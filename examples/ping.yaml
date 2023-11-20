@@ -1,0 +1,24 @@
+- kind: http
+  name: http
+  address: :8000
+  links:
+    io:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  links:
+    out[0]:
+      - name: pong
+        port: io
+
+- kind: snippet
+  name: pong
+  lang: json
+  code: |
+    "pong"
