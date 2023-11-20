@@ -1,0 +1,18 @@
+- kind: http
+  name: http
+  address: :8000
+  links:
+    io:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /*
+      port: out[0]
+  links:
+    out[0]:
+      - name: http
+        port: io
