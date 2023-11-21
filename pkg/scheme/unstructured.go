@@ -9,7 +9,6 @@ import (
 )
 
 type (
-
 	// Unstructured is an Spec that is not marshaled for structuring.
 	Unstructured struct {
 		doc *primitive.Map
