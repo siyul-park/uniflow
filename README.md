@@ -86,5 +86,5 @@ For more information, run the following command:
 [repo_wiki_url]: https://github.com/siyul-park/uniflow/wiki
 [repo_wiki_img]: https://img.shields.io/badge/docs-wiki_page-blue?style=for-the-badge&logo=none
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
-[repo_check_img]: https://github.com/siyual-park/uniflow/actions/uniflows/check.yml/badge.svg
-[repo_check_url]: https://github.com/siyual-park/uniflow/actions/uniflows/check.yml
+[repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
+[repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
