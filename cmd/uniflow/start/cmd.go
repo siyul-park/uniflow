@@ -1,7 +1,6 @@
 package start
 
 import (
-	"io"
 	"io/fs"
 	"os"
 	"os/signal"
@@ -67,39 +66,15 @@ func NewCmd(config Config) *cobra.Command {
 				}); err != nil {
 					return err
 				} else if len(specs) == 0 {
-					file, err := fsys.Open(boot)
+					b := resource.NewBuilder().
+						Scheme(sc).
+						Namespace(ns).
+						FS(fsys).
+						Filename(boot)
+
+					specs, err := b.Build()
 					if err != nil {
 						return err
-					}
-					defer func() { _ = file.Close() }()
-
-					data, err := io.ReadAll(file)
-					if err != nil {
-						return err
-					}
-
-					var raws []map[string]any
-					if err := resource.UnmarshalYAMLOrJSON(data, &raws); err != nil {
-						var e map[string]any
-						if err := resource.UnmarshalYAMLOrJSON(data, &e); err != nil {
-							return err
-						} else {
-							raws = []map[string]any{e}
-						}
-					}
-
-					codec := resource.NewSpecCodec(resource.SpecCodecOptions{
-						Scheme:    sc,
-						Namespace: ns,
-					})
-
-					var specs []scheme.Spec
-					for _, raw := range raws {
-						if spec, err := codec.Decode(raw); err != nil {
-							return err
-						} else {
-							specs = append(specs, spec)
-						}
 					}
 
 					if _, err := st.InsertMany(ctx, specs); err != nil {
