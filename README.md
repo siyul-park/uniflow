@@ -1,51 +1,43 @@
-# uniflow
+# Uniflow
 
 [![go report][go_report_img]][go_report_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 [![check][repo_check_img]][repo_check_url]
 [![release][repo_releases_img]][repo_releases_url]
 
-> Create your uniflow and integrate it anywhere!
-  
-Uniflow is a low-code engine for the backend. You can connect the nodes to create a flow and run it.
+> Low-Code Engine for Backend Workflows
+
+Uniflow is a low-code engine that enables fast and efficient construction and execution of backend workflows.
 
 ## Getting Started
 ### Installation
-First, [download][go_download_url] and install **Go**. Version `1.21` or higher is required.
-  
-Clone the repository by using the `git clone` command:
-```shell
-git clone https://github.com/siyul-park/uniflow
-```
+1. [Download Go][go_download_url]: Install **Go** (version `1.21` or higher is required).
+2. Clone the repository and initialize:
+   ```shell
+   git clone https://github.com/siyul-park/uniflow
+   cd uniflow
+   make init
+   ```
 
-And then init the project:
-```shell
-cd uniflow
-make init
-```
-  
 ### Build
-
-Build the project using the following command:
-```shell
-make build
-```
-
-The build result is created in the `/dist`.
-```shell
-ls /dist
-uniflow
-```
-
-If you want to test the project. then run the following command:
-```shell
-make test
-```
+1. Build the project:
+   ```shell
+   make build
+   ```
+2. Check the build result:
+   ```shell
+   ls /dist
+   uniflow
+   ```
+3. Run tests:
+   ```shell
+   make test
+   ```
 
 ### Configuration
-Before use any command. You can configure environment variables.
+You can set environment variables before executing any command.
 
-You can set environment variables to use `.uniflow.toml` or system environment variables.
+Configuration can be done using `.uniflow.toml` or system environment variables.
 
 | TOML Key | Env Key | Default |
 |---|---|---|
@@ -53,24 +45,23 @@ You can set environment variables to use `.uniflow.toml` or system environment v
 | database.name | DATABASE.NAME |  |
 
 ### Start
+Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml) example.
 
-Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml).
-
-To start uniflow, using the following command:
 ```shell
 ./dist/uniflow start --boot example/ping.yaml
 ```
-`--boot` is install initially if the node does not exist in namespace.
+The `--boot` flag installs initially if the node does not exist in the namespace.
 
-Let's check if the started uniflow is providing a http endpoint normally.
+Check if the started Uniflow is providing an HTTP endpoint normally.
+
 ```shell
 curl localhost:8000/ping
 pong#
 ```
 
-If you wish to apply nodes to a running server, use the `apply`.
+If you wish to apply nodes to a running server, use the `apply` command.
 
-Run the following command for more information.
+For more information, run the following command:
 ```shell
 ./dist/uniflow start --help
 ```
