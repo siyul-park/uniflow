@@ -73,7 +73,6 @@ func (u *Unstructured) GetNamespace() string {
 	var val string
 	_ = u.Get(KeyNamespace, &val)
 	return val
-
 }
 
 // SetNamespace sets the Namespace of the Unstructured.
