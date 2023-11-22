@@ -1,11 +1,13 @@
 package apply
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/cmd/flag"
+	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/cmd/resource"
 	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -19,6 +21,31 @@ type (
 		Scheme   *scheme.Scheme
 		Database database.Database
 		FS       fs.FS
+	}
+)
+
+var (
+	SpecTableColumnDefinitions = []printer.TableColumnDefinition{
+		{
+			Name:   "id",
+			Format: "$.id",
+		},
+		{
+			Name:   "kind",
+			Format: "$.kind",
+		},
+		{
+			Name:   "name",
+			Format: "$.name",
+		},
+		{
+			Name:   "namespace",
+			Format: "$.namespace",
+		},
+		{
+			Name:   "links",
+			Format: "$.links",
+		},
 	}
 )
 
@@ -131,6 +158,19 @@ func NewCmd(config Config) *cobra.Command {
 				return err
 			}
 			if _, err := st.UpdateMany(ctx, updated); err != nil {
+				return err
+			}
+
+			tablePrinter, err := printer.NewTable(SpecTableColumnDefinitions)
+			if err != nil {
+				return err
+			}
+
+			table, err := tablePrinter.Print(specs)
+			if err != nil {
+				return err
+			}
+			if _, err := fmt.Fprint(cmd.OutOrStdout(), table); err != nil {
 				return err
 			}
 
