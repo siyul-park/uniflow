@@ -34,16 +34,6 @@ Uniflow is a low-code engine that enables fast and efficient construction and ex
    make test
    ```
 
-### Configuration
-You can set environment variables before executing any command.
-
-Configuration can be done using `.uniflow.toml` or system environment variables.
-
-| TOML Key | Env Key | Default |
-|---|---|---|
-| database.url | DATABASE.URL | memdb:// |
-| database.name | DATABASE.NAME |  |
-
 ### Start
 Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml) example.
 
@@ -65,6 +55,16 @@ For more information, run the following command:
 ```shell
 ./dist/uniflow start --help
 ```
+
+### Configuration
+You can set environment variables before executing any command.
+
+Configuration can be done using `.uniflow.toml` or system environment variables.
+
+| TOML Key | Env Key | Default |
+|---|---|---|
+| database.url | DATABASE.URL | memdb:// |
+| database.name | DATABASE.NAME |  |
 
 <!-- Go -->
 
