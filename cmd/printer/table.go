@@ -83,11 +83,13 @@ func (p *TablePrinter) Print(data any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	values, ok := value.(*primitive.Slice)
-	if !ok {
-		return "", nil
+
+	var elements []any
+	if v, ok := value.(*primitive.Slice); ok {
+		elements = v.Slice()
+	} else if v, ok := value.(*primitive.Map); ok {
+		elements = append(elements, v.Interface())
 	}
-	elements := values.Slice()
 
 	header := make(table.Row, len(p.names))
 	for i, name := range p.names {
@@ -98,11 +100,8 @@ func (p *TablePrinter) Print(data any) (string, error) {
 	for i, element := range elements {
 		row := make(table.Row, len(p.formats))
 		for j, format := range p.formats {
-			if data, err := format.Eval(element); err != nil {
-				row[j] = nil
-			} else {
-				row[j] = data
-			}
+			data, _ := format.Eval(element)
+			row[j] = data
 		}
 		rows[i] = row
 	}
