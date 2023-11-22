@@ -10,29 +10,32 @@
 Uniflow is a low-code engine that enables fast and efficient construction and execution of backend workflows.
 
 ## Getting Started
-### Installation
-1. [Download Go][go_download_url]: Install **Go** (version `1.21` or higher is required).
-2. Clone the repository and initialize:
-   ```shell
-   git clone https://github.com/siyul-park/uniflow
-   cd uniflow
-   make init
-   ```
+### Install & Build
+[Download Go][go_download_url] and install(version `1.21` or higher is required).
 
-### Build
-1. Build the project:
-   ```shell
-   make build
-   ```
-2. Check the build result:
-   ```shell
-   ls /dist
-   uniflow
-   ```
-3. Run tests:
-   ```shell
-   make test
-   ```
+Clone the repository and init.
+
+```shell
+git clone https://github.com/siyul-park/uniflow
+cd uniflow
+make init
+```
+
+Build the project and check the result.
+
+```shell
+make build
+```
+```shell
+ls /dist
+uniflow
+```
+
+And run a test to see if it's working properly.
+
+```shell
+make test
+```
 
 ### Start
 Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml) example.
