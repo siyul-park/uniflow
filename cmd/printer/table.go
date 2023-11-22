@@ -47,7 +47,7 @@ var (
 		Format: table.FormatOptionsDefault,
 		HTML:   table.DefaultHTMLOptions,
 		Options: table.Options{
-			DrawBorder:      true,
+			DrawBorder:      false,
 			SeparateColumns: true,
 			SeparateFooter:  false,
 			SeparateHeader:  false,

@@ -26,7 +26,7 @@ func TestTablePrinter_Print(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	expect := "      \n FOO  BAR \n foo  bar \n      "
+	expect := " FOO  BAR \n foo  bar "
 
 	table, err := p.Print(data)
 	assert.NoError(t, err)
