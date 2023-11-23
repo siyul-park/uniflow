@@ -400,37 +400,54 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	outPck := packet.New(outPayload)
 
 	if ioStream.Links() > 0 {
+		proc.Stack().Push(outPck.ID(), ioStream.ID())
 		ioStream.Send(outPck)
 	}
 	if outStream.Links() > 0 {
+		proc.Stack().Push(outPck.ID(), outStream.ID())
 		outStream.Send(outPck)
 	}
 	if ioStream.Links()+outStream.Links() == 0 {
 		return
 	}
 
-	var inPck *packet.Packet
-	var ok bool
+	for {
+		var stream *port.Stream
+		var inPck *packet.Packet
+		var ok bool
+		select {
+		case inPck, ok = <-inStream.Receive():
+			stream = inStream
+		case inPck, ok = <-outStream.Receive():
+			stream = outStream
+		case inPck, ok = <-ioStream.Receive():
+			stream = ioStream
+		}
+		if !ok {
+			_ = n.response(r, w, n.errorPayload(proc, ServiceUnavailable))
+			return
+		}
 
-	select {
-	case inPck, ok = <-inStream.Receive():
-	case inPck, ok = <-ioStream.Receive():
-	}
-	if !ok {
-		_ = n.response(r, w, n.errorPayload(proc, ServiceUnavailable))
-		return
-	}
-	proc.Stack().Clear(inPck.ID())
+		if stream == outStream || stream == ioStream {
+			if _, ok := proc.Stack().Pop(inPck.ID(), stream.ID()); !ok {
+				continue
+			}
+		} else {
+			proc.Stack().Clear(inPck.ID())
+		}
 
-	inPayload := inPck.Payload()
+		inPayload := inPck.Payload()
 
-	var res HTTPPayload
-	if err := primitive.Unmarshal(inPayload, &res); err != nil {
-		res.Body = inPayload
-	}
+		var res HTTPPayload
+		if err := primitive.Unmarshal(inPayload, &res); err != nil {
+			res.Body = inPayload
+		}
 
-	if err := n.response(r, w, res); err != nil {
-		_ = n.response(r, w, n.errorPayload(proc, InternalServerError))
+		if err := n.response(r, w, res); err != nil {
+			_ = n.response(r, w, n.errorPayload(proc, InternalServerError))
+		}
+
+		break
 	}
 }
 
