@@ -11,9 +11,9 @@ Uniflow is a low-code engine that enables fast and efficient construction and ex
 
 ## Getting Started
 ### Install & Build
-[Download Go][go_download_url] and install(version `1.21` or higher is required).
+[Download Go][go_download_url] and install (version `1.21` or higher is required).
 
-Clone the repository and init.
+Clone the repository and initialize.
 
 ```shell
 git clone https://github.com/siyul-park/uniflow
@@ -26,12 +26,13 @@ Build the project and check the result.
 ```shell
 make build
 ```
+
 ```shell
 ls /dist
 uniflow
 ```
 
-And run a test to see if it's working properly.
+Run a test to see if it's working properly.
 
 ```shell
 make test
