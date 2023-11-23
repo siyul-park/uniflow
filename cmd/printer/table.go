@@ -1,7 +1,6 @@
 package printer
 
 import (
-	"github.com/iancoleman/strcase"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -62,7 +61,7 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 	formats := make([]*jsonata.Expr, len(columns))
 
 	for i, column := range columns {
-		name := strcase.ToScreamingSnake(column.Name)
+		name := column.Name
 		format, err := jsonata.Compile(column.Format)
 		if err != nil {
 			return nil, err
