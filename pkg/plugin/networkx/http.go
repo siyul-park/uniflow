@@ -36,6 +36,8 @@ type (
 		listener        net.Listener
 		listenerNetwork string
 		ioPort          *port.Port
+		inPort          *port.Port
+		outPort         *port.Port
 		errPort         *port.Port
 		mu              sync.RWMutex
 	}
@@ -268,6 +270,8 @@ func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
 		server:          new(http.Server),
 		listenerNetwork: "tcp",
 		ioPort:          port.New(),
+		inPort:          port.New(),
+		outPort:         port.New(),
 		errPort:         port.New(),
 	}
 	n.server.Handler = n
@@ -289,6 +293,10 @@ func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 	switch name {
 	case node.PortIO:
 		return n.ioPort, true
+	case node.PortIn:
+		return n.inPort, true
+	case node.PortOut:
+		return n.outPort, true
 	case node.PortErr:
 		return n.errPort, true
 	default:
@@ -350,6 +358,8 @@ func (n *HTTPNode) Close() error {
 		return err
 	}
 	n.ioPort.Close()
+	n.inPort.Close()
+	n.outPort.Close()
 	n.errPort.Close()
 
 	return nil
@@ -373,8 +383,9 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	outStream := n.ioPort.Open(proc)
-	inStream := n.ioPort.Open(proc)
+	ioStream := n.ioPort.Open(proc)
+	inStream := n.inPort.Open(proc)
+	outStream := n.outPort.Open(proc)
 
 	req, err := n.request(r)
 	if err != nil {
@@ -387,9 +398,24 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	outPck := packet.New(outPayload)
-	outStream.Send(outPck)
 
-	inPck, ok := <-inStream.Receive()
+	if ioStream.Links() > 0 {
+		ioStream.Send(outPck)
+	}
+	if outStream.Links() > 0 {
+		outStream.Send(outPck)
+	}
+	if ioStream.Links()+outStream.Links() == 0 {
+		return
+	}
+
+	var inPck *packet.Packet
+	var ok bool
+
+	select {
+	case inPck, ok = <-inStream.Receive():
+	case inPck, ok = <-ioStream.Receive():
+	}
 	if !ok {
 		_ = n.response(r, w, n.errorPayload(proc, ServiceUnavailable))
 		return
