@@ -1,7 +1,6 @@
 package memdb
 
 import (
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -20,7 +19,7 @@ func ParseSorts(sorts []database.Sort) func(i, j *primitive.Map) bool {
 				return s.Order != database.OrderDESC
 			}
 
-			e := util.Compare(x.Interface(), y.Interface())
+			e := primitive.Compare(x, y)
 			if e == 0 {
 				continue
 			}

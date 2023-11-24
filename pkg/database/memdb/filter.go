@@ -41,7 +41,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(o), primitive.Interface(v)) < 0
+				return primitive.Compare(o, v) < 0
 			}
 		}
 	case database.LTE:
@@ -51,7 +51,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(o), primitive.Interface(v)) <= 0
+				return primitive.Compare(o, v) <= 0
 			}
 		}
 	case database.GT:
@@ -61,7 +61,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(o), primitive.Interface(v)) > 0
+				return primitive.Compare(o, v) > 0
 			}
 		}
 	case database.GTE:
@@ -71,7 +71,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(o), primitive.Interface(v)) >= 0
+				return primitive.Compare(o, v) >= 0
 			}
 		}
 	case database.IN:
