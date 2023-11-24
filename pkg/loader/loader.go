@@ -289,7 +289,7 @@ func (ld *Loader) resolveLinks(ctx context.Context, local scheme.Spec, remote sc
 		for _, location := range locations {
 			id := location.ID
 
-			if util.IsZero(id) {
+			if id == (ulid.ULID{}) {
 				if location.Name != "" {
 					filter := storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())
 					filter = filter.And(storage.Where[string](scheme.KeyName).EQ(location.Name))
@@ -301,7 +301,7 @@ func (ld *Loader) resolveLinks(ctx context.Context, local scheme.Spec, remote sc
 				}
 			}
 
-			if !util.IsZero(id) {
+			if id != (ulid.ULID{}) {
 				if ref, ok := ld.table.Lookup(id); ok {
 					referenced := ld.referenced[ref.ID()]
 					var locations []scheme.PortLocation
@@ -331,7 +331,7 @@ func (ld *Loader) resolveLinks(ctx context.Context, local scheme.Spec, remote sc
 
 		for _, location := range locations {
 			filter := storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())
-			if !util.IsZero(location.ID) {
+			if location.ID != (ulid.ULID{}) {
 				filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(location.ID))
 			} else if location.Name != "" {
 				filter = filter.And(storage.Where[string](scheme.KeyName).EQ(location.Name))
@@ -410,7 +410,7 @@ func (ld *Loader) resolveLinks(ctx context.Context, local scheme.Spec, remote sc
 					}
 
 					for _, location := range locations {
-						if (!util.IsZero(location.ID) && location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
+						if (location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
 							if p2, ok := n.Port(location.Port); ok {
 								p1.Link(p2)
 

@@ -6,38 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsZero(t *testing.T) {
-	var testCase = []struct {
-		when   any
-		expect bool
-	}{
-		{
-			when:   nil,
-			expect: true,
-		},
-		{
-			when:   "",
-			expect: true,
-		},
-		{
-			when:   0,
-			expect: true,
-		},
-		{
-			when:   false,
-			expect: true,
-		},
-		{
-			when:   struct{}{},
-			expect: true,
-		},
-	}
-
-	for _, tc := range testCase {
-		assert.Equal(t, tc.expect, IsZero(tc.when))
-	}
-}
-
 func TestEqual(t *testing.T) {
 	var testCase = []struct {
 		when   []any

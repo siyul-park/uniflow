@@ -162,7 +162,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		for i, spec := range specs {
 			id := spec.GetID()
 
-			if !util.IsZero(id) {
+			if id != (ulid.ULID{}) {
 				ids = append(ids, id)
 				patches[id] = examples[i]
 			}
@@ -227,16 +227,16 @@ func examplesToFilter(examples []*primitive.Map) (*storage.Filter, error) {
 			return nil, err
 		}
 
-		if !util.IsZero(spec.ID) {
+		if spec.ID != (ulid.ULID{}) {
 			sub = sub.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.ID))
 		}
-		if !util.IsZero(spec.Kind) {
+		if spec.Kind != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyKind).EQ(spec.Kind))
 		}
-		if !util.IsZero(spec.Name) {
+		if spec.Name != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyName).EQ(spec.Name))
 		}
-		if !util.IsZero(spec.Namespace) {
+		if spec.Namespace != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyName).EQ(spec.Namespace))
 		}
 

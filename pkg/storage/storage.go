@@ -113,7 +113,7 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.NamespaceDefault)
 	}
-	if util.IsZero(unstructured.GetID()) {
+	if unstructured.GetID() == (ulid.ULID{}) {
 		unstructured.SetID(ulid.Make())
 	}
 
@@ -147,7 +147,7 @@ func (s *Storage) InsertMany(ctx context.Context, objs []scheme.Spec) ([]ulid.UL
 		if unstructured.GetNamespace() == "" {
 			unstructured.SetNamespace(scheme.NamespaceDefault)
 		}
-		if util.IsZero(unstructured.GetID()) {
+		if unstructured.GetID() == (ulid.ULID{}) {
 			unstructured.SetID(ulid.Make())
 		}
 
@@ -182,7 +182,7 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.NamespaceDefault)
 	}
-	if util.IsZero(unstructured.GetID()) {
+	if unstructured.GetID() == (ulid.ULID{}) {
 		return false, nil
 	}
 
@@ -209,7 +209,7 @@ func (s *Storage) UpdateMany(ctx context.Context, objs []scheme.Spec) (int, erro
 		if unstructured.GetNamespace() == "" {
 			unstructured.SetNamespace(scheme.NamespaceDefault)
 		}
-		if util.IsZero(unstructured.GetID()) {
+		if unstructured.GetID() == (ulid.ULID{}) {
 			continue
 		}
 

@@ -5,13 +5,6 @@ import (
 	"reflect"
 )
 
-func IsZero(v any) bool {
-	if IsNil(v) {
-		return true
-	}
-	return reflect.ValueOf(v).IsZero()
-}
-
 func Equal(x any, y any) bool {
 	if IsNil(x) != IsNil(y) {
 		return false

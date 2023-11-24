@@ -86,7 +86,7 @@ func NewCmd(config Config) *cobra.Command {
 			}
 
 			for _, spec := range specs {
-				if util.IsZero(spec.GetID()) {
+				if spec.GetID() == (ulid.ULID{}) {
 					if spec.GetName() != "" {
 						exist, err := st.FindOne(ctx, storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
 						if err != nil {
