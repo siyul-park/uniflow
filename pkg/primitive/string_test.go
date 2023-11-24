@@ -33,12 +33,6 @@ func TestString_Compare(t *testing.T) {
 	assert.Equal(t, -1, NewString("A").Compare(NewString("a")))
 }
 
-func TestString_Hash(t *testing.T) {
-	assert.NotEqual(t, NewString("A").Hash(), NewString("B").Hash())
-	assert.Equal(t, NewString("").Hash(), NewString("").Hash())
-	assert.Equal(t, NewString("A").Hash(), NewString("A").Hash())
-}
-
 func TestString_Encode(t *testing.T) {
 	e := NewStringEncoder()
 

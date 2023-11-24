@@ -6,7 +6,6 @@ type (
 		Kind() Kind
 		Equal(v Object) bool
 		Compare(v Object) int
-		Hash() uint32
 		Interface() any
 	}
 

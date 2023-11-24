@@ -37,12 +37,6 @@ func TestBinary_Compare(t *testing.T) {
 	assert.Equal(t, 1, v2.Compare(v1))
 }
 
-func TestBinary_Hash(t *testing.T) {
-	assert.NotEqual(t, NewBinary([]byte{0}).Hash(), NewBinary([]byte{1}).Hash())
-	assert.Equal(t, NewBinary(nil).Hash(), NewBinary(nil).Hash())
-	assert.Equal(t, NewBinary([]byte{0}).Hash(), NewBinary([]byte{0}).Hash())
-}
-
 func TestBinary_Encode(t *testing.T) {
 	e := NewBinaryEncoder()
 

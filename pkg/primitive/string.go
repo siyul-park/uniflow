@@ -2,7 +2,6 @@ package primitive
 
 import (
 	"encoding"
-	"hash/fnv"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -59,14 +58,6 @@ func (o String) Compare(v Object) int {
 	} else {
 		return compare[string](o.String(), r.String())
 	}
-}
-
-func (o String) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindString), 0})
-	h.Write([]byte(o))
-
-	return h.Sum32()
 }
 
 func (o String) Interface() any {

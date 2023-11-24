@@ -51,20 +51,6 @@ func TestFloat_Compare(t *testing.T) {
 	})
 }
 
-func TestFloat_Hash(t *testing.T) {
-	t.Run("32", func(t *testing.T) {
-		assert.NotEqual(t, NewFloat32(0).Hash(), NewFloat32(1).Hash())
-		assert.Equal(t, NewFloat32(0).Hash(), NewFloat32(0).Hash())
-		assert.Equal(t, NewFloat32(1).Hash(), NewFloat32(1).Hash())
-	})
-
-	t.Run("64", func(t *testing.T) {
-		assert.NotEqual(t, NewFloat64(0).Hash(), NewFloat64(1).Hash())
-		assert.Equal(t, NewFloat64(0).Hash(), NewFloat64(0).Hash())
-		assert.Equal(t, NewFloat64(1).Hash(), NewFloat64(1).Hash())
-	})
-}
-
 func TestFloat_Encode(t *testing.T) {
 	e := NewFloatEncoder()
 

@@ -2,10 +2,8 @@ package primitive
 
 import (
 	"fmt"
-	"hash/fnv"
 	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/iancoleman/strcase"
@@ -175,33 +173,6 @@ func (o *Map) Compare(v Object) int {
 		}
 		return 0
 	}
-}
-
-func (o *Map) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindMap), 0})
-
-	itr := o.value.Iterator()
-	for !itr.Done() {
-		k, v, _ := itr.Next()
-
-		if k != nil {
-			hash := k.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
-		} else {
-			h.Write([]byte{0})
-		}
-		if v != nil {
-			hash := v.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
-		} else {
-			h.Write([]byte{0})
-		}
-	}
-
-	return h.Sum32()
 }
 
 func (o *Map) Interface() any {

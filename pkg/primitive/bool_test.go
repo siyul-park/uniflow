@@ -27,12 +27,6 @@ func TestBool_Equal(t *testing.T) {
 	assert.False(t, FALSE.Equal(TRUE))
 }
 
-func TestBool_Hash(t *testing.T) {
-	assert.NotEqual(t, TRUE.Hash(), FALSE.Hash())
-	assert.Equal(t, TRUE.Hash(), TRUE.Hash())
-	assert.Equal(t, FALSE.Hash(), FALSE.Hash())
-}
-
 func TestBool_Encode(t *testing.T) {
 	e := NewBoolEncoder()
 

@@ -100,34 +100,6 @@ func TestUint_Compare(t *testing.T) {
 	})
 }
 
-func TestUint_Hash(t *testing.T) {
-	t.Run("", func(t *testing.T) {
-		assert.NotEqual(t, NewUint(0).Hash(), NewUint(1).Hash())
-		assert.Equal(t, NewUint(0).Hash(), NewUint(0).Hash())
-		assert.Equal(t, NewUint(1).Hash(), NewUint(1).Hash())
-	})
-	t.Run("8", func(t *testing.T) {
-		assert.NotEqual(t, NewUint8(0).Hash(), NewUint8(1).Hash())
-		assert.Equal(t, NewUint8(0).Hash(), NewUint8(0).Hash())
-		assert.Equal(t, NewUint8(1).Hash(), NewUint8(1).Hash())
-	})
-	t.Run("16", func(t *testing.T) {
-		assert.NotEqual(t, NewUint16(0).Hash(), NewUint16(1).Hash())
-		assert.Equal(t, NewUint16(0).Hash(), NewUint16(0).Hash())
-		assert.Equal(t, NewUint16(1).Hash(), NewUint16(1).Hash())
-	})
-	t.Run("32", func(t *testing.T) {
-		assert.NotEqual(t, NewUint32(0).Hash(), NewUint32(1).Hash())
-		assert.Equal(t, NewUint32(0).Hash(), NewUint32(0).Hash())
-		assert.Equal(t, NewUint32(1).Hash(), NewUint32(1).Hash())
-	})
-	t.Run("64", func(t *testing.T) {
-		assert.NotEqual(t, NewUint64(0).Hash(), NewUint64(1).Hash())
-		assert.Equal(t, NewUint64(0).Hash(), NewUint64(0).Hash())
-		assert.Equal(t, NewUint64(1).Hash(), NewUint64(1).Hash())
-	})
-}
-
 func TestUint_Encode(t *testing.T) {
 	e := NewUintEncoder()
 

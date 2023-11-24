@@ -3,7 +3,6 @@ package primitive
 import (
 	"encoding"
 	"fmt"
-	"hash/fnv"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -81,14 +80,6 @@ func (o Binary) Compare(v Object) int {
 		}
 		return 0
 	}
-}
-
-func (o Binary) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindBinary), 0})
-	h.Write([]byte(o))
-
-	return h.Sum32()
 }
 
 func (o Binary) Interface() any {

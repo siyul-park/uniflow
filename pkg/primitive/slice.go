@@ -2,9 +2,7 @@ package primitive
 
 import (
 	"fmt"
-	"hash/fnv"
 	"reflect"
-	"unsafe"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/pkg/errors"
@@ -118,26 +116,6 @@ func (o *Slice) Compare(v Object) int {
 		}
 		return 0
 	}
-}
-
-func (o *Slice) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindSlice), 0})
-
-	itr := o.value.Iterator()
-	for !itr.Done() {
-		_, v := itr.Next()
-
-		if v != nil {
-			hash := v.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
-		} else {
-			h.Write([]byte{0})
-		}
-	}
-
-	return h.Sum32()
 }
 
 func (o *Slice) Interface() any {

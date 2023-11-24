@@ -1,7 +1,6 @@
 package primitive
 
 import (
-	"hash/fnv"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -56,19 +55,6 @@ func (o Bool) Compare(v Object) int {
 	} else {
 		return -1
 	}
-}
-
-func (o Bool) Hash() uint32 {
-	var v byte
-	if o {
-		v |= 1
-	}
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindBool), 0})
-	h.Write([]byte{v})
-
-	return h.Sum32()
 }
 
 func (o Bool) Interface() any {

@@ -79,15 +79,6 @@ func TestSlice_Compare(t *testing.T) {
 	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
 }
 
-func TestSlice_Hash(t *testing.T) {
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
-
-	assert.NotEqual(t, NewSlice(v1, v2).Hash(), NewSlice(v2, v1).Hash())
-	assert.Equal(t, NewSlice().Hash(), NewSlice().Hash())
-	assert.Equal(t, NewSlice(v1, v2).Hash(), NewSlice(v1, v2).Hash())
-}
-
 func TestSlice_Encode(t *testing.T) {
 	e := NewSliceEncoder(NewStringEncoder())
 
