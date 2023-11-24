@@ -87,7 +87,7 @@ func (o *Slice) Equal(v Object) bool {
 		return false
 	} else {
 		for i := 0; i < o.Len(); i++ {
-			if !o.Get(i).Equal(r.Get(i)) {
+			if !Equal(o.Get(i), r.Get(i)) {
 				return false
 			}
 		}

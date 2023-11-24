@@ -2,10 +2,10 @@ package storage
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -70,7 +70,7 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 			var ok bool
 			for _, i := range exists {
 				if i.Name == index.Name {
-					if ok := util.Equal(i, index); !ok {
+					if reflect.DeepEqual(i, index) {
 						s.collection.Indexes().Drop(ctx, i.Name)
 					}
 					break

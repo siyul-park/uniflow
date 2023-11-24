@@ -1,7 +1,5 @@
 package primitive
 
-import "github.com/siyul-park/uniflow/internal/util"
-
 type (
 	// Object is an atomic type.
 	Object interface {
@@ -35,8 +33,21 @@ const (
 	KindString
 )
 
+func Equal(x, y Object) bool {
+	if x == nil && y == nil {
+		return true
+	} else if x == nil {
+		return false
+	} else if y == nil {
+		return false
+	} else {
+		return x.Equal(y)
+	}
+}
+
+
 func Interface(v any) any {
-	if util.IsNil(v) {
+	if v == nil {
 		return nil
 	} else if v, ok := v.(Object); !ok {
 		return nil

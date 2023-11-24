@@ -5,22 +5,6 @@ import (
 	"reflect"
 )
 
-func Equal(x any, y any) bool {
-	if IsNil(x) != IsNil(y) {
-		return false
-	}
-	c, ok := compare(reflect.ValueOf(x), reflect.ValueOf(y))
-	if !ok {
-		if hash1, err := Hash(x); err == nil {
-			if hash2, err := Hash(y); err == nil {
-				return hash1 == hash2
-			}
-		}
-		return reflect.DeepEqual(x, y) // Is unsafe compare
-	}
-	return c == 0
-}
-
 func Compare(x any, y any) int {
 	c, ok := compare(reflect.ValueOf(x), reflect.ValueOf(y))
 	if !ok {

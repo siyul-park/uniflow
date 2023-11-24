@@ -118,7 +118,7 @@ func (o *Map) Equal(v Object) bool {
 
 		for i, k1 := range keys1 {
 			k2 := keys2[i]
-			if k1 != k2 {
+			if !Equal(k1, k2) {
 				return false
 			}
 
@@ -130,7 +130,7 @@ func (o *Map) Equal(v Object) bool {
 			if !ok1 || !ok2 {
 				continue
 			}
-			if !v1.Equal(v2) {
+			if !Equal(v1, v2) {
 				return false
 			}
 		}

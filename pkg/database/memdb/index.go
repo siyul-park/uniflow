@@ -340,7 +340,7 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 						return nil
 					}
 				} else if model.Unique {
-					if r, loaded := curr.Load(hash); loaded && util.Equal(r, id) {
+					if r, loaded := curr.Load(hash); loaded && primitive.Equal(id, r.(primitive.Object)) {
 						curr.Delete(hash)
 					}
 				} else {

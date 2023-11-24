@@ -2,10 +2,10 @@ package loader
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -103,7 +103,7 @@ func (ld *Loader) loadOne(ctx context.Context, filter *storage.Filter) (node.Nod
 
 	if remote != nil {
 		if local != nil {
-			if ok := util.Equal(local, remote); ok {
+			if reflect.DeepEqual(remote, local) {
 				if n, ok := ld.table.Lookup(remote.GetID()); ok {
 					return n, nil
 				}
@@ -178,7 +178,7 @@ func (ld *Loader) loadMany(ctx context.Context, filter *storage.Filter) ([]node.
 	for id, remote := range idToRemote {
 		local := idToLocal[id]
 		if local != nil {
-			if ok := util.Equal(local, remote); ok {
+			if reflect.DeepEqual(remote, local) {
 				if n, ok := ld.table.Lookup(id); ok {
 					nodes = append(nodes, n)
 					continue

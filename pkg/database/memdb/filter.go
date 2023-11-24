@@ -16,63 +16,67 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	switch filter.OP {
 	case database.EQ:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Equal(primitive.Interface(v), primitive.Interface(filter.Value))
+				return primitive.Equal(o, v)
 			}
 		}
 	case database.NE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return !util.Equal(primitive.Interface(v), primitive.Interface(filter.Value))
+				return !primitive.Equal(o, v)
 			}
 		}
 	case database.LT:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) < 0
+				return util.Compare(primitive.Interface(o), primitive.Interface(filter.Value)) < 0
 			}
 		}
 	case database.LTE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) <= 0
+				return util.Compare(primitive.Interface(o), primitive.Interface(filter.Value)) <= 0
 			}
 		}
 	case database.GT:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) > 0
+				return util.Compare(primitive.Interface(o), primitive.Interface(filter.Value)) > 0
 			}
 		}
 	case database.GTE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) >= 0
+				return util.Compare(primitive.Interface(o), primitive.Interface(filter.Value)) >= 0
 			}
 		}
 	case database.IN:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v == nil {
+			} else if o == nil {
 				return false
-			} else if children, ok := filter.Value.(*primitive.Slice); !ok {
+			} else if v, ok := filter.Value.(*primitive.Slice); !ok {
 				return false
 			} else {
-				for i := 0; i < children.Len(); i++ {
-					if util.Equal(v.Interface(), children.Get(i).Interface()) {
+				for i := 0; i < v.Len(); i++ {
+					if primitive.Equal(o, v.Get(i)) {
 						return true
 					}
 				}
@@ -81,19 +85,19 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NIN:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
-				return false
-			} else if v == nil {
+			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
 				return true
-			} else if children, ok := filter.Value.(*primitive.Slice); !ok {
+			} else if o == nil {
+				return true
+			} else if v, ok := filter.Value.(*primitive.Slice); !ok {
 				return false
 			} else {
-				for i := 0; i < children.Len(); i++ {
-					if util.Equal(v.Interface(), children.Get(i).Interface()) {
-						return false
+				for i := 0; i < v.Len(); i++ {
+					if !primitive.Equal(o, v.Get(i)) {
+						return true
 					}
 				}
-				return true
+				return false
 			}
 		}
 	case database.NULL:
