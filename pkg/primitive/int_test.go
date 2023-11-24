@@ -39,6 +39,34 @@ func TestNewInt(t *testing.T) {
 	})
 }
 
+func TestInt_Equal(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		assert.True(t, NewInt(0).Equal(NewInt(0)))
+		assert.False(t, NewInt(0).Equal(NewInt(1)))
+		assert.True(t, NewInt(0).Equal(NewFloat32(0)))
+	})
+	t.Run("8", func(t *testing.T) {
+		assert.True(t, NewInt8(0).Equal(NewInt(0)))
+		assert.False(t, NewInt8(0).Equal(NewInt(1)))
+		assert.True(t, NewInt8(0).Equal(NewFloat32(0)))
+	})
+	t.Run("16", func(t *testing.T) {
+		assert.True(t, NewInt16(0).Equal(NewInt(0)))
+		assert.False(t, NewInt16(0).Equal(NewInt(1)))
+		assert.True(t, NewInt16(0).Equal(NewFloat32(0)))
+	})
+	t.Run("32", func(t *testing.T) {
+		assert.True(t, NewInt32(0).Equal(NewInt(0)))
+		assert.False(t, NewInt32(0).Equal(NewInt(1)))
+		assert.True(t, NewInt32(0).Equal(NewFloat32(0)))
+	})
+	t.Run("64", func(t *testing.T) {
+		assert.True(t, NewInt64(0).Equal(NewInt(0)))
+		assert.False(t, NewInt64(0).Equal(NewInt(1)))
+		assert.True(t, NewInt64(0).Equal(NewFloat32(0)))
+	})
+}
+
 func TestInt_Hash(t *testing.T) {
 	t.Run("", func(t *testing.T) {
 		assert.NotEqual(t, NewInt(0).Hash(), NewInt(1).Hash())

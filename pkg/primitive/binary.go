@@ -42,6 +42,21 @@ func (o Binary) Kind() Kind {
 	return KindBinary
 }
 
+func (o Binary) Equal(v Object) bool {
+	if r, ok := v.(Binary); !ok {
+		return false
+	} else if r.Len() != o.Len() {
+		return false
+	} else {
+		for i := 0; i < o.Len(); i++ {
+			if o.Get(i) != r.Get(i) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func (o Binary) Hash() uint32 {
 	h := fnv.New32()
 	h.Write([]byte{byte(KindBinary), 0})

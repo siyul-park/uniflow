@@ -46,6 +46,20 @@ func (o Int) Kind() Kind {
 	return KindInt
 }
 
+func (o Int) Equal(v Object) bool {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return o.Int() == int64(r.Uint())
+		} else if r, ok := v.(Float); ok {
+			return float64(o.Int()) == r.Float()
+		} else {
+			return false
+		}
+	} else {
+		return o.Int() == r.Int()
+	}
+}
+
 func (o Int) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -72,6 +86,20 @@ func (o Int8) Int() int64 {
 
 func (o Int8) Kind() Kind {
 	return KindInt8
+}
+
+func (o Int8) Equal(v Object) bool {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return o.Int() == int64(r.Uint())
+		} else if r, ok := v.(Float); ok {
+			return float64(o.Int()) == r.Float()
+		} else {
+			return false
+		}
+	} else {
+		return o.Int() == r.Int()
+	}
 }
 
 func (o Int8) Hash() uint32 {
@@ -102,6 +130,20 @@ func (o Int16) Kind() Kind {
 	return KindInt16
 }
 
+func (o Int16) Equal(v Object) bool {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return o.Int() == int64(r.Uint())
+		} else if r, ok := v.(Float); ok {
+			return float64(o.Int()) == r.Float()
+		} else {
+			return false
+		}
+	} else {
+		return o.Int() == r.Int()
+	}
+}
+
 func (o Int16) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -130,6 +172,20 @@ func (o Int32) Kind() Kind {
 	return KindInt32
 }
 
+func (o Int32) Equal(v Object) bool {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return o.Int() == int64(r.Uint())
+		} else if r, ok := v.(Float); ok {
+			return float64(o.Int()) == r.Float()
+		} else {
+			return false
+		}
+	} else {
+		return o.Int() == r.Int()
+	}
+}
+
 func (o Int32) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -156,6 +212,20 @@ func (o Int64) Int() int64 {
 
 func (o Int64) Kind() Kind {
 	return KindInt64
+}
+
+func (o Int64) Equal(v Object) bool {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return o.Int() == int64(r.Uint())
+		} else if r, ok := v.(Float); ok {
+			return float64(o.Int()) == r.Float()
+		} else {
+			return false
+		}
+	} else {
+		return o.Int() == r.Int()
+	}
 }
 
 func (o Int64) Hash() uint32 {

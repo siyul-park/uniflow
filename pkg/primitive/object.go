@@ -6,6 +6,7 @@ type (
 	// Object is an atomic type.
 	Object interface {
 		Kind() Kind
+		Equal(v Object) bool
 		Hash() uint32
 		Interface() any
 	}

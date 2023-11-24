@@ -80,6 +80,21 @@ func (o *Slice) Kind() Kind {
 	return KindSlice
 }
 
+func (o *Slice) Equal(v Object) bool {
+	if r, ok := v.(*Slice); !ok {
+		return false
+	} else if o.Len() != r.Len() {
+		return false
+	} else {
+		for i := 0; i < o.Len(); i++ {
+			if !o.Get(i).Equal(r.Get(i)) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func (o *Slice) Hash() uint32 {
 	h := fnv.New32()
 	h.Write([]byte{byte(KindSlice), 0})

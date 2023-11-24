@@ -14,6 +14,18 @@ func TestNewString(t *testing.T) {
 	assert.Equal(t, KindString, v.Kind())
 	assert.Equal(t, raw, v.Interface())
 }
+func TestString_Get(t *testing.T) {
+	v := NewString("A")
+
+	assert.Equal(t, 1, v.Len())
+	assert.Equal(t, rune('A'), v.Get(0))
+}
+
+func TestString_Equal(t *testing.T) {
+	assert.True(t, NewString("A").Equal(NewString("A")))
+	assert.True(t, NewString("").Equal(NewString("")))
+	assert.False(t, NewString("A").Equal(NewString("")))
+}
 
 func TestString_Hash(t *testing.T) {
 	assert.NotEqual(t, NewString("A").Hash(), NewString("B").Hash())
@@ -21,12 +33,6 @@ func TestString_Hash(t *testing.T) {
 	assert.Equal(t, NewString("A").Hash(), NewString("A").Hash())
 }
 
-func TestString_Get(t *testing.T) {
-	v := NewString("A")
-
-	assert.Equal(t, 1, v.Len())
-	assert.Equal(t, rune('A'), v.Get(0))
-}
 
 func TestString_Encode(t *testing.T) {
 	e := NewStringEncoder()

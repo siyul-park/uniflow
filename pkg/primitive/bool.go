@@ -34,6 +34,14 @@ func (o Bool) Kind() Kind {
 	return KindBool
 }
 
+func (o Bool) Equal(v Object) bool {
+	if r, ok := v.(Bool); !ok {
+		return false
+	} else {
+		return o.Bool() == r.Bool()
+	}
+}
+
 func (o Bool) Hash() uint32 {
 	var v byte
 	if o {

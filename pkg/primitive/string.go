@@ -41,6 +41,14 @@ func (o String) Kind() Kind {
 	return KindString
 }
 
+func (o String) Equal(v Object) bool {
+	if r, ok := v.(String); !ok {
+		return false
+	} else {
+		return o.String() == r.String()
+	}
+}
+
 func (o String) Hash() uint32 {
 	h := fnv.New32()
 	h.Write([]byte{byte(KindString), 0})
