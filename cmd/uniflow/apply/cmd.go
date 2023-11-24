@@ -1,7 +1,6 @@
 package apply
 
 import (
-	"io"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
@@ -50,39 +49,15 @@ func NewCmd(config Config) *cobra.Command {
 				return err
 			}
 
-			file, err := fsys.Open(fl)
+			b := resource.NewBuilder().
+				Scheme(sc).
+				Namespace(ns).
+				FS(fsys).
+				Filename(fl)
+
+			specs, err := b.Build()
 			if err != nil {
 				return err
-			}
-			defer func() { _ = file.Close() }()
-
-			data, err := io.ReadAll(file)
-			if err != nil {
-				return err
-			}
-
-			var raws []map[string]any
-			if err := resource.UnmarshalYAMLOrJSON(data, &raws); err != nil {
-				var e map[string]any
-				if err := resource.UnmarshalYAMLOrJSON(data, &e); err != nil {
-					return err
-				} else {
-					raws = []map[string]any{e}
-				}
-			}
-
-			codec := resource.NewSpecCodec(resource.SpecCodecOptions{
-				Scheme:    sc,
-				Namespace: ns,
-			})
-
-			var specs []scheme.Spec
-			for _, raw := range raws {
-				if spec, err := codec.Decode(raw); err != nil {
-					return err
-				} else {
-					specs = append(specs, spec)
-				}
 			}
 
 			for _, spec := range specs {

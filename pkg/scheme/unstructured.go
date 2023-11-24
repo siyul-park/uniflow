@@ -8,7 +8,6 @@ import (
 )
 
 type (
-
 	// Unstructured is an Spec that is not marshaled for structuring.
 	Unstructured struct {
 		doc *primitive.Map
@@ -73,7 +72,6 @@ func (u *Unstructured) GetNamespace() string {
 	var val string
 	_ = u.Get(KeyNamespace, &val)
 	return val
-
 }
 
 // SetNamespace sets the Namespace of the Unstructured.
