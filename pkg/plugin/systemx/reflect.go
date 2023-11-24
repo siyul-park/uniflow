@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -121,7 +121,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)
@@ -169,7 +169,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		specs, err := n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)
@@ -197,7 +197,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)

@@ -9,7 +9,7 @@ import (
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -122,7 +122,7 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
-		upsert = util.UnPtr(opt.Upsert)
+		upsert = lo.FromPtr(opt.Upsert)
 	}
 
 	old, err := coll.findOne(ctx, filter)
@@ -188,7 +188,7 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
-		upsert = util.UnPtr(opt.Upsert)
+		upsert = lo.FromPtr(opt.Upsert)
 	}
 
 	old, err := coll.findMany(ctx, filter)
@@ -380,7 +380,7 @@ func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) (
 }
 
 func (coll *Collection) findOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
-	opt := database.MergeFindOptions(append(opts, util.Ptr(database.FindOptions{Limit: util.Ptr(1)})))
+	opt := database.MergeFindOptions(append(opts, lo.ToPtr(database.FindOptions{Limit: lo.ToPtr(1)})))
 
 	if docs, err := coll.findMany(ctx, filter, opt); err != nil {
 		return nil, err
@@ -399,11 +399,11 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 
 	limit := -1
 	if opt != nil && opt.Limit != nil {
-		limit = util.UnPtr(opt.Limit)
+		limit = lo.FromPtr(opt.Limit)
 	}
 	skip := 0
 	if opt != nil && opt.Skip != nil {
-		skip = util.UnPtr(opt.Skip)
+		skip = lo.FromPtr(opt.Skip)
 	}
 	var sorts []database.Sort
 	if opt != nil && opt.Sorts != nil {

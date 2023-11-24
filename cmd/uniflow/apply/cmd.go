@@ -5,9 +5,9 @@ import (
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/flag"
 	"github.com/siyul-park/uniflow/cmd/resource"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -107,7 +107,7 @@ func NewCmd(config Config) *cobra.Command {
 			}
 
 			exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-				Limit: util.Ptr[int](len(ids)),
+				Limit: lo.ToPtr[int](len(ids)),
 			})
 			if err != nil {
 				return err

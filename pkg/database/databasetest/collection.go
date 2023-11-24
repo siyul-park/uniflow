@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/stretchr/testify/assert"
@@ -116,8 +116,8 @@ func AssertCollectionUpdateOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(true),
+		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
 		assert.True(t, ok)
@@ -129,8 +129,8 @@ func AssertCollectionUpdateOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(false),
+		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
 		assert.False(t, ok)
@@ -138,8 +138,8 @@ func AssertCollectionUpdateOne(t *testing.T, collection database.Collection) {
 		_, err = collection.InsertOne(ctx, doc)
 		assert.NoError(t, err)
 
-		ok, err = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(false),
+		ok, err = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
 		assert.True(t, ok)
@@ -158,8 +158,8 @@ func AssertCollectionUpdateMany(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(true),
+		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)
@@ -171,8 +171,8 @@ func AssertCollectionUpdateMany(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(false),
+		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
@@ -180,8 +180,8 @@ func AssertCollectionUpdateMany(t *testing.T, collection database.Collection) {
 		_, err = collection.InsertOne(ctx, doc)
 		assert.NoError(t, err)
 
-		count, err = collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), util.Ptr(database.UpdateOptions{
-			Upsert: util.Ptr(false),
+		count, err = collection.UpdateMany(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)

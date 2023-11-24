@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/flag"
 	"github.com/siyul-park/uniflow/cmd/resource"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -63,7 +63,7 @@ func NewCmd(config Config) *cobra.Command {
 				}
 
 				if specs, err := st.FindMany(ctx, filter, &database.FindOptions{
-					Limit: util.Ptr[int](1),
+					Limit: lo.ToPtr[int](1),
 				}); err != nil {
 					return err
 				} else if len(specs) == 0 {
