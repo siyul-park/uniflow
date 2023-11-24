@@ -252,29 +252,7 @@ func (o *Map) Interface() any {
 }
 
 func (*comparer) Compare(a Object, b Object) int {
-	if a == nil {
-		return -1
-	} else if b == nil {
-		return 1
-	} else if a.Kind() > b.Kind() {
-		return 1
-	} else if a.Kind() < b.Kind() {
-		return -1
-	}
-
-	hashA := a.Hash()
-	hashB := b.Hash()
-
-	if hashA > hashB {
-		return 1
-	} else if hashA < hashB {
-		return -1
-	}
-
-	if !a.Equal(b) {
-		return 1
-	}
-	return 0
+	return Compare(a, b)
 }
 
 // NewMapEncoder is encode map or struct to Map.
