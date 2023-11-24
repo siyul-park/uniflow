@@ -10,7 +10,7 @@ var (
 	numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 )
 
-func Get[T any](v Object, path string) (T, bool) {
+func Pick[T any](v Object, path string) (T, bool) {
 	paths := parsePath(path)
 
 	var zero T

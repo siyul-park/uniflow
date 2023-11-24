@@ -156,7 +156,7 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 				var i int
 				var k string
 				for i, k = range model.Keys {
-					if obj, ok := primitive.Get[primitive.Object](example, k); ok {
+					if obj, ok := primitive.Pick[primitive.Object](example, k); ok {
 						v := primitive.Interface(obj)
 
 						hash, err := util.Hash(v)
@@ -259,7 +259,7 @@ func (iv *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 			}
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Get[primitive.Object](doc, k)
+				obj, _ := primitive.Pick[primitive.Object](doc, k)
 				v := primitive.Interface(obj)
 
 				hash, err := util.Hash(v)
@@ -322,7 +322,7 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 			keys = append(keys, nil)
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Get[primitive.Object](doc, k)
+				obj, _ := primitive.Pick[primitive.Object](doc, k)
 				v := primitive.Interface(obj)
 
 				hash, err := util.Hash(v)

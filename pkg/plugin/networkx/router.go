@@ -147,11 +147,11 @@ func (n *RouterNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 	if !ok {
 		return nil, packet.NewError(node.ErrInvalidPacket, inPck)
 	}
-	method, ok := primitive.Get[string](inPayload, KeyMethod)
+	method, ok := primitive.Pick[string](inPayload, KeyMethod)
 	if !ok {
 		return nil, packet.NewError(node.ErrInvalidPacket, inPck)
 	}
-	path, ok := primitive.Get[string](inPayload, KeyPath)
+	path, ok := primitive.Pick[string](inPayload, KeyPath)
 	if !ok {
 		return nil, packet.NewError(node.ErrInvalidPacket, inPck)
 	}

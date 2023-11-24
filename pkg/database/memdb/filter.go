@@ -16,7 +16,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	switch filter.OP {
 	case database.EQ:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -26,7 +26,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -36,7 +36,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.LT:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -46,7 +46,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.LTE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -56,7 +56,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.GT:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -66,7 +66,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.GTE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
@@ -76,7 +76,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.IN:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else if o == nil {
 				return false
@@ -93,7 +93,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NIN:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return true
 			} else if o == nil {
 				return true
@@ -110,7 +110,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
 				return util.IsNil(v)
@@ -118,7 +118,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NNULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
 				return !util.IsNil(v)
