@@ -233,7 +233,9 @@ func (*comparer) Compare(a Object, b Object) int {
 		return -1
 	}
 
-	// FIXME: hash conflict.
+	if !a.Equal(b) {
+		return 1
+	}
 	return 0
 }
 
