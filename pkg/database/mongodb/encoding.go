@@ -5,8 +5,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
 	"github.com/siyul-park/uniflow/pkg/database"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"go.mongodb.org/mongo-driver/bson"
 	bsonprimitive "go.mongodb.org/mongo-driver/bson/primitive"

@@ -3,7 +3,7 @@ package primitive
 import (
 	"reflect"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 var (
