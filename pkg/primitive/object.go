@@ -45,11 +45,8 @@ func Equal(x, y Object) bool {
 	}
 }
 
-
-func Interface(v any) any {
+func Interface(v Object) any {
 	if v == nil {
-		return nil
-	} else if v, ok := v.(Object); !ok {
 		return nil
 	} else {
 		return v.Interface()

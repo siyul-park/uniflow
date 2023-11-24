@@ -168,7 +168,8 @@ func (ft *Filter) String() (string, error) {
 		return ft.Key + " " + string(ft.OP), nil
 	}
 
-	b, err := json.Marshal(primitive.Interface(ft.Value))
+	v, _ := ft.Value.(primitive.Object)
+	b, err := json.Marshal(primitive.Interface(v))
 	if err != nil {
 		return "", err
 	}

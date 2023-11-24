@@ -156,7 +156,7 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 				var i int
 				var k string
 				for i, k = range model.Keys {
-					if obj, ok := primitive.Get[any](example, k); ok {
+					if obj, ok := primitive.Get[primitive.Object](example, k); ok {
 						v := primitive.Interface(obj)
 
 						hash, err := util.Hash(v)
