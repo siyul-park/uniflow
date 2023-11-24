@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/internal/pool"
 	"github.com/siyul-park/uniflow/internal/util"
@@ -15,7 +16,7 @@ import (
 type (
 	Collection struct {
 		name          string
-		data          *sync.Map
+		data          maps.Map
 		indexView     *IndexView
 		streams       []*Stream
 		streamMatches []func(*primitive.Map) bool
