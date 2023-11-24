@@ -2,13 +2,11 @@ package primitive
 
 import (
 	"fmt"
-	"hash/fnv"
 	"reflect"
-	"unsafe"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type (
@@ -80,24 +78,29 @@ func (o *Slice) Kind() Kind {
 	return KindSlice
 }
 
-func (o *Slice) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindSlice), 0})
-
-	itr := o.value.Iterator()
-	for !itr.Done() {
-		_, v := itr.Next()
-
-		if v != nil {
-			hash := v.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
+func (o *Slice) Compare(v Object) int {
+	if r, ok := v.(*Slice); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
 		} else {
-			h.Write([]byte{0})
+			return -1
 		}
-	}
+	} else {
+		for i := 0; i < o.Len(); i++ {
+			if r.Len() == i {
+				return 1
+			}
 
-	return h.Sum32()
+			if diff := Compare(o.Get(i), r.Get(i)); diff != 0 {
+				return diff
+			}
+		}
+
+		if o.Len() > r.Len() {
+			return -1
+		}
+		return 0
+	}
 }
 
 func (o *Slice) Interface() any {

@@ -1,12 +1,10 @@
 package primitive
 
 import (
-	"hash/fnv"
 	"reflect"
-	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type (
@@ -46,14 +44,20 @@ func (o Uint) Kind() Kind {
 	return KindUint
 }
 
-func (o Uint) Hash() uint32 {
-	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindUint), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Uint) Compare(v Object) int {
+	if r, ok := v.(Uinteger); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[int64](int64(o.Uint()), r.Int())
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Uint()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[uint64](o.Uint(), r.Uint())
+	}
 }
 
 func (o Uint) Interface() any {
@@ -74,14 +78,20 @@ func (o Uint8) Kind() Kind {
 	return KindUint8
 }
 
-func (o Uint8) Hash() uint32 {
-	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindUint8), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Uint8) Compare(v Object) int {
+	if r, ok := v.(Uinteger); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[int64](int64(o.Uint()), r.Int())
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Uint()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[uint64](o.Uint(), r.Uint())
+	}
 }
 
 func (o Uint8) Interface() any {
@@ -102,14 +112,20 @@ func (o Uint16) Kind() Kind {
 	return KindUint16
 }
 
-func (o Uint16) Hash() uint32 {
-	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindUint16), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Uint16) Compare(v Object) int {
+	if r, ok := v.(Uinteger); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[int64](int64(o.Uint()), r.Int())
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Uint()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[uint64](o.Uint(), r.Uint())
+	}
 }
 
 func (o Uint16) Interface() any {
@@ -130,14 +146,20 @@ func (o Uint32) Kind() Kind {
 	return KindUint32
 }
 
-func (o Uint32) Hash() uint32 {
-	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindUint32), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Uint32) Compare(v Object) int {
+	if r, ok := v.(Uinteger); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[int64](int64(o.Uint()), r.Int())
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Uint()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[uint64](o.Uint(), r.Uint())
+	}
 }
 
 func (o Uint32) Interface() any {
@@ -158,14 +180,20 @@ func (o Uint64) Kind() Kind {
 	return KindUint64
 }
 
-func (o Uint64) Hash() uint32 {
-	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindUint64), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Uint64) Compare(v Object) int {
+	if r, ok := v.(Uinteger); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[int64](int64(o.Uint()), r.Int())
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Uint()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[uint64](o.Uint(), r.Uint())
+	}
 }
 
 func (o Uint64) Interface() any {

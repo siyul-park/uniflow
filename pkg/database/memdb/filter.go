@@ -1,7 +1,6 @@
 package memdb
 
 import (
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -16,63 +15,75 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	switch filter.OP {
 	case database.EQ:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Equal(primitive.Interface(v), primitive.Interface(filter.Value))
+				return primitive.Compare(o, v) == 0
 			}
 		}
 	case database.NE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return !util.Equal(primitive.Interface(v), primitive.Interface(filter.Value))
+				return primitive.Compare(o, v) != 0
 			}
 		}
 	case database.LT:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) < 0
+				return primitive.Compare(o, v) < 0
 			}
 		}
 	case database.LTE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) <= 0
+				return primitive.Compare(o, v) <= 0
 			}
 		}
 	case database.GT:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) > 0
+				return primitive.Compare(o, v) > 0
 			}
 		}
 	case database.GTE:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+				return false
+			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return util.Compare(primitive.Interface(v), primitive.Interface(filter.Value)) >= 0
+				return primitive.Compare(o, v) >= 0
 			}
 		}
 	case database.IN:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v == nil {
+			} else if o == nil {
 				return false
-			} else if children, ok := filter.Value.(*primitive.Slice); !ok {
+			} else if v, ok := filter.Value.(*primitive.Slice); !ok {
 				return false
 			} else {
-				for i := 0; i < children.Len(); i++ {
-					if util.Equal(v.Interface(), children.Get(i).Interface()) {
+				for i := 0; i < v.Len(); i++ {
+					if primitive.Compare(o, v.Get(i)) == 0 {
 						return true
 					}
 				}
@@ -81,35 +92,35 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NIN:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
-				return false
-			} else if v == nil {
+			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return true
-			} else if children, ok := filter.Value.(*primitive.Slice); !ok {
+			} else if o == nil {
+				return true
+			} else if v, ok := filter.Value.(*primitive.Slice); !ok {
 				return false
 			} else {
-				for i := 0; i < children.Len(); i++ {
-					if util.Equal(v.Interface(), children.Get(i).Interface()) {
-						return false
+				for i := 0; i < v.Len(); i++ {
+					if primitive.Compare(o, v.Get(i)) != 0 {
+						return true
 					}
 				}
-				return true
+				return false
 			}
 		}
 	case database.NULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.IsNil(v)
+				return v == nil
 			}
 		}
 	case database.NNULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Get[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return !util.IsNil(v)
+				return v != nil
 			}
 		}
 	case database.AND:
@@ -158,7 +169,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 }
 
 func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
-	if util.IsNil(filter) {
+	if filter == nil {
 		return nil, false
 	}
 

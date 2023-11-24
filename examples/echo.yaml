@@ -2,7 +2,7 @@
   name: http
   address: :8000
   links:
-    io:
+    out:
       - name: router
         port: in
 
@@ -15,4 +15,4 @@
   links:
     out[0]:
       - name: http
-        port: io
+        port: in

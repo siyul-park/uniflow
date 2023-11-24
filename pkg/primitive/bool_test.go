@@ -13,10 +13,11 @@ func TestNewBool(t *testing.T) {
 	assert.Equal(t, true, v.Interface())
 }
 
-func TestBool_Hash(t *testing.T) {
-	assert.NotEqual(t, TRUE.Hash(), FALSE.Hash())
-	assert.Equal(t, TRUE.Hash(), TRUE.Hash())
-	assert.Equal(t, FALSE.Hash(), FALSE.Hash())
+func TestBool_Compare(t *testing.T) {
+	assert.Equal(t, 0, TRUE.Compare(TRUE))
+	assert.Equal(t, 0, FALSE.Compare(FALSE))
+	assert.Equal(t, 1, TRUE.Compare(FALSE))
+	assert.Equal(t, -1, FALSE.Compare(TRUE))
 }
 
 func TestBool_Encode(t *testing.T) {

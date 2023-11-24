@@ -13,7 +13,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 

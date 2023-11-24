@@ -1,12 +1,10 @@
 package primitive
 
-import "github.com/siyul-park/uniflow/internal/util"
-
 type (
 	// Object is an atomic type.
 	Object interface {
 		Kind() Kind
-		Hash() uint32
+		Compare(v Object) int
 		Interface() any
 	}
 
@@ -34,10 +32,20 @@ const (
 	KindString
 )
 
-func Interface(v any) any {
-	if util.IsNil(v) {
-		return nil
-	} else if v, ok := v.(Object); !ok {
+func Compare(x, y Object) int {
+	if x == nil && y == nil {
+		return 0
+	} else if x == nil {
+		return -1
+	} else if y == nil {
+		return 1
+	} else {
+		return x.Compare(y)
+	}
+}
+
+func Interface(v Object) any {
+	if v == nil {
 		return nil
 	} else {
 		return v.Interface()

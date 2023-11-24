@@ -4,9 +4,12 @@ import (
 	"context"
 	"sync"
 
+	"github.com/emirpasic/gods/containers"
+	"github.com/emirpasic/gods/maps"
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/emirpasic/gods/sets"
+	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/pool"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -15,7 +18,7 @@ type (
 	IndexView struct {
 		names  []string
 		models []database.IndexModel
-		data   []*sync.Map
+		data   []maps.Map
 		lock   sync.RWMutex
 	}
 )
@@ -72,7 +75,7 @@ func (iv *IndexView) Create(_ context.Context, index database.IndexModel) error 
 
 	iv.names = append(iv.names, name)
 	iv.models = append(iv.models, index)
-	iv.data = append(iv.data, pool.GetMap())
+	iv.data = append(iv.data, treemap.NewWith(comparator))
 
 	return nil
 }
@@ -135,8 +138,7 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 	iv.lock.RLock()
 	defer iv.lock.RUnlock()
 
-	ids := pool.GetMap()
-	defer pool.PutMap(ids)
+	ids := treeset.NewWith(comparator)
 
 	for _, example := range examples {
 		if err := func() error {
@@ -156,30 +158,16 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 				var i int
 				var k string
 				for i, k = range model.Keys {
-					if obj, ok := primitive.Get[any](example, k); ok {
-						v := primitive.Interface(obj)
-
-						hash, err := util.Hash(v)
-						if err != nil {
-							return err
-						}
+					if obj, ok := primitive.Pick[primitive.Object](example, k); ok {
 						visits[k] = true
-						if sub, ok := curr.Load(hash); ok {
+						if sub, ok := curr.Get(obj); ok {
 							if i < len(model.Keys)-1 {
-								curr = sub.(*sync.Map)
+								curr = sub.(maps.Map)
 							} else {
 								if model.Unique {
-									if hsub, err := util.Hash(sub); err != nil {
-										return err
-									} else {
-										ids.Store(hsub, sub)
-										return nil
-									}
+									ids.Add(sub)
 								} else {
-									sub.(*sync.Map).Range(func(key, val any) bool {
-										ids.Store(key, val)
-										return true
-									})
+									ids.Add(sub.(sets.Set).Values()...)
 									return nil
 								}
 							}
@@ -201,7 +189,7 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 					continue
 				}
 
-				var parent []*sync.Map
+				var parent []maps.Map
 				parent = append(parent, curr)
 
 				depth := len(model.Keys) - 1
@@ -210,21 +198,17 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 				}
 
 				for ; i < depth; i++ {
-					var children []*sync.Map
+					var children []maps.Map
 					for _, curr := range parent {
-						curr.Range(func(_, value any) bool {
-							children = append(children, value.(*sync.Map))
-							return true
-						})
+						for _, v := range curr.Values() {
+							children = append(children, v.(maps.Map))
+						}
 					}
 					parent = children
 				}
 
 				for _, curr := range parent {
-					curr.Range(func(k, v any) bool {
-						ids.Store(k, v)
-						return true
-					})
+					ids.Add(curr.Values()...)
 				}
 
 				return nil
@@ -237,10 +221,9 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 	}
 
 	var uniqueIds []primitive.Object
-	ids.Range(func(_, val any) bool {
-		uniqueIds = append(uniqueIds, val.(primitive.Object))
-		return true
-	})
+	for _, v := range ids.Values() {
+		uniqueIds = append(uniqueIds, v.(primitive.Object))
+	}
 	return uniqueIds, nil
 }
 
@@ -259,31 +242,28 @@ func (iv *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 			}
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Get[primitive.Object](doc, k)
-				v := primitive.Interface(obj)
+				obj, _ := primitive.Pick[primitive.Object](doc, k)
 
-				hash, err := util.Hash(v)
-				if err != nil {
-					return err
-				}
 				if i < len(model.Keys)-1 {
-					cm := pool.GetMap()
-					sub, load := curr.LoadOrStore(hash, cm)
-					if load {
-						pool.PutMap(cm)
+					sub, ok := curr.Get(obj)
+					if !ok {
+						sub = treemap.NewWith(comparator)
+						curr.Put(obj, sub)
 					}
-					curr = sub.(*sync.Map)
+					curr = sub.(maps.Map)
 				} else if model.Unique {
-					if r, loaded := curr.LoadOrStore(hash, id); loaded && r != id {
+					if r, ok := curr.Get(obj); !ok {
+						curr.Put(obj, id)
+					} else if r != id {
 						return ErrIndexConflict
 					}
 				} else {
-					cm := pool.GetMap()
-					r, load := curr.LoadOrStore(hash, cm)
-					if load {
-						pool.PutMap(cm)
+					r, ok := curr.Get(obj)
+					if !ok {
+						r = treeset.NewWith(comparator)
+						curr.Put(obj, r)
 					}
-					r.(*sync.Map).Store(hash, id)
+					r.(sets.Set).Add(id)
 				}
 			}
 
@@ -303,11 +283,6 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 		return nil
 	}
 
-	hid, err := util.Hash(id)
-	if err != nil {
-		return err
-	}
-
 	for i, model := range iv.models {
 		if err := func() error {
 			curr := iv.data[i]
@@ -316,38 +291,32 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 				return nil
 			}
 
-			var nodes []*sync.Map
+			var nodes []containers.Container
 			nodes = append(nodes, curr)
-			var keys []any
+			var keys []primitive.Object
 			keys = append(keys, nil)
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Get[primitive.Object](doc, k)
-				v := primitive.Interface(obj)
-
-				hash, err := util.Hash(v)
-				if err != nil {
-					return err
-				}
+				obj, _ := primitive.Pick[primitive.Object](doc, k)
 
 				if i < len(model.Keys)-1 {
-					if sub, ok := curr.Load(hash); ok {
-						curr = sub.(*sync.Map)
+					if sub, ok := curr.Get(obj); ok {
+						curr = sub.(maps.Map)
 
 						nodes = append(nodes, curr)
-						keys = append(keys, hash)
+						keys = append(keys, obj)
 					} else {
 						return nil
 					}
 				} else if model.Unique {
-					if r, loaded := curr.Load(hash); loaded && util.Equal(r, id) {
-						curr.Delete(hash)
+					if r, ok := curr.Get(obj); ok && primitive.Compare(id, r.(primitive.Object)) == 0 {
+						curr.Remove(obj)
 					}
 				} else {
-					if r, loaded := curr.Load(hash); loaded {
-						nodes = append(nodes, r.(*sync.Map))
-						keys = append(keys, hash)
-						r.(*sync.Map).Delete(hid)
+					if r, ok := curr.Get(obj); ok {
+						nodes = append(nodes, r.(sets.Set))
+						keys = append(keys, obj)
+						r.(sets.Set).Remove(id)
 					}
 				}
 			}
@@ -355,18 +324,13 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 			for i := len(nodes) - 1; i >= 0; i-- {
 				node := nodes[i]
 
-				empty := true
-				node.Range(func(_, _ any) bool {
-					empty = false
-					return false
-				})
-
-				if empty && i > 0 {
+				if node.Empty() && i > 0 {
 					parent := nodes[i-1]
 					key := keys[i]
 
-					parent.Delete(key)
-					pool.PutMap(node)
+					if p, ok := parent.(maps.Map); ok {
+						p.Remove(key)
+					}
 				}
 			}
 

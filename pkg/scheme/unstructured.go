@@ -4,12 +4,10 @@ import (
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 type (
-
 	// Unstructured is an Spec that is not marshaled for structuring.
 	Unstructured struct {
 		doc *primitive.Map
@@ -35,10 +33,10 @@ func NewUnstructured(doc *primitive.Map) *Unstructured {
 
 	u := &Unstructured{doc: doc}
 
-	if v := u.GetID(); !util.IsZero(v) {
+	if v := u.GetID(); v != (ulid.ULID{}) {
 		u.SetID(v)
 	}
-	if v := u.GetLinks(); !util.IsZero(v) {
+	if v := u.GetLinks(); len(v) > 0 {
 		u.SetLinks(v)
 	}
 
@@ -74,7 +72,6 @@ func (u *Unstructured) GetNamespace() string {
 	var val string
 	_ = u.Get(KeyNamespace, &val)
 	return val
-
 }
 
 // SetNamespace sets the Namespace of the Unstructured.

@@ -1,13 +1,10 @@
 package primitive
 
 import (
-	"encoding/binary"
-	"hash/fnv"
-	"math"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type (
@@ -38,15 +35,34 @@ func (o Float32) Kind() Kind {
 	return KindFloat32
 }
 
-func (o Float32) Hash() uint32 {
-	var buf [4]byte
-	binary.BigEndian.PutUint32(buf[:], math.Float32bits(float32(o)))
+func (o Float32) Equal(v Object) bool {
+	if r, ok := v.(Float); !ok {
+		if r, ok := v.(Integer); ok {
+			return o.Float() == float64(r.Int())
+		} else if r, ok := v.(Uinteger); ok {
+			return o.Float() == float64(r.Uint())
+		} else {
+			return false
+		}
+	} else {
+		return o.Float() == r.Float()
+	}
+}
 
-	h := fnv.New32()
-	h.Write([]byte{byte(KindFloat32), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Float32) Compare(v Object) int {
+	if r, ok := v.(Float); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[float64](o.Float(), float64(r.Int()))
+		} else if r, ok := v.(Uinteger); ok {
+			return compare[float64](o.Float(), float64(r.Uint()))
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[float64](o.Float(), r.Float())
+	}
 }
 
 func (o Float32) Interface() any {
@@ -67,15 +83,20 @@ func (o Float64) Kind() Kind {
 	return KindFloat64
 }
 
-func (o Float64) Hash() uint32 {
-	var buf [8]byte
-	binary.BigEndian.PutUint64(buf[:], math.Float64bits(float64(o)))
-
-	h := fnv.New32()
-	h.Write([]byte{byte(KindFloat64), 0})
-	h.Write(buf[:])
-
-	return h.Sum32()
+func (o Float64) Compare(v Object) int {
+	if r, ok := v.(Float); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[float64](o.Float(), float64(r.Int()))
+		} else if r, ok := v.(Uinteger); ok {
+			return compare[float64](o.Float(), float64(r.Uint()))
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[float64](o.Float(), r.Float())
+	}
 }
 
 func (o Float64) Interface() any {

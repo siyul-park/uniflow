@@ -21,17 +21,19 @@ func TestNewFloat(t *testing.T) {
 	})
 }
 
-func TestFloat_Hash(t *testing.T) {
+func TestFloat_Compare(t *testing.T) {
 	t.Run("32", func(t *testing.T) {
-		assert.NotEqual(t, NewFloat32(0).Hash(), NewFloat32(1).Hash())
-		assert.Equal(t, NewFloat32(0).Hash(), NewFloat32(0).Hash())
-		assert.Equal(t, NewFloat32(1).Hash(), NewFloat32(1).Hash())
+		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat32(0)))
+		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat64(0)))
+		assert.Equal(t, 1, NewFloat32(1).Compare(NewFloat32(0)))
+		assert.Equal(t, -1, NewFloat32(0).Compare(NewFloat32(1)))
 	})
 
 	t.Run("64", func(t *testing.T) {
-		assert.NotEqual(t, NewFloat64(0).Hash(), NewFloat64(1).Hash())
-		assert.Equal(t, NewFloat64(0).Hash(), NewFloat64(0).Hash())
-		assert.Equal(t, NewFloat64(1).Hash(), NewFloat64(1).Hash())
+		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat64(0)))
+		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat32(0)))
+		assert.Equal(t, 1, NewFloat64(1).Compare(NewFloat64(0)))
+		assert.Equal(t, -1, NewFloat64(0).Compare(NewFloat64(1)))
 	})
 }
 

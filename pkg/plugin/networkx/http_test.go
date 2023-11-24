@@ -41,6 +41,14 @@ func TestHTTPNode_Port(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, p)
 
+	p, ok = n.Port(node.PortIn)
+	assert.True(t, ok)
+	assert.NotNil(t, p)
+
+	p, ok = n.Port(node.PortOut)
+	assert.True(t, ok)
+	assert.NotNil(t, p)
+
 	p, ok = n.Port(node.PortErr)
 	assert.True(t, ok)
 	assert.NotNil(t, p)
@@ -69,7 +77,7 @@ func TestHTTPNode_StartAndClose(t *testing.T) {
 }
 
 func TestHTTPNode_ServeHTTP(t *testing.T) {
-	t.Run("Hello World", func(t *testing.T) {
+	t.Run("IO", func(t *testing.T) {
 		n := NewHTTPNode(HTTPNodeConfig{})
 		defer func() { _ = n.Close() }()
 
@@ -105,29 +113,34 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "Hello World!", w.Body.String())
 	})
 
-	t.Run("HTTPError", func(t *testing.T) {
+	t.Run("In/Out", func(t *testing.T) {
 		n := NewHTTPNode(HTTPNodeConfig{})
 		defer func() { _ = n.Close() }()
 
-		httpErr := NotFound
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
 
-		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
-		ioPort.Link(io)
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
 
-		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			ioStream := io.Open(proc)
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			inStream := in.Open(proc)
+			outStream := out.Open(proc)
 
 			for {
-				inPck, ok := <-ioStream.Receive()
+				inPck, ok := <-outStream.Receive()
 				if !ok {
 					return
 				}
 
-				outPayload, _ := primitive.MarshalText(httpErr)
-				outPck := packet.New(outPayload)
+				outPck := packet.New(primitive.NewMap(
+					primitive.NewString("body"), primitive.NewString("Hello World!"),
+					primitive.NewString("status"), primitive.NewInt(200),
+				))
 				proc.Stack().Link(inPck.ID(), outPck.ID())
-				ioStream.Send(outPck)
+				inStream.Send(outPck)
 			}
 		}))
 
@@ -136,8 +149,8 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, httpErr.Status, w.Result().StatusCode)
+		assert.Equal(t, 200, w.Result().StatusCode)
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
-		assert.Equal(t, httpErr.Body.Interface(), w.Body.String())
+		assert.Equal(t, "Hello World!", w.Body.String())
 	})
 }

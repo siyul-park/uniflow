@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -35,7 +34,7 @@ func NewOneToManyNode(config OneToManyNodeConfig) *OneToManyNode {
 	id := config.ID
 	action := config.Action
 
-	if util.IsZero(id) {
+	if id == (ulid.ULID{}) {
 		id = ulid.Make()
 	}
 	if action == nil {

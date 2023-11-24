@@ -2,15 +2,13 @@ package primitive
 
 import (
 	"fmt"
-	"hash/fnv"
 	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type (
@@ -107,31 +105,42 @@ func (o *Map) Kind() Kind {
 	return KindMap
 }
 
-func (o *Map) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindMap), 0})
-
-	itr := o.value.Iterator()
-	for !itr.Done() {
-		k, v, _ := itr.Next()
-
-		if k != nil {
-			hash := k.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
+func (o *Map) Compare(v Object) int {
+	if r, ok := v.(*Map); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
 		} else {
-			h.Write([]byte{0})
+			return -1
 		}
-		if v != nil {
-			hash := v.Hash()
-			buf := *(*[unsafe.Sizeof(hash)]byte)(unsafe.Pointer(&hash))
-			h.Write(buf[:])
-		} else {
-			h.Write([]byte{0})
+	} else {
+		keys1 := o.Keys()
+		keys2 := r.Keys()
+
+		for i, k1 := range keys1 {
+			if len(keys2) == i {
+				return 1
+			}
+
+			k2 := keys2[i]
+			if diff := Compare(k1, k2); diff != 0 {
+				return diff
+			}
+
+			v1, ok1 := o.Get(k1)
+			v2, ok2 := o.Get(k2)
+			if diff := Compare(NewBool(ok1), NewBool(ok2)); diff != 0 {
+				return diff
+			}
+			if diff := Compare(v1, v2); diff != 0 {
+				return diff
+			}
 		}
+
+		if len(keys2) > len(keys1) {
+			return -1
+		}
+		return 0
 	}
-
-	return h.Sum32()
 }
 
 func (o *Map) Interface() any {
@@ -182,27 +191,7 @@ func (o *Map) Interface() any {
 }
 
 func (*comparer) Compare(a Object, b Object) int {
-	if a == nil {
-		return -1
-	} else if b == nil {
-		return 1
-	} else if a.Kind() > b.Kind() {
-		return 1
-	} else if a.Kind() < b.Kind() {
-		return -1
-	}
-
-	hashA := a.Hash()
-	hashB := b.Hash()
-
-	if hashA > hashB {
-		return 1
-	} else if hashA < hashB {
-		return -1
-	}
-
-	// FIXME: hash conflict.
-	return 0
+	return Compare(a, b)
 }
 
 // NewMapEncoder is encode map or struct to Map.

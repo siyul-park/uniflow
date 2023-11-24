@@ -2,14 +2,13 @@ package apply
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/flag"
 	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/cmd/resource"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -77,43 +76,19 @@ func NewCmd(config Config) *cobra.Command {
 				return err
 			}
 
-			file, err := fsys.Open(fl)
+			b := resource.NewBuilder().
+				Scheme(sc).
+				Namespace(ns).
+				FS(fsys).
+				Filename(fl)
+
+			specs, err := b.Build()
 			if err != nil {
 				return err
-			}
-			defer func() { _ = file.Close() }()
-
-			data, err := io.ReadAll(file)
-			if err != nil {
-				return err
-			}
-
-			var raws []map[string]any
-			if err := resource.UnmarshalYAMLOrJSON(data, &raws); err != nil {
-				var e map[string]any
-				if err := resource.UnmarshalYAMLOrJSON(data, &e); err != nil {
-					return err
-				} else {
-					raws = []map[string]any{e}
-				}
-			}
-
-			codec := resource.NewSpecCodec(resource.SpecCodecOptions{
-				Scheme:    sc,
-				Namespace: ns,
-			})
-
-			var specs []scheme.Spec
-			for _, raw := range raws {
-				if spec, err := codec.Decode(raw); err != nil {
-					return err
-				} else {
-					specs = append(specs, spec)
-				}
 			}
 
 			for _, spec := range specs {
-				if util.IsZero(spec.GetID()) {
+				if spec.GetID() == (ulid.ULID{}) {
 					if spec.GetName() != "" {
 						filter := storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
 						if exist, err := st.FindOne(ctx, filter); err != nil {
@@ -133,7 +108,7 @@ func NewCmd(config Config) *cobra.Command {
 			}
 
 			exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-				Limit: util.Ptr[int](len(ids)),
+				Limit: lo.ToPtr[int](len(ids)),
 			})
 			if err != nil {
 				return err

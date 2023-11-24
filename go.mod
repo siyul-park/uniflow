@@ -5,20 +5,21 @@ go 1.21.0
 require (
 	github.com/benbjohnson/immutable v0.4.3
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
-	github.com/evanw/esbuild v0.19.5
+	github.com/emirpasic/gods v1.18.1
+	github.com/evanw/esbuild v0.19.7
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.9
 	github.com/lithammer/dedent v1.1.0
-	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
+	github.com/samber/lo v1.38.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tryvium-travels/memongo v0.10.0
-	github.com/xiatechs/jsonata-go v1.7.0
+	github.com/xiatechs/jsonata-go v1.7.1
 	go.mongodb.org/mongo-driver v1.12.1
 	gopkg.in/yaml.v3 v3.0.1
 )

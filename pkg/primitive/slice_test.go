@@ -16,15 +16,6 @@ func TestNewSlice(t *testing.T) {
 	assert.Equal(t, []string{v1.String()}, o.Interface())
 }
 
-func TestSlice_Hash(t *testing.T) {
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
-
-	assert.NotEqual(t, NewSlice(v1, v2).Hash(), NewSlice(v2, v1).Hash())
-	assert.Equal(t, NewSlice().Hash(), NewSlice().Hash())
-	assert.Equal(t, NewSlice(v1, v2).Hash(), NewSlice(v1, v2).Hash())
-}
-
 func TestSlice_GetAndSet(t *testing.T) {
 	v1 := NewString(faker.Word())
 	v2 := NewString(faker.Word())
@@ -69,6 +60,15 @@ func TestSlice_Sub(t *testing.T) {
 	o = o.Sub(0, 1)
 
 	assert.Equal(t, 1, o.Len())
+}
+
+func TestSlice_Compare(t *testing.T) {
+	v1 := NewString("1")
+	v2 := NewString("2")
+
+	assert.Equal(t, 0, NewSlice(v1, v2).Compare(NewSlice(v1, v2)))
+	assert.Equal(t, 1, NewSlice(v2, v1).Compare(NewSlice(v1, v2)))
+	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
 }
 
 func TestSlice_Encode(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"go.mongodb.org/mongo-driver/bson"
@@ -235,7 +235,7 @@ func mongoUpdateOptions(opts *database.UpdateOptions) *options.UpdateOptions {
 	if opts == nil {
 		return nil
 	}
-	return util.Ptr(options.UpdateOptions{
+	return lo.ToPtr(options.UpdateOptions{
 		Upsert: opts.Upsert,
 	})
 }
@@ -244,8 +244,8 @@ func mongoFindOneOptions(opts *database.FindOptions) *options.FindOneOptions {
 	if opts == nil {
 		return nil
 	}
-	return util.Ptr(options.FindOneOptions{
-		Skip: util.PtrTo(opts.Skip, func(s int) int64 { return int64(s) }),
+	return lo.ToPtr(options.FindOneOptions{
+		Skip: lo.EmptyableToPtr(int64(lo.FromPtr(opts.Skip))),
 		Sort: mongoSorts(opts.Sorts),
 	})
 }
@@ -254,9 +254,9 @@ func mongoFindOptions(opts *database.FindOptions) *options.FindOptions {
 	if opts == nil {
 		return nil
 	}
-	return util.Ptr(options.FindOptions{
-		Limit: util.PtrTo(opts.Limit, func(s int) int64 { return int64(s) }),
-		Skip:  util.PtrTo(opts.Skip, func(s int) int64 { return int64(s) }),
+	return lo.ToPtr(options.FindOptions{
+		Limit: lo.EmptyableToPtr(int64(lo.FromPtr(opts.Limit))),
+		Skip:  lo.EmptyableToPtr(int64(lo.FromPtr(opts.Skip))),
 		Sort:  mongoSorts(opts.Sorts),
 	})
 }

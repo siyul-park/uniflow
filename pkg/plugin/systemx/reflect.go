@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -121,7 +121,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)
@@ -162,14 +162,14 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		for i, spec := range specs {
 			id := spec.GetID()
 
-			if !util.IsZero(id) {
+			if id != (ulid.ULID{}) {
 				ids = append(ids, id)
 				patches[id] = examples[i]
 			}
 		}
 
 		specs, err := n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)
@@ -197,7 +197,7 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-			Limit: util.Ptr[int](len(ids)),
+			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
 			return nil, packet.NewError(err, inPck)
@@ -227,16 +227,16 @@ func examplesToFilter(examples []*primitive.Map) (*storage.Filter, error) {
 			return nil, err
 		}
 
-		if !util.IsZero(spec.ID) {
+		if spec.ID != (ulid.ULID{}) {
 			sub = sub.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.ID))
 		}
-		if !util.IsZero(spec.Kind) {
+		if spec.Kind != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyKind).EQ(spec.Kind))
 		}
-		if !util.IsZero(spec.Name) {
+		if spec.Name != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyName).EQ(spec.Name))
 		}
-		if !util.IsZero(spec.Namespace) {
+		if spec.Namespace != "" {
 			sub = sub.And(storage.Where[string](scheme.KeyName).EQ(spec.Namespace))
 		}
 
