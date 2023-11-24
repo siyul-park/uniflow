@@ -5,11 +5,11 @@ go 1.21.0
 require (
 	github.com/benbjohnson/immutable v0.4.3
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
+	github.com/emirpasic/gods v1.18.1
 	github.com/evanw/esbuild v0.19.7
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/lithammer/dedent v1.1.0
-	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
@@ -26,7 +26,6 @@ require (
 	github.com/acobaugh/osrelease v0.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
