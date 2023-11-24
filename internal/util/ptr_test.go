@@ -6,21 +6,6 @@ import (
 	"testing"
 )
 
-func TestIsNil(t *testing.T) {
-	assert.True(t, IsNil(nil))
-	assert.False(t, IsNil(1))
-
-	type animal interface{}
-	type dog struct{}
-
-	assert.False(t, IsNil(dog{}))
-
-	var d *dog = nil
-	var a animal = d
-	assert.True(t, IsNil(a))
-	assert.Nil(t, d)
-}
-
 func TestPtr(t *testing.T) {
 	value := faker.UUIDHyphenated()
 	assert.Equal(t, value, *Ptr(value))

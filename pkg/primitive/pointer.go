@@ -5,13 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/internal/encoding"
-	"github.com/siyul-park/uniflow/internal/util"
 )
 
 // NewPointerEncoder is encode *T to T.
 func NewPointerEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, Object] {
 	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
-		if util.IsNil(source) {
+		if source == nil {
 			return nil, nil
 		}
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Pointer {
@@ -24,7 +23,7 @@ func NewPointerEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[a
 // NewPointerDecoder is decode T to *T.
 func NewPointerDecoder(decoder encoding.Decoder[Object, any]) encoding.Decoder[Object, any] {
 	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
-		if util.IsNil(source) {
+		if source == nil {
 			return nil
 		}
 		if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer && t.Elem().Kind() == reflect.Pointer {

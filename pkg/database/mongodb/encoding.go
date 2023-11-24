@@ -6,7 +6,6 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/internal/encoding"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"go.mongodb.org/mongo-driver/bson"
@@ -179,13 +178,13 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding
 							Key: key,
 						}
 						if op == "$eq" {
-							if util.IsNil(v) {
+							if v == nil {
 								child.OP = database.NULL
 							} else {
 								child.OP = database.EQ
 							}
 						} else if op == "$ne" {
-							if util.IsNil(v) {
+							if v == nil {
 								child.OP = database.NNULL
 							} else {
 								child.OP = database.NE

@@ -1,7 +1,6 @@
 package memdb
 
 import (
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -113,7 +112,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return util.IsNil(v)
+				return v == nil
 			}
 		}
 	case database.NNULL:
@@ -121,7 +120,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
 			} else {
-				return !util.IsNil(v)
+				return v != nil
 			}
 		}
 	case database.AND:
@@ -170,7 +169,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 }
 
 func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
-	if util.IsNil(filter) {
+	if filter == nil {
 		return nil, false
 	}
 
