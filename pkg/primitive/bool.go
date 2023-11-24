@@ -42,6 +42,22 @@ func (o Bool) Equal(v Object) bool {
 	}
 }
 
+func (o Bool) Compare(v Object) int {
+	if r, ok := v.(Bool); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else if o == r {
+		return 0
+	} else if o == TRUE {
+		return 1
+	} else {
+		return -1
+	}
+}
+
 func (o Bool) Hash() uint32 {
 	var v byte
 	if o {

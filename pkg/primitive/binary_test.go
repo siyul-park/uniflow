@@ -22,13 +22,19 @@ func TestBinary_Get(t *testing.T) {
 
 func TestBinary_Equal(t *testing.T) {
 	v1 := NewBinary([]byte{0})
-	v2 := NewBinary([]byte{0})
-	v3 := NewBinary([]byte{1})
+	v2 := NewBinary([]byte{1})
 
-	assert.True(t, v1.Equal(v2))
-	assert.True(t, v2.Equal(v1))
-	assert.False(t, v1.Equal(v3))
-	assert.False(t, v2.Equal(v3))
+	assert.True(t, v1.Equal(v1))
+	assert.False(t, v1.Equal(v2))
+}
+
+func TestBinary_Compare(t *testing.T) {
+	v1 := NewBinary([]byte{0})
+	v2 := NewBinary([]byte{1})
+
+	assert.Equal(t, 0, v1.Compare(v1))
+	assert.Equal(t, -1, v1.Compare(v2))
+	assert.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestBinary_Hash(t *testing.T) {

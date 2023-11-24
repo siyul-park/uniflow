@@ -25,13 +25,29 @@ func TestFloat_Equal(t *testing.T) {
 	t.Run("32", func(t *testing.T) {
 		assert.True(t, NewFloat32(0).Equal(NewFloat32(0)))
 		assert.True(t, NewFloat32(0).Equal(NewFloat64(0)))
-		assert.False(t, NewFloat32(0).Equal(NewFloat32(1)))
+		assert.False(t, NewFloat32(1).Equal(NewFloat32(0)))
 	})
 
 	t.Run("64", func(t *testing.T) {
 		assert.True(t, NewFloat64(0).Equal(NewFloat64(0)))
 		assert.True(t, NewFloat64(0).Equal(NewFloat32(0)))
 		assert.False(t, NewFloat64(1).Equal(NewFloat64(0)))
+	})
+}
+
+func TestFloat_Compare(t *testing.T) {
+	t.Run("32", func(t *testing.T) {
+		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat32(0)))
+		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat64(0)))
+		assert.Equal(t, 1, NewFloat32(1).Compare(NewFloat32(0)))
+		assert.Equal(t, -1, NewFloat32(0).Compare(NewFloat32(1)))
+	})
+
+	t.Run("64", func(t *testing.T) {
+		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat64(0)))
+		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat32(0)))
+		assert.Equal(t, 1, NewFloat64(1).Compare(NewFloat64(0)))
+		assert.Equal(t, -1, NewFloat64(0).Compare(NewFloat64(1)))
 	})
 }
 

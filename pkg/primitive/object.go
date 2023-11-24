@@ -5,6 +5,7 @@ type (
 	Object interface {
 		Kind() Kind
 		Equal(v Object) bool
+		Compare(v Object) int
 		Hash() uint32
 		Interface() any
 	}
@@ -42,6 +43,18 @@ func Equal(x, y Object) bool {
 		return false
 	} else {
 		return x.Equal(y)
+	}
+}
+
+func Compare(x, y Object) int {
+	if x == nil && y == nil {
+		return 0
+	} else if x == nil {
+		return -1
+	} else if y == nil {
+		return 1
+	} else {
+		return x.Compare(y)
 	}
 }
 

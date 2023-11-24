@@ -13,6 +13,13 @@ func TestNewBool(t *testing.T) {
 	assert.Equal(t, true, v.Interface())
 }
 
+func TestBool_Compare(t *testing.T) {
+	assert.Equal(t, 0, TRUE.Compare(TRUE))
+	assert.Equal(t, 0, FALSE.Compare(FALSE))
+	assert.Equal(t, 1, TRUE.Compare(FALSE))
+	assert.Equal(t, -1, FALSE.Compare(TRUE))
+}
+
 func TestBool_Equal(t *testing.T) {
 	assert.True(t, TRUE.Equal(TRUE))
 	assert.True(t, FALSE.Equal(FALSE))

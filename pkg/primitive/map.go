@@ -139,6 +139,44 @@ func (o *Map) Equal(v Object) bool {
 	}
 }
 
+func (o *Map) Compare(v Object) int {
+	if r, ok := v.(*Map); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		keys1 := o.Keys()
+		keys2 := r.Keys()
+
+		for i, k1 := range keys1 {
+			if len(keys2) == i {
+				return 1
+			}
+
+			k2 := keys2[i]
+			if diff := Compare(k1, k2); diff != 0 {
+				return diff
+			}
+
+			v1, ok1 := o.Get(k1)
+			v2, ok2 := o.Get(k2)
+			if diff := Compare(NewBool(ok1), NewBool(ok2)); diff != 0 {
+				return diff
+			}
+			if diff := Compare(v1, v2); diff != 0 {
+				return diff
+			}
+		}
+
+		if len(keys2) > len(keys1) {
+			return -1
+		}
+		return 0
+	}
+}
+
 func (o *Map) Hash() uint32 {
 	h := fnv.New32()
 	h.Write([]byte{byte(KindMap), 0})

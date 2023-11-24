@@ -60,6 +60,22 @@ func (o Int) Equal(v Object) bool {
 	}
 }
 
+func (o Int) Compare(v Object) int {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return compare[int64](o.Int(), int64(r.Uint()))
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Int()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[int64](o.Int(), r.Int())
+	}
+}
+
 func (o Int) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -99,6 +115,22 @@ func (o Int8) Equal(v Object) bool {
 		}
 	} else {
 		return o.Int() == r.Int()
+	}
+}
+
+func (o Int8) Compare(v Object) int {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return compare[int64](o.Int(), int64(r.Uint()))
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Int()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[int64](o.Int(), r.Int())
 	}
 }
 
@@ -144,6 +176,22 @@ func (o Int16) Equal(v Object) bool {
 	}
 }
 
+func (o Int16) Compare(v Object) int {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return compare[int64](o.Int(), int64(r.Uint()))
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Int()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[int64](o.Int(), r.Int())
+	}
+}
+
 func (o Int16) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -186,6 +234,22 @@ func (o Int32) Equal(v Object) bool {
 	}
 }
 
+func (o Int32) Compare(v Object) int {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return compare[int64](o.Int(), int64(r.Uint()))
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Int()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[int64](o.Int(), r.Int())
+	}
+}
+
 func (o Int32) Hash() uint32 {
 	buf := *(*[unsafe.Sizeof(o)]byte)(unsafe.Pointer(&o))
 
@@ -225,6 +289,22 @@ func (o Int64) Equal(v Object) bool {
 		}
 	} else {
 		return o.Int() == r.Int()
+	}
+}
+
+func (o Int64) Compare(v Object) int {
+	if r, ok := v.(Integer); !ok {
+		if r, ok := v.(Uinteger); ok {
+			return compare[int64](o.Int(), int64(r.Uint()))
+		} else if r, ok := v.(Float); ok {
+			return compare[float64](float64(o.Int()), r.Float())
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[int64](o.Int(), r.Int())
 	}
 }
 

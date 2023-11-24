@@ -52,6 +52,22 @@ func (o Float32) Equal(v Object) bool {
 	}
 }
 
+func (o Float32) Compare(v Object) int {
+	if r, ok := v.(Float); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[float64](o.Float(), float64(r.Int()))
+		} else if r, ok := v.(Uinteger); ok {
+			return compare[float64](o.Float(), float64(r.Uint()))
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[float64](o.Float(), r.Float())
+	}
+}
+
 func (o Float32) Hash() uint32 {
 	var buf [4]byte
 	binary.BigEndian.PutUint32(buf[:], math.Float32bits(float32(o)))
@@ -92,6 +108,22 @@ func (o Float64) Equal(v Object) bool {
 		}
 	} else {
 		return o.Float() == r.Float()
+	}
+}
+
+func (o Float64) Compare(v Object) int {
+	if r, ok := v.(Float); !ok {
+		if r, ok := v.(Integer); ok {
+			return compare[float64](o.Float(), float64(r.Int()))
+		} else if r, ok := v.(Uinteger); ok {
+			return compare[float64](o.Float(), float64(r.Uint()))
+		} else if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		return compare[float64](o.Float(), r.Float())
 	}
 }
 

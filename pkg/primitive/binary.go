@@ -57,6 +57,32 @@ func (o Binary) Equal(v Object) bool {
 	}
 }
 
+func (o Binary) Compare(v Object) int {
+	if r, ok := v.(Binary); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		for i := 0; i < o.Len(); i++ {
+			if r.Len() == i {
+				return 1
+			}
+
+			v1 := o.Get(i)
+			v2 := r.Get(i)
+
+			if v1 > v2 {
+				return 1
+			} else if v1 < v2 {
+				return -1
+			}
+		}
+		return 0
+	}
+}
+
 func (o Binary) Hash() uint32 {
 	h := fnv.New32()
 	h.Write([]byte{byte(KindBinary), 0})
