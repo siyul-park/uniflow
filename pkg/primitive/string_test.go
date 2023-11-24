@@ -21,12 +21,6 @@ func TestString_Get(t *testing.T) {
 	assert.Equal(t, rune('A'), v.Get(0))
 }
 
-func TestString_Equal(t *testing.T) {
-	assert.True(t, NewString("A").Equal(NewString("A")))
-	assert.True(t, NewString("").Equal(NewString("")))
-	assert.False(t, NewString("A").Equal(NewString("")))
-}
-
 func TestString_Compare(t *testing.T) {
 	assert.Equal(t, 0, NewString("A").Compare(NewString("A")))
 	assert.Equal(t, 1, NewString("a").Compare(NewString("A")))

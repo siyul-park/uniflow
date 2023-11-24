@@ -21,7 +21,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return primitive.Equal(o, v)
+				return primitive.Compare(o, v) == 0
 			}
 		}
 	case database.NE:
@@ -31,7 +31,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			} else if v, ok := filter.Value.(primitive.Object); !ok {
 				return false
 			} else {
-				return !primitive.Equal(o, v)
+				return primitive.Compare(o, v) != 0
 			}
 		}
 	case database.LT:
@@ -84,7 +84,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 				return false
 			} else {
 				for i := 0; i < v.Len(); i++ {
-					if primitive.Equal(o, v.Get(i)) {
+					if primitive.Compare(o, v.Get(i)) == 0 {
 						return true
 					}
 				}
@@ -101,7 +101,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 				return false
 			} else {
 				for i := 0; i < v.Len(); i++ {
-					if !primitive.Equal(o, v.Get(i)) {
+					if primitive.Compare(o, v.Get(i)) != 0 {
 						return true
 					}
 				}

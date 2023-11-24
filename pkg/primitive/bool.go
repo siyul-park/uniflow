@@ -32,15 +32,6 @@ func (o Bool) Bool() bool {
 func (o Bool) Kind() Kind {
 	return KindBool
 }
-
-func (o Bool) Equal(v Object) bool {
-	if r, ok := v.(Bool); !ok {
-		return false
-	} else {
-		return o.Bool() == r.Bool()
-	}
-}
-
 func (o Bool) Compare(v Object) int {
 	if r, ok := v.(Bool); !ok {
 		if o.Kind() > v.Kind() {

@@ -62,14 +62,6 @@ func TestSlice_Sub(t *testing.T) {
 	assert.Equal(t, 1, o.Len())
 }
 
-func TestSlice_Equal(t *testing.T) {
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
-
-	assert.True(t, NewSlice(v1, v2).Equal(NewSlice(v1, v2)))
-	assert.False(t, NewSlice(v1, v2).Equal(NewSlice(v2, v1)))
-}
-
 func TestSlice_Compare(t *testing.T) {
 	v1 := NewString("1")
 	v2 := NewString("2")

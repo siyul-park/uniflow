@@ -83,20 +83,6 @@ func (o Float64) Kind() Kind {
 	return KindFloat64
 }
 
-func (o Float64) Equal(v Object) bool {
-	if r, ok := v.(Float); !ok {
-		if r, ok := v.(Integer); ok {
-			return o.Float() == float64(r.Int())
-		} else if r, ok := v.(Uinteger); ok {
-			return o.Float() == float64(r.Uint())
-		} else {
-			return false
-		}
-	} else {
-		return o.Float() == r.Float()
-	}
-}
-
 func (o Float64) Compare(v Object) int {
 	if r, ok := v.(Float); !ok {
 		if r, ok := v.(Integer); ok {

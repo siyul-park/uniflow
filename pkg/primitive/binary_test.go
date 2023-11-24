@@ -20,14 +20,6 @@ func TestBinary_Get(t *testing.T) {
 	assert.Equal(t, byte(0), v.Get(0))
 }
 
-func TestBinary_Equal(t *testing.T) {
-	v1 := NewBinary([]byte{0})
-	v2 := NewBinary([]byte{1})
-
-	assert.True(t, v1.Equal(v1))
-	assert.False(t, v1.Equal(v2))
-}
-
 func TestBinary_Compare(t *testing.T) {
 	v1 := NewBinary([]byte{0})
 	v2 := NewBinary([]byte{1})

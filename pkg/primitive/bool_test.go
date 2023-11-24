@@ -20,13 +20,6 @@ func TestBool_Compare(t *testing.T) {
 	assert.Equal(t, -1, FALSE.Compare(TRUE))
 }
 
-func TestBool_Equal(t *testing.T) {
-	assert.True(t, TRUE.Equal(TRUE))
-	assert.True(t, FALSE.Equal(FALSE))
-	assert.False(t, TRUE.Equal(FALSE))
-	assert.False(t, FALSE.Equal(TRUE))
-}
-
 func TestBool_Encode(t *testing.T) {
 	e := NewBoolEncoder()
 

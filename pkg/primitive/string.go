@@ -40,14 +40,6 @@ func (o String) Kind() Kind {
 	return KindString
 }
 
-func (o String) Equal(v Object) bool {
-	if r, ok := v.(String); !ok {
-		return false
-	} else {
-		return o.String() == r.String()
-	}
-}
-
 func (o String) Compare(v Object) int {
 	if r, ok := v.(String); !ok {
 		if o.Kind() > v.Kind() {

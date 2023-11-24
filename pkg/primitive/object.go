@@ -4,7 +4,6 @@ type (
 	// Object is an atomic type.
 	Object interface {
 		Kind() Kind
-		Equal(v Object) bool
 		Compare(v Object) int
 		Interface() any
 	}
@@ -32,18 +31,6 @@ const (
 	KindSlice
 	KindString
 )
-
-func Equal(x, y Object) bool {
-	if x == nil && y == nil {
-		return true
-	} else if x == nil {
-		return false
-	} else if y == nil {
-		return false
-	} else {
-		return x.Equal(y)
-	}
-}
 
 func Compare(x, y Object) int {
 	if x == nil && y == nil {

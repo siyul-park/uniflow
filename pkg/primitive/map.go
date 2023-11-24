@@ -105,38 +105,6 @@ func (o *Map) Kind() Kind {
 	return KindMap
 }
 
-func (o *Map) Equal(v Object) bool {
-	if r, ok := v.(*Map); !ok {
-		return false
-	} else if o.Len() != r.Len() {
-		return false
-	} else {
-		keys1 := o.Keys()
-		keys2 := r.Keys()
-
-		for i, k1 := range keys1 {
-			k2 := keys2[i]
-			if !Equal(k1, k2) {
-				return false
-			}
-
-			v1, ok1 := o.Get(k1)
-			v2, ok2 := o.Get(k2)
-			if ok1 != ok2 {
-				return false
-			}
-			if !ok1 || !ok2 {
-				continue
-			}
-			if !Equal(v1, v2) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
-
 func (o *Map) Compare(v Object) int {
 	if r, ok := v.(*Map); !ok {
 		if o.Kind() > v.Kind() {

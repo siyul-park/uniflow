@@ -309,7 +309,7 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 						return nil
 					}
 				} else if model.Unique {
-					if r, ok := curr.Get(obj); ok && primitive.Equal(id, r.(primitive.Object)) {
+					if r, ok := curr.Get(obj); ok && primitive.Compare(id, r.(primitive.Object)) == 0 {
 						curr.Remove(obj)
 					}
 				} else {

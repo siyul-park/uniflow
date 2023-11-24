@@ -17,16 +17,6 @@ func TestNewMap(t *testing.T) {
 	assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
 }
 
-func TestMap_Equal(t *testing.T) {
-	k1 := NewString(faker.Word())
-	k2 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
-
-	assert.True(t, NewMap(k1, v1).Equal(NewMap(k1, v1)))
-	assert.False(t, NewMap(k1, v1).Equal(NewMap(k2, v2)))
-}
-
 func TestMap_GetAndSetAndDelete(t *testing.T) {
 	k1 := NewString(faker.Word())
 	v1 := NewString(faker.Word())
