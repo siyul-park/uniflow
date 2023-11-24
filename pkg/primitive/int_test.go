@@ -39,31 +39,36 @@ func TestNewInt(t *testing.T) {
 	})
 }
 
-func TestInt_Hash(t *testing.T) {
+func TestInt_Compare(t *testing.T) {
 	t.Run("", func(t *testing.T) {
-		assert.NotEqual(t, NewInt(0).Hash(), NewInt(1).Hash())
-		assert.Equal(t, NewInt(0).Hash(), NewInt(0).Hash())
-		assert.Equal(t, NewInt(1).Hash(), NewInt(1).Hash())
+		assert.Equal(t, 0, NewInt(0).Compare(NewInt(0)))
+		assert.Equal(t, 1, NewInt(1).Compare(NewInt(0)))
+		assert.Equal(t, -1, NewInt(0).Compare(NewInt(1)))
+		assert.Equal(t, 0, NewInt(0).Compare(NewFloat32(0)))
 	})
 	t.Run("8", func(t *testing.T) {
-		assert.NotEqual(t, NewInt8(0).Hash(), NewInt8(1).Hash())
-		assert.Equal(t, NewInt8(0).Hash(), NewInt8(0).Hash())
-		assert.Equal(t, NewInt8(1).Hash(), NewInt8(1).Hash())
+		assert.Equal(t, 0, NewInt8(0).Compare(NewInt(0)))
+		assert.Equal(t, 1, NewInt8(1).Compare(NewInt(0)))
+		assert.Equal(t, -1, NewInt8(0).Compare(NewInt(1)))
+		assert.Equal(t, 0, NewInt8(0).Compare(NewFloat32(0)))
 	})
 	t.Run("16", func(t *testing.T) {
-		assert.NotEqual(t, NewInt16(0).Hash(), NewInt16(1).Hash())
-		assert.Equal(t, NewInt16(0).Hash(), NewInt16(0).Hash())
-		assert.Equal(t, NewInt16(1).Hash(), NewInt16(1).Hash())
+		assert.Equal(t, 0, NewInt16(0).Compare(NewInt(0)))
+		assert.Equal(t, 1, NewInt16(1).Compare(NewInt(0)))
+		assert.Equal(t, -1, NewInt16(0).Compare(NewInt(1)))
+		assert.Equal(t, 0, NewInt16(0).Compare(NewFloat32(0)))
 	})
 	t.Run("32", func(t *testing.T) {
-		assert.NotEqual(t, NewInt32(0).Hash(), NewInt32(1).Hash())
-		assert.Equal(t, NewInt32(0).Hash(), NewInt32(0).Hash())
-		assert.Equal(t, NewInt32(1).Hash(), NewInt32(1).Hash())
+		assert.Equal(t, 0, NewInt32(0).Compare(NewInt(0)))
+		assert.Equal(t, 1, NewInt32(1).Compare(NewInt(0)))
+		assert.Equal(t, -1, NewInt32(0).Compare(NewInt(1)))
+		assert.Equal(t, 0, NewInt32(0).Compare(NewFloat32(0)))
 	})
 	t.Run("64", func(t *testing.T) {
-		assert.NotEqual(t, NewInt64(0).Hash(), NewInt64(1).Hash())
-		assert.Equal(t, NewInt64(0).Hash(), NewInt64(0).Hash())
-		assert.Equal(t, NewInt64(1).Hash(), NewInt64(1).Hash())
+		assert.Equal(t, 0, NewInt64(0).Compare(NewInt(0)))
+		assert.Equal(t, 1, NewInt64(1).Compare(NewInt(0)))
+		assert.Equal(t, -1, NewInt64(0).Compare(NewInt(1)))
+		assert.Equal(t, 0, NewInt64(0).Compare(NewFloat32(0)))
 	})
 }
 

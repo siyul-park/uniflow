@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -258,7 +257,7 @@ func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
 	id := config.ID
 	address := config.Address
 
-	if util.IsZero(id) {
+	if id == (ulid.ULID{}) {
 		id = ulid.Make()
 	}
 

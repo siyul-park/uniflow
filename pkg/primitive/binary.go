@@ -3,11 +3,10 @@ package primitive
 import (
 	"encoding"
 	"fmt"
-	"hash/fnv"
 	"reflect"
 
 	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
+	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type (
@@ -42,12 +41,30 @@ func (o Binary) Kind() Kind {
 	return KindBinary
 }
 
-func (o Binary) Hash() uint32 {
-	h := fnv.New32()
-	h.Write([]byte{byte(KindBinary), 0})
-	h.Write([]byte(o))
+func (o Binary) Compare(v Object) int {
+	if r, ok := v.(Binary); !ok {
+		if o.Kind() > v.Kind() {
+			return 1
+		} else {
+			return -1
+		}
+	} else {
+		for i := 0; i < o.Len(); i++ {
+			if r.Len() == i {
+				return 1
+			}
 
-	return h.Sum32()
+			v1 := o.Get(i)
+			v2 := r.Get(i)
+
+			if v1 > v2 {
+				return 1
+			} else if v1 < v2 {
+				return -1
+			}
+		}
+		return 0
+	}
 }
 
 func (o Binary) Interface() any {

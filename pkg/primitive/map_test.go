@@ -17,18 +17,6 @@ func TestNewMap(t *testing.T) {
 	assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
 }
 
-func TestMap_Hash(t *testing.T) {
-	k1 := NewString(faker.Word())
-	k2 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
-
-	assert.NotEqual(t, NewMap(k1, v1).Hash(), NewMap(k2, v2).Hash())
-	assert.Equal(t, NewMap().Hash(), NewMap().Hash())
-	assert.Equal(t, NewMap(k1, v1).Hash(), NewMap(k1, v1).Hash())
-	assert.Equal(t, NewMap(k1, v1, k2, v2).Hash(), NewMap(k2, v2, k1, v1).Hash())
-}
-
 func TestMap_GetAndSetAndDelete(t *testing.T) {
 	k1 := NewString(faker.Word())
 	v1 := NewString(faker.Word())
@@ -89,7 +77,7 @@ func TestMap_Encode(t *testing.T) {
 			K1: v1.String(),
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, NewMap(NewString("k_1"), v1).Hash(), v.Hash())
+		assert.True(t, NewMap(NewString("k_1"), v1).Compare(v) == 0)
 	})
 }
 

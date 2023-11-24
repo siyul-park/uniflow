@@ -3,43 +3,43 @@ package database
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMergeUpdateOptions(t *testing.T) {
 	opt := MergeUpdateOptions([]*UpdateOptions{
 		nil,
-		util.Ptr(UpdateOptions{
+		lo.ToPtr(UpdateOptions{
 			Upsert: nil,
 		}),
-		util.Ptr(UpdateOptions{
-			Upsert: util.Ptr(true),
+		lo.ToPtr(UpdateOptions{
+			Upsert: lo.ToPtr(true),
 		}),
 	})
 
-	assert.Equal(t, util.Ptr(UpdateOptions{
-		Upsert: util.Ptr(true),
+	assert.Equal(t, lo.ToPtr(UpdateOptions{
+		Upsert: lo.ToPtr(true),
 	}), opt)
 }
 
 func TestMergeFindOptions(t *testing.T) {
 	opt := MergeFindOptions([]*FindOptions{
 		nil,
-		util.Ptr(FindOptions{
-			Limit: util.Ptr(1),
+		lo.ToPtr(FindOptions{
+			Limit: lo.ToPtr(1),
 		}),
-		util.Ptr(FindOptions{
-			Skip: util.Ptr(1),
+		lo.ToPtr(FindOptions{
+			Skip: lo.ToPtr(1),
 		}),
-		util.Ptr(FindOptions{
+		lo.ToPtr(FindOptions{
 			Sorts: []Sort{{Key: "", Order: OrderASC}},
 		}),
 	})
 
-	assert.Equal(t, util.Ptr(FindOptions{
-		Limit: util.Ptr(1),
-		Skip:  util.Ptr(1),
+	assert.Equal(t, lo.ToPtr(FindOptions{
+		Limit: lo.ToPtr(1),
+		Skip:  lo.ToPtr(1),
 		Sorts: []Sort{{Key: "", Order: OrderASC}},
 	}), opt)
 }

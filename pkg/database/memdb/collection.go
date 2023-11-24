@@ -5,9 +5,11 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/emirpasic/gods/maps"
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/internal/pool"
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -15,7 +17,7 @@ import (
 type (
 	Collection struct {
 		name          string
-		data          *sync.Map
+		data          maps.Map
 		indexView     *IndexView
 		streams       []*Stream
 		streamMatches []func(*primitive.Map) bool
@@ -42,7 +44,7 @@ var (
 func NewCollection(name string) *Collection {
 	return &Collection{
 		name:       name,
-		data:       pool.GetMap(),
+		data:       treemap.NewWith(comparator),
 		indexView:  NewIndexView(),
 		dataLock:   sync.RWMutex{},
 		streamLock: sync.RWMutex{},
@@ -120,7 +122,7 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
-		upsert = util.UnPtr(opt.Upsert)
+		upsert = lo.FromPtr(opt.Upsert)
 	}
 
 	old, err := coll.findOne(ctx, filter)
@@ -186,7 +188,7 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
-		upsert = util.UnPtr(opt.Upsert)
+		upsert = lo.FromPtr(opt.Upsert)
 	}
 
 	old, err := coll.findMany(ctx, filter)
@@ -301,12 +303,12 @@ func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, o
 }
 
 func (coll *Collection) Drop(ctx context.Context) error {
-	data, err := func() (*sync.Map, error) {
+	data, err := func() (maps.Map, error) {
 		coll.dataLock.Lock()
 		defer coll.dataLock.Unlock()
 
 		data := coll.data
-		coll.data = pool.GetMap()
+		coll.data = treemap.NewWith(comparator)
 
 		if err := coll.indexView.deleteAll(ctx); err != nil {
 			return nil, err
@@ -318,7 +320,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 		return err
 	}
 
-	data.Range(func(_, val any) bool {
+	for _, val := range data.Values() {
 		doc := val.(*primitive.Map)
 		if id, ok := doc.Get(keyID); ok {
 			coll.emit(fullEvent{
@@ -329,8 +331,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 				Document: doc,
 			})
 		}
-		return true
-	})
+	}
 
 	coll.streamLock.Lock()
 	defer coll.streamLock.Unlock()
@@ -361,9 +362,7 @@ func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) (
 	for i, doc := range docs {
 		if id, ok := doc.Get(keyID); !ok {
 			return nil, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
-		} else if hash, err := util.Hash(id); err != nil {
-			return nil, errors.Wrap(err, database.ErrCodeWrite)
-		} else if _, ok := coll.data.Load(hash); ok {
+		} else if _, ok := coll.data.Get(id); ok {
 			return nil, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
 		} else {
 			ids[i] = id
@@ -374,18 +373,14 @@ func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) (
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
 	}
 	for i, doc := range docs {
-		if hash, err := util.Hash(ids[i].Interface()); err != nil {
-			return nil, errors.Wrap(err, database.ErrCodeWrite)
-		} else {
-			coll.data.Store(hash, doc)
-		}
+		coll.data.Put(ids[i], doc)
 	}
 
 	return ids, nil
 }
 
 func (coll *Collection) findOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
-	opt := database.MergeFindOptions(append(opts, util.Ptr(database.FindOptions{Limit: util.Ptr(1)})))
+	opt := database.MergeFindOptions(append(opts, lo.ToPtr(database.FindOptions{Limit: lo.ToPtr(1)})))
 
 	if docs, err := coll.findMany(ctx, filter, opt); err != nil {
 		return nil, err
@@ -404,11 +399,11 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 
 	limit := -1
 	if opt != nil && opt.Limit != nil {
-		limit = util.UnPtr(opt.Limit)
+		limit = lo.FromPtr(opt.Limit)
 	}
 	skip := 0
 	if opt != nil && opt.Skip != nil {
-		skip = util.UnPtr(opt.Skip)
+		skip = lo.FromPtr(opt.Skip)
 	}
 	var sorts []database.Sort
 	if opt != nil && opt.Sorts != nil {
@@ -422,40 +417,39 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 		scanSize = -1
 	}
 
-	scan := map[uint64]*primitive.Map{}
+	scan := treemap.NewWith(utils.Comparator(func(a, b any) int {
+		return primitive.Compare(a.(primitive.Object), b.(primitive.Object))
+	}))
 	if examples, ok := FilterToExample(filter); ok {
 		if ids, err := coll.indexView.findMany(ctx, examples); err == nil {
 			for _, id := range ids {
-				if scanSize == len(scan) {
+				if scanSize == scan.Size() {
 					break
-				} else if hash, err := util.Hash(id.Interface()); err != nil {
-					return nil, errors.Wrap(err, database.ErrCodeWrite)
-				} else if doc, ok := coll.data.Load(hash); ok && match(doc.(*primitive.Map)) {
-					scan[hash] = doc.(*primitive.Map)
+				} else if doc, ok := coll.data.Get(id); ok && match(doc.(*primitive.Map)) {
+					scan.Put(id, doc)
 				}
 			}
 		}
 	}
-	if scanSize != len(scan) {
-		coll.data.Range(func(key, value any) bool {
-			if scanSize == len(scan) {
-				return false
+	if scanSize != scan.Size() {
+		for _, key := range coll.data.Keys() {
+			value, _ := coll.data.Get(key)
+			if scanSize == scan.Size() {
+				continue
 			}
-
 			if match(value.(*primitive.Map)) {
-				scan[key.(uint64)] = value.(*primitive.Map)
+				scan.Put(key, value)
 			}
-			return true
-		})
+		}
 	}
 
-	if skip >= len(scan) {
+	if skip >= scan.Size() {
 		return nil, nil
 	}
 
 	var docs []*primitive.Map
-	for _, doc := range scan {
-		docs = append(docs, doc)
+	for _, doc := range scan.Values() {
+		docs = append(docs, doc.(*primitive.Map))
 	}
 
 	if len(sorts) > 0 {
@@ -507,11 +501,7 @@ func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) (
 	}
 
 	for _, id := range ids {
-		if hash, err := util.Hash(id.Interface()); err != nil {
-			return nil, errors.Wrap(err, database.ErrCodeWrite)
-		} else {
-			coll.data.Delete(hash)
-		}
+		coll.data.Remove(id)
 	}
 
 	return deletes, nil

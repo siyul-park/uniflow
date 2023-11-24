@@ -39,31 +39,36 @@ func TestNewUint(t *testing.T) {
 	})
 }
 
-func TestUint_Hash(t *testing.T) {
+func TestUint_Compare(t *testing.T) {
 	t.Run("", func(t *testing.T) {
-		assert.NotEqual(t, NewUint(0).Hash(), NewUint(1).Hash())
-		assert.Equal(t, NewUint(0).Hash(), NewUint(0).Hash())
-		assert.Equal(t, NewUint(1).Hash(), NewUint(1).Hash())
+		assert.Equal(t, 0, NewUint(0).Compare(NewUint(0)))
+		assert.Equal(t, 1, NewUint(1).Compare(NewUint(0)))
+		assert.Equal(t, -1, NewUint(0).Compare(NewUint(1)))
+		assert.Equal(t, 0, NewUint(0).Compare(NewFloat32(0)))
 	})
 	t.Run("8", func(t *testing.T) {
-		assert.NotEqual(t, NewUint8(0).Hash(), NewUint8(1).Hash())
-		assert.Equal(t, NewUint8(0).Hash(), NewUint8(0).Hash())
-		assert.Equal(t, NewUint8(1).Hash(), NewUint8(1).Hash())
+		assert.Equal(t, 0, NewUint8(0).Compare(NewUint(0)))
+		assert.Equal(t, 1, NewUint8(1).Compare(NewUint(0)))
+		assert.Equal(t, -1, NewUint8(0).Compare(NewUint(1)))
+		assert.Equal(t, 0, NewUint8(0).Compare(NewFloat32(0)))
 	})
 	t.Run("16", func(t *testing.T) {
-		assert.NotEqual(t, NewUint16(0).Hash(), NewUint16(1).Hash())
-		assert.Equal(t, NewUint16(0).Hash(), NewUint16(0).Hash())
-		assert.Equal(t, NewUint16(1).Hash(), NewUint16(1).Hash())
+		assert.Equal(t, 0, NewUint16(0).Compare(NewUint(0)))
+		assert.Equal(t, 1, NewUint16(1).Compare(NewUint(0)))
+		assert.Equal(t, -1, NewUint16(0).Compare(NewUint(1)))
+		assert.Equal(t, 0, NewUint16(0).Compare(NewFloat32(0)))
 	})
 	t.Run("32", func(t *testing.T) {
-		assert.NotEqual(t, NewUint32(0).Hash(), NewUint32(1).Hash())
-		assert.Equal(t, NewUint32(0).Hash(), NewUint32(0).Hash())
-		assert.Equal(t, NewUint32(1).Hash(), NewUint32(1).Hash())
+		assert.Equal(t, 0, NewUint32(0).Compare(NewUint(0)))
+		assert.Equal(t, 1, NewUint32(1).Compare(NewUint(0)))
+		assert.Equal(t, -1, NewUint32(0).Compare(NewUint(1)))
+		assert.Equal(t, 0, NewUint32(0).Compare(NewFloat32(0)))
 	})
 	t.Run("64", func(t *testing.T) {
-		assert.NotEqual(t, NewUint64(0).Hash(), NewUint64(1).Hash())
-		assert.Equal(t, NewUint64(0).Hash(), NewUint64(0).Hash())
-		assert.Equal(t, NewUint64(1).Hash(), NewUint64(1).Hash())
+		assert.Equal(t, 0, NewUint64(0).Compare(NewUint(0)))
+		assert.Equal(t, 1, NewUint64(1).Compare(NewUint(0)))
+		assert.Equal(t, -1, NewUint64(0).Compare(NewUint(1)))
+		assert.Equal(t, 0, NewUint64(0).Compare(NewFloat32(0)))
 	})
 }
 

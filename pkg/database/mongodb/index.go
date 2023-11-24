@@ -3,7 +3,7 @@ package mongodb
 import (
 	"context"
 
-	"github.com/siyul-park/uniflow/internal/util"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -74,8 +74,8 @@ func (iv *IndexView) Create(ctx context.Context, index database.IndexModel) erro
 	_, err = iv.raw.CreateOne(ctx, mongo.IndexModel{
 		Keys: keys,
 		Options: &options.IndexOptions{
-			Name:                    util.Ptr(index.Name),
-			Unique:                  util.Ptr(index.Unique),
+			Name:                    lo.ToPtr(index.Name),
+			Unique:                  lo.ToPtr(index.Unique),
 			PartialFilterExpression: partialFilterExpression,
 		},
 	})

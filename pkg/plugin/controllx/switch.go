@@ -1,10 +1,10 @@
 package controllx
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/internal/util"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -91,7 +91,7 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 	}
 
 	for _, cond := range n.conditions {
-		if output, _ := cond.when.Eval(input); !util.IsZero(output) {
+		if output, _ := cond.when.Eval(input); output != nil && !reflect.ValueOf(output).IsZero() {
 			if i, ok := port.GetIndex(node.PortOut, cond.port); ok {
 				outPcks := make([]*packet.Packet, i+1)
 				outPcks[i] = inPck
