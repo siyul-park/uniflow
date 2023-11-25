@@ -152,8 +152,8 @@ func NewCmd(config Config) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "uniflow namespace")
-	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "configuration file name")
+	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the namespace. If not set it up, use default namespace. In this case.")
+	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "Set the file path that want to be applied.")
 
 	return cmd
 }
