@@ -41,21 +41,27 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 }
 
 // Load runs LoadHooks.
-func (h *Hook) Load(n node.Node) {
+func (h *Hook) Load(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, hook := range h.loadHooks {
-		hook.Load(n)
+		if err := hook.Load(n); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Unload runs UnloadHooks.
-func (h *Hook) Unload(n node.Node) {
+func (h *Hook) Unload(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, hook := range h.unloadHooks {
-		hook.Unload(n)
+		if err := hook.Unload(n); err != nil {
+			return err
+		}
 	}
+	return nil
 }

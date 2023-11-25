@@ -58,12 +58,16 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 	prevNode := t.nodes[n.ID()]
 	prevSpec := t.specs[n.ID()]
 
-	if prevNode != nil && len(t.unlinks[n.ID()]) == 0 {
-		t.unload(prevNode)
-	}
-	if prevNode != nil && n != prevNode {
-		if err := prevNode.Close(); err != nil {
-			return err
+	if prevNode != nil {
+		if len(t.unlinks[n.ID()]) == 0 {
+			if err := t.unload(prevNode); err != nil {
+				return err
+			}
+		}
+		if n != prevNode {
+			if err := prevNode.Close(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -171,6 +175,9 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 		t.unlinks[n.ID()] = unlinks
 	} else {
 		delete(t.unlinks, n.ID())
+		if err := t.load(n); err != nil {
+			return err
+		}
 	}
 
 	for name, locations := range t.linked[n.ID()] {
@@ -186,21 +193,19 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 		}
 	}
 
-	for id, additions := range t.unlinks {
+	for id, unlinks := range t.unlinks {
 		if ref := t.specs[id]; ref.GetNamespace() != spec.GetNamespace() {
 			continue
 		}
 
-		unlinks := make(map[string][]scheme.PortLocation, len(additions))
-
 		ref := t.nodes[id]
-		for name, locations := range additions {
+		for name, locations := range unlinks {
 			p1, ok := ref.Port(name)
 			if !ok {
 				continue
 			}
 
-			for _, location := range locations {
+			for i, location := range locations {
 				if (location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
 					if p2, ok := n.Port(location.Port); ok {
 						p1.Link(p2)
@@ -215,17 +220,24 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 						})
 						t.linked[n.ID()] = linked
 
-						continue
+						unlinks[name] = append(locations[:i], locations[i+1:]...)
 					}
 				}
-				unlinks[name] = append(unlinks[name], location)
+			}
+
+			if len(unlinks[name]) == 0 {
+				delete(unlinks, name)
 			}
 		}
-		t.unlinks[id] = unlinks
-	}
 
-	if len(unlinks) == 0 {
-		t.load(n)
+		if len(unlinks) > 0 {
+			t.unlinks[id] = unlinks
+		} else {
+			delete(t.unlinks, id)
+			if err := t.load(n); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -304,14 +316,20 @@ func (t *Table) Close() error {
 	return nil
 }
 
-func (t *Table) load(n node.Node) {
+func (t *Table) load(n node.Node) error {
 	for _, hook := range t.loadHooks {
-		hook.Load(n)
+		if err := hook.Load(n); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (t *Table) unload(n node.Node) {
+func (t *Table) unload(n node.Node) error {
 	for _, hook := range t.unloadHooks {
-		hook.Unload(n)
+		if err := hook.Unload(n); err != nil {
+			return err
+		}
 	}
+	return nil
 }
