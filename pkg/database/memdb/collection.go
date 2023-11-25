@@ -7,7 +7,6 @@ import (
 
 	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -417,9 +416,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 		scanSize = -1
 	}
 
-	scan := treemap.NewWith(utils.Comparator(func(a, b any) int {
-		return primitive.Compare(a.(primitive.Object), b.(primitive.Object))
-	}))
+	scan := treemap.NewWith(comparator)
 	if examples, ok := FilterToExample(filter); ok {
 		if ids, err := coll.indexView.findMany(ctx, examples); err == nil {
 			for _, id := range ids {
