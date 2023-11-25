@@ -129,10 +129,10 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	}
 	errStream := n.errPort.Open(proc)
 
-	for func() bool {
+	for {
 		inPck, ok := <-inStream.Receive()
 		if !ok {
-			return false
+			return
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
@@ -175,9 +175,6 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		} else {
 			proc.Stack().Clear(inPck.ID())
 		}
-
-		return true
-	}() {
 	}
 }
 
