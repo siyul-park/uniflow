@@ -61,10 +61,8 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}
 
 	tb := symbol.NewTable(symbol.TableOptions{
-		PreLoadHooks:    []symbol.PreLoadHook{hk},
-		PostLoadHooks:   []symbol.PostLoadHook{hk},
-		PreUnloadHooks:  []symbol.PreUnloadHook{hk},
-		PostUnloadHooks: []symbol.PostUnloadHook{hk},
+		LoadHooks:   []symbol.LoadHook{hk},
+		UnloadHooks: []symbol.UnloadHook{hk},
 	})
 
 	ld, err := loader.New(ctx, loader.Config{

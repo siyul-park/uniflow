@@ -4,78 +4,231 @@ import (
 	"sync"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 type (
 	// TableOptions is a options for Table.
 	TableOptions struct {
-		PreLoadHooks    []PreLoadHook
-		PostLoadHooks   []PostLoadHook
-		PreUnloadHooks  []PreUnloadHook
-		PostUnloadHooks []PostUnloadHook
+		LoadHooks   []LoadHook
+		UnloadHooks []UnloadHook
 	}
 
 	// Table is the storage that manages Symbol.
 	Table struct {
-		data            map[ulid.ULID]node.Node
-		preLoadHooks    []PreLoadHook
-		postLoadHooks   []PostLoadHook
-		preUnloadHooks  []PreUnloadHook
-		postUnloadHooks []PostUnloadHook
-		mu              sync.RWMutex
+		nodes       map[ulid.ULID]node.Node
+		specs       map[ulid.ULID]scheme.Spec
+		unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
+		linked      map[ulid.ULID]map[string][]scheme.PortLocation
+		index       map[string]map[string]ulid.ULID
+		loadHooks   []LoadHook
+		unloadHooks []UnloadHook
+		mu          sync.RWMutex
 	}
 )
 
 // NewTable returns a new SymbolTable
 func NewTable(opts ...TableOptions) *Table {
-	var preLoadHooks []PreLoadHook
-	var postLoadHooks []PostLoadHook
-	var preUnloadHooks []PreUnloadHook
-	var postUnloadHooks []PostUnloadHook
+	var loadHooks []LoadHook
+	var unloadHooks []UnloadHook
 
 	for _, opt := range opts {
-		preLoadHooks = append(preLoadHooks, opt.PreLoadHooks...)
-		postLoadHooks = append(postLoadHooks, opt.PostLoadHooks...)
-		preUnloadHooks = append(preUnloadHooks, opt.PreUnloadHooks...)
-		postUnloadHooks = append(postUnloadHooks, opt.PostUnloadHooks...)
+		loadHooks = append(loadHooks, opt.LoadHooks...)
+		unloadHooks = append(unloadHooks, opt.UnloadHooks...)
 	}
 
 	return &Table{
-		data:            make(map[ulid.ULID]node.Node),
-		preLoadHooks:    preLoadHooks,
-		postLoadHooks:   postLoadHooks,
-		preUnloadHooks:  preUnloadHooks,
-		postUnloadHooks: postUnloadHooks,
+		nodes:       make(map[ulid.ULID]node.Node),
+		specs:       make(map[ulid.ULID]scheme.Spec),
+		unlinks:     make(map[ulid.ULID]map[string][]scheme.PortLocation),
+		linked:      make(map[ulid.ULID]map[string][]scheme.PortLocation),
+		index:       make(map[string]map[string]ulid.ULID),
+		loadHooks:   loadHooks,
+		unloadHooks: unloadHooks,
 	}
 }
 
 // Insert inserts a node.Node.
-func (t *Table) Insert(n node.Node) (node.Node, error) {
+func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if origin, ok := t.data[n.ID()]; ok {
-		if err := t.preUnload(origin); err != nil {
-			return nil, err
-		}
-		if err := origin.Close(); err != nil {
-			return nil, err
-		}
-		if err := t.postUnload(origin); err != nil {
-			return nil, err
+	prevNode := t.nodes[n.ID()]
+	prevSpec := t.specs[n.ID()]
+
+	if prevNode != nil && len(t.unlinks[n.ID()]) == 0 {
+		t.unload(prevNode)
+	}
+	if prevNode != nil && n != prevNode {
+		if err := prevNode.Close(); err != nil {
+			return err
 		}
 	}
 
-	if err := t.preLoad(n); err != nil {
-		return nil, err
+	t.nodes[n.ID()] = n
+	t.specs[n.ID()] = spec
+	if prevSpec != nil && prevSpec.GetName() != "" {
+		if namespace, ok := t.index[prevSpec.GetNamespace()]; ok {
+			delete(namespace, prevSpec.GetName())
+			if len(namespace) == 0 {
+				delete(t.index, prevSpec.GetNamespace())
+			}
+		}
 	}
-	t.data[n.ID()] = n
-	if err := t.postLoad(n); err != nil {
-		return nil, err
+	t.index[spec.GetNamespace()] = lo.Assign(t.index[spec.GetNamespace()], map[string]ulid.ULID{spec.GetName(): n.ID()})
+
+	var deletions map[string][]scheme.PortLocation
+	if prevSpec != nil {
+		deletions = prevSpec.GetLinks()
+	}
+	additions := spec.GetLinks()
+	unlinks := map[string][]scheme.PortLocation{}
+
+	for name, locations := range deletions {
+		for _, location := range locations {
+			id := location.ID
+			if id == (ulid.ULID{}) {
+				if location.Name != "" {
+					if namespace, ok := t.index[prevSpec.GetNamespace()]; ok {
+						id = namespace[location.Name]
+					}
+				}
+			}
+
+			if id == (ulid.ULID{}) {
+				continue
+			}
+
+			linked := t.linked[id]
+			var locations []scheme.PortLocation
+			for _, location := range linked[location.Port] {
+				if location.ID != n.ID() && location.Port != name {
+					locations = append(locations, location)
+				}
+			}
+			if len(locations) > 0 {
+				linked[location.Port] = locations
+				t.linked[id] = linked
+			} else if len(linked) > 0 {
+				delete(linked, location.Port)
+				t.linked[id] = linked
+			}
+		}
 	}
 
-	return n, nil
+	for name, locations := range additions {
+		p1, ok := n.Port(name)
+		if !ok {
+			unlinks[name] = locations
+			continue
+		}
+
+		for _, location := range locations {
+			id := location.ID
+			if id == (ulid.ULID{}) {
+				if location.Name != "" {
+					if namespace, ok := t.index[spec.GetNamespace()]; ok {
+						id = namespace[location.Name]
+					}
+				}
+			}
+
+			if id == (ulid.ULID{}) {
+				unlinks[name] = append(unlinks[name], location)
+				continue
+			}
+
+			if ref, ok := t.specs[id]; ok {
+				if ref.GetNamespace() != spec.GetNamespace() {
+					continue
+				}
+			}
+
+			if ref, ok := t.nodes[id]; ok {
+				if p2, ok := ref.Port(location.Port); ok {
+					p1.Link(p2)
+
+					linked := t.linked[ref.ID()]
+					if linked == nil {
+						linked = make(map[string][]scheme.PortLocation)
+					}
+					linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
+						ID:   n.ID(),
+						Port: name,
+					})
+					t.linked[ref.ID()] = linked
+
+					continue
+				}
+			}
+			unlinks[name] = append(unlinks[name], location)
+		}
+	}
+
+	if len(unlinks) > 0 {
+		t.unlinks[n.ID()] = unlinks
+	} else {
+		delete(t.unlinks, n.ID())
+	}
+
+	for name, locations := range t.linked[n.ID()] {
+		p1, ok := n.Port(name)
+		if !ok {
+			continue
+		}
+		for _, location := range locations {
+			ref := t.nodes[location.ID]
+			if p2, ok := ref.Port(location.Port); ok {
+				p1.Link(p2)
+			}
+		}
+	}
+
+	for id, additions := range t.unlinks {
+		if ref := t.specs[id]; ref.GetNamespace() != spec.GetNamespace() {
+			continue
+		}
+
+		unlinks := make(map[string][]scheme.PortLocation, len(additions))
+
+		ref := t.nodes[id]
+		for name, locations := range additions {
+			p1, ok := ref.Port(name)
+			if !ok {
+				continue
+			}
+
+			for _, location := range locations {
+				if (location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
+					if p2, ok := n.Port(location.Port); ok {
+						p1.Link(p2)
+
+						linked := t.linked[n.ID()]
+						if linked == nil {
+							linked = make(map[string][]scheme.PortLocation)
+						}
+						linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
+							ID:   ref.ID(),
+							Port: name,
+						})
+						t.linked[n.ID()] = linked
+
+						continue
+					}
+				}
+				unlinks[name] = append(unlinks[name], location)
+			}
+		}
+		t.unlinks[id] = unlinks
+	}
+
+	if len(unlinks) == 0 {
+		t.load(n)
+	}
+
+	return nil
 }
 
 // Free removes a Symbol.
@@ -83,11 +236,40 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if n, ok := t.data[id]; ok {
+	if n, ok := t.nodes[id]; ok {
 		if err := n.Close(); err != nil {
 			return false, err
 		}
-		delete(t.data, id)
+
+		spec := t.specs[id]
+		if namespace, ok := t.index[spec.GetNamespace()]; ok {
+			delete(namespace, spec.GetName())
+			if len(namespace) == 0 {
+				delete(t.index, spec.GetNamespace())
+			}
+		}
+
+		for name, locations := range t.linked[id] {
+			for _, location := range locations {
+				unlinks := t.unlinks[location.ID]
+				if unlinks == nil {
+					unlinks = make(map[string][]scheme.PortLocation)
+				}
+				unlinks[location.Port] = append(unlinks[location.Port], scheme.PortLocation{
+					ID:   id,
+					Port: name,
+				})
+				t.unlinks[location.ID] = unlinks
+			}
+		}
+
+		delete(t.nodes, id)
+		delete(t.specs, id)
+		delete(t.unlinks, id)
+		delete(t.linked, id)
+
+		t.unload(n)
+
 		return true, nil
 	}
 
@@ -99,7 +281,7 @@ func (t *Table) Lookup(id ulid.ULID) (node.Node, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	n, ok := t.data[id]
+	n, ok := t.nodes[id]
 	return n, ok
 }
 
@@ -108,48 +290,28 @@ func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for id, n := range t.data {
+	for id, n := range t.nodes {
 		if err := n.Close(); err != nil {
 			return err
 		}
-		delete(t.data, id)
+		delete(t.nodes, id)
 	}
+	t.specs = make(map[ulid.ULID]scheme.Spec)
+	t.unlinks = make(map[ulid.ULID]map[string][]scheme.PortLocation)
+	t.linked = make(map[ulid.ULID]map[string][]scheme.PortLocation)
+	t.index = make(map[string]map[string]ulid.ULID)
 
 	return nil
 }
 
-func (t *Table) preLoad(n node.Node) error {
-	for _, hook := range t.preLoadHooks {
-		if err := hook.PreLoad(n); err != nil {
-			return err
-		}
+func (t *Table) load(n node.Node) {
+	for _, hook := range t.loadHooks {
+		hook.Load(n)
 	}
-	return nil
 }
 
-func (t *Table) postLoad(n node.Node) error {
-	for _, hook := range t.postLoadHooks {
-		if err := hook.PostLoad(n); err != nil {
-			return err
-		}
+func (t *Table) unload(n node.Node) {
+	for _, hook := range t.unloadHooks {
+		hook.Unload(n)
 	}
-	return nil
-}
-
-func (t *Table) preUnload(n node.Node) error {
-	for _, hook := range t.preUnloadHooks {
-		if err := hook.PreUnload(n); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (t *Table) postUnload(n node.Node) error {
-	for _, hook := range t.postUnloadHooks {
-		if err := hook.PostUnload(n); err != nil {
-			return err
-		}
-	}
-	return nil
 }

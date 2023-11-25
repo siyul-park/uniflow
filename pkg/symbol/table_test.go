@@ -3,94 +3,170 @@ package symbol
 import (
 	"testing"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_Insert(t *testing.T) {
-	t.Run("not exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
+	tb := NewTable()
+	defer tb.Close()
 
-		n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n1.Close()
+	n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n2.Close()
+	n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n3.Close()
 
-		s, err := tb.Insert(n)
-		assert.NoError(t, err)
-		assert.NotNil(t, s)
-		assert.Equal(t, n.ID(), s.ID())
-	})
+	spec1 := &scheme.SpecMeta{
+		ID: n1.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n2.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+	spec2 := &scheme.SpecMeta{
+		ID: n2.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n3.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+	spec3 := &scheme.SpecMeta{
+		ID: n3.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n1.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
 
-	t.Run("exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
+	p1, _ := n1.Port(node.PortIn)
+	p2, _ := n2.Port(node.PortIn)
+	p3, _ := n3.Port(node.PortIn)
 
-		id := ulid.Make()
+	err := tb.Insert(n1, spec1)
+	assert.NoError(t, err)
 
-		n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
-		n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
+	assert.Equal(t, 0, p1.Links())
+	assert.Equal(t, 0, p2.Links())
+	assert.Equal(t, 0, p3.Links())
 
-		s1, err := tb.Insert(n1)
-		assert.NoError(t, err)
-		assert.NotNil(t, s1)
-		assert.Equal(t, n1.ID(), s1.ID())
+	err = tb.Insert(n2, spec2)
+	assert.NoError(t, err)
 
-		s2, err := tb.Insert(n1)
-		assert.NoError(t, err)
-		assert.NotNil(t, s2)
-		assert.Equal(t, n2.ID(), s2.ID())
-	})
+	assert.Equal(t, 0, p1.Links())
+	assert.Equal(t, 1, p2.Links())
+	assert.Equal(t, 0, p3.Links())
+
+	err = tb.Insert(n3, spec3)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, p1.Links())
+	assert.Equal(t, 1, p2.Links())
+	assert.Equal(t, 1, p3.Links())
 }
 
 func TestTable_Free(t *testing.T) {
-	t.Run("not exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
+	tb := NewTable()
+	defer tb.Close()
 
-		n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n1.Close()
+	n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n2.Close()
+	n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n3.Close()
 
-		ok, err := tb.Free(n.ID())
-		assert.NoError(t, err)
-		assert.False(t, ok)
-	})
+	spec1 := &scheme.SpecMeta{
+		ID: n1.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n2.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+	spec2 := &scheme.SpecMeta{
+		ID: n2.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n3.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+	spec3 := &scheme.SpecMeta{
+		ID: n3.ID(),
+		Links: map[string][]scheme.PortLocation{
+			node.PortOut: {
+				{
+					ID:   n1.ID(),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
 
-	t.Run("exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
+	p1, _ := n1.Port(node.PortIn)
+	p2, _ := n2.Port(node.PortIn)
+	p3, _ := n3.Port(node.PortIn)
 
-		n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	_ = tb.Insert(n1, spec1)
+	_ = tb.Insert(n2, spec2)
+	_ = tb.Insert(n3, spec3)
 
-		tb.Insert(n)
+	ok, err := tb.Free(n1.ID())
+	assert.NoError(t, err)
+	assert.True(t, ok)
 
-		ok, err := tb.Free(n.ID())
-		assert.NoError(t, err)
-		assert.True(t, ok)
-	})
+	assert.Equal(t, 0, p1.Links())
+
+	ok, err = tb.Free(n2.ID())
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	assert.Equal(t, 0, p1.Links())
+	assert.Equal(t, 0, p2.Links())
+
+	ok, err = tb.Free(n3.ID())
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	assert.Equal(t, 0, p1.Links())
+	assert.Equal(t, 0, p2.Links())
+	assert.Equal(t, 0, p3.Links())
 }
 
 func TestTable_Lookup(t *testing.T) {
-	t.Run("not exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
+	tb := NewTable()
+	defer tb.Close()
 
-		n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n.Close()
+	spec := &scheme.SpecMeta{
+		ID: n.ID(),
+	}
 
-		s, ok := tb.Lookup(n.ID())
-		assert.False(t, ok)
-		assert.Nil(t, s)
-	})
+	_ = tb.Insert(n, spec)
 
-	t.Run("exists", func(t *testing.T) {
-		tb := NewTable()
-		defer func() { _ = tb.Close() }()
-
-		n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
-
-		tb.Insert(n)
-
-		s, ok := tb.Lookup(n.ID())
-		assert.True(t, ok)
-		assert.NotNil(t, s)
-		assert.Equal(t, n.ID(), s.ID())
-	})
+	r, ok := tb.Lookup(n.ID())
+	assert.True(t, ok)
+	assert.Equal(t, r, n)
 }
