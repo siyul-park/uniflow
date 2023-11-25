@@ -24,7 +24,7 @@ generate:
 build:
 	@go clean -cache
 	@mkdir -p dist
-	@go build -o dist ./...
+	@go build -ldflags "-s -w" -o dist ./...
 
 .PHONY: clean
 clean:
