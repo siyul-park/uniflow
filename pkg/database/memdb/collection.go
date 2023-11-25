@@ -416,6 +416,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 		scanSize = -1
 	}
 
+	fullScan := true
 	scan := treemap.NewWith(comparator)
 	if examples, ok := FilterToExample(filter); ok {
 		if ids, err := coll.indexView.findMany(ctx, examples); err == nil {
@@ -426,9 +427,10 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 					scan.Put(id, doc)
 				}
 			}
+			fullScan = false
 		}
 	}
-	if scanSize != scan.Size() {
+	if fullScan {
 		for _, key := range coll.data.Keys() {
 			value, _ := coll.data.Get(key)
 			if scanSize == scan.Size() {
