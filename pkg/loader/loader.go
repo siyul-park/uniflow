@@ -23,16 +23,12 @@ type (
 
 	// Loader loads scheme.Spec into symbol.Table.
 	Loader struct {
-		scheme     *scheme.Scheme
-		table      *symbol.Table
-		remote     *storage.Storage
-		local      *storage.Storage
-		referenced map[ulid.ULID]links
-		undefined  map[ulid.ULID]links
-		mu         sync.RWMutex
+		scheme *scheme.Scheme
+		table  *symbol.Table
+		remote *storage.Storage
+		local  *storage.Storage
+		mu     sync.RWMutex
 	}
-
-	links map[string][]scheme.PortLocation
 )
 
 // New returns a new Loader.
@@ -50,12 +46,10 @@ func New(ctx context.Context, config Config) (*Loader, error) {
 	}
 
 	return &Loader{
-		scheme:     scheme,
-		table:      table,
-		remote:     remote,
-		local:      local,
-		referenced: make(map[ulid.ULID]links),
-		undefined:  make(map[ulid.ULID]links),
+		scheme: scheme,
+		table:  table,
+		remote: remote,
+		local:  local,
 	}, nil
 }
 
@@ -102,11 +96,9 @@ func (ld *Loader) loadOne(ctx context.Context, filter *storage.Filter) (node.Nod
 	}
 
 	if remote != nil {
-		if local != nil {
-			if reflect.DeepEqual(remote, local) {
-				if n, ok := ld.table.Lookup(remote.GetID()); ok {
-					return n, nil
-				}
+		if reflect.DeepEqual(remote, local) {
+			if n, ok := ld.table.Lookup(remote.GetID()); ok {
+				return n, nil
 			}
 		}
 	} else {
@@ -116,6 +108,8 @@ func (ld *Loader) loadOne(ctx context.Context, filter *storage.Filter) (node.Nod
 		}
 		return nil, nil
 	}
+
+	// load child
 
 	if n, err := ld.scheme.Decode(remote); err != nil {
 		return nil, err
@@ -173,14 +167,14 @@ func (ld *Loader) loadMany(ctx context.Context, filter *storage.Filter) ([]node.
 	var nodes []node.Node
 	for id, remote := range idToRemote {
 		local := idToLocal[id]
-		if local != nil {
-			if reflect.DeepEqual(remote, local) {
-				if n, ok := ld.table.Lookup(id); ok {
-					nodes = append(nodes, n)
-					continue
-				}
+		if reflect.DeepEqual(remote, local) {
+			if n, ok := ld.table.Lookup(id); ok {
+				nodes = append(nodes, n)
+				continue
 			}
 		}
+
+		// load child
 
 		if n, err := ld.scheme.Decode(remote); err != nil {
 			return nil, err

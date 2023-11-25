@@ -24,7 +24,7 @@ func TestAddToHooks(t *testing.T) {
 	})
 
 	hk.Load(n)
-	
+
 	errChan := make(chan error)
 
 	err = n.WaitForListen(errChan)

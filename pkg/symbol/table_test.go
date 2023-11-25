@@ -62,21 +62,21 @@ func TestTable_Insert(t *testing.T) {
 		p2, _ := n2.Port(node.PortIn)
 		p3, _ := n3.Port(node.PortIn)
 
-		err := tb.Insert(n1, spec1)
+		err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
 		assert.NoError(t, err)
 
 		assert.Equal(t, 0, p1.Links())
 		assert.Equal(t, 0, p2.Links())
 		assert.Equal(t, 0, p3.Links())
 
-		err = tb.Insert(n2, spec2)
+		err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
 		assert.NoError(t, err)
 
 		assert.Equal(t, 0, p1.Links())
 		assert.Equal(t, 1, p2.Links())
 		assert.Equal(t, 0, p3.Links())
 
-		err = tb.Insert(n3, spec3)
+		err = tb.Insert(&Symbol{Node: n3, Spec: spec3})
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, p1.Links())
@@ -153,17 +153,17 @@ func TestTable_Insert(t *testing.T) {
 		p3, _ := n3.Port(node.PortIn)
 		p4, _ := n4.Port(node.PortIn)
 
-		_ = tb.Insert(n3, spec3)
-		_ = tb.Insert(n4, spec4)
+		_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
+		_ = tb.Insert(&Symbol{Node: n4, Spec: spec4})
 
-		err := tb.Insert(n1, spec1)
+		err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
 		assert.NoError(t, err)
 
 		assert.Equal(t, 2, p1.Links())
 		assert.Equal(t, 0, p2.Links())
 		assert.Equal(t, 1, p3.Links())
 
-		err = tb.Insert(n2, spec2)
+		err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
 		assert.NoError(t, err)
 
 		assert.Equal(t, 0, p1.Links())
@@ -224,9 +224,9 @@ func TestTable_Free(t *testing.T) {
 	p2, _ := n2.Port(node.PortIn)
 	p3, _ := n3.Port(node.PortIn)
 
-	_ = tb.Insert(n1, spec1)
-	_ = tb.Insert(n2, spec2)
-	_ = tb.Insert(n3, spec3)
+	_ = tb.Insert(&Symbol{Node: n1, Spec: spec1})
+	_ = tb.Insert(&Symbol{Node: n2, Spec: spec2})
+	_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
 
 	ok, err := tb.Free(n1.ID())
 	assert.NoError(t, err)
@@ -259,10 +259,11 @@ func TestTable_Lookup(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID: n.ID(),
 	}
+	sym := &Symbol{Node: n, Spec: spec}
 
-	_ = tb.Insert(n, spec)
+	_ = tb.Insert(sym)
 
 	r, ok := tb.Lookup(n.ID())
 	assert.True(t, ok)
-	assert.Equal(t, r, n)
+	assert.Equal(t, sym, r)
 }

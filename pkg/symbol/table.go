@@ -18,8 +18,7 @@ type (
 
 	// Table is the storage that manages Symbol.
 	Table struct {
-		nodes       map[ulid.ULID]node.Node
-		specs       map[ulid.ULID]scheme.Spec
+		symbols     map[ulid.ULID]*Symbol
 		unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
 		linked      map[ulid.ULID]map[string][]scheme.PortLocation
 		index       map[string]map[string]ulid.ULID
@@ -40,8 +39,7 @@ func NewTable(opts ...TableOptions) *Table {
 	}
 
 	return &Table{
-		nodes:       make(map[ulid.ULID]node.Node),
-		specs:       make(map[ulid.ULID]scheme.Spec),
+		symbols:     make(map[ulid.ULID]*Symbol),
 		unlinks:     make(map[ulid.ULID]map[string][]scheme.PortLocation),
 		linked:      make(map[ulid.ULID]map[string][]scheme.PortLocation),
 		index:       make(map[string]map[string]ulid.ULID),
@@ -51,43 +49,41 @@ func NewTable(opts ...TableOptions) *Table {
 }
 
 // Insert inserts a node.Node.
-func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
+func (t *Table) Insert(sym *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	prevNode := t.nodes[n.ID()]
-	prevSpec := t.specs[n.ID()]
+	prev := t.symbols[sym.ID()]
 
-	if prevNode != nil {
-		if len(t.unlinks[n.ID()]) == 0 {
-			if err := t.unload(prevNode); err != nil {
+	if prev != nil {
+		if len(t.unlinks[sym.ID()]) == 0 {
+			if err := t.unload(prev.Node); err != nil {
 				return err
 			}
 		}
-		if n != prevNode {
-			if err := prevNode.Close(); err != nil {
+		if sym.Node != prev.Node {
+			if err := prev.Node.Close(); err != nil {
 				return err
 			}
 		}
 	}
 
-	t.nodes[n.ID()] = n
-	t.specs[n.ID()] = spec
-	if prevSpec != nil && prevSpec.GetName() != "" {
-		if namespace, ok := t.index[prevSpec.GetNamespace()]; ok {
-			delete(namespace, prevSpec.GetName())
+	t.symbols[sym.ID()] = sym
+	if prev != nil && prev.Name() != "" {
+		if namespace, ok := t.index[prev.Namespace()]; ok {
+			delete(namespace, prev.Name())
 			if len(namespace) == 0 {
-				delete(t.index, prevSpec.GetNamespace())
+				delete(t.index, prev.Namespace())
 			}
 		}
 	}
-	t.index[spec.GetNamespace()] = lo.Assign(t.index[spec.GetNamespace()], map[string]ulid.ULID{spec.GetName(): n.ID()})
+	t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
 
 	var deletions map[string][]scheme.PortLocation
-	if prevSpec != nil {
-		deletions = prevSpec.GetLinks()
+	if prev != nil {
+		deletions = prev.Links()
 	}
-	additions := spec.GetLinks()
+	additions := sym.Links()
 	unlinks := map[string][]scheme.PortLocation{}
 
 	for name, locations := range deletions {
@@ -95,7 +91,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 			id := location.ID
 			if id == (ulid.ULID{}) {
 				if location.Name != "" {
-					if namespace, ok := t.index[prevSpec.GetNamespace()]; ok {
+					if namespace, ok := t.index[prev.Namespace()]; ok {
 						id = namespace[location.Name]
 					}
 				}
@@ -108,7 +104,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 			linked := t.linked[id]
 			var locations []scheme.PortLocation
 			for _, location := range linked[location.Port] {
-				if location.ID != n.ID() && location.Port != name {
+				if location.ID != sym.ID() && location.Port != name {
 					locations = append(locations, location)
 				}
 			}
@@ -123,7 +119,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 	}
 
 	for name, locations := range additions {
-		p1, ok := n.Port(name)
+		p1, ok := sym.Node.Port(name)
 		if !ok {
 			unlinks[name] = locations
 			continue
@@ -133,7 +129,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 			id := location.ID
 			if id == (ulid.ULID{}) {
 				if location.Name != "" {
-					if namespace, ok := t.index[spec.GetNamespace()]; ok {
+					if namespace, ok := t.index[sym.Namespace()]; ok {
 						id = namespace[location.Name]
 					}
 				}
@@ -144,14 +140,12 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 				continue
 			}
 
-			if ref, ok := t.specs[id]; ok {
-				if ref.GetNamespace() != spec.GetNamespace() {
+			if ref, ok := t.symbols[id]; ok {
+				if ref.Namespace() != sym.Namespace() {
 					continue
 				}
-			}
 
-			if ref, ok := t.nodes[id]; ok {
-				if p2, ok := ref.Port(location.Port); ok {
+				if p2, ok := ref.Node.Port(location.Port); ok {
 					p1.Link(p2)
 
 					linked := t.linked[ref.ID()]
@@ -159,7 +153,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 						linked = make(map[string][]scheme.PortLocation)
 					}
 					linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
-						ID:   n.ID(),
+						ID:   sym.ID(),
 						Port: name,
 					})
 					t.linked[ref.ID()] = linked
@@ -172,45 +166,46 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 	}
 
 	if len(unlinks) > 0 {
-		t.unlinks[n.ID()] = unlinks
+		t.unlinks[sym.ID()] = unlinks
 	} else {
-		delete(t.unlinks, n.ID())
-		if err := t.load(n); err != nil {
+		delete(t.unlinks, sym.ID())
+		if err := t.load(sym.Node); err != nil {
 			return err
 		}
 	}
 
-	for name, locations := range t.linked[n.ID()] {
-		p1, ok := n.Port(name)
+	for name, locations := range t.linked[sym.ID()] {
+		p1, ok := sym.Node.Port(name)
 		if !ok {
 			continue
 		}
 		for _, location := range locations {
-			ref := t.nodes[location.ID]
-			if p2, ok := ref.Port(location.Port); ok {
+			ref := t.symbols[location.ID]
+			if p2, ok := ref.Node.Port(location.Port); ok {
 				p1.Link(p2)
 			}
 		}
 	}
 
 	for id, unlinks := range t.unlinks {
-		if ref := t.specs[id]; ref.GetNamespace() != spec.GetNamespace() {
+		ref := t.symbols[id]
+
+		if ref.Namespace() != sym.Namespace() {
 			continue
 		}
 
-		ref := t.nodes[id]
 		for name, locations := range unlinks {
-			p1, ok := ref.Port(name)
+			p1, ok := ref.Node.Port(name)
 			if !ok {
 				continue
 			}
 
 			for i, location := range locations {
-				if (location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
-					if p2, ok := n.Port(location.Port); ok {
+				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
+					if p2, ok := sym.Node.Port(location.Port); ok {
 						p1.Link(p2)
 
-						linked := t.linked[n.ID()]
+						linked := t.linked[sym.ID()]
 						if linked == nil {
 							linked = make(map[string][]scheme.PortLocation)
 						}
@@ -218,7 +213,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 							ID:   ref.ID(),
 							Port: name,
 						})
-						t.linked[n.ID()] = linked
+						t.linked[sym.ID()] = linked
 
 						unlinks[name] = append(locations[:i], locations[i+1:]...)
 					}
@@ -234,7 +229,7 @@ func (t *Table) Insert(n node.Node, spec scheme.Spec) error {
 			t.unlinks[id] = unlinks
 		} else {
 			delete(t.unlinks, id)
-			if err := t.load(n); err != nil {
+			if err := t.load(ref.Node); err != nil {
 				return err
 			}
 		}
@@ -248,16 +243,15 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if n, ok := t.nodes[id]; ok {
-		if err := n.Close(); err != nil {
+	if sym, ok := t.symbols[id]; ok {
+		if err := sym.Node.Close(); err != nil {
 			return false, err
 		}
 
-		spec := t.specs[id]
-		if namespace, ok := t.index[spec.GetNamespace()]; ok {
-			delete(namespace, spec.GetName())
+		if namespace, ok := t.index[sym.Namespace()]; ok {
+			delete(namespace, sym.Name())
 			if len(namespace) == 0 {
-				delete(t.index, spec.GetNamespace())
+				delete(t.index, sym.Namespace())
 			}
 		}
 
@@ -275,12 +269,11 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 			}
 		}
 
-		delete(t.nodes, id)
-		delete(t.specs, id)
+		delete(t.symbols, id)
 		delete(t.unlinks, id)
 		delete(t.linked, id)
 
-		t.unload(n)
+		t.unload(sym.Node)
 
 		return true, nil
 	}
@@ -288,13 +281,13 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	return false, nil
 }
 
-// Lookup returns a node.Node.
-func (t *Table) Lookup(id ulid.ULID) (node.Node, bool) {
+// Lookup returns a Symbol.
+func (t *Table) Lookup(id ulid.ULID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	n, ok := t.nodes[id]
-	return n, ok
+	sym, ok := t.symbols[id]
+	return sym, ok
 }
 
 // Close closes the SymbolTable.
@@ -302,13 +295,12 @@ func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for id, n := range t.nodes {
-		if err := n.Close(); err != nil {
+	for id, sym := range t.symbols {
+		if err := sym.Node.Close(); err != nil {
 			return err
 		}
-		delete(t.nodes, id)
+		delete(t.symbols, id)
 	}
-	t.specs = make(map[ulid.ULID]scheme.Spec)
 	t.unlinks = make(map[ulid.ULID]map[string][]scheme.PortLocation)
 	t.linked = make(map[ulid.ULID]map[string][]scheme.PortLocation)
 	t.index = make(map[string]map[string]ulid.ULID)
