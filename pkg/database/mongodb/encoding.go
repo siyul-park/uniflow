@@ -51,23 +51,19 @@ func NewFilterEncoder(encoder encoding.Encoder[primitive.Object, any]) encoding.
 
 		switch source.OP {
 		case database.AND, database.OR:
-			if v, ok := source.Value.([]*database.Filter); !ok {
-				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-			} else {
-				var values bson.A
-				for _, e := range v {
-					if value, err := self.Encode(e); err != nil {
-						return nil, err
-					} else {
-						values = append(values, value)
-					}
+			var values bson.A
+			for _, e := range source.Children {
+				if value, err := self.Encode(e); err != nil {
+					return nil, err
+				} else {
+					values = append(values, value)
 				}
+			}
 
-				if source.OP == database.AND {
-					return bson.D{{Key: "$and", Value: values}}, nil
-				} else if source.OP == database.OR {
-					return bson.D{{Key: "$or", Value: values}}, nil
-				}
+			if source.OP == database.AND {
+				return bson.D{{Key: "$and", Value: values}}, nil
+			} else if source.OP == database.OR {
+				return bson.D{{Key: "$or", Value: values}}, nil
 			}
 		case database.NULL, database.NNULL:
 			k := bsonKey(source.Key)
@@ -78,32 +74,28 @@ func NewFilterEncoder(encoder encoding.Encoder[primitive.Object, any]) encoding.
 				return bson.D{{Key: k, Value: bson.M{"$ne": nil}}}, nil
 			}
 		default:
-			if v, ok := source.Value.(primitive.Object); !ok {
-				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-			} else {
-				k := bsonKey(source.Key)
-				v, err := encoder.Encode(v)
-				if err != nil {
-					return nil, err
-				}
+			k := bsonKey(source.Key)
+			v, err := encoder.Encode(source.Value)
+			if err != nil {
+				return nil, err
+			}
 
-				if source.OP == database.EQ {
-					return bson.D{{Key: k, Value: bson.M{"$eq": v}}}, nil
-				} else if source.OP == database.NE {
-					return bson.D{{Key: k, Value: bson.M{"$ne": v}}}, nil
-				} else if source.OP == database.LT {
-					return bson.D{{Key: k, Value: bson.M{"$lt": v}}}, nil
-				} else if source.OP == database.LTE {
-					return bson.D{{Key: k, Value: bson.M{"$lte": v}}}, nil
-				} else if source.OP == database.GT {
-					return bson.D{{Key: k, Value: bson.M{"$gt": v}}}, nil
-				} else if source.OP == database.GTE {
-					return bson.D{{Key: k, Value: bson.M{"$gte": v}}}, nil
-				} else if source.OP == database.IN {
-					return bson.D{{Key: k, Value: bson.M{"$in": v}}}, nil
-				} else if source.OP == database.NIN {
-					return bson.D{{Key: k, Value: bson.M{"$nin": v}}}, nil
-				}
+			if source.OP == database.EQ {
+				return bson.D{{Key: k, Value: bson.M{"$eq": v}}}, nil
+			} else if source.OP == database.NE {
+				return bson.D{{Key: k, Value: bson.M{"$ne": v}}}, nil
+			} else if source.OP == database.LT {
+				return bson.D{{Key: k, Value: bson.M{"$lt": v}}}, nil
+			} else if source.OP == database.LTE {
+				return bson.D{{Key: k, Value: bson.M{"$lte": v}}}, nil
+			} else if source.OP == database.GT {
+				return bson.D{{Key: k, Value: bson.M{"$gt": v}}}, nil
+			} else if source.OP == database.GTE {
+				return bson.D{{Key: k, Value: bson.M{"$gte": v}}}, nil
+			} else if source.OP == database.IN {
+				return bson.D{{Key: k, Value: bson.M{"$in": v}}}, nil
+			} else if source.OP == database.NIN {
+				return bson.D{{Key: k, Value: bson.M{"$nin": v}}}, nil
 			}
 		}
 
@@ -138,13 +130,13 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding
 
 						if key == "$and" {
 							children = append(children, &database.Filter{
-								OP:    database.AND,
-								Value: values,
+								OP:       database.AND,
+								Children: values,
 							})
 						} else if key == "$or" {
 							children = append(children, &database.Filter{
-								OP:    database.OR,
-								Value: values,
+								OP:       database.OR,
+								Children: values,
 							})
 						}
 					}
@@ -224,8 +216,8 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding
 			*target = children[0]
 		} else {
 			*target = &database.Filter{
-				OP:    database.AND,
-				Value: children,
+				OP:       database.AND,
+				Children: children,
 			}
 		}
 

@@ -11,9 +11,10 @@ import (
 type (
 	// Filter is a filter for find matched primitive.
 	Filter struct {
-		OP    OP
-		Key   string
-		Value any
+		OP       OP
+		Key      string
+		Value    primitive.Object
+		Children []*Filter
 	}
 
 	filterHelper struct {
@@ -131,8 +132,8 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 
 	return &Filter{
-		OP:    AND,
-		Value: v,
+		OP:       AND,
+		Children: v,
 	}
 }
 
@@ -145,20 +146,18 @@ func (ft *Filter) Or(x ...*Filter) *Filter {
 	}
 
 	return &Filter{
-		OP:    OR,
-		Value: v,
+		OP:       OR,
+		Children: v,
 	}
 }
 
 func (ft *Filter) String() (string, error) {
 	if ft.OP == AND || ft.OP == OR {
 		var parsed []string
-		if value, ok := ft.Value.([]*Filter); ok {
-			for _, v := range value {
-				c, e := v.String()
-				if e != nil {
-					return "", e
-				}
+		for _, child := range ft.Children {
+			if c, err := child.String(); err != nil {
+				return "", err
+			} else {
 				parsed = append(parsed, "("+c+")")
 			}
 		}
@@ -168,8 +167,7 @@ func (ft *Filter) String() (string, error) {
 		return ft.Key + " " + string(ft.OP), nil
 	}
 
-	v, _ := ft.Value.(primitive.Object)
-	b, err := json.Marshal(primitive.Interface(v))
+	b, err := json.Marshal(primitive.Interface(ft.Value))
 	if err != nil {
 		return "", err
 	}

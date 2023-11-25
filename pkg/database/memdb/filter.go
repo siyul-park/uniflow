@@ -17,60 +17,48 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) == 0
+				return primitive.Compare(o, filter.Value) == 0
 			}
 		}
 	case database.NE:
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) != 0
+				return primitive.Compare(o, filter.Value) != 0
 			}
 		}
 	case database.LT:
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) < 0
+				return primitive.Compare(o, filter.Value) < 0
 			}
 		}
 	case database.LTE:
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) <= 0
+				return primitive.Compare(o, filter.Value) <= 0
 			}
 		}
 	case database.GT:
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) > 0
+				return primitive.Compare(o, filter.Value) > 0
 			}
 		}
 	case database.GTE:
 		return func(m *primitive.Map) bool {
 			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
 				return false
-			} else if v, ok := filter.Value.(primitive.Object); !ok {
-				return false
 			} else {
-				return primitive.Compare(o, v) >= 0
+				return primitive.Compare(o, filter.Value) >= 0
 			}
 		}
 	case database.IN:
@@ -124,42 +112,30 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 			}
 		}
 	case database.AND:
-		if children, ok := filter.Value.([]*database.Filter); !ok {
-			return func(m *primitive.Map) bool {
-				return false
-			}
-		} else {
-			parsed := make([]func(*primitive.Map) bool, len(children))
-			for i, child := range children {
-				parsed[i] = ParseFilter(child)
-			}
-			return func(m *primitive.Map) bool {
-				for _, p := range parsed {
-					if !p(m) {
-						return false
-					}
+		parsed := make([]func(*primitive.Map) bool, len(filter.Children))
+		for i, child := range filter.Children {
+			parsed[i] = ParseFilter(child)
+		}
+		return func(m *primitive.Map) bool {
+			for _, p := range parsed {
+				if !p(m) {
+					return false
 				}
-				return true
 			}
+			return true
 		}
 	case database.OR:
-		if children, ok := filter.Value.([]*database.Filter); !ok {
-			return func(m *primitive.Map) bool {
-				return false
-			}
-		} else {
-			parsed := make([]func(*primitive.Map) bool, len(children))
-			for i, child := range children {
-				parsed[i] = ParseFilter(child)
-			}
-			return func(m *primitive.Map) bool {
-				for _, p := range parsed {
-					if p(m) {
-						return true
-					}
+		parsed := make([]func(*primitive.Map) bool, len(filter.Children))
+		for i, child := range filter.Children {
+			parsed[i] = ParseFilter(child)
+		}
+		return func(m *primitive.Map) bool {
+			for _, p := range parsed {
+				if p(m) {
+					return true
 				}
-				return false
 			}
+			return false
 		}
 	}
 
@@ -175,7 +151,7 @@ func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 
 	switch filter.OP {
 	case database.EQ:
-		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), filter.Value.(primitive.Object))}, true
+		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), filter.Value)}, true
 	case database.NE:
 		return nil, false
 	case database.LT:
@@ -203,43 +179,35 @@ func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 	case database.NNULL:
 		return nil, false
 	case database.AND:
-		if children, ok := filter.Value.([]*database.Filter); !ok {
-			return nil, false
-		} else {
-			example := primitive.NewMap()
-			for _, child := range children {
-				e, _ := FilterToExample(child)
-				if len(e) == 0 {
-				} else if len(e) == 1 {
-					for _, k := range e[0].Keys() {
-						v, _ := e[0].Get(k)
+		example := primitive.NewMap()
+		for _, child := range filter.Children {
+			e, _ := FilterToExample(child)
+			if len(e) == 0 {
+			} else if len(e) == 1 {
+				for _, k := range e[0].Keys() {
+					v, _ := e[0].Get(k)
 
-						if _, ok := example.Get(k); ok {
-							return nil, true
-						} else {
-							example.Set(k, v)
-						}
+					if _, ok := example.Get(k); ok {
+						return nil, true
+					} else {
+						example.Set(k, v)
 					}
-				} else {
-					return nil, false
 				}
+			} else {
+				return nil, false
 			}
-			return []*primitive.Map{example}, true
 		}
+		return []*primitive.Map{example}, true
 	case database.OR:
-		if children, ok := filter.Value.([]*database.Filter); !ok {
-			return nil, false
-		} else {
-			var examples []*primitive.Map
-			for _, child := range children {
-				if e, ok := FilterToExample(child); ok {
-					examples = append(examples, e...)
-				} else {
-					return nil, false
-				}
+		var examples []*primitive.Map
+		for _, child := range filter.Children {
+			if e, ok := FilterToExample(child); ok {
+				examples = append(examples, e...)
+			} else {
+				return nil, false
 			}
-			return examples, true
 		}
+		return examples, true
 	}
 
 	return nil, false

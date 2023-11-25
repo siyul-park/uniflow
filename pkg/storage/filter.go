@@ -8,9 +8,10 @@ import (
 type (
 	// Filter is a filter for find matched primitive.
 	Filter struct {
-		OP    database.OP
-		Key   string
-		Value any
+		OP       database.OP
+		Key      string
+		Value    any
+		Children []*Filter
 	}
 
 	filterHelper[T any] struct {
@@ -119,8 +120,8 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 
 	return &Filter{
-		OP:    database.AND,
-		Value: v,
+		OP:       database.AND,
+		Children: v,
 	}
 }
 
@@ -133,8 +134,8 @@ func (ft *Filter) Or(x ...*Filter) *Filter {
 	}
 
 	return &Filter{
-		OP:    database.OR,
-		Value: v,
+		OP:       database.OR,
+		Children: v,
 	}
 }
 
@@ -143,17 +144,15 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		return nil, nil
 	}
 	if ft.OP == database.AND || ft.OP == database.OR {
-		var values []*database.Filter
-		if value, ok := ft.Value.([]*Filter); ok {
-			for _, v := range value {
-				if v, err := v.Encode(); err != nil {
-					return nil, err
-				} else {
-					values = append(values, v)
-				}
+		var children []*database.Filter
+		for _, child := range ft.Children {
+			if c, err := child.Encode(); err != nil {
+				return nil, err
+			} else {
+				children = append(children, c)
 			}
 		}
-		return &database.Filter{OP: database.AND, Value: values}, nil
+		return &database.Filter{OP: database.AND, Children: children}, nil
 	}
 	if ft.OP == database.NULL || ft.OP == database.NNULL {
 		return &database.Filter{OP: ft.OP, Key: ft.Key}, nil

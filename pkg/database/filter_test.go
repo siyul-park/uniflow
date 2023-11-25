@@ -152,8 +152,8 @@ func TestFilter_And(t *testing.T) {
 	q := q1.And(q2)
 
 	assert.Equal(t, &Filter{
-		OP:    AND,
-		Value: []*Filter{q1, q2},
+		OP:       AND,
+		Children: []*Filter{q1, q2},
 	}, q)
 }
 
@@ -169,8 +169,8 @@ func TestFilter_Or(t *testing.T) {
 	q := q1.Or(q2)
 
 	assert.Equal(t, &Filter{
-		OP:    OR,
-		Value: []*Filter{q1, q2},
+		OP:       OR,
+		Children: []*Filter{q1, q2},
 	}, q)
 }
 
