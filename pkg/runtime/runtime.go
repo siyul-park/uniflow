@@ -80,9 +80,9 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		filter = storage.Where[string](scheme.KeyNamespace).EQ(ns)
 	}
 	rc := loader.NewReconciler(loader.ReconcilerConfig{
-		Remote: st,
-		Loader: ld,
-		Filter: filter,
+		Storage: st,
+		Loader:  ld,
+		Filter:  filter,
 	})
 
 	return &Runtime{

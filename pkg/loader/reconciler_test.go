@@ -33,8 +33,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	r := NewReconciler(ReconcilerConfig{
-		Remote: st,
-		Loader: ld,
+		Storage: st,
+		Loader:  ld,
 	})
 	defer func() { _ = r.Close() }()
 
