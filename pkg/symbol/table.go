@@ -150,6 +150,7 @@ func (t *Table) insert(sym *Symbol) error {
 							}
 							linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
 								ID:   sym.ID(),
+								Name: location.Name,
 								Port: name,
 							})
 							t.linked[ref.ID()] = linked
@@ -196,6 +197,7 @@ func (t *Table) insert(sym *Symbol) error {
 						}
 						linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
 							ID:   ref.ID(),
+							Name: location.Name,
 							Port: name,
 						})
 						t.linked[sym.ID()] = linked
@@ -288,10 +290,21 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 			if unlinks == nil {
 				unlinks = make(map[string][]scheme.PortLocation)
 			}
-			unlinks[location.Port] = append(unlinks[location.Port], scheme.PortLocation{
-				ID:   id,
-				Port: name,
-			})
+
+			var unlink scheme.PortLocation
+			if location.Name == "" {
+				unlink = scheme.PortLocation{
+					ID:   id,
+					Port: name,
+				}
+			} else {
+				unlink = scheme.PortLocation{
+					Name: location.Name,
+					Port: name,
+				}
+			}
+
+			unlinks[location.Port] = append(unlinks[location.Port], unlink)
 			t.unlinks[location.ID] = unlinks
 		}
 	}
