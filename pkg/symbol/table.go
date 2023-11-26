@@ -168,19 +168,6 @@ func (t *Table) insert(sym *Symbol) error {
 		t.unlinks[sym.ID()] = unlinks
 	}
 
-	for name, locations := range t.linked[sym.ID()] {
-		p1, ok := sym.Port(name)
-		if !ok {
-			continue
-		}
-		for _, location := range locations {
-			ref := t.symbols[location.ID]
-			if p2, ok := ref.Port(location.Port); ok {
-				p1.Link(p2)
-			}
-		}
-	}
-
 	if err := t.load(sym); err != nil {
 		return err
 	}

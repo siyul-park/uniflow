@@ -3,6 +3,7 @@ package symbol
 import (
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -264,6 +265,26 @@ func TestTable_LookupByID(t *testing.T) {
 	_ = tb.Insert(sym)
 
 	r, ok := tb.LookupByID(n.ID())
+	assert.True(t, ok)
+	assert.Equal(t, sym, r)
+}
+
+func TestTable_LookupByName(t *testing.T) {
+	tb := NewTable()
+	defer tb.Close()
+
+	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	defer n.Close()
+	spec := &scheme.SpecMeta{
+		ID: n.ID(),
+		Namespace: scheme.NamespaceDefault,
+		Name: faker.Word(),
+	}
+	sym := &Symbol{Node: n, Spec: spec}
+
+	_ = tb.Insert(sym)
+
+	r, ok := tb.LookupByName(spec.GetNamespace(), spec.GetName())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }
