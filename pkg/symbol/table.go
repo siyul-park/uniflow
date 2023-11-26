@@ -11,19 +11,19 @@ import (
 type (
 	// TableOptions holds options for configuring a Table.
 	TableOptions struct {
-		LoadHooks   []LoadHook    // LoadHooks define functions to be executed on symbol loading.
-		UnloadHooks []UnloadHook  // UnloadHooks define functions to be executed on symbol unloading.
+		LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
+		UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
 	}
 
 	// Table manages the storage and operations for Symbols.
 	Table struct {
-		symbols     map[ulid.ULID]*Symbol   
-		unlinks     map[ulid.ULID]map[string][]scheme.PortLocation 
+		symbols     map[ulid.ULID]*Symbol
+		unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
 		linked      map[ulid.ULID]map[string][]scheme.PortLocation
 		index       map[string]map[string]ulid.ULID
-		loadHooks   []LoadHook           
-		unloadHooks []UnloadHook                
-		mu          sync.RWMutex                  
+		loadHooks   []LoadHook
+		unloadHooks []UnloadHook
+		mu          sync.RWMutex
 	}
 )
 
@@ -68,19 +68,18 @@ func (t *Table) Insert(sym *Symbol) error {
 				return err
 			}
 		}
-	}
 
-	t.symbols[sym.ID()] = sym
-
-	if prev != nil && prev.Name() != "" {
-		if namespace, ok := t.index[prev.Namespace()]; ok {
-			delete(namespace, prev.Name())
-			if len(namespace) == 0 {
-				delete(t.index, prev.Namespace())
+		if prev.Name() != "" {
+			if namespace, ok := t.index[prev.Namespace()]; ok {
+				delete(namespace, prev.Name())
+				if len(namespace) == 0 {
+					delete(t.index, prev.Namespace())
+				}
 			}
 		}
 	}
 
+	t.symbols[sym.ID()] = sym
 	t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
 
 	var deletions map[string][]scheme.PortLocation
