@@ -54,72 +54,16 @@ func (t *Table) Insert(sym *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	prev := t.symbols[sym.ID()]
-
-	if prev != nil {
-		if err := t.unload(prev); err != nil {
-			return err
-		}
-
-		if sym.Node != prev.Node {
-			if err := prev.Close(); err != nil {
-				return err
-			}
-		}
-
-		if prev.Name() != "" {
-			if namespace, ok := t.index[prev.Namespace()]; ok {
-				delete(namespace, prev.Name())
-				if len(namespace) == 0 {
-					delete(t.index, prev.Namespace())
-				}
-			}
-		}
+	if _, err := t.free(sym.ID()); err != nil {
+		return err
 	}
 
 	t.symbols[sym.ID()] = sym
 	t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
 
-	var deletions map[string][]scheme.PortLocation
-	if prev != nil {
-		deletions = prev.Links()
-	}
-	additions := sym.Links()
 	unlinks := map[string][]scheme.PortLocation{}
 
-	for name, locations := range deletions {
-		for _, location := range locations {
-			id := location.ID
-			if id == (ulid.ULID{}) {
-				if location.Name != "" {
-					if namespace, ok := t.index[prev.Namespace()]; ok {
-						id = namespace[location.Name]
-					}
-				}
-			}
-
-			if id == (ulid.ULID{}) {
-				continue
-			}
-
-			linked := t.linked[id]
-			var locations []scheme.PortLocation
-			for _, location := range linked[location.Port] {
-				if location.ID != sym.ID() && location.Port != name {
-					locations = append(locations, location)
-				}
-			}
-			if len(locations) > 0 {
-				linked[location.Port] = locations
-				t.linked[id] = linked
-			} else if len(linked) > 0 {
-				delete(linked, location.Port)
-				t.linked[id] = linked
-			}
-		}
-	}
-
-	for name, locations := range additions {
+	for name, locations := range sym.Links() {
 		p1, ok := sym.Port(name)
 		if !ok {
 			unlinks[name] = locations
@@ -168,12 +112,6 @@ func (t *Table) Insert(sym *Symbol) error {
 
 	if len(unlinks) > 0 {
 		t.unlinks[sym.ID()] = unlinks
-	} else {
-		delete(t.unlinks, sym.ID())
-	}
-
-	if err := t.load(sym); err != nil {
-		return err
 	}
 
 	for name, locations := range t.linked[sym.ID()] {
@@ -187,6 +125,10 @@ func (t *Table) Insert(sym *Symbol) error {
 				p1.Link(p2)
 			}
 		}
+	}
+
+	if err := t.load(sym); err != nil {
+		return err
 	}
 
 	for id, unlinks := range t.unlinks {
@@ -246,44 +188,11 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if sym, ok := t.symbols[id]; ok {
-		if err := t.unload(sym); err != nil {
-			return false, err
-		}
-		if err := sym.Close(); err != nil {
-			return false, err
-		}
-
-		if namespace, ok := t.index[sym.Namespace()]; ok {
-			delete(namespace, sym.Name())
-			if len(namespace) == 0 {
-				delete(t.index, sym.Namespace())
-			}
-		}
-
-		for name, locations := range t.linked[id] {
-			for _, location := range locations {
-				unlinks := t.unlinks[location.ID]
-				if unlinks == nil {
-					unlinks = make(map[string][]scheme.PortLocation)
-				}
-				unlinks[location.Port] = append(unlinks[location.Port], scheme.PortLocation{
-					ID:   id,
-					Port: name,
-				})
-				t.unlinks[location.ID] = unlinks
-			}
-		}
-
-		delete(t.symbols, id)
-		delete(t.unlinks, id)
-		delete(t.linked, id)
-
-		t.unload(sym)
-
+	if sym, err := t.free(id); err != nil {
+		return false, err
+	} else if sym != nil {
 		return true, nil
 	}
-
 	return false, nil
 }
 
@@ -315,20 +224,88 @@ func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for id, sym := range t.symbols {
-		if err := t.unload(sym); err != nil {
+	for id := range t.symbols {
+		if _, err := t.free(id); err != nil {
 			return err
 		}
-		if err := sym.Close(); err != nil {
-			return err
-		}
-		delete(t.symbols, id)
 	}
-	t.unlinks = make(map[ulid.ULID]map[string][]scheme.PortLocation)
-	t.linked = make(map[ulid.ULID]map[string][]scheme.PortLocation)
-	t.index = make(map[string]map[string]ulid.ULID)
 
 	return nil
+}
+
+func (t *Table) free(id ulid.ULID) (*Symbol, error) {
+	sym, ok := t.symbols[id]
+	if !ok {
+		return nil, nil
+	}
+
+	if err := t.unload(sym); err != nil {
+		return nil, err
+	}
+	if err := sym.Close(); err != nil {
+		return nil, err
+	}
+
+	if sym.Name() != "" {
+		if namespace, ok := t.index[sym.Namespace()]; ok {
+			delete(namespace, sym.Name())
+			if len(namespace) == 0 {
+				delete(t.index, sym.Namespace())
+			}
+		}
+	}
+
+	for name, locations := range sym.Links() {
+		for _, location := range locations {
+			id := location.ID
+			if id == (ulid.ULID{}) {
+				if location.Name != "" {
+					if namespace, ok := t.index[sym.Namespace()]; ok {
+						id = namespace[location.Name]
+					}
+				}
+			}
+
+			if id == (ulid.ULID{}) {
+				continue
+			}
+
+			linked := t.linked[id]
+			var locations []scheme.PortLocation
+			for _, location := range linked[location.Port] {
+				if location.ID != sym.ID() && location.Port != name {
+					locations = append(locations, location)
+				}
+			}
+			if len(locations) > 0 {
+				linked[location.Port] = locations
+				t.linked[id] = linked
+			} else if len(linked) > 0 {
+				delete(linked, location.Port)
+				t.linked[id] = linked
+			}
+		}
+	}
+
+	for name, locations := range t.linked[id] {
+		for _, location := range locations {
+			unlinks := t.unlinks[location.ID]
+			if unlinks == nil {
+				unlinks = make(map[string][]scheme.PortLocation)
+			}
+			unlinks[location.Port] = append(unlinks[location.Port], scheme.PortLocation{
+				ID:   id,
+				Port: name,
+			})
+			t.unlinks[location.ID] = unlinks
+		}
+	}
+
+	delete(t.symbols, id)
+	delete(t.unlinks, id)
+	delete(t.linked, id)
+
+	return sym, nil
 }
 
 func (t *Table) load(sym *Symbol) error {
