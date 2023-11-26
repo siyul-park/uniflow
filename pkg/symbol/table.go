@@ -57,10 +57,8 @@ func (t *Table) Insert(sym *Symbol) error {
 	prev := t.symbols[sym.ID()]
 
 	if prev != nil {
-		if len(t.unlinks[sym.ID()]) == 0 {
-			if err := t.unload(prev); err != nil {
-				return err
-			}
+		if err := t.unload(prev); err != nil {
+			return err
 		}
 
 		if sym.Node != prev.Node {
@@ -172,9 +170,10 @@ func (t *Table) Insert(sym *Symbol) error {
 		t.unlinks[sym.ID()] = unlinks
 	} else {
 		delete(t.unlinks, sym.ID())
-		if err := t.load(sym); err != nil {
-			return err
-		}
+	}
+
+	if err := t.load(sym); err != nil {
+		return err
 	}
 
 	for name, locations := range t.linked[sym.ID()] {
@@ -232,9 +231,10 @@ func (t *Table) Insert(sym *Symbol) error {
 			t.unlinks[id] = unlinks
 		} else {
 			delete(t.unlinks, id)
-			if err := t.load(ref); err != nil {
-				return err
-			}
+		}
+
+		if err := t.load(ref); err != nil {
+			return err
 		}
 	}
 
@@ -247,6 +247,9 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	defer t.mu.Unlock()
 
 	if sym, ok := t.symbols[id]; ok {
+		if err := t.unload(sym); err != nil {
+			return false, err
+		}
 		if err := sym.Close(); err != nil {
 			return false, err
 		}
@@ -313,6 +316,9 @@ func (t *Table) Close() error {
 	defer t.mu.Unlock()
 
 	for id, sym := range t.symbols {
+		if err := t.unload(sym); err != nil {
+			return err
+		}
 		if err := sym.Close(); err != nil {
 			return err
 		}
@@ -326,6 +332,9 @@ func (t *Table) Close() error {
 }
 
 func (t *Table) load(sym *Symbol) error {
+	if len(t.unlinks[sym.ID()]) > 0 {
+		return nil
+	}
 	for _, hook := range t.loadHooks {
 		if err := hook.Load(sym.Node); err != nil {
 			return err
@@ -335,6 +344,9 @@ func (t *Table) load(sym *Symbol) error {
 }
 
 func (t *Table) unload(sym *Symbol) error {
+	if len(t.unlinks[sym.ID()]) > 0 {
+		return nil
+	}
 	for _, hook := range t.unloadHooks {
 		if err := hook.Unload(sym.Node); err != nil {
 			return err
