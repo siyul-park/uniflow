@@ -114,7 +114,10 @@ func (t *Table) Close() error {
 
 func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
-	t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
+
+	if sym.Name() != "" {
+		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
+	}
 
 	unlinks := map[string][]scheme.PortLocation{}
 
