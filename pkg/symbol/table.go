@@ -296,6 +296,10 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 
 	for name, locations := range t.linked[id] {
 		for _, location := range locations {
+			if err := t.unload(t.symbols[location.ID]); err != nil {
+				return nil, err
+			}
+
 			unlinks := t.unlinks[location.ID]
 			if unlinks == nil {
 				unlinks = make(map[string][]scheme.PortLocation)
