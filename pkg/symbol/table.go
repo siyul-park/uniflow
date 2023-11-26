@@ -118,7 +118,7 @@ func (t *Table) Insert(sym *Symbol) error {
 	}
 
 	for name, locations := range additions {
-		p1, ok := prev.Port(name)
+		p1, ok := sym.Port(name)
 		if !ok {
 			unlinks[name] = locations
 			continue
@@ -144,7 +144,7 @@ func (t *Table) Insert(sym *Symbol) error {
 					continue
 				}
 
-				if p2, ok := ref.Node.Port(location.Port); ok {
+				if p2, ok := ref.Port(location.Port); ok {
 					p1.Link(p2)
 
 					linked := t.linked[ref.ID()]
@@ -174,13 +174,13 @@ func (t *Table) Insert(sym *Symbol) error {
 	}
 
 	for name, locations := range t.linked[sym.ID()] {
-		p1, ok := prev.Port(name)
+		p1, ok := sym.Port(name)
 		if !ok {
 			continue
 		}
 		for _, location := range locations {
 			ref := t.symbols[location.ID]
-			if p2, ok := ref.Node.Port(location.Port); ok {
+			if p2, ok := ref.Port(location.Port); ok {
 				p1.Link(p2)
 			}
 		}
@@ -194,14 +194,14 @@ func (t *Table) Insert(sym *Symbol) error {
 		}
 
 		for name, locations := range unlinks {
-			p1, ok := ref.Node.Port(name)
+			p1, ok := ref.Port(name)
 			if !ok {
 				continue
 			}
 
 			for i, location := range locations {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					if p2, ok := prev.Port(location.Port); ok {
+					if p2, ok := sym.Port(location.Port); ok {
 						p1.Link(p2)
 
 						linked := t.linked[sym.ID()]
@@ -280,13 +280,27 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	return false, nil
 }
 
-// Lookup returns a Symbol.
-func (t *Table) Lookup(id ulid.ULID) (*Symbol, bool) {
+// LookupByID returns a Symbol.
+func (t *Table) LookupByID(id ulid.ULID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	sym, ok := t.symbols[id]
 	return sym, ok
+}
+
+// LookupByID returns a Symbol.
+func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	if namespace, ok := t.index[namespace]; ok {
+		if id, ok := namespace[name]; ok {
+			sym, ok := t.symbols[id]
+			return sym, ok
+		}
+	}
+	return nil, false
 }
 
 // Close closes the SymbolTable.

@@ -250,7 +250,7 @@ func TestTable_Free(t *testing.T) {
 	assert.Equal(t, 0, p3.Links())
 }
 
-func TestTable_Lookup(t *testing.T) {
+func TestTable_LookupByID(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
@@ -263,7 +263,7 @@ func TestTable_Lookup(t *testing.T) {
 
 	_ = tb.Insert(sym)
 
-	r, ok := tb.Lookup(n.ID())
+	r, ok := tb.LookupByID(n.ID())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
@@ -71,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			if _, err := r.loader.LoadOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(event.NodeID)); err != nil {
+			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
 				return err
 			}
 		}
