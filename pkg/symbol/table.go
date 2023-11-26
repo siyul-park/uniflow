@@ -137,32 +137,28 @@ func (t *Table) insert(sym *Symbol) error {
 				}
 			}
 
-			if id == (ulid.ULID{}) {
-				unlinks[name] = append(unlinks[name], location)
-				continue
-			}
+			if id != (ulid.ULID{}) {
+				if ref, ok := t.symbols[id]; ok {
+					if ref.Namespace() == sym.Namespace() {
+						if p2, ok := ref.Port(location.Port); ok {
+							p1.Link(p2)
 
-			if ref, ok := t.symbols[id]; ok {
-				if ref.Namespace() != sym.Namespace() {
-					continue
-				}
+							linked := t.linked[ref.ID()]
+							if linked == nil {
+								linked = make(map[string][]scheme.PortLocation)
+							}
+							linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
+								ID:   sym.ID(),
+								Port: name,
+							})
+							t.linked[ref.ID()] = linked
 
-				if p2, ok := ref.Port(location.Port); ok {
-					p1.Link(p2)
-
-					linked := t.linked[ref.ID()]
-					if linked == nil {
-						linked = make(map[string][]scheme.PortLocation)
+							continue
+						}
 					}
-					linked[location.Port] = append(linked[location.Port], scheme.PortLocation{
-						ID:   sym.ID(),
-						Port: name,
-					})
-					t.linked[ref.ID()] = linked
-
-					continue
 				}
 			}
+
 			unlinks[name] = append(unlinks[name], location)
 		}
 	}
