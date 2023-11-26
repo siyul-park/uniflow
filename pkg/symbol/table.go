@@ -27,7 +27,7 @@ type (
 	}
 )
 
-// NewTable creates a new SymbolTable with the specified options.
+// NewTable returns a new SymbolTable with the specified options.
 func NewTable(opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
@@ -293,7 +293,7 @@ func (t *Table) LookupByID(id ulid.ULID) (*Symbol, bool) {
 	return sym, ok
 }
 
-// LookupByID retrieves a Symbol by its namespace and name.
+// LookupByName retrieves a Symbol by its namespace and name.
 func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
