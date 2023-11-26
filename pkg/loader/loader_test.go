@@ -61,15 +61,24 @@ func TestLoader_LoadOne(t *testing.T) {
 	st.InsertOne(context.Background(), spec1)
 	st.InsertOne(context.Background(), spec2)
 
-	r2, err := ld.LoadOne(context.Background(), spec2.GetID())
+	r, err := ld.LoadOne(context.Background(), spec2.GetID())
 	assert.NoError(t, err)
-	assert.NotNil(t, r2)
+	assert.NotNil(t, r)
 
 	_, ok := tb.LookupByID(spec1.GetID())
 	assert.True(t, ok)
 
 	_, ok = tb.LookupByID(spec2.GetID())
 	assert.True(t, ok)
+
+	st.DeleteOne(context.Background(), storage.Where[ulid.ULID](scheme.KeyID).EQ(spec2.GetID()))
+
+	r, err = ld.LoadOne(context.Background(), spec2.GetID())
+	assert.NoError(t, err)
+	assert.Nil(t, r)
+
+	_, ok = tb.LookupByID(spec2.GetID())
+	assert.False(t, ok)
 }
 
 func TestLoader_LoadAll(t *testing.T) {

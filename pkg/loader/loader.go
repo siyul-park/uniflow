@@ -145,7 +145,12 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 
 // LoadAll loads all scheme.Spec from the storage.Storage
 func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
-	specs, err := ld.storage.FindMany(ctx, nil)
+	var filter *storage.Filter
+	if ld.namespace != "" {
+		filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(ld.namespace))
+	}
+
+	specs, err := ld.storage.FindMany(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
