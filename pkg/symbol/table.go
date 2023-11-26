@@ -57,7 +57,64 @@ func (t *Table) Insert(sym *Symbol) error {
 	if _, err := t.free(sym.ID()); err != nil {
 		return err
 	}
+	if err := t.insert(sym); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+// Free removes a Symbol from the table.
+func (t *Table) Free(id ulid.ULID) (bool, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if sym, err := t.free(id); err != nil {
+		return false, err
+	} else if sym != nil {
+		return true, nil
+	}
+	return false, nil
+}
+
+// LookupByID retrieves a Symbol by its ID.
+func (t *Table) LookupByID(id ulid.ULID) (*Symbol, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	sym, ok := t.symbols[id]
+	return sym, ok
+}
+
+// LookupByName retrieves a Symbol by its namespace and name.
+func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	if namespace, ok := t.index[namespace]; ok {
+		if id, ok := namespace[name]; ok {
+			sym, ok := t.symbols[id]
+			return sym, ok
+		}
+	}
+	return nil, false
+}
+
+// Close closes the SymbolTable, closing all associated symbols.
+func (t *Table) Close() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	for id := range t.symbols {
+		if _, err := t.free(id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
 	t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
 
@@ -176,56 +233,6 @@ func (t *Table) Insert(sym *Symbol) error {
 		}
 
 		if err := t.load(ref); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Free removes a Symbol from the table.
-func (t *Table) Free(id ulid.ULID) (bool, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if sym, err := t.free(id); err != nil {
-		return false, err
-	} else if sym != nil {
-		return true, nil
-	}
-	return false, nil
-}
-
-// LookupByID retrieves a Symbol by its ID.
-func (t *Table) LookupByID(id ulid.ULID) (*Symbol, bool) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	sym, ok := t.symbols[id]
-	return sym, ok
-}
-
-// LookupByName retrieves a Symbol by its namespace and name.
-func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	if namespace, ok := t.index[namespace]; ok {
-		if id, ok := namespace[name]; ok {
-			sym, ok := t.symbols[id]
-			return sym, ok
-		}
-	}
-	return nil, false
-}
-
-// Close closes the SymbolTable, closing all associated symbols.
-func (t *Table) Close() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	for id := range t.symbols {
-		if _, err := t.free(id); err != nil {
 			return err
 		}
 	}
