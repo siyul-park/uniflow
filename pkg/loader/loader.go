@@ -15,15 +15,15 @@ import (
 )
 
 type (
-	// Config is a config for for the Loader.
+	// Config represents the configuration for the Loader.
 	Config struct {
-		Namespace string
-		Table     *symbol.Table
-		Scheme    *scheme.Scheme
-		Storage   *storage.Storage
+		Namespace string           // Namespace is the namespace used by the Loader.
+		Table     *symbol.Table    // Table is the symbol table for managing symbols.
+		Scheme    *scheme.Scheme   // Scheme is the scheme used by the Loader.
+		Storage   *storage.Storage // Storage is the storage used by the Loader.
 	}
 
-	// Loader loads scheme.Spec into symbol.Table.
+	// Loader loads scheme.Spec into the symbol.Table.
 	Loader struct {
 		namespace string
 		scheme    *scheme.Scheme
