@@ -32,7 +32,6 @@ func NewTable(opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
-	// Collect load and unload hooks from the provided options.
 	for _, opt := range opts {
 		loadHooks = append(loadHooks, opt.LoadHooks...)
 		unloadHooks = append(unloadHooks, opt.UnloadHooks...)
@@ -50,7 +49,6 @@ func NewTable(opts ...TableOptions) *Table {
 
 // Insert adds a Symbol to the table.
 func (t *Table) Insert(sym *Symbol) error {
-	// Lock the table to ensure atomicity.
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
