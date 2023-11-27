@@ -130,11 +130,9 @@ func (t *Table) insert(sym *Symbol) error {
 
 		for _, location := range locations {
 			id := location.ID
-			if id == (ulid.ULID{}) {
-				if location.Name != "" {
-					if namespace, ok := t.index[sym.Namespace()]; ok {
-						id = namespace[location.Name]
-					}
+			if location.Name != "" {
+				if namespace, ok := t.index[sym.Namespace()]; ok {
+					id = namespace[location.Name]
 				}
 			}
 
@@ -251,11 +249,9 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 	for name, locations := range sym.Links() {
 		for _, location := range locations {
 			id := location.ID
-			if id == (ulid.ULID{}) {
-				if location.Name != "" {
-					if namespace, ok := t.index[sym.Namespace()]; ok {
-						id = namespace[location.Name]
-					}
+			if location.Name != "" {
+				if namespace, ok := t.index[sym.Namespace()]; ok {
+					id = namespace[location.Name]
 				}
 			}
 
