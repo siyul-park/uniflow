@@ -6,7 +6,8 @@ import (
 	"sync"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
+	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -14,509 +15,163 @@ import (
 )
 
 type (
-	// Config is a config for for the Loader.
+	// Config represents the configuration for the Loader.
 	Config struct {
-		Table   *symbol.Table
-		Scheme  *scheme.Scheme
-		Storage *storage.Storage
+		Namespace string           // Namespace is the namespace used by the Loader.
+		Table     *symbol.Table    // Table is the symbol table for managing symbols.
+		Scheme    *scheme.Scheme   // Scheme is the scheme used by the Loader.
+		Storage   *storage.Storage // Storage is the storage used by the Loader.
 	}
 
-	// Loader loads scheme.Spec into symbol.Table.
+	// Loader loads scheme.Spec into the symbol.Table.
 	Loader struct {
-		scheme     *scheme.Scheme
-		table      *symbol.Table
-		remote     *storage.Storage
-		local      *storage.Storage
-		referenced map[ulid.ULID]links
-		undefined  map[ulid.ULID]links
-		mu         sync.RWMutex
+		namespace string
+		scheme    *scheme.Scheme
+		table     *symbol.Table
+		storage   *storage.Storage
+		mu        sync.RWMutex
 	}
-
-	links map[string][]scheme.PortLocation
 )
 
 // New returns a new Loader.
-func New(ctx context.Context, config Config) (*Loader, error) {
+func New(config Config) *Loader {
+	namespace := config.Namespace
 	table := config.Table
 	scheme := config.Scheme
-	remote := config.Storage
-
-	local, err := storage.New(ctx, storage.Config{
-		Scheme:   scheme,
-		Database: memdb.New(""),
-	})
-	if err != nil {
-		return nil, err
-	}
+	storage := config.Storage
 
 	return &Loader{
-		scheme:     scheme,
-		table:      table,
-		remote:     remote,
-		local:      local,
-		referenced: make(map[ulid.ULID]links),
-		undefined:  make(map[ulid.ULID]links),
-	}, nil
+		namespace: namespace,
+		scheme:    scheme,
+		table:     table,
+		storage:   storage,
+	}
 }
 
 // LoadOne loads a single scheme.Spec from the storage.Storage
-func (ld *Loader) LoadOne(ctx context.Context, filter *storage.Filter) (node.Node, error) {
+func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
 
-	return ld.loadOne(ctx, filter)
-}
+	namespace := ld.namespace
 
-// LoadMany loads multiple scheme.Spec from the storage.Storage
-func (ld *Loader) LoadMany(ctx context.Context, filter *storage.Filter) ([]node.Node, error) {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
+	queue := []any{id}
+	for len(queue) > 0 {
+		prev := queue
+		queue = nil
 
-	return ld.loadMany(ctx, filter)
-}
+		exists := map[any]bool{}
 
-// UnloadOne unloads a single scheme.Spec from the storage.Storage
-func (ld *Loader) UnloadOne(ctx context.Context, filter *storage.Filter) (bool, error) {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
-
-	return ld.unloadOne(ctx, filter)
-}
-
-// UnloadMany unloads multiple scheme.Spec from the storage.Storage
-func (ld *Loader) UnloadMany(ctx context.Context, filter *storage.Filter) (int, error) {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
-
-	return ld.unloadMany(ctx, filter)
-}
-
-func (ld *Loader) loadOne(ctx context.Context, filter *storage.Filter) (node.Node, error) {
-	remote, err := ld.remote.FindOne(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	local, err := ld.local.FindOne(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	if remote != nil {
-		if local != nil {
-			if reflect.DeepEqual(remote, local) {
-				if n, ok := ld.table.Lookup(remote.GetID()); ok {
-					return n, nil
-				}
+		var filter *storage.Filter
+		for _, key := range prev {
+			if k, ok := key.(ulid.ULID); ok {
+				exists[k] = false
+				filter = filter.Or(storage.Where[ulid.ULID](scheme.KeyID).EQ(k))
+			} else if k, ok := key.(string); ok {
+				exists[k] = false
+				filter = filter.Or(storage.Where[string](scheme.KeyName).EQ(k))
 			}
 		}
-	} else {
-		if local != nil {
-			_, err := ld.unloadOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(local.GetID()))
-			return nil, err
+		if namespace != "" {
+			filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(namespace))
 		}
-		return nil, nil
-	}
 
-	if n, err := ld.scheme.Decode(remote); err != nil {
-		return nil, err
-	} else {
-		n, err := ld.table.Insert(n)
+		specs, err := ld.storage.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(prev))})
 		if err != nil {
 			return nil, err
 		}
 
-		if local == nil {
-			if _, err := ld.local.InsertOne(ctx, remote); err != nil {
-				return nil, err
+		for _, spec := range specs {
+			exists[spec.GetID()] = true
+			if spec.GetName() != "" {
+				exists[spec.GetName()] = true
 			}
-		} else {
-			if _, err := ld.local.UpdateOne(ctx, remote); err != nil {
-				return nil, err
+
+			if namespace == "" {
+				namespace = spec.GetNamespace()
 			}
-		}
 
-		if err := ld.resolveLinks(ctx, local, remote); err != nil {
-			return nil, err
-		}
-
-		return n, nil
-	}
-}
-
-func (ld *Loader) loadMany(ctx context.Context, filter *storage.Filter) ([]node.Node, error) {
-	remotes, err := ld.remote.FindMany(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	locals, err := ld.local.FindMany(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	idToLocal := map[ulid.ULID]scheme.Spec{}
-	idToRemote := map[ulid.ULID]scheme.Spec{}
-	for _, spec := range locals {
-		idToLocal[spec.GetID()] = spec
-	}
-	for _, spec := range remotes {
-		idToRemote[spec.GetID()] = spec
-	}
-
-	var removeIds []ulid.ULID
-	for id := range idToLocal {
-		if _, ok := idToRemote[id]; !ok {
-			removeIds = append(removeIds, id)
-		}
-	}
-	if len(removeIds) > 0 {
-		if _, err := ld.unloadMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(removeIds...)); err != nil {
-			return nil, err
-		}
-	}
-
-	var nodes []node.Node
-	for id, remote := range idToRemote {
-		local := idToLocal[id]
-		if local != nil {
-			if reflect.DeepEqual(remote, local) {
-				if n, ok := ld.table.Lookup(id); ok {
-					nodes = append(nodes, n)
+			if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
+				if reflect.DeepEqual(sym.Spec, spec) {
 					continue
 				}
 			}
-		}
 
-		if n, err := ld.scheme.Decode(remote); err != nil {
-			return nil, err
-		} else {
-			if sym, err := ld.table.Insert(n); err != nil {
+			if n, err := ld.scheme.Decode(spec); err != nil {
 				return nil, err
-			} else {
-				nodes = append(nodes, sym)
+			} else if err := ld.table.Insert(&symbol.Symbol{Node: n, Spec: spec}); err != nil {
+				return nil, err
 			}
-			if local == nil {
-				if _, err := ld.local.InsertOne(ctx, remote); err != nil {
-					return nil, err
-				}
-			} else {
-				if _, err := ld.local.UpdateOne(ctx, remote); err != nil {
-					return nil, err
+
+			for _, locations := range spec.GetLinks() {
+				for _, location := range locations {
+					if location.ID != (ulid.ULID{}) {
+						queue = append(queue, location.ID)
+					} else if location.Name != "" {
+						queue = append(queue, location.Name)
+					}
 				}
 			}
 		}
-	}
 
-	for id, remote := range idToRemote {
-		local := idToLocal[id]
-		if err := ld.resolveLinks(ctx, local, remote); err != nil {
-			return nil, err
-		}
-	}
+		for key, exist := range exists {
+			if exist {
+				continue
+			}
 
-	return nodes, nil
-}
-
-func (ld *Loader) unloadOne(ctx context.Context, filter *storage.Filter) (bool, error) {
-	local, err := ld.local.FindOne(ctx, filter)
-	if err != nil {
-		return false, err
-	}
-	if local == nil {
-		return false, nil
-	}
-
-	if err := ld.resolveLinks(ctx, local, nil); err != nil {
-		return false, err
-	}
-	if _, err := ld.table.Free(local.GetID()); err != nil {
-		return false, err
-	}
-	return ld.local.DeleteOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(local.GetID()))
-}
-
-func (ld *Loader) unloadMany(ctx context.Context, filter *storage.Filter) (int, error) {
-	locals, err := ld.local.FindMany(ctx, filter)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, local := range locals {
-		if err := ld.resolveLinks(ctx, local, nil); err != nil {
-			return 0, err
-		}
-		if _, err := ld.table.Free(local.GetID()); err != nil {
-			return 0, err
-		}
-	}
-
-	var ids []ulid.ULID
-	for _, local := range locals {
-		ids = append(ids, local.GetID())
-	}
-	return ld.local.DeleteMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...))
-}
-
-func (ld *Loader) resolveLinks(ctx context.Context, local scheme.Spec, remote scheme.Spec) error {
-	var n node.Node
-	var ok bool
-
-	var spec scheme.Spec
-	var localLinks links
-	var remoteLinks links
-
-	if local != nil {
-		spec = local
-		localLinks = local.GetLinks()
-		n, ok = ld.table.Lookup(local.GetID())
-	}
-	if remote != nil {
-		spec = remote
-		remoteLinks = remote.GetLinks()
-		if !ok {
-			n, ok = ld.table.Lookup(remote.GetID())
-		}
-	}
-	if !ok {
-		return nil
-	}
-
-	deletions := localLinks
-	additions := remoteLinks
-
-	undefined := links{}
-
-	for name, locations := range deletions {
-		for _, location := range locations {
-			id := location.ID
-
-			if id == (ulid.ULID{}) {
-				if location.Name != "" {
-					filter := storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())
-					filter = filter.And(storage.Where[string](scheme.KeyName).EQ(location.Name))
-					if spec, err := ld.local.FindOne(ctx, filter); err != nil {
-						return err
-					} else if spec != nil {
-						id = spec.GetID()
+			id, ok := key.(ulid.ULID)
+			if !ok {
+				if name, ok := key.(string); ok {
+					if sym, ok := ld.table.LookupByName(namespace, name); ok {
+						id = sym.ID()
 					}
 				}
 			}
 
 			if id != (ulid.ULID{}) {
-				if ref, ok := ld.table.Lookup(id); ok {
-					referenced := ld.referenced[ref.ID()]
-					var locations []scheme.PortLocation
-					for _, location := range referenced[location.Port] {
-						if location.ID != n.ID() || location.Port != name {
-							locations = append(locations, location)
-						}
-					}
-					if len(locations) > 0 {
-						referenced[location.Port] = locations
-						ld.referenced[ref.ID()] = referenced
-					} else if referenced != nil {
-						delete(referenced, location.Port)
-						ld.referenced[ref.ID()] = referenced
-					}
+				if _, err := ld.table.Free(id); err != nil {
+					return nil, err
 				}
 			}
 		}
 	}
 
-	for name, locations := range additions {
-		p1, ok := n.Port(name)
-		if !ok {
-			undefined[name] = locations
-			continue
-		}
-
-		for _, location := range locations {
-			filter := storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())
-			if location.ID != (ulid.ULID{}) {
-				filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(location.ID))
-			} else if location.Name != "" {
-				filter = filter.And(storage.Where[string](scheme.KeyName).EQ(location.Name))
-			} else {
-				continue
-			}
-
-			// TODO: use load many
-			if ref, err := ld.loadOne(ctx, filter); err != nil {
-				return err
-			} else if ref != nil {
-				if p2, ok := ref.Port(location.Port); ok {
-					p1.Link(p2)
-
-					referenced := ld.referenced[ref.ID()]
-					if referenced == nil {
-						referenced = links{}
-					}
-					referenced[location.Port] = append(referenced[location.Port], scheme.PortLocation{
-						ID:   n.ID(),
-						Port: name,
-					})
-					ld.referenced[ref.ID()] = referenced
-				} else {
-					undefined[name] = append(undefined[name], location)
-				}
-			} else {
-				undefined[name] = append(undefined[name], location)
-			}
-		}
-	}
-
-	undefined = diffLinks(unionLinks(ld.undefined[n.ID()], undefined), deletions)
-
-	if len(undefined) > 0 {
-		ld.undefined[n.ID()] = undefined
+	if sym, ok := ld.table.LookupByID(id); !ok {
+		return nil, nil
 	} else {
-		delete(ld.undefined, n.ID())
+		return sym.Node, nil
 	}
-
-	if remote == nil {
-		ld.removeReference(ctx, n.ID())
-	} else {
-		for name, locations := range ld.referenced[spec.GetID()] {
-			p1, ok := n.Port(name)
-			if !ok {
-				continue
-			}
-			for _, location := range locations {
-				if ref, ok := ld.table.Lookup(location.ID); ok {
-					if p2, ok := ref.Port(location.Port); ok {
-						p1.Link(p2)
-					}
-				}
-			}
-		}
-
-		for id, additions := range ld.undefined {
-			if ref, err := ld.local.FindOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(id)); err != nil {
-				return err
-			} else if ref == nil {
-				ld.removeReference(ctx, id)
-				delete(ld.undefined, id)
-				continue
-			} else if ref.GetNamespace() != spec.GetNamespace() {
-				continue
-			}
-
-			undefined := make(links, len(additions))
-
-			if ref, ok := ld.table.Lookup(id); ok {
-				for name, locations := range additions {
-					p1, ok := ref.Port(name)
-					if !ok {
-						continue
-					}
-
-					for _, location := range locations {
-						if (location.ID == spec.GetID()) || (location.Name != "" && location.Name == spec.GetName()) {
-							if p2, ok := n.Port(location.Port); ok {
-								p1.Link(p2)
-
-								referenced := ld.referenced[n.ID()]
-								if referenced == nil {
-									referenced = links{}
-								}
-								referenced[location.Port] = append(referenced[location.Port], scheme.PortLocation{
-									ID:   ref.ID(),
-									Port: name,
-								})
-								ld.referenced[n.ID()] = referenced
-							} else {
-								undefined[name] = append(undefined[name], location)
-							}
-						} else {
-							undefined[name] = append(undefined[name], location)
-						}
-					}
-				}
-			}
-
-			ld.undefined[id] = undefined
-		}
-	}
-
-	return nil
 }
 
-func (ld *Loader) removeReference(ctx context.Context, id ulid.ULID) {
-	for name, locations := range ld.referenced[id] {
-		for _, location := range locations {
-			if ref, ok := ld.table.Lookup(location.ID); ok {
-				undefined := ld.undefined[ref.ID()]
-				if undefined == nil {
-					undefined = links{}
-				}
-				undefined[location.Port] = append(undefined[location.Port], scheme.PortLocation{
-					ID:   id,
-					Port: name,
-				})
-				ld.undefined[ref.ID()] = undefined
-			}
-		}
+// LoadAll loads all scheme.Spec from the storage.Storage
+func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
+	var filter *storage.Filter
+	if ld.namespace != "" {
+		filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(ld.namespace))
 	}
-	delete(ld.referenced, id)
-}
 
-func diffLinks(l1 links, l2 links) links {
-	diff := make(links, len(l1))
-	for name, locations1 := range l1 {
-		diffLocationSet := map[scheme.PortLocation]struct{}{}
-		for _, location := range locations1 {
-			diffLocationSet[location] = struct{}{}
-		}
-		if locations2, ok := l2[name]; ok {
-			for _, location := range locations2 {
-				delete(diffLocationSet, location)
+	specs, err := ld.storage.FindMany(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var nodes []node.Node
+	for _, spec := range specs {
+		if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
+			if reflect.DeepEqual(sym.Spec, spec) {
+				nodes = append(nodes, sym.Node)
+				continue
 			}
 		}
 
-		var diffLocations []scheme.PortLocation
-		for location := range diffLocationSet {
-			diffLocations = append(diffLocations, location)
-		}
-
-		if len(diffLocations) > 0 {
-			diff[name] = diffLocations
+		if n, err := ld.scheme.Decode(spec); err != nil {
+			return nil, err
+		} else if err := ld.table.Insert(&symbol.Symbol{Node: n, Spec: spec}); err != nil {
+			return nil, err
+		} else {
+			nodes = append(nodes, n)
 		}
 	}
 
-	if len(diff) == 0 {
-		return nil
-	}
-	return diff
-}
-
-func unionLinks(l1 links, l2 links) links {
-	unionSet := make(map[string]map[scheme.PortLocation]struct{}, len(l1)+len(l2))
-	for name, locations := range l1 {
-		unionLocationSet := map[scheme.PortLocation]struct{}{}
-		for _, location := range locations {
-			unionLocationSet[location] = struct{}{}
-		}
-		unionSet[name] = unionLocationSet
-	}
-	for name, locations := range l2 {
-		unionLocationSet := unionSet[name]
-		if len(unionLocationSet) == 0 {
-			unionLocationSet = map[scheme.PortLocation]struct{}{}
-		}
-		for _, location := range locations {
-			unionLocationSet[location] = struct{}{}
-		}
-		unionSet[name] = unionLocationSet
-	}
-
-	union := make(links, len(unionSet))
-	for name, locationSet := range unionSet {
-		var locations []scheme.PortLocation
-		for location := range locationSet {
-			locations = append(locations, location)
-		}
-
-		union[name] = locations
-	}
-
-	return union
+	return nodes, nil
 }

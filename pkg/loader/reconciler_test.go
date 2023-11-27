@@ -26,15 +26,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 	tb := symbol.NewTable()
 	defer func() { _ = tb.Close() }()
 
-	ld, _ := New(context.Background(), Config{
+	ld := New(Config{
 		Scheme:  s,
 		Storage: st,
 		Table:   tb,
 	})
 
 	r := NewReconciler(ReconcilerConfig{
-		Remote: st,
-		Loader: ld,
+		Storage: st,
+		Loader:  ld,
 	})
 	defer func() { _ = r.Close() }()
 
@@ -72,7 +72,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			assert.Fail(t, "timeout")
 			return
 		default:
-			if _, ok := tb.Lookup(m.GetID()); ok {
+			if _, ok := tb.LookupByID(m.GetID()); ok {
 				return
 			}
 		}

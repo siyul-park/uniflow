@@ -8,62 +8,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHook_PreLoadHook(t *testing.T) {
+func TestHook_LoadHook(t *testing.T) {
 	hooks := New()
 
 	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
 
-	h := symbol.PreLoadHookFunc(func(_ node.Node) error {
+	count := 0
+	h := symbol.LoadHookFunc(func(_ node.Node) error {
+		count += 1
 		return nil
 	})
 
-	hooks.AddPreLoadHook(h)
+	hooks.AddLoadHook(h)
 
-	err := hooks.PreLoad(n)
+	err := hooks.Load(n)
 	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
 }
 
-func TestHook_PostLoadHook(t *testing.T) {
+func TestHook_UnloadHook(t *testing.T) {
 	hooks := New()
 
 	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
 
-	h := symbol.PostLoadHookFunc(func(_ node.Node) error {
+	count := 0
+	h := symbol.UnloadHookFunc(func(_ node.Node) error {
+		count += 1
 		return nil
 	})
 
-	hooks.AddPostLoadHook(h)
+	hooks.AddUnloadHook(h)
 
-	err := hooks.PostLoad(n)
+	err := hooks.Unload(n)
 	assert.NoError(t, err)
-}
-
-func TestHook_PreUnloadHook(t *testing.T) {
-	hooks := New()
-
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
-
-	h := symbol.PreUnloadHookFunc(func(_ node.Node) error {
-		return nil
-	})
-
-	hooks.AddPreUnloadHook(h)
-
-	err := hooks.PreUnload(n)
-	assert.NoError(t, err)
-}
-
-func TestHook_PostUnloadHook(t *testing.T) {
-	hooks := New()
-
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
-
-	h := symbol.PostUnloadHookFunc(func(_ node.Node) error {
-		return nil
-	})
-
-	hooks.AddPostUnloadHook(h)
-
-	err := hooks.PostUnload(n)
-	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
 }

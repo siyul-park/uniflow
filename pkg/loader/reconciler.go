@@ -4,41 +4,39 @@ import (
 	"context"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
 type (
 	// ReconcilerConfig is a config for for the Reconciler.
 	ReconcilerConfig struct {
-		Remote *storage.Storage
-		Loader *Loader
-		Filter *storage.Filter
+		Storage *storage.Storage
+		Loader  *Loader
+		Filter  *storage.Filter
 	}
 
 	// Reconciler keeps up to date symbol.Table by tracking changes to the scheme.Spec.
 	Reconciler struct {
-		remote *storage.Storage
-		loader *Loader
-		filter *storage.Filter
-		stream *storage.Stream
-		done   chan struct{}
-		mu     sync.Mutex
+		storage *storage.Storage
+		loader  *Loader
+		filter  *storage.Filter
+		stream  *storage.Stream
+		done    chan struct{}
+		mu      sync.Mutex
 	}
 )
 
 // NewReconciler returns a new Reconciler.
 func NewReconciler(config ReconcilerConfig) *Reconciler {
-	remote := config.Remote
+	storage := config.Storage
 	loader := config.Loader
 	filter := config.Filter
 
 	return &Reconciler{
-		remote: remote,
-		loader: loader,
-		filter: filter,
-		done:   make(chan struct{}),
+		storage: storage,
+		loader:  loader,
+		filter:  filter,
+		done:    make(chan struct{}),
 	}
 }
 
@@ -71,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			if _, err := r.loader.LoadOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(event.NodeID)); err != nil {
+			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
 				return err
 			}
 		}
@@ -107,7 +105,7 @@ func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
 	if r.stream != nil {
 		return r.stream, nil
 	}
-	s, err := r.remote.Watch(ctx, r.filter)
+	s, err := r.storage.Watch(ctx, r.filter)
 	if err != nil {
 		return nil, err
 	}

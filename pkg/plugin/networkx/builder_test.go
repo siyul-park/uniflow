@@ -23,8 +23,7 @@ func TestAddToHooks(t *testing.T) {
 		Address: fmt.Sprintf(":%d", port),
 	})
 
-	err = hk.PostLoad(n)
-	assert.NoError(t, err)
+	hk.Load(n)
 
 	errChan := make(chan error)
 

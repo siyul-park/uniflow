@@ -10,102 +10,56 @@ import (
 type (
 	// Hook is a collection of hook functions.
 	Hook struct {
-		preLoadHooks    []symbol.PreLoadHook
-		postLoadHooks   []symbol.PostLoadHook
-		preUnloadHooks  []symbol.PreUnloadHook
-		postUnloadHooks []symbol.PostUnloadHook
-		mu              sync.RWMutex
+		loadHooks   []symbol.LoadHook
+		unloadHooks []symbol.UnloadHook
+		mu          sync.RWMutex
 	}
 )
 
-var _ symbol.PreLoadHook = &Hook{}
-var _ symbol.PostLoadHook = &Hook{}
-var _ symbol.PreUnloadHook = &Hook{}
-var _ symbol.PostUnloadHook = &Hook{}
+var _ symbol.LoadHook = &Hook{}
+var _ symbol.UnloadHook = &Hook{}
 
 // New returns a new Hooks.
 func New() *Hook {
 	return &Hook{}
 }
 
-// AddPreLoadHook adds a PreLoadHook.
-func (h *Hook) AddPreLoadHook(hook symbol.PreLoadHook) {
+// AddLoadHook adds a LoadHook.
+func (h *Hook) AddLoadHook(hook symbol.LoadHook) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	h.preLoadHooks = append(h.preLoadHooks, hook)
+	h.loadHooks = append(h.loadHooks, hook)
 }
 
-// AddPostLoadHook adds a PostLoadHook.
-func (h *Hook) AddPostLoadHook(hook symbol.PostLoadHook) {
+// AddUnloadHook adds a UnloadHook.
+func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	h.postLoadHooks = append(h.postLoadHooks, hook)
+	h.unloadHooks = append(h.unloadHooks, hook)
 }
 
-// AddPreUnloadHook adds a PreUnloadHook.
-func (h *Hook) AddPreUnloadHook(hook symbol.PreUnloadHook) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.preUnloadHooks = append(h.preUnloadHooks, hook)
-}
-
-// AddPostUnloadHook adds a PostUnloadHook.
-func (h *Hook) AddPostUnloadHook(hook symbol.PostUnloadHook) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.postUnloadHooks = append(h.postUnloadHooks, hook)
-}
-
-// PreLoad runs PreLoadHooks.
-func (h *Hook) PreLoad(n node.Node) error {
+// Load runs LoadHooks.
+func (h *Hook) Load(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, hook := range h.preLoadHooks {
-		if err := hook.PreLoad(n); err != nil {
+	for _, hook := range h.loadHooks {
+		if err := hook.Load(n); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// PostLoad runs PostLoadHooks.
-func (h *Hook) PostLoad(n node.Node) error {
+// Unload runs UnloadHooks.
+func (h *Hook) Unload(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, hook := range h.postLoadHooks {
-		if err := hook.PostLoad(n); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// PreUnload runs PreUnloadHooks.
-func (h *Hook) PreUnload(n node.Node) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	for _, hook := range h.preUnloadHooks {
-		if err := hook.PreUnload(n); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// PostUnload runs PostUnloadHooks.
-func (h *Hook) PostUnload(n node.Node) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	for _, hook := range h.postUnloadHooks {
-		if err := hook.PostUnload(n); err != nil {
+	for _, hook := range h.unloadHooks {
+		if err := hook.Unload(n); err != nil {
 			return err
 		}
 	}

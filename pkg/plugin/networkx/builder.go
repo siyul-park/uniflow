@@ -9,7 +9,7 @@ import (
 
 func AddToHooks() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
-		h.AddPostLoadHook(symbol.PostLoadHookFunc(func(n node.Node) error {
+		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
 			if n, ok := n.(*HTTPNode); ok {
 				go func() { n.Start() }()
 			}
