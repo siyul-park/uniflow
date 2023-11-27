@@ -312,7 +312,7 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 }
 
 func (t *Table) load(sym *Symbol) error {
-	if t.shouldSkipLink(sym) {
+	if t.shouldSkipLoad(sym) {
 		return nil
 	}
 	for _, hook := range t.loadHooks {
@@ -324,7 +324,7 @@ func (t *Table) load(sym *Symbol) error {
 }
 
 func (t *Table) unload(sym *Symbol) error {
-	if t.shouldSkipLink(sym) {
+	if t.shouldSkipLoad(sym) {
 		return nil
 	}
 	for _, hook := range t.unloadHooks {
@@ -335,6 +335,6 @@ func (t *Table) unload(sym *Symbol) error {
 	return nil
 }
 
-func (t *Table) shouldSkipLink(sym *Symbol) bool {
+func (t *Table) shouldSkipLoad(sym *Symbol) bool {
 	return len(t.unlinks[sym.ID()]) > 0
 }
