@@ -11,8 +11,8 @@ import (
 )
 
 func TestTable_Insert(t *testing.T) {
-	t.Run("ID", func(t *testing.T) {
-		t.Run("not exists", func(t *testing.T) {
+	t.Run("by ID", func(t *testing.T) {
+		t.Run("when not exists", func(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
@@ -86,7 +86,7 @@ func TestTable_Insert(t *testing.T) {
 			assert.Equal(t, 1, p3.Links())
 		})
 
-		t.Run("exists", func(t *testing.T) {
+		t.Run("when exists", func(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
@@ -174,8 +174,8 @@ func TestTable_Insert(t *testing.T) {
 		})
 	})
 
-	t.Run("Name", func(t *testing.T) {
-		t.Run("not exists", func(t *testing.T) {
+	t.Run("by name", func(t *testing.T) {
+		t.Run("when not exists", func(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
@@ -253,7 +253,7 @@ func TestTable_Insert(t *testing.T) {
 			assert.Equal(t, 1, p3.Links())
 		})
 
-		t.Run("exists", func(t *testing.T) {
+		t.Run("when exists", func(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 

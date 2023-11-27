@@ -15,77 +15,155 @@ import (
 )
 
 func TestLoader_LoadOne(t *testing.T) {
-	s := scheme.New()
-	st, _ := storage.New(context.Background(), storage.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.Word()),
-	})
-
-	tb := symbol.NewTable()
-	defer func() { _ = tb.Close() }()
-
-	ld := New(Config{
-		Scheme:  s,
-		Storage: st,
-		Table:   tb,
-	})
-
-	kind := faker.Word()
-
-	spec1 := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
-	}
-	spec2 := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
-		Links: map[string][]scheme.PortLocation{
-			node.PortIO: {
-				{
-					ID:   spec1.GetID(),
-					Port: node.PortIO,
+	t.Run("load first", func(t *testing.T) {
+		s := scheme.New()
+		st, _ := storage.New(context.Background(), storage.Config{
+			Scheme:   s,
+			Database: memdb.New(faker.Word()),
+		})
+	
+		tb := symbol.NewTable()
+		defer func() { _ = tb.Close() }()
+	
+		ld := New(Config{
+			Scheme:  s,
+			Storage: st,
+			Table:   tb,
+		})
+	
+		kind := faker.Word()
+	
+		spec1 := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.NamespaceDefault,
+		}
+		spec2 := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.NamespaceDefault,
+			Links: map[string][]scheme.PortLocation{
+				node.PortIO: {
+					{
+						ID:   spec1.GetID(),
+						Port: node.PortIO,
+					},
 				},
 			},
-		},
-	}
+		}
+	
+		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		})
+	
+		s.AddKnownType(kind, &scheme.SpecMeta{})
+		s.AddCodec(kind, codec)
+	
+		st.InsertOne(context.Background(), spec1)
+		st.InsertOne(context.Background(), spec2)
+	
+		r, err := ld.LoadOne(context.Background(), spec2.GetID())
+		assert.NoError(t, err)
+		assert.NotNil(t, r)
+	
+		_, ok := tb.LookupByID(spec1.GetID())
+		assert.True(t, ok)
+	
+		_, ok = tb.LookupByID(spec2.GetID())
+		assert.True(t, ok)
+	
+	})
+	
+	t.Run("reload same ID", func(t *testing.T) {
+		s := scheme.New()
+		st, _ := storage.New(context.Background(), storage.Config{
+			Scheme:   s,
+			Database: memdb.New(faker.Word()),
+		})
+	
+		tb := symbol.NewTable()
+		defer func() { _ = tb.Close() }()
+	
+		ld := New(Config{
+			Scheme:  s,
+			Storage: st,
+			Table:   tb,
+		})
+	
+		kind := faker.Word()
+	
+		spec := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.NamespaceDefault,
+		}
+		
+		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		})
+	
+		s.AddKnownType(kind, &scheme.SpecMeta{})
+		s.AddCodec(kind, codec)
+	
+		st.InsertOne(context.Background(), spec)
+		
+		r1, err := ld.LoadOne(context.Background(), spec.GetID())
+		assert.NoError(t, err)
+		assert.NotNil(t, r1)
+	
+		r2, err := ld.LoadOne(context.Background(), spec.GetID())
+		assert.NoError(t, err)
+		assert.NotNil(t, r2)
 
-	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		assert.Equal(t, r1, r2)
 	})
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, codec)
-
-	st.InsertOne(context.Background(), spec1)
-	st.InsertOne(context.Background(), spec2)
-
-	r, err := ld.LoadOne(context.Background(), spec2.GetID())
-	assert.NoError(t, err)
-	assert.NotNil(t, r)
-
-	_, ok := tb.LookupByID(spec1.GetID())
-	assert.True(t, ok)
-
-	_, ok = tb.LookupByID(spec2.GetID())
-	assert.True(t, ok)
-
-	r, err = ld.LoadOne(context.Background(), spec2.GetID())
-	assert.NoError(t, err)
-	assert.NotNil(t, r)
-
-	_, ok = tb.LookupByID(spec2.GetID())
-	assert.True(t, ok)
-
-	st.DeleteOne(context.Background(), storage.Where[ulid.ULID](scheme.KeyID).EQ(spec2.GetID()))
-
-	r, err = ld.LoadOne(context.Background(), spec2.GetID())
-	assert.NoError(t, err)
-	assert.Nil(t, r)
-
-	_, ok = tb.LookupByID(spec2.GetID())
-	assert.False(t, ok)
+	t.Run("reload after deletion", func(t *testing.T) {
+		s := scheme.New()
+		st, _ := storage.New(context.Background(), storage.Config{
+			Scheme:   s,
+			Database: memdb.New(faker.Word()),
+		})
+	
+		tb := symbol.NewTable()
+		defer func() { _ = tb.Close() }()
+	
+		ld := New(Config{
+			Scheme:  s,
+			Storage: st,
+			Table:   tb,
+		})
+	
+		kind := faker.Word()
+	
+		spec := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.NamespaceDefault,
+		}
+		
+		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		})
+	
+		s.AddKnownType(kind, &scheme.SpecMeta{})
+		s.AddCodec(kind, codec)
+	
+		st.InsertOne(context.Background(), spec)
+		
+		r1, err := ld.LoadOne(context.Background(), spec.GetID())
+		assert.NoError(t, err)
+		assert.NotNil(t, r1)
+	
+		st.DeleteOne(context.Background(), storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	
+		r2, err := ld.LoadOne(context.Background(), spec.GetID())
+		assert.NoError(t, err)
+		assert.Nil(t, r2)
+	
+		_, ok := tb.LookupByID(spec.GetID())
+		assert.False(t, ok)
+	})
 }
 
 func TestLoader_LoadAll(t *testing.T) {
