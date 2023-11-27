@@ -91,10 +91,8 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 				namespace = spec.GetNamespace()
 			}
 
-			if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
-				if reflect.DeepEqual(sym.Spec, spec) {
-					continue
-				}
+			if sym, ok := ld.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
+				continue
 			}
 
 			if n, err := ld.scheme.Decode(spec); err != nil {
@@ -115,22 +113,20 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 		}
 
 		for key, exist := range exists {
-			if exist {
-				continue
-			}
-
-			id, ok := key.(ulid.ULID)
-			if !ok {
-				if name, ok := key.(string); ok {
-					if sym, ok := ld.table.LookupByName(namespace, name); ok {
-						id = sym.ID()
+			if !exist {
+				id, ok := key.(ulid.ULID)
+				if !ok {
+					if name, ok := key.(string); ok {
+						if sym, ok := ld.table.LookupByName(namespace, name); ok {
+							id = sym.ID()
+						}
 					}
 				}
-			}
 
-			if id != (ulid.ULID{}) {
-				if _, err := ld.table.Free(id); err != nil {
-					return nil, err
+				if id != (ulid.ULID{}) {
+					if _, err := ld.table.Free(id); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -157,11 +153,9 @@ func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
 
 	var nodes []node.Node
 	for _, spec := range specs {
-		if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
-			if reflect.DeepEqual(sym.Spec, spec) {
-				nodes = append(nodes, sym.Node)
-				continue
-			}
+		if sym, ok := ld.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
+			nodes = append(nodes, sym.Node)
+			continue
 		}
 
 		if n, err := ld.scheme.Decode(spec); err != nil {

@@ -67,12 +67,11 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if sym, err := t.free(id); err != nil {
+	sym, err := t.free(id)
+	if err != nil {
 		return false, err
-	} else if sym != nil {
-		return true, nil
 	}
-	return false, nil
+	return sym != nil, nil
 }
 
 // LookupByID retrieves a Symbol by its ID.
@@ -313,7 +312,7 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 }
 
 func (t *Table) load(sym *Symbol) error {
-	if len(t.unlinks[sym.ID()]) > 0 {
+	if t.shouldSkipLink(sym) {
 		return nil
 	}
 	for _, hook := range t.loadHooks {
@@ -325,7 +324,7 @@ func (t *Table) load(sym *Symbol) error {
 }
 
 func (t *Table) unload(sym *Symbol) error {
-	if len(t.unlinks[sym.ID()]) > 0 {
+	if t.shouldSkipLink(sym) {
 		return nil
 	}
 	for _, hook := range t.unloadHooks {
@@ -334,4 +333,8 @@ func (t *Table) unload(sym *Symbol) error {
 		}
 	}
 	return nil
+}
+
+func (t *Table) shouldSkipLink(sym *Symbol) bool {
+	return len(t.unlinks[sym.ID()]) > 0
 }
