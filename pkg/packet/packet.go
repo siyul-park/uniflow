@@ -13,6 +13,7 @@ type (
 	}
 )
 
+// NewError return a new Packet for error.
 func NewError(err error, cause *Packet) *Packet {
 	var pairs []primitive.Object
 	pairs = append(pairs, primitive.NewString("error"), primitive.NewString(err.Error()))
