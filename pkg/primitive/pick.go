@@ -1,18 +1,10 @@
 package primitive
 
 import (
-	"regexp"
 	"strconv"
-	"strings"
 )
 
-var (
-	numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
-)
-
-func Pick[T any](v Object, path string) (T, bool) {
-	paths := parsePath(path)
-
+func Pick[T any](v Value, paths ...string) (T, bool) {
 	var zero T
 
 	cur := v
@@ -45,9 +37,4 @@ func Pick[T any](v Object, path string) (T, bool) {
 	} else {
 		return zero, false
 	}
-}
-
-func parsePath(key string) []string {
-	key = numberSubPath.ReplaceAllString(key, ".$1")
-	return strings.Split(key, ".")
 }

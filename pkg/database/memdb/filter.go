@@ -1,8 +1,15 @@
 package memdb
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+)
+
+var (
+	numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 )
 
 func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
@@ -15,7 +22,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	switch filter.OP {
 	case database.EQ:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) == 0
@@ -23,7 +30,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) != 0
@@ -31,7 +38,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.LT:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) < 0
@@ -39,7 +46,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.LTE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) <= 0
@@ -47,7 +54,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.GT:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) > 0
@@ -55,7 +62,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.GTE:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return primitive.Compare(o, filter.Value) >= 0
@@ -63,7 +70,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.IN:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else if o == nil {
 				return false
@@ -80,7 +87,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NIN:
 		return func(m *primitive.Map) bool {
-			if o, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if o, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return true
 			} else if o == nil {
 				return true
@@ -97,7 +104,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return v == nil
@@ -105,7 +112,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 		}
 	case database.NNULL:
 		return func(m *primitive.Map) bool {
-			if v, ok := primitive.Pick[primitive.Object](m, filter.Key); !ok {
+			if v, ok := primitive.Pick[primitive.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return v != nil
@@ -211,4 +218,9 @@ func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 	}
 
 	return nil, false
+}
+
+func parsePath(key string) []string {
+	key = numberSubPath.ReplaceAllString(key, ".$1")
+	return strings.Split(key, ".")
 }

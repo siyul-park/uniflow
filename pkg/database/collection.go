@@ -15,8 +15,8 @@ type (
 
 		Watch(ctx context.Context, filter *Filter) (Stream, error)
 
-		InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Object, error)
-		InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Object, error)
+		InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error)
+		InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error)
 
 		UpdateOne(ctx context.Context, filter *Filter, patch *primitive.Map, options ...*UpdateOptions) (bool, error)
 		UpdateMany(ctx context.Context, filter *Filter, patch *primitive.Map, options ...*UpdateOptions) (int, error)
@@ -48,7 +48,7 @@ type (
 
 	Event struct {
 		OP         eventOP
-		DocumentID primitive.Object
+		DocumentID primitive.Value
 	}
 
 	eventOP int

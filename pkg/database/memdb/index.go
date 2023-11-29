@@ -134,7 +134,7 @@ func (iv *IndexView) deleteAll(_ context.Context) error {
 	return nil
 }
 
-func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]primitive.Object, error) {
+func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]primitive.Value, error) {
 	iv.lock.RLock()
 	defer iv.lock.RUnlock()
 
@@ -158,7 +158,7 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 				var i int
 				var k string
 				for i, k = range model.Keys {
-					if obj, ok := primitive.Pick[primitive.Object](example, k); ok {
+					if obj, ok := primitive.Pick[primitive.Value](example, k); ok {
 						visits[k] = true
 						if sub, ok := curr.Get(obj); ok {
 							if i < len(model.Keys)-1 {
@@ -220,9 +220,9 @@ func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]p
 		}
 	}
 
-	var uniqueIds []primitive.Object
+	var uniqueIds []primitive.Value
 	for _, v := range ids.Values() {
-		uniqueIds = append(uniqueIds, v.(primitive.Object))
+		uniqueIds = append(uniqueIds, v.(primitive.Value))
 	}
 	return uniqueIds, nil
 }
@@ -242,7 +242,7 @@ func (iv *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 			}
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Pick[primitive.Object](doc, k)
+				obj, _ := primitive.Pick[primitive.Value](doc, k)
 
 				if i < len(model.Keys)-1 {
 					sub, ok := curr.Get(obj)
@@ -293,11 +293,11 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 
 			var nodes []containers.Container
 			nodes = append(nodes, curr)
-			var keys []primitive.Object
+			var keys []primitive.Value
 			keys = append(keys, nil)
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Pick[primitive.Object](doc, k)
+				obj, _ := primitive.Pick[primitive.Value](doc, k)
 
 				if i < len(model.Keys)-1 {
 					if sub, ok := curr.Get(obj); ok {
@@ -309,7 +309,7 @@ func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 						return nil
 					}
 				} else if model.Unique {
-					if r, ok := curr.Get(obj); ok && primitive.Compare(id, r.(primitive.Object)) == 0 {
+					if r, ok := curr.Get(obj); ok && primitive.Compare(id, r.(primitive.Value)) == 0 {
 						curr.Remove(obj)
 					}
 				} else {

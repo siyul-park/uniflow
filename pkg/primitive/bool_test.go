@@ -18,21 +18,22 @@ func TestBool_Compare(t *testing.T) {
 	assert.Equal(t, 0, FALSE.Compare(FALSE))
 	assert.Equal(t, 1, TRUE.Compare(FALSE))
 	assert.Equal(t, -1, FALSE.Compare(TRUE))
+	assert.Equal(t, 1, TRUE.Compare(FALSE))
+	assert.Equal(t, -1, FALSE.Compare(TRUE))
 }
 
-func TestBool_Encode(t *testing.T) {
+func TestBool_EncodeAndDecode(t *testing.T) {
 	e := NewBoolEncoder()
-
-	v, err := e.Encode(true)
-	assert.NoError(t, err)
-	assert.Equal(t, TRUE, v)
-}
-
-func TestBool_Decode(t *testing.T) {
 	d := NewBoolDecoder()
 
-	var v bool
-	err := d.Decode(TRUE, &v)
+	source := true
+
+	encoded, err := e.Encode(source)
 	assert.NoError(t, err)
-	assert.Equal(t, true, v)
+	assert.Equal(t, TRUE, encoded)
+
+	var decoded bool
+	err = d.Decode(encoded, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
 }

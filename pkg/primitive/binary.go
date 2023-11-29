@@ -10,57 +10,58 @@ import (
 	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-type (
-	// Binary is a representation of a []byte.
-	Binary []byte
-)
+// Binary is a representation of a []byte.
+type Binary []byte
 
-var _ Object = (Binary)(nil)
+var _ Value = (Binary)(nil)
 
-// NewBinary returns a new Binary.
+// NewBinary creates a new Binary instance.
 func NewBinary(value []byte) Binary {
 	return Binary(value)
 }
 
-func (o Binary) Len() int {
-	return len([]byte(o))
+// Len returns the length of the binary data.
+func (b Binary) Len() int {
+	return len(b)
 }
 
-func (o Binary) Get(index int) byte {
-	if index >= len([]byte(o)) {
+// Get returns the byte at the specified index.
+func (b Binary) Get(index int) byte {
+	if index >= len(b) {
 		return 0
 	}
-	return o[index]
+	return b[index]
 }
 
-// Bytes returns a raw representation.
-func (o Binary) Bytes() []byte {
-	return []byte(o)
+// Bytes returns the raw byte slice.
+func (b Binary) Bytes() []byte {
+	return []byte(b)
 }
 
-func (o Binary) Kind() Kind {
+// Kind returns the type of the binary data.
+func (b Binary) Kind() Kind {
 	return KindBinary
 }
 
-func (o Binary) Compare(v Object) int {
-	if r, ok := v.(Binary); !ok {
-		if o.Kind() > v.Kind() {
-			return 1
-		} else {
-			return -1
-		}
-	} else {
-		return bytes.Compare(o.Bytes(), r.Bytes())
+// Compare compares two Binary values.
+func (b Binary) Compare(v Value) int {
+	if other, ok := v.(Binary); ok {
+		return bytes.Compare(b.Bytes(), other.Bytes())
 	}
+	if b.Kind() > v.Kind() {
+		return 1
+	}
+	return -1
 }
 
-func (o Binary) Interface() any {
-	return []byte(o)
+// Interface converts Binary to a byte slice.
+func (b Binary) Interface() any {
+	return []byte(b)
 }
 
-// NewBinaryEncoder is encode byte like to Binary.
-func NewBinaryEncoder() encoding2.Encoder[any, Object] {
-	return encoding2.EncoderFunc[any, Object](func(source any) (Object, error) {
+// NewBinaryEncoder creates an encoder for converting byte-like types to Binary.
+func NewBinaryEncoder() encoding2.Encoder[any, Value] {
+	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.BinaryMarshaler); ok {
 			if data, err := s.MarshalBinary(); err != nil {
 				return nil, err
@@ -74,9 +75,9 @@ func NewBinaryEncoder() encoding2.Encoder[any, Object] {
 	})
 }
 
-// NewBinaryDecoder is decode Binary to byte like.
-func NewBinaryDecoder() encoding2.Decoder[Object, any] {
-	return encoding2.DecoderFunc[Object, any](func(source Object, target any) error {
+// NewBinaryDecoder creates a decoder for converting Binary to byte-like types.
+func NewBinaryDecoder() encoding2.Decoder[Value, any] {
+	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Binary); ok {
 			if t, ok := target.(encoding.BinaryUnmarshaler); ok {
 				return t.UnmarshalBinary(s.Bytes())

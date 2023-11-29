@@ -33,15 +33,15 @@ func UnmarshalFilter(data any, v **database.Filter) error {
 	return filterDecoder.Decode(data, v)
 }
 
-func MarshalDocument(v primitive.Object) (any, error) {
+func MarshalDocument(v primitive.Value) (any, error) {
 	return documentEncoder.Encode(v)
 }
 
-func UnmarshalDocument(data any, v *primitive.Object) error {
+func UnmarshalDocument(data any, v *primitive.Value) error {
 	return documentDecoder.Decode(data, v)
 }
 
-func NewFilterEncoder(encoder encoding.Encoder[primitive.Object, any]) encoding.Encoder[*database.Filter, any] {
+func NewFilterEncoder(encoder encoding.Encoder[primitive.Value, any]) encoding.Encoder[*database.Filter, any] {
 	return encoding.EncoderFunc[*database.Filter, any](func(source *database.Filter) (any, error) {
 		if source == nil {
 			return bson.D{}, nil
@@ -103,7 +103,7 @@ func NewFilterEncoder(encoder encoding.Encoder[primitive.Object, any]) encoding.
 	})
 }
 
-func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding.Decoder[any, **database.Filter] {
+func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Value]) encoding.Decoder[any, **database.Filter] {
 	return encoding.DecoderFunc[any, **database.Filter](func(source any, target **database.Filter) error {
 		s, ok := bsonMA(source)
 		if !ok {
@@ -197,7 +197,7 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding
 							return errors.WithStack(encoding.ErrUnsupportedValue)
 						}
 
-						var value primitive.Object
+						var value primitive.Value
 						if err := decoder.Decode(v, &value); err != nil {
 							return err
 						}
@@ -225,8 +225,8 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Object]) encoding
 	})
 }
 
-func NewDocumentEncoder() encoding.Encoder[primitive.Object, any] {
-	return encoding.EncoderFunc[primitive.Object, any](func(source primitive.Object) (any, error) {
+func NewDocumentEncoder() encoding.Encoder[primitive.Value, any] {
+	return encoding.EncoderFunc[primitive.Value, any](func(source primitive.Value) (any, error) {
 		if source == nil {
 			return bsonprimitive.Null{}, nil
 		}
@@ -266,8 +266,8 @@ func NewDocumentEncoder() encoding.Encoder[primitive.Object, any] {
 	})
 }
 
-func NewDocumentDecoder() encoding.Decoder[any, *primitive.Object] {
-	return encoding.DecoderFunc[any, *primitive.Object](func(source any, target *primitive.Object) error {
+func NewDocumentDecoder() encoding.Decoder[any, *primitive.Value] {
+	return encoding.DecoderFunc[any, *primitive.Value](func(source any, target *primitive.Value) error {
 		self := NewDocumentDecoder()
 
 		if source == nil {
@@ -283,9 +283,9 @@ func NewDocumentDecoder() encoding.Decoder[any, *primitive.Object] {
 			*target = primitive.NewBinary(s.Data)
 			return nil
 		} else if s, ok := source.(bsonprimitive.A); ok {
-			values := make([]primitive.Object, len(s))
+			values := make([]primitive.Value, len(s))
 			for i, e := range s {
-				var value primitive.Object
+				var value primitive.Value
 				if err := self.Decode(e, &value); err != nil {
 					return err
 				}
@@ -294,9 +294,9 @@ func NewDocumentDecoder() encoding.Decoder[any, *primitive.Object] {
 			*target = primitive.NewSlice(values...)
 			return nil
 		} else if s, ok := source.(bsonprimitive.D); ok {
-			pairs := make([]primitive.Object, len(s)*2)
+			pairs := make([]primitive.Value, len(s)*2)
 			for i, e := range s {
-				var value primitive.Object
+				var value primitive.Value
 				if err := self.Decode(e.Value, &value); err != nil {
 					return err
 				}
@@ -306,10 +306,10 @@ func NewDocumentDecoder() encoding.Decoder[any, *primitive.Object] {
 			*target = primitive.NewMap(pairs...)
 			return nil
 		} else if s, ok := source.(bsonprimitive.M); ok {
-			pairs := make([]primitive.Object, len(s)*2)
+			pairs := make([]primitive.Value, len(s)*2)
 			i := 0
 			for k, v := range s {
-				var value primitive.Object
+				var value primitive.Value
 				if err := self.Decode(v, &value); err != nil {
 					return err
 				}

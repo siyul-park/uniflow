@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -22,14 +23,18 @@ func TestSlice_GetAndSet(t *testing.T) {
 
 	o := NewSlice(v1)
 
+	// Test Get
 	r1 := o.Get(0)
 	assert.Equal(t, v1, r1)
 
+	// Test Get with out-of-bounds index
 	r2 := o.Get(1)
 	assert.Nil(t, r2)
 
+	// Test Set
 	o = o.Set(0, v2)
 
+	// Test Get after Set
 	r3 := o.Get(0)
 	assert.Equal(t, v2, r3)
 }
@@ -66,30 +71,77 @@ func TestSlice_Compare(t *testing.T) {
 	v1 := NewString("1")
 	v2 := NewString("2")
 
+	// Test equal slices
 	assert.Equal(t, 0, NewSlice(v1, v2).Compare(NewSlice(v1, v2)))
+
+	// Test greater slice
 	assert.Equal(t, 1, NewSlice(v2, v1).Compare(NewSlice(v1, v2)))
+
+	// Test lesser slice
 	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
 }
 
-func TestSlice_Encode(t *testing.T) {
-	e := NewSliceEncoder(NewStringEncoder())
+func TestSlice_EncodeAndDecode(t *testing.T) {
+	encoder := NewSliceEncoder(NewStringEncoder())
+	decoder := NewSliceDecoder(NewStringDecoder())
 
 	v1 := NewString(faker.Word())
 	v2 := NewString(faker.Word())
 
-	v, err := e.Encode([]string{v1.String(), v2.String()})
-	assert.NoError(t, err)
-	assert.Equal(t, NewSlice(v1, v2), v)
+	t.Run("Encode", func(t *testing.T) {
+		// Test Encode
+		encoded, err := encoder.Encode([]any{v1.Interface(), v2.Interface()})
+		assert.NoError(t, err)
+		assert.Equal(t, NewSlice(v1, v2), encoded)
+	})
+
+	t.Run("Decode", func(t *testing.T) {
+		// Test Decode
+		var decoded []any
+		err := decoder.Decode(NewSlice(v1, v2), &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
+	})
 }
 
-func TestSlice_Decode(t *testing.T) {
-	d := NewSliceDecoder(NewStringDecoder())
+func BenchmarkSlice_Append(b *testing.B) {
+	s := NewSlice()
 
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
+	for i := 0; i < b.N; i++ {
+		s = s.Append(NewString(faker.Word()))
+	}
+}
 
-	var v []string
-	err := d.Decode(NewSlice(v1, v2), &v)
-	assert.NoError(t, err)
-	assert.Equal(t, []string{v1.String(), v2.String()}, v)
+func BenchmarkSlice_Sub(b *testing.B) {
+	s := NewSlice()
+	for i := 0; i < 1000; i++ {
+		s = s.Append(NewString(faker.Word()))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = s.Sub(0, 500)
+	}
+}
+func BenchmarkSlice_Get(b *testing.B) {
+	size := 100000
+	s := NewSlice()
+	for i := 0; i < size; i++ {
+		s = s.Set(i, NewString(fmt.Sprintf("value%d", i)))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		index := i % size
+		_ = s.Get(index)
+	}
+}
+
+func BenchmarkSlice_Interface(b *testing.B) {
+	v := NewSlice(NewString("value"))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = v.Interface()
+	}
 }

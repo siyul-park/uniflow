@@ -13,7 +13,7 @@ func TestNewBinary(t *testing.T) {
 	assert.Equal(t, []byte{0}, v.Interface())
 }
 
-func TestBinary_Get(t *testing.T) {
+func TestBinary_GetAndLen(t *testing.T) {
 	v := NewBinary([]byte{0})
 
 	assert.Equal(t, 1, v.Len())
@@ -29,19 +29,18 @@ func TestBinary_Compare(t *testing.T) {
 	assert.Equal(t, 1, v2.Compare(v1))
 }
 
-func TestBinary_Encode(t *testing.T) {
+func TestBinary_EncodeAndDecode(t *testing.T) {
 	e := NewBinaryEncoder()
-
-	v, err := e.Encode([]byte{0})
-	assert.NoError(t, err)
-	assert.Equal(t, NewBinary([]byte{0}), v)
-}
-
-func TestBinary_Decode(t *testing.T) {
 	d := NewBinaryDecoder()
 
-	var v []byte
-	err := d.Decode(NewBinary([]byte{0}), &v)
+	source := []byte{0}
+
+	encoded, err := e.Encode(source)
 	assert.NoError(t, err)
-	assert.Equal(t, []byte{0}, v)
+	assert.Equal(t, NewBinary([]byte{0}), encoded)
+
+	var decoded []byte
+	err = d.Decode(encoded, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
 }

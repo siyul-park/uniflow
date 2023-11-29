@@ -255,7 +255,7 @@ func examplesToSpecs(examples []*primitive.Map) []scheme.Spec {
 	return specs
 }
 
-func specsToExamples(specs []scheme.Spec, batch bool) (primitive.Object, error) {
+func specsToExamples(specs []scheme.Spec, batch bool) (primitive.Value, error) {
 	if batch || len(specs) > 1 {
 		return primitive.MarshalText(specs)
 	} else {

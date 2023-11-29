@@ -12,102 +12,107 @@ import (
 type (
 	// Slice is a representation of a slice.
 	Slice struct {
-		value *immutable.List[Object]
+		value *immutable.List[Value]
 	}
 )
 
-var _ Object = (*Slice)(nil)
+var _ Value = (*Slice)(nil)
 
 // NewSlice returns a new Slice.
-func NewSlice(values ...Object) *Slice {
-	b := immutable.NewListBuilder[Object]()
+func NewSlice(values ...Value) *Slice {
+	builder := immutable.NewListBuilder[Value]()
 	for _, v := range values {
-		b.Append(v)
+		builder.Append(v)
 	}
-	return &Slice{value: b.List()}
+	return &Slice{value: builder.List()}
 }
 
-func (o *Slice) Prepend(value Object) *Slice {
-	return &Slice{value: o.value.Prepend(value)}
+func (s *Slice) Prepend(value Value) *Slice {
+	return &Slice{value: s.value.Prepend(value)}
 }
 
-func (o *Slice) Append(value Object) *Slice {
-	return &Slice{value: o.value.Append(value)}
+func (s *Slice) Append(value Value) *Slice {
+	return &Slice{value: s.value.Append(value)}
 }
 
-func (o *Slice) Sub(start, end int) *Slice {
-	return &Slice{value: o.value.Slice(start, end)}
+func (s *Slice) Sub(start, end int) *Slice {
+	return &Slice{value: s.value.Slice(start, end)}
 }
 
-func (o *Slice) Get(index int) Object {
-	if index >= o.value.Len() {
+func (s *Slice) Get(index int) Value {
+	if index >= s.value.Len() {
 		return nil
 	}
-	return o.value.Get(index)
+	return s.value.Get(index)
 }
 
-func (o *Slice) Set(index int, value Object) *Slice {
-	if index < 0 && index >= o.value.Len() {
-		return o
+func (s *Slice) Set(index int, value Value) *Slice {
+	if index < 0 || index >= s.value.Len() {
+		return s
 	}
-	return &Slice{value: o.value.Set(index, value)}
+	return &Slice{value: s.value.Set(index, value)}
 }
 
-func (o *Slice) Len() int {
-	return o.value.Len()
+func (s *Slice) Len() int {
+	return s.value.Len()
 }
 
 // Slice returns a raw representation.
-func (o *Slice) Slice() []any {
-	// TODO: support more type defined slice.
-	s := make([]any, o.value.Len())
+func (s *Slice) Slice() []any {
+	rawSlice := make([]any, s.value.Len())
 
-	itr := o.value.Iterator()
-	for !itr.Done() {
-		i, v := itr.Next()
+	itr := s.value.Iterator()
+	for i := 0; !itr.Done(); i++ {
+		_, v := itr.Next()
 
 		if v != nil {
-			s[i] = v.Interface()
+			rawSlice[i] = v.Interface()
 		}
 	}
 
-	return s
+	return rawSlice
 }
 
-func (o *Slice) Kind() Kind {
+func (s *Slice) Kind() Kind {
 	return KindSlice
 }
 
-func (o *Slice) Compare(v Object) int {
-	if r, ok := v.(*Slice); !ok {
-		if o.Kind() > v.Kind() {
-			return 1
-		} else {
-			return -1
+func (s *Slice) Compare(v Value) int {
+	if r, ok := v.(*Slice); ok {
+		minLen := s.Len()
+		if minLen > r.Len() {
+			minLen = r.Len()
 		}
-	} else {
-		for i := 0; i < o.Len(); i++ {
-			if r.Len() == i {
-				return 1
-			}
 
-			if diff := Compare(o.Get(i), r.Get(i)); diff != 0 {
+		for i := 0; i < minLen; i++ {
+			if diff := Compare(s.Get(i), r.Get(i)); diff != 0 {
 				return diff
 			}
 		}
 
-		if o.Len() > r.Len() {
+		if s.Len() < r.Len() {
 			return -1
+		} else if s.Len() > r.Len() {
+			return 1
 		}
+
 		return 0
 	}
+
+	// If the types are different, compare based on type kind.
+	if s.Kind() > v.Kind() {
+		return 1
+	}
+	return -1
 }
 
-func (o *Slice) Interface() any {
+func (s *Slice) Interface() any {
 	var values []any
-	itr := o.value.Iterator()
-	for !itr.Done() {
+
+	itr := s.value.Iterator()
+	for i := 0; !itr.Done(); i++ {
 		_, v := itr.Next()
+
 		if v != nil {
 			values = append(values, v.Interface())
 		} else {
@@ -115,29 +120,25 @@ func (o *Slice) Interface() any {
 		}
 	}
 
-	valueType := typeAny
+	// Check if all elements have the same type.
+	elementType := getCommonType(values)
 
+	// Create a slice of the common type.
+	sliceValue := reflect.MakeSlice(reflect.SliceOf(elementType), s.value.Len(), s.value.Len())
 	for i, value := range values {
-		typ := reflect.TypeOf(value)
-		if i == 0 {
-			valueType = typ
-		} else if valueType != typ {
-			valueType = typeAny
+		if value != nil {
+			sliceValue.Index(i).Set(reflect.ValueOf(value))
 		}
 	}
 
-	t := reflect.MakeSlice(reflect.SliceOf(valueType), o.value.Len(), o.value.Len())
-	for i, value := range values {
-		t.Index(i).Set(reflect.ValueOf(value))
-	}
-	return t.Interface()
+	return sliceValue.Interface()
 }
 
 // NewSliceEncoder is encode slice or array to Slice.
-func NewSliceEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Slice || s.Kind() == reflect.Array {
-			values := make([]Object, s.Len())
+			values := make([]Value, s.Len())
 			for i := 0; i < s.Len(); i++ {
 				if v, err := encoder.Encode(s.Index(i).Interface()); err != nil {
 					return nil, err
@@ -152,8 +153,8 @@ func NewSliceEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any
 }
 
 // NewSliceDecoder is decode Slice to slice or array.
-func NewSliceDecoder(decoder encoding.Decoder[Object, any]) encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Slice); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {

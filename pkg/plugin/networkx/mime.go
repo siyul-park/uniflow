@@ -41,7 +41,7 @@ const (
 	charsetUTF8 = "charset=utf-8"
 )
 
-func MarshalMIME(value primitive.Object, typ *string) ([]byte, error) {
+func MarshalMIME(value primitive.Value, typ *string) ([]byte, error) {
 	if typ == nil {
 		content := ""
 		typ = &content
@@ -114,7 +114,7 @@ func MarshalMIME(value primitive.Object, typ *string) ([]byte, error) {
 			return nil, err
 		}
 
-		writeField := func(obj *primitive.Map, key primitive.Object) error {
+		writeField := func(obj *primitive.Map, key primitive.Value) error {
 			if key, ok := key.(primitive.String); ok {
 				elements := obj.GetOr(key, nil)
 				if e, ok := elements.(primitive.String); ok {
@@ -133,7 +133,7 @@ func MarshalMIME(value primitive.Object, typ *string) ([]byte, error) {
 			}
 			return nil
 		}
-		writeFields := func(value primitive.Object) error {
+		writeFields := func(value primitive.Value) error {
 			if value, ok := value.(*primitive.Map); ok {
 				for _, key := range value.Keys() {
 					if err := writeField(value, key); err != nil {
@@ -144,7 +144,7 @@ func MarshalMIME(value primitive.Object, typ *string) ([]byte, error) {
 			return nil
 		}
 
-		writeFiles := func(value primitive.Object) error {
+		writeFiles := func(value primitive.Value) error {
 			if value, ok := value.(*primitive.Map); ok {
 				for _, key := range value.Keys() {
 					if key, ok := key.(primitive.String); ok {
@@ -202,7 +202,7 @@ func MarshalMIME(value primitive.Object, typ *string) ([]byte, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-func UnmarshalMIME(data []byte, typ *string) (primitive.Object, error) {
+func UnmarshalMIME(data []byte, typ *string) (primitive.Value, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}

@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	textEncoder   = encoding.NewEncoderGroup[any, Object]()
-	binaryEncoder = encoding.NewEncoderGroup[any, Object]()
-	decoder       = encoding.NewDecoderGroup[Object, any]()
+	textEncoder   = encoding.NewEncoderGroup[any, Value]()
+	binaryEncoder = encoding.NewEncoderGroup[any, Value]()
+	decoder       = encoding.NewDecoderGroup[Value, any]()
 )
 
 var (
@@ -52,16 +52,16 @@ func init() {
 }
 
 // MarshalText returns the Object of v.
-func MarshalText(v any) (Object, error) {
+func MarshalText(v any) (Value, error) {
 	return textEncoder.Encode(v)
 }
 
 // MarshalBinary returns the Object of v.
-func MarshalBinary(v any) (Object, error) {
+func MarshalBinary(v any) (Value, error) {
 	return binaryEncoder.Encode(v)
 }
 
 // Unmarshal parses the Object and stores the result.
-func Unmarshal(data Object, v any) error {
+func Unmarshal(data Value, v any) error {
 	return decoder.Decode(data, v)
 }

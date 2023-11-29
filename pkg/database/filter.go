@@ -13,7 +13,7 @@ type (
 	Filter struct {
 		OP       OP
 		Key      string
-		Value    primitive.Object
+		Value    primitive.Value
 		Children []*Filter
 	}
 
@@ -45,7 +45,7 @@ func Where(key string) *filterHelper {
 	}
 }
 
-func (fh *filterHelper) EQ(value primitive.Object) *Filter {
+func (fh *filterHelper) EQ(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    EQ,
 		Key:   fh.key,
@@ -53,7 +53,7 @@ func (fh *filterHelper) EQ(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) NE(value primitive.Object) *Filter {
+func (fh *filterHelper) NE(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    NE,
 		Key:   fh.key,
@@ -61,7 +61,7 @@ func (fh *filterHelper) NE(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) LT(value primitive.Object) *Filter {
+func (fh *filterHelper) LT(value primitive.Value) *Filter {
 	return &Filter{
 		Key:   fh.key,
 		OP:    LT,
@@ -69,7 +69,7 @@ func (fh *filterHelper) LT(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) LTE(value primitive.Object) *Filter {
+func (fh *filterHelper) LTE(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    LTE,
 		Key:   fh.key,
@@ -77,7 +77,7 @@ func (fh *filterHelper) LTE(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) GT(value primitive.Object) *Filter {
+func (fh *filterHelper) GT(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    GT,
 		Key:   fh.key,
@@ -85,7 +85,7 @@ func (fh *filterHelper) GT(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) GTE(value primitive.Object) *Filter {
+func (fh *filterHelper) GTE(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    GTE,
 		Key:   fh.key,
@@ -93,7 +93,7 @@ func (fh *filterHelper) GTE(value primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) IN(slice ...primitive.Object) *Filter {
+func (fh *filterHelper) IN(slice ...primitive.Value) *Filter {
 	return &Filter{
 		OP:    IN,
 		Key:   fh.key,
@@ -101,7 +101,7 @@ func (fh *filterHelper) IN(slice ...primitive.Object) *Filter {
 	}
 }
 
-func (fh *filterHelper) NotIN(slice ...primitive.Object) *Filter {
+func (fh *filterHelper) NotIN(slice ...primitive.Value) *Filter {
 	return &Filter{
 		OP:    NIN,
 		Key:   fh.key,

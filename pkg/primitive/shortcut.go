@@ -6,9 +6,9 @@ import (
 )
 
 // NewPointerEncoder is encode Object to Object.
-func NewShortcutEncoder() encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
-		if s, ok := source.(Object); ok {
+func NewShortcutEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
+		if s, ok := source.(Value); ok {
 			return s, nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
@@ -16,9 +16,9 @@ func NewShortcutEncoder() encoding.Encoder[any, Object] {
 }
 
 // NewShortcutDecoder is decode Object to Object.
-func NewShortcutDecoder() encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
-		if t, ok := target.(*Object); ok {
+func NewShortcutDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
+		if t, ok := target.(*Value); ok {
 			*t = source
 			return nil
 		}

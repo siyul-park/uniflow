@@ -11,7 +11,7 @@ import (
 func TestMarshalText(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Object
+		expect Value
 	}{
 		{
 			when:   nil,
@@ -95,7 +95,7 @@ func TestMarshalText(t *testing.T) {
 func TestMarshalBinary(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Object
+		expect Value
 	}{
 		{
 			when:   nil,
@@ -178,7 +178,7 @@ func TestMarshalBinary(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	var testCase = []struct {
-		when   Object
+		when   Value
 		expect any
 	}{
 		{
