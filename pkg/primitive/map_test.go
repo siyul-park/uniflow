@@ -96,3 +96,32 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 		assert.Equal(t, v1.String(), decoded.K1)
 	})
 }
+
+func BenchmarkMap_Set(b *testing.B) {
+	m := NewMap()
+
+	for i := 0; i < b.N; i++ {
+		m = m.Set(NewString(faker.Word()), NewString(faker.Word()))
+	}
+}
+
+func BenchmarkMap_Get(b *testing.B) {
+	m := NewMap()
+	for i := 0; i < 1000; i++ {
+		m = m.Set(NewString(faker.Word()), NewString(faker.Word()))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = m.Get(NewString(faker.Word()))
+	}
+}
+
+func BenchmarkMap_Interface(b *testing.B) {
+	v := NewMap(NewString("key"), NewString("value"))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = v.Interface()
+	}
+}

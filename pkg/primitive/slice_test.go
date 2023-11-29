@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -101,4 +102,46 @@ func TestSlice_EncodeAndDecode(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
 	})
+}
+
+func BenchmarkSlice_Append(b *testing.B) {
+	s := NewSlice()
+
+	for i := 0; i < b.N; i++ {
+		s = s.Append(NewString(faker.Word()))
+	}
+}
+
+func BenchmarkSlice_Sub(b *testing.B) {
+	s := NewSlice()
+	for i := 0; i < 1000; i++ {
+		s = s.Append(NewString(faker.Word()))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = s.Sub(0, 500)
+	}
+}
+func BenchmarkSlice_Get(b *testing.B) {
+	size := 100000
+	s := NewSlice()
+	for i := 0; i < size; i++ {
+		s = s.Set(i, NewString(fmt.Sprintf("value%d", i)))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		index := i % size
+		_ = s.Get(index)
+	}
+}
+
+func BenchmarkSlice_Interface(b *testing.B) {
+	v := NewSlice(NewString("value"))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = v.Interface()
+	}
 }
