@@ -14,7 +14,7 @@ func TestNewMap(t *testing.T) {
 	o := NewMap(k1, v1)
 
 	assert.Equal(t, KindMap, o.Kind())
-	assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
+	assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, o.Map())
 }
 
 func TestMap_GetAndSetAndDelete(t *testing.T) {
@@ -41,8 +41,9 @@ func TestMap_Keys(t *testing.T) {
 
 	o := NewMap(k1, v1)
 
-	assert.Len(t, o.Keys(), 1)
-	assert.Contains(t, o.Keys(), k1)
+	keys := o.Keys()
+	assert.Len(t, keys, 1)
+	assert.Contains(t, keys, k1)
 }
 
 func TestMap_Len(t *testing.T) {
@@ -52,53 +53,46 @@ func TestMap_Len(t *testing.T) {
 	o1 := NewMap()
 	o2 := NewMap(k1, v1)
 
-	assert.Equal(t, 0, o1.Len())
+	assert.Zero(t, o1.Len())
 	assert.Equal(t, 1, o2.Len())
 }
 
-func TestMap_Encode(t *testing.T) {
-	e := NewMapEncoder(NewStringEncoder())
+func TestMap_EncodeAndDecode(t *testing.T) {
+	encoder := NewMapEncoder(NewStringEncoder())
+	decoder := NewMapDecoder(NewStringDecoder())
 
 	t.Run("map", func(t *testing.T) {
 		k1 := NewString(faker.Word())
 		v1 := NewString(faker.Word())
 
-		v, err := e.Encode(map[string]string{k1.String(): v1.String()})
+		// Test Encode
+		encoded, err := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
 		assert.NoError(t, err)
-		assert.Equal(t, NewMap(k1, v1), v)
+		assert.Equal(t, NewMap(k1, v1), encoded)
+
+		// Test Decode
+		var decoded map[any]any
+		err = decoder.Decode(encoded, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, decoded)
 	})
 
 	t.Run("struct", func(t *testing.T) {
 		v1 := NewString(faker.Word())
 
-		v, err := e.Encode(struct {
+		// Test Encode
+		encoded, err := encoder.Encode(struct {
 			K1 string
 		}{
 			K1: v1.String(),
 		})
 		assert.NoError(t, err)
-		assert.True(t, NewMap(NewString("k_1"), v1).Compare(v) == 0)
-	})
-}
+		assert.True(t, NewMap(NewString("k_1"), v1).Compare(encoded) == 0)
 
-func TestMap_Decode(t *testing.T) {
-	d := NewMapDecoder(NewStringDecoder())
-
-	t.Run("map", func(t *testing.T) {
-		k1 := NewString(faker.Word())
-		v1 := NewString(faker.Word())
-
-		var v map[string]string
-		err := d.Decode(NewMap(k1, v1), &v)
+		// Test Decode
+		var decoded struct{ K1 string }
+		err = decoder.Decode(encoded, &decoded)
 		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{k1.String(): v1.String()}, v)
-	})
-	t.Run("struct", func(t *testing.T) {
-		v1 := NewString(faker.Word())
-
-		var v struct{ K1 string }
-		err := d.Decode(NewMap(NewString("k_1"), v1), &v)
-		assert.NoError(t, err)
-		assert.Equal(t, v1.String(), v.K1)
+		assert.Equal(t, v1.String(), decoded.K1)
 	})
 }
