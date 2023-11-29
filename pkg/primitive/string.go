@@ -8,10 +8,8 @@ import (
 	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-type (
-	// String is a representation of a string.
-	String string
-)
+// String is a representation of a string.
+type String string
 
 var _ Value = (String)("")
 
@@ -20,26 +18,31 @@ func NewString(value string) String {
 	return String(value)
 }
 
+// Len returns the length of the string.
 func (o String) Len() int {
 	return len([]rune(o))
 }
 
+// Get returns the rune at the specified index in the string.
 func (o String) Get(index int) rune {
-	if index >= len([]rune(o)) {
+	runes := []rune(o)
+	if index >= len(runes) {
 		return rune(0)
 	}
-	return []rune(o)[index]
+	return runes[index]
 }
 
-// String returns a raw representation.
+// String returns the raw string representation.
 func (o String) String() string {
 	return string(o)
 }
 
+// Kind returns the kind of the value.
 func (o String) Kind() Kind {
 	return KindString
 }
 
+// Compare compares two String values.
 func (o String) Compare(v Value) int {
 	if r, ok := v.(String); !ok {
 		if o.Kind() > v.Kind() {
@@ -52,11 +55,12 @@ func (o String) Compare(v Value) int {
 	}
 }
 
+// Interface converts String to its underlying string.
 func (o String) Interface() any {
 	return string(o)
 }
 
-// NewStringEncoder is encode string to String.
+// NewStringEncoder encodes a string to a String.
 func NewStringEncoder() encoding2.Encoder[any, Value] {
 	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.TextMarshaler); ok {
@@ -72,7 +76,7 @@ func NewStringEncoder() encoding2.Encoder[any, Value] {
 	})
 }
 
-// NewStringDecoder is decode String to string.
+// NewStringDecoder decodes a String to a string.
 func NewStringDecoder() encoding2.Decoder[Value, any] {
 	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(String); ok {
