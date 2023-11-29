@@ -7,13 +7,13 @@ import (
 )
 
 func TestNewFloat(t *testing.T) {
-	t.Run("32", func(t *testing.T) {
+	t.Run("Float32", func(t *testing.T) {
 		v := NewFloat32(0)
 
 		assert.Equal(t, KindFloat32, v.Kind())
 		assert.Equal(t, float32(0), v.Interface())
 	})
-	t.Run("64", func(t *testing.T) {
+	t.Run("Float64", func(t *testing.T) {
 		v := NewFloat64(0)
 
 		assert.Equal(t, KindFloat64, v.Kind())
@@ -22,14 +22,14 @@ func TestNewFloat(t *testing.T) {
 }
 
 func TestFloat_Compare(t *testing.T) {
-	t.Run("32", func(t *testing.T) {
+	t.Run("Float32", func(t *testing.T) {
 		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat32(0)))
 		assert.Equal(t, 0, NewFloat32(0).Compare(NewFloat64(0)))
 		assert.Equal(t, 1, NewFloat32(1).Compare(NewFloat32(0)))
 		assert.Equal(t, -1, NewFloat32(0).Compare(NewFloat32(1)))
 	})
 
-	t.Run("64", func(t *testing.T) {
+	t.Run("Float64", func(t *testing.T) {
 		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat64(0)))
 		assert.Equal(t, 0, NewFloat64(0).Compare(NewFloat32(0)))
 		assert.Equal(t, 1, NewFloat64(1).Compare(NewFloat64(0)))
@@ -37,11 +37,11 @@ func TestFloat_Compare(t *testing.T) {
 	})
 }
 
-func TestFloat_Encode(t *testing.T) {
+func TestFloat_EncodeAndDecode(t *testing.T) {
 	e := NewFloatEncoder()
 	d := NewFloatDecoder()
 
-	t.Run("32", func(t *testing.T) {
+	t.Run("Float32", func(t *testing.T) {
 		source := float32(1)
 
 		encoded, err := e.Encode(source)
@@ -52,9 +52,8 @@ func TestFloat_Encode(t *testing.T) {
 		err = d.Decode(encoded, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
-
 	})
-	t.Run("64", func(t *testing.T) {
+	t.Run("Float64", func(t *testing.T) {
 		source := float64(1)
 
 		encoded, err := e.Encode(source)
