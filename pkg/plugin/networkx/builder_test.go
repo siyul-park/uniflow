@@ -23,7 +23,8 @@ func TestAddToHooks(t *testing.T) {
 		Address: fmt.Sprintf(":%d", port),
 	})
 
-	hk.Load(n)
+	err = hk.Load(n)
+	assert.NoError(t, err)
 
 	errChan := make(chan error)
 
@@ -31,6 +32,9 @@ func TestAddToHooks(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NoError(t, n.Close())
+
+	err = hk.Unload(n)
+	assert.NoError(t, err)
 }
 
 func TestAddToScheme(t *testing.T) {
