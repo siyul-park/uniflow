@@ -39,32 +39,31 @@ func TestFloat_Compare(t *testing.T) {
 
 func TestFloat_Encode(t *testing.T) {
 	e := NewFloatEncoder()
-
-	t.Run("32", func(t *testing.T) {
-		v, err := e.Encode(float32(1))
-		assert.NoError(t, err)
-		assert.Equal(t, NewFloat32(1), v)
-	})
-	t.Run("64", func(t *testing.T) {
-		v, err := e.Encode(float64(1))
-		assert.NoError(t, err)
-		assert.Equal(t, NewFloat64(1), v)
-	})
-}
-
-func TestFloat_Decode(t *testing.T) {
 	d := NewFloatDecoder()
 
 	t.Run("32", func(t *testing.T) {
-		var v float32
-		err := d.Decode(NewFloat32(1), &v)
+		source := float32(1)
+
+		encoded, err := e.Encode(source)
 		assert.NoError(t, err)
-		assert.Equal(t, float32(1), v)
+		assert.Equal(t, Float32(1), encoded)
+
+		var decoded float32
+		err = d.Decode(encoded, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+
 	})
 	t.Run("64", func(t *testing.T) {
-		var v float64
-		err := d.Decode(NewFloat64(1), &v)
+		source := float64(1)
+
+		encoded, err := e.Encode(source)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(1), v)
+		assert.Equal(t, Float64(1), encoded)
+
+		var decoded float64
+		err = d.Decode(encoded, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
 	})
 }
