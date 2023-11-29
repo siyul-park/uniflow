@@ -1,12 +1,3 @@
----
-name: Pull Request
-about: Submit changes for review
-title: ''
-labels: ''
-assignees: ''
-
----
-
 ### **Changes Made**
 <!-- Outline the key changes you made in this pull request. -->
 

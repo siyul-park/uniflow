@@ -1,7 +1,7 @@
 name: check
 
 concurrency:
-  group: ${{ github.uniflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 on: ["push"]
@@ -43,6 +43,7 @@ jobs:
 
   benchmark:
     needs: check
+    if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
