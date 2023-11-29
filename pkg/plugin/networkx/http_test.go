@@ -1,10 +1,12 @@
 package networkx
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -25,7 +27,7 @@ func TestNewHTTPNode(t *testing.T) {
 	assert.NotNil(t, n)
 	assert.NotZero(t, n.ID())
 
-	_ = n.Close()
+	assert.NoError(t, n.Close())
 }
 
 func TestHTTPNode_Port(t *testing.T) {
@@ -35,7 +37,7 @@ func TestHTTPNode_Port(t *testing.T) {
 	n := NewHTTPNode(HTTPNodeConfig{
 		Address: fmt.Sprintf(":%d", port),
 	})
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	p, ok := n.Port(node.PortIO)
 	assert.True(t, ok)
@@ -54,26 +56,30 @@ func TestHTTPNode_Port(t *testing.T) {
 	assert.NotNil(t, p)
 }
 
-func TestHTTPNode_StartAndClose(t *testing.T) {
+func TestHTTPNode_ServeAndShutdown(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
 	n := NewHTTPNode(HTTPNodeConfig{
 		Address: fmt.Sprintf(":%d", port),
 	})
+	defer n.Close()
 
 	errChan := make(chan error)
 
 	go func() {
-		if err := n.Start(); err != nil {
+		if err := n.Serve(); err != nil {
 			errChan <- err
 		}
 	}()
 
 	err = n.WaitForListen(errChan)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
 	assert.NoError(t, err)
-	assert.NoError(t, n.Close())
+	assert.NoError(t, n.Shutdown(ctx))
 }
 
 func TestHTTPNode_ServeHTTP(t *testing.T) {

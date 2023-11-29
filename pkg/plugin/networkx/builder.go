@@ -1,6 +1,9 @@
 package networkx
 
 import (
+	"context"
+	"time"
+
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -11,7 +14,24 @@ func AddToHooks() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
 			if n, ok := n.(*HTTPNode); ok {
-				go func() { n.Start() }()
+				errChan := make(chan error)
+
+				go func() {
+					if err := n.Serve(); err != nil {
+						errChan <- err
+					}
+				}()
+
+				return n.WaitForListen(errChan)
+			}
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadHookFunc(func(n node.Node) error {
+			if n, ok := n.(*HTTPNode); ok {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+
+				return n.Shutdown(ctx)
 			}
 			return nil
 		}))

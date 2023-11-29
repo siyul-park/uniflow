@@ -24,10 +24,13 @@ import (
 )
 
 type (
+	// HTTPNodeConfig represents the configuration of an HTTP node.
 	HTTPNodeConfig struct {
 		ID      ulid.ULID
 		Address string
 	}
+
+	// HTTPNode represents a node based on the HTTP protocol.
 	HTTPNode struct {
 		id              ulid.ULID
 		address         string
@@ -41,6 +44,13 @@ type (
 		mu              sync.RWMutex
 	}
 
+	// HTTPSpec represents the specification of an HTTP node.
+	HTTPSpec struct {
+		scheme.SpecMeta `map:",inline"`
+		Address         string `map:"address"`
+	}
+
+	// HTTPPayload represents the payload for HTTP requests and responses.
 	HTTPPayload struct {
 		Proto   string           `map:"proto,omitempty"`
 		Path    string           `map:"path,omitempty"`
@@ -52,11 +62,6 @@ type (
 		Status  int              `map:"status"`
 	}
 
-	HTTPSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		Address         string `map:"address"`
-	}
-
 	tcpKeepAliveListener struct {
 		*net.TCPListener
 	}
@@ -66,9 +71,7 @@ const (
 	KindHTTP = "http"
 )
 
-var _ node.Node = &HTTPNode{}
-var _ http.Handler = &HTTPNode{}
-
+// Commonly used HTTP header constants.
 const (
 	HeaderAccept                  = "Accept"
 	HeaderAcceptCharset           = "Accept-Charset"
@@ -158,6 +161,7 @@ const (
 	HeaderReferrerPolicy                  = "Referrer-Policy"
 )
 
+// HTTP error response payload.
 var (
 	BadRequest                    = NewHTTPPayload(http.StatusBadRequest)                    // HTTP 400 Bad Request
 	Unauthorized                  = NewHTTPPayload(http.StatusUnauthorized)                  // HTTP 401 Unauthorized
@@ -204,6 +208,9 @@ var (
 var (
 	ErrInvalidListenerNetwork = errors.New("invalid listener network")
 )
+
+var _ node.Node = &HTTPNode{}
+var _ http.Handler = &HTTPNode{}
 
 var (
 	forbiddenResponseHeaderRegexps []*regexp.Regexp
@@ -255,6 +262,7 @@ func init() {
 	}
 }
 
+// NewHTTPNode creates a new HTTPNode with the given configuration.
 func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
 	id := config.ID
 	address := config.Address
@@ -278,6 +286,7 @@ func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
 	return n
 }
 
+// ID returns the ID of the HTTPNode.
 func (n *HTTPNode) ID() ulid.ULID {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -285,6 +294,7 @@ func (n *HTTPNode) ID() ulid.ULID {
 	return n.id
 }
 
+// Port returns the port with the given name and a boolean indicating success.
 func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -304,6 +314,7 @@ func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
+// ListenerAddr returns the address of the listener associated with the HTTPNode.
 func (n *HTTPNode) ListenerAddr() net.Addr {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -313,6 +324,7 @@ func (n *HTTPNode) ListenerAddr() net.Addr {
 	return n.listener.Addr()
 }
 
+// WaitForListen waits for the HTTPNode to start listening.
 func (n *HTTPNode) WaitForListen(errChan <-chan error) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
@@ -338,7 +350,8 @@ func (n *HTTPNode) WaitForListen(errChan <-chan error) error {
 	}
 }
 
-func (n *HTTPNode) Start() error {
+// Serve starts serving HTTP requests.
+func (n *HTTPNode) Serve() error {
 	n.mu.Lock()
 	n.server.Addr = n.address
 	if err := n.configureServer(); err != nil {
@@ -349,6 +362,15 @@ func (n *HTTPNode) Start() error {
 	return n.server.Serve(n.listener)
 }
 
+// Shutdown gracefully shuts down the HTTP server.
+func (n *HTTPNode) Shutdown(ctx context.Context) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	return n.server.Shutdown(ctx)
+}
+
+// Close closes the HTTPNode.
 func (n *HTTPNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -364,6 +386,7 @@ func (n *HTTPNode) Close() error {
 	return nil
 }
 
+// ServeHTTP handles HTTP requests for the HTTPNode.
 func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
