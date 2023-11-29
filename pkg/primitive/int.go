@@ -9,7 +9,7 @@ import (
 
 type (
 	Integer interface {
-		Object
+		Value
 		Int() int64
 	}
 	// Int is a representation of a int.
@@ -44,7 +44,7 @@ func (o Int) Kind() Kind {
 	return KindInt
 }
 
-func (o Int) Compare(v Object) int {
+func (o Int) Compare(v Value) int {
 	if r, ok := v.(Integer); !ok {
 		if r, ok := v.(Uinteger); ok {
 			return compare[int64](o.Int(), int64(r.Uint()))
@@ -78,7 +78,7 @@ func (o Int8) Kind() Kind {
 	return KindInt8
 }
 
-func (o Int8) Compare(v Object) int {
+func (o Int8) Compare(v Value) int {
 	if r, ok := v.(Integer); !ok {
 		if r, ok := v.(Uinteger); ok {
 			return compare[int64](o.Int(), int64(r.Uint()))
@@ -112,7 +112,7 @@ func (o Int16) Kind() Kind {
 	return KindInt16
 }
 
-func (o Int16) Compare(v Object) int {
+func (o Int16) Compare(v Value) int {
 	if r, ok := v.(Integer); !ok {
 		if r, ok := v.(Uinteger); ok {
 			return compare[int64](o.Int(), int64(r.Uint()))
@@ -146,7 +146,7 @@ func (o Int32) Kind() Kind {
 	return KindInt32
 }
 
-func (o Int32) Compare(v Object) int {
+func (o Int32) Compare(v Value) int {
 	if r, ok := v.(Integer); !ok {
 		if r, ok := v.(Uinteger); ok {
 			return compare[int64](o.Int(), int64(r.Uint()))
@@ -180,7 +180,7 @@ func (o Int64) Kind() Kind {
 	return KindInt64
 }
 
-func (o Int64) Compare(v Object) int {
+func (o Int64) Compare(v Value) int {
 	if r, ok := v.(Integer); !ok {
 		if r, ok := v.(Uinteger); ok {
 			return compare[int64](o.Int(), int64(r.Uint()))
@@ -201,8 +201,8 @@ func (o Int64) Interface() any {
 }
 
 // NewIntEncoder is encode int to Int.
-func NewIntEncoder() encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewIntEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Int {
 			return NewInt(int(s.Int())), nil
 		} else if s := reflect.ValueOf(source); s.Kind() == reflect.Int8 {
@@ -219,8 +219,8 @@ func NewIntEncoder() encoding.Encoder[any, Object] {
 }
 
 // NewIntDecoder is decode Int to int.
-func NewIntDecoder() encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewIntDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Integer); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Int {

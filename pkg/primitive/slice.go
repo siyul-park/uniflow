@@ -12,26 +12,26 @@ import (
 type (
 	// Slice is a representation of a slice.
 	Slice struct {
-		value *immutable.List[Object]
+		value *immutable.List[Value]
 	}
 )
 
-var _ Object = (*Slice)(nil)
+var _ Value = (*Slice)(nil)
 
 // NewSlice returns a new Slice.
-func NewSlice(values ...Object) *Slice {
-	b := immutable.NewListBuilder[Object]()
+func NewSlice(values ...Value) *Slice {
+	b := immutable.NewListBuilder[Value]()
 	for _, v := range values {
 		b.Append(v)
 	}
 	return &Slice{value: b.List()}
 }
 
-func (o *Slice) Prepend(value Object) *Slice {
+func (o *Slice) Prepend(value Value) *Slice {
 	return &Slice{value: o.value.Prepend(value)}
 }
 
-func (o *Slice) Append(value Object) *Slice {
+func (o *Slice) Append(value Value) *Slice {
 	return &Slice{value: o.value.Append(value)}
 }
 
@@ -39,14 +39,14 @@ func (o *Slice) Sub(start, end int) *Slice {
 	return &Slice{value: o.value.Slice(start, end)}
 }
 
-func (o *Slice) Get(index int) Object {
+func (o *Slice) Get(index int) Value {
 	if index >= o.value.Len() {
 		return nil
 	}
 	return o.value.Get(index)
 }
 
-func (o *Slice) Set(index int, value Object) *Slice {
+func (o *Slice) Set(index int, value Value) *Slice {
 	if index < 0 && index >= o.value.Len() {
 		return o
 	}
@@ -78,7 +78,7 @@ func (o *Slice) Kind() Kind {
 	return KindSlice
 }
 
-func (o *Slice) Compare(v Object) int {
+func (o *Slice) Compare(v Value) int {
 	if r, ok := v.(*Slice); !ok {
 		if o.Kind() > v.Kind() {
 			return 1
@@ -134,10 +134,10 @@ func (o *Slice) Interface() any {
 }
 
 // NewSliceEncoder is encode slice or array to Slice.
-func NewSliceEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Slice || s.Kind() == reflect.Array {
-			values := make([]Object, s.Len())
+			values := make([]Value, s.Len())
 			for i := 0; i < s.Len(); i++ {
 				if v, err := encoder.Encode(s.Index(i).Interface()); err != nil {
 					return nil, err
@@ -152,8 +152,8 @@ func NewSliceEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any
 }
 
 // NewSliceDecoder is decode Slice to slice or array.
-func NewSliceDecoder(decoder encoding.Decoder[Object, any]) encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Slice); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {

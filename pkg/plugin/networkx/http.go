@@ -52,14 +52,14 @@ type (
 
 	// HTTPPayload represents the payload for HTTP requests and responses.
 	HTTPPayload struct {
-		Proto   string           `map:"proto,omitempty"`
-		Path    string           `map:"path,omitempty"`
-		Method  string           `map:"method,omitempty"`
-		Header  http.Header      `map:"header,omitempty"`
-		Query   url.Values       `map:"query,omitempty"`
-		Cookies []*http.Cookie   `map:"cookies,omitempty"`
-		Body    primitive.Object `map:"body,omitempty"`
-		Status  int              `map:"status"`
+		Proto   string          `map:"proto,omitempty"`
+		Path    string          `map:"path,omitempty"`
+		Method  string          `map:"method,omitempty"`
+		Header  http.Header     `map:"header,omitempty"`
+		Query   url.Values      `map:"query,omitempty"`
+		Cookies []*http.Cookie  `map:"cookies,omitempty"`
+		Body    primitive.Value `map:"body,omitempty"`
+		Status  int             `map:"status"`
 	}
 
 	tcpKeepAliveListener struct {
@@ -584,7 +584,7 @@ func (n *HTTPNode) configureServer() error {
 	return nil
 }
 
-func NewHTTPPayload(status int, body ...primitive.Object) HTTPPayload {
+func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
 	he := HTTPPayload{Status: status, Body: primitive.NewString(http.StatusText(status))}
 	if len(body) > 0 {
 		he.Body = body[0]

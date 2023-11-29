@@ -11,7 +11,7 @@ import (
 
 func TestMarshalMIME(t *testing.T) {
 	testCases := []struct {
-		whenPayload     primitive.Object
+		whenPayload     primitive.Value
 		whenContentType string
 		expectPayload   []byte
 	}{
@@ -68,7 +68,7 @@ func TestUnmarshalMIME(t *testing.T) {
 	testCases := []struct {
 		whenPayload     []byte
 		whenContentType string
-		expectPayload   primitive.Object
+		expectPayload   primitive.Value
 	}{
 		{
 			whenPayload: []byte(`

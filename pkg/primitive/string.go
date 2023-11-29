@@ -13,7 +13,7 @@ type (
 	String string
 )
 
-var _ Object = (String)("")
+var _ Value = (String)("")
 
 // NewString returns a new String.
 func NewString(value string) String {
@@ -40,7 +40,7 @@ func (o String) Kind() Kind {
 	return KindString
 }
 
-func (o String) Compare(v Object) int {
+func (o String) Compare(v Value) int {
 	if r, ok := v.(String); !ok {
 		if o.Kind() > v.Kind() {
 			return 1
@@ -57,8 +57,8 @@ func (o String) Interface() any {
 }
 
 // NewStringEncoder is encode string to String.
-func NewStringEncoder() encoding2.Encoder[any, Object] {
-	return encoding2.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewStringEncoder() encoding2.Encoder[any, Value] {
+	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.TextMarshaler); ok {
 			if text, err := s.MarshalText(); err != nil {
 				return nil, err
@@ -73,8 +73,8 @@ func NewStringEncoder() encoding2.Encoder[any, Object] {
 }
 
 // NewStringDecoder is decode String to string.
-func NewStringDecoder() encoding2.Decoder[Object, any] {
-	return encoding2.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewStringDecoder() encoding2.Decoder[Value, any] {
+	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(String); ok {
 			if t, ok := target.(encoding.TextUnmarshaler); ok {
 				return t.UnmarshalText([]byte(s.String()))

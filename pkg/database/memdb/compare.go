@@ -7,6 +7,6 @@ import (
 
 var (
 	comparator = utils.Comparator(func(a, b any) int {
-		return primitive.Compare(a.(primitive.Object), b.(primitive.Object))
+		return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
 	})
 )

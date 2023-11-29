@@ -12,7 +12,7 @@ type (
 	Bool bool
 )
 
-var _ Object = (Bool)(false)
+var _ Value = (Bool)(false)
 
 var (
 	TRUE  = NewBool(true)
@@ -32,7 +32,7 @@ func (o Bool) Bool() bool {
 func (o Bool) Kind() Kind {
 	return KindBool
 }
-func (o Bool) Compare(v Object) int {
+func (o Bool) Compare(v Value) int {
 	if r, ok := v.(Bool); !ok {
 		if o.Kind() > v.Kind() {
 			return 1
@@ -53,8 +53,8 @@ func (o Bool) Interface() any {
 }
 
 // NewBoolEncoder is encode bool to Bool.
-func NewBoolEncoder() encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewBoolEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Bool {
 			return NewBool(s.Bool()), nil
 		}
@@ -63,8 +63,8 @@ func NewBoolEncoder() encoding.Encoder[any, Object] {
 }
 
 // NewBoolDecoder is decode Bool to bool.
-func NewBoolDecoder() encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewBoolDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Bool); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Bool {

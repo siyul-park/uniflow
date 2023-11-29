@@ -15,7 +15,7 @@ type (
 	Binary []byte
 )
 
-var _ Object = (Binary)(nil)
+var _ Value = (Binary)(nil)
 
 // NewBinary returns a new Binary.
 func NewBinary(value []byte) Binary {
@@ -42,7 +42,7 @@ func (o Binary) Kind() Kind {
 	return KindBinary
 }
 
-func (o Binary) Compare(v Object) int {
+func (o Binary) Compare(v Value) int {
 	if r, ok := v.(Binary); !ok {
 		if o.Kind() > v.Kind() {
 			return 1
@@ -59,8 +59,8 @@ func (o Binary) Interface() any {
 }
 
 // NewBinaryEncoder is encode byte like to Binary.
-func NewBinaryEncoder() encoding2.Encoder[any, Object] {
-	return encoding2.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewBinaryEncoder() encoding2.Encoder[any, Value] {
+	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.BinaryMarshaler); ok {
 			if data, err := s.MarshalBinary(); err != nil {
 				return nil, err
@@ -75,8 +75,8 @@ func NewBinaryEncoder() encoding2.Encoder[any, Object] {
 }
 
 // NewBinaryDecoder is decode Binary to byte like.
-func NewBinaryDecoder() encoding2.Decoder[Object, any] {
-	return encoding2.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewBinaryDecoder() encoding2.Decoder[Value, any] {
+	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Binary); ok {
 			if t, ok := target.(encoding.BinaryUnmarshaler); ok {
 				return t.UnmarshalBinary(s.Bytes())

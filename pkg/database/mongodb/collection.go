@@ -59,7 +59,7 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 	return UpgradeStream(stream), nil
 }
 
-func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Object, error) {
+func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
 	raw, err := MarshalDocument(doc)
 	if err != nil {
 		return nil, err
@@ -70,14 +70,14 @@ func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (prim
 		return nil, errors.Wrap(database.ErrWrite, err.Error())
 	}
 
-	var id primitive.Object
+	var id primitive.Value
 	if err := UnmarshalDocument(res.InsertedID, &id); err != nil {
 		return nil, err
 	}
 	return id, nil
 }
 
-func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Object, error) {
+func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	var raws bson.A
 	for _, doc := range docs {
 		if raw, err := MarshalDocument(doc); err == nil {
@@ -92,9 +92,9 @@ func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) (
 		return nil, errors.Wrap(database.ErrWrite, err.Error())
 	}
 
-	var ids []primitive.Object
+	var ids []primitive.Value
 	for _, insertedID := range res.InsertedIDs {
-		var id primitive.Object
+		var id primitive.Value
 		if err := UnmarshalDocument(insertedID, &id); err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func (coll *Collection) FindOne(ctx context.Context, filter *database.Filter, op
 		return nil, errors.Wrap(database.ErrRead, res.Err().Error())
 	}
 
-	var doc primitive.Object
+	var doc primitive.Value
 	var r any
 	if err := res.Decode(&r); err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, o
 
 	var docs []*primitive.Map
 	for cursor.Next(ctx) {
-		var doc primitive.Object
+		var doc primitive.Value
 		var r any
 		if err := cursor.Decode(&r); err != nil {
 			return nil, err

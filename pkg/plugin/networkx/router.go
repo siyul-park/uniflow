@@ -160,7 +160,7 @@ func (n *RouterNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 
 	if cur != nil {
 		p := cur.methods[method]
-		var paramPairs []primitive.Object
+		var paramPairs []primitive.Value
 		for i, v := range values {
 			paramPairs = append(paramPairs, primitive.NewString(cur.paramNames[i]))
 			paramPairs = append(paramPairs, primitive.NewString(v))

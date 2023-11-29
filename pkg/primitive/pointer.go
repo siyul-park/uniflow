@@ -8,8 +8,8 @@ import (
 )
 
 // NewPointerEncoder is encode *T to T.
-func NewPointerEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewPointerEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if source == nil {
 			return nil, nil
 		}
@@ -21,8 +21,8 @@ func NewPointerEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[a
 }
 
 // NewPointerDecoder is decode T to *T.
-func NewPointerDecoder(decoder encoding.Decoder[Object, any]) encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewPointerDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if source == nil {
 			return nil
 		}

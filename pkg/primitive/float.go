@@ -9,7 +9,7 @@ import (
 
 type (
 	Float interface {
-		Object
+		Value
 		Float() float64
 	}
 	// Float32 is a representation of a float64.
@@ -35,7 +35,7 @@ func (o Float32) Kind() Kind {
 	return KindFloat32
 }
 
-func (o Float32) Equal(v Object) bool {
+func (o Float32) Equal(v Value) bool {
 	if r, ok := v.(Float); !ok {
 		if r, ok := v.(Integer); ok {
 			return o.Float() == float64(r.Int())
@@ -49,7 +49,7 @@ func (o Float32) Equal(v Object) bool {
 	}
 }
 
-func (o Float32) Compare(v Object) int {
+func (o Float32) Compare(v Value) int {
 	if r, ok := v.(Float); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[float64](o.Float(), float64(r.Int()))
@@ -83,7 +83,7 @@ func (o Float64) Kind() Kind {
 	return KindFloat64
 }
 
-func (o Float64) Compare(v Object) int {
+func (o Float64) Compare(v Value) int {
 	if r, ok := v.(Float); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[float64](o.Float(), float64(r.Int()))
@@ -104,8 +104,8 @@ func (o Float64) Interface() any {
 }
 
 // NewFloatEncoder is encode float to Float.
-func NewFloatEncoder() encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewFloatEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Float32 {
 			return NewFloat32(float32(s.Float())), nil
 		} else if s := reflect.ValueOf(source); s.Kind() == reflect.Float64 {
@@ -116,8 +116,8 @@ func NewFloatEncoder() encoding.Encoder[any, Object] {
 }
 
 // NewFloatDecoder is decode Float to float.
-func NewFloatDecoder() encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewFloatDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Float); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Float32 {

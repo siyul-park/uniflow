@@ -9,7 +9,7 @@ import (
 
 type (
 	Uinteger interface {
-		Object
+		Value
 		Uint() uint64
 	}
 	// Uint is a representation of a uint.
@@ -44,7 +44,7 @@ func (o Uint) Kind() Kind {
 	return KindUint
 }
 
-func (o Uint) Compare(v Object) int {
+func (o Uint) Compare(v Value) int {
 	if r, ok := v.(Uinteger); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[int64](int64(o.Uint()), r.Int())
@@ -78,7 +78,7 @@ func (o Uint8) Kind() Kind {
 	return KindUint8
 }
 
-func (o Uint8) Compare(v Object) int {
+func (o Uint8) Compare(v Value) int {
 	if r, ok := v.(Uinteger); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[int64](int64(o.Uint()), r.Int())
@@ -112,7 +112,7 @@ func (o Uint16) Kind() Kind {
 	return KindUint16
 }
 
-func (o Uint16) Compare(v Object) int {
+func (o Uint16) Compare(v Value) int {
 	if r, ok := v.(Uinteger); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[int64](int64(o.Uint()), r.Int())
@@ -146,7 +146,7 @@ func (o Uint32) Kind() Kind {
 	return KindUint32
 }
 
-func (o Uint32) Compare(v Object) int {
+func (o Uint32) Compare(v Value) int {
 	if r, ok := v.(Uinteger); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[int64](int64(o.Uint()), r.Int())
@@ -180,7 +180,7 @@ func (o Uint64) Kind() Kind {
 	return KindUint64
 }
 
-func (o Uint64) Compare(v Object) int {
+func (o Uint64) Compare(v Value) int {
 	if r, ok := v.(Uinteger); !ok {
 		if r, ok := v.(Integer); ok {
 			return compare[int64](int64(o.Uint()), r.Int())
@@ -201,8 +201,8 @@ func (o Uint64) Interface() any {
 }
 
 // NewUintEncoder is encode uint to Uint.
-func NewUintEncoder() encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewUintEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Uint {
 			return NewUint(uint(s.Uint())), nil
 		} else if s := reflect.ValueOf(source); s.Kind() == reflect.Uint8 {
@@ -219,8 +219,8 @@ func NewUintEncoder() encoding.Encoder[any, Object] {
 }
 
 // NewUintDecoder is decode Uint to uint.
-func NewUintDecoder() encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewUintDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Uinteger); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Uint {

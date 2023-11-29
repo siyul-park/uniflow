@@ -9,13 +9,13 @@ type (
 	// Packet is a formalized block of data.
 	Packet struct {
 		id      ulid.ULID
-		payload primitive.Object
+		payload primitive.Value
 	}
 )
 
 // NewError return a new Packet for error.
 func NewError(err error, cause *Packet) *Packet {
-	var pairs []primitive.Object
+	var pairs []primitive.Value
 	pairs = append(pairs, primitive.NewString("error"), primitive.NewString(err.Error()))
 	if cause != nil {
 		pairs = append(pairs, primitive.NewString("cause"), cause.Payload())
@@ -25,7 +25,7 @@ func NewError(err error, cause *Packet) *Packet {
 }
 
 // New returns a new Packet.
-func New(payload primitive.Object) *Packet {
+func New(payload primitive.Value) *Packet {
 	return &Packet{
 		id:      ulid.Make(),
 		payload: payload,
@@ -38,6 +38,6 @@ func (pck *Packet) ID() ulid.ULID {
 }
 
 // Payload returns the payload of the Packet.
-func (pck *Packet) Payload() primitive.Object {
+func (pck *Packet) Payload() primitive.Value {
 	return pck.payload
 }

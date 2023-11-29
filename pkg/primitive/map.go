@@ -14,7 +14,7 @@ import (
 type (
 	// Map is a representation of a map.
 	Map struct {
-		value *immutable.SortedMap[Object, Object]
+		value *immutable.SortedMap[Value, Value]
 	}
 
 	mapTag struct {
@@ -31,12 +31,12 @@ const (
 	tagMap = "map"
 )
 
-var _ Object = (*Map)(nil)
-var _ immutable.Comparer[Object] = (*comparer)(nil)
+var _ Value = (*Map)(nil)
+var _ immutable.Comparer[Value] = (*comparer)(nil)
 
 // NewMap returns a new Map.
-func NewMap(pairs ...Object) *Map {
-	b := immutable.NewSortedMapBuilder[Object, Object](&comparer{})
+func NewMap(pairs ...Value) *Map {
+	b := immutable.NewSortedMapBuilder[Value, Value](&comparer{})
 	for i := 0; i < len(pairs)/2; i++ {
 		k := pairs[i*2]
 		v := pairs[i*2+1]
@@ -46,27 +46,27 @@ func NewMap(pairs ...Object) *Map {
 	return &Map{value: b.Map()}
 }
 
-func (o *Map) Get(key Object) (Object, bool) {
+func (o *Map) Get(key Value) (Value, bool) {
 	return o.value.Get(key)
 }
 
-func (o *Map) GetOr(key, value Object) Object {
+func (o *Map) GetOr(key, value Value) Value {
 	if v, ok := o.Get(key); ok {
 		return v
 	}
 	return value
 }
 
-func (o *Map) Set(key, value Object) *Map {
+func (o *Map) Set(key, value Value) *Map {
 	return &Map{value: o.value.Set(key, value)}
 }
 
-func (o *Map) Delete(key Object) *Map {
+func (o *Map) Delete(key Value) *Map {
 	return &Map{value: o.value.Delete(key)}
 }
 
-func (o *Map) Keys() []Object {
-	var keys []Object
+func (o *Map) Keys() []Value {
+	var keys []Value
 
 	itr := o.value.Iterator()
 	for !itr.Done() {
@@ -105,7 +105,7 @@ func (o *Map) Kind() Kind {
 	return KindMap
 }
 
-func (o *Map) Compare(v Object) int {
+func (o *Map) Compare(v Value) int {
 	if r, ok := v.(*Map); !ok {
 		if o.Kind() > v.Kind() {
 			return 1
@@ -190,15 +190,15 @@ func (o *Map) Interface() any {
 	return t.Interface()
 }
 
-func (*comparer) Compare(a Object, b Object) int {
+func (*comparer) Compare(a Value, b Value) int {
 	return Compare(a, b)
 }
 
 // NewMapEncoder is encode map or struct to Map.
-func NewMapEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, Object] {
-	return encoding.EncoderFunc[any, Object](func(source any) (Object, error) {
+func NewMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Map {
-			pairs := make([]Object, len(s.MapKeys())*2)
+			pairs := make([]Value, len(s.MapKeys())*2)
 			for i, k := range s.MapKeys() {
 				if k, err := encoder.Encode(k.Interface()); err != nil {
 					return nil, errors.WithMessage(err, fmt.Sprintf("key(%v) can't encode", k.Interface()))
@@ -213,7 +213,7 @@ func NewMapEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, 
 			}
 			return NewMap(pairs...), nil
 		} else if s := reflect.ValueOf(source); s.Kind() == reflect.Struct {
-			pairs := make([]Object, 0, s.NumField()*2)
+			pairs := make([]Value, 0, s.NumField()*2)
 			for i := 0; i < s.NumField(); i++ {
 				field := s.Type().Field(i)
 				if !field.IsExported() {
@@ -252,8 +252,8 @@ func NewMapEncoder(encoder encoding.Encoder[any, Object]) encoding.Encoder[any, 
 }
 
 // NewMapDecoder is decode Map to map or struct.
-func NewMapDecoder(decoder encoding.Decoder[Object, any]) encoding.Decoder[Object, any] {
-	return encoding.DecoderFunc[Object, any](func(source Object, target any) error {
+func NewMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Map); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Map {

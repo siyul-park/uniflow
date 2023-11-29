@@ -85,7 +85,7 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 	return stream, nil
 }
 
-func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Object, error) {
+func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
 	if id, err := coll.insertOne(ctx, doc); err != nil {
 		return nil, err
 	} else {
@@ -100,7 +100,7 @@ func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (prim
 	}
 }
 
-func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Object, error) {
+func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	if ids, err := coll.insertMany(ctx, docs); err != nil {
 		return nil, err
 	} else {
@@ -132,7 +132,7 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		return false, nil
 	}
 
-	var id primitive.Object
+	var id primitive.Value
 	if old != nil {
 		id = old.GetOr(keyID, nil)
 	}
@@ -345,7 +345,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 	return nil
 }
 
-func (coll *Collection) insertOne(ctx context.Context, doc *primitive.Map) (primitive.Object, error) {
+func (coll *Collection) insertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
 	if ids, err := coll.insertMany(ctx, []*primitive.Map{doc}); err != nil {
 		return nil, err
 	} else {
@@ -353,11 +353,11 @@ func (coll *Collection) insertOne(ctx context.Context, doc *primitive.Map) (prim
 	}
 }
 
-func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Object, error) {
+func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	coll.dataLock.Lock()
 	defer coll.dataLock.Unlock()
 
-	ids := make([]primitive.Object, len(docs))
+	ids := make([]primitive.Value, len(docs))
 	for i, doc := range docs {
 		if id, ok := doc.Get(keyID); !ok {
 			return nil, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
@@ -481,7 +481,7 @@ func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) (
 	coll.dataLock.Lock()
 	defer coll.dataLock.Unlock()
 
-	ids := make([]primitive.Object, 0, len(docs))
+	ids := make([]primitive.Value, 0, len(docs))
 	deletes := make([]*primitive.Map, 0, len(docs))
 	for _, doc := range docs {
 		if doc == nil {

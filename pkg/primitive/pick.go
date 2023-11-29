@@ -4,7 +4,7 @@ import (
 	"strconv"
 )
 
-func Pick[T any](v Object, paths ...string) (T, bool) {
+func Pick[T any](v Value, paths ...string) (T, bool) {
 	var zero T
 
 	cur := v
