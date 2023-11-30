@@ -10,23 +10,23 @@ import (
 
 var placeholder = regexp.MustCompile(`\$\{\{\s*([^\}]*)\s*\}\}`)
 
-// Apply applies the configuration represented by 'config' to the input value 'val'.
-// It replaces placeholders in the input value with corresponding values from the configuration.
-func Apply(val any, config *Config) (any, error) {
-	config.mu.RLock()
-	defer config.mu.RUnlock()
+// Apply applies the environment represented by 'environment' to the input value 'val'.
+// It replaces placeholders in the input value with corresponding values from the environment.
+func Apply(val any, environment *Environment) (any, error) {
+	environment.mu.RLock()
+	defer environment.mu.RUnlock()
 
 	v := reflect.ValueOf(val)
 	result := deepUnSpecify(v)
 
-	if err := applyRecursive(result, config.data); err != nil {
+	if err := applyRecursive(result, environment.data); err != nil {
 		return nil, err
 	}
 
 	return result.Interface(), nil
 }
 
-func applyRecursive(node reflect.Value, config map[string]any) error {
+func applyRecursive(node reflect.Value, environment map[string]any) error {
 	switch node.Kind() {
 	case reflect.Map:
 		for _, key := range node.MapKeys() {
@@ -35,14 +35,14 @@ func applyRecursive(node reflect.Value, config map[string]any) error {
 			switch value.Kind() {
 			case reflect.String:
 				strValue := value.String()
-				newValue, err := replacePlaceholders(strValue, config)
+				newValue, err := replacePlaceholders(strValue, environment)
 				if err != nil {
 					return err
 				}
 
 				node.SetMapIndex(key, reflect.ValueOf(newValue))
 			case reflect.Map, reflect.Slice:
-				if err := applyRecursive(value, config); err != nil {
+				if err := applyRecursive(value, environment); err != nil {
 					return err
 				}
 			}
@@ -50,7 +50,7 @@ func applyRecursive(node reflect.Value, config map[string]any) error {
 	case reflect.Slice:
 		for i := 0; i < node.Len(); i++ {
 			elem := reflect.ValueOf(node.Index(i).Interface())
-			err := applyRecursive(elem, config)
+			err := applyRecursive(elem, environment)
 			if err != nil {
 				return err
 			}
@@ -59,14 +59,14 @@ func applyRecursive(node reflect.Value, config map[string]any) error {
 	return nil
 }
 
-func replacePlaceholders(input string, config map[string]any) (any, error) {
+func replacePlaceholders(input string, environment map[string]any) (any, error) {
 	matches := placeholder.FindAllStringSubmatch(input, -1)
 
 	if len(matches) == 0 {
 		return input, nil
 	}
 	if len(matches) == 1 {
-		return evaluateExpression(matches[0][1], config)
+		return evaluateExpression(matches[0][1], environment)
 	}
 
 	return placeholder.ReplaceAllStringFunc(input, func(match string) string {
@@ -76,7 +76,7 @@ func replacePlaceholders(input string, config map[string]any) (any, error) {
 		}
 		expression := matches[1]
 
-		value, err := evaluateExpression(expression, config)
+		value, err := evaluateExpression(expression, environment)
 		if err != nil {
 			return match
 		}
@@ -85,12 +85,12 @@ func replacePlaceholders(input string, config map[string]any) (any, error) {
 	}), nil
 }
 
-func evaluateExpression(expression string, config map[string]any) (any, error) {
+func evaluateExpression(expression string, environment map[string]any) (any, error) {
 	exp, err := jsonata.Compile(expression)
 	if err != nil {
 		return nil, err
 	}
-	exp.RegisterVars(config)
+	exp.RegisterVars(environment)
 	return exp.Eval(nil)
 }
 

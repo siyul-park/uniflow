@@ -1,28 +1,29 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 )
 
-// Config represents the configuration of your application.
-type Config struct {
+// Environment represents the environment of your application.
+type Environment struct {
 	data map[string]any
 	mu   sync.RWMutex
 }
 
 var typeAny = reflect.TypeOf((*any)(nil)).Elem()
 
-// New creates a new configuration instance.
-func New() *Config {
-	return &Config{
+// New creates a new environment instance.
+func New() *Environment {
+	return &Environment{
 		data: make(map[string]any),
 	}
 }
 
-// Set sets the value for the specified key in the configuration.
-func (c *Config) Set(key string, val any) bool {
+// Set sets the value for the specified key in the environment.
+func (c *Environment) Set(key string, val any) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -34,12 +35,12 @@ func (c *Config) Set(key string, val any) bool {
 		t := reflect.ValueOf(token)
 
 		if node.Kind() != reflect.Map || node.Type().Key().Kind() != reflect.String {
-			return false
+			return fmt.Errorf("invalid map type for key %s", key)
 		}
 
 		if i == len(tokens)-1 {
 			node.SetMapIndex(t, v)
-			return true
+			return nil
 		}
 
 		child := node.MapIndex(t)
@@ -49,12 +50,12 @@ func (c *Config) Set(key string, val any) bool {
 		}
 		node = reflect.ValueOf(child.Interface())
 	}
-	return false
+	return nil
 }
 
-// Get retrieves the value for the specified key from the configuration.
+// Get retrieves the value for the specified key from the environment.
 // If the key is not present, it returns a default value and a boolean indicating the key's existence.
-func (c *Config) Get(key string) (any, bool) {
+func (c *Environment) Get(key string) (any, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -78,17 +79,28 @@ func (c *Config) Get(key string) (any, bool) {
 	return node.Interface(), true
 }
 
-// Delete removes the specified key from the configuration.
-func (c *Config) Delete(key string) bool {
+// Delete removes the specified key from the environment.
+func (c *Environment) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	tokens := strings.Split(key, ".")
-	return c.deleteRecursive(reflect.ValueOf(c.data), tokens)
+	c.deleteRecursive(reflect.ValueOf(c.data), tokens)
 }
 
-// deleteRecursive is a recursive helper function for Delete.
-func (c *Config) deleteRecursive(node reflect.Value, tokens []string) bool {
+// GetData returns a read-only copy of the environment data.
+func (c *Environment) GetData() map[string]any {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	result := make(map[string]any, len(c.data))
+	for k, v := range c.data {
+		result[k] = v
+	}
+	return result
+}
+
+func (c *Environment) deleteRecursive(node reflect.Value, tokens []string) bool {
 	t := reflect.ValueOf(tokens[0])
 
 	if node.Kind() != reflect.Map || node.Type().Key().Kind() != reflect.String {
