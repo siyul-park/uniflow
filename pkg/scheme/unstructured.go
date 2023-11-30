@@ -7,16 +7,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	// Unstructured is an Spec that is not marshaled for structuring.
-	Unstructured struct {
-		doc *primitive.Map
-		mu  sync.RWMutex
-	}
-)
+// Unstructured is a data structure that implements the Spec interface and is not marshaled for structuring.
+type Unstructured struct {
+	doc *primitive.Map
+	mu  sync.RWMutex
+}
 
-var _ Spec = &Unstructured{}
-
+// Key constants for commonly used fields in Unstructured.
 const (
 	KeyID        = "id"
 	KeyKind      = "kind"
@@ -25,7 +22,9 @@ const (
 	KeyLinks     = "links"
 )
 
-// NewUnstructured returns a new Unstructured.
+var _ Spec = &Unstructured{}
+
+// NewUnstructured returns a new Unstructured instance with an optional primitive.Map.
 func NewUnstructured(doc *primitive.Map) *Unstructured {
 	if doc == nil {
 		doc = primitive.NewMap()
