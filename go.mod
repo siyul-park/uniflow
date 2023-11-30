@@ -19,7 +19,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tryvium-travels/memongo v0.10.0
-	github.com/xiatechs/jsonata-go v1.8.0
+	github.com/xiatechs/jsonata-go v1.8.1
 	go.mongodb.org/mongo-driver v1.12.1
 	gopkg.in/yaml.v3 v3.0.1
 )
