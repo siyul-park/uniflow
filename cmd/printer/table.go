@@ -1,61 +1,59 @@
 package printer
 
 import (
+	"errors"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/xiatechs/jsonata-go"
 )
 
-type (
-	TableColumnDefinition struct {
-		Name   string
-		Format string
-	}
+// TableColumnDefinition represents the definition of a table column.
+type TableColumnDefinition struct {
+	Name   string // Name is the name of the column.
+	Format string // Format is the JSONata expression for formatting the column.
+}
 
-	TablePrinter struct {
-		names   []string
-		formats []*jsonata.Expr
-	}
-)
+// TablePrinter is responsible for printing tabular data based on the provided columns.
+type TablePrinter struct {
+	names   []string   
+	formats []*jsonata.Expr 
+}
 
-var (
-	style = table.Style{
-		Name: "StyleDefault",
-		Box: table.BoxStyle{
-			BottomLeft:       "",
-			BottomRight:      "",
-			BottomSeparator:  "",
-			EmptySeparator:   text.RepeatAndTrim(" ", text.RuneWidthWithoutEscSequences(" ")),
-			Left:             "",
-			LeftSeparator:    "",
-			MiddleHorizontal: "",
-			MiddleSeparator:  "",
-			MiddleVertical:   "",
-			PaddingLeft:      " ",
-			PaddingRight:     " ",
-			PageSeparator:    "\n",
-			Right:            "",
-			RightSeparator:   "",
-			TopLeft:          "",
-			TopRight:         "",
-			TopSeparator:     "",
-			UnfinishedRow:    " ~",
-		},
-		Color:  table.ColorOptionsDefault,
-		Format: table.FormatOptionsDefault,
-		HTML:   table.DefaultHTMLOptions,
-		Options: table.Options{
-			DrawBorder:      false,
-			SeparateColumns: true,
-			SeparateFooter:  false,
-			SeparateHeader:  false,
-			SeparateRows:    false,
-		},
-		Title: table.TitleOptionsDefault,
-	}
-)
+// style is the default style configuration for the table.
+var style = table.Style{
+	Name: "StyleDefault",
+	Box: table.BoxStyle{
+		BottomLeft:       "",
+		BottomRight:      "",
+		BottomSeparator:  "",
+		EmptySeparator:   text.RepeatAndTrim(" ", text.RuneWidthWithoutEscSequences(" ")),
+		Left:             "",
+		LeftSeparator:    "",
+		MiddleHorizontal: "",
+		MiddleSeparator:  "",
+		MiddleVertical:   "",
+		PaddingLeft:      " ",
+		PaddingRight:     " ",
+		PageSeparator:    "\n",
+		Right:            "",
+		RightSeparator:   "",
+		TopLeft:          "",
+		TopRight:         "",
+		TopSeparator:     "",
+		UnfinishedRow:    " ~",
+	},
+	Color:  table.ColorOptionsDefault,
+	Format: table.FormatOptionsDefault,
+	HTML:   table.DefaultHTMLOptions,
+	Options: table.Options{
+		DoNotColorBordersAndSeparators: true,
+	},
+	Title: table.TitleOptionsDefault,
+}
 
+// NewTable creates a new TablePrinter based on the provided column definitions.
 func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 	names := make([]string, len(columns))
 	formats := make([]*jsonata.Expr, len(columns))
@@ -77,6 +75,7 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 	}, nil
 }
 
+// Print formats and prints the provided data as a table.
 func (p *TablePrinter) Print(data any) (string, error) {
 	value, err := primitive.MarshalText(data)
 	if err != nil {
@@ -84,10 +83,13 @@ func (p *TablePrinter) Print(data any) (string, error) {
 	}
 
 	var elements []any
-	if v, ok := value.(*primitive.Slice); ok {
+	switch v := value.(type) {
+	case *primitive.Slice:
 		elements = v.Slice()
-	} else if v, ok := value.(*primitive.Map); ok {
+	case *primitive.Map:
 		elements = append(elements, v.Interface())
+	default:
+		return "", errors.New("unsupported data type")
 	}
 
 	header := make(table.Row, len(p.names))

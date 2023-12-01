@@ -6,27 +6,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type (
-	// EncoderGroup is a group of Encoder.
-	EncoderGroup[S, T any] struct {
-		encoders []Encoder[S, T]
-		lock     sync.RWMutex
-	}
+// EncoderGroup is a group of Encoder.
+type EncoderGroup[S, T any] struct {
+	encoders []Encoder[S, T]
+	lock     sync.RWMutex
+}
 
-	// DecoderGroup is a group of Decoder.
-	DecoderGroup[S, T any] struct {
-		decoders []Decoder[S, T]
-		lock     sync.RWMutex
-	}
-)
-
+// Ensure EncoderGroup implements the Encoder interface.
 var _ Encoder[any, any] = (*EncoderGroup[any, any])(nil)
-var _ Decoder[any, any] = (*DecoderGroup[any, any])(nil)
 
+// NewEncoderGroup creates a new EncoderGroup instance.
 func NewEncoderGroup[S, T any]() *EncoderGroup[S, T] {
 	return &EncoderGroup[S, T]{}
 }
 
+// Add adds an encoder to the group.
 func (e *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
@@ -34,6 +28,7 @@ func (e *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) {
 	e.encoders = append(e.encoders, encoder)
 }
 
+// Len returns the number of encoders in the group.
 func (e *EncoderGroup[S, T]) Len() int {
 	e.lock.Lock()
 	defer e.lock.Unlock()
@@ -41,6 +36,7 @@ func (e *EncoderGroup[S, T]) Len() int {
 	return len(e.encoders)
 }
 
+// Encode attempts to encode the source using the encoders in the group.
 func (e *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
@@ -56,10 +52,21 @@ func (e *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	return zero, errors.WithStack(ErrUnsupportedValue)
 }
 
+// DecoderGroup is a group of Decoder.
+type DecoderGroup[S, T any] struct {
+	decoders []Decoder[S, T]
+	lock     sync.RWMutex
+}
+
+// Ensure DecoderGroup implements the Decoder interface.
+var _ Decoder[any, any] = (*DecoderGroup[any, any])(nil)
+
+// NewDecoderGroup creates a new DecoderGroup instance.
 func NewDecoderGroup[S, T any]() *DecoderGroup[S, T] {
 	return &DecoderGroup[S, T]{}
 }
 
+// Add adds a decoder to the group.
 func (d *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -67,6 +74,7 @@ func (d *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) {
 	d.decoders = append(d.decoders, decoder)
 }
 
+// Len returns the number of decoders in the group.
 func (d *DecoderGroup[S, T]) Len() int {
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -74,6 +82,7 @@ func (d *DecoderGroup[S, T]) Len() int {
 	return len(d.decoders)
 }
 
+// Decode attempts to decode the source using the decoders in the group.
 func (d *DecoderGroup[S, T]) Decode(source S, target T) error {
 	d.lock.RLock()
 	defer d.lock.RUnlock()

@@ -1,6 +1,7 @@
 package start
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"os/signal"
@@ -17,95 +18,106 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type (
-	Config struct {
-		Scheme   *scheme.Scheme
-		Hook     *hook.Hook
-		Database database.Database
-		FS       fs.FS
-	}
-)
+// Config holds the configuration for the uniflow command.
+type Config struct {
+	Scheme   *scheme.Scheme
+	Hook     *hook.Hook
+	Database database.Database
+	FS       fs.FS
+}
 
+// NewCmd creates a new Cobra command for the uniflow application.
 func NewCmd(config Config) *cobra.Command {
-	sc := config.Scheme
-	hk := config.Hook
-	db := config.Database
-	fsys := config.FS
-
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start a uniflow worker",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			ctx := cmd.Context()
-
-			ns, err := cmd.Flags().GetString(FlagNamespace)
-			if err != nil {
-				return err
-			}
-			boot, err := cmd.Flags().GetString(FlagBoot)
-			if err != nil {
-				return err
-			}
-
-			if boot != "" {
-				st, err := storage.New(ctx, storage.Config{
-					Scheme:   sc,
-					Database: db,
-				})
-				if err != nil {
-					return err
-				}
-
-				var filter *storage.Filter
-				if ns != "" {
-					filter = storage.Where[string](scheme.KeyNamespace).EQ(ns)
-				}
-
-				if specs, err := st.FindMany(ctx, filter, &database.FindOptions{
-					Limit: lo.ToPtr[int](1),
-				}); err != nil {
-					return err
-				} else if len(specs) == 0 {
-					b := resource.NewBuilder().
-						Scheme(sc).
-						Namespace(ns).
-						FS(fsys).
-						Filename(boot)
-
-					specs, err := b.Build()
-					if err != nil {
-						return err
-					}
-
-					if _, err := st.InsertMany(ctx, specs); err != nil {
-						return err
-					}
-				}
-			}
-
-			r, err := runtime.New(ctx, runtime.Config{
-				Namespace: ns,
-				Scheme:    sc,
-				Hooks:     hk,
-				Database:  db,
-			})
-			if err != nil {
-				return err
-			}
-
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-			go func() {
-				<-sigs
-				_ = r.Close(ctx)
-			}()
-
-			return r.Start(ctx)
-		},
+		Short: "Start a worker process",
+		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the namespace. If not set it up, runs all namespaces. In this case, if namespace is sharing resources exclusively, some nodes may not run normally.")
-	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path that must be installed initially if the node does not exist in namespace.")
+	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the worker's namespace.")
+	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path for initializing nodes.")
 
 	return cmd
+}
+
+func runStartCommand(config Config) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, _ []string) error {
+		ctx := cmd.Context()
+		ns, err := cmd.Flags().GetString(FlagNamespace)
+		if err != nil {
+			return err
+		}
+
+		boot, err := cmd.Flags().GetString(FlagBoot)
+		if err != nil {
+			return err
+		}
+
+		if boot != "" {
+			if err := initializeNamespace(ctx, config, ns, boot); err != nil {
+				return err
+			}
+		}
+
+		r, err := runtime.New(ctx, runtime.Config{
+			Namespace: ns,
+			Scheme:    config.Scheme,
+			Hooks:     config.Hook,
+			Database:  config.Database,
+		})
+		if err != nil {
+			return err
+		}
+
+		handleSignals(ctx, r)
+		return r.Start(ctx)
+	}
+}
+
+func initializeNamespace(ctx context.Context, config Config, ns, boot string) error {
+	st, err := storage.New(ctx, storage.Config{
+		Scheme:   config.Scheme,
+		Database: config.Database,
+	})
+	if err != nil {
+		return err
+	}
+
+	filter := storage.Where[string](scheme.KeyNamespace).EQ(ns)
+	specs, err := st.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
+	if err != nil {
+		return err
+	}
+
+	if len(specs) == 0 {
+		if err := installBootFile(ctx, config, ns, boot); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func installBootFile(ctx context.Context, config Config, ns, boot string) error {
+	b := resource.NewBuilder().Scheme(config.Scheme).Namespace(ns).FS(config.FS).Filename(boot)
+	specs, err := b.Build()
+	if err != nil {
+		return err
+	}
+
+	st, err := storage.New(ctx, storage.Config{Scheme: config.Scheme, Database: config.Database})
+	if err != nil {
+		return err
+	}
+
+	_, err = st.InsertMany(ctx, specs)
+	return err
+}
+
+func handleSignals(ctx context.Context, r *runtime.Runtime) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		_ = r.Close(ctx)
+	}()
 }
