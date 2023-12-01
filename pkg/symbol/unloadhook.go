@@ -13,7 +13,6 @@ type (
 	UnloadHookFunc func(n node.Node) error
 )
 
-// Ensure that UnloadHookFunc implements the UnloadHook interface.
 var _ UnloadHook = UnloadHookFunc(func(n node.Node) error { return nil })
 
 // Unload is the implementation of the Unload method for UnloadHookFunc.

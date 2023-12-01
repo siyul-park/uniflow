@@ -6,24 +6,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
-type (
-	// ReadPipe is a Pipe that can be Receive Packet.
-	ReadPipe struct {
-		in   chan *packet.Packet
-		out  chan *packet.Packet
-		done chan struct{}
-		mu   sync.RWMutex
-	}
+// ReadPipe represents a unidirectional pipe for receiving packets.
+type ReadPipe struct {
+	in   chan *packet.Packet
+	out  chan *packet.Packet
+	done chan struct{}
+	mu   sync.RWMutex
+}
 
-	// WritePipe is a Pipe that can be Send Packet.
-	WritePipe struct {
-		links []*ReadPipe
-		done  chan struct{}
-		mu    sync.RWMutex
-	}
-)
-
-// NewReadPipe returns a new ReadPipe.
+// NewReadPipe creates a new ReadPipe instance.
 func NewReadPipe() *ReadPipe {
 	p := &ReadPipe{
 		in:   make(chan *packet.Packet),
@@ -70,7 +61,7 @@ func NewReadPipe() *ReadPipe {
 	return p
 }
 
-// Receive returns a channel that receives Packet.
+// Receive returns a channel that receives packets.
 func (p *ReadPipe) Receive() <-chan *packet.Packet {
 	return p.out
 }
@@ -81,7 +72,7 @@ func (p *ReadPipe) Done() <-chan struct{} {
 }
 
 // Close closes the ReadPipe.
-// Packet that are not processed will be discard.
+// Unprocessed packets will be discarded.
 func (p *ReadPipe) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -96,6 +87,7 @@ func (p *ReadPipe) Close() {
 	close(p.in)
 }
 
+// send sends a packet through the pipe.
 func (p *ReadPipe) send(pck *packet.Packet) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -107,7 +99,14 @@ func (p *ReadPipe) send(pck *packet.Packet) {
 	}
 }
 
-// NewWritePipe returns a new WritePipe.
+// WritePipe represents a unidirectional pipe for sending packets.
+type WritePipe struct {
+	links []*ReadPipe
+	done  chan struct{}
+	mu    sync.RWMutex
+}
+
+// NewWritePipe creates a new WritePipe instance.
 func NewWritePipe() *WritePipe {
 	return &WritePipe{
 		links: nil,
@@ -116,7 +115,7 @@ func NewWritePipe() *WritePipe {
 	}
 }
 
-// Send a Packet to all linked ReadPipe.
+// Send sends a packet to all linked ReadPipe instances.
 func (p *WritePipe) Send(pck *packet.Packet) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -133,7 +132,7 @@ func (p *WritePipe) Send(pck *packet.Packet) {
 	wg.Wait()
 }
 
-// Link a ReadPipe to enable communication with each other.
+// Link links a ReadPipe to enable communication with each other.
 func (p *WritePipe) Link(pipe *ReadPipe) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -175,7 +174,7 @@ func (p *WritePipe) Done() <-chan struct{} {
 }
 
 // Close closes the WritePipe.
-// Packet that are not processed will be discard.
+// Unprocessed packets will be discarded.
 func (p *WritePipe) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()

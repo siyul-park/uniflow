@@ -6,16 +6,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-type (
-	// Port is a linking terminal that allows *packet.Packet to be exchanged.
-	Port struct {
-		streams   map[*process.Process]*Stream
-		links     []*Port
-		initHooks []InitHook
-		done      chan struct{}
-		mu        sync.RWMutex
-	}
-)
+// Port is a linking terminal that allows *packet.Packet to be exchanged.
+type Port struct {
+	streams   map[*process.Process]*Stream
+	links     []*Port
+	initHooks []InitHook
+	done      chan struct{}
+	mu        sync.RWMutex
+}
 
 // New returns a new Port.
 func New() *Port {
@@ -25,7 +23,7 @@ func New() *Port {
 	}
 }
 
-// AddInitHook adds a InitHook.
+// AddInitHook adds an InitHook to the Port.
 func (p *Port) AddInitHook(hook InitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -33,7 +31,7 @@ func (p *Port) AddInitHook(hook InitHook) {
 	p.initHooks = append(p.initHooks, hook)
 }
 
-// Link connects two Port to enable communication with each other.
+// Link connects two Ports to enable communication with each other.
 func (p *Port) Link(port *Port) {
 	p.link(port)
 	port.link(p)
@@ -45,7 +43,7 @@ func (p *Port) Unlink(port *Port) {
 	port.unlink(p)
 }
 
-// Links return length of linked.
+// Links returns the number of linked Ports.
 func (p *Port) Links() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -53,8 +51,9 @@ func (p *Port) Links() int {
 	return len(p.links)
 }
 
-// Open Stream to communicate. For each process, Stream is opened independently.
-// When Process is closed, Stream is also closed. Stream Send and Receive Packet to Broadcast to all other Port connected to the Port.
+// Open creates or returns an existing Stream for communication with a process.
+// The Stream is closed when the associated Process or Port is closed.
+// It broadcasts sent and received packets to all other Ports connected to it.
 func (p *Port) Open(proc *process.Process) *Stream {
 	select {
 	case <-proc.Done():
@@ -133,8 +132,8 @@ func (p *Port) Done() <-chan struct{} {
 	return p.done
 }
 
-// Close the Port.
-// All Stream currently open will also be shut down and any Packet that are not processed will be discard.
+// Close closes the Port.
+// All Streams currently open will also be shut down, and any unprocessed packets will be discarded.
 func (p *Port) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()

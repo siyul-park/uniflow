@@ -13,7 +13,6 @@ type (
 	LoadHookFunc func(n node.Node) error
 )
 
-// Ensure that LoadHookFunc implements the LoadHook interface.
 var _ LoadHook = LoadHookFunc(func(n node.Node) error { return nil })
 
 // Load is the implementation of the Load method for LoadHookFunc.
