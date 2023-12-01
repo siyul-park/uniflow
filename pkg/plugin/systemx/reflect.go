@@ -14,29 +14,30 @@ import (
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
-type (
-	ReflectNodeConfig struct {
-		ID      ulid.ULID
-		OP      string
-		Storage *storage.Storage
-	}
+// ReflectNodeConfig holds the configuration for ReflectNode.
+type ReflectNodeConfig struct {
+	ID      ulid.ULID        // ID is the unique identifier for ReflectNode.
+	OP      string           // OP is the operation to be performed by ReflectNode.
+	Storage *storage.Storage // Storage is the storage instance associated with ReflectNode.
+}
 
-	ReflectNode struct {
-		*node.OneToOneNode
-		op      string
-		storage *storage.Storage
-	}
+// ReflectNode represents a node that reflects operations like delete, insert, select, or update.
+type ReflectNode struct {
+	*node.OneToOneNode                  // Embedded OneToOneNode to support the node structure.
+	op                 string           // op is the operation to be performed.
+	storage            *storage.Storage // storage is the storage instance associated with ReflectNode.
+}
 
-	ReflectSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		OP              string `map:"op"`
-	}
-)
+// ReflectSpec defines the specification for the ReflectNode.
+type ReflectSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	OP              string `map:"op"` // OP is the operation to be performed by ReflectNode.
+}
 
-const (
-	KindReflect = "reflect"
-)
+// KindReflect is the kind identifier for ReflectNode.
+const KindReflect = "reflect"
 
+// Operation constants for ReflectNode.
 const (
 	OPDelete = "delete"
 	OPInsert = "insert"
@@ -44,6 +45,10 @@ const (
 	OPUpdate = "update"
 )
 
+var _ node.Node = (*ReflectNode)(nil)
+var _ scheme.Spec = (*ReflectSpec)(nil)
+
+// NewReflectNode creates a new instance of ReflectNode with the given configuration.
 func NewReflectNode(config ReflectNodeConfig) *ReflectNode {
 	id := config.ID
 	op := config.OP

@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// AddToHooks returns a function that adds hooks for HTTPNode to the given hook.Hook.
+// AddToHooks returns a function that adds hooks to the given hook.Hook.
 func AddToHooks() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
@@ -42,7 +42,7 @@ func AddToHooks() func(*hook.Hook) error {
 	}
 }
 
-// AddToScheme returns a function that adds schemes for HTTPNode and RouterNode to the given scheme.Scheme.
+// AddToScheme returns a function that adds types and codecs to the provided scheme.
 func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindHTTP, &HTTPSpec{})
