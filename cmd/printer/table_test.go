@@ -15,14 +15,8 @@ func TestTablePrinter_Print(t *testing.T) {
 	}
 
 	p, err := NewTable([]TableColumnDefinition{
-		{
-			Name:   "foo",
-			Format: "$.foo",
-		},
-		{
-			Name:   "bar",
-			Format: "$.bar",
-		},
+		{Name: "foo", Format: "$.foo"},
+		{Name: "bar", Format: "$.bar"},
 	})
 	assert.NoError(t, err)
 

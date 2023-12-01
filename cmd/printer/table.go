@@ -17,8 +17,8 @@ type TableColumnDefinition struct {
 
 // TablePrinter is responsible for printing tabular data based on the provided columns.
 type TablePrinter struct {
-	names   []string   
-	formats []*jsonata.Expr 
+	names   []string
+	formats []*jsonata.Expr
 }
 
 // style is the default style configuration for the table.
