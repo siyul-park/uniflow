@@ -15,16 +15,18 @@ type (
 	CodecFunc func(spec Spec) (node.Node, error)
 )
 
+// CodecWithType creates a new CodecFunc for the specified type T.
 func CodecWithType[T Spec](decode func(spec T) (node.Node, error)) Codec {
 	return CodecFunc(func(spec Spec) (node.Node, error) {
-		if spec, ok := spec.(T); !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-		} else {
-			return decode(spec)
+		if converted, ok := spec.(T); ok {
+			return decode(converted)
 		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
+// Decode implements the Decode method for CodecFunc.
 func (c CodecFunc) Decode(spec Spec) (node.Node, error) {
 	return c(spec)
 }
+

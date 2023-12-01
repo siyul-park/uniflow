@@ -31,7 +31,7 @@ func TestStorage_Watch(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	stream, err := st.Watch(context.Background(), nil)
@@ -100,12 +100,12 @@ func TestStorage_InsertMany(t *testing.T) {
 		&scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		},
 		&scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		},
 	}
 
@@ -169,12 +169,12 @@ func TestStorage_UpdateMany(t *testing.T) {
 		&scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		},
 		&scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		},
 	}
 
@@ -208,7 +208,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	ok, err := st.DeleteOne(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
@@ -241,7 +241,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	count, err := st.DeleteMany(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
@@ -275,7 +275,7 @@ func TestStorage_FindOne(t *testing.T) {
 		spec := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		}
 
 		_, _ = st.InsertOne(context.Background(), spec)
@@ -305,7 +305,7 @@ func TestStorage_FindOne(t *testing.T) {
 		spec := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 			Name:      faker.Word(),
 		}
 
@@ -337,7 +337,7 @@ func TestStorage_FindMany(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	_, _ = st.InsertOne(context.Background(), spec)

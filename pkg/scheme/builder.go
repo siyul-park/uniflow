@@ -1,16 +1,14 @@
 package scheme
 
-type (
-	// Builder builds a new Scheme.
-	Builder []func(*Scheme) error
-)
+// Builder is a collection of functions to build a new Scheme.
+type Builder []func(*Scheme) error
 
-// NewBuilder returns a new SchemeBuilder.
+// NewBuilder creates a new SchemeBuilder with the provided functions.
 func NewBuilder(funcs ...func(*Scheme) error) Builder {
 	return Builder(funcs)
 }
 
-// AddToScheme adds all registered types to s.
+// AddToScheme adds all registered types to the given Scheme.
 func (b *Builder) AddToScheme(s *Scheme) error {
 	for _, f := range *b {
 		if err := f(s); err != nil {
@@ -20,7 +18,7 @@ func (b *Builder) AddToScheme(s *Scheme) error {
 	return nil
 }
 
-// Register adds one or more Spec.
+// Register adds one or more functions to register Spec types.
 func (b *Builder) Register(funcs ...func(*Scheme) error) {
 	*b = append(*b, funcs...)
 }

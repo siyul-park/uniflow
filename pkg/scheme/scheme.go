@@ -9,18 +9,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 )
 
-type (
-	// Scheme defines methods for decode Spec.
-	Scheme struct {
-		types  map[string]reflect.Type
-		codecs map[string]Codec
-		mu     sync.RWMutex
-	}
-)
+// Scheme defines a registry for handling decoding of Spec objects.
+type Scheme struct {
+	types  map[string]reflect.Type
+	codecs map[string]Codec
+	mu     sync.RWMutex
+}
 
 var _ Codec = &Scheme{}
 
-// New returns a new Scheme.
+// New creates a new Scheme instance.
 func New() *Scheme {
 	return &Scheme{
 		types:  make(map[string]reflect.Type),
@@ -28,7 +26,7 @@ func New() *Scheme {
 	}
 }
 
-// AddKnownType adds a new Type and Spec to the Scheme.
+// AddKnownType adds a new Spec type to the Scheme, associating it with a kind.
 func (s *Scheme) AddKnownType(kind string, spec Spec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -45,7 +43,7 @@ func (s *Scheme) KnownType(kind string) (reflect.Type, bool) {
 	return t, ok
 }
 
-// AddCodec adds a new Codec to the Scheme.
+// AddCodec associates a Codec with a specific kind in the Scheme.
 func (s *Scheme) AddCodec(kind string, codec Codec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -53,7 +51,7 @@ func (s *Scheme) AddCodec(kind string, codec Codec) {
 	s.codecs[kind] = codec
 }
 
-// Codec returns Codec with the given kind.
+// Codec returns a Codec associated with the given kind.
 func (s *Scheme) Codec(kind string) (Codec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -62,7 +60,7 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	return c, ok
 }
 
-// New returns a new Spec with the given kind.
+// New creates a new instance of Spec with the given kind.
 func (s *Scheme) New(kind string) (Spec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -107,7 +105,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-// Kinds returns the kinds of the given Spec.
+// Kinds returns the kinds associated with the given Spec.
 func (s *Scheme) Kinds(spec Spec) []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

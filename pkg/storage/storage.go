@@ -11,27 +11,24 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	// Config is a config for Storage.
-	Config struct {
-		Scheme   *scheme.Scheme
-		Database database.Database
-	}
+// Config is a configuration struct for Storage.
+type Config struct {
+	Scheme   *scheme.Scheme
+	Database database.Database
+}
 
-	// Storage is the storage that stores scheme.Spec.
-	Storage struct {
-		scheme     *scheme.Scheme
-		collection database.Collection
-		mu         sync.RWMutex
-	}
-)
+// Storage is responsible for storing scheme.Spec.
+type Storage struct {
+	scheme *scheme.Scheme
+	nodes  database.Collection
+	mu     sync.RWMutex
+}
 
-const (
-	CollectionNodes = "nodes"
-)
+// CollectionNodes is the name of the nodes collection in the storage.
+const CollectionNodes = "nodes"
 
 var (
-	indexes = []database.IndexModel{
+	indexesNode = []database.IndexModel{
 		{
 			Name:    "namespace_name",
 			Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
@@ -41,25 +38,25 @@ var (
 	}
 )
 
-// New returns a new Storage.
+// New creates a new Storage instance.
 func New(ctx context.Context, config Config) (*Storage, error) {
 	scheme := config.Scheme
 	db := config.Database
 
-	collection, err := db.Collection(ctx, CollectionNodes)
+	nodes, err := db.Collection(ctx, CollectionNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Storage{
-		scheme:     scheme,
-		collection: collection,
+		scheme: scheme,
+		nodes:  nodes,
 	}
 
-	if exists, err := s.collection.Indexes().List(ctx); err != nil {
+	if exists, err := s.nodes.Indexes().List(ctx); err != nil {
 		return nil, err
 	} else {
-		for _, index := range indexes {
+		for _, index := range indexesNode {
 			index = database.IndexModel{
 				Name:    index.Name,
 				Keys:    index.Keys,
@@ -71,7 +68,7 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 			for _, i := range exists {
 				if i.Name == index.Name {
 					if reflect.DeepEqual(i, index) {
-						s.collection.Indexes().Drop(ctx, i.Name)
+						s.nodes.Indexes().Drop(ctx, i.Name)
 					}
 					break
 				}
@@ -79,28 +76,28 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 			if ok {
 				continue
 			}
-			s.collection.Indexes().Create(ctx, index)
+			s.nodes.Indexes().Create(ctx, index)
 		}
 	}
 
 	return s, nil
 }
 
-// Watch returns Stream to track changes.
+// Watch returns a Stream to track changes based on the provided filter.
 func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	f, err := filter.Encode()
 	if err != nil {
 		return nil, err
 	}
 
-	stream, err := s.collection.Watch(ctx, f)
+	stream, err := s.nodes.Watch(ctx, f)
 	if err != nil {
 		return nil, err
 	}
 	return NewStream(stream), nil
 }
 
-// InsertOne inserts a single scheme.Spec and return ID.
+// InsertOne inserts a single scheme.Spec and returns its ID.
 func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -111,7 +108,7 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 		return ulid.ULID{}, err
 	}
 	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(scheme.NamespaceDefault)
+		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}
 	if unstructured.GetID() == (ulid.ULID{}) {
 		unstructured.SetID(ulid.Make())
@@ -122,17 +119,17 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 	}
 
 	var id ulid.ULID
-	if pk, err := s.collection.InsertOne(ctx, unstructured.Doc()); err != nil {
+	if pk, err := s.nodes.InsertOne(ctx, unstructured.Doc()); err != nil {
 		return ulid.ULID{}, err
 	} else if err := primitive.Unmarshal(pk, &id); err != nil {
-		_, _ = s.collection.DeleteOne(ctx, database.Where(scheme.KeyID).EQ(pk))
+		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).EQ(pk))
 		return ulid.ULID{}, err
 	} else {
 		return id, nil
 	}
 }
 
-// InsertMany inserts multiple scheme.Spec and return IDs.
+// InsertMany inserts multiple scheme.Spec instances and returns their IDs.
 func (s *Storage) InsertMany(ctx context.Context, objs []scheme.Spec) ([]ulid.ULID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -145,7 +142,7 @@ func (s *Storage) InsertMany(ctx context.Context, objs []scheme.Spec) ([]ulid.UL
 			return nil, err
 		}
 		if unstructured.GetNamespace() == "" {
-			unstructured.SetNamespace(scheme.NamespaceDefault)
+			unstructured.SetNamespace(scheme.DefaultNamespace)
 		}
 		if unstructured.GetID() == (ulid.ULID{}) {
 			unstructured.SetID(ulid.Make())
@@ -159,10 +156,10 @@ func (s *Storage) InsertMany(ctx context.Context, objs []scheme.Spec) ([]ulid.UL
 	}
 
 	ids := make([]ulid.ULID, 0)
-	if pks, err := s.collection.InsertMany(ctx, docs); err != nil {
+	if pks, err := s.nodes.InsertMany(ctx, docs); err != nil {
 		return nil, err
 	} else if err := primitive.Unmarshal(primitive.NewSlice(pks...), &ids); err != nil {
-		_, _ = s.collection.DeleteMany(ctx, database.Where(scheme.KeyID).IN(pks...))
+		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).IN(pks...))
 		return nil, err
 	} else {
 		return ids, nil
@@ -180,7 +177,7 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 		return false, err
 	}
 	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(scheme.NamespaceDefault)
+		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}
 	if unstructured.GetID() == (ulid.ULID{}) {
 		return false, nil
@@ -191,10 +188,10 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 	}
 
 	filter, _ := Where[ulid.ULID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
-	return s.collection.UpdateOne(ctx, filter, unstructured.Doc())
+	return s.nodes.UpdateOne(ctx, filter, unstructured.Doc())
 }
 
-// UpdateMany multiple scheme.Spec and return the number of success.
+// UpdateMany updates multiple scheme.Spec instances and returns the number of successes.
 func (s *Storage) UpdateMany(ctx context.Context, objs []scheme.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -207,7 +204,7 @@ func (s *Storage) UpdateMany(ctx context.Context, objs []scheme.Spec) (int, erro
 			return 0, err
 		}
 		if unstructured.GetNamespace() == "" {
-			unstructured.SetNamespace(scheme.NamespaceDefault)
+			unstructured.SetNamespace(scheme.DefaultNamespace)
 		}
 		if unstructured.GetID() == (ulid.ULID{}) {
 			continue
@@ -223,7 +220,7 @@ func (s *Storage) UpdateMany(ctx context.Context, objs []scheme.Spec) (int, erro
 	count := 0
 	for _, unstructured := range unstructureds {
 		filter, _ := Where[ulid.ULID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
-		if ok, err := s.collection.UpdateOne(ctx, filter, unstructured.Doc()); err != nil {
+		if ok, err := s.nodes.UpdateOne(ctx, filter, unstructured.Doc()); err != nil {
 			return count, err
 		} else if ok {
 			count += 1
@@ -243,10 +240,10 @@ func (s *Storage) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
 		return false, err
 	}
 
-	return s.collection.DeleteOne(ctx, f)
+	return s.nodes.DeleteOne(ctx, f)
 }
 
-// DeleteMany deletes multiple scheme.Spec and returns the number of success.
+// DeleteMany deletes multiple scheme.Spec instances and returns the number of successes.
 func (s *Storage) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -256,10 +253,10 @@ func (s *Storage) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 		return 0, err
 	}
 
-	return s.collection.DeleteMany(ctx, f)
+	return s.nodes.DeleteMany(ctx, f)
 }
 
-// FindOne return the single scheme.Spec which is matched by the filter.
+// FindOne returns a single scheme.Spec matched by the filter.
 func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (scheme.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -269,7 +266,7 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 		return nil, err
 	}
 
-	if doc, err := s.collection.FindOne(ctx, f, options...); err != nil {
+	if doc, err := s.nodes.FindOne(ctx, f, options...); err != nil {
 		return nil, err
 	} else if doc != nil {
 		unstructured := scheme.NewUnstructured(doc)
@@ -285,7 +282,7 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 	return nil, nil
 }
 
-// FindMany returns multiple scheme.Spec which is matched by the filter.
+// FindMany returns multiple scheme.Spec instances matched by the filter.
 func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]scheme.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -296,7 +293,7 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	}
 
 	var specs []scheme.Spec
-	if docs, err := s.collection.FindMany(ctx, f, options...); err != nil {
+	if docs, err := s.nodes.FindMany(ctx, f, options...); err != nil {
 		return nil, err
 	} else {
 		for _, doc := range docs {

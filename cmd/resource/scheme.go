@@ -50,7 +50,7 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 		if c.namespace != "" {
 			unstructured.SetNamespace(c.namespace)
 		} else {
-			unstructured.SetNamespace(scheme.NamespaceDefault)
+			unstructured.SetNamespace(scheme.DefaultNamespace)
 		}
 	}
 

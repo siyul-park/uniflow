@@ -36,12 +36,12 @@ func TestLoader_LoadOne(t *testing.T) {
 		spec1 := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		}
 		spec2 := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 			Links: map[string][]scheme.PortLocation{
 				node.PortIO: {
 					{
@@ -95,7 +95,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		spec := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		}
 
 		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -139,7 +139,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		spec := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
-			Namespace: scheme.NamespaceDefault,
+			Namespace: scheme.DefaultNamespace,
 		}
 
 		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -187,12 +187,12 @@ func TestLoader_LoadAll(t *testing.T) {
 	spec1 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 	spec2 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 		Links: map[string][]scheme.PortLocation{
 			node.PortIO: {
 				{

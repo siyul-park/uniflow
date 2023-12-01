@@ -35,7 +35,7 @@ func TestExecute(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
