@@ -8,14 +8,14 @@ import (
 )
 
 type (
-	// ReconcilerConfig is a config for for the Reconciler.
+	// ReconcilerConfig holds the configuration for the Reconciler.
 	ReconcilerConfig struct {
-		Storage *storage.Storage
-		Loader  *Loader
-		Filter  *storage.Filter
+		Storage *storage.Storage // Storage is the storage used by the Reconciler.
+		Loader  *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
+		Filter  *storage.Filter  // Filter is the filter for tracking changes to the scheme.Spec.
 	}
 
-	// Reconciler keeps up to date symbol.Table by tracking changes to the scheme.Spec.
+	// Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
 	Reconciler struct {
 		storage *storage.Storage
 		loader  *Loader
@@ -26,7 +26,7 @@ type (
 	}
 )
 
-// NewReconciler returns a new Reconciler.
+// NewReconciler creates a new Reconciler with the given configuration.
 func NewReconciler(config ReconcilerConfig) *Reconciler {
 	storage := config.Storage
 	loader := config.Loader
@@ -40,13 +40,13 @@ func NewReconciler(config ReconcilerConfig) *Reconciler {
 	}
 }
 
-// Watch starts to watch the changes.
+// Watch starts watching for changes to scheme.Spec.
 func (r *Reconciler) Watch(ctx context.Context) error {
 	_, err := r.watch(ctx)
 	return err
 }
 
-// Reconcile starts to reflects the changes.
+// Reconcile reflects changes to scheme.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	stream, err := r.watch(ctx)
 	if err != nil {
@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 }
 
-// Close closes the Reconciler.
+// Close stops the Reconciler and closes the associated stream.
 func (r *Reconciler) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

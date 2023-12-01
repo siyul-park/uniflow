@@ -14,24 +14,22 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-type (
-	// Config represents the configuration for the Loader.
-	Config struct {
-		Namespace string           // Namespace is the namespace used by the Loader.
-		Table     *symbol.Table    // Table is the symbol table for managing symbols.
-		Scheme    *scheme.Scheme   // Scheme is the scheme used by the Loader.
-		Storage   *storage.Storage // Storage is the storage used by the Loader.
-	}
+// Config represents the configuration for the Loader.
+type Config struct {
+	Namespace string           // Namespace is the namespace used by the Loader.
+	Table     *symbol.Table    // Table is the symbol table for managing symbols.
+	Scheme    *scheme.Scheme   // Scheme is the scheme used by the Loader.
+	Storage   *storage.Storage // Storage is the storage used by the Loader.
+}
 
-	// Loader loads scheme.Spec into the symbol.Table.
-	Loader struct {
-		namespace string
-		scheme    *scheme.Scheme
-		table     *symbol.Table
-		storage   *storage.Storage
-		mu        sync.RWMutex
-	}
-)
+// Loader loads scheme.Spec into the symbol.Table.
+type Loader struct {
+	namespace string
+	scheme    *scheme.Scheme
+	table     *symbol.Table
+	storage   *storage.Storage
+	mu        sync.RWMutex
+}
 
 // New returns a new Loader.
 func New(config Config) *Loader {
@@ -48,30 +46,34 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single scheme.Spec from the storage.Storage
+// LoadOne loads a single scheme.Spec from the storage.Storage.
+// It processes the specified ID and recursively loads linked scheme.Spec.
+// If the loader is associated with a namespace, it uses that namespace.
+// The loaded nodes are added to the symbol table for future reference.
 func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
 
 	namespace := ld.namespace
-
 	queue := []any{id}
+
 	for len(queue) > 0 {
 		prev := queue
 		queue = nil
-
 		exists := map[any]bool{}
-
 		var filter *storage.Filter
+
 		for _, key := range prev {
-			if k, ok := key.(ulid.ULID); ok {
+			switch k := key.(type) {
+			case ulid.ULID:
 				exists[k] = false
 				filter = filter.Or(storage.Where[ulid.ULID](scheme.KeyID).EQ(k))
-			} else if k, ok := key.(string); ok {
+			case string:
 				exists[k] = false
 				filter = filter.Or(storage.Where[string](scheme.KeyName).EQ(k))
 			}
 		}
+
 		if namespace != "" {
 			filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(namespace))
 		}
@@ -139,9 +141,15 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 	}
 }
 
-// LoadAll loads all scheme.Spec from the storage.Storage
+// LoadAll loads all scheme.Spec from the storage.Storage.
+// It loads all available scheme.Spec and adds them to the symbol table for future reference.
+// If the loader is associated with a namespace, it filters the loading based on that namespace.
 func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
+	ld.mu.Lock()
+	defer ld.mu.Unlock()
+
 	var filter *storage.Filter
+
 	if ld.namespace != "" {
 		filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(ld.namespace))
 	}
