@@ -96,7 +96,7 @@ func loadDB(ctx context.Context) (database.Database, error) {
 	dbURL := viper.GetString(FlagDatabaseURL)
 	dbName := viper.GetString(FlagDatabaseName)
 
-	if dbURL == "" || strings.HasPrefix(dbURL, "memdb://") {
+	if dbURL == "" || strings.HasPrefix(dbURL, "mem://") {
 		return memdb.New(dbName), nil
 	} else if strings.HasPrefix(dbURL, "mongodb://") {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)

@@ -6,14 +6,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	// Stream is a stream to track scheme.Spec changes.
-	Stream struct {
-		stream  database.Stream
-		channel chan Event
-		done    chan struct{}
-	}
-)
+// Stream is a stream to track scheme.Spec changes.
+type Stream struct {
+	stream  database.Stream
+	channel chan Event
+	done    chan struct{}
+}
 
 // NewStream returns a new Stream.
 func NewStream(stream database.Stream) *Stream {
