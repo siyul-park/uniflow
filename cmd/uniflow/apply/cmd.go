@@ -40,8 +40,8 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use the default namespace.")
-	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "Set the file path to be applied.")
+	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "Set the file path to be applied")
 
 	return cmd
 }

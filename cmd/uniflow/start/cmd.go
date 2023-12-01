@@ -34,8 +34,8 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the worker's namespace.")
-	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path for initializing nodes.")
+	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the worker's namespace")
+	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path for initializing nodes")
 
 	return cmd
 }
