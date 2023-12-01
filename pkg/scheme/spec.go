@@ -4,90 +4,95 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-type (
-	// Spec is a specification that defines how node.Node should be defined and linked.
-	Spec interface {
-		// GetID returns the ID.
-		GetID() ulid.ULID
-		// SetID set the ID.
-		SetID(val ulid.ULID)
-		// GetKind returns the Kind.
-		GetKind() string
-		// SetKind set the Kind.
-		SetKind(val string)
-		// GetNamespace returns the Namespace.
-		GetNamespace() string
-		// SetNamespace set the Namespace.
-		SetNamespace(val string)
-		// GetName returns the Name.
-		GetName() string
-		// SetName set the Name.
-		SetName(val string)
-		// GetLinks returns the Links.
-		GetLinks() map[string][]PortLocation
-		// SetLinks set the Links.
-		SetLinks(val map[string][]PortLocation)
-	}
+// Spec represents the specification defining the attributes and connections of a node.
+type Spec interface {
+	// GetID returns the unique identifier of the node.
+	GetID() ulid.ULID
+	// SetID sets the unique identifier of the node.
+	SetID(val ulid.ULID)
+	// GetKind returns the category or type of the node.
+	GetKind() string
+	// SetKind sets the category or type of the node.
+	SetKind(val string)
+	// GetNamespace returns the logical grouping of nodes, allowing for better organization.
+	GetNamespace() string
+	// SetNamespace sets the logical grouping of nodes.
+	SetNamespace(val string)
+	// GetName returns the human-readable name of the node.
+	GetName() string
+	// SetName sets the human-readable name of the node.
+	SetName(val string)
+	// GetLinks returns the connections or links between nodes.
+	GetLinks() map[string][]PortLocation
+	// SetLinks sets the connections or links between nodes.
+	SetLinks(val map[string][]PortLocation)
+}
 
-	// SpecMeta is metadata that all persisted resources must have, which includes all objects users must create.
-	SpecMeta struct {
-		ID        ulid.ULID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-		Kind      string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
-		Namespace string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-		Name      string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-		Links     map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
-	}
+// SpecMeta is the metadata that every persisted resource must have, including user-created objects.
+type SpecMeta struct {
+	ID        ulid.ULID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	Kind      string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
+	Namespace string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Name      string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Links     map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
+}
 
-	// PortLocation is the location of a port in the network.
-	PortLocation struct {
-		ID   ulid.ULID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-		Name string    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-		Port string    `json:"port" yaml:"port" map:"port"`
-	}
-)
+// PortLocation represents the location of a port within the network.
+type PortLocation struct {
+	ID   ulid.ULID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	Name string    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Port string    `json:"port" yaml:"port" map:"port"`
+}
 
-var _ Spec = &SpecMeta{}
+// DefaultNamespace is the default value for logical node grouping.
+const DefaultNamespace = "default"
 
-const (
-	NamespaceDefault = "default"
-)
-
+// GetID returns the unique identifier of the SpecMeta.
 func (m *SpecMeta) GetID() ulid.ULID {
 	return m.ID
 }
 
+// SetID sets the unique identifier of the SpecMeta.
 func (m *SpecMeta) SetID(val ulid.ULID) {
 	m.ID = val
 }
 
+// GetKind returns the category or type of the SpecMeta.
 func (m *SpecMeta) GetKind() string {
 	return m.Kind
 }
 
+// SetKind sets the category or type of the SpecMeta.
 func (m *SpecMeta) SetKind(val string) {
 	m.Kind = val
 }
 
+// GetNamespace returns the logical grouping of the SpecMeta.
 func (m *SpecMeta) GetNamespace() string {
 	return m.Namespace
 }
 
+// SetNamespace sets the logical grouping of the SpecMeta.
 func (m *SpecMeta) SetNamespace(val string) {
 	m.Namespace = val
 }
 
+// GetName returns the human-readable name of the SpecMeta.
 func (m *SpecMeta) GetName() string {
 	return m.Name
 }
 
+// SetName sets the human-readable name of the SpecMeta.
 func (m *SpecMeta) SetName(val string) {
 	m.Name = val
 }
 
+// GetLinks returns the connections or links of the SpecMeta.
 func (m *SpecMeta) GetLinks() map[string][]PortLocation {
 	return m.Links
 }
 
+// SetLinks sets the connections or links of the SpecMeta.
 func (m *SpecMeta) SetLinks(val map[string][]PortLocation) {
 	m.Links = val
 }

@@ -22,7 +22,7 @@ func TestBuilder_Build(t *testing.T) {
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -40,7 +40,7 @@ func TestBuilder_Build(t *testing.T) {
 
 	builder := NewBuilder().
 		Scheme(s).
-		Namespace(scheme.NamespaceDefault).
+		Namespace(scheme.DefaultNamespace).
 		FS(fsys).
 		Filename(filename)
 

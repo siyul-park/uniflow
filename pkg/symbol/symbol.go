@@ -7,13 +7,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	// Symbol represents an object that binds a Node and a Spec.
-	Symbol struct {
-		Node node.Node
-		Spec scheme.Spec
-	}
-)
+// Symbol represents an object that binds a Node and a Spec.
+type Symbol struct {
+	Node node.Node
+	Spec scheme.Spec
+}
 
 var _ node.Node = (*Symbol)(nil)
 

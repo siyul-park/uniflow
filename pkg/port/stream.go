@@ -7,19 +7,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
-type (
-	// Stream is a channel where you can exchange *packet.Packet.
-	Stream struct {
-		id    ulid.ULID
-		read  *ReadPipe
-		write *WritePipe
-		links []*Stream
-		done  chan struct{}
-		mu    sync.RWMutex
-	}
-)
+// Stream represents a communication channel for exchanging *packet.Packet.
+type Stream struct {
+	id    ulid.ULID
+	read  *ReadPipe
+	write *WritePipe
+	links []*Stream
+	done  chan struct{}
+	mu    sync.RWMutex
+}
 
-// NewStream returns a new Stream.
+// NewStream creates a new Stream instance.
 func NewStream() *Stream {
 	return &Stream{
 		id:    ulid.Make(),
@@ -29,51 +27,48 @@ func NewStream() *Stream {
 	}
 }
 
-// ID returns the ID.
+// ID returns the Stream's ID.
 func (s *Stream) ID() ulid.ULID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
 	return s.id
 }
 
-// Send sends a Packet to linked Stream.
+// Send sends a *packet.Packet to linked Streams.
 func (s *Stream) Send(pck *packet.Packet) {
 	s.write.Send(pck)
 }
 
-// Receive receives a Packet from linked Stream.
+// Receive returns a channel for receiving *packet.Packet from linked Streams.
 func (s *Stream) Receive() <-chan *packet.Packet {
 	return s.read.Receive()
 }
 
-// Link connects two Stream to enable communication with each other.
+// Link connects two Streams for communication.
 func (s *Stream) Link(stream *Stream) {
 	s.link(stream)
 	stream.link(s)
 }
 
-// Unlink removes the linked Stream from being able to communicate further.
+// Unlink disconnects two linked Streams.
 func (s *Stream) Unlink(stream *Stream) {
 	s.unlink(stream)
 	stream.unlink(s)
 }
 
-// Links returns length of linked.
+// Links returns the number of linked Streams.
 func (s *Stream) Links() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
 	return len(s.links)
 }
 
-// Done returns a channel which is closed when the Stream is closed.
+// Done returns a channel that's closed when the Stream is closed.
 func (s *Stream) Done() <-chan struct{} {
 	return s.done
 }
 
-// Close closes the Stream.
-// Shut down and any Packet that are not processed will be discard.
+// Close closes the Stream, discarding any unprocessed packets.
 func (s *Stream) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -89,6 +84,7 @@ func (s *Stream) Close() {
 	s.write.Close()
 }
 
+// link connects the current Stream with another for communication.
 func (s *Stream) link(stream *Stream) {
 	if stream == s {
 		return
@@ -107,6 +103,7 @@ func (s *Stream) link(stream *Stream) {
 	s.write.Link(stream.read)
 }
 
+// unlink disconnects the current Stream from another.
 func (s *Stream) unlink(stream *Stream) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

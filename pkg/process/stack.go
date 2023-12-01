@@ -6,19 +6,17 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-type (
-	// Stack is trace object.
-	Stack struct {
-		stems  map[ulid.ULID][]ulid.ULID
-		leaves map[ulid.ULID][]ulid.ULID
-		stacks map[ulid.ULID][]ulid.ULID
-		heads  map[ulid.ULID][]ulid.ULID
-		wait   sync.RWMutex
-		mu     sync.RWMutex
-	}
-)
+// Stack is a data structure that manages relationships between ULIDs in a trace.
+type Stack struct {
+	stems  map[ulid.ULID][]ulid.ULID
+	leaves map[ulid.ULID][]ulid.ULID
+	stacks map[ulid.ULID][]ulid.ULID
+	heads  map[ulid.ULID][]ulid.ULID
+	wait   sync.RWMutex
+	mu     sync.RWMutex
+}
 
-// NewStack returns a new Stack.
+// NewStack creates a new Stack instance.
 func NewStack() *Stack {
 	return &Stack{
 		stems:  make(map[ulid.ULID][]ulid.ULID),
@@ -28,7 +26,7 @@ func NewStack() *Stack {
 	}
 }
 
-// Link adds an relation.
+// Link establishes a relationship between two ULIDs, a stem, and a leaf.
 func (s *Stack) Link(stem, leaf ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -51,7 +49,7 @@ func (s *Stack) Link(stem, leaf ulid.ULID) {
 	s.leaves[stem] = append(s.leaves[stem], leaf)
 }
 
-// Unlink deletes an relation.
+// Unlink removes a relationship between a stem and a leaf.
 func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -84,7 +82,7 @@ func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 	}
 }
 
-// Push pushes the value.
+// Push adds a value to the stack associated with a key.
 func (s *Stack) Push(key, value ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -96,7 +94,7 @@ func (s *Stack) Push(key, value ulid.ULID) {
 	s.wait.RLock()
 }
 
-// Pop pops the value.
+// Pop removes and returns the top value from the stack associated with a key.
 func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -169,7 +167,7 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 	return ulid.ULID{}, false
 }
 
-// Clear removes a link from the child.
+// Clear removes links from the child associated with a key.
 func (s *Stack) Clear(key ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -219,7 +217,7 @@ func (s *Stack) Clear(key ulid.ULID) {
 	}
 }
 
-// Len return the number of values.
+// Len returns the number of values in the stack associated with a key.
 func (s *Stack) Len(key ulid.ULID) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -263,13 +261,13 @@ func (s *Stack) Len(key ulid.ULID) int {
 	return count
 }
 
-// Wait blocks until is empty.
+// Wait blocks until the stack is empty.
 func (s *Stack) Wait() {
 	s.wait.Lock()
 	defer s.wait.Unlock()
 }
 
-// Close closes all resources.
+// Close releases all resources associated with the Stack.
 func (s *Stack) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

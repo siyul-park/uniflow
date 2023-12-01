@@ -7,24 +7,22 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-type (
-	// Hook is a collection of hook functions.
-	Hook struct {
-		loadHooks   []symbol.LoadHook
-		unloadHooks []symbol.UnloadHook
-		mu          sync.RWMutex
-	}
-)
+// Hook is a collection of hook functions for loading and unloading nodes.
+type Hook struct {
+	loadHooks   []symbol.LoadHook
+	unloadHooks []symbol.UnloadHook
+	mu          sync.RWMutex
+}
 
 var _ symbol.LoadHook = &Hook{}
 var _ symbol.UnloadHook = &Hook{}
 
-// New returns a new Hooks.
+// New creates a new Hook instance.
 func New() *Hook {
 	return &Hook{}
 }
 
-// AddLoadHook adds a LoadHook.
+// AddLoadHook adds a LoadHook function to the Hook.
 func (h *Hook) AddLoadHook(hook symbol.LoadHook) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -32,7 +30,7 @@ func (h *Hook) AddLoadHook(hook symbol.LoadHook) {
 	h.loadHooks = append(h.loadHooks, hook)
 }
 
-// AddUnloadHook adds a UnloadHook.
+// AddUnloadHook adds an UnloadHook function to the Hook.
 func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -40,7 +38,7 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 	h.unloadHooks = append(h.unloadHooks, hook)
 }
 
-// Load runs LoadHooks.
+// Load executes LoadHooks on the provided node.
 func (h *Hook) Load(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -53,7 +51,7 @@ func (h *Hook) Load(n node.Node) error {
 	return nil
 }
 
-// Unload runs UnloadHooks.
+// Unload executes UnloadHooks on the provided node.
 func (h *Hook) Unload(n node.Node) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

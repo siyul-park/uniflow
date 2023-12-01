@@ -94,7 +94,7 @@ func TestPort_Open(t *testing.T) {
 		proc := process.New()
 		stream := port.Open(proc)
 
-		proc.Close()
+		proc.Exit()
 
 		select {
 		case <-stream.Done():
@@ -105,7 +105,7 @@ func TestPort_Open(t *testing.T) {
 
 	t.Run("process closed", func(t *testing.T) {
 		proc := process.New()
-		proc.Close()
+		proc.Exit()
 
 		stream := port.Open(proc)
 

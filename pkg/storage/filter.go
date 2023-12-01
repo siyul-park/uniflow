@@ -5,26 +5,24 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	// Filter is a filter for find matched primitive.
-	Filter struct {
-		OP       database.OP
-		Key      string
-		Value    any
-		Children []*Filter
-	}
-
-	filterHelper[T any] struct {
-		key string
-	}
-)
-
-func Where[T any](key string) *filterHelper[T] {
-	return &filterHelper[T]{
-		key: key,
-	}
+// Filter is a filter for finding matched document.
+type Filter struct {
+	OP       database.OP // Operator for the filter.
+	Key      string      // Key specifies the field for the filter.
+	Value    any         // Value is the filter value.
+	Children []*Filter   // Children are nested filters for AND and OR operations.
 }
 
+type filterHelper[T any] struct {
+	key string
+}
+
+// Where creates a new filterHelper with the specified key.
+func Where[T any](key string) *filterHelper[T] {
+	return &filterHelper[T]{key: key}
+}
+
+// EQ creates an equality filter.
 func (fh *filterHelper[T]) EQ(value T) *Filter {
 	return &Filter{
 		OP:    database.EQ,
@@ -33,6 +31,7 @@ func (fh *filterHelper[T]) EQ(value T) *Filter {
 	}
 }
 
+// NE creates a not-equal filter.
 func (fh *filterHelper[T]) NE(value T) *Filter {
 	return &Filter{
 		OP:    database.NE,
@@ -49,6 +48,7 @@ func (fh *filterHelper[T]) LT(value T) *Filter {
 	}
 }
 
+// LTE creates a less-than-or-equal filter.
 func (fh *filterHelper[T]) LTE(value T) *Filter {
 	return &Filter{
 		OP:    database.LTE,
@@ -57,6 +57,7 @@ func (fh *filterHelper[T]) LTE(value T) *Filter {
 	}
 }
 
+// GT creates a greater-than filter.
 func (fh *filterHelper[T]) GT(value T) *Filter {
 	return &Filter{
 		OP:    database.GT,
@@ -65,6 +66,7 @@ func (fh *filterHelper[T]) GT(value T) *Filter {
 	}
 }
 
+// GTE creates a greater-than-or-equal filter.
 func (fh *filterHelper[T]) GTE(value T) *Filter {
 	return &Filter{
 		OP:    database.GTE,
@@ -73,6 +75,7 @@ func (fh *filterHelper[T]) GTE(value T) *Filter {
 	}
 }
 
+// IN creates a filter for values in a given slice.
 func (fh *filterHelper[T]) IN(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
@@ -85,6 +88,7 @@ func (fh *filterHelper[T]) IN(slice ...T) *Filter {
 	}
 }
 
+// NotIN creates a filter for values not in a given slice.
 func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
@@ -97,6 +101,7 @@ func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
 	}
 }
 
+// IsNull creates a filter for null values.
 func (fh *filterHelper[T]) IsNull() *Filter {
 	return &Filter{
 		OP:  database.NULL,
@@ -104,6 +109,7 @@ func (fh *filterHelper[T]) IsNull() *Filter {
 	}
 }
 
+// IsNotNull creates a filter for non-null values.
 func (fh *filterHelper[T]) IsNotNull() *Filter {
 	return &Filter{
 		OP:  database.NNULL,
@@ -111,6 +117,7 @@ func (fh *filterHelper[T]) IsNotNull() *Filter {
 	}
 }
 
+// And creates a filter that combines multiple filters with a logical AND.
 func (ft *Filter) And(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -125,6 +132,7 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 }
 
+// Or creates a filter that combines multiple filters with a logical OR.
 func (ft *Filter) Or(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -139,6 +147,7 @@ func (ft *Filter) Or(x ...*Filter) *Filter {
 	}
 }
 
+// Encode encodes the filter to a database.Filter.
 func (ft *Filter) Encode() (*database.Filter, error) {
 	if ft == nil {
 		return nil, nil

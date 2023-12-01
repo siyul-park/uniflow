@@ -5,18 +5,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	// Packet is a formalized block of data.
-	Packet struct {
-		id      ulid.ULID
-		payload primitive.Value
-	}
-)
+// Packet represents a formalized block of data.
+type Packet struct {
+	id      ulid.ULID
+	payload primitive.Value
+}
 
-// NewError return a new Packet for error.
+// NewError creates a new Packet to represent an error.
+// It takes an error and an optional cause Packet and constructs a Packet with error details.
 func NewError(err error, cause *Packet) *Packet {
-	var pairs []primitive.Value
-	pairs = append(pairs, primitive.NewString("error"), primitive.NewString(err.Error()))
+	pairs := []primitive.Value{
+		primitive.NewString("error"),
+		primitive.NewString(err.Error()),
+	}
+
 	if cause != nil {
 		pairs = append(pairs, primitive.NewString("cause"), cause.Payload())
 	}
@@ -24,7 +26,8 @@ func NewError(err error, cause *Packet) *Packet {
 	return New(primitive.NewMap(pairs...))
 }
 
-// New returns a new Packet.
+// New creates a new Packet with the given payload.
+// It generates a new unique ID for the Packet.
 func New(payload primitive.Value) *Packet {
 	return &Packet{
 		id:      ulid.Make(),
@@ -32,12 +35,12 @@ func New(payload primitive.Value) *Packet {
 	}
 }
 
-// ID returns the ID of the Packet
-func (pck *Packet) ID() ulid.ULID {
-	return pck.id
+// ID returns the unique identifier (ID) of the Packet.
+func (p *Packet) ID() ulid.ULID {
+	return p.id
 }
 
-// Payload returns the payload of the Packet.
-func (pck *Packet) Payload() primitive.Value {
-	return pck.payload
+// Payload returns the data payload of the Packet.
+func (p *Packet) Payload() primitive.Value {
+	return p.payload
 }

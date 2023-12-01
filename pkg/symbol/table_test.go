@@ -25,7 +25,7 @@ func TestTable_Insert(t *testing.T) {
 
 			spec1 := &scheme.SpecMeta{
 				ID:        n1.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -37,7 +37,7 @@ func TestTable_Insert(t *testing.T) {
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        n2.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -49,7 +49,7 @@ func TestTable_Insert(t *testing.T) {
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        n3.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -103,7 +103,7 @@ func TestTable_Insert(t *testing.T) {
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -115,7 +115,7 @@ func TestTable_Insert(t *testing.T) {
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        id,
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -127,7 +127,7 @@ func TestTable_Insert(t *testing.T) {
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        n3.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -139,7 +139,7 @@ func TestTable_Insert(t *testing.T) {
 			}
 			spec4 := &scheme.SpecMeta{
 				ID:        n4.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Links: map[string][]scheme.PortLocation{
 					node.PortOut: {
 						{
@@ -188,17 +188,17 @@ func TestTable_Insert(t *testing.T) {
 
 			spec1 := &scheme.SpecMeta{
 				ID:        n1.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        n2.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        n3.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 
@@ -271,22 +271,22 @@ func TestTable_Insert(t *testing.T) {
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      name,
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        id,
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      name,
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        n3.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec4 := &scheme.SpecMeta{
 				ID:        n4.ID(),
-				Namespace: scheme.NamespaceDefault,
+				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 
@@ -361,7 +361,7 @@ func TestTable_Free(t *testing.T) {
 
 	spec1 := &scheme.SpecMeta{
 		ID:        n1.ID(),
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 		Links: map[string][]scheme.PortLocation{
 			node.PortOut: {
 				{
@@ -373,7 +373,7 @@ func TestTable_Free(t *testing.T) {
 	}
 	spec2 := &scheme.SpecMeta{
 		ID:        n2.ID(),
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 		Links: map[string][]scheme.PortLocation{
 			node.PortOut: {
 				{
@@ -385,7 +385,7 @@ func TestTable_Free(t *testing.T) {
 	}
 	spec3 := &scheme.SpecMeta{
 		ID:        n3.ID(),
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 		Links: map[string][]scheme.PortLocation{
 			node.PortOut: {
 				{
@@ -452,7 +452,7 @@ func TestTable_LookupByName(t *testing.T) {
 	defer n.Close()
 	spec := &scheme.SpecMeta{
 		ID:        n.ID(),
-		Namespace: scheme.NamespaceDefault,
+		Namespace: scheme.DefaultNamespace,
 		Name:      faker.Word(),
 	}
 	sym := &Symbol{Node: n, Spec: spec}

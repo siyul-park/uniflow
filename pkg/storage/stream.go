@@ -7,10 +7,10 @@ import (
 )
 
 type (
-	// Stream is a stream to track scheme.Spec is changed.
+	// Stream is a stream to track scheme.Spec changes.
 	Stream struct {
-		stream  database.Stream
-		channel chan Event
+		stream  database.Stream 
+		channel chan Event     
 		done    chan struct{}
 	}
 )
@@ -59,7 +59,7 @@ func NewStream(stream database.Stream) *Stream {
 	return s
 }
 
-// Next returns a channel that is received Event.
+// Next returns a channel that receives Event.
 func (s *Stream) Next() <-chan Event {
 	return s.channel
 }

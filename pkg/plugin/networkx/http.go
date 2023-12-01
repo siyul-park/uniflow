@@ -394,13 +394,13 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proc := process.New()
 	defer func() {
 		proc.Stack().Wait()
-		proc.Close()
+		proc.Exit()
 	}()
 
 	go func() {
 		select {
 		case <-r.Context().Done():
-			proc.Close()
+			proc.Exit()
 		case <-proc.Done():
 		}
 	}()

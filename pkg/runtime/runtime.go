@@ -14,60 +14,53 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-type (
-	// Config is a config for for the Runtime.
-	Config struct {
-		Namespace string
-		Hooks     *hook.Hook
-		Scheme    *scheme.Scheme
-		Database  database.Database
-	}
+// Config holds the configuration options for the Runtime.
+type Config struct {
+	Namespace string           // Namespace is the namespace for the Runtime.
+	Hooks     *hook.Hook       // Hooks represent the hooks for the Runtime.
+	Scheme    *scheme.Scheme   // Scheme is the scheme for the Runtime.
+	Database  database.Database // Database is the database for the Runtime.
+}
 
-	// Runtime is an execution environment that runs Flows.
-	Runtime struct {
-		namespace  string
-		hooks      *hook.Hook
-		scheme     *scheme.Scheme
-		storage    *storage.Storage
-		table      *symbol.Table
-		loader     *loader.Loader
-		reconciler *loader.Reconciler
-	}
-)
+// Runtime represents an execution environment for running Flows.
+type Runtime struct {
+	namespace  string    
+	hooks      *hook.Hook   
+	scheme     *scheme.Scheme 
+	storage    *storage.Storage
+	table      *symbol.Table  
+	loader     *loader.Loader  
+	reconciler *loader.Reconciler 
+}
 
-// New returns a new Runtime.
+// New creates a new Runtime instance with the specified configuration.
 func New(ctx context.Context, config Config) (*Runtime, error) {
-	ns := config.Namespace
-	hk := config.Hooks
-	sc := config.Scheme
-	db := config.Database
-
-	if hk == nil {
-		hk = hook.New()
+	if config.Hooks == nil {
+		config.Hooks = hook.New()
 	}
-	if sc == nil {
-		sc = scheme.New()
+	if config.Scheme == nil {
+		config.Scheme = scheme.New()
 	}
-	if db == nil {
-		db = memdb.New("")
+	if config.Database == nil {
+		config.Database = memdb.New("")
 	}
 
 	st, err := storage.New(ctx, storage.Config{
-		Scheme:   sc,
-		Database: db,
+		Scheme:   config.Scheme,
+		Database: config.Database,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	tb := symbol.NewTable(symbol.TableOptions{
-		LoadHooks:   []symbol.LoadHook{hk},
-		UnloadHooks: []symbol.UnloadHook{hk},
+		LoadHooks:   []symbol.LoadHook{config.Hooks},
+		UnloadHooks: []symbol.UnloadHook{config.Hooks},
 	})
 
 	ld := loader.New(loader.Config{
-		Namespace: ns,
-		Scheme:    sc,
+		Namespace: config.Namespace,
+		Scheme:    config.Scheme,
 		Storage:   st,
 		Table:     tb,
 	})
@@ -76,9 +69,10 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}
 
 	var filter *storage.Filter
-	if ns != "" {
-		filter = storage.Where[string](scheme.KeyNamespace).EQ(ns)
+	if config.Namespace != "" {
+		filter = storage.Where[string](scheme.KeyNamespace).EQ(config.Namespace)
 	}
+
 	rc := loader.NewReconciler(loader.ReconcilerConfig{
 		Storage: st,
 		Loader:  ld,
@@ -86,9 +80,9 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	})
 
 	return &Runtime{
-		namespace:  ns,
-		hooks:      hk,
-		scheme:     sc,
+		namespace:  config.Namespace,
+		hooks:      config.Hooks,
+		scheme:     config.Scheme,
 		storage:    st,
 		table:      tb,
 		loader:     ld,
@@ -96,7 +90,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}, nil
 }
 
-// Lookup lookup node.Node in symbol.Table, and if it not exist load it from storage.Storage.
+// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from storage.Storage.
 func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (node.Node, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)
@@ -105,14 +99,14 @@ func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (node.Node, error) {
 	}
 }
 
-// Free unload node.Node from symbol.Table.
+// Free unloads a node.Node from the symbol.Table.
 func (r *Runtime) Free(_ context.Context, id ulid.ULID) (bool, error) {
 	return r.table.Free(id)
 }
 
-// Start starts the Runtime.
-// Runtime load all scheme.Spec as node.Node from the database.Collection,
-// and then keeps node.Node up-to-date and runs by continuously tracking scheme.Spec.
+// Start initiates the Runtime.
+// It loads all scheme.Specs as node.Nodes from the database.Collection,
+// and continuously monitors and runs them by staying up-to-date with scheme.Spec changes.
 func (r *Runtime) Start(ctx context.Context) error {
 	if err := r.reconciler.Watch(ctx); err != nil {
 		return err
@@ -123,7 +117,7 @@ func (r *Runtime) Start(ctx context.Context) error {
 	return r.reconciler.Reconcile(ctx)
 }
 
-// Close is close the Runtime.
+// Close shuts down the Runtime.
 func (r *Runtime) Close(ctx context.Context) error {
 	if err := r.reconciler.Close(); err != nil {
 		return err
