@@ -66,9 +66,8 @@ func (b *Builder) Build() ([]scheme.Spec, error) {
 		var e map[string]any
 		if err := UnmarshalYAMLOrJSON(data, &e); err != nil {
 			return nil, err
-		} else {
-			raws = []map[string]any{e}
 		}
+		raws = []map[string]any{e}
 	}
 
 	codec := NewSpecCodec(SpecCodecOptions{
@@ -78,11 +77,11 @@ func (b *Builder) Build() ([]scheme.Spec, error) {
 
 	var specs []scheme.Spec
 	for _, raw := range raws {
-		if spec, err := codec.Decode(raw); err != nil {
+		spec, err := codec.Decode(raw)
+		if err != nil {
 			return nil, err
-		} else {
-			specs = append(specs, spec)
 		}
+		specs = append(specs, spec)
 	}
 
 	return specs, nil
