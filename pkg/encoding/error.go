@@ -4,6 +4,4 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrUnsupportedValue = errors.New("unsupported value")
-)
+var ErrUnsupportedValue = errors.New("unsupported value")

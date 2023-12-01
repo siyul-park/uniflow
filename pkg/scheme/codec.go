@@ -29,4 +29,3 @@ func CodecWithType[T Spec](decode func(spec T) (node.Node, error)) Codec {
 func (c CodecFunc) Decode(spec Spec) (node.Node, error) {
 	return c(spec)
 }
-

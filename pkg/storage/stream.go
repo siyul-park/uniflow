@@ -9,8 +9,8 @@ import (
 type (
 	// Stream is a stream to track scheme.Spec changes.
 	Stream struct {
-		stream  database.Stream 
-		channel chan Event     
+		stream  database.Stream
+		channel chan Event
 		done    chan struct{}
 	}
 )

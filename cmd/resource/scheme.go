@@ -7,18 +7,19 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	SpecCodecOptions struct {
-		Scheme    *scheme.Scheme
-		Namespace string
-	}
+// SpecCodecOptions holds options for creating a SpecCodec.
+type SpecCodecOptions struct {
+	Scheme    *scheme.Scheme
+	Namespace string
+}
 
-	SpecCodec struct {
-		scheme    *scheme.Scheme
-		namespace string
-	}
-)
+// SpecCodec is responsible for decoding raw data into scheme.Spec instances.
+type SpecCodec struct {
+	scheme    *scheme.Scheme
+	namespace string
+}
 
+// NewSpecCodec creates a new SpecCodec instance with the provided options.
 func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 	var scheme *scheme.Scheme
 	var namespace string
@@ -38,6 +39,7 @@ func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 	}
 }
 
+// Decode decodes raw data into a scheme.Spec instance.
 func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 	doc, err := primitive.MarshalBinary(data)
 	if err != nil {

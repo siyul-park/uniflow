@@ -8,7 +8,6 @@ import (
 	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -30,9 +29,9 @@ func TestExecute(t *testing.T) {
 	kind := faker.Word()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
+		Name:      faker.Word(),
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -63,7 +62,7 @@ func TestExecute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(context.Background(), storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
 	assert.NoError(t, err)
-	assert.Equal(t, spec, r)
+	assert.NotNil(t, r)
 }

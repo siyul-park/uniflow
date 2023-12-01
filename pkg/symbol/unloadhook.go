@@ -2,16 +2,14 @@ package symbol
 
 import "github.com/siyul-park/uniflow/pkg/node"
 
-type (
-	// UnloadHook is an interface for hooks that are called when node.Node is unloaded.
-	UnloadHook interface {
-		// Unload is called when node.Node is unloaded.
-		Unload(n node.Node) error
-	}
+// UnloadHook is an interface for hooks that are called when node.Node is unloaded.
+type UnloadHook interface {
+	// Unload is called when node.Node is unloaded.
+	Unload(n node.Node) error
+}
 
-	// UnloadHookFunc is a function type that implements the UnloadHook interface.
-	UnloadHookFunc func(n node.Node) error
-)
+// UnloadHookFunc is a function type that implements the UnloadHook interface.
+type UnloadHookFunc func(n node.Node) error
 
 var _ UnloadHook = UnloadHookFunc(func(n node.Node) error { return nil })
 
