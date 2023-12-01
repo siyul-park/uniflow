@@ -1,4 +1,4 @@
-package config
+package template
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEnvironment_GetAndSetAndDelete(t *testing.T) {
-	env := New()
+func TestValues_GetAndSetAndDelete(t *testing.T) {
+	vl := NewValues()
 
 	key1 := faker.Word()
 	key2 := faker.Word()
@@ -17,21 +17,21 @@ func TestEnvironment_GetAndSetAndDelete(t *testing.T) {
 	key := fmt.Sprintf("%s.%s", key1, key2)
 	value := faker.Word()
 
-	env.Set(key, value)
+	vl.Set(key, value)
 
-	r1, ok := env.Get(key)
+	r1, ok := vl.Get(key)
 	assert.True(t, ok)
 	assert.Equal(t, value, r1)
 
-	_, ok = env.Get(key1)
+	_, ok = vl.Get(key1)
 	assert.True(t, ok)
 
-	env.Delete(key)
+	vl.Delete(key)
 
-	r2, ok := env.Get(key)
+	r2, ok := vl.Get(key)
 	assert.False(t, ok)
 	assert.Nil(t, r2)
 
-	_, ok = env.Get(key1)
+	_, ok = vl.Get(key1)
 	assert.False(t, ok)
 }
