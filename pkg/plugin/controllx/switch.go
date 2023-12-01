@@ -13,39 +13,42 @@ import (
 	"github.com/xiatechs/jsonata-go"
 )
 
-type (
-	SwitchNodeConfig struct {
-		ID ulid.ULID
-	}
+// SwitchNodeConfig holds the configuration for creating a SwitchNode.
+type SwitchNodeConfig struct {
+	ID ulid.ULID
+}
 
-	SwitchNode struct {
-		*node.OneToManyNode
-		conditions []condition
-		mu         sync.RWMutex
-	}
+// SwitchNode represents a node that switches packets based on conditions.
+type SwitchNode struct {
+	*node.OneToManyNode
+	conditions []condition
+	mu         sync.RWMutex
+}
 
-	SwitchSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		Match           []Condition `map:"match"`
-	}
+// SwitchSpec represents the specification for the SwitchNode.
+type SwitchSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Match           []Condition `map:"match"`
+}
 
-	Condition struct {
-		When string `map:"when"`
-		Port string `map:"port"`
-	}
+// Condition represents a condition for the SwitchNode.
+type Condition struct {
+	When string `map:"when"`
+	Port string `map:"port"`
+}
 
-	condition struct {
-		when *jsonata.Expr
-		port string
-	}
-)
+type condition struct {
+	when *jsonata.Expr
+	port string
+}
 
-const (
-	KindSwitch = "switch"
-)
+// KindSwitch is the kind identifier for SwitchNode.
+const KindSwitch = "switch"
 
-var _ node.Node = &SwitchNode{}
+var _ node.Node = (*SwitchNode)(nil)
+var _ scheme.Spec = (*SwitchSpec)(nil)
 
+// NewSwitchNode creates a new SwitchNode with the given configuration.
 func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
 	id := config.ID
 
@@ -58,6 +61,7 @@ func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
 	return n
 }
 
+// Add adds a new condition to the SwitchNode.
 func (n *SwitchNode) Add(when string, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -71,6 +75,7 @@ func (n *SwitchNode) Add(when string, port string) error {
 	return nil
 }
 
+// Close closes the SwitchNode and clears its conditions.
 func (n *SwitchNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

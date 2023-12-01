@@ -40,6 +40,7 @@ func (fh *filterHelper[T]) NE(value T) *Filter {
 	}
 }
 
+// LT creates a less-than filter.
 func (fh *filterHelper[T]) LT(value T) *Filter {
 	return &Filter{
 		OP:    database.LT,

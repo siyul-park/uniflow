@@ -19,31 +19,30 @@ import (
 	"github.com/xiatechs/jsonata-go"
 )
 
-type (
-	SnippetNodeConfig struct {
-		ID   ulid.ULID
-		Lang string
-		Code string
-	}
+// SnippetNodeConfig holds the configuration for creating a SnippetNode.
+type SnippetNodeConfig struct {
+	ID   ulid.ULID
+	Lang string
+	Code string
+}
 
-	SnippetNode struct {
-		*node.OneToOneNode
-		run func(any) (any, error)
-	}
+// SnippetNode represents a node that runs a snippet of code.
+type SnippetNode struct {
+	*node.OneToOneNode
+	run func(any) (any, error)
+}
 
-	SnippetSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		Lang            string `map:"lang"`
-		Code            string `map:"code"`
-	}
+// SnippetSpec represents the specification for the SnippetNode.
+type SnippetSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Lang            string `map:"lang"`
+	Code            string `map:"code"`
+}
 
-	fieldNameMapper struct{}
-)
+// KindSnippet is the kind identifier for SnippetNode.
+const KindSnippet = "snippet"
 
-const (
-	KindSnippet = "snippet"
-)
-
+// Supported programming languages for snippets.
 const (
 	LangTypescript = "typescript"
 	LangJavascript = "javascript"
@@ -51,13 +50,16 @@ const (
 	LangJSONata    = "jsonata"
 )
 
-var _ node.Node = &SnippetNode{}
-
+// Errors related to snippet execution.
 var (
 	ErrEntryPointNotUndeclared = errors.New("entry point is undeclared")
 	ErrNotSupportedLanguage    = errors.New("language is not supported")
 )
 
+var _ node.Node = (*SnippetNode)(nil)
+var _ scheme.Spec = (*SnippetSpec)(nil)
+
+// NewSnippetNode creates a new SnippetNode with the given configuration.
 func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
 	defer func() { _ = recover() }()
 
@@ -177,6 +179,8 @@ func compile(lang, code string) (func(any) (any, error), error) {
 		return nil, errors.WithStack(ErrNotSupportedLanguage)
 	}
 }
+
+type fieldNameMapper struct{}
 
 func (*fieldNameMapper) FieldName(t reflect.Type, f reflect.StructField) string {
 	return strcase.ToLowerCamel(f.Name)
