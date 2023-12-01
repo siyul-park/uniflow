@@ -1,8 +1,8 @@
 # Uniflow
 
-[![go report][go_report_img]][go_report_url]
-[![code coverage][go_code_coverage_img]][go_code_coverage_url]
 [![check][repo_check_img]][repo_check_url]
+[![code coverage][go_code_coverage_img]][go_code_coverage_url]
+[![go report][go_report_img]][go_report_url]
 [![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
