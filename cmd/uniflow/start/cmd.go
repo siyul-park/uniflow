@@ -98,8 +98,12 @@ func initializeNamespace(ctx context.Context, config Config, ns, boot string) er
 }
 
 func installBootFile(ctx context.Context, config Config, ns, boot string) error {
-	b := resource.NewBuilder().Scheme(config.Scheme).Namespace(ns).FS(config.FS).Filename(boot)
-	specs, err := b.Build()
+	specs, err := resource.NewBuilder().
+		Scheme(config.Scheme).
+		Namespace(ns).
+		FS(config.FS).
+		Filename(boot).
+		Build()
 	if err != nil {
 		return err
 	}

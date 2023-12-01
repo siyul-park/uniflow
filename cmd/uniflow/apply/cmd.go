@@ -68,13 +68,12 @@ func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) erro
 			return err
 		}
 
-		b := resource.NewBuilder().
+		specs, err := resource.NewBuilder().
 			Scheme(config.Scheme).
 			Namespace(ns).
 			FS(config.FS).
-			Filename(fl)
-
-		specs, err := b.Build()
+			Filename(fl).
+			Build()
 		if err != nil {
 			return err
 		}
