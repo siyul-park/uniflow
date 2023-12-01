@@ -3,6 +3,7 @@
 [![go report][go_report_img]][go_report_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 [![check][repo_check_img]][repo_check_url]
+[![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
 > Low-Code Engine for Backend Workflows
@@ -92,3 +93,5 @@ Configuration can be done using `.uniflow.toml` or system environment variables.
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
 [repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
 [repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
+[repo_codefactor_img]: https://www.codefactor.io/repository/github/siyul-park/uniflow/badge
+[repo_codefactor_url]: https://www.codefactor.io/repository/github/siyul-park/uniflow
