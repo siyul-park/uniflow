@@ -5,6 +5,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// AddToScheme returns a function that adds types and codecs to the provided scheme.
 func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindSnippet, &SnippetSpec{})
