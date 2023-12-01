@@ -23,53 +23,46 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	// HTTPNodeConfig represents the configuration of an HTTP node.
-	HTTPNodeConfig struct {
-		ID      ulid.ULID
-		Address string
-	}
+// HTTPNodeConfig represents the configuration of an HTTP node.
+type HTTPNodeConfig struct {
+	ID      ulid.ULID
+	Address string
+}
 
-	// HTTPNode represents a node based on the HTTP protocol.
-	HTTPNode struct {
-		id              ulid.ULID
-		address         string
-		server          *http.Server
-		listener        net.Listener
-		listenerNetwork string
-		ioPort          *port.Port
-		inPort          *port.Port
-		outPort         *port.Port
-		errPort         *port.Port
-		mu              sync.RWMutex
-	}
+// HTTPNode represents a node based on the HTTP protocol.
+type HTTPNode struct {
+	id              ulid.ULID
+	address         string
+	server          *http.Server
+	listener        net.Listener
+	listenerNetwork string
+	ioPort          *port.Port
+	inPort          *port.Port
+	outPort         *port.Port
+	errPort         *port.Port
+	mu              sync.RWMutex
+}
 
-	// HTTPSpec represents the specification of an HTTP node.
-	HTTPSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		Address         string `map:"address"`
-	}
+// HTTPSpec represents the specification of an HTTP node.
+type HTTPSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Address         string `map:"address"`
+}
 
-	// HTTPPayload represents the payload for HTTP requests and responses.
-	HTTPPayload struct {
-		Proto   string          `map:"proto,omitempty"`
-		Path    string          `map:"path,omitempty"`
-		Method  string          `map:"method,omitempty"`
-		Header  http.Header     `map:"header,omitempty"`
-		Query   url.Values      `map:"query,omitempty"`
-		Cookies []*http.Cookie  `map:"cookies,omitempty"`
-		Body    primitive.Value `map:"body,omitempty"`
-		Status  int             `map:"status"`
-	}
+// HTTPPayload represents the payload for HTTP requests and responses.
+type HTTPPayload struct {
+	Proto   string          `map:"proto,omitempty"`
+	Path    string          `map:"path,omitempty"`
+	Method  string          `map:"method,omitempty"`
+	Header  http.Header     `map:"header,omitempty"`
+	Query   url.Values      `map:"query,omitempty"`
+	Cookies []*http.Cookie  `map:"cookies,omitempty"`
+	Body    primitive.Value `map:"body,omitempty"`
+	Status  int             `map:"status"`
+}
 
-	tcpKeepAliveListener struct {
-		*net.TCPListener
-	}
-)
-
-const (
-	KindHTTP = "http"
-)
+// KindHTTP is the kind identifier for HTTPNode.
+const KindHTTP = "http"
 
 // Commonly used HTTP header constants.
 const (
@@ -205,16 +198,11 @@ var (
 	NetworkAuthenticationRequired = NewHTTPPayload(http.StatusNetworkAuthenticationRequired) // HTTP 511 Network Authentication Required
 )
 
-var (
-	ErrInvalidListenerNetwork = errors.New("invalid listener network")
-)
-
-var _ node.Node = &HTTPNode{}
+var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = &HTTPNode{}
+var _ scheme.Spec = (*HTTPSpec)(nil)
 
-var (
-	forbiddenResponseHeaderRegexps []*regexp.Regexp
-)
+var forbiddenResponseHeaderRegexps []*regexp.Regexp
 
 func init() {
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
@@ -604,9 +592,13 @@ func isForbiddenResponseHeader(header string) bool {
 	return forbidden
 }
 
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
 func newListener(address, network string) (*tcpKeepAliveListener, error) {
 	if network != "tcp" && network != "tcp4" && network != "tcp6" {
-		return nil, ErrInvalidListenerNetwork
+		return nil, errors.New("invalid listener network")
 	}
 	l, err := net.Listen(network, address)
 	if err != nil {

@@ -17,6 +17,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
+// MIME content types
 const (
 	ApplicationJSON                  = "application/json"
 	ApplicationJSONCharsetUTF8       = ApplicationJSON + "; " + charsetUTF8
@@ -37,10 +38,9 @@ const (
 	OctetStream                      = "application/octet-stream"
 )
 
-const (
-	charsetUTF8 = "charset=utf-8"
-)
+const charsetUTF8 = "charset=utf-8"
 
+// MarshalMIME marshals a primitive.Value to MIME format.
 func MarshalMIME(value primitive.Value, typ *string) ([]byte, error) {
 	if typ == nil {
 		content := ""
@@ -202,6 +202,7 @@ func MarshalMIME(value primitive.Value, typ *string) ([]byte, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
+// UnmarshalMIME unmarshals MIME data to a primitive.Value.
 func UnmarshalMIME(data []byte, typ *string) (primitive.Value, error) {
 	if len(data) == 0 {
 		return nil, nil

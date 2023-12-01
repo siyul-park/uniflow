@@ -14,43 +14,51 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	RouterNodeConfig struct {
-		ID ulid.ULID
-	}
+// RouterNodeConfig holds the configuration for RouterNode.
+type RouterNodeConfig struct {
+	ID ulid.ULID
+}
 
-	RouterNode struct {
-		*node.OneToManyNode
-		tree *route
-		mu   sync.RWMutex
-	}
+// RouterNode represents a router node that handles routing based on HTTP methods, paths, and ports.
+type RouterNode struct {
+	*node.OneToManyNode
+	tree *route
+	mu   sync.RWMutex
+}
 
-	RouterSpec struct {
-		scheme.SpecMeta `map:",inline"`
-		Routes          []RouteInfo `map:"routes"`
-	}
+// RouterSpec defines the specification for the router node.
+type RouterSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Routes          []RouteInfo `map:"routes"`
+}
 
-	RouteInfo struct {
-		Method string `map:"method"`
-		Path   string `map:"path"`
-		Port   string `map:"port"`
-	}
+// RouteInfo holds information about an individual route.
+type RouteInfo struct {
+	Method string `map:"method"`
+	Path   string `map:"path"`
+	Port   string `map:"port"`
+}
 
-	route struct {
-		kind           routeKind
-		prefix         string
-		parent         *route
-		staticChildren []*route
-		paramChild     *route
-		anyChild       *route
-		paramNames     []string
-		methods        map[string]string
-	}
-	routeKind uint8
-)
+type route struct {
+	kind           routeKind
+	prefix         string
+	parent         *route
+	staticChildren []*route
+	paramChild     *route
+	anyChild       *route
+	paramNames     []string
+	methods        map[string]string
+}
+
+type routeKind uint8
+
+// KindRouter is the kind identifier for RouterNode.
+const KindRouter = "router"
 
 const (
-	KindRouter = "router"
+	KeyMethod = "method"
+	KeyPath   = "path"
+	KeyParams = "params"
 )
 
 const (
@@ -62,14 +70,10 @@ const (
 	anyLabel   = byte('*')
 )
 
-const (
-	KeyMethod = "method"
-	KeyPath   = "path"
-	KeyParams = "params"
-)
+var _ node.Node = (*RouterNode)(nil)
+var _ scheme.Spec = (*RouterSpec)(nil)
 
-var _ node.Node = &RouterNode{}
-
+// NewRouterNode creates a new instance of RouterNode with the given configuration.
 func NewRouterNode(config RouterNodeConfig) *RouterNode {
 	id := config.ID
 
@@ -86,6 +90,7 @@ func NewRouterNode(config RouterNodeConfig) *RouterNode {
 	return n
 }
 
+// Add adds a new route to the router based on the provided HTTP method, path, and port.
 func (n *RouterNode) Add(method, path, port string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -100,7 +105,7 @@ func (n *RouterNode) Add(method, path, port string) {
 	var paramNames []string
 
 	for i, lcpIndex := 0, len(path); i < lcpIndex; i++ {
-		if path[i] == ':' {
+		if path[i] == paramLabel {
 			if i > 0 && path[i-1] == '\\' {
 				path = path[:i-1] + path[i:]
 				i--
@@ -122,7 +127,7 @@ func (n *RouterNode) Add(method, path, port string) {
 			} else {
 				n.insert(method, path[:i], paramKind, nil, "")
 			}
-		} else if path[i] == '*' {
+		} else if path[i] == anyLabel {
 			n.insert(method, path[:i], staticKind, nil, "")
 			paramNames = append(paramNames, "*")
 			n.insert(method, path[:i+1], anyKind, paramNames, port)
@@ -132,6 +137,7 @@ func (n *RouterNode) Add(method, path, port string) {
 	n.insert(method, path, staticKind, paramNames, port)
 }
 
+// Close resets the router's tree when closing the node.
 func (n *RouterNode) Close() error {
 	n.tree = &route{
 		methods: map[string]string{},
