@@ -6,14 +6,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 )
 
-type (
-	// Codec is the interface for decoding Spec to node.Node.
-	Codec interface {
-		Decode(spec Spec) (node.Node, error)
-	}
+// Codec is the interface for decoding Spec to node.Node.
+type Codec interface {
+	Decode(spec Spec) (node.Node, error)
+}
 
-	CodecFunc func(spec Spec) (node.Node, error)
-)
+// CodecFunc is a function type that implements the Codec interface.
+type CodecFunc func(spec Spec) (node.Node, error)
 
 // CodecWithType creates a new CodecFunc for the specified type T.
 func CodecWithType[T Spec](decode func(spec T) (node.Node, error)) Codec {

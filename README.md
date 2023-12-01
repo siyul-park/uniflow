@@ -68,7 +68,7 @@ Configuration can be done using `.uniflow.toml` or system environment variables.
 
 | TOML Key | Env Key | Default |
 |---|---|---|
-| database.url | DATABASE.URL | memdb:// |
+| database.url | DATABASE.URL | mem:// or mongodb:// |
 | database.name | DATABASE.NAME |  |
 
 <!-- Go -->
