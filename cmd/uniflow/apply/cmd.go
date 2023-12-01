@@ -27,8 +27,8 @@ type Config struct {
 var SpecTableColumnDefinitions = []printer.TableColumnDefinition{
 	{Name: "id", Format: "$.id"},
 	{Name: "kind", Format: "$.kind"},
-	{Name: "name", Format: "$.name"},
 	{Name: "namespace", Format: "$.namespace"},
+	{Name: "name", Format: "$.name"},
 	{Name: "links", Format: "$.links"},
 }
 
