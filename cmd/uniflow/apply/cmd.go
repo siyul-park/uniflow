@@ -46,7 +46,6 @@ func NewCmd(config Config) *cobra.Command {
 	return cmd
 }
 
-// runApplyCommand executes the apply command.
 func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
@@ -104,9 +103,11 @@ func updateSpecIDs(ctx context.Context, st *storage.Storage, specs []scheme.Spec
 				} else if exist != nil {
 					spec.SetID(exist.GetID())
 				}
-			} else {
-				spec.SetID(ulid.Make())
 			}
+		}
+
+		if spec.GetID() == (ulid.ULID{}) {
+			spec.SetID(ulid.Make())
 		}
 	}
 	return nil
