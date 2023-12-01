@@ -71,7 +71,7 @@ func TestRouterNode_Send(t *testing.T) {
 			outPort.Link(out)
 
 			proc := process.New()
-			defer proc.Close()
+			defer proc.Exit()
 
 			inStream := in.Open(proc)
 			outStream := out.Open(proc)

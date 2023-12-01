@@ -9,21 +9,21 @@ import (
 
 func TestNew(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit()
 
 	assert.NotNil(t, proc)
 }
 
 func TestProcess_ID(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit()
 
 	assert.NotEqual(t, ulid.ULID{}, proc.ID())
 }
 
 func TestProcess_Stack(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit()
 
 	assert.NotNil(t, proc.Stack())
 }
@@ -37,7 +37,7 @@ func TestProcess_Close(t *testing.T) {
 	default:
 	}
 
-	proc.Close()
+	proc.Exit()
 
 	select {
 	case <-proc.Done():

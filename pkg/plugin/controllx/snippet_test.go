@@ -44,7 +44,7 @@ function main(inPayload: any): any {
 		ioPort.Link(io)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit()
 
 		ioStream := io.Open(proc)
 
@@ -80,7 +80,7 @@ function main(inPayload) {
 		ioPort.Link(io)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit()
 
 		ioStream := io.Open(proc)
 
@@ -114,7 +114,7 @@ function main(inPayload) {
 		ioPort.Link(io)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit()
 
 		ioStream := io.Open(proc)
 
@@ -146,7 +146,7 @@ function main(inPayload) {
 		ioPort.Link(io)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit()
 
 		ioStream := io.Open(proc)
 
@@ -185,7 +185,7 @@ function main(inPayload: any): any {
 
 		for i := 0; i < b.N; i++ {
 			proc := process.New()
-			defer proc.Close()
+			defer proc.Exit()
 
 			ioStream := io.Open(proc)
 
@@ -222,7 +222,7 @@ function main(inPayload) {
 
 		for i := 0; i < b.N; i++ {
 			proc := process.New()
-			defer proc.Close()
+			defer proc.Exit()
 
 			ioStream := io.Open(proc)
 
@@ -255,7 +255,7 @@ function main(inPayload) {
 
 		for i := 0; i < b.N; i++ {
 			proc := process.New()
-			defer proc.Close()
+			defer proc.Exit()
 
 			ioStream := io.Open(proc)
 
@@ -288,7 +288,7 @@ function main(inPayload) {
 
 		for i := 0; i < b.N; i++ {
 			proc := process.New()
-			defer proc.Close()
+			defer proc.Exit()
 
 			ioStream := io.Open(proc)
 
