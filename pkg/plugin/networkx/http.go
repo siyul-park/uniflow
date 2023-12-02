@@ -379,8 +379,9 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	proc := process.New()
 	var procErr error
+	proc := process.New()
+
 	defer func() {
 		proc.Stack().Wait()
 		proc.Exit(procErr)
@@ -404,12 +405,14 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = n.response(r, w, n.errorPayload(proc, UnsupportedMediaType))
 		return
 	}
+
 	outPayload, err := primitive.MarshalText(req)
 	if err != nil {
 		procErr = err
 		_ = n.response(r, w, n.errorPayload(proc, BadRequest))
 		return
 	}
+
 	outPck := packet.New(outPayload)
 
 	if ioStream.Links() > 0 {
