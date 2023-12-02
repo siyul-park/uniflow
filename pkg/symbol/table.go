@@ -8,24 +8,23 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-type (
-	// TableOptions holds options for configuring a Table.
-	TableOptions struct {
-		LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
-		UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
-	}
+// TableOptions holds options for configuring a Table.
 
-	// Table manages the storage and operations for Symbols.
-	Table struct {
-		symbols     map[ulid.ULID]*Symbol
-		unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
-		linked      map[ulid.ULID]map[string][]scheme.PortLocation
-		index       map[string]map[string]ulid.ULID
-		loadHooks   []LoadHook
-		unloadHooks []UnloadHook
-		mu          sync.RWMutex
-	}
-)
+type TableOptions struct {
+	LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
+	UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
+}
+
+// Table manages the storage and operations for Symbols.
+type Table struct {
+	symbols     map[ulid.ULID]*Symbol
+	unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
+	linked      map[ulid.ULID]map[string][]scheme.PortLocation
+	index       map[string]map[string]ulid.ULID
+	loadHooks   []LoadHook
+	unloadHooks []UnloadHook
+	mu          sync.RWMutex
+}
 
 // NewTable returns a new SymbolTable with the specified options.
 func NewTable(opts ...TableOptions) *Table {
