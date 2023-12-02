@@ -92,12 +92,12 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	case OPDelete:
 		filter, err := examplesToFilter(examples)
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		specs, err := n.storage.FindMany(ctx, filter)
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		var ids []ulid.ULID
@@ -106,14 +106,14 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		if _, err := n.storage.DeleteMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...)); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		if len(specs) == 0 {
 			return nil, inPck
 		}
 		if outPayload, err := specsToExamples(specs, batch); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		} else {
 			return packet.New(outPayload), nil
 		}
@@ -122,40 +122,40 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 		ids, err := n.storage.InsertMany(ctx, specs)
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		if len(specs) == 0 {
 			return nil, inPck
 		}
 		if outPayload, err := specsToExamples(specs, batch); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		} else {
 			return packet.New(outPayload), nil
 		}
 	case OPSelect:
 		filter, err := examplesToFilter(examples)
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		specs, err := n.storage.FindMany(ctx, filter)
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		if len(specs) == 0 {
 			return nil, inPck
 		}
 		if outPayload, err := specsToExamples(specs, batch); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		} else {
 			return packet.New(outPayload), nil
 		}
@@ -177,14 +177,14 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		var merges []scheme.Spec
 		for _, spec := range specs {
 			unstructured := scheme.NewUnstructured(nil)
 			if err := unstructured.Marshal(spec); err != nil {
-				return nil, packet.NewError(err, inPck)
+				return nil, packet.WithError(err, inPck)
 			}
 
 			patch := patches[spec.GetID()]
@@ -198,21 +198,21 @@ func (n *ReflectNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 
 		if _, err := n.storage.UpdateMany(ctx, merges); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		specs, err = n.storage.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr(len(ids)),
 		})
 		if err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		}
 
 		if len(specs) == 0 {
 			return nil, inPck
 		}
 		if outPayload, err := specsToExamples(specs, batch); err != nil {
-			return nil, packet.NewError(err, inPck)
+			return nil, packet.WithError(err, inPck)
 		} else {
 			return packet.New(outPayload), nil
 		}

@@ -28,7 +28,7 @@ type (
 	}
 )
 
-var _ Node = &OneToOneNode{}
+var _ Node = (*OneToOneNode)(nil)
 
 // NewOneToOneNode returns a new OneToOneNode.
 func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {

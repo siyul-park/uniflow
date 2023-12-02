@@ -14,8 +14,8 @@ type Hook struct {
 	mu          sync.RWMutex
 }
 
-var _ symbol.LoadHook = &Hook{}
-var _ symbol.UnloadHook = &Hook{}
+var _ symbol.LoadHook = (*Hook)(nil)
+var _ symbol.UnloadHook = (*Hook)(nil)
 
 // New creates a new Hook instance.
 func New() *Hook {

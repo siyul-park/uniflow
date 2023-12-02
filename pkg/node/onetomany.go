@@ -27,7 +27,7 @@ type (
 	}
 )
 
-var _ Node = &OneToManyNode{}
+var _ Node = (*OneToManyNode)(nil)
 
 // NewOneToManyNode returns a new OneToManyNode.
 func NewOneToManyNode(config OneToManyNodeConfig) *OneToManyNode {
