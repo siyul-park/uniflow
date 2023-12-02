@@ -16,7 +16,7 @@ type Scheme struct {
 	mu     sync.RWMutex
 }
 
-var _ Codec = &Scheme{}
+var _ Codec = (*Scheme)(nil)
 
 // New creates a new Scheme instance.
 func New() *Scheme {

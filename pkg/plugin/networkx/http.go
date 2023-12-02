@@ -199,7 +199,7 @@ var (
 )
 
 var _ node.Node = (*HTTPNode)(nil)
-var _ http.Handler = &HTTPNode{}
+var _ http.Handler = (*HTTPNode)(nil)
 var _ scheme.Spec = (*HTTPSpec)(nil)
 
 var forbiddenResponseHeaderRegexps []*regexp.Regexp

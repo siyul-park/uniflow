@@ -22,7 +22,7 @@ const (
 	KeyLinks     = "links"
 )
 
-var _ Spec = &Unstructured{}
+var _ Spec = (*Unstructured)(nil)
 
 // NewUnstructured returns a new Unstructured instance with an optional primitive.Map.
 func NewUnstructured(doc *primitive.Map) *Unstructured {
