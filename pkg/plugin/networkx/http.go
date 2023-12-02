@@ -380,9 +380,10 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
+	var procErr error
 	defer func() {
 		proc.Stack().Wait()
-		proc.Exit(nil)
+		proc.Exit(procErr)
 	}()
 
 	go func() {
@@ -399,11 +400,13 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	req, err := n.request(r)
 	if err != nil {
+		procErr = err
 		_ = n.response(r, w, n.errorPayload(proc, UnsupportedMediaType))
 		return
 	}
 	outPayload, err := primitive.MarshalText(req)
 	if err != nil {
+		procErr = err
 		_ = n.response(r, w, n.errorPayload(proc, BadRequest))
 		return
 	}
@@ -419,6 +422,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ioStream.Links()+outStream.Links() == 0 {
+		procErr = node.ErrDiscardPacket
 		return
 	}
 
@@ -435,6 +439,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			stream = ioStream
 		}
 		if !ok {
+			procErr = node.ErrDiscardPacket
 			_ = n.response(r, w, n.errorPayload(proc, ServiceUnavailable))
 			return
 		}
@@ -451,15 +456,21 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		var res HTTPPayload
 		if err := primitive.Unmarshal(inPayload, &res); err != nil {
-			if _, ok := packet.AsError(inPck); ok {
+			if err, ok := packet.AsError(inPck); ok {
+				procErr = err
 				res = InternalServerError
 			} else {
 				res.Body = inPayload
 			}
 		}
 
-		if err := n.response(r, w, res); err != nil {
-			_ = n.response(r, w, n.errorPayload(proc, InternalServerError))
+		if err = n.response(r, w, res); err != nil {
+			res = n.errorPayload(proc, InternalServerError)
+			_ = n.response(r, w, res)
+		}
+
+		if procErr == nil && res.Status >= 400 && res.Status < 600 {
+			procErr = errors.New(http.StatusText(res.Status))
 		}
 
 		break
