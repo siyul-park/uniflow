@@ -417,6 +417,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		proc.Stack().Push(outPck.ID(), outStream.ID())
 		outStream.Send(outPck)
 	}
+
 	if ioStream.Links()+outStream.Links() == 0 {
 		return
 	}
@@ -450,7 +451,11 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		var res HTTPPayload
 		if err := primitive.Unmarshal(inPayload, &res); err != nil {
-			res.Body = inPayload
+			if packet.IsError(inPck) {
+				res = InternalServerError
+			} else {
+				res.Body = inPayload
+			}
 		}
 
 		if err := n.response(r, w, res); err != nil {
