@@ -461,7 +461,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		inPayload := inPck.Payload()
 
-		var res *HTTPPayload
+		var res HTTPPayload
 		if err := primitive.Unmarshal(inPayload, &res); err != nil {
 			if err, ok := packet.AsError(inPck); ok {
 				procErr = err
@@ -492,16 +492,16 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (n *HTTPNode) readPayload(r *http.Request) (*HTTPPayload, error) {
+func (n *HTTPNode) readPayload(r *http.Request) (HTTPPayload, error) {
 	contentType := r.Header.Get(HeaderContentType)
 
 	if b, err := io.ReadAll(r.Body); err != nil {
-		return nil, err
+		return HTTPPayload{}, err
 	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
-		return nil, err
+		return HTTPPayload{}, err
 	} else {
 		r.Header.Set(HeaderContentType, contentType)
-		return &HTTPPayload{
+		return HTTPPayload{
 			Proto:   r.Proto,
 			Path:    r.URL.Path,
 			Method:  r.Method,
@@ -513,7 +513,7 @@ func (n *HTTPNode) readPayload(r *http.Request) (*HTTPPayload, error) {
 	}
 }
 
-func (n *HTTPNode) writePayload(w http.ResponseWriter, res *HTTPPayload) error {
+func (n *HTTPNode) writePayload(w http.ResponseWriter, res HTTPPayload) error {
 	contentType := res.Header.Get(HeaderContentType)
 	b, err := MarshalMIME(res.Body, &contentType)
 	if err != nil {
@@ -557,7 +557,7 @@ func (n *HTTPNode) writePayload(w http.ResponseWriter, res *HTTPPayload) error {
 	return nil
 }
 
-func (n *HTTPNode) handleErrorPayload(proc *process.Process, err *HTTPPayload) *HTTPPayload {
+func (n *HTTPNode) handleErrorPayload(proc *process.Process, err HTTPPayload) HTTPPayload {
 	if n.errPort.Links() == 0 {
 		return err
 	}
@@ -573,7 +573,7 @@ func (n *HTTPNode) handleErrorPayload(proc *process.Process, err *HTTPPayload) *
 	}
 	outPayload := outPck.Payload()
 
-	var res *HTTPPayload
+	var res HTTPPayload
 	if err := primitive.Unmarshal(outPayload, &res); err != nil {
 		if _, ok := packet.AsError(outPck); ok {
 			res = InternalServerError
@@ -600,8 +600,8 @@ func (n *HTTPNode) configureServer() error {
 	return nil
 }
 
-func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
-	he := &HTTPPayload{Status: status, Body: primitive.NewString(http.StatusText(status))}
+func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
+	he := HTTPPayload{Status: status, Body: primitive.NewString(http.StatusText(status))}
 	if len(body) > 0 {
 		he.Body = body[0]
 	}
