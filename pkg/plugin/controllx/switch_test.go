@@ -79,7 +79,7 @@ func TestSwitchNode_Send(t *testing.T) {
 			outPort.Link(out)
 
 			proc := process.New()
-			defer proc.Exit()
+			defer proc.Exit(nil)
 
 			inStream := in.Open(proc)
 			outStream := out.Open(proc)

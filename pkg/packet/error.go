@@ -1,10 +1,15 @@
 package packet
 
-import "github.com/siyul-park/uniflow/pkg/primitive"
+import (
+	"errors"
 
-// NewError creates a new Packet to represent an error.
-// It takes an error and an optional cause Packet and constructs a Packet with error details.
-func NewError(err error, cause *Packet) *Packet {
+	"github.com/siyul-park/uniflow/pkg/primitive"
+)
+
+// WithError creates a new Packet representing an error with the given error and optional cause.
+// It constructs a Packet with error details, including the error message.
+// If a cause is provided, it is attached to the error packet.
+func WithError(err error, cause *Packet) *Packet {
 	pairs := []primitive.Value{
 		primitive.NewString("error"),
 		primitive.NewString(err.Error()),
@@ -17,9 +22,14 @@ func NewError(err error, cause *Packet) *Packet {
 	return New(primitive.NewMap(pairs...))
 }
 
-// IsError checks if the given Packet represents an error.
-func IsError(pck *Packet) bool {
+// AsError extracts the error from a Packet, returning it along with a boolean indicating whether
+// the Packet contains error information. If the Packet does not represent an error, the
+// returned error is nil, and the boolean is false.
+func AsError(pck *Packet) (error, bool) {
 	payload := pck.Payload()
-	_, ok := primitive.Pick[string](payload, "error")
-	return ok
+	err, ok := primitive.Pick[string](payload, "error")
+	if !ok {
+		return nil, false
+	}
+	return errors.New(err), true
 }

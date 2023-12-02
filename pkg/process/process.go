@@ -7,10 +7,10 @@ import (
 )
 
 // Process is a processing unit that isolates data processing from others.
-
 type Process struct {
 	id    ulid.ULID
 	stack *Stack
+	err   error
 	done  chan struct{}
 	mu    sync.RWMutex
 }
@@ -41,13 +41,21 @@ func (p *Process) Stack() *Stack {
 	return p.stack
 }
 
+// Err returns the last error encountered by the process.
+func (p *Process) Err() error {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.err
+}
+
 // Done returns a channel that is closed when the process is closed.
 func (p *Process) Done() <-chan struct{} {
 	return p.done
 }
 
-// Exit closes the process.
-func (p *Process) Exit() {
+// Exit closes the process with an optional error.
+func (p *Process) Exit(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -57,7 +65,7 @@ func (p *Process) Exit() {
 	default:
 	}
 
+	p.err = err
 	close(p.done)
-
 	p.stack.Close()
 }

@@ -92,9 +92,9 @@ func (n *SnippetNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	}
 
 	if output, err := n.run(input); err != nil {
-		return nil, packet.NewError(err, inPck)
+		return nil, packet.WithError(err, inPck)
 	} else if outPayload, err := primitive.MarshalText(output); err != nil {
-		return nil, packet.NewError(err, inPck)
+		return nil, packet.WithError(err, inPck)
 	} else {
 		return packet.New(outPayload), nil
 	}

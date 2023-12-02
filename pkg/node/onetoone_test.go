@@ -65,7 +65,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			ioPort.Link(io)
 
 			proc := process.New()
-			defer proc.Exit()
+			defer proc.Exit(nil)
 
 			ioStream := io.Open(proc)
 
@@ -102,7 +102,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			errPort.Link(err)
 
 			proc := process.New()
-			defer proc.Exit()
+			defer proc.Exit(nil)
 
 			ioStream := io.Open(proc)
 			errStream := err.Open(proc)
@@ -142,7 +142,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			outPort.Link(out)
 
 			proc := process.New()
-			defer proc.Exit()
+			defer proc.Exit(nil)
 
 			inStream := in.Open(proc)
 			outStream := out.Open(proc)
@@ -188,7 +188,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			errPort.Link(err)
 
 			proc := process.New()
-			defer proc.Exit()
+			defer proc.Exit(nil)
 
 			inStream := in.Open(proc)
 			errStream := err.Open(proc)

@@ -382,13 +382,13 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proc := process.New()
 	defer func() {
 		proc.Stack().Wait()
-		proc.Exit()
+		proc.Exit(nil)
 	}()
 
 	go func() {
 		select {
 		case <-r.Context().Done():
-			proc.Exit()
+			proc.Exit(r.Context().Err())
 		case <-proc.Done():
 		}
 	}()
@@ -451,7 +451,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		var res HTTPPayload
 		if err := primitive.Unmarshal(inPayload, &res); err != nil {
-			if packet.IsError(inPck) {
+			if _, ok := packet.AsError(inPck); ok {
 				res = InternalServerError
 			} else {
 				res.Body = inPayload

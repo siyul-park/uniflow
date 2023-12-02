@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewError(t *testing.T) {
+func TestWithError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
 	pck1 := New(primitive.NewString(faker.Word()))
-	pck2 := NewError(err, pck1)
+	pck2 := WithError(err, pck1)
 
 	assert.NotNil(t, pck2)
 	assert.NotZero(t, pck2.ID())
@@ -24,12 +24,13 @@ func TestNewError(t *testing.T) {
 	assert.Equal(t, pck1.Payload(), payload.GetOr(primitive.NewString("cause"), nil))
 }
 
-func TestIsError(t *testing.T) {
+func TestAsError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
 	pck1 := New(primitive.NewString(faker.Word()))
-	pck2 := NewError(err, pck1)
+	pck2 := WithError(err, pck1)
 
-	assert.True(t, IsError(pck2))
-	assert.False(t, IsError(pck1))
+	err1, ok := AsError(pck2)
+	assert.True(t, ok)
+	assert.Equal(t, err.Error(), err1.Error())
 }
