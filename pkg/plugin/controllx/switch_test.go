@@ -129,11 +129,12 @@ func BenchmarkSwitchNode_Send(b *testing.B) {
 	inPayload, _ := primitive.MarshalText(map[string]bool{
 		"a": true,
 	})
-	
+	inPck := packet.New(inPayload)
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		inStream.Send(packet.New(inPayload))
+		inStream.Send(inPck)
 		<-outStream.Receive()
 	}
 }

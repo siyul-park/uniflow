@@ -129,13 +129,16 @@ func BenchmarkRouterNode_Send(b *testing.B) {
 	inStream := in.Open(proc)
 	outStream := out.Open(proc)
 
+	inPayload := primitive.NewMap(
+		primitive.NewString(KeyMethod), primitive.NewString(http.MethodGet),
+		primitive.NewString(KeyPath), primitive.NewString("/first"),
+	)
+	inPck := packet.New(inPayload)
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		inStream.Send(packet.New(primitive.NewMap(
-			primitive.NewString(KeyMethod), primitive.NewString(http.MethodGet),
-			primitive.NewString(KeyPath), primitive.NewString("/first"),
-		)))
+		inStream.Send(inPck)
 		<-outStream.Receive()
 	}
 }
