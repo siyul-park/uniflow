@@ -223,3 +223,176 @@ func TestReflectNode_Send(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkReflectNode_Send(b *testing.B) {
+	s := scheme.New()
+
+	st, _ := storage.New(context.Background(), storage.Config{
+		Scheme:   s,
+		Database: memdb.New(faker.Word()),
+	})
+
+	s.AddKnownType(KindReflect, &ReflectSpec{})
+	s.AddCodec(KindReflect, scheme.CodecWithType[*ReflectSpec](func(spec *ReflectSpec) (node.Node, error) {
+		return NewReflectNode(ReflectNodeConfig{
+			ID:      spec.ID,
+			OP:      spec.OP,
+			Storage: st,
+		}), nil
+	}))
+
+	b.Run(OPDelete, func(b *testing.B) {
+		n := NewReflectNode(ReflectNodeConfig{
+			OP:      OPDelete,
+			Storage: st,
+		})
+		defer func() { _ = n.Close() }()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+
+			id, _ := st.InsertOne(context.Background(), &ReflectSpec{
+				SpecMeta: scheme.SpecMeta{
+					ID:   ulid.Make(),
+					Kind: KindReflect,
+				},
+				OP: OPDelete,
+			})
+
+			inPayload := primitive.NewMap(
+				primitive.NewString(scheme.KeyID), primitive.NewString(id.String()),
+			)
+			inPck := packet.New(inPayload)
+
+			b.StartTimer()
+
+			ioStream.Send(inPck)
+			<-ioStream.Receive()
+		}
+	})
+
+	b.Run(OPInsert, func(b *testing.B) {
+		n := NewReflectNode(ReflectNodeConfig{
+			OP:      OPInsert,
+			Storage: st,
+		})
+		defer func() { _ = n.Close() }()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+
+			inPayload := primitive.NewMap(
+				primitive.NewString(scheme.KeyID), primitive.NewString(ulid.Make().String()),
+				primitive.NewString("kind"), primitive.NewString(KindReflect),
+				primitive.NewString("op"), primitive.NewString(OPInsert),
+			)
+			inPck := packet.New(inPayload)
+
+			b.StartTimer()
+
+			ioStream.Send(inPck)
+			<-ioStream.Receive()
+		}
+	})
+
+	b.Run(OPSelect, func(b *testing.B) {
+		n := NewReflectNode(ReflectNodeConfig{
+			OP:      OPSelect,
+			Storage: st,
+		})
+		defer func() { _ = n.Close() }()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		id, _ := st.InsertOne(context.Background(), &ReflectSpec{
+			SpecMeta: scheme.SpecMeta{
+				ID:   ulid.Make(),
+				Kind: KindReflect,
+			},
+			OP: OPSelect,
+		})
+
+		inPayload := primitive.NewMap(
+			primitive.NewString(scheme.KeyID), primitive.NewString(id.String()),
+		)
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			ioStream.Send(inPck)
+			<-ioStream.Receive()
+		}
+	})
+
+	b.Run(OPUpdate, func(b *testing.B) {
+		n := NewReflectNode(ReflectNodeConfig{
+			OP:      OPUpdate,
+			Storage: st,
+		})
+		defer func() { _ = n.Close() }()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+
+			id, _ := st.InsertOne(context.Background(), &ReflectSpec{
+				SpecMeta: scheme.SpecMeta{
+					ID:   ulid.Make(),
+					Kind: KindReflect,
+				},
+				OP: OPInsert,
+			})
+
+			inPayload := primitive.NewMap(
+				primitive.NewString(scheme.KeyID), primitive.NewString(id.String()),
+				primitive.NewString("op"), primitive.NewString(OPUpdate),
+			)
+			inPck := packet.New(inPayload)
+
+			b.StartTimer()
+
+			ioStream.Send(inPck)
+			<-ioStream.Receive()
+		}
+	})
+}
