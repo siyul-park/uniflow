@@ -106,5 +106,5 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 		}
 	}
 
-	return nil, packet.WithError(node.ErrDiscardPacket, inPck)
+	return nil, packet.WithError(packet.ErrDiscardPacket, inPck)
 }

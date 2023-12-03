@@ -408,13 +408,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	outPayload, err := primitive.MarshalText(req)
-	if err != nil {
-		procErr = err
-		_ = n.writePayload(w, n.handleErrorPayload(proc, BadRequest))
-		return
-	}
-
+	outPayload, _ := primitive.MarshalText(req)
 	outPck := packet.New(outPayload)
 
 	if ioStream.Links() > 0 {
@@ -427,7 +421,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ioStream.Links()+outStream.Links() == 0 {
-		procErr = node.ErrDiscardPacket
+		procErr = packet.ErrDiscardPacket
 		return
 	}
 
@@ -446,7 +440,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !ok {
-			procErr = node.ErrDiscardPacket
+			procErr = packet.ErrDiscardPacket
 			_ = n.writePayload(w, n.handleErrorPayload(proc, ServiceUnavailable))
 			return
 		}

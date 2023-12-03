@@ -9,28 +9,26 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-type (
-	// OneToOneNodeConfig is a config for ActionNode.
-	OneToOneNodeConfig struct {
-		ID     ulid.ULID
-		Action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-	}
+// OneToOneNodeConfig holds the configuration for OneToOneNode.
+type OneToOneNodeConfig struct {
+	ID     ulid.ULID
+	Action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+}
 
-	// OneToOneNode provide process *packet.Packet one source and onde distance.
-	OneToOneNode struct {
-		id      ulid.ULID
-		action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-		ioPort  *port.Port
-		inPort  *port.Port
-		outPort *port.Port
-		errPort *port.Port
-		mu      sync.RWMutex
-	}
-)
+// OneToOneNode represents a node that processes *packet.Packet with one input and one output.
+type OneToOneNode struct {
+	id      ulid.ULID
+	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+	ioPort  *port.Port
+	inPort  *port.Port
+	outPort *port.Port
+	errPort *port.Port
+	mu      sync.RWMutex
+}
 
 var _ Node = (*OneToOneNode)(nil)
 
-// NewOneToOneNode returns a new OneToOneNode.
+// NewOneToOneNode creates a new OneToOneNode with the given configuration.
 func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {
 	id := config.ID
 	action := config.Action
@@ -90,6 +88,7 @@ func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {
 	return n
 }
 
+// ID returns the ID of the OneToOneNode.
 func (n *OneToOneNode) ID() ulid.ULID {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -97,6 +96,7 @@ func (n *OneToOneNode) ID() ulid.ULID {
 	return n.id
 }
 
+// Port returns the specified port of the OneToOneNode.
 func (n *OneToOneNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -116,6 +116,7 @@ func (n *OneToOneNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
+// Close closes all ports of the OneToOneNode.
 func (n *OneToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -128,7 +129,7 @@ func (n *OneToOneNode) Close() error {
 	return nil
 }
 
-func (n *OneToOneNode) forward(proc *process.Process, inStream *port.Stream, outStream *port.Stream) {
+func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.Stream) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 

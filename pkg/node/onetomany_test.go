@@ -130,3 +130,36 @@ func TestOneToManyNode_Send(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkOneToManyNode_Send(b *testing.B) {
+	n := NewOneToManyNode(OneToManyNodeConfig{
+		Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return []*packet.Packet{inPck}, nil
+		},
+	})
+	defer func() { _ = n.Close() }()
+
+	in := port.New()
+	inPort, _ := n.Port(PortIn)
+	inPort.Link(in)
+
+	out := port.New()
+	outPort, _ := n.Port(port.SetIndex(PortOut, 0))
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inStream := in.Open(proc)
+	outStream := out.Open(proc)
+
+	inPayload := primitive.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inStream.Send(inPck)
+		<-outStream.Receive()
+	}
+}

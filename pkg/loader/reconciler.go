@@ -7,35 +7,29 @@ import (
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
-type (
-	// ReconcilerConfig holds the configuration for the Reconciler.
-	ReconcilerConfig struct {
-		Storage *storage.Storage // Storage is the storage used by the Reconciler.
-		Loader  *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
-		Filter  *storage.Filter  // Filter is the filter for tracking changes to the scheme.Spec.
-	}
+// ReconcilerConfig holds the configuration for the Reconciler.
+type ReconcilerConfig struct {
+	Storage *storage.Storage // Storage is the storage used by the Reconciler.
+	Loader  *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
+	Filter  *storage.Filter  // Filter is the filter for tracking changes to the scheme.Spec.
+}
 
-	// Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
-	Reconciler struct {
-		storage *storage.Storage
-		loader  *Loader
-		filter  *storage.Filter
-		stream  *storage.Stream
-		done    chan struct{}
-		mu      sync.Mutex
-	}
-)
+// Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
+type Reconciler struct {
+	storage *storage.Storage
+	loader  *Loader
+	filter  *storage.Filter
+	stream  *storage.Stream
+	done    chan struct{}
+	mu      sync.Mutex
+}
 
 // NewReconciler creates a new Reconciler with the given configuration.
 func NewReconciler(config ReconcilerConfig) *Reconciler {
-	storage := config.Storage
-	loader := config.Loader
-	filter := config.Filter
-
 	return &Reconciler{
-		storage: storage,
-		loader:  loader,
-		filter:  filter,
+		storage: config.Storage,
+		loader:  config.Loader,
+		filter:  config.Filter,
 		done:    make(chan struct{}),
 	}
 }

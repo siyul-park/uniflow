@@ -6,6 +6,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
+var (
+	ErrInvalidPacket = errors.New("invalid packet")
+	ErrDiscardPacket = errors.New("discarded packet")
+)
+
 // WithError creates a new Packet representing an error with the given error and optional cause.
 // It constructs a Packet with error details, including the error message.
 // If a cause is provided, it is attached to the error packet.
