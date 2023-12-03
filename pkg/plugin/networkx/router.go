@@ -151,15 +151,15 @@ func (n *RouterNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 
 	inPayload, ok := inPck.Payload().(*primitive.Map)
 	if !ok {
-		return nil, packet.WithError(node.ErrInvalidPacket, inPck)
+		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 	method, ok := primitive.Pick[string](inPayload, KeyMethod)
 	if !ok {
-		return nil, packet.WithError(node.ErrInvalidPacket, inPck)
+		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 	path, ok := primitive.Pick[string](inPayload, KeyPath)
 	if !ok {
-		return nil, packet.WithError(node.ErrInvalidPacket, inPck)
+		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 
 	pre, cur, values := n.find(method, path)

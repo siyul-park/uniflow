@@ -9,15 +9,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-type (
 	// OneToManyNodeConfig is a config for ActionNode.
-	OneToManyNodeConfig struct {
+	type OneToManyNodeConfig struct {
 		ID     ulid.ULID
 		Action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
 	}
 
 	// OneToManyNode provide process *packet.Packet one source and many distance.
-	OneToManyNode struct {
+	type OneToManyNode struct {
 		id       ulid.ULID
 		action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
 		inPort   *port.Port
@@ -25,7 +24,7 @@ type (
 		errPort  *port.Port
 		mu       sync.RWMutex
 	}
-)
+
 
 var _ Node = (*OneToManyNode)(nil)
 

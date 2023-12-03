@@ -9,24 +9,22 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-type (
-	// OneToOneNodeConfig is a config for ActionNode.
-	OneToOneNodeConfig struct {
-		ID     ulid.ULID
-		Action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-	}
+// OneToOneNodeConfig is a config for ActionNode.
+type OneToOneNodeConfig struct {
+	ID     ulid.ULID
+	Action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+}
 
-	// OneToOneNode provide process *packet.Packet one source and onde distance.
-	OneToOneNode struct {
-		id      ulid.ULID
-		action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-		ioPort  *port.Port
-		inPort  *port.Port
-		outPort *port.Port
-		errPort *port.Port
-		mu      sync.RWMutex
-	}
-)
+// OneToOneNode provide process *packet.Packet one source and onde distance.
+type OneToOneNode struct {
+	id      ulid.ULID
+	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+	ioPort  *port.Port
+	inPort  *port.Port
+	outPort *port.Port
+	errPort *port.Port
+	mu      sync.RWMutex
+}
 
 var _ Node = (*OneToOneNode)(nil)
 

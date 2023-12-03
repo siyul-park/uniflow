@@ -427,7 +427,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ioStream.Links()+outStream.Links() == 0 {
-		procErr = node.ErrDiscardPacket
+		procErr = packet.ErrDiscardPacket
 		return
 	}
 
@@ -446,7 +446,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !ok {
-			procErr = node.ErrDiscardPacket
+			procErr = packet.ErrDiscardPacket
 			_ = n.writePayload(w, n.handleErrorPayload(proc, ServiceUnavailable))
 			return
 		}
