@@ -104,5 +104,38 @@ func TestRouterNode_Send(t *testing.T) {
 			}
 		})
 	}
+}
 
+func BenchmarkRouterNode_Send(b *testing.B) {
+	n := NewRouterNode(RouterNodeConfig{})
+	defer func() { _ = n.Close() }()
+
+	in := port.New()
+	inPort, _ := n.Port(node.PortIn)
+	inPort.Link(in)
+
+	n.Add(http.MethodGet, "/*", port.SetIndex(node.PortOut, 0))
+	n.Add(http.MethodGet, "/:1/second", port.SetIndex(node.PortOut, 1))
+	n.Add(http.MethodGet, "/:1/:2", port.SetIndex(node.PortOut, 2))
+
+	out := port.New()
+	defer out.Close()
+	outPort, _ := n.Port(port.SetIndex(node.PortOut, 0))
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inStream := in.Open(proc)
+	outStream := out.Open(proc)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inStream.Send(packet.New(primitive.NewMap(
+			primitive.NewString(KeyMethod), primitive.NewString(http.MethodGet),
+			primitive.NewString(KeyPath), primitive.NewString("/first"),
+		)))
+		<-outStream.Receive()
+	}
 }

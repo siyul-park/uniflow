@@ -160,3 +160,82 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "Hello World!", w.Body.String())
 	})
 }
+
+func BenchmarkHTTPNode_Send(b *testing.B) {
+	b.Run("IO", func(b *testing.B) {
+		n := NewHTTPNode(HTTPNodeConfig{})
+		defer func() { _ = n.Close() }()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			ioStream := io.Open(proc)
+
+			for {
+				inPck, ok := <-ioStream.Receive()
+				if !ok {
+					return
+				}
+
+				outPck := packet.New(primitive.NewMap(
+					primitive.NewString("body"), primitive.NewString("Hello World!"),
+					primitive.NewString("status"), primitive.NewInt(200),
+				))
+				proc.Stack().Link(inPck.ID(), outPck.ID())
+				ioStream.Send(outPck)
+			}
+		}))
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
+			w := httptest.NewRecorder()
+
+			n.ServeHTTP(w, r)
+		}
+	})
+
+	b.Run("In/Out", func(b *testing.B) {
+		n := NewHTTPNode(HTTPNodeConfig{})
+		defer func() { _ = n.Close() }()
+
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
+
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
+
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			inStream := in.Open(proc)
+			outStream := out.Open(proc)
+
+			for {
+				inPck, ok := <-outStream.Receive()
+				if !ok {
+					return
+				}
+
+				outPck := packet.New(primitive.NewMap(
+					primitive.NewString("body"), primitive.NewString("Hello World!"),
+					primitive.NewString("status"), primitive.NewInt(200),
+				))
+				proc.Stack().Link(inPck.ID(), outPck.ID())
+				inStream.Send(outPck)
+			}
+		}))
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
+			w := httptest.NewRecorder()
+
+			n.ServeHTTP(w, r)
+		}
+	})
+}

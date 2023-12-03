@@ -101,3 +101,39 @@ func TestSwitchNode_Send(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkSwitchNode_Send(b *testing.B) {
+	n := NewSwitchNode(SwitchNodeConfig{})
+	defer func() { _ = n.Close() }()
+
+	in := port.New()
+	inPort, _ := n.Port(node.PortIn)
+	inPort.Link(in)
+
+	n.Add("$.a", "out[0]")
+	n.Add("$.b", "out[1]")
+	n.Add("$.a = $.b", "out[2]")
+	n.Add("true", "out[3]")
+
+	out := port.New()
+	defer out.Close()
+	outPort, _ := n.Port(port.SetIndex(node.PortOut, 0))
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inStream := in.Open(proc)
+	outStream := out.Open(proc)
+
+	b.ResetTimer()
+
+	inPayload, _ := primitive.MarshalText(map[string]bool{
+		"a": true,
+	})
+
+	for i := 0; i < b.N; i++ {
+		inStream.Send(packet.New(inPayload))
+		<-outStream.Receive()
+	}
+}
