@@ -7,7 +7,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
- 
 // ReconcilerConfig holds the configuration for the Reconciler.
 type ReconcilerConfig struct {
 	Storage *storage.Storage // Storage is the storage used by the Reconciler.
