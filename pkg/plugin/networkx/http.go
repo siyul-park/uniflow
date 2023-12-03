@@ -408,13 +408,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	outPayload, err := primitive.MarshalText(req)
-	if err != nil {
-		procErr = err
-		_ = n.writePayload(w, n.handleErrorPayload(proc, BadRequest))
-		return
-	}
-
+	outPayload, _ := primitive.MarshalText(req)
 	outPck := packet.New(outPayload)
 
 	if ioStream.Links() > 0 {
