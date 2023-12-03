@@ -183,25 +183,19 @@ function main(inPayload: any): any {
 		ioPort, _ := n.Port(node.PortIO)
 		ioPort.Link(io)
 
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			ioStream := io.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
 			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			select {
-			case <-ioStream.Receive():
-			case <-ctx.Done():
-				assert.Fail(b, "timeout")
-			}
+			<-ioStream.Receive()
 		}
 	})
 
@@ -220,25 +214,19 @@ function main(inPayload) {
 		ioPort, _ := n.Port(node.PortIO)
 		ioPort.Link(io)
 
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			ioStream := io.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
 			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			select {
-			case <-ioStream.Receive():
-			case <-ctx.Done():
-				assert.Fail(b, "timeout")
-			}
+			<-ioStream.Receive()
 		}
 	})
 
@@ -253,25 +241,19 @@ function main(inPayload) {
 		ioPort, _ := n.Port(node.PortIO)
 		ioPort.Link(io)
 
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			ioStream := io.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
 			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			select {
-			case <-ioStream.Receive():
-			case <-ctx.Done():
-				assert.Fail(b, "timeout")
-			}
+			<-ioStream.Receive()
 		}
 	})
 
@@ -286,25 +268,19 @@ function main(inPayload) {
 		ioPort, _ := n.Port(node.PortIO)
 		ioPort.Link(io)
 
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			ioStream := io.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
 			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			select {
-			case <-ioStream.Receive():
-			case <-ctx.Done():
-				assert.Fail(b, "timeout")
-			}
+			<-ioStream.Receive()
 		}
 	})
 }
