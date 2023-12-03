@@ -9,26 +9,25 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-	// OneToManyNodeConfig is a config for ActionNode.
-	type OneToManyNodeConfig struct {
-		ID     ulid.ULID
-		Action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-	}
+// OneToManyNodeConfig holds the configuration for OneToManyNode.
+type OneToManyNodeConfig struct {
+	ID     ulid.ULID
+	Action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
+}
 
-	// OneToManyNode provide process *packet.Packet one source and many distance.
-	type OneToManyNode struct {
-		id       ulid.ULID
-		action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-		inPort   *port.Port
-		outPorts []*port.Port
-		errPort  *port.Port
-		mu       sync.RWMutex
-	}
-
+// OneToManyNode represents a node that processes *packet.Packet with one input and many outputs.
+type OneToManyNode struct {
+	id       ulid.ULID
+	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
+	inPort   *port.Port
+	outPorts []*port.Port
+	errPort  *port.Port
+	mu       sync.RWMutex
+}
 
 var _ Node = (*OneToManyNode)(nil)
 
-// NewOneToManyNode returns a new OneToManyNode.
+// NewOneToManyNode creates a new OneToManyNode with the given configuration.
 func NewOneToManyNode(config OneToManyNodeConfig) *OneToManyNode {
 	id := config.ID
 	action := config.Action
@@ -63,6 +62,7 @@ func NewOneToManyNode(config OneToManyNodeConfig) *OneToManyNode {
 	return n
 }
 
+// ID returns the ID of the OneToManyNode.
 func (n *OneToManyNode) ID() ulid.ULID {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -70,6 +70,7 @@ func (n *OneToManyNode) ID() ulid.ULID {
 	return n.id
 }
 
+// Port returns the specified port of the OneToManyNode.
 func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -80,30 +81,30 @@ func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 	case PortErr:
 		return n.errPort, true
 	default:
-	}
+		if i, ok := port.GetIndex(PortOut, name); ok {
+			for j := 0; j <= i; j++ {
+				if len(n.outPorts) <= j {
+					outPort := port.New()
+					outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+						n.mu.RLock()
+						defer n.mu.RUnlock()
 
-	if i, ok := port.GetIndex(PortOut, name); ok {
-		for j := 0; j <= i; j++ {
-			if len(n.outPorts) <= j {
-				outPort := port.New()
-				outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-					n.mu.RLock()
-					defer n.mu.RUnlock()
+						outStream := outPort.Open(proc)
 
-					outStream := outPort.Open(proc)
-
-					n.backward(proc, outStream)
-				}))
-				n.outPorts = append(n.outPorts, outPort)
+						n.backward(proc, outStream)
+					}))
+					n.outPorts = append(n.outPorts, outPort)
+				}
 			}
-		}
 
-		return n.outPorts[i], true
+			return n.outPorts[i], true
+		}
 	}
 
 	return nil, false
 }
 
+// Close closes all ports of the OneToManyNode.
 func (n *OneToManyNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -146,30 +147,21 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				inStream.Send(errPck)
 			}
 		} else if len(outPcks) > 0 && len(outStreams) > 0 {
-			var ok bool
 			for i, outPck := range outPcks {
-				if len(outStreams) <= i {
-					break
-				}
-				if outPck == nil {
+				if len(outStreams) <= i || outPck == nil {
 					continue
 				}
 				outStream := outStreams[i]
-
-				if outStream.Links() > 0 {
-					if outPck == inPck {
-						outPck = packet.New(outPck.Payload())
-					}
-					proc.Stack().Link(inPck.ID(), outPck.ID())
-					proc.Stack().Push(outPck.ID(), inStream.ID())
-					outStream.Send(outPck)
-
-					ok = true
+				if outStream.Links() == 0 {
+					continue
 				}
-			}
 
-			if !ok {
-				proc.Stack().Clear(inPck.ID())
+				if outPck == inPck {
+					outPck = packet.New(outPck.Payload())
+				}
+				proc.Stack().Link(inPck.ID(), outPck.ID())
+				proc.Stack().Push(outPck.ID(), inStream.ID())
+				outStream.Send(outPck)
 			}
 		} else {
 			proc.Stack().Clear(inPck.ID())

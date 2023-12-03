@@ -11,3 +11,10 @@ type Node interface {
 	Port(name string) (*port.Port, bool)
 	Close() error
 }
+
+const (
+	PortIO  = "io"
+	PortIn  = "in"
+	PortOut = "out"
+	PortErr = "error"
+)
