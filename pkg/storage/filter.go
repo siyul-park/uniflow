@@ -76,7 +76,7 @@ func (fh *filterHelper[T]) GTE(value T) *Filter {
 	}
 }
 
-// IN creates a filter for values in a given slice.
+// IN creates an "in" filter.
 func (fh *filterHelper[T]) IN(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
@@ -89,7 +89,7 @@ func (fh *filterHelper[T]) IN(slice ...T) *Filter {
 	}
 }
 
-// NotIN creates a filter for values not in a given slice.
+// NotIN creates a "not in" filter.
 func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
@@ -102,7 +102,7 @@ func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
 	}
 }
 
-// IsNull creates a filter for null values.
+// IsNull creates an "is null" filter.
 func (fh *filterHelper[T]) IsNull() *Filter {
 	return &Filter{
 		OP:  database.NULL,
@@ -110,7 +110,7 @@ func (fh *filterHelper[T]) IsNull() *Filter {
 	}
 }
 
-// IsNotNull creates a filter for non-null values.
+// IsNotNull creates an "is not null" filter.
 func (fh *filterHelper[T]) IsNotNull() *Filter {
 	return &Filter{
 		OP:  database.NNULL,
@@ -118,7 +118,7 @@ func (fh *filterHelper[T]) IsNotNull() *Filter {
 	}
 }
 
-// And creates a filter that combines multiple filters with a logical AND.
+// And creates an "and" filter.
 func (ft *Filter) And(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -133,7 +133,7 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 }
 
-// Or creates a filter that combines multiple filters with a logical OR.
+// Or creates an "or" filter.
 func (ft *Filter) Or(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {

@@ -401,10 +401,10 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	inStream := n.inPort.Open(proc)
 	outStream := n.outPort.Open(proc)
 
-	req, err := n.readPayload(r)
+	req, err := n.loadPayload(r)
 	if err != nil {
 		procErr = err
-		_ = n.writePayload(w, n.handleErrorPayload(proc, UnsupportedMediaType))
+		_ = n.storePayload(w, n.handleErrorPayload(proc, UnsupportedMediaType))
 		return
 	}
 
@@ -441,7 +441,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if !ok {
 			procErr = packet.ErrDiscardPacket
-			_ = n.writePayload(w, n.handleErrorPayload(proc, ServiceUnavailable))
+			_ = n.storePayload(w, n.handleErrorPayload(proc, ServiceUnavailable))
 			return
 		}
 
@@ -473,9 +473,9 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			res.Body = nil
 		}
 
-		if err = n.writePayload(w, res); err != nil {
+		if err = n.storePayload(w, res); err != nil {
 			res = n.handleErrorPayload(proc, InternalServerError)
-			_ = n.writePayload(w, res)
+			_ = n.storePayload(w, res)
 		}
 
 		if procErr == nil && res.Status >= 400 && res.Status < 600 {
@@ -486,7 +486,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (n *HTTPNode) readPayload(r *http.Request) (HTTPPayload, error) {
+func (n *HTTPNode) loadPayload(r *http.Request) (HTTPPayload, error) {
 	contentType := r.Header.Get(HeaderContentType)
 
 	if b, err := io.ReadAll(r.Body); err != nil {
@@ -507,7 +507,7 @@ func (n *HTTPNode) readPayload(r *http.Request) (HTTPPayload, error) {
 	}
 }
 
-func (n *HTTPNode) writePayload(w http.ResponseWriter, res HTTPPayload) error {
+func (n *HTTPNode) storePayload(w http.ResponseWriter, res HTTPPayload) error {
 	contentType := res.Header.Get(HeaderContentType)
 	b, err := MarshalMIME(res.Body, &contentType)
 	if err != nil {
