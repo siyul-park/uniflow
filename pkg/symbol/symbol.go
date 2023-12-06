@@ -15,32 +15,32 @@ type Symbol struct {
 
 var _ node.Node = (*Symbol)(nil)
 
-// ID returns the unique identifier of the Symbol, based on its Spec.
+// ID returns the unique identifier.
 func (s *Symbol) ID() ulid.ULID {
 	return s.Spec.GetID()
 }
 
-// Kind returns the kind of the Symbol, based on its Spec.
+// Kind returns the kind.
 func (s *Symbol) Kind() string {
 	return s.Spec.GetKind()
 }
 
-// Namespace returns the namespace of the Symbol, based on its Spec.
+// Namespace returns the namespace.
 func (s *Symbol) Namespace() string {
 	return s.Spec.GetNamespace()
 }
 
-// Name returns the name of the Symbol, based on its Spec.
+// Name returns the name.
 func (s *Symbol) Name() string {
 	return s.Spec.GetName()
 }
 
-// Links returns the links of the Symbol, based on its Spec.
+// Links returns the links.
 func (s *Symbol) Links() map[string][]scheme.PortLocation {
 	return s.Spec.GetLinks()
 }
 
-// Port returns the specified port of the Symbol, based on its Node.
+// Port returns the specified port.
 func (s *Symbol) Port(name string) (*port.Port, bool) {
 	return s.Node.Port(name)
 }
