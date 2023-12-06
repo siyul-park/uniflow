@@ -16,10 +16,7 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
-	n, err := NewSnippetNode(SnippetNodeConfig{
-		Lang: LangJSON,
-		Code: "{}",
-	})
+	n, err := NewSnippetNode(LangJSON, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 
@@ -28,14 +25,11 @@ func TestNewSnippetNode(t *testing.T) {
 
 func TestSnippetNode_Send(t *testing.T) {
 	t.Run(LangTypescript, func(t *testing.T) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangTypescript,
-			Code: `
+		n, _ := NewSnippetNode(LangTypescript, `
 function main(inPayload: any): any {
 	return inPayload;
 }
-			`,
-		})
+		`)
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -64,14 +58,11 @@ function main(inPayload: any): any {
 	})
 
 	t.Run(LangJavascript, func(t *testing.T) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJavascript,
-			Code: `
+		n, _ := NewSnippetNode(LangTypescript, `
 function main(inPayload) {
 	return inPayload;
 }
-			`,
-		})
+		`)
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -102,10 +93,7 @@ function main(inPayload) {
 	t.Run(LangJSON, func(t *testing.T) {
 		data := faker.UUIDHyphenated()
 
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJSON,
-			Code: fmt.Sprintf("\"%s\"", data),
-		})
+		n, _ := NewSnippetNode(LangJSON, fmt.Sprintf("\"%s\"", data))
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -134,10 +122,7 @@ function main(inPayload) {
 	})
 
 	t.Run(LangJSONata, func(t *testing.T) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJSONata,
-			Code: "$",
-		})
+		n, _ := NewSnippetNode(LangJSONata, "$")
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -168,14 +153,11 @@ function main(inPayload) {
 
 func BenchmarkSnippetNode_Send(b *testing.B) {
 	b.Run(LangTypescript, func(b *testing.B) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangTypescript,
-			Code: `
+		n, _ := NewSnippetNode(LangTypescript, `
 function main(inPayload: any): any {
 	return inPayload;
 }
-				`,
-		})
+		`)
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -199,14 +181,11 @@ function main(inPayload: any): any {
 	})
 
 	b.Run(LangJavascript, func(b *testing.B) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJavascript,
-			Code: `
+		n, _ := NewSnippetNode(LangJavascript, `
 function main(inPayload) {
 	return inPayload;
 }
-				`,
-		})
+		`)
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -230,10 +209,7 @@ function main(inPayload) {
 	})
 
 	b.Run(LangJSON, func(b *testing.B) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJSON,
-			Code: fmt.Sprintf("\"%s\"", faker.UUIDHyphenated()),
-		})
+		n, _ := NewSnippetNode(LangJSON, fmt.Sprintf("\"%s\"", faker.UUIDHyphenated()))
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -257,10 +233,7 @@ function main(inPayload) {
 	})
 
 	b.Run(LangJSONata, func(b *testing.B) {
-		n, _ := NewSnippetNode(SnippetNodeConfig{
-			Lang: LangJSONata,
-			Code: "$",
-		})
+		n, _ := NewSnippetNode(LangJSONata, "$")
 		defer func() { _ = n.Close() }()
 
 		io := port.New()

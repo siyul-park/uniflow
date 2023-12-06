@@ -18,12 +18,6 @@ import (
 	"github.com/xiatechs/jsonata-go"
 )
 
-// SnippetNodeConfig holds the configuration for creating a SnippetNode.
-type SnippetNodeConfig struct {
-	Lang string
-	Code string
-}
-
 // SnippetNode represents a node that runs a snippet of code.
 type SnippetNode struct {
 	*node.OneToOneNode
@@ -57,12 +51,9 @@ var (
 var _ node.Node = (*SnippetNode)(nil)
 var _ scheme.Spec = (*SnippetSpec)(nil)
 
-// NewSnippetNode creates a new SnippetNode with the given configuration.
-func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
+// NewSnippetNode creates a new SnippetNode.
+func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	defer func() { _ = recover() }()
-
-	lang := config.Lang
-	code := config.Code
 
 	run, err := compile(lang, code)
 	if err != nil {

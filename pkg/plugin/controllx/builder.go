@@ -10,10 +10,7 @@ func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindSnippet, &SnippetSpec{})
 		s.AddCodec(KindSnippet, scheme.CodecWithType[*SnippetSpec](func(spec *SnippetSpec) (node.Node, error) {
-			return NewSnippetNode(SnippetNodeConfig{
-				Lang: spec.Lang,
-				Code: spec.Code,
-			})
+			return NewSnippetNode(spec.Lang, spec.Code)
 		}))
 
 		s.AddKnownType(KindSwitch, &SwitchSpec{})
