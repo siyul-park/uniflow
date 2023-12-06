@@ -13,10 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// RouterNodeConfig holds the configuration for RouterNode.
-type RouterNodeConfig struct {
-}
-
 // RouterNode represents a router node that handles routing based on HTTP methods, paths, and ports.
 type RouterNode struct {
 	*node.OneToManyNode
@@ -71,8 +67,8 @@ const (
 var _ node.Node = (*RouterNode)(nil)
 var _ scheme.Spec = (*RouterSpec)(nil)
 
-// NewRouterNode creates a new instance of RouterNode with the given configuration.
-func NewRouterNode(config RouterNodeConfig) *RouterNode {
+// NewRouterNode creates a new instance of RouterNode.
+func NewRouterNode() *RouterNode {
 	n := &RouterNode{
 		tree: &route{
 			methods: map[string]string{},

@@ -18,7 +18,7 @@ func AddToScheme() func(*scheme.Scheme) error {
 
 		s.AddKnownType(KindSwitch, &SwitchSpec{})
 		s.AddCodec(KindSwitch, scheme.CodecWithType[*SwitchSpec](func(spec *SwitchSpec) (node.Node, error) {
-			n := NewSwitchNode(SwitchNodeConfig{})
+			n := NewSwitchNode()
 			for _, v := range spec.Match {
 				if err := n.Add(v.When, v.Port); err != nil {
 					_ = n.Close()

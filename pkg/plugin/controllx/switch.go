@@ -12,10 +12,6 @@ import (
 	"github.com/xiatechs/jsonata-go"
 )
 
-// SwitchNodeConfig holds the configuration for creating a SwitchNode.
-type SwitchNodeConfig struct {
-}
-
 // SwitchNode represents a node that switches packets based on conditions.
 type SwitchNode struct {
 	*node.OneToManyNode
@@ -46,8 +42,8 @@ const KindSwitch = "switch"
 var _ node.Node = (*SwitchNode)(nil)
 var _ scheme.Spec = (*SwitchSpec)(nil)
 
-// NewSwitchNode creates a new SwitchNode with the given configuration.
-func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
+// NewSwitchNode creates a new SwitchNode.
+func NewSwitchNode() *SwitchNode {
 	n := &SwitchNode{}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 

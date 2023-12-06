@@ -15,14 +15,14 @@ import (
 )
 
 func TestNewRouterNode(t *testing.T) {
-	n := NewRouterNode(RouterNodeConfig{})
+	n := NewRouterNode()
 	assert.NotNil(t, n)
 
 	_ = n.Close()
 }
 
 func TestRouterNode_Send(t *testing.T) {
-	n := NewRouterNode(RouterNodeConfig{})
+	n := NewRouterNode()
 	defer func() { _ = n.Close() }()
 
 	in := port.New()
@@ -106,7 +106,7 @@ func TestRouterNode_Send(t *testing.T) {
 }
 
 func BenchmarkRouterNode_Send(b *testing.B) {
-	n := NewRouterNode(RouterNodeConfig{})
+	n := NewRouterNode()
 	defer func() { _ = n.Close() }()
 
 	in := port.New()

@@ -54,7 +54,7 @@ func AddToScheme() func(*scheme.Scheme) error {
 
 		s.AddKnownType(KindRouter, &RouterSpec{})
 		s.AddCodec(KindRouter, scheme.CodecWithType[*RouterSpec](func(spec *RouterSpec) (node.Node, error) {
-			n := NewRouterNode(RouterNodeConfig{})
+			n := NewRouterNode()
 
 			for _, r := range spec.Routes {
 				n.Add(r.Method, r.Path, r.Port)
