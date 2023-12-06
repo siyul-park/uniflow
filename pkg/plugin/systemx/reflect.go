@@ -56,9 +56,7 @@ func NewReflectNode(config ReflectNodeConfig) *ReflectNode {
 		op:      op,
 		storage: storage,
 	}
-	n.OneToOneNode = node.NewOneToOneNode(node.OneToOneNodeConfig{
-		Action: n.action,
-	})
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
 }

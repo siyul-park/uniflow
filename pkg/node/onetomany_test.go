@@ -14,18 +14,14 @@ import (
 )
 
 func TestNewOneToManyNode(t *testing.T) {
-	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-		return []*packet.Packet{inPck}, nil
-	})
+	n := NewOneToManyNode(nil)
 	assert.NotNil(t, n)
 
 	assert.NoError(t, n.Close())
 }
 
 func TestOneToManyNode_Port(t *testing.T) {
-	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-		return []*packet.Packet{inPck}, nil
-	})
+	n := NewOneToManyNode(nil)
 	defer func() { _ = n.Close() }()
 
 	p, ok := n.Port(PortIn)

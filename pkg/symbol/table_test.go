@@ -16,11 +16,11 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
@@ -93,13 +93,13 @@ func TestTable_Insert(t *testing.T) {
 
 			id := ulid.Make()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
-			n4 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n4 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
@@ -181,11 +181,11 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
@@ -262,13 +262,13 @@ func TestTable_Insert(t *testing.T) {
 			id := ulid.Make()
 			name := faker.UUIDHyphenated()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
-			n4 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n4 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
@@ -354,11 +354,11 @@ func TestTable_Free(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n1 := node.NewOneToOneNode(nil)
 	defer n1.Close()
-	n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n2 := node.NewOneToOneNode(nil)
 	defer n2.Close()
-	n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n3 := node.NewOneToOneNode(nil)
 	defer n3.Close()
 
 	spec1 := &scheme.SpecMeta{
@@ -433,7 +433,7 @@ func TestTable_LookupByID(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 	spec := &scheme.SpecMeta{
 		ID: ulid.Make(),
@@ -451,7 +451,7 @@ func TestTable_LookupByName(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),

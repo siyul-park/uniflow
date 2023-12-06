@@ -72,9 +72,7 @@ func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
 	n := &SnippetNode{
 		run: run,
 	}
-	n.OneToOneNode = node.NewOneToOneNode(node.OneToOneNodeConfig{
-		Action: n.action,
-	})
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
 }

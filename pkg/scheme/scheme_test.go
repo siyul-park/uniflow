@@ -25,7 +25,7 @@ func TestScheme_Codec(t *testing.T) {
 	kind := faker.Word()
 
 	c := CodecFunc(func(spec Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
+		return node.NewOneToOneNode(nil), nil
 	})
 
 	s.AddCodec(kind, c)
@@ -51,7 +51,7 @@ func TestScheme_Decode(t *testing.T) {
 
 	s.AddKnownType(kind, &SpecMeta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	n, err := s.Decode(&SpecMeta{})
