@@ -49,9 +49,7 @@ var _ scheme.Spec = (*SwitchSpec)(nil)
 // NewSwitchNode creates a new SwitchNode with the given configuration.
 func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
 	n := &SwitchNode{}
-	n.OneToManyNode = node.NewOneToManyNode(node.OneToManyNodeConfig{
-		Action: n.action,
-	})
+	n.OneToManyNode = node.NewOneToManyNode(n.action)
 
 	return n
 }

@@ -8,11 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// OneToManyNodeConfig holds the configuration for OneToManyNode.
-type OneToManyNodeConfig struct {
-	Action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-}
-
 // OneToManyNode represents a node that processes *packet.Packet with one input and many outputs.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
@@ -25,8 +20,7 @@ type OneToManyNode struct {
 var _ Node = (*OneToManyNode)(nil)
 
 // NewOneToManyNode creates a new OneToManyNode with the given configuration.
-func NewOneToManyNode(config OneToManyNodeConfig) *OneToManyNode {
-	action := config.Action
+func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	if action == nil {
 		action = func(_ *process.Process, _ *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 			return nil, nil

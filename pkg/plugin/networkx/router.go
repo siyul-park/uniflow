@@ -78,9 +78,7 @@ func NewRouterNode(config RouterNodeConfig) *RouterNode {
 			methods: map[string]string{},
 		},
 	}
-	n.OneToManyNode = node.NewOneToManyNode(node.OneToManyNodeConfig{
-		Action: n.action,
-	})
+	n.OneToManyNode = node.NewOneToManyNode(n.action)
 
 	return n
 }
