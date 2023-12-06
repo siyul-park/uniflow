@@ -47,9 +47,7 @@ func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindHTTP, &HTTPSpec{})
 		s.AddCodec(KindHTTP, scheme.CodecWithType[*HTTPSpec](func(spec *HTTPSpec) (node.Node, error) {
-			return NewHTTPNode(HTTPNodeConfig{
-				Address: spec.Address,
-			}), nil
+			return NewHTTPNode(spec.Address), nil
 		}))
 
 		s.AddKnownType(KindRouter, &RouterSpec{})

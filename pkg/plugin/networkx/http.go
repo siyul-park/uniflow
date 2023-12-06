@@ -22,11 +22,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// HTTPNodeConfig represents the configuration of an HTTP node.
-type HTTPNodeConfig struct {
-	Address string
-}
-
 // HTTPNode represents a node based on the HTTP protocol.
 type HTTPNode struct {
 	address         string
@@ -247,10 +242,8 @@ func init() {
 	}
 }
 
-// NewHTTPNode creates a new HTTPNode with the given configuration.
-func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
-	address := config.Address
-
+// NewHTTPNode creates a new HTTPNode.
+func NewHTTPNode(address string) *HTTPNode {
 	n := &HTTPNode{
 		address:         address,
 		server:          new(http.Server),
