@@ -11,7 +11,6 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindSnippet, &SnippetSpec{})
 		s.AddCodec(KindSnippet, scheme.CodecWithType[*SnippetSpec](func(spec *SnippetSpec) (node.Node, error) {
 			return NewSnippetNode(SnippetNodeConfig{
-				ID:   spec.ID,
 				Lang: spec.Lang,
 				Code: spec.Code,
 			})
@@ -19,9 +18,7 @@ func AddToScheme() func(*scheme.Scheme) error {
 
 		s.AddKnownType(KindSwitch, &SwitchSpec{})
 		s.AddCodec(KindSwitch, scheme.CodecWithType[*SwitchSpec](func(spec *SwitchSpec) (node.Node, error) {
-			n := NewSwitchNode(SwitchNodeConfig{
-				ID: spec.ID,
-			})
+			n := NewSwitchNode(SwitchNodeConfig{})
 			for _, v := range spec.Match {
 				if err := n.Add(v.When, v.Port); err != nil {
 					_ = n.Close()

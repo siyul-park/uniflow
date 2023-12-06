@@ -22,7 +22,6 @@ func TestNewSnippetNode(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	_ = n.Close()
 }

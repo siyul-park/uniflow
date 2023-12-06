@@ -20,7 +20,6 @@ func TestNewOneToOneNode(t *testing.T) {
 		},
 	})
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	assert.NoError(t, n.Close())
 }

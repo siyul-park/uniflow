@@ -15,9 +15,9 @@ type Symbol struct {
 
 var _ node.Node = (*Symbol)(nil)
 
-// ID returns the unique identifier of the Symbol, based on its Node.
+// ID returns the unique identifier of the Symbol, based on its Spec.
 func (s *Symbol) ID() ulid.ULID {
-	return s.Node.ID()
+	return s.Spec.GetID()
 }
 
 // Kind returns the kind of the Symbol, based on its Spec.

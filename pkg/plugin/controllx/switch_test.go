@@ -17,7 +17,6 @@ import (
 func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode(SwitchNodeConfig{})
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	_ = n.Close()
 }

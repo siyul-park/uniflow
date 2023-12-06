@@ -53,7 +53,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		}
 
 		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
 		})
 
 		s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -99,7 +99,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		}
 
 		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
 		})
 
 		s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -143,7 +143,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		}
 
 		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
 		})
 
 		s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -204,7 +204,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
 	})
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})

@@ -25,7 +25,7 @@ func TestScheme_Codec(t *testing.T) {
 	kind := faker.Word()
 
 	c := CodecFunc(func(spec Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		return node.NewOneToOneNode(node.OneToOneNodeConfig{}), nil
 	})
 
 	s.AddCodec(kind, c)

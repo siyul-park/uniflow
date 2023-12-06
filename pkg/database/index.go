@@ -11,8 +11,8 @@ type IndexView interface {
 
 // IndexModel represents a model for an index.
 type IndexModel struct {
-	Name string
-	Keys []string
-	Unique bool
+	Name    string
+	Keys    []string
+	Unique  bool
 	Partial *Filter
 }

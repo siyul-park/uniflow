@@ -17,7 +17,6 @@ import (
 func TestNewRouterNode(t *testing.T) {
 	n := NewRouterNode(RouterNodeConfig{})
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	_ = n.Close()
 }

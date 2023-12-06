@@ -25,7 +25,6 @@ func TestNewHTTPNode(t *testing.T) {
 		Address: fmt.Sprintf(":%d", port),
 	})
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	assert.NoError(t, n.Close())
 }

@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -11,13 +10,11 @@ import (
 
 // OneToOneNodeConfig holds the configuration for OneToOneNode.
 type OneToOneNodeConfig struct {
-	ID     ulid.ULID
 	Action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
 }
 
 // OneToOneNode represents a node that processes *packet.Packet with one input and one output.
 type OneToOneNode struct {
-	id      ulid.ULID
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
 	ioPort  *port.Port
 	inPort  *port.Port
@@ -30,12 +27,8 @@ var _ Node = (*OneToOneNode)(nil)
 
 // NewOneToOneNode creates a new OneToOneNode with the given configuration.
 func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {
-	id := config.ID
 	action := config.Action
 
-	if id == (ulid.ULID{}) {
-		id = ulid.Make()
-	}
 	if action == nil {
 		action = func(_ *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, nil
@@ -43,7 +36,6 @@ func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {
 	}
 
 	n := &OneToOneNode{
-		id:      id,
 		action:  action,
 		ioPort:  port.New(),
 		inPort:  port.New(),
@@ -86,14 +78,6 @@ func NewOneToOneNode(config OneToOneNodeConfig) *OneToOneNode {
 	}))
 
 	return n
-}
-
-// ID returns the ID of the OneToOneNode.
-func (n *OneToOneNode) ID() ulid.ULID {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.id
 }
 
 // Port returns the specified port of the OneToOneNode.

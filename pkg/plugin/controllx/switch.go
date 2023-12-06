@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -15,7 +14,6 @@ import (
 
 // SwitchNodeConfig holds the configuration for creating a SwitchNode.
 type SwitchNodeConfig struct {
-	ID ulid.ULID
 }
 
 // SwitchNode represents a node that switches packets based on conditions.
@@ -50,11 +48,8 @@ var _ scheme.Spec = (*SwitchSpec)(nil)
 
 // NewSwitchNode creates a new SwitchNode with the given configuration.
 func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
-	id := config.ID
-
 	n := &SwitchNode{}
 	n.OneToManyNode = node.NewOneToManyNode(node.OneToManyNodeConfig{
-		ID:     id,
 		Action: n.action,
 	})
 

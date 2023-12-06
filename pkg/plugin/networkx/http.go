@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -25,13 +24,11 @@ import (
 
 // HTTPNodeConfig represents the configuration of an HTTP node.
 type HTTPNodeConfig struct {
-	ID      ulid.ULID
 	Address string
 }
 
 // HTTPNode represents a node based on the HTTP protocol.
 type HTTPNode struct {
-	id              ulid.ULID
 	address         string
 	server          *http.Server
 	listener        net.Listener
@@ -252,15 +249,9 @@ func init() {
 
 // NewHTTPNode creates a new HTTPNode with the given configuration.
 func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
-	id := config.ID
 	address := config.Address
 
-	if id == (ulid.ULID{}) {
-		id = ulid.Make()
-	}
-
 	n := &HTTPNode{
-		id:              id,
 		address:         address,
 		server:          new(http.Server),
 		listenerNetwork: "tcp",
@@ -272,14 +263,6 @@ func NewHTTPNode(config HTTPNodeConfig) *HTTPNode {
 	n.server.Handler = n
 
 	return n
-}
-
-// ID returns the ID of the HTTPNode.
-func (n *HTTPNode) ID() ulid.ULID {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.id
 }
 
 // Port returns the port with the given name and a boolean indicating success.

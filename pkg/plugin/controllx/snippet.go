@@ -9,7 +9,6 @@ import (
 	"github.com/dop251/goja"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/iancoleman/strcase"
-	"github.com/oklog/ulid/v2"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -21,7 +20,6 @@ import (
 
 // SnippetNodeConfig holds the configuration for creating a SnippetNode.
 type SnippetNodeConfig struct {
-	ID   ulid.ULID
 	Lang string
 	Code string
 }
@@ -63,7 +61,6 @@ var _ scheme.Spec = (*SnippetSpec)(nil)
 func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
 	defer func() { _ = recover() }()
 
-	id := config.ID
 	lang := config.Lang
 	code := config.Code
 
@@ -76,7 +73,6 @@ func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
 		run: run,
 	}
 	n.OneToOneNode = node.NewOneToOneNode(node.OneToOneNodeConfig{
-		ID:     id,
 		Action: n.action,
 	})
 
