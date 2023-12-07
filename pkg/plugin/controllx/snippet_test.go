@@ -16,7 +16,7 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
-	n, err := NewSnippetNode(LangJSON, "")
+	n, err := NewSnippetNode(LangJSON, "{}")
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 
