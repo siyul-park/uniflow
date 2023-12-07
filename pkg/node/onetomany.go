@@ -21,12 +21,6 @@ var _ Node = (*OneToManyNode)(nil)
 
 // NewOneToManyNode creates a new OneToManyNode with the given configuration.
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
-	if action == nil {
-		action = func(_ *process.Process, _ *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return nil, nil
-		}
-	}
-
 	n := &OneToManyNode{
 		action:   action,
 		inPort:   port.New(),
@@ -34,15 +28,17 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 		errPort:  port.New(),
 	}
 
-	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-	n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+	if action != nil {
+		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+		n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
 
-		errStream := n.errPort.Open(proc)
+			errStream := n.errPort.Open(proc)
 
-		n.backward(proc, errStream)
-	}))
+			n.backward(proc, errStream)
+		}))
+	}
 
 	return n
 }

@@ -22,12 +22,6 @@ var _ Node = (*OneToOneNode)(nil)
 
 // NewOneToOneNode creates a new OneToOneNode with the given configuration.
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
-	if action == nil {
-		action = func(_ *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return nil, nil
-		}
-	}
-
 	n := &OneToOneNode{
 		action:  action,
 		ioPort:  port.New(),
@@ -36,39 +30,41 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 		errPort: port.New(),
 	}
 
-	n.ioPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+	if action != nil {
+		n.ioPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
 
-		ioStream := n.ioPort.Open(proc)
+			ioStream := n.ioPort.Open(proc)
 
-		n.forward(proc, ioStream, ioStream)
-	}))
-	n.inPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+			n.forward(proc, ioStream, ioStream)
+		}))
+		n.inPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
 
-		inStream := n.inPort.Open(proc)
-		outStream := n.outPort.Open(proc)
+			inStream := n.inPort.Open(proc)
+			outStream := n.outPort.Open(proc)
 
-		n.forward(proc, inStream, outStream)
-	}))
-	n.outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+			n.forward(proc, inStream, outStream)
+		}))
+		n.outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
 
-		outStream := n.outPort.Open(proc)
+			outStream := n.outPort.Open(proc)
 
-		n.backward(proc, outStream)
-	}))
-	n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+			n.backward(proc, outStream)
+		}))
+		n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
 
-		errStream := n.errPort.Open(proc)
+			errStream := n.errPort.Open(proc)
 
-		n.backward(proc, errStream)
-	}))
+			n.backward(proc, errStream)
+		}))
+	}
 
 	return n
 }
