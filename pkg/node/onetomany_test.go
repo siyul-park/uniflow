@@ -14,23 +14,14 @@ import (
 )
 
 func TestNewOneToManyNode(t *testing.T) {
-	n := NewOneToManyNode(OneToManyNodeConfig{
-		Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return []*packet.Packet{inPck}, nil
-		},
-	})
+	n := NewOneToManyNode(nil)
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	assert.NoError(t, n.Close())
 }
 
 func TestOneToManyNode_Port(t *testing.T) {
-	n := NewOneToManyNode(OneToManyNodeConfig{
-		Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return []*packet.Packet{inPck}, nil
-		},
-	})
+	n := NewOneToManyNode(nil)
 	defer func() { _ = n.Close() }()
 
 	p, ok := n.Port(PortIn)
@@ -48,10 +39,8 @@ func TestOneToManyNode_Port(t *testing.T) {
 
 func TestOneToManyNode_Send(t *testing.T) {
 	t.Run("return out", func(t *testing.T) {
-		n := NewOneToManyNode(OneToManyNodeConfig{
-			Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-				return []*packet.Packet{inPck}, nil
-			},
+		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return []*packet.Packet{inPck}, nil
 		})
 		defer func() { _ = n.Close() }()
 
@@ -93,10 +82,8 @@ func TestOneToManyNode_Send(t *testing.T) {
 	})
 
 	t.Run("return err", func(t *testing.T) {
-		n := NewOneToManyNode(OneToManyNodeConfig{
-			Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-				return nil, packet.New(primitive.NewString(faker.Word()))
-			},
+		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return nil, packet.New(primitive.NewString(faker.Word()))
 		})
 		defer func() { _ = n.Close() }()
 
@@ -132,10 +119,8 @@ func TestOneToManyNode_Send(t *testing.T) {
 }
 
 func BenchmarkOneToManyNode_Send(b *testing.B) {
-	n := NewOneToManyNode(OneToManyNodeConfig{
-		Action: func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return []*packet.Packet{inPck}, nil
-		},
+	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+		return []*packet.Packet{inPck}, nil
 	})
 	defer func() { _ = n.Close() }()
 

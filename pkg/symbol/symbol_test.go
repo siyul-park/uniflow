@@ -11,10 +11,10 @@ import (
 )
 
 func TestSymbol_Getter(t *testing.T) {
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 	spec := &scheme.SpecMeta{
-		ID:        n.ID(),
+		ID:        ulid.Make(),
 		Kind:      faker.Word(),
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
@@ -30,7 +30,7 @@ func TestSymbol_Getter(t *testing.T) {
 
 	sym := &Symbol{Node: n, Spec: spec}
 
-	assert.Equal(t, n.ID(), sym.ID())
+	assert.Equal(t, spec.GetID(), sym.ID())
 	assert.Equal(t, spec.GetKind(), sym.Kind())
 	assert.Equal(t, spec.GetNamespace(), sym.Namespace())
 	assert.Equal(t, spec.GetName(), sym.Name())

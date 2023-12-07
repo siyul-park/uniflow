@@ -47,17 +47,12 @@ func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindHTTP, &HTTPSpec{})
 		s.AddCodec(KindHTTP, scheme.CodecWithType[*HTTPSpec](func(spec *HTTPSpec) (node.Node, error) {
-			return NewHTTPNode(HTTPNodeConfig{
-				ID:      spec.ID,
-				Address: spec.Address,
-			}), nil
+			return NewHTTPNode(spec.Address), nil
 		}))
 
 		s.AddKnownType(KindRouter, &RouterSpec{})
 		s.AddCodec(KindRouter, scheme.CodecWithType[*RouterSpec](func(spec *RouterSpec) (node.Node, error) {
-			n := NewRouterNode(RouterNodeConfig{
-				ID: spec.ID,
-			})
+			n := NewRouterNode()
 
 			for _, r := range spec.Routes {
 				n.Add(r.Method, r.Path, r.Port)

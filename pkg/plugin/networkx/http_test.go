@@ -21,11 +21,8 @@ func TestNewHTTPNode(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPNode(HTTPNodeConfig{
-		Address: fmt.Sprintf(":%d", port),
-	})
+	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	assert.NoError(t, n.Close())
 }
@@ -34,9 +31,7 @@ func TestHTTPNode_Port(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPNode(HTTPNodeConfig{
-		Address: fmt.Sprintf(":%d", port),
-	})
+	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	p, ok := n.Port(node.PortIO)
@@ -60,9 +55,7 @@ func TestHTTPNode_ServeAndShutdown(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPNode(HTTPNodeConfig{
-		Address: fmt.Sprintf(":%d", port),
-	})
+	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	errChan := make(chan error)
@@ -84,7 +77,7 @@ func TestHTTPNode_ServeAndShutdown(t *testing.T) {
 
 func TestHTTPNode_ServeHTTP(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
-		n := NewHTTPNode(HTTPNodeConfig{})
+		n := NewHTTPNode("")
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -120,7 +113,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("In/Out", func(t *testing.T) {
-		n := NewHTTPNode(HTTPNodeConfig{})
+		n := NewHTTPNode("")
 		defer func() { _ = n.Close() }()
 
 		in := port.New()
@@ -163,7 +156,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 func BenchmarkHTTPNode_Send(b *testing.B) {
 	b.Run("IO", func(b *testing.B) {
-		n := NewHTTPNode(HTTPNodeConfig{})
+		n := NewHTTPNode("")
 		defer func() { _ = n.Close() }()
 
 		io := port.New()
@@ -199,7 +192,7 @@ func BenchmarkHTTPNode_Send(b *testing.B) {
 	})
 
 	b.Run("In/Out", func(b *testing.B) {
-		n := NewHTTPNode(HTTPNodeConfig{})
+		n := NewHTTPNode("")
 		defer func() { _ = n.Close() }()
 
 		in := port.New()

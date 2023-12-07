@@ -18,9 +18,7 @@ func TestStorage_Watch(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -60,9 +58,7 @@ func TestStorage_InsertOne(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -86,9 +82,7 @@ func TestStorage_InsertMany(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -123,9 +117,7 @@ func TestStorage_UpdateOne(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -155,9 +147,7 @@ func TestStorage_UpdateMany(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -195,9 +185,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -228,9 +216,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{
@@ -262,9 +248,7 @@ func TestStorage_FindOne(t *testing.T) {
 		s := scheme.New()
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{
-				ID: spec.GetID(),
-			}), nil
+			return node.NewOneToOneNode(nil), nil
 		}))
 
 		st, _ := New(context.Background(), Config{
@@ -292,9 +276,7 @@ func TestStorage_FindOne(t *testing.T) {
 		s := scheme.New()
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{
-				ID: spec.GetID(),
-			}), nil
+			return node.NewOneToOneNode(nil), nil
 		}))
 
 		st, _ := New(context.Background(), Config{
@@ -324,9 +306,7 @@ func TestStorage_FindMany(t *testing.T) {
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{
-			ID: spec.GetID(),
-		}), nil
+		return node.NewOneToOneNode(nil), nil
 	}))
 
 	st, _ := New(context.Background(), Config{

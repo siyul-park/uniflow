@@ -30,7 +30,6 @@ func TestNewReflectNode(t *testing.T) {
 		Storage: st,
 	})
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	_ = n.Close()
 }
@@ -46,7 +45,6 @@ func TestReflectNode_Send(t *testing.T) {
 	s.AddKnownType(KindReflect, &ReflectSpec{})
 	s.AddCodec(KindReflect, scheme.CodecWithType[*ReflectSpec](func(spec *ReflectSpec) (node.Node, error) {
 		return NewReflectNode(ReflectNodeConfig{
-			ID:      spec.ID,
 			OP:      spec.OP,
 			Storage: st,
 		}), nil
@@ -235,7 +233,6 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 	s.AddKnownType(KindReflect, &ReflectSpec{})
 	s.AddCodec(KindReflect, scheme.CodecWithType[*ReflectSpec](func(spec *ReflectSpec) (node.Node, error) {
 		return NewReflectNode(ReflectNodeConfig{
-			ID:      spec.ID,
 			OP:      spec.OP,
 			Storage: st,
 		}), nil

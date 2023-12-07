@@ -16,7 +16,6 @@ import (
 
 // ReflectNodeConfig holds the configuration for ReflectNode.
 type ReflectNodeConfig struct {
-	ID      ulid.ULID        // ID is the unique identifier for ReflectNode.
 	OP      string           // OP is the operation to be performed by ReflectNode.
 	Storage *storage.Storage // Storage is the storage instance associated with ReflectNode.
 }
@@ -50,7 +49,6 @@ var _ scheme.Spec = (*ReflectSpec)(nil)
 
 // NewReflectNode creates a new instance of ReflectNode with the given configuration.
 func NewReflectNode(config ReflectNodeConfig) *ReflectNode {
-	id := config.ID
 	op := config.OP
 	storage := config.Storage
 
@@ -58,10 +56,7 @@ func NewReflectNode(config ReflectNodeConfig) *ReflectNode {
 		op:      op,
 		storage: storage,
 	}
-	n.OneToOneNode = node.NewOneToOneNode(node.OneToOneNodeConfig{
-		ID:     id,
-		Action: n.action,
-	})
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
 }

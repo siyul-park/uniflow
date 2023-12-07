@@ -26,7 +26,7 @@ func TestBuilder_Build(t *testing.T) {
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+		return node.NewOneToOneNode(nil), nil
 	})
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})

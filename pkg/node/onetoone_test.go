@@ -14,23 +14,14 @@ import (
 )
 
 func TestNewOneToOneNode(t *testing.T) {
-	n := NewOneToOneNode(OneToOneNodeConfig{
-		Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		},
-	})
+	n := NewOneToOneNode(nil)
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	assert.NoError(t, n.Close())
 }
 
 func TestOneToOneNode_Port(t *testing.T) {
-	n := NewOneToOneNode(OneToOneNodeConfig{
-		Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		},
-	})
+	n := NewOneToOneNode(nil)
 	defer func() { _ = n.Close() }()
 
 	p, ok := n.Port(PortIO)
@@ -53,10 +44,8 @@ func TestOneToOneNode_Port(t *testing.T) {
 func TestOneToOneNode_Send(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
 		t.Run("return out", func(t *testing.T) {
-			n := NewOneToOneNode(OneToOneNodeConfig{
-				Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-					return inPck, nil
-				},
+			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
 			})
 			defer func() { _ = n.Close() }()
 
@@ -86,10 +75,8 @@ func TestOneToOneNode_Send(t *testing.T) {
 		})
 
 		t.Run("return err", func(t *testing.T) {
-			n := NewOneToOneNode(OneToOneNodeConfig{
-				Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-					return nil, packet.New(primitive.NewString(faker.Word()))
-				},
+			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return nil, packet.New(primitive.NewString(faker.Word()))
 			})
 			defer func() { _ = n.Close() }()
 
@@ -126,10 +113,8 @@ func TestOneToOneNode_Send(t *testing.T) {
 
 	t.Run("In/Out", func(t *testing.T) {
 		t.Run("return out", func(t *testing.T) {
-			n := NewOneToOneNode(OneToOneNodeConfig{
-				Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-					return inPck, nil
-				},
+			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
 			})
 			defer func() { _ = n.Close() }()
 
@@ -172,10 +157,8 @@ func TestOneToOneNode_Send(t *testing.T) {
 		})
 
 		t.Run("return err", func(t *testing.T) {
-			n := NewOneToOneNode(OneToOneNodeConfig{
-				Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-					return nil, packet.New(primitive.NewString(faker.Word()))
-				},
+			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return nil, packet.New(primitive.NewString(faker.Word()))
 			})
 			defer func() { _ = n.Close() }()
 
@@ -213,10 +196,8 @@ func TestOneToOneNode_Send(t *testing.T) {
 
 func BenchmarkOneToOneNode_Send(b *testing.B) {
 	b.Run("IO", func(b *testing.B) {
-		n := NewOneToOneNode(OneToOneNodeConfig{
-			Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			},
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
 		})
 		defer func() { _ = n.Close() }()
 
@@ -241,10 +222,8 @@ func BenchmarkOneToOneNode_Send(b *testing.B) {
 	})
 
 	b.Run("In/Out", func(b *testing.B) {
-		n := NewOneToOneNode(OneToOneNodeConfig{
-			Action: func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			},
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
 		})
 		defer func() { _ = n.Close() }()
 

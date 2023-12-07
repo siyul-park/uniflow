@@ -11,7 +11,7 @@ import (
 func TestHook_LoadHook(t *testing.T) {
 	hooks := New()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 
 	count := 0
 	h := symbol.LoadHookFunc(func(_ node.Node) error {
@@ -29,7 +29,7 @@ func TestHook_LoadHook(t *testing.T) {
 func TestHook_UnloadHook(t *testing.T) {
 	hooks := New()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 
 	count := 0
 	h := symbol.UnloadHookFunc(func(_ node.Node) error {

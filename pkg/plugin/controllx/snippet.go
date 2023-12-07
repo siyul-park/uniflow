@@ -9,7 +9,6 @@ import (
 	"github.com/dop251/goja"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/iancoleman/strcase"
-	"github.com/oklog/ulid/v2"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -18,13 +17,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/xiatechs/jsonata-go"
 )
-
-// SnippetNodeConfig holds the configuration for creating a SnippetNode.
-type SnippetNodeConfig struct {
-	ID   ulid.ULID
-	Lang string
-	Code string
-}
 
 // SnippetNode represents a node that runs a snippet of code.
 type SnippetNode struct {
@@ -59,13 +51,9 @@ var (
 var _ node.Node = (*SnippetNode)(nil)
 var _ scheme.Spec = (*SnippetSpec)(nil)
 
-// NewSnippetNode creates a new SnippetNode with the given configuration.
-func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
+// NewSnippetNode creates a new SnippetNode.
+func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	defer func() { _ = recover() }()
-
-	id := config.ID
-	lang := config.Lang
-	code := config.Code
 
 	run, err := compile(lang, code)
 	if err != nil {
@@ -75,10 +63,7 @@ func NewSnippetNode(config SnippetNodeConfig) (*SnippetNode, error) {
 	n := &SnippetNode{
 		run: run,
 	}
-	n.OneToOneNode = node.NewOneToOneNode(node.OneToOneNodeConfig{
-		ID:     id,
-		Action: n.action,
-	})
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
 }

@@ -16,46 +16,47 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
-				ID:        n1.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   n2.ID(),
-							Port: node.PortIn,
-						},
-					},
-				},
 			}
 			spec2 := &scheme.SpecMeta{
-				ID:        n2.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   n3.ID(),
-							Port: node.PortIn,
-						},
+			}
+			spec3 := &scheme.SpecMeta{
+				ID:        ulid.Make(),
+				Namespace: scheme.DefaultNamespace,
+			}
+
+			spec1.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   spec2.GetID(),
+						Port: node.PortIn,
 					},
 				},
 			}
-			spec3 := &scheme.SpecMeta{
-				ID:        n3.ID(),
-				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   n1.ID(),
-							Port: node.PortIn,
-						},
+			spec2.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   spec3.GetID(),
+						Port: node.PortIn,
+					},
+				},
+			}
+			spec3.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   spec1.GetID(),
+						Port: node.PortIn,
 					},
 				},
 			}
@@ -92,60 +93,61 @@ func TestTable_Insert(t *testing.T) {
 
 			id := ulid.Make()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
-			n4 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n4 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
 				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   n3.ID(),
-							Port: node.PortIn,
-						},
-					},
-				},
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        id,
 				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   n4.ID(),
-							Port: node.PortIn,
-						},
-					},
-				},
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        n3.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   id,
-							Port: node.PortIn,
-						},
+			}
+			spec4 := &scheme.SpecMeta{
+				ID:        ulid.Make(),
+				Namespace: scheme.DefaultNamespace,
+			}
+
+			spec1.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   spec3.GetID(),
+						Port: node.PortIn,
 					},
 				},
 			}
-			spec4 := &scheme.SpecMeta{
-				ID:        n4.ID(),
-				Namespace: scheme.DefaultNamespace,
-				Links: map[string][]scheme.PortLocation{
-					node.PortOut: {
-						{
-							ID:   id,
-							Port: node.PortIn,
-						},
+			spec2.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   spec4.GetID(),
+						Port: node.PortIn,
+					},
+				},
+			}
+			spec3.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   id,
+						Port: node.PortIn,
+					},
+				},
+			}
+			spec4.Links = map[string][]scheme.PortLocation{
+				node.PortOut: {
+					{
+						ID:   id,
+						Port: node.PortIn,
 					},
 				},
 			}
@@ -179,25 +181,25 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable()
 			defer tb.Close()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
-				ID:        n1.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
-				ID:        n2.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        n3.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
@@ -260,13 +262,13 @@ func TestTable_Insert(t *testing.T) {
 			id := ulid.Make()
 			name := faker.UUIDHyphenated()
 
-			n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
+			n1 := node.NewOneToOneNode(nil)
 			defer n1.Close()
-			n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{ID: id})
+			n2 := node.NewOneToOneNode(nil)
 			defer n2.Close()
-			n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n3 := node.NewOneToOneNode(nil)
 			defer n3.Close()
-			n4 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+			n4 := node.NewOneToOneNode(nil)
 			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
@@ -280,12 +282,12 @@ func TestTable_Insert(t *testing.T) {
 				Name:      name,
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        n3.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec4 := &scheme.SpecMeta{
-				ID:        n4.ID(),
+				ID:        ulid.Make(),
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
@@ -352,46 +354,47 @@ func TestTable_Free(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n1 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n1 := node.NewOneToOneNode(nil)
 	defer n1.Close()
-	n2 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n2 := node.NewOneToOneNode(nil)
 	defer n2.Close()
-	n3 := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n3 := node.NewOneToOneNode(nil)
 	defer n3.Close()
 
 	spec1 := &scheme.SpecMeta{
-		ID:        n1.ID(),
+		ID:        ulid.Make(),
 		Namespace: scheme.DefaultNamespace,
-		Links: map[string][]scheme.PortLocation{
-			node.PortOut: {
-				{
-					ID:   n2.ID(),
-					Port: node.PortIn,
-				},
-			},
-		},
 	}
 	spec2 := &scheme.SpecMeta{
-		ID:        n2.ID(),
+		ID:        ulid.Make(),
 		Namespace: scheme.DefaultNamespace,
-		Links: map[string][]scheme.PortLocation{
-			node.PortOut: {
-				{
-					ID:   n3.ID(),
-					Port: node.PortIn,
-				},
+	}
+	spec3 := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Namespace: scheme.DefaultNamespace,
+	}
+
+	spec1.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec2.GetID(),
+				Port: node.PortIn,
 			},
 		},
 	}
-	spec3 := &scheme.SpecMeta{
-		ID:        n3.ID(),
-		Namespace: scheme.DefaultNamespace,
-		Links: map[string][]scheme.PortLocation{
-			node.PortOut: {
-				{
-					ID:   n1.ID(),
-					Port: node.PortIn,
-				},
+	spec2.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec3.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
+	spec3.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec1.GetID(),
+				Port: node.PortIn,
 			},
 		},
 	}
@@ -404,20 +407,20 @@ func TestTable_Free(t *testing.T) {
 	_ = tb.Insert(&Symbol{Node: n2, Spec: spec2})
 	_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
 
-	ok, err := tb.Free(n1.ID())
+	ok, err := tb.Free(spec1.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	assert.Equal(t, 0, p1.Links())
 
-	ok, err = tb.Free(n2.ID())
+	ok, err = tb.Free(spec2.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	assert.Equal(t, 0, p1.Links())
 	assert.Equal(t, 0, p2.Links())
 
-	ok, err = tb.Free(n3.ID())
+	ok, err = tb.Free(spec3.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
@@ -430,16 +433,16 @@ func TestTable_LookupByID(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 	spec := &scheme.SpecMeta{
-		ID: n.ID(),
+		ID: ulid.Make(),
 	}
 	sym := &Symbol{Node: n, Spec: spec}
 
 	_ = tb.Insert(sym)
 
-	r, ok := tb.LookupByID(n.ID())
+	r, ok := tb.LookupByID(spec.GetID())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }
@@ -448,10 +451,10 @@ func TestTable_LookupByName(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(node.OneToOneNodeConfig{})
+	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 	spec := &scheme.SpecMeta{
-		ID:        n.ID(),
+		ID:        ulid.Make(),
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.Word(),
 	}

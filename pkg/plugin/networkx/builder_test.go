@@ -19,9 +19,7 @@ func TestAddToHooks(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPNode(HTTPNodeConfig{
-		Address: fmt.Sprintf(":%d", port),
-	})
+	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 
 	err = hk.Load(n)
 	assert.NoError(t, err)

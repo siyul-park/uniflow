@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -12,11 +11,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/xiatechs/jsonata-go"
 )
-
-// SwitchNodeConfig holds the configuration for creating a SwitchNode.
-type SwitchNodeConfig struct {
-	ID ulid.ULID
-}
 
 // SwitchNode represents a node that switches packets based on conditions.
 type SwitchNode struct {
@@ -48,15 +42,10 @@ const KindSwitch = "switch"
 var _ node.Node = (*SwitchNode)(nil)
 var _ scheme.Spec = (*SwitchSpec)(nil)
 
-// NewSwitchNode creates a new SwitchNode with the given configuration.
-func NewSwitchNode(config SwitchNodeConfig) *SwitchNode {
-	id := config.ID
-
+// NewSwitchNode creates a new SwitchNode.
+func NewSwitchNode() *SwitchNode {
 	n := &SwitchNode{}
-	n.OneToManyNode = node.NewOneToManyNode(node.OneToManyNodeConfig{
-		ID:     id,
-		Action: n.action,
-	})
+	n.OneToManyNode = node.NewOneToManyNode(n.action)
 
 	return n
 }

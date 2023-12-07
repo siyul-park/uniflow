@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -13,11 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
-
-// RouterNodeConfig holds the configuration for RouterNode.
-type RouterNodeConfig struct {
-	ID ulid.ULID
-}
 
 // RouterNode represents a router node that handles routing based on HTTP methods, paths, and ports.
 type RouterNode struct {
@@ -73,19 +67,14 @@ const (
 var _ node.Node = (*RouterNode)(nil)
 var _ scheme.Spec = (*RouterSpec)(nil)
 
-// NewRouterNode creates a new instance of RouterNode with the given configuration.
-func NewRouterNode(config RouterNodeConfig) *RouterNode {
-	id := config.ID
-
+// NewRouterNode creates a new instance of RouterNode.
+func NewRouterNode() *RouterNode {
 	n := &RouterNode{
 		tree: &route{
 			methods: map[string]string{},
 		},
 	}
-	n.OneToManyNode = node.NewOneToManyNode(node.OneToManyNodeConfig{
-		ID:     id,
-		Action: n.action,
-	})
+	n.OneToManyNode = node.NewOneToManyNode(n.action)
 
 	return n
 }

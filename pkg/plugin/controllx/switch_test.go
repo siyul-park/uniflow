@@ -15,15 +15,14 @@ import (
 )
 
 func TestNewSwitchNode(t *testing.T) {
-	n := NewSwitchNode(SwitchNodeConfig{})
+	n := NewSwitchNode()
 	assert.NotNil(t, n)
-	assert.NotZero(t, n.ID())
 
 	_ = n.Close()
 }
 
 func TestSwitchNode_Send(t *testing.T) {
-	n := NewSwitchNode(SwitchNodeConfig{})
+	n := NewSwitchNode()
 	defer func() { _ = n.Close() }()
 
 	in := port.New()
@@ -103,7 +102,7 @@ func TestSwitchNode_Send(t *testing.T) {
 }
 
 func BenchmarkSwitchNode_Send(b *testing.B) {
-	n := NewSwitchNode(SwitchNodeConfig{})
+	n := NewSwitchNode()
 	defer func() { _ = n.Close() }()
 
 	in := port.New()

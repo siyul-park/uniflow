@@ -19,7 +19,7 @@ func TestRuntime_Lookup(t *testing.T) {
 	sb := scheme.NewBuilder(func(s *scheme.Scheme) error {
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(nil), nil
 		}))
 		return nil
 	})
@@ -56,7 +56,7 @@ func TestRuntime_Free(t *testing.T) {
 	sb := scheme.NewBuilder(func(s *scheme.Scheme) error {
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(nil), nil
 		}))
 		return nil
 	})
@@ -94,7 +94,7 @@ func TestRuntime_Start(t *testing.T) {
 	sb := scheme.NewBuilder(func(s *scheme.Scheme) error {
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(node.OneToOneNodeConfig{ID: spec.GetID()}), nil
+			return node.NewOneToOneNode(nil), nil
 		}))
 		return nil
 	})
