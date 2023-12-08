@@ -28,7 +28,7 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 		errPort:  port.New(),
 	}
 
-	if action != nil {
+	if n.action != nil {
 		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 		n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 			n.mu.RLock()
@@ -58,14 +58,16 @@ func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 			for j := 0; j <= i; j++ {
 				if len(n.outPorts) <= j {
 					outPort := port.New()
-					outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-						n.mu.RLock()
-						defer n.mu.RUnlock()
+					if n.action != nil {
+						outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+							n.mu.RLock()
+							defer n.mu.RUnlock()
 
-						outStream := outPort.Open(proc)
+							outStream := outPort.Open(proc)
 
-						n.backward(proc, outStream)
-					}))
+							n.backward(proc, outStream)
+						}))
+					}
 					n.outPorts = append(n.outPorts, outPort)
 				}
 			}
