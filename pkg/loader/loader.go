@@ -2,13 +2,11 @@ package loader
 
 import (
 	"context"
-	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -18,14 +16,12 @@ import (
 type Config struct {
 	Namespace string           // Namespace is the namespace used by the Loader.
 	Table     *symbol.Table    // Table is the symbol table for managing symbols.
-	Scheme    *scheme.Scheme   // Scheme is the scheme used by the Loader.
 	Storage   *storage.Storage // Storage is the storage used by the Loader.
 }
 
 // Loader loads scheme.Spec into the symbol.Table.
 type Loader struct {
 	namespace string
-	scheme    *scheme.Scheme
 	table     *symbol.Table
 	storage   *storage.Storage
 	mu        sync.RWMutex
@@ -35,12 +31,10 @@ type Loader struct {
 func New(config Config) *Loader {
 	namespace := config.Namespace
 	table := config.Table
-	scheme := config.Scheme
 	storage := config.Storage
 
 	return &Loader{
 		namespace: namespace,
-		scheme:    scheme,
 		table:     table,
 		storage:   storage,
 	}
@@ -50,7 +44,7 @@ func New(config Config) *Loader {
 // It processes the specified ID and recursively loads linked scheme.Spec.
 // If the loader is associated with a namespace, it uses that namespace.
 // The loaded nodes are added to the symbol table for future reference.
-func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) {
+func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
 
@@ -93,14 +87,10 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 				namespace = spec.GetNamespace()
 			}
 
-			if sym, ok := ld.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
+			if sym, err := ld.table.Insert(spec); err != nil {
+				return nil, err
+			} else if sym == nil {
 				continue
-			}
-
-			if n, err := ld.scheme.Decode(spec); err != nil {
-				return nil, err
-			} else if err := ld.table.Insert(&symbol.Symbol{Node: n, Spec: spec}); err != nil {
-				return nil, err
 			}
 
 			for _, locations := range spec.GetLinks() {
@@ -137,14 +127,14 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (node.Node, error) 
 	if sym, ok := ld.table.LookupByID(id); !ok {
 		return nil, nil
 	} else {
-		return sym.Node, nil
+		return sym, nil
 	}
 }
 
 // LoadAll loads all scheme.Spec from the storage.Storage.
 // It loads all available scheme.Spec and adds them to the symbol table for future reference.
 // If the loader is associated with a namespace, it filters the loading based on that namespace.
-func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
+func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
 
@@ -159,21 +149,16 @@ func (ld *Loader) LoadAll(ctx context.Context) ([]node.Node, error) {
 		return nil, err
 	}
 
-	var nodes []node.Node
+	var symbols []*symbol.Symbol
 	for _, spec := range specs {
-		if sym, ok := ld.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
-			nodes = append(nodes, sym.Node)
-			continue
-		}
-
-		if n, err := ld.scheme.Decode(spec); err != nil {
+		if sym, err := ld.table.Insert(spec); err != nil {
 			return nil, err
-		} else if err := ld.table.Insert(&symbol.Symbol{Node: n, Spec: spec}); err != nil {
-			return nil, err
-		} else {
-			nodes = append(nodes, n)
+		} else if sym != nil {
+			symbols = append(symbols, sym)
+		} else if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
+			symbols = append(symbols, sym)
 		}
 	}
 
-	return nodes, nil
+	return symbols, nil
 }

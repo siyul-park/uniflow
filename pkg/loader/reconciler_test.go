@@ -23,11 +23,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		Database: memdb.New(faker.Word()),
 	})
 
-	tb := symbol.NewTable()
+	tb := symbol.NewTable(s)
 	defer func() { _ = tb.Close() }()
 
 	ld := New(Config{
-		Scheme:  s,
 		Storage: st,
 		Table:   tb,
 	})

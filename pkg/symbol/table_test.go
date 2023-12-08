@@ -13,26 +13,31 @@ import (
 func TestTable_Insert(t *testing.T) {
 	t.Run("by ID", func(t *testing.T) {
 		t.Run("when not exists", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
+			s := scheme.New()
 
-			n1 := node.NewOneToOneNode(nil)
-			defer n1.Close()
-			n2 := node.NewOneToOneNode(nil)
-			defer n2.Close()
-			n3 := node.NewOneToOneNode(nil)
-			defer n3.Close()
+			kind := faker.Word()
+
+			s.AddKnownType(kind, &scheme.SpecMeta{})
+			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+				return node.NewOneToOneNode(nil), nil
+			}))
+
+			tb := NewTable(s)
+			defer tb.Close()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 
@@ -61,26 +66,18 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			p1, _ := n1.Port(node.PortIn)
-			p2, _ := n2.Port(node.PortIn)
-			p3, _ := n3.Port(node.PortIn)
-
-			err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
+			sym1, err := tb.Insert(spec1)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 0, p2.Links())
-			assert.Equal(t, 0, p3.Links())
-
-			err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
+			sym2, err := tb.Insert(spec2)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 1, p2.Links())
-			assert.Equal(t, 0, p3.Links())
-
-			err = tb.Insert(&Symbol{Node: n3, Spec: spec3})
+			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
+
+			p1, _ := sym1.Port(node.PortIn)
+			p2, _ := sym2.Port(node.PortIn)
+			p3, _ := sym3.Port(node.PortIn)
 
 			assert.Equal(t, 1, p1.Links())
 			assert.Equal(t, 1, p2.Links())
@@ -88,34 +85,40 @@ func TestTable_Insert(t *testing.T) {
 		})
 
 		t.Run("when exists", func(t *testing.T) {
-			tb := NewTable()
+			s := scheme.New()
+
+			kind := faker.Word()
+
+			s.AddKnownType(kind, &scheme.SpecMeta{})
+			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+				return node.NewOneToOneNode(nil), nil
+			}))
+
+			tb := NewTable(s)
 			defer tb.Close()
 
 			id := ulid.Make()
 
-			n1 := node.NewOneToOneNode(nil)
-			defer n1.Close()
-			n2 := node.NewOneToOneNode(nil)
-			defer n2.Close()
-			n3 := node.NewOneToOneNode(nil)
-			defer n3.Close()
-			n4 := node.NewOneToOneNode(nil)
-			defer n3.Close()
-
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        id,
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec4 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 
@@ -135,71 +138,57 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			spec3.Links = map[string][]scheme.PortLocation{
-				node.PortOut: {
-					{
-						ID:   id,
-						Port: node.PortIn,
-					},
-				},
-			}
-			spec4.Links = map[string][]scheme.PortLocation{
-				node.PortOut: {
-					{
-						ID:   id,
-						Port: node.PortIn,
-					},
-				},
-			}
 
-			p1, _ := n1.Port(node.PortIn)
-			p2, _ := n2.Port(node.PortIn)
-			p3, _ := n3.Port(node.PortIn)
-			p4, _ := n4.Port(node.PortIn)
-
-			_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
-			_ = tb.Insert(&Symbol{Node: n4, Spec: spec4})
-
-			err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
+			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 2, p1.Links())
-			assert.Equal(t, 0, p2.Links())
+			sym4, err := tb.Insert(spec4)
+			assert.NoError(t, err)
+
+			p3, _ := sym3.Port(node.PortIn)
+			p4, _ := sym4.Port(node.PortIn)
+
+			_, err = tb.Insert(spec1)
+			assert.NoError(t, err)
+
 			assert.Equal(t, 1, p3.Links())
 
-			err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
+			_, err = tb.Insert(spec2)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 2, p2.Links())
 			assert.Equal(t, 1, p4.Links())
 		})
 	})
 
-	t.Run("by name", func(t *testing.T) {
+	t.Run("by Name", func(t *testing.T) {
 		t.Run("when not exists", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
+			s := scheme.New()
 
-			n1 := node.NewOneToOneNode(nil)
-			defer n1.Close()
-			n2 := node.NewOneToOneNode(nil)
-			defer n2.Close()
-			n3 := node.NewOneToOneNode(nil)
-			defer n3.Close()
+			kind := faker.Word()
+
+			s.AddKnownType(kind, &scheme.SpecMeta{})
+			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+				return node.NewOneToOneNode(nil), nil
+			}))
+
+			tb := NewTable(s)
+			defer tb.Close()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
@@ -229,26 +218,18 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			p1, _ := n1.Port(node.PortIn)
-			p2, _ := n2.Port(node.PortIn)
-			p3, _ := n3.Port(node.PortIn)
-
-			err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
+			sym1, err := tb.Insert(spec1)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 0, p2.Links())
-			assert.Equal(t, 0, p3.Links())
-
-			err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
+			sym2, err := tb.Insert(spec2)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 1, p2.Links())
-			assert.Equal(t, 0, p3.Links())
-
-			err = tb.Insert(&Symbol{Node: n3, Spec: spec3})
+			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
+
+			p1, _ := sym1.Port(node.PortIn)
+			p2, _ := sym2.Port(node.PortIn)
+			p3, _ := sym3.Port(node.PortIn)
 
 			assert.Equal(t, 1, p1.Links())
 			assert.Equal(t, 1, p2.Links())
@@ -256,38 +237,41 @@ func TestTable_Insert(t *testing.T) {
 		})
 
 		t.Run("when exists", func(t *testing.T) {
-			tb := NewTable()
+			s := scheme.New()
+
+			kind := faker.Word()
+
+			s.AddKnownType(kind, &scheme.SpecMeta{})
+			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+				return node.NewOneToOneNode(nil), nil
+			}))
+
+			tb := NewTable(s)
 			defer tb.Close()
 
 			id := ulid.Make()
-			name := faker.UUIDHyphenated()
-
-			n1 := node.NewOneToOneNode(nil)
-			defer n1.Close()
-			n2 := node.NewOneToOneNode(nil)
-			defer n2.Close()
-			n3 := node.NewOneToOneNode(nil)
-			defer n3.Close()
-			n4 := node.NewOneToOneNode(nil)
-			defer n3.Close()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
-				Name:      name,
+				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
 				ID:        id,
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
-				Name:      name,
+				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec4 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
+				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
@@ -308,69 +292,55 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			spec3.Links = map[string][]scheme.PortLocation{
-				node.PortOut: {
-					{
-						Name: name,
-						Port: node.PortIn,
-					},
-				},
-			}
-			spec4.Links = map[string][]scheme.PortLocation{
-				node.PortOut: {
-					{
-						Name: name,
-						Port: node.PortIn,
-					},
-				},
-			}
 
-			p1, _ := n1.Port(node.PortIn)
-			p2, _ := n2.Port(node.PortIn)
-			p3, _ := n3.Port(node.PortIn)
-			p4, _ := n4.Port(node.PortIn)
-
-			_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
-			_ = tb.Insert(&Symbol{Node: n4, Spec: spec4})
-
-			err := tb.Insert(&Symbol{Node: n1, Spec: spec1})
+			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 2, p1.Links())
-			assert.Equal(t, 0, p2.Links())
+			sym4, err := tb.Insert(spec4)
+			assert.NoError(t, err)
+
+			p3, _ := sym3.Port(node.PortIn)
+			p4, _ := sym4.Port(node.PortIn)
+
+			_, err = tb.Insert(spec1)
+			assert.NoError(t, err)
+
 			assert.Equal(t, 1, p3.Links())
 
-			err = tb.Insert(&Symbol{Node: n2, Spec: spec2})
+			_, err = tb.Insert(spec2)
 			assert.NoError(t, err)
 
-			assert.Equal(t, 0, p1.Links())
-			assert.Equal(t, 2, p2.Links())
 			assert.Equal(t, 1, p4.Links())
 		})
 	})
 }
 
 func TestTable_Free(t *testing.T) {
-	tb := NewTable()
-	defer tb.Close()
+	s := scheme.New()
 
-	n1 := node.NewOneToOneNode(nil)
-	defer n1.Close()
-	n2 := node.NewOneToOneNode(nil)
-	defer n2.Close()
-	n3 := node.NewOneToOneNode(nil)
-	defer n3.Close()
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
+	defer tb.Close()
 
 	spec1 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
+		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 	spec2 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
+		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 	spec3 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
+		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 
@@ -399,13 +369,22 @@ func TestTable_Free(t *testing.T) {
 		},
 	}
 
-	p1, _ := n1.Port(node.PortIn)
-	p2, _ := n2.Port(node.PortIn)
-	p3, _ := n3.Port(node.PortIn)
+	sym1, err := tb.Insert(spec1)
+	assert.NoError(t, err)
 
-	_ = tb.Insert(&Symbol{Node: n1, Spec: spec1})
-	_ = tb.Insert(&Symbol{Node: n2, Spec: spec2})
-	_ = tb.Insert(&Symbol{Node: n3, Spec: spec3})
+	sym2, err := tb.Insert(spec2)
+	assert.NoError(t, err)
+
+	sym3, err := tb.Insert(spec3)
+	assert.NoError(t, err)
+
+	p1, _ := sym1.Port(node.PortIn)
+	p2, _ := sym2.Port(node.PortIn)
+	p3, _ := sym3.Port(node.PortIn)
+
+	assert.Equal(t, 1, p1.Links())
+	assert.Equal(t, 1, p2.Links())
+	assert.Equal(t, 1, p3.Links())
 
 	ok, err := tb.Free(spec1.GetID())
 	assert.NoError(t, err)
@@ -430,39 +409,54 @@ func TestTable_Free(t *testing.T) {
 }
 
 func TestTable_LookupByID(t *testing.T) {
-	tb := NewTable()
+	s := scheme.New()
+
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(nil)
-	defer n.Close()
 	spec := &scheme.SpecMeta{
-		ID: ulid.Make(),
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
 	}
-	sym := &Symbol{Node: n, Spec: spec}
 
-	_ = tb.Insert(sym)
+	sym, _ := tb.Insert(spec)
 
-	r, ok := tb.LookupByID(spec.GetID())
+	r, ok := tb.LookupByID(sym.ID())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }
 
 func TestTable_LookupByName(t *testing.T) {
-	tb := NewTable()
+	s := scheme.New()
+
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
 	defer tb.Close()
 
-	n := node.NewOneToOneNode(nil)
-	defer n.Close()
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
+		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.Word(),
 	}
-	sym := &Symbol{Node: n, Spec: spec}
 
-	_ = tb.Insert(sym)
+	sym, _ := tb.Insert(spec)
 
-	r, ok := tb.LookupByName(spec.GetNamespace(), spec.GetName())
+	r, ok := tb.LookupByName(sym.Namespace(), sym.Name())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }
