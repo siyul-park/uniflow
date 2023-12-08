@@ -30,7 +30,7 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 		errPort: port.New(),
 	}
 
-	if action != nil {
+	if n.action != nil {
 		n.ioPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 			n.mu.RLock()
 			defer n.mu.RUnlock()
