@@ -22,11 +22,10 @@ func TestLoader_LoadOne(t *testing.T) {
 			Database: memdb.New(faker.Word()),
 		})
 
-		tb := symbol.NewTable()
+		tb := symbol.NewTable(s)
 		defer func() { _ = tb.Close() }()
 
 		ld := New(Config{
-			Scheme:  s,
 			Storage: st,
 			Table:   tb,
 		})
@@ -51,13 +50,10 @@ func TestLoader_LoadOne(t *testing.T) {
 				},
 			},
 		}
-
-		codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		})
-
 		s.AddKnownType(kind, &scheme.SpecMeta{})
-		s.AddCodec(kind, codec)
+		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(nil), nil
+		}))
 
 		st.InsertOne(context.Background(), spec1)
 		st.InsertOne(context.Background(), spec2)
@@ -81,11 +77,10 @@ func TestLoader_LoadOne(t *testing.T) {
 			Database: memdb.New(faker.Word()),
 		})
 
-		tb := symbol.NewTable()
+		tb := symbol.NewTable(s)
 		defer func() { _ = tb.Close() }()
 
 		ld := New(Config{
-			Scheme:  s,
 			Storage: st,
 			Table:   tb,
 		})
@@ -125,11 +120,10 @@ func TestLoader_LoadOne(t *testing.T) {
 			Database: memdb.New(faker.Word()),
 		})
 
-		tb := symbol.NewTable()
+		tb := symbol.NewTable(s)
 		defer func() { _ = tb.Close() }()
 
 		ld := New(Config{
-			Scheme:  s,
 			Storage: st,
 			Table:   tb,
 		})
@@ -173,11 +167,10 @@ func TestLoader_LoadAll(t *testing.T) {
 		Database: memdb.New(faker.Word()),
 	})
 
-	tb := symbol.NewTable()
+	tb := symbol.NewTable(s)
 	defer func() { _ = tb.Close() }()
 
 	ld := New(Config{
-		Scheme:  s,
 		Storage: st,
 		Table:   tb,
 	})

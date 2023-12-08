@@ -1,6 +1,7 @@
 package symbol
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
@@ -17,6 +18,7 @@ type TableOptions struct {
 
 // Table manages the storage and operations for Symbols.
 type Table struct {
+	scheme      *scheme.Scheme
 	symbols     map[ulid.ULID]*Symbol
 	unlinks     map[ulid.ULID]map[string][]scheme.PortLocation
 	linked      map[ulid.ULID]map[string][]scheme.PortLocation
@@ -27,7 +29,7 @@ type Table struct {
 }
 
 // NewTable returns a new SymbolTable with the specified options.
-func NewTable(opts ...TableOptions) *Table {
+func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
@@ -37,6 +39,7 @@ func NewTable(opts ...TableOptions) *Table {
 	}
 
 	return &Table{
+		scheme:      sh,
 		symbols:     make(map[ulid.ULID]*Symbol),
 		unlinks:     make(map[ulid.ULID]map[string][]scheme.PortLocation),
 		linked:      make(map[ulid.ULID]map[string][]scheme.PortLocation),
@@ -47,18 +50,29 @@ func NewTable(opts ...TableOptions) *Table {
 }
 
 // Insert adds a Symbol to the table.
-func (t *Table) Insert(sym *Symbol) error {
+func (t *Table) Insert(spec scheme.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if _, err := t.free(sym.ID()); err != nil {
-		return err
-	}
-	if err := t.insert(sym); err != nil {
-		return err
+	if sym, ok := t.symbols[spec.GetID()]; ok && reflect.DeepEqual(sym.Spec, spec) {
+		return sym, nil
 	}
 
-	return nil
+	n, err := t.scheme.Decode(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	sym := &Symbol{spec: spec, node: n}
+
+	if _, err := t.free(sym.ID()); err != nil {
+		return nil, err
+	}
+	if err := t.insert(sym); err != nil {
+		return nil, err
+	}
+
+	return sym, nil
 }
 
 // Free removes a Symbol from the table.
@@ -315,7 +329,7 @@ func (t *Table) load(sym *Symbol) error {
 		return nil
 	}
 	for _, hook := range t.loadHooks {
-		if err := hook.Load(sym.Node); err != nil {
+		if err := hook.Load(sym.node); err != nil {
 			return err
 		}
 	}
@@ -327,7 +341,7 @@ func (t *Table) unload(sym *Symbol) error {
 		return nil
 	}
 	for _, hook := range t.unloadHooks {
-		if err := hook.Unload(sym.Node); err != nil {
+		if err := hook.Unload(sym.node); err != nil {
 			return err
 		}
 	}

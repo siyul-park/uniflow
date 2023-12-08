@@ -8,7 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/loader"
-	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -53,14 +52,13 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		return nil, err
 	}
 
-	tb := symbol.NewTable(symbol.TableOptions{
+	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
 		LoadHooks:   []symbol.LoadHook{config.Hooks},
 		UnloadHooks: []symbol.UnloadHook{config.Hooks},
 	})
 
 	ld := loader.New(loader.Config{
 		Namespace: config.Namespace,
-		Scheme:    config.Scheme,
 		Storage:   st,
 		Table:     tb,
 	})
@@ -91,7 +89,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 }
 
 // Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from storage.Storage.
-func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (node.Node, error) {
+func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)
 	} else {
