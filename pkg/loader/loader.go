@@ -2,7 +2,6 @@ package loader
 
 import (
 	"context"
-	"reflect"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
@@ -90,7 +89,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 
 			if sym, err := ld.table.Insert(spec); err != nil {
 				return nil, err
-			} else if sym.Spec() != spec {
+			} else if sym == nil {
 				continue
 			}
 
@@ -152,14 +151,11 @@ func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 
 	var symbols []*symbol.Symbol
 	for _, spec := range specs {
-		if sym, ok := ld.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
-			symbols = append(symbols, sym)
-			continue
-		}
-
 		if sym, err := ld.table.Insert(spec); err != nil {
 			return nil, err
-		} else {
+		} else if sym != nil {
+			symbols = append(symbols, sym)
+		} else if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
 			symbols = append(symbols, sym)
 		}
 	}

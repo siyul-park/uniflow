@@ -40,11 +40,6 @@ func (s *Symbol) Links() map[string][]scheme.PortLocation {
 	return s.spec.GetLinks()
 }
 
-// Spec returns the spec.
-func (s *Symbol) Spec() scheme.Spec {
-	return s.spec
-}
-
 // Port returns the specified port.
 func (s *Symbol) Port(name string) (*port.Port, bool) {
 	return s.node.Port(name)
