@@ -60,9 +60,7 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 		return nil, err
 	}
 
-	n := &SnippetNode{
-		run: run,
-	}
+	n := &SnippetNode{run: run}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil

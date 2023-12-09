@@ -31,7 +31,7 @@ func TestProxyNode_Send(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxyNode(server.URL)
+	proxy, _ := NewProxyNode(server.URL)
 	defer proxy.Close()
 
 	io := port.New()
@@ -71,7 +71,7 @@ func BenchmarkProxyNode_Send(b *testing.B) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxyNode(server.URL)
+	proxy, _ := NewProxyNode(server.URL)
 	defer proxy.Close()
 
 	io := port.New()
