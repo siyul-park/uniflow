@@ -1,12 +1,15 @@
 package networkx
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -241,13 +244,21 @@ func init() {
 
 // NewHTTPNode creates a new HTTPNode.
 func NewHTTPNode(address string) *HTTPNode {
+	target, _ := url.Parse(address)
+	isServer := target == nil || target.Scheme == ""
+
 	n := &HTTPNode{
-		OneToOneNode:    node.NewOneToOneNode(nil),
 		address:         address,
-		server:          new(http.Server),
 		listenerNetwork: "tcp",
 	}
-	n.server.Handler = n
+
+	if isServer {
+		n.OneToOneNode = node.NewOneToOneNode(nil)
+		n.server = new(http.Server)
+		n.server.Handler = n
+	} else {
+		n.OneToOneNode = node.NewOneToOneNode(n.action)
+	}
 
 	return n
 }
@@ -298,13 +309,18 @@ func (n *HTTPNode) WaitForListen(errChan <-chan error) error {
 
 // Serve starts serving HTTP requests.
 func (n *HTTPNode) Serve() error {
-	n.mu.Lock()
-	n.server.Addr = n.address
-	if err := n.configureServer(); err != nil {
-		n.mu.Unlock()
+	if err := func() error {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
+		if n.server == nil {
+			return nil
+		}
+		n.server.Addr = n.address
+		return n.configureServer()
+	}(); err != nil {
 		return err
 	}
-	n.mu.Unlock()
 	return n.server.Serve(n.listener)
 }
 
@@ -313,6 +329,9 @@ func (n *HTTPNode) Shutdown(ctx context.Context) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	if n.server == nil {
+		return nil
+	}
 	return n.server.Shutdown(ctx)
 }
 
@@ -321,8 +340,10 @@ func (n *HTTPNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if err := n.server.Close(); err != nil {
-		return err
+	if n.server != nil {
+		if err := n.server.Close(); err != nil {
+			return err
+		}
 	}
 	return n.OneToOneNode.Close()
 }
@@ -379,6 +400,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if ioStream.Links()+outStream.Links() == 0 {
 		procErr = packet.ErrDiscardPacket
+		_ = n.storePayload(w, HTTPPayload{})
 		return
 	}
 
@@ -423,8 +445,8 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.Method == http.MethodHead {
-			if res.Status == 200 {
-				res.Status = 204
+			if res.Status == http.StatusOK {
+				res.Status = http.StatusNoContent
 			}
 			res.Header.Del(HeaderContentType)
 			res.Body = nil
@@ -440,6 +462,54 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		break
+	}
+}
+
+func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	var inPayload HTTPPayload
+	if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+
+	req, err := n.readPayload(inPayload)
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+
+	rw := httptest.NewRecorder()
+
+	target, err := url.Parse(n.address)
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	proxy.ErrorHandler = func(_ http.ResponseWriter, _ *http.Request, localErr error) {
+		err = localErr
+	}
+
+	proxy.ServeHTTP(rw, req)
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+
+	outPayload, err := n.writePayload(rw)
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+	outPayload.Proto = inPayload.Proto
+	outPayload.Path = inPayload.Path
+	outPayload.Method = inPayload.Method
+	outPayload.Query = inPayload.Query
+	outPayload.Cookies = inPayload.Cookies
+
+	if outPayload, err := primitive.MarshalBinary(outPayload); err != nil {
+		return nil, packet.WithError(err, inPck)
+	} else {
+		return packet.New(outPayload), nil
 	}
 }
 
@@ -506,6 +576,56 @@ func (n *HTTPNode) storePayload(w http.ResponseWriter, res HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
+}
+
+func (n *HTTPNode) readPayload(payload HTTPPayload) (*http.Request, error) {
+	url := &url.URL{
+		Path:     payload.Path,
+		RawQuery: payload.Query.Encode(),
+	}
+
+	contentType := payload.Header.Get(HeaderContentType)
+	b, err := MarshalMIME(payload.Body, &contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		payload.Method,
+		url.RequestURI(),
+		bytes.NewReader(b),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Proto = payload.Proto
+	req.Header = payload.Header
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	req.Header.Set("Content-Length", strconv.Itoa(len(b)))
+	for _, cookie := range payload.Cookies {
+		req.AddCookie(cookie)
+	}
+
+	return req, nil
+}
+
+func (n *HTTPNode) writePayload(rw *httptest.ResponseRecorder) (HTTPPayload, error) {
+	contentType := rw.Header().Get(HeaderContentType)
+
+	if b, err := io.ReadAll(rw.Body); err != nil {
+		return HTTPPayload{}, err
+	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
+		return HTTPPayload{}, err
+	} else {
+		rw.Header().Set(HeaderContentType, contentType)
+		return HTTPPayload{
+			Header: rw.Header(),
+			Body:   b,
+		}, nil
+	}
 }
 
 func (n *HTTPNode) handleErrorPayload(proc *process.Process, err HTTPPayload) HTTPPayload {

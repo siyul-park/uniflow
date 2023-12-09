@@ -287,10 +287,8 @@ func NewMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value,
 						}
 
 						value, ok := s.Get(NewString(tag.alias))
-						if !ok || reflect.ValueOf(value.Interface()).IsZero() {
-							if tag.omitempty {
-								continue
-							} else {
+						if !ok {
+							if !tag.omitempty {
 								return errors.WithMessage(encoding.ErrUnsupportedValue, fmt.Sprintf("key(%v) is zero value", field.Name))
 							}
 						} else if err := decoder.Decode(value, v.Addr().Interface()); err != nil {

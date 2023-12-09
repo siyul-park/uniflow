@@ -67,11 +67,10 @@ func TestHTTPNode_ServeAndShutdown(t *testing.T) {
 	}()
 
 	err = n.WaitForListen(errChan)
+	assert.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-
-	assert.NoError(t, err)
 	assert.NoError(t, n.Shutdown(ctx))
 }
 
@@ -152,6 +151,48 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, "Hello World!", w.Body.String())
 	})
+}
+
+func TestHTTPNode_Send(t *testing.T) {
+	called := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called++
+	}))
+	defer server.Close()
+
+	client := NewHTTPNode(server.URL)
+	defer client.Close()
+
+	io := port.New()
+	ioPort, _ := client.Port(node.PortIO)
+	ioPort.Link(io)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	ioStream := io.Open(proc)
+
+	inPayload, _ := primitive.MarshalText(HTTPPayload{
+		Method: http.MethodGet,
+		Path:   "/",
+	})
+	inPck := packet.New(inPayload)
+
+	ioStream.Send(inPck)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	select {
+	case outPck := <-ioStream.Receive():
+		assert.Equal(t, 1, called)
+
+		var outPayload HTTPPayload
+		err := primitive.Unmarshal(outPck.Payload(), &outPayload)
+		assert.NoError(t, err)
+	case <-ctx.Done():
+		assert.Fail(t, "timeout")
+	}
 }
 
 func BenchmarkHTTPNode_Send(b *testing.B) {
