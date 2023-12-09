@@ -16,11 +16,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// ProxyNode represents a node that acts as a reverse proxy.
 type ProxyNode struct {
 	*node.OneToOneNode
 	target *url.URL
 }
 
+// ProxySpec defines the specification for the ProxyNode.
 type ProxySpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Target          string `map:"target"`
@@ -31,6 +33,7 @@ const KindProxy = "proxy"
 
 var _ node.Node = (*ProxyNode)(nil)
 
+// NewProxyNode creates a new ProxyNode with the specified target URL.
 func NewProxyNode(target string) (*ProxyNode, error) {
 	t, err := url.Parse(target)
 	if err != nil {
@@ -70,16 +73,17 @@ func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
+
 	outPayload.Proto = inPayload.Proto
 	outPayload.Path = inPayload.Path
 	outPayload.Method = inPayload.Method
 	outPayload.Query = inPayload.Query
 	outPayload.Cookies = inPayload.Cookies
 
-	if outPayload, err := primitive.MarshalBinary(outPayload); err != nil {
+	if outPayloadBinary, err := primitive.MarshalBinary(outPayload); err != nil {
 		return nil, packet.WithError(err, inPck)
 	} else {
-		return packet.New(outPayload), nil
+		return packet.New(outPayloadBinary), nil
 	}
 }
 
@@ -90,7 +94,7 @@ func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
 	}
 
 	contentType := payload.Header.Get(HeaderContentType)
-	b, err := MarshalMIME(payload.Body, &contentType)
+	body, err := MarshalMIME(payload.Body, &contentType)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +102,7 @@ func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
 	req, err := http.NewRequest(
 		payload.Method,
 		url.RequestURI(),
-		bytes.NewReader(b),
+		bytes.NewReader(body),
 	)
 	if err != nil {
 		return nil, err
@@ -109,7 +113,7 @@ func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
 	if req.Header == nil {
 		req.Header = make(http.Header)
 	}
-	req.Header.Set(HeaderContentLength, strconv.Itoa(len(b)))
+	req.Header.Set(HeaderContentLength, strconv.Itoa(len(body)))
 	for _, cookie := range payload.Cookies {
 		req.AddCookie(cookie)
 	}
@@ -120,15 +124,20 @@ func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
 func (n *ProxyNode) storePayload(rw *httptest.ResponseRecorder) (HTTPPayload, error) {
 	contentType := rw.Header().Get(HeaderContentType)
 
-	if b, err := io.ReadAll(rw.Body); err != nil {
+	bodyBytes, err := io.ReadAll(rw.Body)
+	if err != nil {
 		return HTTPPayload{}, err
-	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
-		return HTTPPayload{}, err
-	} else {
-		rw.Header().Set(HeaderContentType, contentType)
-		return HTTPPayload{
-			Header: rw.Header(),
-			Body:   b,
-		}, nil
 	}
+
+	body, err := UnmarshalMIME(bodyBytes, &contentType)
+	if err != nil {
+		return HTTPPayload{}, err
+	}
+
+	rw.Header().Set(HeaderContentType, contentType)
+
+	return HTTPPayload{
+		Header: rw.Header(),
+		Body:   body,
+	}, nil
 }
