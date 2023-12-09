@@ -43,7 +43,16 @@ func TestAddToScheme(t *testing.T) {
 
 	_, ok := s.Codec(KindHTTP)
 	assert.True(t, ok)
-
 	_, ok = s.KnownType(KindHTTP)
+	assert.True(t, ok)
+
+	_, ok = s.Codec(KindProxy)
+	assert.True(t, ok)
+	_, ok = s.KnownType(KindProxy)
+	assert.True(t, ok)
+
+	_, ok = s.Codec(KindRouter)
+	assert.True(t, ok)
+	_, ok = s.KnownType(KindRouter)
 	assert.True(t, ok)
 }

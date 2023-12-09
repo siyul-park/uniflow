@@ -13,12 +13,21 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 type ProxyNode struct {
 	*node.OneToOneNode
 	target *url.URL
 }
+
+type ProxySpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Target          string `map:"target"`
+}
+
+// KindProxy is the kind identifier for ProxyNode.
+const KindProxy = "proxy"
 
 var _ node.Node = (*ProxyNode)(nil)
 
