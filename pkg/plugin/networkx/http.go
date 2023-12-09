@@ -247,15 +247,13 @@ func NewHTTPNode(address string) *HTTPNode {
 	target, _ := url.Parse(address)
 	isServer := target == nil || target.Scheme == ""
 
-	n := &HTTPNode{
-		address:         address,
-		listenerNetwork: "tcp",
-	}
+	n := &HTTPNode{address: address}
 
 	if isServer {
 		n.OneToOneNode = node.NewOneToOneNode(nil)
 		n.server = new(http.Server)
 		n.server.Handler = n
+		n.listenerNetwork = "tcp"
 	} else {
 		n.OneToOneNode = node.NewOneToOneNode(n.action)
 	}
