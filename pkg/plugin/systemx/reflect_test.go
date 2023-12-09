@@ -31,7 +31,7 @@ func TestNewReflectNode(t *testing.T) {
 	})
 	assert.NotNil(t, n)
 
-	_ = n.Close()
+	assert.NoError(t, n.Close())
 }
 
 func TestReflectNode_Send(t *testing.T) {

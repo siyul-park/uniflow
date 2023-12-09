@@ -18,7 +18,7 @@ func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode()
 	assert.NotNil(t, n)
 
-	_ = n.Close()
+	assert.NoError(t, n.Close())
 }
 
 func TestSwitchNode_Send(t *testing.T) {

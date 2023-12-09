@@ -18,7 +18,7 @@ func TestNewRouterNode(t *testing.T) {
 	n := NewRouterNode()
 	assert.NotNil(t, n)
 
-	_ = n.Close()
+	assert.NoError(t, n.Close())
 }
 
 func TestRouterNode_Send(t *testing.T) {
