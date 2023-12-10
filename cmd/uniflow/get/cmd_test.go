@@ -1,11 +1,9 @@
-package apply
+package get
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"testing"
-	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
@@ -18,14 +16,12 @@ import (
 func TestExecute(t *testing.T) {
 	s := scheme.New()
 	db := memdb.New("")
-	fsys := make(fstest.MapFS)
 
 	st, _ := storage.New(context.Background(), storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
 
-	patchFilepath := "patch.json"
 	kind := faker.Word()
 
 	spec := &scheme.SpecMeta{
@@ -41,28 +37,19 @@ func TestExecute(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
-	data, _ := json.Marshal(spec)
-
-	fsys[patchFilepath] = &fstest.MapFile{
-		Data: data,
-	}
+	id, _ := st.InsertOne(context.Background(), spec)
 
 	output := new(bytes.Buffer)
 
 	cmd := NewCmd(Config{
 		Scheme:   s,
 		Database: db,
-		FS:       fsys,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)
 
-	cmd.SetArgs([]string{"--file", patchFilepath})
-
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
-	assert.NoError(t, err)
-	assert.NotNil(t, r)
+	assert.Contains(t, output.String(), id.String())
 }
