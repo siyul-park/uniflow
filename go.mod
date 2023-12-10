@@ -6,7 +6,7 @@ require (
 	github.com/benbjohnson/immutable v0.4.3
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
 	github.com/emirpasic/gods v1.18.1
-	github.com/evanw/esbuild v0.19.8
+	github.com/evanw/esbuild v0.19.9
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jedib0t/go-pretty/v6 v6.4.9
