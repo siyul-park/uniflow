@@ -65,4 +65,6 @@ func TestExecute(t *testing.T) {
 	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
+
+	assert.Contains(t, output.String(), spec.Name)
 }
