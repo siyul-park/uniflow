@@ -2,6 +2,7 @@ package networkx
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -47,16 +48,21 @@ func NewProxyNode(target string) (*ProxyNode, error) {
 }
 
 func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-proc.Done()
+		cancel()
+	}()
+
 	var inPayload HTTPPayload
 	if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 
-	req, err := n.loadPayload(inPayload)
+	req, err := n.loadPayload(ctx, inPayload)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
-
 	rw := httptest.NewRecorder()
 
 	proxy := httputil.NewSingleHostReverseProxy(n.target)
@@ -87,7 +93,7 @@ func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	}
 }
 
-func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
+func (n *ProxyNode) loadPayload(ctx context.Context, payload HTTPPayload) (*http.Request, error) {
 	url := &url.URL{
 		Path:     payload.Path,
 		RawQuery: payload.Query.Encode(),
@@ -99,7 +105,8 @@ func (n *ProxyNode) loadPayload(payload HTTPPayload) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		payload.Method,
 		url.RequestURI(),
 		bytes.NewReader(body),
