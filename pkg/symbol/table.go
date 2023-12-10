@@ -133,7 +133,7 @@ func (t *Table) insert(sym *Symbol) error {
 
 	unlinks := map[string][]scheme.PortLocation{}
 
-	for name, locations := range sym.Links() {
+	for name, locations := range sym.spec.GetLinks() {
 		p1, ok := sym.Port(name)
 		if !ok {
 			unlinks[name] = locations
@@ -258,7 +258,7 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 		}
 	}
 
-	for name, locations := range sym.Links() {
+	for name, locations := range sym.spec.GetLinks() {
 		for _, location := range locations {
 			id := location.ID
 			if location.Name != "" {
