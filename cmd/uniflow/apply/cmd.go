@@ -23,15 +23,6 @@ type Config struct {
 	FS       fs.FS
 }
 
-// SpecTableColumnDefinitions defines columns for displaying spec information.
-var SpecTableColumnDefinitions = []printer.TableColumnDefinition{
-	{Name: "id", Format: "$.id"},
-	{Name: "kind", Format: "$.kind"},
-	{Name: "namespace", Format: "$.namespace"},
-	{Name: "name", Format: "$.name"},
-	{Name: "links", Format: "$.links"},
-}
-
 // NewCmd creates a new cobra.Command for the apply command.
 func NewCmd(config Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -150,7 +141,7 @@ func applySpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) e
 }
 
 func printSpecTable(cmd *cobra.Command, specs []scheme.Spec) error {
-	tablePrinter, err := printer.NewTable(SpecTableColumnDefinitions)
+	tablePrinter, err := printer.NewTable(printer.SpecTableColumnDefinitions)
 	if err != nil {
 		return err
 	}

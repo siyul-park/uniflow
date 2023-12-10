@@ -21,6 +21,15 @@ type TablePrinter struct {
 	formats []*jsonata.Expr
 }
 
+// SpecTableColumnDefinitions defines columns for displaying spec information.
+var SpecTableColumnDefinitions = []TableColumnDefinition{
+	{Name: "id", Format: "$.id"},
+	{Name: "kind", Format: "$.kind"},
+	{Name: "namespace", Format: "$.namespace"},
+	{Name: "name", Format: "$.name"},
+	{Name: "links", Format: "$.links"},
+}
+
 // style is the default style configuration for the table.
 var style = table.Style{
 	Name: "StyleDefault",
