@@ -35,11 +35,6 @@ func (s *Symbol) Name() string {
 	return s.spec.GetName()
 }
 
-// Links returns the links.
-func (s *Symbol) Links() map[string][]scheme.PortLocation {
-	return s.spec.GetLinks()
-}
-
 // Port returns the specified port.
 func (s *Symbol) Port(name string) (*port.Port, bool) {
 	return s.node.Port(name)

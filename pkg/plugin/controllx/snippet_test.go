@@ -20,7 +20,7 @@ func TestNewSnippetNode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 
-	_ = n.Close()
+	assert.NoError(t, n.Close())
 }
 
 func TestSnippetNode_Send(t *testing.T) {

@@ -34,7 +34,6 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Equal(t, spec.GetKind(), sym.Kind())
 	assert.Equal(t, spec.GetNamespace(), sym.Namespace())
 	assert.Equal(t, spec.GetName(), sym.Name())
-	assert.Equal(t, spec.GetLinks(), sym.Links())
 
 	p1, _ := n.Port(node.PortIn)
 	p2, _ := sym.Port(node.PortIn)

@@ -50,6 +50,11 @@ func AddToScheme() func(*scheme.Scheme) error {
 			return NewHTTPNode(spec.Address), nil
 		}))
 
+		s.AddKnownType(KindProxy, &ProxySpec{})
+		s.AddCodec(KindProxy, scheme.CodecWithType[*ProxySpec](func(spec *ProxySpec) (node.Node, error) {
+			return NewProxyNode(spec.Target)
+		}))
+
 		s.AddKnownType(KindRouter, &RouterSpec{})
 		s.AddCodec(KindRouter, scheme.CodecWithType[*RouterSpec](func(spec *RouterSpec) (node.Node, error) {
 			n := NewRouterNode()
