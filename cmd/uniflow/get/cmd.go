@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config represents the configuration for the apply command.
+// Config represents the configuration for the get command.
 type Config struct {
 	Scheme   *scheme.Scheme
 	Database database.Database
 }
 
-// NewCmd creates a new cobra.Command for the apply command.
+// NewCmd creates a new cobra.Command for the get command.
 func NewCmd(config Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
@@ -25,7 +25,7 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runGetCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
 
 	return cmd
 }
