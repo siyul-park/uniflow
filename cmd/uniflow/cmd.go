@@ -4,6 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/siyul-park/uniflow/cmd/uniflow/apply"
+	"github.com/siyul-park/uniflow/cmd/uniflow/get"
 	"github.com/siyul-park/uniflow/cmd/uniflow/start"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -32,14 +33,18 @@ func NewCmd(config Config) *cobra.Command {
 		Long: "Create your uniflow and integrate it anywhere!",
 	}
 
-	cmd.AddCommand(start.NewCmd(start.Config{
+	cmd.AddCommand(apply.NewCmd(apply.Config{
 		Scheme:   sc,
-		Hook:     hk,
 		Database: db,
 		FS:       fsys,
 	}))
-	cmd.AddCommand(apply.NewCmd(apply.Config{
+	cmd.AddCommand(get.NewCmd(get.Config{
 		Scheme:   sc,
+		Database: db,
+	}))
+	cmd.AddCommand(start.NewCmd(start.Config{
+		Scheme:   sc,
+		Hook:     hk,
 		Database: db,
 		FS:       fsys,
 	}))
