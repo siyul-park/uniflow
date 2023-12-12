@@ -23,8 +23,6 @@ type Config struct {
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	hooks      *hook.Hook
-	scheme     *scheme.Scheme
 	storage    *storage.Storage
 	table      *symbol.Table
 	loader     *loader.Loader
@@ -72,8 +70,6 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	})
 
 	return &Runtime{
-		hooks:      config.Hooks,
-		scheme:     config.Scheme,
 		storage:    st,
 		table:      tb,
 		loader:     ld,
