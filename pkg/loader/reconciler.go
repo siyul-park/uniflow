@@ -4,33 +4,34 @@ import (
 	"context"
 	"sync"
 
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
 // ReconcilerConfig holds the configuration for the Reconciler.
 type ReconcilerConfig struct {
-	Storage *storage.Storage // Storage is the storage used by the Reconciler.
-	Loader  *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
-	Filter  *storage.Filter  // Filter is the filter for tracking changes to the scheme.Spec.
+	Namespace string           // // Namespace is the namespace for the Reconciler.
+	Storage   *storage.Storage // Storage is the storage used by the Reconciler.
+	Loader    *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
 }
 
 // Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
 type Reconciler struct {
-	storage *storage.Storage
-	loader  *Loader
-	filter  *storage.Filter
-	stream  *storage.Stream
-	done    chan struct{}
-	mu      sync.Mutex
+	namespace string
+	storage   *storage.Storage
+	loader    *Loader
+	stream    *storage.Stream
+	done      chan struct{}
+	mu        sync.Mutex
 }
 
 // NewReconciler creates a new Reconciler with the given configuration.
 func NewReconciler(config ReconcilerConfig) *Reconciler {
 	return &Reconciler{
-		storage: config.Storage,
-		loader:  config.Loader,
-		filter:  config.Filter,
-		done:    make(chan struct{}),
+		namespace: config.Namespace,
+		storage:   config.Storage,
+		loader:    config.Loader,
+		done:      make(chan struct{}),
 	}
 }
 
@@ -99,7 +100,12 @@ func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
 	if r.stream != nil {
 		return r.stream, nil
 	}
-	s, err := r.storage.Watch(ctx, r.filter)
+
+	var filter *storage.Filter
+	if r.namespace != "" {
+		filter = storage.Where[string](scheme.KeyNamespace).EQ(r.namespace)
+	}
+	s, err := r.storage.Watch(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
