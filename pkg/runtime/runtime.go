@@ -23,7 +23,6 @@ type Config struct {
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	namespace  string
 	hooks      *hook.Hook
 	scheme     *scheme.Scheme
 	storage    *storage.Storage
@@ -66,19 +65,13 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		return nil, err
 	}
 
-	var filter *storage.Filter
-	if config.Namespace != "" {
-		filter = storage.Where[string](scheme.KeyNamespace).EQ(config.Namespace)
-	}
-
 	rc := loader.NewReconciler(loader.ReconcilerConfig{
-		Storage: st,
-		Loader:  ld,
-		Filter:  filter,
+		Namespace: config.Namespace,
+		Storage:   st,
+		Loader:    ld,
 	})
 
 	return &Runtime{
-		namespace:  config.Namespace,
 		hooks:      config.Hooks,
 		scheme:     config.Scheme,
 		storage:    st,
