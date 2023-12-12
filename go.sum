@@ -280,6 +280,8 @@ github.com/xiatechs/jsonata-go v1.8.0 h1:RZxM16WXwcSLvmmgG57zlpGAHuXMp8oLUjrO+wU
 github.com/xiatechs/jsonata-go v1.8.0/go.mod h1:qc/5uRtTKE5mil6PncK/ogxFQyhqlI6YnxvdyAz57Xw=
 github.com/xiatechs/jsonata-go v1.8.1 h1:hq20oLMBGDt3eCmcvptLyggCqNyZ4i7/8/KhxNukTRY=
 github.com/xiatechs/jsonata-go v1.8.1/go.mod h1:qc/5uRtTKE5mil6PncK/ogxFQyhqlI6YnxvdyAz57Xw=
+github.com/xiatechs/jsonata-go v1.8.2 h1:Qgnjz3esP08tcJEPSmHQrleSowGoisD+R14lH3RJyPY=
+github.com/xiatechs/jsonata-go v1.8.2/go.mod h1:qc/5uRtTKE5mil6PncK/ogxFQyhqlI6YnxvdyAz57Xw=
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
 github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a h1:fZHgsYlfvtyqToslyjUt3VOPF4J7aK/3MPcK7xp3PDk=
 github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a/go.mod h1:ul22v+Nro/R083muKhosV54bj5niojjWZvU8xrevuH4=
