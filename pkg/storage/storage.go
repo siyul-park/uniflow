@@ -263,14 +263,7 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 		return nil, nil
 	}
 
-	unstructured := scheme.NewUnstructured(doc)
-	if spec, ok := s.scheme.New(unstructured.GetKind()); !ok {
-		return unstructured, nil
-	} else if err := unstructured.Unmarshal(spec); err != nil {
-		return nil, err
-	} else {
-		return spec, nil
-	}
+	return s.scheme.NewSpecWithDoc(doc)
 }
 
 // FindMany returns multiple scheme.Spec instances matched by the filter.
@@ -294,10 +287,7 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 			continue
 		}
 
-		unstructured := scheme.NewUnstructured(doc)
-		if spec, ok := s.scheme.New(unstructured.GetKind()); !ok {
-			specs = append(specs, unstructured)
-		} else if err := unstructured.Unmarshal(spec); err != nil {
+		if spec, err := s.scheme.NewSpecWithDoc(doc); err != nil {
 			return nil, err
 		} else {
 			specs = append(specs, spec)

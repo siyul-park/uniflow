@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 // Scheme defines a registry for handling decoding of Spec objects.
@@ -60,8 +61,8 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	return c, ok
 }
 
-// New creates a new instance of Spec with the given kind.
-func (s *Scheme) New(kind string) (Spec, bool) {
+// NewSpec creates a new instance of Spec with the given kind.
+func (s *Scheme) NewSpec(kind string) (Spec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -74,6 +75,18 @@ func (s *Scheme) New(kind string) (Spec, bool) {
 		}
 		v, ok := zero.Elem().Interface().(Spec)
 		return v, ok
+	}
+}
+
+// NewSpecWithDoc creates a new instance of Spec with the given doc.
+func (s *Scheme) NewSpecWithDoc(doc *primitive.Map) (Spec, error) {
+	unstructured := NewUnstructured(doc)
+	if spec, ok := s.NewSpec(unstructured.GetKind()); !ok {
+		return unstructured, nil
+	} else if err := unstructured.Unmarshal(spec); err != nil {
+		return nil, err
+	} else {
+		return spec, nil
 	}
 }
 
@@ -90,7 +103,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	}
 
 	if unstructured, ok := spec.(*Unstructured); ok {
-		if structured, ok := s.New(kind); ok {
+		if structured, ok := s.NewSpec(kind); ok {
 			if err := unstructured.Unmarshal(structured); err != nil {
 				return nil, err
 			} else {
