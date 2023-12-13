@@ -335,15 +335,11 @@ func (s *Storage) ensureIndexes(ctx context.Context, indexes []database.IndexMod
 	return nil
 }
 
-func (s *Storage) validate(unstructured *scheme.Unstructured) error {
-	if spec, ok := s.scheme.New(unstructured.GetKind()); ok {
-		if err := unstructured.Unmarshal(spec); err != nil {
-			return err
-		} else if n, err := s.scheme.Decode(spec); err != nil {
-			return err
-		} else {
-			_ = n.Close()
-		}
+func (s *Storage) validate(spec scheme.Spec) error {
+	if n, err := s.scheme.Decode(spec); err != nil {
+		return err
+	} else {
+		_ = n.Close()
 	}
 	return nil
 }
