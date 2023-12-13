@@ -28,7 +28,7 @@ func TestSymbol_Getter(t *testing.T) {
 		},
 	}
 
-	sym := &Symbol{spec: spec, node: n}
+	sym := New(spec, n)
 
 	assert.Equal(t, spec.GetID(), sym.ID())
 	assert.Equal(t, spec.GetKind(), sym.Kind())

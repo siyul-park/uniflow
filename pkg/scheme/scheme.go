@@ -99,7 +99,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 		}
 	}
 
-	if codec, ok := s.codecs[kind]; ok {
+	if codec, ok := s.Codec(kind); ok {
 		return codec.Decode(spec)
 	}
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)

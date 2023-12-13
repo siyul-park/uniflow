@@ -11,9 +11,24 @@ import (
 type Symbol struct {
 	spec scheme.Spec
 	node node.Node
+
+	links   map[string][]scheme.PortLocation
+	unlinks map[string][]scheme.PortLocation
+	linked  map[string][]scheme.PortLocation
 }
 
 var _ node.Node = (*Symbol)(nil)
+
+// New returns a new Symbol.
+func New(spec scheme.Spec, node node.Node) *Symbol {
+	return &Symbol{
+		spec:    spec,
+		node:    node,
+		links:   spec.GetLinks(),
+		unlinks: make(map[string][]scheme.PortLocation),
+		linked:  make(map[string][]scheme.PortLocation),
+	}
+}
 
 // ID returns the unique identifier.
 func (s *Symbol) ID() ulid.ULID {
