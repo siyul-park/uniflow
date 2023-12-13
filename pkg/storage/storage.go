@@ -24,10 +24,9 @@ type Storage struct {
 	mu     sync.RWMutex
 }
 
-// CollectionNodes is the name of the nodes collection in the storage.
-const CollectionNodes = "nodes"
+const collectionName = "nodes"
 
-var indexesNode = []database.IndexModel{
+var defaultIndexes = []database.IndexModel{
 	{
 		Name:    "namespace_name",
 		Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
@@ -41,7 +40,7 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 	scheme := config.Scheme
 	db := config.Database
 
-	nodes, err := db.Collection(ctx, CollectionNodes)
+	nodes, err := db.Collection(ctx, collectionName)
 	if err != nil {
 		return nil, err
 	}
@@ -51,39 +50,11 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 		nodes:  nodes,
 	}
 
-	if err := s.ensureIndexes(ctx); err != nil {
+	if err := s.ensureIndexes(ctx, defaultIndexes); err != nil {
 		return nil, err
 	}
 
 	return s, nil
-}
-
-// ensureIndexes creates required indexes for the storage collection.
-func (s *Storage) ensureIndexes(ctx context.Context) error {
-	existingIndexes, err := s.nodes.Indexes().List(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, index := range indexesNode {
-		var indexExists bool
-
-		for _, existingIndex := range existingIndexes {
-			if existingIndex.Name == index.Name {
-				indexExists = true
-				if !reflect.DeepEqual(existingIndex, index) {
-					s.nodes.Indexes().Drop(ctx, existingIndex.Name)
-					break
-				}
-			}
-		}
-
-		if !indexExists {
-			s.nodes.Indexes().Create(ctx, index)
-		}
-	}
-
-	return nil
 }
 
 // Watch returns a Stream to track changes based on the provided filter.
@@ -334,6 +305,34 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	}
 
 	return specs, nil
+}
+
+func (s *Storage) ensureIndexes(ctx context.Context, indexes []database.IndexModel) error {
+	existingIndexes, err := s.nodes.Indexes().List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, index := range indexes {
+		var indexExists bool
+
+		for _, existingIndex := range existingIndexes {
+			if existingIndex.Name == index.Name {
+				if !reflect.DeepEqual(existingIndex, index) {
+					s.nodes.Indexes().Drop(ctx, existingIndex.Name)
+				} else {
+					indexExists = true
+				}
+				break
+			}
+		}
+
+		if !indexExists {
+			s.nodes.Indexes().Create(ctx, index)
+		}
+	}
+
+	return nil
 }
 
 func (s *Storage) validate(unstructured *scheme.Unstructured) error {
