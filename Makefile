@@ -1,12 +1,8 @@
 -include .env
 
-PACKAGE := "github.com/siyul-park/uniflow"
-
-GO_PACKAGE := $(shell go list ${PACKAGE}/...)
-
 .PHONY: init
 init:
-	@go install -v ${GO_PACKAGE}
+	@find . -name go.mod -execdir go install -v ./... ';'
 
 .PHONY: init-staticcheck
 init-staticcheck:
@@ -18,13 +14,13 @@ init-godoc:
 
 .PHONY: generate
 generate:
-	@go generate ${GO_PACKAGE}
+	@find . -name go.mod -execdir go generate ./... ';'
 
 .PHONY: build
 build:
-	@go clean -cache
-	@mkdir -p dist
-	@go build -ldflags "-s -w" -o dist ./...
+	@find . -name go.mod -execdir go clean -cache ';'
+	@find . -name go.mod -execdir mkdir -p dist ';'
+	@find . -name go.mod -execdir go build -ldflags "-s -w" -o dist ./... ';'
 
 .PHONY: clean
 clean:
@@ -33,42 +29,42 @@ clean:
 
 .PHONY: tidy
 tidy:
-	@go mod tidy
+	@find . -name go.mod -execdir go mod tidy ';'
 
 .PHONY: check
 check: lint test
 
 .PHONY: test
 test:
-	@go test $(test-options) ${GO_PACKAGE}
+	@find . -name go.mod -execdir go test $(test-options) ./... ';'
 
 .PHONY: race
 race:
-	@go test -race $(test-options) ${GO_PACKAGE}
+	@find . -name go.mod -execdir go test -race $(test-options) ./... ';'
 
 .PHONY: coverage
 coverage:
-	@go test -coverprofile coverage.out -covermode count ${GO_PACKAGE}
-	@go tool cover -func=coverage.out | grep total
+	@find . -name go.mod -execdir go test -coverprofile coverage.out -covermode count ./... ';'
+	@find . -name go.mod -execdir go tool cover -func=coverage.out | grep total ';'
 
 .PHONY: benchmark
 benchmark:
-	@go test -run="-" -bench=".*" -benchmem ${GO_PACKAGE}
+	@find . -name go.mod -execdir go test -run="-" -bench=".*" -benchmem ./... ';'
 
 .PHONY: lint
 lint: fmt vet staticcheck
 
 .PHONY: vet
 vet:
-	@go vet ${GO_PACKAGE}
+	@find . -name go.mod -execdir go vet ./... ';'
 
 .PHONY: fmt
 fmt:
-	@go fmt ${GO_PACKAGE}
+	@find . -name go.mod -execdir go fmt ./... ';'
 
 .PHONY: staticcheck
 staticcheck: init-staticcheck
-	@staticcheck ${GO_PACKAGE}
+	@find . -name go.mod -execdir staticcheck ./... ';'
 
 .PHONY: doc
 doc: init-godoc
