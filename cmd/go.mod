@@ -9,6 +9,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.0.0
+	github.com/siyul-park/uniflow/plugin/pkg/controllx v0.0.0
+	github.com/siyul-park/uniflow/plugin/pkg/networkx v0.0.0
+	github.com/siyul-park/uniflow/plugin/pkg/systemx v0.0.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.1
 	github.com/stretchr/testify v1.8.4
@@ -65,3 +68,6 @@ require (
 )
 
 replace github.com/siyul-park/uniflow => ../
+replace github.com/siyul-park/uniflow/plugin/pkg/controllx => ../plugin/pkg/controllx
+replace github.com/siyul-park/uniflow/plugin/pkg/networkx => ../plugin/pkg/networkx
+replace github.com/siyul-park/uniflow/plugin/pkg/systemx => ../plugin/pkg/systemx
