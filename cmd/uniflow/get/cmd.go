@@ -1,8 +1,6 @@
 package get
 
 import (
-	"fmt"
-
 	"github.com/siyul-park/uniflow/cmd/flag"
 	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -53,7 +51,7 @@ func runGetCommand(config Config) func(cmd *cobra.Command, args []string) error 
 			return err
 		}
 
-		return printSpecTable(cmd, specs)
+		return printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions)
 	}
 }
 
@@ -62,22 +60,4 @@ func createNamespaceFilter(ns string) *storage.Filter {
 		return nil
 	}
 	return storage.Where[string](scheme.KeyNamespace).EQ(ns)
-}
-
-func printSpecTable(cmd *cobra.Command, specs []scheme.Spec) error {
-	tablePrinter, err := printer.NewTable(printer.SpecTableColumnDefinitions)
-	if err != nil {
-		return err
-	}
-
-	table, err := tablePrinter.Print(specs)
-	if err != nil {
-		return err
-	}
-
-	if _, err := fmt.Fprint(cmd.OutOrStdout(), table); err != nil {
-		return err
-	}
-
-	return nil
 }

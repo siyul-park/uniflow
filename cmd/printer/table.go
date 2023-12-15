@@ -2,6 +2,8 @@ package printer
 
 import (
 	"errors"
+	"fmt"
+	"io"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -60,6 +62,25 @@ var style = table.Style{
 		DoNotColorBordersAndSeparators: true,
 	},
 	Title: table.TitleOptionsDefault,
+}
+
+// PrintTable prints tabular data to the specified writer using the provided columns.
+func PrintTable(writer io.Writer, data any, columns []TableColumnDefinition) error {
+	tablePrinter, err := NewTable(columns)
+	if err != nil {
+		return err
+	}
+
+	table, err := tablePrinter.Print(data)
+	if err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprint(writer, table); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // NewTable creates a new TablePrinter based on the provided column definitions.

@@ -2,7 +2,6 @@ package apply
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
@@ -76,7 +75,7 @@ func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) erro
 			return err
 		}
 
-		if err := printSpecTable(cmd, specs); err != nil {
+		if err := printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions); err != nil {
 			return err
 		}
 
@@ -137,23 +136,5 @@ func applySpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) e
 	if _, err := st.UpdateMany(ctx, updated); err != nil {
 		return err
 	}
-	return nil
-}
-
-func printSpecTable(cmd *cobra.Command, specs []scheme.Spec) error {
-	tablePrinter, err := printer.NewTable(printer.SpecTableColumnDefinitions)
-	if err != nil {
-		return err
-	}
-
-	table, err := tablePrinter.Print(specs)
-	if err != nil {
-		return err
-	}
-
-	if _, err := fmt.Fprint(cmd.OutOrStdout(), table); err != nil {
-		return err
-	}
-
 	return nil
 }

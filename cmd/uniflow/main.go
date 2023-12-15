@@ -6,15 +6,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/siyul-park/uniflow/cmd/uniflow/uniflow"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/plugin/controllx"
-	"github.com/siyul-park/uniflow/pkg/plugin/networkx"
-	"github.com/siyul-park/uniflow/pkg/plugin/systemx"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
+	"github.com/siyul-park/uniflow/plugin/pkg/controllx"
+	"github.com/siyul-park/uniflow/plugin/pkg/networkx"
+	"github.com/siyul-park/uniflow/plugin/pkg/systemx"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -80,7 +81,7 @@ func execute() error {
 	}
 	systemx.AddToScheme(st)(sc)
 
-	cmd := NewCmd(Config{
+	cmd := uniflow.NewCmd(uniflow.Config{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,
