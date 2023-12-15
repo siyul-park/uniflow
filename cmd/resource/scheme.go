@@ -60,7 +60,7 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 		return unstructured, nil
 	}
 
-	spec, ok := c.scheme.New(unstructured.GetKind())
+	spec, ok := c.scheme.NewSpec(unstructured.GetKind())
 	if !ok {
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	}

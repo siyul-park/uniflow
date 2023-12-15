@@ -116,7 +116,9 @@ func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
 			r.mu.Lock()
 			defer r.mu.Unlock()
 
-			r.stream = nil
+			if r.stream == s {
+				r.stream = nil
+			}
 		case <-r.done:
 			return
 		}

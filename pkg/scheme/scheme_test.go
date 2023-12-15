@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,15 +35,34 @@ func TestScheme_Codec(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestScheme_New(t *testing.T) {
+func TestScheme_NewSpec(t *testing.T) {
 	s := New()
 	kind := faker.Word()
 
 	s.AddKnownType(kind, &SpecMeta{})
 
-	spec, ok := s.New(kind)
+	spec, ok := s.NewSpec(kind)
 	assert.True(t, ok)
 	assert.IsType(t, spec, &SpecMeta{})
+}
+
+func TestScheme_NewSpecWithDoc(t *testing.T) {
+	s := New()
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &SpecMeta{})
+
+	u := NewUnstructured(nil)
+	spec := &SpecMeta{
+		ID:   ulid.Make(),
+		Kind: faker.Word(),
+	}
+
+	_ = u.Marshal(spec)
+
+	r, err := s.NewSpecWithDoc(u.Doc())
+	assert.NoError(t, err)
+	assert.NotNil(t, r, spec)
 }
 
 func TestScheme_Decode(t *testing.T) {
