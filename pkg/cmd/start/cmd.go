@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/cmd/pkg/flag"
-	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/flag"
+	"github.com/siyul-park/uniflow/pkg/cmd/resource"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"

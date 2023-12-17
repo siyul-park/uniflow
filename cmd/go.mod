@@ -4,7 +4,6 @@ go 1.21.0
 
 require (
 	github.com/siyul-park/uniflow v0.0.0
-	github.com/siyul-park/uniflow/cmd/pkg v0.0.0
 	github.com/siyul-park/uniflow/plugin/pkg/controllx v0.0.0
 	github.com/siyul-park/uniflow/plugin/pkg/networkx v0.0.0
 	github.com/siyul-park/uniflow/plugin/pkg/systemx v0.0.0
@@ -71,5 +70,3 @@ replace github.com/siyul-park/uniflow/plugin/pkg/controllx => ../plugin/pkg/cont
 replace github.com/siyul-park/uniflow/plugin/pkg/networkx => ../plugin/pkg/networkx
 
 replace github.com/siyul-park/uniflow/plugin/pkg/systemx => ../plugin/pkg/systemx
-
-replace github.com/siyul-park/uniflow/cmd/pkg => ./pkg

@@ -3,9 +3,9 @@ package uniflow
 import (
 	"io/fs"
 
-	"github.com/siyul-park/uniflow/cmd/pkg/apply"
-	"github.com/siyul-park/uniflow/cmd/pkg/get"
-	"github.com/siyul-park/uniflow/cmd/pkg/start"
+	"github.com/siyul-park/uniflow/pkg/cmd/apply"
+	"github.com/siyul-park/uniflow/pkg/cmd/get"
+	"github.com/siyul-park/uniflow/pkg/cmd/start"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"

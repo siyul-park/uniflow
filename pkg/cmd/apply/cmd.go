@@ -6,9 +6,9 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/cmd/pkg/flag"
-	"github.com/siyul-park/uniflow/cmd/pkg/printer"
-	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/flag"
+	"github.com/siyul-park/uniflow/pkg/cmd/printer"
+	"github.com/siyul-park/uniflow/pkg/cmd/resource"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
