@@ -25,6 +25,11 @@ const (
 	configFile = ".uniflow.toml"
 )
 
+const (
+	flagDatabaseURL  = "database.url"
+	flagDatabaseName = "database.name"
+)
+
 func init() {
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
@@ -94,8 +99,8 @@ func execute() error {
 }
 
 func loadDB(ctx context.Context) (database.Database, error) {
-	dbURL := viper.GetString(FlagDatabaseURL)
-	dbName := viper.GetString(FlagDatabaseName)
+	dbURL := viper.GetString(flagDatabaseURL)
+	dbName := viper.GetString(flagDatabaseName)
 
 	if dbURL == "" || strings.HasPrefix(dbURL, "mem://") {
 		return memdb.New(dbName), nil
@@ -108,5 +113,5 @@ func loadDB(ctx context.Context) (database.Database, error) {
 		}
 		return mongodb.NewDatabase(client.Database(dbName)), nil
 	}
-	return nil, fmt.Errorf("%s is invalid", FlagDatabaseURL)
+	return nil, fmt.Errorf("%s is invalid", flagDatabaseURL)
 }
