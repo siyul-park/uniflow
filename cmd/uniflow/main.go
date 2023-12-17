@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/siyul-park/uniflow/cmd/uniflow/uniflow"
+	"github.com/siyul-park/uniflow/cmd/pkg/uniflow"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"

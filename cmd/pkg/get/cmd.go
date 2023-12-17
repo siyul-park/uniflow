@@ -1,8 +1,8 @@
 package get
 
 import (
-	"github.com/siyul-park/uniflow/cmd/flag"
-	"github.com/siyul-park/uniflow/cmd/printer"
+	"github.com/siyul-park/uniflow/cmd/pkg/flag"
+	"github.com/siyul-park/uniflow/cmd/pkg/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
