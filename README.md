@@ -29,7 +29,7 @@ make build
 ```
 
 ```shell
-ls /cmd/dist
+ls /dist
 uniflow
 ```
 
@@ -43,7 +43,7 @@ make test
 Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml) example.
 
 ```shell
-./cmd/dist/uniflow start --boot example/ping.yaml
+./dist/uniflow start --boot example/ping.yaml
 ```
 The `--boot` flag installs initially if the node does not exist in the namespace.
 
@@ -58,7 +58,7 @@ If you wish to apply nodes to a running server, use the `apply` command.
 
 For more information, run the following command:
 ```shell
-./cmd/dist/uniflow start --help
+./dist/uniflow start --help
 ```
 
 ### Configuration

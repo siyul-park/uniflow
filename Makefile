@@ -18,9 +18,9 @@ generate:
 
 .PHONY: build
 build:
-	@find . -name go.mod -execdir go clean -cache ';'
-	@find . -name go.mod -execdir mkdir -p dist ';'
-	@find . -name go.mod -execdir go build -ldflags "-s -w" -o dist ./... ';'
+	@go clean -cache
+	@mkdir -p dist
+	@cd cmd && go build -ldflags "-s -w" -o ../dist ./...
 
 .PHONY: clean
 clean:
