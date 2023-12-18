@@ -26,6 +26,11 @@ type Config struct {
 	FS       fs.FS
 }
 
+const (
+	flagNamespace = "namespace"
+	flagBoot      = "boot"
+)
+
 // NewCmd creates a new Cobra command for the uniflow application.
 func NewCmd(config Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -34,8 +39,8 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the worker's namespace")
-	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path for initializing nodes")
+	cmd.PersistentFlags().StringP(flagNamespace, flag.ToShorthand(flagNamespace), "", "Set the worker's namespace")
+	cmd.PersistentFlags().StringP(flagBoot, flag.ToShorthand(flagBoot), "", "Set the boot file path for initializing nodes")
 
 	return cmd
 }
@@ -43,12 +48,12 @@ func NewCmd(config Config) *cobra.Command {
 func runStartCommand(config Config) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
 
-		boot, err := cmd.Flags().GetString(FlagBoot)
+		boot, err := cmd.Flags().GetString(flagBoot)
 		if err != nil {
 			return err
 		}

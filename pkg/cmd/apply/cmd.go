@@ -22,6 +22,11 @@ type Config struct {
 	FS       fs.FS
 }
 
+const (
+	flagNamespace = "namespace"
+	flagFile      = "file"
+)
+
 // NewCmd creates a new cobra.Command for the apply command.
 func NewCmd(config Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,8 +35,8 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
-	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "Set the file path to be applied")
+	cmd.PersistentFlags().StringP(flagNamespace, flag.ToShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagFile, flag.ToShorthand(flagFile), "", "Set the file path to be applied")
 
 	return cmd
 }
@@ -40,11 +45,11 @@ func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) erro
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
-		fl, err := cmd.Flags().GetString(FlagFile)
+		fl, err := cmd.Flags().GetString(flagFile)
 		if err != nil {
 			return err
 		}

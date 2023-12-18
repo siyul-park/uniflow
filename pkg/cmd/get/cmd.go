@@ -15,6 +15,10 @@ type Config struct {
 	Database database.Database
 }
 
+const (
+	flagNamespace = "namespace"
+)
+
 // NewCmd creates a new cobra.Command for the get command.
 func NewCmd(config Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -23,7 +27,7 @@ func NewCmd(config Config) *cobra.Command {
 		RunE:  runGetCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, flag.ToShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
 
 	return cmd
 }
@@ -32,7 +36,7 @@ func runGetCommand(config Config) func(cmd *cobra.Command, args []string) error 
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
