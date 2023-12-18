@@ -1,4 +1,4 @@
-package resource
+package scanner
 
 import (
 	"github.com/pkg/errors"

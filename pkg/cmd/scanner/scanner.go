@@ -1,4 +1,4 @@
-package resource
+package scanner
 
 import (
 	"io"
@@ -7,50 +7,50 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// Builder is responsible for building scheme.Spec instances from raw data.
-type Builder struct {
+// Scanner is responsible for building scheme.Spec instances from raw data.
+type Scanner struct {
 	scheme    *scheme.Scheme
 	namespace string
 	fsys      fs.FS
 	filename  string
 }
 
-// NewBuilder creates a new Builder instance.
-func NewBuilder() *Builder {
-	return &Builder{}
+// New creates a new Scanner instance.
+func New() *Scanner {
+	return &Scanner{}
 }
 
 // Scheme sets the scheme for the Builder.
-func (b *Builder) Scheme(scheme *scheme.Scheme) *Builder {
-	b.scheme = scheme
-	return b
+func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
+	s.scheme = scheme
+	return s
 }
 
 // Namespace sets the namespace for the Builder.
-func (b *Builder) Namespace(namespace string) *Builder {
-	b.namespace = namespace
-	return b
+func (s *Scanner) Namespace(namespace string) *Scanner {
+	s.namespace = namespace
+	return s
 }
 
 // FS sets the file system for the Builder.
-func (b *Builder) FS(fsys fs.FS) *Builder {
-	b.fsys = fsys
-	return b
+func (s *Scanner) FS(fsys fs.FS) *Scanner {
+	s.fsys = fsys
+	return s
 }
 
 // Filename sets the filename for the Builder.
-func (b *Builder) Filename(filename string) *Builder {
-	b.filename = filename
-	return b
+func (s *Scanner) Filename(filename string) *Scanner {
+	s.filename = filename
+	return s
 }
 
-// Build builds scheme.Spec instances based on the configured parameters.
-func (b *Builder) Build() ([]scheme.Spec, error) {
-	if b.fsys == nil || b.filename == "" {
+// Scan builds scheme.Spec instances based on the configured parameters.
+func (s *Scanner) Scan() ([]scheme.Spec, error) {
+	if s.fsys == nil || s.filename == "" {
 		return nil, nil
 	}
 
-	file, err := b.fsys.Open(b.filename)
+	file, err := s.fsys.Open(s.filename)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +71,8 @@ func (b *Builder) Build() ([]scheme.Spec, error) {
 	}
 
 	codec := NewSpecCodec(SpecCodecOptions{
-		Scheme:    b.scheme,
-		Namespace: b.namespace,
+		Scheme:    s.scheme,
+		Namespace: s.namespace,
 	})
 
 	var specs []scheme.Spec

@@ -7,7 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/cmd/printer"
-	"github.com/siyul-park/uniflow/pkg/cmd/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -56,12 +56,12 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		specs, err := resource.NewBuilder().
+		specs, err := scanner.New().
 			Scheme(config.Scheme).
 			Namespace(ns).
 			FS(config.FS).
 			Filename(fl).
-			Build()
+			Scan()
 		if err != nil {
 			return err
 		}

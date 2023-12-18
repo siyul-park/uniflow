@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/cmd/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -97,12 +97,12 @@ func initializeNamespace(ctx context.Context, config StartConfig, ns, boot strin
 }
 
 func installBootFile(ctx context.Context, config StartConfig, ns, boot string) error {
-	specs, err := resource.NewBuilder().
+	specs, err := scanner.New().
 		Scheme(config.Scheme).
 		Namespace(ns).
 		FS(config.FS).
 		Filename(boot).
-		Build()
+		Scan()
 	if err != nil {
 		return err
 	}
