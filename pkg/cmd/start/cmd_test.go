@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -66,7 +67,7 @@ func TestExecute(t *testing.T) {
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{"--boot", bootFilepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagBoot), bootFilepath})
 
 	go func() {
 		_ = cmd.Execute()
