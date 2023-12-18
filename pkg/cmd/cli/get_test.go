@@ -1,4 +1,4 @@
-package get
+package cli
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecute(t *testing.T) {
+func TestGetCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	db := memdb.New("")
 
@@ -41,7 +41,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewCmd(Config{
+	cmd := NewGetCommand(GetConfig{
 		Scheme:   s,
 		Database: db,
 	})

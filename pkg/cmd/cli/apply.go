@@ -1,4 +1,4 @@
-package apply
+package cli
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/cmd/flag"
 	"github.com/siyul-park/uniflow/pkg/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/cmd/resource"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -15,33 +14,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config represents the configuration for the apply command.
-type Config struct {
+// ApplyConfig represents the configuration for the apply command.
+type ApplyConfig struct {
 	Scheme   *scheme.Scheme
 	Database database.Database
 	FS       fs.FS
 }
 
-const (
-	flagNamespace = "namespace"
-	flagFile      = "file"
-)
-
-// NewCmd creates a new cobra.Command for the apply command.
-func NewCmd(config Config) *cobra.Command {
+// NewApplyCommand creates a new cobra.Command for the apply command.
+func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
 		Short: "Apply a configuration to a resource",
 		RunE:  runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, flag.ToShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
-	cmd.PersistentFlags().StringP(flagFile, flag.ToShorthand(flagFile), "", "Set the file path to be applied")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagFile, toShorthand(flagFile), "", "Set the file path to be applied")
 
 	return cmd
 }
 
-func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) error {
+func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
