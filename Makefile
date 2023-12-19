@@ -2,7 +2,7 @@
 
 .PHONY: init
 init:
-	@find . -name go.mod -execdir go install -v ./... ';'
+	@find . -name go.mod -execdir go install -v ./... \;
 
 .PHONY: init-staticcheck
 init-staticcheck:
@@ -14,7 +14,7 @@ init-godoc:
 
 .PHONY: generate
 generate:
-	@find . -name go.mod -execdir go generate ./... ';'
+	@find . -name go.mod -execdir go generate ./... \;
 
 .PHONY: build
 build:
@@ -29,42 +29,42 @@ clean:
 
 .PHONY: tidy
 tidy:
-	@find . -name go.mod -execdir go mod tidy ';'
+	@find . -name go.mod -execdir go mod tidy \;
 
 .PHONY: check
 check: lint test
 
 .PHONY: test
 test:
-	@find . -name go.mod -execdir go test $(test-options) ./... ';'
+	@find . -name go.mod -execdir go test $(test-options) ./... \;
 
 .PHONY: race
 race:
-	@find . -name go.mod -execdir go test -race $(test-options) ./... ';'
+	@find . -name go.mod -execdir go test -race $(test-options) ./... \;
 
 .PHONY: coverage
 coverage:
-	@find . -name go.mod -execdir go test -coverprofile coverage.out -covermode count ./... ';'
-	@find . -name go.mod -execdir go tool cover -func=coverage.out | grep total ';'
+	@find . -name go.mod -execdir go test -coverprofile coverage.out -covermode count ./... \;
+	@find . -name go.mod -execdir go tool cover -func=coverage.out | grep total \;
 
 .PHONY: benchmark
 benchmark:
-	@find . -name go.mod -execdir go test -run="-" -bench=".*" -benchmem ./... ';'
+	@find . -name go.mod -execdir go test -run="-" -bench=".*" -benchmem ./... \;
 
 .PHONY: lint
 lint: fmt vet staticcheck
 
 .PHONY: vet
 vet:
-	@find . -name go.mod -execdir go vet ./... ';'
+	@find . -name go.mod -execdir go vet ./... \;
 
 .PHONY: fmt
 fmt:
-	@find . -name go.mod -execdir go fmt ./... ';'
+	@find . -name go.mod -execdir go fmt ./... \;
 
 .PHONY: staticcheck
 staticcheck: init-staticcheck
-	@find . -name go.mod -execdir staticcheck ./... ';'
+	@find . -name go.mod -execdir staticcheck ./... \;
 
 .PHONY: doc
 doc: init-godoc
