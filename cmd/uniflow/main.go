@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/siyul-park/uniflow/cmd/uniflow/uniflow"
+	"github.com/siyul-park/uniflow/pkg/cmd/uniflow"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
@@ -23,6 +23,11 @@ import (
 
 const (
 	configFile = ".uniflow.toml"
+)
+
+const (
+	flagDatabaseURL  = "database.url"
+	flagDatabaseName = "database.name"
 )
 
 func init() {
@@ -81,7 +86,7 @@ func execute() error {
 	}
 	systemx.AddToScheme(st)(sc)
 
-	cmd := uniflow.NewCmd(uniflow.Config{
+	cmd := uniflow.NewCommand(uniflow.Config{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,
@@ -94,8 +99,8 @@ func execute() error {
 }
 
 func loadDB(ctx context.Context) (database.Database, error) {
-	dbURL := viper.GetString(FlagDatabaseURL)
-	dbName := viper.GetString(FlagDatabaseName)
+	dbURL := viper.GetString(flagDatabaseURL)
+	dbName := viper.GetString(flagDatabaseName)
 
 	if dbURL == "" || strings.HasPrefix(dbURL, "mem://") {
 		return memdb.New(dbName), nil
@@ -108,5 +113,5 @@ func loadDB(ctx context.Context) (database.Database, error) {
 		}
 		return mongodb.NewDatabase(client.Database(dbName)), nil
 	}
-	return nil, fmt.Errorf("%s is invalid", FlagDatabaseURL)
+	return nil, fmt.Errorf("%s is invalid", flagDatabaseURL)
 }

@@ -1,4 +1,4 @@
-package apply
+package cli
 
 import (
 	"context"
@@ -6,45 +6,44 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/cmd/flag"
-	"github.com/siyul-park/uniflow/cmd/printer"
-	"github.com/siyul-park/uniflow/cmd/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/printer"
+	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
-// Config represents the configuration for the apply command.
-type Config struct {
+// ApplyConfig represents the configuration for the apply command.
+type ApplyConfig struct {
 	Scheme   *scheme.Scheme
 	Database database.Database
 	FS       fs.FS
 }
 
-// NewCmd creates a new cobra.Command for the apply command.
-func NewCmd(config Config) *cobra.Command {
+// NewApplyCommand creates a new cobra.Command for the apply command.
+func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
 		Short: "Apply a configuration to a resource",
 		RunE:  runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
-	cmd.PersistentFlags().StringP(FlagFile, flag.ToShorthand(FlagFile), "", "Set the file path to be applied")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagFile, toShorthand(flagFile), "", "Set the file path to be applied")
 
 	return cmd
 }
 
-func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) error {
+func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
-		fl, err := cmd.Flags().GetString(FlagFile)
+		fl, err := cmd.Flags().GetString(flagFile)
 		if err != nil {
 			return err
 		}
@@ -57,12 +56,12 @@ func runApplyCommand(config Config) func(cmd *cobra.Command, args []string) erro
 			return err
 		}
 
-		specs, err := resource.NewBuilder().
+		specs, err := scanner.New().
 			Scheme(config.Scheme).
 			Namespace(ns).
 			FS(config.FS).
 			Filename(fl).
-			Build()
+			Scan()
 		if err != nil {
 			return err
 		}

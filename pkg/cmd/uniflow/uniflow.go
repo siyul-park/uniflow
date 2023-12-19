@@ -3,9 +3,7 @@ package uniflow
 import (
 	"io/fs"
 
-	"github.com/siyul-park/uniflow/cmd/uniflow/apply"
-	"github.com/siyul-park/uniflow/cmd/uniflow/get"
-	"github.com/siyul-park/uniflow/cmd/uniflow/start"
+	"github.com/siyul-park/uniflow/pkg/cmd/cli"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -13,7 +11,6 @@ import (
 )
 
 // Config holds the configuration parameters for the main command.
-
 type Config struct {
 	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
@@ -21,8 +18,8 @@ type Config struct {
 	FS       fs.FS
 }
 
-// NewCmd creates the root cobra command for the 'uniflow' CLI.
-func NewCmd(config Config) *cobra.Command {
+// NewCommand creates the root cobra command for the 'uniflow' CLI.
+func NewCommand(config Config) *cobra.Command {
 	sc := config.Scheme
 	hk := config.Hook
 	db := config.Database
@@ -33,16 +30,16 @@ func NewCmd(config Config) *cobra.Command {
 		Long: "Create your uniflow and integrate it anywhere!",
 	}
 
-	cmd.AddCommand(apply.NewCmd(apply.Config{
+	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
 		Scheme:   sc,
 		Database: db,
 		FS:       fsys,
 	}))
-	cmd.AddCommand(get.NewCmd(get.Config{
+	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
 		Scheme:   sc,
 		Database: db,
 	}))
-	cmd.AddCommand(start.NewCmd(start.Config{
+	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,

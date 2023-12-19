@@ -1,4 +1,4 @@
-package resource
+package scanner
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuilder_Build(t *testing.T) {
+func TestScanner_Scan(t *testing.T) {
 	s := scheme.New()
 	fsys := make(fstest.MapFS)
 
@@ -38,13 +38,13 @@ func TestBuilder_Build(t *testing.T) {
 		Data: data,
 	}
 
-	builder := NewBuilder().
+	scanner := New().
 		Scheme(s).
 		Namespace(scheme.DefaultNamespace).
 		FS(fsys).
 		Filename(filename)
 
-	specs, err := builder.Build()
+	specs, err := scanner.Scan()
 	assert.NoError(t, err)
 	assert.Len(t, specs, 1)
 }

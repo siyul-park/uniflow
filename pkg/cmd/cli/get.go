@@ -1,38 +1,37 @@
-package get
+package cli
 
 import (
-	"github.com/siyul-park/uniflow/cmd/flag"
-	"github.com/siyul-park/uniflow/cmd/printer"
+	"github.com/siyul-park/uniflow/pkg/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
-// Config represents the configuration for the get command.
-type Config struct {
+// GetConfig represents the configuration for the get command.
+type GetConfig struct {
 	Scheme   *scheme.Scheme
 	Database database.Database
 }
 
-// NewCmd creates a new cobra.Command for the get command.
-func NewCmd(config Config) *cobra.Command {
+// NewGetCommand creates a new cobra.Command for the get command.
+func NewGetCommand(config GetConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get and display applied resources",
 		RunE:  runGetCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
 
 	return cmd
 }
 
-func runGetCommand(config Config) func(cmd *cobra.Command, args []string) error {
+func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}

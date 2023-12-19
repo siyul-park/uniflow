@@ -1,9 +1,10 @@
-package start
+package cli
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -18,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecute(t *testing.T) {
+func TestStartCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	h := hook.New()
 	db := memdb.New("")
@@ -56,7 +57,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewCmd(Config{
+	cmd := NewStartCommand(StartConfig{
 		Scheme:   s,
 		Hook:     h,
 		FS:       fsys,
@@ -66,7 +67,7 @@ func TestExecute(t *testing.T) {
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{"--boot", bootFilepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagBoot), bootFilepath})
 
 	go func() {
 		_ = cmd.Execute()

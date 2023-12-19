@@ -1,4 +1,4 @@
-package apply
+package cli
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecute(t *testing.T) {
+func TestApplyCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
@@ -49,7 +49,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewCmd(Config{
+	cmd := NewApplyCommand(ApplyConfig{
 		Scheme:   s,
 		Database: db,
 		FS:       fsys,

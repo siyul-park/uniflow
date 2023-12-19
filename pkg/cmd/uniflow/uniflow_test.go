@@ -24,7 +24,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewCmd(Config{
+	cmd := NewCommand(Config{
 		Scheme:   s,
 		Hook:     h,
 		FS:       fsys,

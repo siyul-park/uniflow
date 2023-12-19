@@ -1,4 +1,4 @@
-package start
+package cli
 
 import (
 	"context"
@@ -8,8 +8,7 @@ import (
 	"syscall"
 
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/cmd/flag"
-	"github.com/siyul-park/uniflow/cmd/resource"
+	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -18,37 +17,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config holds the configuration for the uniflow command.
-type Config struct {
+// StartConfig holds the configuration for the uniflow command.
+type StartConfig struct {
 	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
 	Database database.Database
 	FS       fs.FS
 }
 
-// NewCmd creates a new Cobra command for the uniflow application.
-func NewCmd(config Config) *cobra.Command {
+// NewStartCommand creates a new Cobra command for the uniflow application.
+func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start a worker process",
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(FlagNamespace, flag.ToShorthand(FlagNamespace), "", "Set the worker's namespace")
-	cmd.PersistentFlags().StringP(FlagBoot, flag.ToShorthand(FlagBoot), "", "Set the boot file path for initializing nodes")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the worker's namespace")
+	cmd.PersistentFlags().StringP(flagBoot, toShorthand(flagBoot), "", "Set the boot file path for initializing nodes")
 
 	return cmd
 }
 
-func runStartCommand(config Config) func(cmd *cobra.Command, args []string) error {
+func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
-		ns, err := cmd.Flags().GetString(FlagNamespace)
+		ns, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
 
-		boot, err := cmd.Flags().GetString(FlagBoot)
+		boot, err := cmd.Flags().GetString(flagBoot)
 		if err != nil {
 			return err
 		}
@@ -74,7 +73,7 @@ func runStartCommand(config Config) func(cmd *cobra.Command, args []string) erro
 	}
 }
 
-func initializeNamespace(ctx context.Context, config Config, ns, boot string) error {
+func initializeNamespace(ctx context.Context, config StartConfig, ns, boot string) error {
 	st, err := storage.New(ctx, storage.Config{
 		Scheme:   config.Scheme,
 		Database: config.Database,
@@ -97,13 +96,13 @@ func initializeNamespace(ctx context.Context, config Config, ns, boot string) er
 	return nil
 }
 
-func installBootFile(ctx context.Context, config Config, ns, boot string) error {
-	specs, err := resource.NewBuilder().
+func installBootFile(ctx context.Context, config StartConfig, ns, boot string) error {
+	specs, err := scanner.New().
 		Scheme(config.Scheme).
 		Namespace(ns).
 		FS(config.FS).
 		Filename(boot).
-		Build()
+		Scan()
 	if err != nil {
 		return err
 	}
