@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/siyul-park/uniflow v0.0.0
 	github.com/siyul-park/uniflow/plugin v0.0.0
-	github.com/spf13/viper v1.18.1
+	github.com/spf13/viper v1.18.2
 	go.mongodb.org/mongo-driver v1.13.1
 )
 
