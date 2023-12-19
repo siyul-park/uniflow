@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
-	github.com/evanw/esbuild v0.19.9
+	github.com/evanw/esbuild v0.19.10
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/lithammer/dedent v1.1.0
