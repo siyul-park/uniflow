@@ -43,7 +43,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
-		fl, err := cmd.Flags().GetString(flagFile)
+		file, err := cmd.Flags().GetString(flagFile)
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			Scheme(config.Scheme).
 			Namespace(ns).
 			FS(config.FS).
-			Filename(fl).
+			Filename(file).
 			Scan()
 		if err != nil {
 			return err

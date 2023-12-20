@@ -3,7 +3,6 @@ package cli
 const (
 	flagNamespace = "namespace"
 	flagFile      = "file"
-	flagBoot      = "boot"
 )
 
 func toShorthand(flag string) string {
