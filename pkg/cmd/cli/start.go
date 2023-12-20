@@ -34,7 +34,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the worker's namespace")
-	cmd.PersistentFlags().StringP(flagBoot, toShorthand(flagBoot), "", "Set the boot file path for initializing nodes")
+	cmd.PersistentFlags().StringP(flagFile, toShorthand(flagFile), "", "Set the boot file path for initializing nodes")
 
 	return cmd
 }
@@ -47,13 +47,13 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		boot, err := cmd.Flags().GetString(flagBoot)
+		file, err := cmd.Flags().GetString(flagFile)
 		if err != nil {
 			return err
 		}
 
-		if boot != "" {
-			if err := initializeNamespace(ctx, config, ns, boot); err != nil {
+		if file != "" {
+			if err := initializeNamespace(ctx, config, ns, file); err != nil {
 				return err
 			}
 		}

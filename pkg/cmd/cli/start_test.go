@@ -30,7 +30,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		Database: db,
 	})
 
-	bootFilepath := "boot.json"
+	filepath := "boot.json"
 	kind := faker.Word()
 
 	spec := &scheme.SpecMeta{
@@ -48,7 +48,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	data, _ := json.Marshal(spec)
 
-	fsys[bootFilepath] = &fstest.MapFile{
+	fsys[filepath] = &fstest.MapFile{
 		Data: data,
 	}
 
@@ -67,7 +67,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagBoot), bootFilepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFile), filepath})
 
 	go func() {
 		_ = cmd.Execute()
