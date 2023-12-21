@@ -14,7 +14,7 @@ init-godoc:
 
 .PHONY: generate
 generate:
-	@find . -name go.mod -execdir go generate ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go generate ./...'
 
 .PHONY: build
 build:
@@ -29,42 +29,42 @@ clean:
 
 .PHONY: tidy
 tidy:
-	@find . -name go.mod -execdir go mod tidy \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go mod tidy'
 
 .PHONY: check
 check: lint test
 
 .PHONY: test
 test:
-	@find . -name go.mod -execdir go test $(test-options) ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test $(test-options) ./...'
 
 .PHONY: race
 race:
-	@find . -name go.mod -execdir go test -race $(test-options) ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -race $(test-options) ./...'
 
 .PHONY: coverage
 coverage:
-	@find . -name go.mod -execdir go test -coverprofile coverage.out -covermode count ./... \;
-	@find . -name go.mod -execdir go tool cover -func=coverage.out | grep total \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -coverprofile coverage.out -covermode count $(test-options) ./...'
+	@find $(realpath .) -name go.mod -execdir go tool cover -func=coverage.out | grep total \;
 
 .PHONY: benchmark
 benchmark:
-	@find . -name go.mod -execdir go test -run="-" -bench=".*" -benchmem ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -run="-" -bench=".*" -benchmem $(test-options) ./...'
 
 .PHONY: lint
 lint: fmt vet staticcheck
 
 .PHONY: vet
 vet:
-	@find . -name go.mod -execdir go vet ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go vet ./...'
 
 .PHONY: fmt
 fmt:
-	@find . -name go.mod -execdir go fmt ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go fmt ./...'
 
 .PHONY: staticcheck
 staticcheck: init-staticcheck
-	@find . -name go.mod -execdir staticcheck ./... \;
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; staticcheck ./...'
 
 .PHONY: doc
 doc: init-godoc
