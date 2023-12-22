@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"testing/fstest"
 
@@ -54,7 +55,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		FS:       fsys,
 	})
 
-	cmd.SetArgs([]string{"--file", filepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filepath})
 
 	err := cmd.Execute()
 	assert.NoError(t, err)

@@ -2,7 +2,7 @@ package cli
 
 const (
 	flagNamespace = "namespace"
-	flagFile      = "file"
+	flagFilename  = "filename"
 )
 
 func toShorthand(flag string) string {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"testing/fstest"
 
@@ -57,7 +58,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	cmd.SetOut(output)
 	cmd.SetErr(output)
 
-	cmd.SetArgs([]string{"--file", patchFilepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), patchFilepath})
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
