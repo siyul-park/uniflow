@@ -35,6 +35,11 @@ func NewCommand(config Config) *cobra.Command {
 		Database: db,
 		FS:       fsys,
 	}))
+	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
+		Scheme:   sc,
+		Database: db,
+		FS:       fsys,
+	}))
 	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
 		Scheme:   sc,
 		Database: db,
