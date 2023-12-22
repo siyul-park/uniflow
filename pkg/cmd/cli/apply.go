@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
@@ -25,12 +24,12 @@ type ApplyConfig struct {
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Apply a configuration to a resource",
+		Short: "Apply resources to runtime",
 		RunE:  runApplyCommand(config),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
-	cmd.PersistentFlags().StringP(flagFile, toShorthand(flagFile), "", "Set the file path to be applied")
+	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd
 }
@@ -43,7 +42,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
-		file, err := cmd.Flags().GetString(flagFile)
+		file, err := cmd.Flags().GetString(flagFilename)
 		if err != nil {
 			return err
 		}
@@ -58,19 +57,45 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
+			Storage(st).
 			Namespace(ns).
 			FS(config.FS).
 			Filename(file).
-			Scan()
+			Scan(ctx)
 		if err != nil {
 			return err
 		}
 
-		if err := updateSpecIDs(ctx, st, specs); err != nil {
-			return err
+		var ids []ulid.ULID
+		for _, spec := range specs {
+			ids = append(ids, spec.GetID())
 		}
 
-		if err := applySpecs(ctx, st, specs); err != nil {
+		exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
+			Limit: lo.ToPtr[int](len(ids)),
+		})
+		if err != nil {
+			return err
+		}
+		existsIds := make(map[ulid.ULID]struct{}, len(exists))
+		for _, spec := range exists {
+			existsIds[spec.GetID()] = struct{}{}
+		}
+
+		var inserted []scheme.Spec
+		var updated []scheme.Spec
+		for _, spec := range specs {
+			if _, ok := existsIds[spec.GetID()]; ok {
+				updated = append(updated, spec)
+			} else {
+				inserted = append(inserted, spec)
+			}
+		}
+
+		if _, err := st.InsertMany(ctx, inserted); err != nil {
+			return err
+		}
+		if _, err := st.UpdateMany(ctx, updated); err != nil {
 			return err
 		}
 
@@ -80,60 +105,4 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 		return nil
 	}
-}
-
-func updateSpecIDs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {
-	for _, spec := range specs {
-		if spec.GetID() == (ulid.ULID{}) {
-			if spec.GetName() != "" {
-				filter := storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
-				if exist, err := st.FindOne(ctx, filter); err != nil {
-					return err
-				} else if exist != nil {
-					spec.SetID(exist.GetID())
-				}
-			}
-		}
-
-		if spec.GetID() == (ulid.ULID{}) {
-			spec.SetID(ulid.Make())
-		}
-	}
-	return nil
-}
-
-func applySpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {
-	var ids []ulid.ULID
-	for _, spec := range specs {
-		ids = append(ids, spec.GetID())
-	}
-
-	exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-		Limit: lo.ToPtr[int](len(ids)),
-	})
-	if err != nil {
-		return err
-	}
-	existsIds := make(map[ulid.ULID]struct{}, len(exists))
-	for _, spec := range exists {
-		existsIds[spec.GetID()] = struct{}{}
-	}
-
-	var inserted []scheme.Spec
-	var updated []scheme.Spec
-	for _, spec := range specs {
-		if _, ok := existsIds[spec.GetID()]; ok {
-			updated = append(updated, spec)
-		} else {
-			inserted = append(inserted, spec)
-		}
-	}
-
-	if _, err := st.InsertMany(ctx, inserted); err != nil {
-		return err
-	}
-	if _, err := st.UpdateMany(ctx, updated); err != nil {
-		return err
-	}
-	return nil
 }

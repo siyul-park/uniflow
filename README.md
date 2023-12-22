@@ -43,9 +43,9 @@ make test
 Uniflow is now ready to be used. Let's start the [ping](/examples/ping.yaml) example.
 
 ```shell
-./dist/uniflow start --file example/ping.yaml
+./dist/uniflow start --filename example/ping.yaml
 ```
-The `--file` flag installs initially if the node does not exist in the namespace.
+The `--filename` flag installs initially if the node does not exist in the namespace.
 
 Check if the started Uniflow is providing an HTTP endpoint normally.
 

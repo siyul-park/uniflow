@@ -1,13 +1,13 @@
-package scanner
+package cli
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestScanner_Scan(t *testing.T) {
+func TestDeleteCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
@@ -25,13 +25,13 @@ func TestScanner_Scan(t *testing.T) {
 		Database: db,
 	})
 
-	filename := "spec.json"
+	filepath := "resource.json"
 	kind := faker.Word()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
+		Name:      faker.Word(),
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -43,18 +43,24 @@ func TestScanner_Scan(t *testing.T) {
 
 	data, _ := json.Marshal(spec)
 
-	fsys[filename] = &fstest.MapFile{
+	fsys[filepath] = &fstest.MapFile{
 		Data: data,
 	}
 
-	scanner := New().
-		Scheme(s).
-		Storage(st).
-		Namespace(scheme.DefaultNamespace).
-		FS(fsys).
-		Filename(filename)
+	_, _ = st.InsertOne(context.Background(), spec)
 
-	specs, err := scanner.Scan(context.Background())
+	cmd := NewDeleteCommand(DeleteConfig{
+		Scheme:   s,
+		Database: db,
+		FS:       fsys,
+	})
+
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filepath})
+
+	err := cmd.Execute()
 	assert.NoError(t, err)
-	assert.Len(t, specs, 1)
+
+	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
+	assert.NoError(t, err)
+	assert.Nil(t, r)
 }

@@ -67,7 +67,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFile), filepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filepath})
 
 	go func() {
 		_ = cmd.Execute()
