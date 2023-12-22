@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
@@ -67,7 +66,36 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if err := applySpecs(ctx, st, specs); err != nil {
+		var ids []ulid.ULID
+		for _, spec := range specs {
+			ids = append(ids, spec.GetID())
+		}
+
+		exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
+			Limit: lo.ToPtr[int](len(ids)),
+		})
+		if err != nil {
+			return err
+		}
+		existsIds := make(map[ulid.ULID]struct{}, len(exists))
+		for _, spec := range exists {
+			existsIds[spec.GetID()] = struct{}{}
+		}
+
+		var inserted []scheme.Spec
+		var updated []scheme.Spec
+		for _, spec := range specs {
+			if _, ok := existsIds[spec.GetID()]; ok {
+				updated = append(updated, spec)
+			} else {
+				inserted = append(inserted, spec)
+			}
+		}
+
+		if _, err := st.InsertMany(ctx, inserted); err != nil {
+			return err
+		}
+		if _, err := st.UpdateMany(ctx, updated); err != nil {
 			return err
 		}
 
@@ -77,40 +105,4 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 		return nil
 	}
-}
-
-func applySpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {
-	var ids []ulid.ULID
-	for _, spec := range specs {
-		ids = append(ids, spec.GetID())
-	}
-
-	exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
-		Limit: lo.ToPtr[int](len(ids)),
-	})
-	if err != nil {
-		return err
-	}
-	existsIds := make(map[ulid.ULID]struct{}, len(exists))
-	for _, spec := range exists {
-		existsIds[spec.GetID()] = struct{}{}
-	}
-
-	var inserted []scheme.Spec
-	var updated []scheme.Spec
-	for _, spec := range specs {
-		if _, ok := existsIds[spec.GetID()]; ok {
-			updated = append(updated, spec)
-		} else {
-			inserted = append(inserted, spec)
-		}
-	}
-
-	if _, err := st.InsertMany(ctx, inserted); err != nil {
-		return err
-	}
-	if _, err := st.UpdateMany(ctx, updated); err != nil {
-		return err
-	}
-	return nil
 }

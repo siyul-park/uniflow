@@ -44,7 +44,11 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		filter := createNamespaceFilter(ns)
+		var filter *storage.Filter
+		if ns != "" {
+			filter = storage.Where[string](scheme.KeyNamespace).EQ(ns)
+		}
+
 		specs, err := st.FindMany(ctx, filter)
 		if err != nil {
 			return err
@@ -52,11 +56,4 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 
 		return printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions)
 	}
-}
-
-func createNamespaceFilter(ns string) *storage.Filter {
-	if ns == "" {
-		return nil
-	}
-	return storage.Where[string](scheme.KeyNamespace).EQ(ns)
 }

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"io/fs"
 
 	"github.com/oklog/ulid/v2"
@@ -65,22 +64,14 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		if err := deleteSpecs(ctx, st, specs); err != nil {
-			return err
+		var filter *storage.Filter
+		for _, spec := range specs {
+			filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
 		}
 
+		if _, err := st.DeleteMany(ctx, filter); err != nil {
+			return err
+		}
 		return nil
 	}
-}
-
-func deleteSpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {
-	var filter *storage.Filter
-	for _, spec := range specs {
-		filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
-	}
-
-	if _, err := st.DeleteMany(ctx, filter); err != nil {
-		return err
-	}
-	return nil
 }
