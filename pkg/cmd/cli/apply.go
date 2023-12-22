@@ -25,7 +25,7 @@ type ApplyConfig struct {
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Apply a configuration to a resource",
+		Short: "Apply resources to runtime",
 		RunE:  runApplyCommand(config),
 	}
 
@@ -58,15 +58,12 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
+			Storage(st).
 			Namespace(ns).
 			FS(config.FS).
 			Filename(file).
-			Scan()
+			Scan(ctx)
 		if err != nil {
-			return err
-		}
-
-		if err := updateSpecIDs(ctx, st, specs); err != nil {
 			return err
 		}
 
@@ -80,26 +77,6 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 		return nil
 	}
-}
-
-func updateSpecIDs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {
-	for _, spec := range specs {
-		if spec.GetID() == (ulid.ULID{}) {
-			if spec.GetName() != "" {
-				filter := storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
-				if exist, err := st.FindOne(ctx, filter); err != nil {
-					return err
-				} else if exist != nil {
-					spec.SetID(exist.GetID())
-				}
-			}
-		}
-
-		if spec.GetID() == (ulid.ULID{}) {
-			spec.SetID(ulid.Make())
-		}
-	}
-	return nil
 }
 
 func applySpecs(ctx context.Context, st *storage.Storage, specs []scheme.Spec) error {

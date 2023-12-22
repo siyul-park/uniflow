@@ -97,17 +97,18 @@ func initializeNamespace(ctx context.Context, config StartConfig, ns, boot strin
 }
 
 func installBootFile(ctx context.Context, config StartConfig, ns, boot string) error {
-	specs, err := scanner.New().
-		Scheme(config.Scheme).
-		Namespace(ns).
-		FS(config.FS).
-		Filename(boot).
-		Scan()
+	st, err := storage.New(ctx, storage.Config{Scheme: config.Scheme, Database: config.Database})
 	if err != nil {
 		return err
 	}
 
-	st, err := storage.New(ctx, storage.Config{Scheme: config.Scheme, Database: config.Database})
+	specs, err := scanner.New().
+		Scheme(config.Scheme).
+		Storage(st).
+		Namespace(ns).
+		FS(config.FS).
+		Filename(boot).
+		Scan(ctx)
 	if err != nil {
 		return err
 	}
