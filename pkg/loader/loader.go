@@ -49,15 +49,16 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 	defer ld.mu.Unlock()
 
 	namespace := ld.namespace
-	queue := []any{id}
+	next := []any{id}
 
-	for len(queue) > 0 {
-		prev := queue
-		queue = nil
+	for len(next) > 0 {
+		cur := next
+		next = nil
+
 		exists := map[any]bool{}
 		var filter *storage.Filter
 
-		for _, key := range prev {
+		for _, key := range cur {
 			switch k := key.(type) {
 			case ulid.ULID:
 				exists[k] = false
@@ -72,7 +73,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 			filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(namespace))
 		}
 
-		specs, err := ld.storage.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(prev))})
+		specs, err := ld.storage.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(cur))})
 		if err != nil {
 			return nil, err
 		}
@@ -96,9 +97,9 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 			for _, locations := range spec.GetLinks() {
 				for _, location := range locations {
 					if location.ID != (ulid.ULID{}) {
-						queue = append(queue, location.ID)
+						next = append(next, location.ID)
 					} else if location.Name != "" {
-						queue = append(queue, location.Name)
+						next = append(next, location.Name)
 					}
 				}
 			}
@@ -137,6 +138,16 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
+
+	for _, id := range ld.table.Keys() {
+		if sym, ok := ld.table.LookupByID(id); ok {
+			if ld.namespace == "" || sym.Namespace() == ld.namespace {
+				if _, err := ld.table.Free(sym.ID()); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
 
 	var filter *storage.Filter
 

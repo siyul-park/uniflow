@@ -210,9 +210,17 @@ func TestLoader_LoadAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, r, 2)
 
-	_, ok := tb.LookupByID(spec1.GetID())
+	sym1, ok := tb.LookupByID(spec1.GetID())
 	assert.True(t, ok)
+	assert.Contains(t, r, sym1)
 
-	_, ok = tb.LookupByID(spec2.GetID())
+	sym2, ok := tb.LookupByID(spec2.GetID())
 	assert.True(t, ok)
+	assert.Contains(t, r, sym2)
+
+	r, err = ld.LoadAll(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, r, 2)
+	assert.NotContains(t, r, sym1)
+	assert.NotContains(t, r, sym2)
 }
