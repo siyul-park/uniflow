@@ -24,7 +24,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	tb := symbol.NewTable(s)
-	defer func() { _ = tb.Close() }()
+	defer func() { _ = tb.Clear() }()
 
 	ld := New(Config{
 		Storage: st,

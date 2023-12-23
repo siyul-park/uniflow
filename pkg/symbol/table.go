@@ -106,8 +106,8 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	return nil, false
 }
 
-// Close closes the SymbolTable, closing all associated symbols.
-func (t *Table) Close() error {
+// Clear free all associated Symbols.
+func (t *Table) Clear() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -118,6 +118,19 @@ func (t *Table) Close() error {
 	}
 
 	return nil
+}
+
+// Keys returns all Symbol's ID.
+func (t *Table) Keys() []ulid.ULID {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	var ids []ulid.ULID
+	for id := range t.symbols {
+		ids = append(ids, id)
+	}
+
+	return ids
 }
 
 func (t *Table) insert(sym *Symbol) error {

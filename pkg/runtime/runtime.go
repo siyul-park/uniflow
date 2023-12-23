@@ -109,5 +109,5 @@ func (r *Runtime) Close(ctx context.Context) error {
 	if err := r.reconciler.Close(); err != nil {
 		return err
 	}
-	return r.table.Close()
+	return r.table.Clear()
 }

@@ -23,7 +23,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
@@ -95,7 +95,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			id := ulid.Make()
 
@@ -172,7 +172,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
@@ -247,7 +247,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			id := ulid.Make()
 
@@ -326,7 +326,7 @@ func TestTable_Free(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec1 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
@@ -419,7 +419,7 @@ func TestTable_LookupByID(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
@@ -445,7 +445,7 @@ func TestTable_LookupByName(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
@@ -459,4 +459,30 @@ func TestTable_LookupByName(t *testing.T) {
 	r, ok := tb.LookupByName(sym.Namespace(), sym.Name())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
+}
+
+func TestTable_Keys(t *testing.T) {
+	s := scheme.New()
+
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
+	defer tb.Clear()
+
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.Word(),
+	}
+
+	sym, _ := tb.Insert(spec)
+
+	ids := tb.Keys()
+	assert.Contains(t, ids, sym.ID())
 }
