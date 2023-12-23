@@ -106,8 +106,8 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	return nil, false
 }
 
-// Close closes the SymbolTable, closing all associated symbols.
-func (t *Table) Close() error {
+// Clear free all associated symbols.
+func (t *Table) Clear() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

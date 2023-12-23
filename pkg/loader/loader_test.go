@@ -23,7 +23,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		tb := symbol.NewTable(s)
-		defer func() { _ = tb.Close() }()
+		defer func() { _ = tb.Clear() }()
 
 		ld := New(Config{
 			Storage: st,
@@ -78,7 +78,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		tb := symbol.NewTable(s)
-		defer func() { _ = tb.Close() }()
+		defer func() { _ = tb.Clear() }()
 
 		ld := New(Config{
 			Storage: st,
@@ -121,7 +121,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		tb := symbol.NewTable(s)
-		defer func() { _ = tb.Close() }()
+		defer func() { _ = tb.Clear() }()
 
 		ld := New(Config{
 			Storage: st,
@@ -168,7 +168,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	tb := symbol.NewTable(s)
-	defer func() { _ = tb.Close() }()
+	defer func() { _ = tb.Clear() }()
 
 	ld := New(Config{
 		Storage: st,

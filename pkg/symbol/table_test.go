@@ -23,7 +23,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
@@ -95,7 +95,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			id := ulid.Make()
 
@@ -172,7 +172,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
 				ID:        ulid.Make(),
@@ -247,7 +247,7 @@ func TestTable_Insert(t *testing.T) {
 			}))
 
 			tb := NewTable(s)
-			defer tb.Close()
+			defer tb.Clear()
 
 			id := ulid.Make()
 
@@ -326,7 +326,7 @@ func TestTable_Free(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec1 := &scheme.SpecMeta{
 		ID:        ulid.Make(),
@@ -419,7 +419,7 @@ func TestTable_LookupByID(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
@@ -445,7 +445,7 @@ func TestTable_LookupByName(t *testing.T) {
 	}))
 
 	tb := NewTable(s)
-	defer tb.Close()
+	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
