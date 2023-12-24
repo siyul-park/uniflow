@@ -24,7 +24,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewCommand(Config{
+	cmd := NewUniflowCommand(UniflowConfig{
 		Scheme:   s,
 		Hook:     h,
 		FS:       fsys,

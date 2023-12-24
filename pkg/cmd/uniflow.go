@@ -10,16 +10,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config holds the configuration parameters for the main command.
-type Config struct {
+// UniflowConfig holds the configuration parameters for the main command.
+type UniflowConfig struct {
 	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
 	Database database.Database
 	FS       fs.FS
 }
 
-// NewCommand creates the root cobra command for the 'uniflow' CLI.
-func NewCommand(config Config) *cobra.Command {
+// NewUniflowCommand creates the root cobra command for the 'uniflow' CLI.
+func NewUniflowCommand(config UniflowConfig) *cobra.Command {
 	sc := config.Scheme
 	hk := config.Hook
 	db := config.Database

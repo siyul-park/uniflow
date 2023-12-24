@@ -86,7 +86,7 @@ func execute() error {
 	}
 	systemx.AddToScheme(st)(sc)
 
-	cmd := cmd.NewCommand(cmd.Config{
+	cmd := cmd.NewUniflowCommand(cmd.UniflowConfig{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,
