@@ -1,4 +1,4 @@
-package uniflow
+package cmd
 
 import (
 	"io/fs"
@@ -27,7 +27,7 @@ func NewCommand(config Config) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:  "uniflow",
-		Long: "Create your uniflow and integrate it anywhere!",
+		Long: "Low-Code Engine for Backend Workflows",
 	}
 
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
