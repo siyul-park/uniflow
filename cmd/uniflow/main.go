@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/siyul-park/uniflow/pkg/cmd/uniflow"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
@@ -86,7 +85,7 @@ func execute() error {
 	}
 	systemx.AddToScheme(st)(sc)
 
-	cmd := uniflow.NewCommand(uniflow.Config{
+	cmd := NewCommand(Config{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,

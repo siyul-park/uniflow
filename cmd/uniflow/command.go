@@ -1,4 +1,4 @@
-package uniflow
+package main
 
 import (
 	"io/fs"
@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config holds the configuration parameters for the main command.
+// Config holds the configuration parameters for the root command.
 type Config struct {
 	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
@@ -27,7 +27,7 @@ func NewCommand(config Config) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:  "uniflow",
-		Long: "Create your uniflow and integrate it anywhere!",
+		Long: "Low-Code Engine for Backend Workflows",
 	}
 
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{

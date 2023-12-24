@@ -5,13 +5,16 @@ go 1.21.0
 require (
 	github.com/siyul-park/uniflow v0.0.0
 	github.com/siyul-park/uniflow/plugin v0.0.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
+	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/mongo-driver v1.13.1
 )
 
 require (
 	github.com/acobaugh/osrelease v0.1.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -33,6 +36,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
@@ -41,7 +45,6 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
-	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tryvium-travels/memongo v0.10.0 // indirect

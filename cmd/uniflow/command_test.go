@@ -1,4 +1,4 @@
-package uniflow
+package main
 
 import (
 	"bytes"
