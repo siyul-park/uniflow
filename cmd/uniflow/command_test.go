@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ func TestExecute(t *testing.T) {
 
 	output := new(bytes.Buffer)
 
-	cmd := NewUniflowCommand(UniflowConfig{
+	cmd := NewCommand(Config{
 		Scheme:   s,
 		Hook:     h,
 		FS:       fsys,
