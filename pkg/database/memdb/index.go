@@ -53,9 +53,6 @@ func NewIndexView() *IndexView {
 }
 
 func (iv *IndexView) List(_ context.Context) ([]database.IndexModel, error) {
-	iv.lock.RLock()
-	defer iv.lock.RUnlock()
-
 	return iv.models, nil
 }
 

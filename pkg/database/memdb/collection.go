@@ -51,16 +51,10 @@ func NewCollection(name string) *Collection {
 }
 
 func (coll *Collection) Name() string {
-	coll.dataLock.RLock()
-	defer coll.dataLock.RUnlock()
-
 	return coll.name
 }
 
 func (coll *Collection) Indexes() database.IndexView {
-	coll.dataLock.RLock()
-	defer coll.dataLock.RUnlock()
-
 	return coll.indexView
 }
 
@@ -388,6 +382,62 @@ func (coll *Collection) findOne(ctx context.Context, filter *database.Filter, op
 	} else {
 		return nil, nil
 	}
+}
+
+//sample version
+func (coll *Collection) find(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
+	coll.dataLock.RLock()
+	defer coll.dataLock.RUnlock()
+	
+	limit := -1
+	skip := 0
+	var sorts = []database.Sort
+	var docs []*primitive.Map
+	match := ParseFilter(filter)
+	err := nil
+
+	if opt != nil {
+		if opt.Limit != nil { limit = lo.FromPtr(opt.Limit) }
+		if opt.Skip != nil { skip = lo.FromPtr(opt.Skip) }
+		if opt.Sorts != nil { sorts = opt.Sorts }
+	}
+
+	if skip > 0 || len(sorts) > 0 {
+		limit = -1
+	}
+	
+	scan := treemap.NewWith(comparator)
+	if examples, ok := FilterToExample(filter); ok {
+		ids, e := coll.indexView.findMany(ctx, examples)
+		if e == nil {
+			for _, id := range ids {
+				if scan.Size() == limit { break }
+				else if doc, ok := coll.data.Get(id); ok && match(doc.(*primitive.Map)) { scan.Put(id, doc) }
+			}
+		}
+		err = e
+	}
+
+	for _, doc := range scan.Values() {
+		docs = append(docs, doc.(*primitive.Map))
+	}
+
+	if len(sorts) > 0 {
+		compare := ParseSorts(sorts)
+		sort.Slice(docs, func(i, j int) bool {
+			return compare(docs[i], docs[j])
+		})
+	}
+
+	if limit >= 0 {
+		if len(docs) > limit + skip {
+			docs = docs[skip : limit + skip]
+		} else {
+			docs = docs[skip:]
+		}
+	}
+
+	return docs, err
 }
 
 func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {

@@ -26,9 +26,6 @@ func New(name string) *Database {
 }
 
 func (db *Database) Name() string {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
-
 	return db.name
 }
 
