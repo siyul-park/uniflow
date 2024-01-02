@@ -127,22 +127,21 @@ func TestRuntime_Start(t *testing.T) {
 		assert.ErrorIs(t, context.Canceled, err)
 	}()
 
-	ctx, cancel = context.WithTimeout(ctx, 200*time.Millisecond)
-	defer cancel()
+	deadline := 200 * time.Millisecond
+	tick := 5 * time.Millisecond
 
-	ticker := time.NewTicker(5 * time.Millisecond)
+	limit := int(deadline.Milliseconds() / tick.Milliseconds())
+
+	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		case <-ticker.C:
-			n, err := r.Lookup(ctx, spec.GetID())
-			assert.NoError(t, err)
-			if n != nil {
-				return
-			}
+	for i := 0; i < limit; i++ {
+		<-ticker.C
+
+		n, err := r.Lookup(ctx, spec.GetID())
+		assert.NoError(t, err)
+		if n != nil {
+			return
 		}
 	}
 }
