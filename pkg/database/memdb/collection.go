@@ -66,7 +66,7 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 	stream := NewStream()
 
 	coll.streams = append(coll.streams, stream)
-	coll.matches = append(coll.matches, ParseFilter(filter))
+	coll.matches = append(coll.matches, parseFilter(filter))
 
 	go func() {
 		select {
@@ -82,35 +82,39 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 }
 
 func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
-	if id, err := coll.insertOne(ctx, doc); err != nil {
+	id, err := coll.insertOne(ctx, doc)
+	if err != nil {
 		return nil, err
-	} else {
-		coll.emit(internalEvent{
-			Event: database.Event{
-				OP:         database.EventInsert,
-				DocumentID: id,
-			},
-			Document: doc,
-		})
-		return id, nil
 	}
+
+	coll.emit(internalEvent{
+		Event: database.Event{
+			OP:         database.EventInsert,
+			DocumentID: id,
+		},
+		Document: doc,
+	})
+
+	return id, nil
 }
 
 func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	if ids, err := coll.insertMany(ctx, docs); err != nil {
+	ids, err := coll.insertMany(ctx, docs)
+	if err != nil {
 		return nil, err
-	} else {
-		for i, doc := range docs {
-			coll.emit(internalEvent{
-				Event: database.Event{
-					OP:         database.EventInsert,
-					DocumentID: ids[i],
-				},
-				Document: doc,
-			})
-		}
-		return ids, nil
 	}
+
+	for i, doc := range docs {
+		coll.emit(internalEvent{
+			Event: database.Event{
+				OP:         database.EventInsert,
+				DocumentID: ids[i],
+			},
+			Document: doc,
+		})
+	}
+
+	return ids, nil
 }
 
 func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
@@ -121,51 +125,38 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		upsert = lo.FromPtr(opt.Upsert)
 	}
 
-	old, err := coll.findOne(ctx, filter)
+	origin, err := coll.findOne(ctx, filter)
 	if err != nil {
 		return false, err
 	}
-	if old == nil && !upsert {
+
+	if origin == nil && !upsert {
 		return false, nil
 	}
 
 	var id primitive.Value
-	if old != nil {
-		id = old.GetOr(keyID, nil)
+	if origin != nil {
+		id = origin.GetOr(keyID, nil)
 	}
 	if id == nil {
-		id = patch.GetOr(keyID, nil)
-	}
-	if id == nil {
-		if examples, ok := FilterToExample(filter); ok {
-			for _, example := range examples {
-				if v, ok := example.Get(keyID); ok {
-					if id == nil {
-						id = v
-					} else {
-						return false, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
-					}
-				}
-			}
-		}
+		id = patch.GetOr(keyID, extractIDByFilter(filter))
 	}
 	if id == nil {
 		return false, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
 	}
 
-	if old != nil {
-		if _, err := coll.deleteOne(ctx, old); err != nil {
+	if origin != nil {
+		if _, err := coll.deleteOne(ctx, origin); err != nil {
 			return false, err
 		}
 	}
 
-	doc := patch
-	if _, ok := doc.Get(keyID); !ok {
-		doc = doc.Set(keyID, id)
+	if _, ok := patch.Get(keyID); !ok {
+		patch = patch.Set(keyID, id)
 	}
 
-	if _, err := coll.insertOne(ctx, doc); err != nil {
-		_, _ = coll.InsertOne(ctx, old)
+	if _, err := coll.insertOne(ctx, patch); err != nil {
+		_, _ = coll.InsertOne(ctx, origin)
 		return false, err
 	}
 
@@ -174,7 +165,7 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 			OP:         database.EventUpdate,
 			DocumentID: id,
 		},
-		Document: doc,
+		Document: patch,
 	})
 
 	return true, nil
@@ -187,67 +178,56 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 		upsert = lo.FromPtr(opt.Upsert)
 	}
 
-	old, err := coll.findMany(ctx, filter)
+	origins, err := coll.findMany(ctx, filter)
 	if err != nil {
 		return 0, err
 	}
-	if len(old) == 0 {
+
+	if len(origins) == 0 {
 		if !upsert {
 			return 0, nil
 		}
 
-		id := patch.GetOr(keyID, nil)
+		id := patch.GetOr(keyID, extractIDByFilter(filter))
 		if id == nil {
-			if examples, ok := FilterToExample(filter); ok {
-				for _, example := range examples {
-					if v, ok := example.Get(keyID); ok {
-						if id == nil {
-							id = v
-						} else {
-							return 0, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
-						}
-					}
-				}
-			}
+			return 0, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
 		}
 
-		doc := patch
-		if _, ok := doc.Get(keyID); !ok {
-			doc = doc.Set(keyID, id)
+		if _, ok := patch.Get(keyID); !ok {
+			patch = patch.Set(keyID, id)
 		}
-		if _, err := coll.insertOne(ctx, doc); err != nil {
+		if _, err := coll.insertOne(ctx, patch); err != nil {
 			return 0, err
 		}
 		return 1, nil
 	}
 
-	if _, err := coll.deleteMany(ctx, old); err != nil {
+	if _, err := coll.deleteMany(ctx, origins); err != nil {
 		return 0, err
 	}
 
-	docs := make([]*primitive.Map, len(old))
-	for i, doc := range old {
-		doc = patch.Set(keyID, doc.GetOr(keyID, nil))
-		docs[i] = doc
+	patches := make([]*primitive.Map, len(origins))
+	for i, origin := range origins {
+		patches[i] = patch.Set(keyID, origin.GetOr(keyID, nil))
 	}
 
-	ids, err := coll.insertMany(ctx, docs)
+	ids, err := coll.insertMany(ctx, patches)
 	if err != nil {
-		_, _ = coll.insertMany(ctx, old)
+		_, _ = coll.insertMany(ctx, origins)
 		return 0, err
 	}
 
-	for i, doc := range docs {
+	for i, patch := range patches {
 		coll.emit(internalEvent{
 			Event: database.Event{
 				OP:         database.EventUpdate,
 				DocumentID: ids[i],
 			},
-			Document: doc,
+			Document: patch,
 		})
 	}
 
-	return len(docs), nil
+	return len(patches), nil
 }
 
 func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
@@ -255,19 +235,17 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) 
 		return false, err
 	} else if doc, err := coll.deleteOne(ctx, doc); err != nil {
 		return false, err
+	} else if doc == nil {
+		return false, nil
 	} else {
-		if doc != nil {
-			if id, ok := doc.Get(keyID); ok {
-				coll.emit(internalEvent{
-					Event: database.Event{
-						OP:         database.EventDelete,
-						DocumentID: id,
-					},
-					Document: doc,
-				})
-			}
-		}
-		return doc != nil, nil
+		coll.emit(internalEvent{
+			Event: database.Event{
+				OP:         database.EventDelete,
+				DocumentID: doc.GetOr(keyID, nil),
+			},
+			Document: doc,
+		})
+		return true, nil
 	}
 }
 
@@ -278,15 +256,13 @@ func (coll *Collection) DeleteMany(ctx context.Context, filter *database.Filter)
 		return 0, err
 	} else {
 		for _, doc := range docs {
-			if id, ok := doc.Get(keyID); ok {
-				coll.emit(internalEvent{
-					Event: database.Event{
-						OP:         database.EventDelete,
-						DocumentID: id,
-					},
-					Document: doc,
-				})
-			}
+			coll.emit(internalEvent{
+				Event: database.Event{
+					OP:         database.EventDelete,
+					DocumentID: doc.GetOr(keyID, nil),
+				},
+				Document: doc,
+			})
 		}
 		return len(docs), nil
 	}
@@ -308,9 +284,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 		data := coll.data
 		coll.data = treemap.NewWith(comparator)
 
-		if err := coll.indexView.deleteAll(ctx); err != nil {
-			return nil, err
-		}
+		coll.indexView.drop()
 
 		return data, nil
 	}()
@@ -367,7 +341,7 @@ func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) (
 		}
 	}
 
-	if err := coll.indexView.insertMany(ctx, docs); err != nil {
+	if err := coll.indexView.insertMany(docs); err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
 	}
 	for i, doc := range docs {
@@ -411,7 +385,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 		}
 	}
 
-	match := ParseFilter(filter)
+	match := parseFilter(filter)
 
 	var docs []*primitive.Map
 	for _, key := range coll.data.Keys() {
@@ -460,29 +434,18 @@ func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) (
 	coll.mu.Lock()
 	defer coll.mu.Unlock()
 
-	ids := make([]primitive.Value, 0, len(docs))
-	deletes := make([]*primitive.Map, 0, len(docs))
-	for _, doc := range docs {
-		if doc == nil {
-			continue
-		}
-		if id, ok := doc.Get(keyID); !ok {
-			continue
-		} else {
-			ids = append(ids, id)
-			deletes = append(deletes, doc)
-		}
-	}
+	docs = lo.Filter[*primitive.Map](docs, func(item *primitive.Map, _ int) bool { 
+		return item != nil && item.GetOr(keyID, nil) != nil 
+	})
 
-	if err := coll.indexView.deleteMany(ctx, deletes); err != nil {
+	if err := coll.indexView.deleteMany(docs); err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeDelete)
 	}
-
-	for _, id := range ids {
-		coll.data.Remove(id)
+	for _, doc := range docs {
+		coll.data.Remove(doc.GetOr(keyID, nil))
 	}
 
-	return deletes, nil
+	return docs, nil
 }
 
 func (coll *Collection) unwatch(stream database.Stream) {

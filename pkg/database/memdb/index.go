@@ -21,10 +21,6 @@ type IndexView struct {
 var _ database.IndexView = &IndexView{}
 
 var (
-	keyID = primitive.NewString("id")
-)
-
-var (
 	ErrIndexConflict   = errors.New("index is conflict")
 	ErrIndexNotFound   = errors.New("index is not found")
 	ErrInvalidDocument = errors.New("document is invalid")
@@ -95,14 +91,14 @@ func (v *IndexView) Drop(_ context.Context, name string) error {
 	return nil
 }
 
-func (v *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) error {
+func (v *IndexView) insertMany(docs []*primitive.Map) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
 	for i, doc := range docs {
-		if err := v.insertOne(ctx, doc); err != nil {
+		if err := v.insertOne(doc); err != nil {
 			for i--; i >= 0; i-- {
-				v.deleteOne(ctx, doc)
+				v.deleteOne(doc)
 			}
 			return err
 		}
@@ -110,33 +106,31 @@ func (v *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) error
 	return nil
 }
 
-func (v *IndexView) deleteMany(ctx context.Context, docs []*primitive.Map) error {
+func (v *IndexView) deleteMany(docs []*primitive.Map) error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
 	for _, doc := range docs {
-		v.deleteOne(ctx, doc)
+		v.deleteOne(doc)
 	}
 	return nil
 }
 
-func (v *IndexView) deleteAll(_ context.Context) error {
+func (v *IndexView) drop() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
 	v.data = nil
-
-	return nil
 }
 
-func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
+func (v *IndexView) insertOne(doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return errors.WithStack(ErrIndexConflict)
 	}
 
 	for i, model := range v.models {
-		match := ParseFilter(model.Partial)
+		match := parseFilter(model.Partial)
 		if !match(doc) {
 			continue
 		}
@@ -160,7 +154,7 @@ func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 
 				if model.Unique && child.Size() > 1 {
 					child.Remove(id)
-					v.deleteOne(ctx, doc)
+					v.deleteOne(doc)
 					return errors.WithStack(ErrIndexConflict)
 				}
 			}
@@ -170,14 +164,14 @@ func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 	return nil
 }
 
-func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) {
+func (v *IndexView) deleteOne(doc *primitive.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return
 	}
 
 	for i, model := range v.models {
-		match := ParseFilter(model.Partial)
+		match := parseFilter(model.Partial)
 		if !match(doc) {
 			continue
 		}

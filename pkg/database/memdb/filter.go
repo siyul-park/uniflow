@@ -12,7 +12,7 @@ var (
 	numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 )
 
-func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
+func parseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	if filter == nil {
 		return func(_ *primitive.Map) bool {
 			return true
@@ -121,7 +121,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	case database.AND:
 		parsed := make([]func(*primitive.Map) bool, len(filter.Children))
 		for i, child := range filter.Children {
-			parsed[i] = ParseFilter(child)
+			parsed[i] = parseFilter(child)
 		}
 		return func(m *primitive.Map) bool {
 			for _, p := range parsed {
@@ -134,7 +134,7 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	case database.OR:
 		parsed := make([]func(*primitive.Map) bool, len(filter.Children))
 		for i, child := range filter.Children {
-			parsed[i] = ParseFilter(child)
+			parsed[i] = parseFilter(child)
 		}
 		return func(m *primitive.Map) bool {
 			for _, p := range parsed {
@@ -151,24 +151,32 @@ func ParseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	}
 }
 
-func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
+func extractIDByFilter(filter *database.Filter) primitive.Value {
+	var id primitive.Value
+	if examples, ok := filterToExample(filter); ok {
+		for _, example := range examples {
+			if v, ok := example.Get(keyID); ok {
+				if id == nil {
+					id = v
+				} else {
+					return nil
+				}
+			}
+		}
+	}
+	return id
+}
+
+func filterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 	if filter == nil {
 		return nil, false
 	}
 
 	switch filter.OP {
+	case database.NE, database.LT, database.LTE, database.GT, database.GTE, database.NIN, database.NNULL:
+		return nil, false
 	case database.EQ:
 		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), filter.Value)}, true
-	case database.NE:
-		return nil, false
-	case database.LT:
-		return nil, false
-	case database.LTE:
-		return nil, false
-	case database.GT:
-		return nil, false
-	case database.GTE:
-		return nil, false
 	case database.IN:
 		if children, ok := filter.Value.(*primitive.Slice); !ok {
 			return nil, false
@@ -179,16 +187,12 @@ func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 			}
 			return examples, true
 		}
-	case database.NIN:
-		return nil, false
 	case database.NULL:
 		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), nil)}, true
-	case database.NNULL:
-		return nil, false
 	case database.AND:
 		example := primitive.NewMap()
 		for _, child := range filter.Children {
-			e, _ := FilterToExample(child)
+			e, _ := filterToExample(child)
 			if len(e) == 0 {
 			} else if len(e) == 1 {
 				for _, k := range e[0].Keys() {
@@ -208,7 +212,7 @@ func FilterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 	case database.OR:
 		var examples []*primitive.Map
 		for _, child := range filter.Children {
-			if e, ok := FilterToExample(child); ok {
+			if e, ok := filterToExample(child); ok {
 				examples = append(examples, e...)
 			} else {
 				return nil, false
