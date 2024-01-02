@@ -20,12 +20,12 @@ func New(payload primitive.Value) *Packet {
 	}
 }
 
-// ID returns the unique identifier (ID) of the Packet.
+// ID returns the unique ID.
 func (p *Packet) ID() ulid.ULID {
 	return p.id
 }
 
-// Payload returns the data payload of the Packet.
+// Payload returns the data payload.
 func (p *Packet) Payload() primitive.Value {
 	return p.payload
 }

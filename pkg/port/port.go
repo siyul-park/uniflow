@@ -55,15 +55,17 @@ func (p *Port) Links() int {
 // The Stream is closed when the associated Process or Port is closed.
 // It broadcasts sent and received packets to all other Ports connected to it.
 func (p *Port) Open(proc *process.Process) *Stream {
+	newClosedStream := func() *Stream {
+		stream := NewStream()
+		stream.Close()
+		return stream
+	}
+
 	select {
 	case <-proc.Done():
-		stream := NewStream()
-		stream.Close()
-		return stream
+		return newClosedStream()
 	case <-p.Done():
-		stream := NewStream()
-		stream.Close()
-		return stream
+		return newClosedStream()
 	default:
 		if stream, ok := func() (*Stream, bool) {
 			p.mu.RLock()
@@ -100,21 +102,24 @@ func (p *Port) Open(proc *process.Process) *Stream {
 			stream.Link(link.Open(proc))
 		}
 
+		closeStream := func() {
+			p.mu.Lock()
+			defer p.mu.Unlock()
+
+			if s := p.streams[proc]; s == stream {
+				delete(p.streams, proc)
+			}
+
+			stream.Close()
+		}
+
 		go func() {
 			select {
 			case <-p.Done():
 			case <-proc.Done():
-				p.mu.Lock()
-				defer p.mu.Unlock()
-
-				delete(p.streams, proc)
-
-				stream.Close()
+				closeStream()
 			case <-stream.Done():
-				p.mu.Lock()
-				defer p.mu.Unlock()
-
-				delete(p.streams, proc)
+				closeStream()
 			}
 		}()
 
@@ -150,7 +155,6 @@ func (p *Port) Close() {
 
 	p.streams = nil
 	p.links = nil
-
 	p.initHooks = nil
 
 	close(p.done)

@@ -31,6 +31,7 @@ func NewStream() *Stream {
 func (s *Stream) ID() ulid.ULID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.id
 }
 
@@ -60,6 +61,7 @@ func (s *Stream) Unlink(stream *Stream) {
 func (s *Stream) Links() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return len(s.links)
 }
 
@@ -84,14 +86,13 @@ func (s *Stream) Close() {
 	s.write.Close()
 }
 
-// link connects the current Stream with another for communication.
 func (s *Stream) link(stream *Stream) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if stream == s {
 		return
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	for _, link := range s.links {
 		if stream == link {
@@ -103,7 +104,6 @@ func (s *Stream) link(stream *Stream) {
 	s.write.Link(stream.read)
 }
 
-// unlink disconnects the current Stream from another.
 func (s *Stream) unlink(stream *Stream) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

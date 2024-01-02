@@ -90,7 +90,7 @@ func TestPort_Open(t *testing.T) {
 	port := New()
 	defer port.Close()
 
-	t.Run("process not closed", func(t *testing.T) {
+	t.Run("Not Closed", func(t *testing.T) {
 		proc := process.New()
 		stream := port.Open(proc)
 
@@ -103,7 +103,7 @@ func TestPort_Open(t *testing.T) {
 		}
 	})
 
-	t.Run("process closed", func(t *testing.T) {
+	t.Run("Closed", func(t *testing.T) {
 		proc := process.New()
 		proc.Exit(nil)
 

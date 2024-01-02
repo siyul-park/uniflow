@@ -55,7 +55,7 @@ func TestReflectNode_Send(t *testing.T) {
 			OP:      OPDelete,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -99,7 +99,7 @@ func TestReflectNode_Send(t *testing.T) {
 			OP:      OPInsert,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -137,7 +137,7 @@ func TestReflectNode_Send(t *testing.T) {
 			OP:      OPSelect,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -181,7 +181,7 @@ func TestReflectNode_Send(t *testing.T) {
 			OP:      OPUpdate,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -243,7 +243,7 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 			OP:      OPDelete,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -284,7 +284,7 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 			OP:      OPInsert,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -319,7 +319,7 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 			OP:      OPSelect,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -356,7 +356,7 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 			OP:      OPUpdate,
 			Storage: st,
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)

@@ -78,7 +78,7 @@ func TestHTTPNode_ServeAndShutdown(t *testing.T) {
 func TestHTTPNode_ServeHTTP(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
 		n := NewHTTPNode("")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -114,7 +114,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 	t.Run("In/Out", func(t *testing.T) {
 		n := NewHTTPNode("")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		in := port.New()
 		inPort, _ := n.Port(node.PortIn)
@@ -157,7 +157,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 func BenchmarkHTTPNode_Send(b *testing.B) {
 	b.Run("IO", func(b *testing.B) {
 		n := NewHTTPNode("")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -193,7 +193,7 @@ func BenchmarkHTTPNode_Send(b *testing.B) {
 
 	b.Run("In/Out", func(b *testing.B) {
 		n := NewHTTPNode("")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		in := port.New()
 		inPort, _ := n.Port(node.PortIn)
