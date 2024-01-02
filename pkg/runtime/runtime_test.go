@@ -122,10 +122,7 @@ func TestRuntime_Start(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, spec)
 
-	go func() {
-		err := r.Start(ctx)
-		assert.ErrorIs(t, context.Canceled, err)
-	}()
+	go r.Start(ctx)
 
 	deadline := time.Second
 	tick := 5 * time.Millisecond

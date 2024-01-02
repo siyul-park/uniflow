@@ -15,9 +15,12 @@ import (
 )
 
 func TestLoader_LoadOne(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	t.Run("load first", func(t *testing.T) {
 		s := scheme.New()
-		st, _ := storage.New(context.Background(), storage.Config{
+		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.Word()),
 		})
@@ -55,10 +58,10 @@ func TestLoader_LoadOne(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		st.InsertOne(context.Background(), spec1)
-		st.InsertOne(context.Background(), spec2)
+		st.InsertOne(ctx, spec1)
+		st.InsertOne(ctx, spec2)
 
-		r, err := ld.LoadOne(context.Background(), spec2.GetID())
+		r, err := ld.LoadOne(ctx, spec2.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
@@ -72,7 +75,7 @@ func TestLoader_LoadOne(t *testing.T) {
 
 	t.Run("reload same ID", func(t *testing.T) {
 		s := scheme.New()
-		st, _ := storage.New(context.Background(), storage.Config{
+		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.Word()),
 		})
@@ -100,13 +103,13 @@ func TestLoader_LoadOne(t *testing.T) {
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, codec)
 
-		st.InsertOne(context.Background(), spec)
+		st.InsertOne(ctx, spec)
 
-		r1, err := ld.LoadOne(context.Background(), spec.GetID())
+		r1, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		r2, err := ld.LoadOne(context.Background(), spec.GetID())
+		r2, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r2)
 
@@ -115,7 +118,7 @@ func TestLoader_LoadOne(t *testing.T) {
 
 	t.Run("reload after deletion", func(t *testing.T) {
 		s := scheme.New()
-		st, _ := storage.New(context.Background(), storage.Config{
+		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.Word()),
 		})
@@ -143,15 +146,15 @@ func TestLoader_LoadOne(t *testing.T) {
 		s.AddKnownType(kind, &scheme.SpecMeta{})
 		s.AddCodec(kind, codec)
 
-		st.InsertOne(context.Background(), spec)
+		st.InsertOne(ctx, spec)
 
-		r1, err := ld.LoadOne(context.Background(), spec.GetID())
+		r1, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(context.Background(), storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+		st.DeleteOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 
-		r2, err := ld.LoadOne(context.Background(), spec.GetID())
+		r2, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
 		assert.Nil(t, r2)
 
@@ -161,8 +164,11 @@ func TestLoader_LoadOne(t *testing.T) {
 }
 
 func TestLoader_LoadAll(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
@@ -203,10 +209,10 @@ func TestLoader_LoadAll(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
-	st.InsertOne(context.Background(), spec1)
-	st.InsertOne(context.Background(), spec2)
+	st.InsertOne(ctx, spec1)
+	st.InsertOne(ctx, spec2)
 
-	r, err := ld.LoadAll(context.Background())
+	r, err := ld.LoadAll(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, r, 2)
 
@@ -218,7 +224,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, r, sym2)
 
-	r, err = ld.LoadAll(context.Background())
+	r, err = ld.LoadAll(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, r, 2)
 	assert.NotContains(t, r, sym1)
