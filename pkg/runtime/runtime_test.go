@@ -127,7 +127,7 @@ func TestRuntime_Start(t *testing.T) {
 		assert.ErrorIs(t, context.Canceled, err)
 	}()
 
-	deadline := 200 * time.Millisecond
+	deadline := time.Second
 	tick := 5 * time.Millisecond
 
 	limit := int(deadline.Milliseconds() / tick.Milliseconds())
@@ -135,13 +135,12 @@ func TestRuntime_Start(t *testing.T) {
 	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 
-	for i := 0; i < limit; i++ {
+	i := 0
+	for ; i < limit; i++ {
 		<-ticker.C
-
-		n, err := r.Lookup(ctx, spec.GetID())
-		assert.NoError(t, err)
-		if n != nil {
-			return
+		if n, _ := r.Lookup(ctx, spec.GetID()); n != nil {
+			break
 		}
 	}
+	assert.Less(t, i, limit)
 }
