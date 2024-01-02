@@ -31,11 +31,7 @@ func (s *Stack) Link(stem, leaf ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if stem == leaf {
-		return
-	}
-
-	if s.stems == nil || s.leaves == nil {
+	if stem == leaf || s.stems == nil || s.leaves == nil {
 		return
 	}
 
@@ -54,11 +50,7 @@ func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if stem == leaf {
-		return
-	}
-
-	if s.stems == nil || s.leaves == nil {
+	if stem == leaf || s.stems == nil || s.leaves == nil {
 		return
 	}
 
@@ -68,16 +60,16 @@ func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 			if len(s.stems[leaf]) == 0 {
 				delete(s.stems, leaf)
 			}
-			return
+			break
 		}
 	}
-	for i, cur := range s.leaves[leaf] {
+	for i, cur := range s.leaves[stem] {
 		if cur == leaf {
 			s.leaves[stem] = append(s.leaves[stem][:i], s.leaves[stem][i+1:]...)
 			if len(s.leaves[stem]) == 0 {
 				delete(s.leaves, stem)
 			}
-			return
+			break
 		}
 	}
 }
@@ -90,6 +82,7 @@ func (s *Stack) Push(key, value ulid.ULID) {
 	if s.stacks == nil {
 		return
 	}
+
 	s.stacks[key] = append(s.stacks[key], value)
 	s.wait.RLock()
 }
@@ -116,7 +109,7 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 			}
 			visits[head] = struct{}{}
 
-			if steams := s.clean(head); steams != nil {
+			if steams := s.move(head); steams != nil {
 				delete(s.heads, head)
 
 				heads = append(heads[:i], heads[i+1:]...)
@@ -156,7 +149,7 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 					delete(s.heads, key)
 				}
 
-				s.clean(head)
+				s.move(head)
 			}
 
 			s.wait.RUnlock()
@@ -200,7 +193,7 @@ func (s *Stack) Clear(key ulid.ULID) {
 				delete(s.stacks, head)
 				delete(s.heads, head)
 
-				s.clean(head)
+				s.move(head)
 			}
 		}
 
@@ -283,12 +276,13 @@ func (s *Stack) Close() {
 	s.heads = nil
 }
 
-func (s *Stack) clean(head ulid.ULID) []ulid.ULID {
+func (s *Stack) move(head ulid.ULID) []ulid.ULID {
 	if len(s.leaves[head]) > 0 || len(s.stacks[head]) > 0 {
 		return nil
 	}
 
-	for _, stem := range s.stems[head] {
+	stems := s.stems[head]
+	for _, stem := range stems {
 		for j, cur := range s.leaves[stem] {
 			if cur == head {
 				s.leaves[stem] = append(s.leaves[stem][:j], s.leaves[stem][j+1:]...)
@@ -298,7 +292,6 @@ func (s *Stack) clean(head ulid.ULID) []ulid.ULID {
 			}
 		}
 	}
-	stems := s.stems[head]
 	delete(s.stems, head)
 
 	return stems

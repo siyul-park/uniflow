@@ -65,7 +65,7 @@ func TestStack_Len(t *testing.T) {
 }
 
 func TestStack_Wait(t *testing.T) {
-	t.Run("empty", func(t *testing.T) {
+	t.Run("Empty", func(t *testing.T) {
 		st := NewStack()
 		defer st.Close()
 
@@ -85,7 +85,7 @@ func TestStack_Wait(t *testing.T) {
 		}
 	})
 
-	t.Run("not empty", func(t *testing.T) {
+	t.Run("Not Empty", func(t *testing.T) {
 		st := NewStack()
 		defer st.Close()
 
