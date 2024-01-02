@@ -59,9 +59,6 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		Storage:   st,
 		Table:     tb,
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	rc := loader.NewReconciler(loader.ReconcilerConfig{
 		Namespace: config.Namespace,
@@ -105,7 +102,7 @@ func (r *Runtime) Start(ctx context.Context) error {
 }
 
 // Close shuts down the Runtime.
-func (r *Runtime) Close(ctx context.Context) error {
+func (r *Runtime) Close() error {
 	if err := r.reconciler.Close(); err != nil {
 		return err
 	}

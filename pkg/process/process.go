@@ -65,7 +65,8 @@ func (p *Process) Exit(err error) {
 	default:
 	}
 
-	p.err = err
 	close(p.done)
+
+	p.err = err
 	p.stack.Close()
 }

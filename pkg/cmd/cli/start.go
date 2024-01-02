@@ -120,8 +120,9 @@ func installBootFile(ctx context.Context, config StartConfig, ns, boot string) e
 func handleSignals(ctx context.Context, r *runtime.Runtime) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-sigs
-		_ = r.Close(ctx)
+		_ = r.Close()
 	}()
 }

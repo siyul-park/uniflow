@@ -30,16 +30,7 @@ func NewUnstructured(doc *primitive.Map) *Unstructured {
 		doc = primitive.NewMap()
 	}
 
-	u := &Unstructured{doc: doc}
-
-	if v := u.GetID(); v != (ulid.ULID{}) {
-		u.SetID(v)
-	}
-	if v := u.GetLinks(); len(v) > 0 {
-		u.SetLinks(v)
-	}
-
-	return u
+	return &Unstructured{doc: doc}
 }
 
 // GetID returns the ID of the Unstructured.

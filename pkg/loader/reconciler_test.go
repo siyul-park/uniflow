@@ -16,15 +16,24 @@ import (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	s := scheme.New()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	s := scheme.New()
+	kind := faker.Word()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
 	tb := symbol.NewTable(s)
-	defer func() { _ = tb.Clear() }()
+	defer tb.Clear()
 
 	ld := New(Config{
 		Storage: st,
@@ -35,45 +44,36 @@ func TestReconciler_Reconcile(t *testing.T) {
 		Storage: st,
 		Loader:  ld,
 	})
-	defer func() { _ = r.Close() }()
+	defer r.Close()
 
-	err := r.Watch(context.Background())
+	err := r.Watch(ctx)
 	assert.NoError(t, err)
 
-	go func() {
-		err := r.Reconcile(context.Background())
-		assert.NoError(t, err)
-	}()
+	go r.Reconcile(ctx)
 
-	kind := faker.Word()
-
-	m := &scheme.SpecMeta{
+	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 
-	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	})
+	st.InsertOne(ctx, spec)
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, codec)
+	func() {
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
 
-	st.InsertOne(context.Background(), m)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-			return
-		default:
-			if _, ok := tb.LookupByID(m.GetID()); ok {
+		for {
+			select {
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
 				return
+			default:
+				if sym, ok := tb.LookupByID(spec.GetID()); ok {
+					assert.Equal(t, spec.GetID(), sym.ID())
+					return
+				}
 			}
 		}
-	}
+	}()
 }

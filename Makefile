@@ -45,7 +45,6 @@ race:
 .PHONY: coverage
 coverage:
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -coverprofile coverage.out -covermode count $(test-options) ./...'
-	@find $(realpath .) -name go.mod -execdir go tool cover -func=coverage.out | grep total \;
 
 .PHONY: benchmark
 benchmark:

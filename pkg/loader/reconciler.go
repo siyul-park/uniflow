@@ -21,7 +21,6 @@ type Reconciler struct {
 	storage   *storage.Storage
 	loader    *Loader
 	stream    *storage.Stream
-	done      chan struct{}
 	mu        sync.Mutex
 }
 
@@ -31,7 +30,6 @@ func NewReconciler(config ReconcilerConfig) *Reconciler {
 		namespace: config.Namespace,
 		storage:   config.Storage,
 		loader:    config.Loader,
-		done:      make(chan struct{}),
 	}
 }
 
@@ -50,8 +48,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	for {
 		select {
-		case <-r.done:
-			return nil
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-stream.Done():
@@ -76,12 +72,6 @@ func (r *Reconciler) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	select {
-	case <-r.done:
-		return nil
-	default:
-	}
-
 	if r.stream == nil {
 		return nil
 	}
@@ -89,7 +79,7 @@ func (r *Reconciler) Close() error {
 		return err
 	}
 	r.stream = nil
-	close(r.done)
+
 	return nil
 }
 
@@ -111,16 +101,13 @@ func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
 	}
 
 	go func() {
-		select {
-		case <-s.Done():
-			r.mu.Lock()
-			defer r.mu.Unlock()
+		<-s.Done()
 
-			if r.stream == s {
-				r.stream = nil
-			}
-		case <-r.done:
-			return
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		if r.stream == s {
+			r.stream = nil
 		}
 	}()
 
