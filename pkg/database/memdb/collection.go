@@ -390,8 +390,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 	match := parseFilter(filter)
 
 	var docs []*primitive.Map
-	for _, key := range coll.data.Keys() {
-		value, _ := coll.data.Get(key)
+	for _, value := range coll.data.Values() {
 		if len(sorts) == 0 && limit == len(docs) {
 			continue
 		}
