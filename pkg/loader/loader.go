@@ -14,9 +14,9 @@ import (
 
 // Config represents the configuration for the Loader.
 type Config struct {
-	Namespace string           // Namespace is the namespace used by the Loader.
-	Table     *symbol.Table    // Table is the symbol table for managing symbols.
-	Storage   *storage.Storage // Storage is the storage used by the Loader.
+	Namespace string
+	Table     *symbol.Table
+	Storage   *storage.Storage
 }
 
 // Loader loads scheme.Spec into the symbol.Table.

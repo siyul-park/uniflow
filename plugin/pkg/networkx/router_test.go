@@ -23,7 +23,7 @@ func TestNewRouterNode(t *testing.T) {
 
 func TestRouterNode_Send(t *testing.T) {
 	n := NewRouterNode()
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	in := port.New()
 	inPort, _ := n.Port(node.PortIn)
@@ -107,7 +107,7 @@ func TestRouterNode_Send(t *testing.T) {
 
 func BenchmarkRouterNode_Send(b *testing.B) {
 	n := NewRouterNode()
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	in := port.New()
 	inPort, _ := n.Port(node.PortIn)

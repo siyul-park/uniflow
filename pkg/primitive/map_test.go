@@ -14,6 +14,7 @@ func TestNewMap(t *testing.T) {
 	o := NewMap(k1, v1)
 
 	assert.Equal(t, KindMap, o.Kind())
+	assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
 	assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, o.Map())
 }
 
@@ -61,7 +62,7 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 	encoder := NewMapEncoder(NewStringEncoder())
 	decoder := NewMapDecoder(NewStringDecoder())
 
-	t.Run("map", func(t *testing.T) {
+	t.Run("Map", func(t *testing.T) {
 		k1 := NewString(faker.Word())
 		v1 := NewString(faker.Word())
 
@@ -77,7 +78,7 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 		assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, decoded)
 	})
 
-	t.Run("struct", func(t *testing.T) {
+	t.Run("Struct", func(t *testing.T) {
 		v1 := NewString(faker.Word())
 
 		// Test Encode

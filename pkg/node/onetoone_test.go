@@ -22,7 +22,7 @@ func TestNewOneToOneNode(t *testing.T) {
 
 func TestOneToOneNode_Port(t *testing.T) {
 	n := NewOneToOneNode(nil)
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	p, ok := n.Port(PortIO)
 	assert.True(t, ok)
@@ -43,11 +43,11 @@ func TestOneToOneNode_Port(t *testing.T) {
 
 func TestOneToOneNode_Send(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
-		t.Run("return out", func(t *testing.T) {
+		t.Run("With Out Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil
 			})
-			defer func() { _ = n.Close() }()
+			defer n.Close()
 
 			io := port.New()
 			ioPort, _ := n.Port(PortIO)
@@ -74,11 +74,11 @@ func TestOneToOneNode_Send(t *testing.T) {
 			}
 		})
 
-		t.Run("return err", func(t *testing.T) {
+		t.Run("With Err Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return nil, packet.New(primitive.NewString(faker.Word()))
 			})
-			defer func() { _ = n.Close() }()
+			defer n.Close()
 
 			io := port.New()
 			ioPort, _ := n.Port(PortIO)
@@ -112,11 +112,11 @@ func TestOneToOneNode_Send(t *testing.T) {
 	})
 
 	t.Run("In/Out", func(t *testing.T) {
-		t.Run("return out", func(t *testing.T) {
+		t.Run("With Out Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil
 			})
-			defer func() { _ = n.Close() }()
+			defer n.Close()
 
 			in := port.New()
 			inPort, _ := n.Port(PortIn)
@@ -156,11 +156,11 @@ func TestOneToOneNode_Send(t *testing.T) {
 			}
 		})
 
-		t.Run("return err", func(t *testing.T) {
+		t.Run("With Err Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return nil, packet.New(primitive.NewString(faker.Word()))
 			})
-			defer func() { _ = n.Close() }()
+			defer n.Close()
 
 			in := port.New()
 			inPort, _ := n.Port(PortIn)
@@ -199,7 +199,7 @@ func BenchmarkOneToOneNode_Send(b *testing.B) {
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(PortIO)
@@ -225,7 +225,7 @@ func BenchmarkOneToOneNode_Send(b *testing.B) {
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		in := port.New()
 		inPort, _ := n.Port(PortIn)

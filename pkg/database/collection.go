@@ -41,31 +41,6 @@ type FindOptions struct {
 	Sorts []Sort
 }
 
-// Stream is an interface for streaming events from a collection.
-type Stream interface {
-	Next() <-chan Event
-	Done() <-chan struct{}
-	Close() error
-}
-
-// Event represents an event that occurred in the collection.
-type Event struct {
-	OP         EventOP
-	DocumentID primitive.Value
-}
-
-// EventOP represents the type of operation in a collection event.
-type EventOP int
-
-const (
-	// EventInsert represents an insert operation in a collection event.
-	EventInsert EventOP = iota
-	// EventUpdate represents an update operation in a collection event.
-	EventUpdate
-	// EventDelete represents a delete operation in a collection event.
-	EventDelete
-)
-
 // MergeUpdateOptions merges multiple UpdateOptions into a single UpdateOptions.
 func MergeUpdateOptions(options []*UpdateOptions) *UpdateOptions {
 	if len(options) == 0 {

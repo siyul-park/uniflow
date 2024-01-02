@@ -11,31 +11,25 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-type (
-	// Map represents a map structure.
-	Map struct {
-		value *immutable.SortedMap[Value, Value]
-	}
+// Map represents a map structure.
+type Map struct {
+	value *immutable.SortedMap[Value, Value]
+}
 
-	// mapTag represents the tag for map fields.
-	mapTag struct {
-		alias     string
-		ignore    bool
-		omitempty bool
-		inline    bool
-	}
+// mapTag represents the tag for map fields.
+type mapTag struct {
+	alias     string
+	ignore    bool
+	omitempty bool
+	inline    bool
+}
 
-	comparer struct{}
-)
+type comparer struct{}
 
-const (
-	tagMap = "map"
-)
+const tagMap = "map"
 
-var (
-	_ Value                     = (*Map)(nil)
-	_ immutable.Comparer[Value] = (*comparer)(nil)
-)
+var _ Value = (*Map)(nil)
+var _ immutable.Comparer[Value] = (*comparer)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) *Map {
@@ -113,14 +107,12 @@ func (m *Map) Compare(v Value) int {
 	if r, ok := v.(*Map); ok {
 		keys1, keys2 := m.Keys(), r.Keys()
 
-		// Compare lengths
 		if len(keys1) < len(keys2) {
 			return -1
 		} else if len(keys1) > len(keys2) {
 			return 1
 		}
 
-		// Compare individual keys and values
 		for i, k1 := range keys1 {
 			k2 := keys2[i]
 			if diff := Compare(k1, k2); diff != 0 {
@@ -175,7 +167,6 @@ func (m *Map) Interface() any {
 	return t.Interface()
 }
 
-// comparer.Compare compares two Values.
 func (*comparer) Compare(a Value, b Value) int {
 	return Compare(a, b)
 }
@@ -310,38 +301,32 @@ func NewMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value,
 }
 
 func getMapTag(t reflect.Type, f reflect.StructField) mapTag {
-	k := strcase.ToSnake(f.Name)
-	tag := f.Tag.Get(tagMap)
+	key := strcase.ToSnake(f.Name)
+	rawTag := f.Tag.Get(tagMap)
 
-	if tag != "" {
-		if tag == "-" {
-			return mapTag{
-				ignore: true,
-			}
+	if rawTag != "" {
+		if rawTag == "-" {
+			return mapTag{ignore: true}
 		}
 
-		if index := strings.Index(tag, ","); index != -1 {
-			mtag := mapTag{}
-			mtag.alias = k
-			if tag[:index] != "" {
-				mtag.alias = tag[:index]
+		if index := strings.Index(rawTag, ","); index != -1 {
+			tag := mapTag{}
+			tag.alias = key
+			if rawTag[:index] != "" {
+				tag.alias = rawTag[:index]
 			}
 
-			if tag[index+1:] == "omitempty" {
-				mtag.omitempty = true
-			} else if tag[index+1:] == "inline" {
-				mtag.alias = ""
-				mtag.inline = true
+			if rawTag[index+1:] == "omitempty" {
+				tag.omitempty = true
+			} else if rawTag[index+1:] == "inline" {
+				tag.alias = ""
+				tag.inline = true
 			}
-			return mtag
+			return tag
 		} else {
-			return mapTag{
-				alias: tag,
-			}
+			return mapTag{alias: rawTag}
 		}
 	}
 
-	return mapTag{
-		alias: k,
-	}
+	return mapTag{alias: key}
 }

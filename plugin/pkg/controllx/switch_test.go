@@ -23,7 +23,7 @@ func TestNewSwitchNode(t *testing.T) {
 
 func TestSwitchNode_Send(t *testing.T) {
 	n := NewSwitchNode()
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	in := port.New()
 	inPort, _ := n.Port(node.PortIn)
@@ -103,7 +103,7 @@ func TestSwitchNode_Send(t *testing.T) {
 
 func BenchmarkSwitchNode_Send(b *testing.B) {
 	n := NewSwitchNode()
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	in := port.New()
 	inPort, _ := n.Port(node.PortIn)

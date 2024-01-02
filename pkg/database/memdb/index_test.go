@@ -9,17 +9,17 @@ import (
 func TestIndexView_List(t *testing.T) {
 	iv := NewIndexView()
 
-	databasetest.AssertIndexViewList(t, iv)
+	databasetest.TestIndexView_List(t, iv)
 }
 
 func TestIndexView_Create(t *testing.T) {
 	iv := NewIndexView()
 
-	databasetest.AssertIndexViewCreate(t, iv)
+	databasetest.TestIndexView_Create(t, iv)
 }
 
 func TestIndexView_Drop(t *testing.T) {
 	iv := NewIndexView()
 
-	databasetest.AssertIndexViewDrop(t, iv)
+	databasetest.TestIndexView_Drop(t, iv)
 }

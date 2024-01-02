@@ -3,6 +3,7 @@ package primitive
 import (
 	"reflect"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
@@ -10,10 +11,6 @@ var (
 	textEncoder   = encoding.NewEncoderGroup[any, Value]()
 	binaryEncoder = encoding.NewEncoderGroup[any, Value]()
 	decoder       = encoding.NewDecoderGroup[Value, any]()
-)
-
-var (
-	typeAny = reflect.TypeOf((*any)(nil)).Elem()
 )
 
 func init() {
@@ -64,4 +61,55 @@ func MarshalBinary(v any) (Value, error) {
 // Unmarshal parses the Object and stores the result.
 func Unmarshal(data Value, v any) error {
 	return decoder.Decode(data, v)
+}
+
+// NewPointerEncoder is encode *T to T.
+func NewPointerEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
+		if source == nil {
+			return nil, nil
+		}
+		if s := reflect.ValueOf(source); s.Kind() == reflect.Pointer {
+			return encoder.Encode(s.Elem().Interface())
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+// NewPointerDecoder is decode T to *T.
+func NewPointerDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
+		if source == nil {
+			return nil
+		}
+		if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer && t.Elem().Kind() == reflect.Pointer {
+			if t.Elem().IsNil() {
+				zero := reflect.New(t.Type().Elem().Elem())
+				t.Elem().Set(zero)
+			}
+			return decoder.Decode(source, t.Elem().Interface())
+		}
+		return errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+// NewPointerEncoder is encode Value to Value.
+func NewShortcutEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
+		if s, ok := source.(Value); ok {
+			return s, nil
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+// NewShortcutDecoder is decode Value to Value.
+func NewShortcutDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
+		if t, ok := target.(*Value); ok {
+			*t = source
+			return nil
+		}
+		return errors.WithStack(encoding.ErrUnsupportedValue)
+	})
 }

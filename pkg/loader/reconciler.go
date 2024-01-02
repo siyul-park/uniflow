@@ -10,9 +10,9 @@ import (
 
 // ReconcilerConfig holds the configuration for the Reconciler.
 type ReconcilerConfig struct {
-	Namespace string           // // Namespace is the namespace for the Reconciler.
-	Storage   *storage.Storage // Storage is the storage used by the Reconciler.
-	Loader    *Loader          // Loader is used to load scheme.Spec into the symbol.Table.
+	Namespace string
+	Storage   *storage.Storage
+	Loader    *Loader
 }
 
 // Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
@@ -59,7 +59,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-
 			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
 				return err
 			}
@@ -95,6 +94,7 @@ func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
 	if r.namespace != "" {
 		filter = storage.Where[string](scheme.KeyNamespace).EQ(r.namespace)
 	}
+
 	s, err := r.storage.Watch(ctx, filter)
 	if err != nil {
 		return nil, err

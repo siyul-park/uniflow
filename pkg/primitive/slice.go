@@ -9,12 +9,10 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-type (
-	// Slice is a representation of a slice.
-	Slice struct {
-		value *immutable.List[Value]
-	}
-)
+// Slice is a representation of a slice.
+type Slice struct {
+	value *immutable.List[Value]
+}
 
 var _ Value = (*Slice)(nil)
 
@@ -99,7 +97,6 @@ func (s *Slice) Compare(v Value) int {
 		return 0
 	}
 
-	// If the types are different, compare based on type kind.
 	if s.Kind() > v.Kind() {
 		return 1
 	}
@@ -120,10 +117,8 @@ func (s *Slice) Interface() any {
 		}
 	}
 
-	// Check if all elements have the same type.
 	elementType := getCommonType(values)
 
-	// Create a slice of the common type.
 	sliceValue := reflect.MakeSlice(reflect.SliceOf(elementType), s.value.Len(), s.value.Len())
 	for i, value := range values {
 		if value != nil {

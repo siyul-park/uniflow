@@ -22,7 +22,7 @@ func TestNewOneToManyNode(t *testing.T) {
 
 func TestOneToManyNode_Port(t *testing.T) {
 	n := NewOneToManyNode(nil)
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	p, ok := n.Port(PortIn)
 	assert.True(t, ok)
@@ -38,11 +38,11 @@ func TestOneToManyNode_Port(t *testing.T) {
 }
 
 func TestOneToManyNode_Send(t *testing.T) {
-	t.Run("return out", func(t *testing.T) {
+	t.Run("With Out Port", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 			return []*packet.Packet{inPck}, nil
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		in := port.New()
 		inPort, _ := n.Port(PortIn)
@@ -81,11 +81,11 @@ func TestOneToManyNode_Send(t *testing.T) {
 		}
 	})
 
-	t.Run("return err", func(t *testing.T) {
+	t.Run("With Err Port", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 			return nil, packet.New(primitive.NewString(faker.Word()))
 		})
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		in := port.New()
 		inPort, _ := n.Port(PortIn)
@@ -122,7 +122,7 @@ func BenchmarkOneToManyNode_Send(b *testing.B) {
 	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 		return []*packet.Packet{inPck}, nil
 	})
-	defer func() { _ = n.Close() }()
+	defer n.Close()
 
 	in := port.New()
 	inPort, _ := n.Port(PortIn)

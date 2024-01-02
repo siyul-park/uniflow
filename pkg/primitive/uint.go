@@ -7,36 +7,32 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-type (
-	// Uinteger is an interface representing an unsigned integer.
-	Uinteger interface {
-		Value
-		Uint() uint64
-	}
+// Uinteger is an interface representing an unsigned integer.
+type Uinteger interface {
+	Value
+	Uint() uint64
+}
 
-	// Uint is a representation of a uint.
-	Uint uint
+// Uint is a representation of a uint.
+type Uint uint
 
-	// Uint8 is a representation of a uint8.
-	Uint8 uint8
+// Uint8 is a representation of a uint8.
+type Uint8 uint8
 
-	// Uint16 is a representation of a uint16.
-	Uint16 uint16
+// Uint16 is a representation of a uint16.
+type Uint16 uint16
 
-	// Uint32 is a representation of a uint32.
-	Uint32 uint32
+// Uint32 is a representation of a uint32.
+type Uint32 uint32
 
-	// Uint64 is a representation of a uint64.
-	Uint64 uint64
-)
+// Uint64 is a representation of a uint64.
+type Uint64 uint64
 
-var (
-	_ Uinteger = (Uint)(0)
-	_ Uinteger = (Uint8)(0)
-	_ Uinteger = (Uint16)(0)
-	_ Uinteger = (Uint32)(0)
-	_ Uinteger = (Uint64)(0)
-)
+var _ Uinteger = (Uint)(0)
+var _ Uinteger = (Uint8)(0)
+var _ Uinteger = (Uint16)(0)
+var _ Uinteger = (Uint32)(0)
+var _ Uinteger = (Uint64)(0)
 
 // NewUint returns a new Uint.
 func NewUint(value uint) Uint {
@@ -55,19 +51,7 @@ func (u Uint) Kind() Kind {
 
 // Compare compares two Uint values.
 func (u Uint) Compare(v Value) int {
-	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
-	}
-	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
-	}
-	if u.Kind() > v.Kind() {
-		return 1
-	}
-	return -1
+	return compareAsUinteger(u, v)
 }
 
 // Interface converts Uint to a uint.
@@ -92,19 +76,7 @@ func (u Uint8) Kind() Kind {
 
 // Compare compares two Uint8 values.
 func (u Uint8) Compare(v Value) int {
-	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
-	}
-	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
-	}
-	if u.Kind() > v.Kind() {
-		return 1
-	}
-	return -1
+	return compareAsUinteger(u, v)
 }
 
 // Interface converts Uint8 to a uint8.
@@ -129,19 +101,7 @@ func (u Uint16) Kind() Kind {
 
 // Compare compares two Uint16 values.
 func (u Uint16) Compare(v Value) int {
-	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
-	}
-	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
-	}
-	if u.Kind() > v.Kind() {
-		return 1
-	}
-	return -1
+	return compareAsUinteger(u, v)
 }
 
 // Interface converts Uint16 to a uint16.
@@ -166,19 +126,7 @@ func (u Uint32) Kind() Kind {
 
 // Compare compares two Uint32 values.
 func (u Uint32) Compare(v Value) int {
-	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
-	}
-	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
-	}
-	if u.Kind() > v.Kind() {
-		return 1
-	}
-	return -1
+	return compareAsUinteger(u, v)
 }
 
 // Interface converts Uint32 to a uint32.
@@ -203,19 +151,7 @@ func (u Uint64) Kind() Kind {
 
 // Compare compares two Uint64 values.
 func (u Uint64) Compare(v Value) int {
-	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
-	}
-	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
-	}
-	if u.Kind() > v.Kind() {
-		return 1
-	}
-	return -1
+	return compareAsUinteger(u, v)
 }
 
 // Interface converts Uint64 to a uint64.
@@ -286,4 +222,20 @@ func NewUintDecoder() encoding.Decoder[Value, any] {
 		}
 		return errors.WithStack(encoding.ErrUnsupportedValue)
 	})
+}
+
+func compareAsUinteger(u Uinteger, v Value) int {
+	if r, ok := v.(Uinteger); ok {
+		return compare[uint64](u.Uint(), r.Uint())
+	}
+	if r, ok := v.(Integer); ok {
+		return compare[int64](int64(u.Uint()), r.Int())
+	}
+	if r, ok := v.(Float); ok {
+		return compare[float64](float64(u.Uint()), r.Float())
+	}
+	if u.Kind() > v.Kind() {
+		return 1
+	}
+	return -1
 }

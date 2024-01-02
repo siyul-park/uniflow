@@ -30,7 +30,7 @@ function main(inPayload: any): any {
 	return inPayload;
 }
 		`)
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -63,7 +63,7 @@ function main(inPayload) {
 	return inPayload;
 }
 		`)
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -94,7 +94,7 @@ function main(inPayload) {
 		data := faker.UUIDHyphenated()
 
 		n, _ := NewSnippetNode(LangJSON, fmt.Sprintf("\"%s\"", data))
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -123,7 +123,7 @@ function main(inPayload) {
 
 	t.Run(LangJSONata, func(t *testing.T) {
 		n, _ := NewSnippetNode(LangJSONata, "$")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -158,7 +158,7 @@ function main(inPayload: any): any {
 	return inPayload;
 }
 		`)
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -186,7 +186,7 @@ function main(inPayload) {
 	return inPayload;
 }
 		`)
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -210,7 +210,7 @@ function main(inPayload) {
 
 	b.Run(LangJSON, func(b *testing.B) {
 		n, _ := NewSnippetNode(LangJSON, fmt.Sprintf("\"%s\"", faker.UUIDHyphenated()))
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)
@@ -234,7 +234,7 @@ function main(inPayload) {
 
 	b.Run(LangJSONata, func(b *testing.B) {
 		n, _ := NewSnippetNode(LangJSONata, "$")
-		defer func() { _ = n.Close() }()
+		defer n.Close()
 
 		io := port.New()
 		ioPort, _ := n.Port(node.PortIO)

@@ -1,5 +1,7 @@
 package primitive
 
+import "reflect"
+
 // Kind represents the enumeration of data types.
 type Kind uint
 
@@ -31,6 +33,8 @@ const (
 	KindSlice
 	KindString
 )
+
+var typeAny = reflect.TypeOf((*any)(nil)).Elem()
 
 // Compare function compares two Values and returns their order.
 // Nil values are treated as the lowest order.

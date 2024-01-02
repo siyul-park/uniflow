@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func AssertIndexViewList(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func TestIndexView_List(t *testing.T, indexView database.IndexView) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -32,8 +34,10 @@ func AssertIndexViewList(t *testing.T, indexView database.IndexView) {
 	assert.Equal(t, model, models[len(models)-1])
 }
 
-func AssertIndexViewCreate(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func TestIndexView_Create(t *testing.T, indexView database.IndexView) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -45,8 +49,10 @@ func AssertIndexViewCreate(t *testing.T, indexView database.IndexView) {
 	assert.NoError(t, err)
 }
 
-func AssertIndexViewDrop(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func TestIndexView_Drop(t *testing.T, indexView database.IndexView) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{

@@ -11,30 +11,35 @@ func TestNewInteger(t *testing.T) {
 		v := NewInt(0)
 		assert.Equal(t, KindInt, v.Kind())
 		assert.Equal(t, int(0), v.Interface())
+		assert.Equal(t, int64(0), v.Int())
 	})
 
 	t.Run("Int8", func(t *testing.T) {
 		v := NewInt8(0)
 		assert.Equal(t, KindInt8, v.Kind())
 		assert.Equal(t, int8(0), v.Interface())
+		assert.Equal(t, int64(0), v.Int())
 	})
 
 	t.Run("Int16", func(t *testing.T) {
 		v := NewInt16(0)
 		assert.Equal(t, KindInt16, v.Kind())
 		assert.Equal(t, int16(0), v.Interface())
+		assert.Equal(t, int64(0), v.Int())
 	})
 
 	t.Run("Int32", func(t *testing.T) {
 		v := NewInt32(0)
 		assert.Equal(t, KindInt32, v.Kind())
 		assert.Equal(t, int32(0), v.Interface())
+		assert.Equal(t, int64(0), v.Int())
 	})
 
 	t.Run("Int64", func(t *testing.T) {
 		v := NewInt64(0)
 		assert.Equal(t, KindInt64, v.Kind())
 		assert.Equal(t, int64(0), v.Interface())
+		assert.Equal(t, int64(0), v.Int())
 	})
 }
 

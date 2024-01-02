@@ -20,7 +20,7 @@ func TestDatabase_Name(t *testing.T) {
 	db, err := testDatabase(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertDatabaseName(t, db)
+	databasetest.TestDatabase_Name(t, db)
 }
 
 func TestDatabase_Collection(t *testing.T) {
@@ -30,7 +30,7 @@ func TestDatabase_Collection(t *testing.T) {
 	db, err := testDatabase(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertDatabaseCollection(t, db)
+	databasetest.TestDatabase_Collection(t, db)
 }
 
 func TestDatabase_Drop(t *testing.T) {
@@ -40,7 +40,7 @@ func TestDatabase_Drop(t *testing.T) {
 	db, err := testDatabase(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertDatabaseDrop(t, db)
+	databasetest.TestDatabase_Drop(t, db)
 }
 
 func testDatabase(server *memongo.Server) (*Database, error) {
