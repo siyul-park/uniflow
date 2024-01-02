@@ -11,6 +11,7 @@ func TestNewBool(t *testing.T) {
 
 	assert.Equal(t, KindBool, v.Kind())
 	assert.Equal(t, true, v.Interface())
+	assert.Equal(t, true, v.Bool())
 }
 
 func TestBool_Compare(t *testing.T) {

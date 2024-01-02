@@ -11,30 +11,35 @@ func TestUinteger(t *testing.T) {
 		v := NewUint(0)
 		assert.Equal(t, KindUint, v.Kind())
 		assert.Equal(t, uint(0), v.Interface())
+		assert.Equal(t, uint64(0), v.Uint())
 	})
 
 	t.Run("Uint8", func(t *testing.T) {
 		v := NewUint8(0)
 		assert.Equal(t, KindUint8, v.Kind())
 		assert.Equal(t, uint8(0), v.Interface())
+		assert.Equal(t, uint64(0), v.Uint())
 	})
 
 	t.Run("Uint16", func(t *testing.T) {
 		v := NewUint16(0)
 		assert.Equal(t, KindUint16, v.Kind())
 		assert.Equal(t, uint16(0), v.Interface())
+		assert.Equal(t, uint64(0), v.Uint())
 	})
 
 	t.Run("Uint32", func(t *testing.T) {
 		v := NewUint32(0)
 		assert.Equal(t, KindUint32, v.Kind())
 		assert.Equal(t, uint32(0), v.Interface())
+		assert.Equal(t, uint64(0), v.Uint())
 	})
 
 	t.Run("Uint64", func(t *testing.T) {
 		v := NewUint64(0)
 		assert.Equal(t, KindUint64, v.Kind())
 		assert.Equal(t, uint64(0), v.Interface())
+		assert.Equal(t, uint64(0), v.Uint())
 	})
 }
 

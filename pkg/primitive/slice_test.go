@@ -15,6 +15,7 @@ func TestNewSlice(t *testing.T) {
 
 	assert.Equal(t, KindSlice, o.Kind())
 	assert.Equal(t, []string{v1.String()}, o.Interface())
+	assert.Equal(t, []any{v1.Interface()}, o.Slice())
 }
 
 func TestSlice_GetAndSet(t *testing.T) {
@@ -23,18 +24,14 @@ func TestSlice_GetAndSet(t *testing.T) {
 
 	o := NewSlice(v1)
 
-	// Test Get
 	r1 := o.Get(0)
 	assert.Equal(t, v1, r1)
 
-	// Test Get with out-of-bounds index
 	r2 := o.Get(1)
 	assert.Nil(t, r2)
 
-	// Test Set
 	o = o.Set(0, v2)
 
-	// Test Get after Set
 	r3 := o.Get(0)
 	assert.Equal(t, v2, r3)
 }
@@ -71,13 +68,8 @@ func TestSlice_Compare(t *testing.T) {
 	v1 := NewString("1")
 	v2 := NewString("2")
 
-	// Test equal slices
 	assert.Equal(t, 0, NewSlice(v1, v2).Compare(NewSlice(v1, v2)))
-
-	// Test greater slice
 	assert.Equal(t, 1, NewSlice(v2, v1).Compare(NewSlice(v1, v2)))
-
-	// Test lesser slice
 	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
 }
 
@@ -88,20 +80,14 @@ func TestSlice_EncodeAndDecode(t *testing.T) {
 	v1 := NewString(faker.Word())
 	v2 := NewString(faker.Word())
 
-	t.Run("Encode", func(t *testing.T) {
-		// Test Encode
-		encoded, err := encoder.Encode([]any{v1.Interface(), v2.Interface()})
-		assert.NoError(t, err)
-		assert.Equal(t, NewSlice(v1, v2), encoded)
-	})
+	encoded, err := encoder.Encode([]any{v1.Interface(), v2.Interface()})
+	assert.NoError(t, err)
+	assert.Equal(t, NewSlice(v1, v2), encoded)
 
-	t.Run("Decode", func(t *testing.T) {
-		// Test Decode
-		var decoded []any
-		err := decoder.Decode(NewSlice(v1, v2), &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
-	})
+	var decoded []any
+	err = decoder.Decode(encoded, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
 }
 
 func BenchmarkSlice_Append(b *testing.B) {
