@@ -11,14 +11,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	IndexView struct {
-		names  []string
-		models []database.IndexModel
-		data   []maps.Map
-		lock   sync.RWMutex
-	}
-)
+type IndexView struct {
+	names  []string
+	models []database.IndexModel
+	data   []maps.Map
+	lock   sync.RWMutex
+}
 
 var _ database.IndexView = &IndexView{}
 
