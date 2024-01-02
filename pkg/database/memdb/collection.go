@@ -282,7 +282,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 		data := coll.data
 		coll.data = treemap.NewWith(comparator)
 
-		coll.indexView.drop()
+		coll.indexView.dropData()
 
 		return data, nil
 	}()

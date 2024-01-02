@@ -116,13 +116,6 @@ func (v *IndexView) deleteMany(docs []*primitive.Map) error {
 	return nil
 }
 
-func (v *IndexView) drop() {
-	v.lock.Lock()
-	defer v.lock.Unlock()
-
-	v.data = nil
-}
-
 func (v *IndexView) insertOne(doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
@@ -217,4 +210,11 @@ func (v *IndexView) deleteOne(doc *primitive.Map) {
 			}
 		}
 	}
+}
+
+func (v *IndexView) dropData() {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	v.data = nil
 }
