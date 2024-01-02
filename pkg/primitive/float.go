@@ -72,8 +72,7 @@ func (f Float64) Interface() any {
 	return float64(f)
 }
 
-// NewFloatEncoder encodes float to Float.
-func NewFloatEncoder() encoding.Encoder[any, Value] {
+func newFloatEncoder() encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		switch s := reflect.ValueOf(source); s.Kind() {
 		case reflect.Float32:
@@ -85,8 +84,7 @@ func NewFloatEncoder() encoding.Encoder[any, Value] {
 	})
 }
 
-// NewFloatDecoder decodes Float to float.
-func NewFloatDecoder() encoding.Decoder[Value, any] {
+func newFloatDecoder() encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Float); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {

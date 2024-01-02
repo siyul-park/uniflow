@@ -59,8 +59,8 @@ func TestMap_Len(t *testing.T) {
 }
 
 func TestMap_EncodeAndDecode(t *testing.T) {
-	encoder := NewMapEncoder(NewStringEncoder())
-	decoder := NewMapDecoder(NewStringDecoder())
+	encoder := newMapEncoder(newStringEncoder())
+	decoder := newMapDecoder(newStringDecoder())
 
 	t.Run("Map", func(t *testing.T) {
 		k1 := NewString(faker.Word())

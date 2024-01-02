@@ -59,8 +59,7 @@ func (b Binary) Interface() any {
 	return []byte(b)
 }
 
-// NewBinaryEncoder creates an encoder for converting byte-like types to Binary.
-func NewBinaryEncoder() encoding2.Encoder[any, Value] {
+func newBinaryEncoder() encoding2.Encoder[any, Value] {
 	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.BinaryMarshaler); ok {
 			if data, err := s.MarshalBinary(); err != nil {
@@ -75,8 +74,7 @@ func NewBinaryEncoder() encoding2.Encoder[any, Value] {
 	})
 }
 
-// NewBinaryDecoder creates a decoder for converting Binary to byte-like types.
-func NewBinaryDecoder() encoding2.Decoder[Value, any] {
+func newBinaryDecoder() encoding2.Decoder[Value, any] {
 	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Binary); ok {
 			if t, ok := target.(encoding.BinaryUnmarshaler); ok {

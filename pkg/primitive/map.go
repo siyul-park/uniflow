@@ -171,8 +171,7 @@ func (*comparer) Compare(a Value, b Value) int {
 	return Compare(a, b)
 }
 
-// NewMapEncoder encodes a map or struct to a Map.
-func NewMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+func newMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Map {
 			pairs := make([]Value, len(s.MapKeys())*2)
@@ -228,8 +227,7 @@ func NewMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, V
 	})
 }
 
-// NewMapDecoder decodes a Map to a map or struct.
-func NewMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+func newMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Map); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {

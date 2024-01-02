@@ -260,7 +260,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestPointer_Encode(t *testing.T) {
-	e := NewPointerEncoder(NewStringEncoder())
+	e := newPointerEncoder(newStringEncoder())
 
 	r1 := faker.Word()
 	v1 := NewString(r1)
@@ -271,7 +271,7 @@ func TestPointer_Encode(t *testing.T) {
 }
 
 func TestPointer_Decode(t *testing.T) {
-	d := NewPointerDecoder(NewStringDecoder())
+	d := newPointerDecoder(newStringDecoder())
 
 	v1 := NewString(faker.Word())
 

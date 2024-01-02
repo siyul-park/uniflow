@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	documentEncoder = NewDocumentEncoder()
-	documentDecoder = NewDocumentDecoder()
+	documentEncoder = newDocumentEncoder()
+	documentDecoder = newDocumentDecoder()
 
-	filterEncoder = NewFilterEncoder(documentEncoder)
-	filterDecoder = NewFilterDecoder(documentDecoder)
+	filterEncoder = newFilterEncoder(documentEncoder)
+	filterDecoder = newFilterDecoder(documentDecoder)
 )
 
 var (
@@ -25,29 +25,29 @@ var (
 	toSnake      = changeCase(strcase.ToSnake)
 )
 
-func MarshalFilter(v *database.Filter) (any, error) {
+func marshalFilter(v *database.Filter) (any, error) {
 	return filterEncoder.Encode(v)
 }
 
-func UnmarshalFilter(data any, v **database.Filter) error {
+func unmarshalFilter(data any, v **database.Filter) error {
 	return filterDecoder.Decode(data, v)
 }
 
-func MarshalDocument(v primitive.Value) (any, error) {
+func marshalDocument(v primitive.Value) (any, error) {
 	return documentEncoder.Encode(v)
 }
 
-func UnmarshalDocument(data any, v *primitive.Value) error {
+func unmarshalDocument(data any, v *primitive.Value) error {
 	return documentDecoder.Decode(data, v)
 }
 
-func NewFilterEncoder(encoder encoding.Encoder[primitive.Value, any]) encoding.Encoder[*database.Filter, any] {
+func newFilterEncoder(encoder encoding.Encoder[primitive.Value, any]) encoding.Encoder[*database.Filter, any] {
 	return encoding.EncoderFunc[*database.Filter, any](func(source *database.Filter) (any, error) {
 		if source == nil {
 			return bson.D{}, nil
 		}
 
-		self := NewFilterEncoder(encoder)
+		self := newFilterEncoder(encoder)
 
 		switch source.OP {
 		case database.AND, database.OR:
@@ -103,14 +103,14 @@ func NewFilterEncoder(encoder encoding.Encoder[primitive.Value, any]) encoding.E
 	})
 }
 
-func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Value]) encoding.Decoder[any, **database.Filter] {
+func newFilterDecoder(decoder encoding.Decoder[any, *primitive.Value]) encoding.Decoder[any, **database.Filter] {
 	return encoding.DecoderFunc[any, **database.Filter](func(source any, target **database.Filter) error {
 		s, ok := bsonMA(source)
 		if !ok {
 			return errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
-		self := NewFilterDecoder(decoder)
+		self := newFilterDecoder(decoder)
 
 		var children []*database.Filter
 		for _, curr := range s {
@@ -225,13 +225,13 @@ func NewFilterDecoder(decoder encoding.Decoder[any, *primitive.Value]) encoding.
 	})
 }
 
-func NewDocumentEncoder() encoding.Encoder[primitive.Value, any] {
+func newDocumentEncoder() encoding.Encoder[primitive.Value, any] {
 	return encoding.EncoderFunc[primitive.Value, any](func(source primitive.Value) (any, error) {
 		if source == nil {
 			return bsonprimitive.Null{}, nil
 		}
 
-		self := NewDocumentEncoder()
+		self := newDocumentEncoder()
 
 		if s, ok := source.(primitive.Binary); ok {
 			return bsonprimitive.Binary{Data: []byte(s)}, nil
@@ -266,9 +266,9 @@ func NewDocumentEncoder() encoding.Encoder[primitive.Value, any] {
 	})
 }
 
-func NewDocumentDecoder() encoding.Decoder[any, *primitive.Value] {
+func newDocumentDecoder() encoding.Decoder[any, *primitive.Value] {
 	return encoding.DecoderFunc[any, *primitive.Value](func(source any, target *primitive.Value) error {
-		self := NewDocumentDecoder()
+		self := newDocumentDecoder()
 
 		if source == nil {
 			*target = nil

@@ -28,7 +28,7 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	e := NewStringEncoder()
+	e := newStringEncoder()
 
 	v, err := e.Encode("A")
 	assert.NoError(t, err)
@@ -36,7 +36,7 @@ func TestString_Encode(t *testing.T) {
 }
 
 func TestString_Decode(t *testing.T) {
-	d := NewStringDecoder()
+	d := newStringDecoder()
 
 	var v string
 	err := d.Decode(NewString("A"), &v)

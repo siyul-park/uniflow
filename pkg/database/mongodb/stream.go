@@ -44,7 +44,7 @@ func UpgradeStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 			var id primitive.Value
 			if documentKey, ok := data["documentKey"]; ok {
 				if documentKey, ok := documentKey.(bson.M); ok {
-					if err := UnmarshalDocument(documentKey["_id"], &id); err != nil {
+					if err := unmarshalDocument(documentKey["_id"], &id); err != nil {
 						continue
 					}
 				} else {

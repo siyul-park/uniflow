@@ -81,8 +81,8 @@ func TestInteger_Compare(t *testing.T) {
 }
 
 func TestInteger_EncodeAndDecode(t *testing.T) {
-	e := NewIntEncoder()
-	d := NewIntDecoder()
+	e := newIntEncoder()
+	d := newIntDecoder()
 
 	t.Run("Int", func(t *testing.T) {
 		source := int(1)

@@ -60,8 +60,7 @@ func (o String) Interface() any {
 	return string(o)
 }
 
-// NewStringEncoder encodes a string to a String.
-func NewStringEncoder() encoding2.Encoder[any, Value] {
+func newStringEncoder() encoding2.Encoder[any, Value] {
 	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(encoding.TextMarshaler); ok {
 			if text, err := s.MarshalText(); err != nil {
@@ -76,8 +75,7 @@ func NewStringEncoder() encoding2.Encoder[any, Value] {
 	})
 }
 
-// NewStringDecoder decodes a String to a string.
-func NewStringDecoder() encoding2.Decoder[Value, any] {
+func newStringDecoder() encoding2.Decoder[Value, any] {
 	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(String); ok {
 			if t, ok := target.(encoding.TextUnmarshaler); ok {

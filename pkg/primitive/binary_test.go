@@ -30,8 +30,8 @@ func TestBinary_Compare(t *testing.T) {
 }
 
 func TestBinary_EncodeAndDecode(t *testing.T) {
-	e := NewBinaryEncoder()
-	d := NewBinaryDecoder()
+	e := newBinaryEncoder()
+	d := newBinaryDecoder()
 
 	source := []byte{0}
 
