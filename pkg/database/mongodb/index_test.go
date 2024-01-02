@@ -20,7 +20,7 @@ func TestIndexView_List(t *testing.T) {
 	indexView, err := testIndexView(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertIndexViewList(t, indexView)
+	databasetest.TestIndexView_List(t, indexView)
 }
 
 func TestIndexView_Create(t *testing.T) {
@@ -30,7 +30,7 @@ func TestIndexView_Create(t *testing.T) {
 	indexView, err := testIndexView(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertIndexViewCreate(t, indexView)
+	databasetest.TestIndexView_Create(t, indexView)
 }
 
 func TestIndexView_Drop(t *testing.T) {
@@ -40,7 +40,7 @@ func TestIndexView_Drop(t *testing.T) {
 	indexView, err := testIndexView(server)
 	assert.NoError(t, err)
 
-	databasetest.AssertIndexViewDrop(t, indexView)
+	databasetest.TestIndexView_Drop(t, indexView)
 }
 
 func testIndexView(server *memongo.Server) (*IndexView, error) {

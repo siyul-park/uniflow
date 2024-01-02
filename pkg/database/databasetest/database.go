@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func AssertDatabaseName(t *testing.T, database database.Database) {
+func TestDatabase_Name(t *testing.T, database database.Database) {
 	t.Helper()
 
 	name := database.Name()
 	assert.NotEmpty(t, name)
 }
 
-func AssertDatabaseCollection(t *testing.T, database database.Database) {
+func TestDatabase_Collection(t *testing.T, database database.Database) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
@@ -28,7 +28,7 @@ func AssertDatabaseCollection(t *testing.T, database database.Database) {
 	assert.NotNil(t, coll)
 }
 
-func AssertDatabaseDrop(t *testing.T, database database.Database) {
+func TestDatabase_Drop(t *testing.T, database database.Database) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
