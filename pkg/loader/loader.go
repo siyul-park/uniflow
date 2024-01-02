@@ -29,14 +29,10 @@ type Loader struct {
 
 // New returns a new Loader.
 func New(config Config) *Loader {
-	namespace := config.Namespace
-	table := config.Table
-	storage := config.Storage
-
 	return &Loader{
-		namespace: namespace,
-		table:     table,
-		storage:   storage,
+		namespace: config.Namespace,
+		table:     config.Table,
+		storage:   config.Storage,
 	}
 }
 
@@ -59,12 +55,12 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 		var filter *storage.Filter
 
 		for _, key := range cur {
+			exists[key] = false
+
 			switch k := key.(type) {
 			case ulid.ULID:
-				exists[k] = false
 				filter = filter.Or(storage.Where[ulid.ULID](scheme.KeyID).EQ(k))
 			case string:
-				exists[k] = false
 				filter = filter.Or(storage.Where[string](scheme.KeyName).EQ(k))
 			}
 		}
