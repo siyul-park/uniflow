@@ -10,7 +10,6 @@ import (
 type Stream struct {
 	stream  database.Stream
 	channel chan Event
-	done    chan struct{}
 }
 
 // NewStream returns a new Stream.
@@ -18,18 +17,14 @@ func NewStream(stream database.Stream) *Stream {
 	s := &Stream{
 		stream:  stream,
 		channel: make(chan Event),
-		done:    make(chan struct{}),
 	}
 
 	go func() {
-		defer func() { close(s.channel) }()
+		defer close(s.channel)
 
 		for {
 			select {
-			case <-s.done:
-				return
 			case <-s.stream.Done():
-				_ = s.Close()
 				return
 			case e := <-s.stream.Next():
 				var id ulid.ULID
@@ -46,7 +41,7 @@ func NewStream(stream database.Stream) *Stream {
 				}
 
 				select {
-				case <-s.done:
+				case <-s.stream.Done():
 					return
 				case s.channel <- Event{OP: op, NodeID: id}:
 				}
@@ -64,18 +59,10 @@ func (s *Stream) Next() <-chan Event {
 
 // Done returns a channel that is closed when the Stream is closed.
 func (s *Stream) Done() <-chan struct{} {
-	return s.done
+	return s.stream.Done()
 }
 
 // Close closes the Stream.
 func (s *Stream) Close() error {
-	select {
-	case <-s.done:
-		return nil
-	default:
-	}
-
-	close(s.done)
-
 	return s.stream.Close()
 }
