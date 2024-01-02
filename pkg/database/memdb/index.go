@@ -4,11 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/emirpasic/gods/containers"
 	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/emirpasic/gods/sets"
-	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -156,26 +153,22 @@ func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 
 			for i, k := range model.Keys {
 				value, _ := primitive.Pick[primitive.Value](doc, k)
-				child, ok := cur.Get(value)
+
+				c, _ := cur.Get(value)
+				child, ok := c.(maps.Map)
+				if !ok {
+					child = treemap.NewWith(comparator)
+					cur.Put(value, child)
+				}
 
 				if i < len(model.Keys)-1 {
-					if !ok {
-						child = treemap.NewWith(comparator)
-						cur.Put(value, child)
-					}
-					cur = child.(maps.Map)
-				} else if model.Unique {
-					if !ok {
-						cur.Put(value, id)
-					} else if child != id {
-						return ErrIndexConflict
-					}
+					cur = child
 				} else {
-					if !ok {
-						child = treeset.NewWith(comparator)
-						cur.Put(value, child)
+					child.Put(id, nil)
+					if model.Unique && child.Size() > 1 {
+						child.Remove(id)
+						return errors.WithStack(ErrIndexConflict)
 					}
-					child.(sets.Set).Add(id)
 				}
 			}
 
@@ -204,7 +197,7 @@ func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 		if err := func() error {
 			cur := v.data[i]
 
-			var nodes []containers.Container
+			var nodes []maps.Map
 			nodes = append(nodes, cur)
 
 			var keys []primitive.Value
@@ -212,24 +205,20 @@ func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 
 			for i, k := range model.Keys {
 				value, _ := primitive.Pick[primitive.Value](doc, k)
-				child, ok := cur.Get(value)
+
+				c, _ := cur.Get(value)
+				child, ok := c.(maps.Map)
 				if !ok {
 					return nil
 				}
 
-				if i < len(model.Keys)-1 {
-					cur = child.(maps.Map)
+				nodes = append(nodes, child)
+				keys = append(keys, value)
 
-					nodes = append(nodes, cur)
-					keys = append(keys, value)
-				} else if model.Unique {
-					if primitive.Compare(id, child.(primitive.Value)) == 0 {
-						cur.Remove(value)
-					}
+				if i < len(model.Keys)-1 {
+					cur = child
 				} else {
-					nodes = append(nodes, child.(sets.Set))
-					keys = append(keys, value)
-					child.(sets.Set).Remove(id)
+					child.Remove(id)
 				}
 			}
 
@@ -240,9 +229,7 @@ func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 					parent := nodes[i-1]
 					key := keys[i]
 
-					if p, ok := parent.(maps.Map); ok {
-						p.Remove(key)
-					}
+					parent.Remove(key)
 				}
 			}
 
