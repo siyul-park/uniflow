@@ -8,6 +8,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
+// Filter is a filter for finding matched primitive.
+type Filter struct {
+	OP       OP
+	Key      string
+	Value    primitive.Value
+	Children []*Filter
+}
+
 // OP represents comparison operators for filters.
 type OP string
 
@@ -25,14 +33,6 @@ const (
 	AND   OP = "AND"
 	OR    OP = "OR"
 )
-
-// Filter is a filter for finding matched primitive.
-type Filter struct {
-	OP       OP
-	Key      string
-	Value    primitive.Value
-	Children []*Filter
-}
 
 // filterHelper is a helper for building filters.
 type filterHelper struct {
