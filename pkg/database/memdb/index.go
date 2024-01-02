@@ -164,11 +164,6 @@ func (v *IndexView) deleteOne(doc *primitive.Map) {
 	}
 
 	for i, model := range v.models {
-		match := parseFilter(model.Partial)
-		if !match(doc) {
-			continue
-		}
-
 		cur := v.data[i]
 		nodes := []maps.Map{cur}
 		keys := []primitive.Value{nil}
