@@ -50,7 +50,7 @@ func TestCollection_InsertOne(t *testing.T) {
 	coll, err := testCollection(server)
 	assert.NoError(t, err)
 
-	databasetest.TestCollection_Insert(t, coll)
+	databasetest.TestCollection_InsertOne(t, coll)
 }
 
 func TestCollection_InsertMany(t *testing.T) {
