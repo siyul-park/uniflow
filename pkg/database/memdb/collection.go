@@ -332,10 +332,14 @@ func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) (
 	for i, doc := range docs {
 		if id, ok := doc.Get(keyID); !ok {
 			return nil, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
-		} else if _, ok := coll.data.Get(id); ok {
-			return nil, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
 		} else {
 			ids[i] = id
+		}
+	}
+
+	for _, id := range ids {
+		if _, ok := coll.data.Get(id); ok {
+			return nil, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
 		}
 	}
 
