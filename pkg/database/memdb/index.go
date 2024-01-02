@@ -170,12 +170,8 @@ func (v *IndexView) deleteOne(doc *primitive.Map) {
 		}
 
 		cur := v.data[i]
-
-		var nodes []maps.Map
-		nodes = append(nodes, cur)
-
-		var keys []primitive.Value
-		keys = append(keys, nil)
+		nodes := []maps.Map{cur}
+		keys := []primitive.Value{nil}
 
 		for i, k := range model.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
