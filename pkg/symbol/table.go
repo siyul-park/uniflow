@@ -295,7 +295,7 @@ func (t *Table) resolveUnlinked(sym *Symbol) error {
 
 func (t *Table) resolveLinked(sym *Symbol) error {
 	for name, locations := range sym.linked {
-		for _, location := range locations {
+		for i, location := range locations {
 			if err := t.unload(t.symbols[location.ID]); err != nil {
 				return err
 			}
@@ -315,11 +315,10 @@ func (t *Table) resolveLinked(sym *Symbol) error {
 				}
 			}
 
+			sym.linked[name] = append(locations[:i], locations[i+1:]...)
 			ref.unlinks[location.Port] = append(ref.unlinks[location.Port], unlink)
 		}
 	}
-
-	sym.linked = make(map[string][]scheme.PortLocation)
 
 	return nil
 }
