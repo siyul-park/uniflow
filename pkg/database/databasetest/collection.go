@@ -67,7 +67,11 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	assert.NoError(t, err)
 }
 
+<<<<<<< HEAD
 func TestCollection_Insert(t *testing.T, collection database.Collection) {
+=======
+func AssertCollectionInsert(t *testing.T, collection database.Collection) {
+>>>>>>> 3f95eaa (refactor: database)
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
