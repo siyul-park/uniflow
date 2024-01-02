@@ -397,58 +397,36 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 	opt := database.MergeFindOptions(opts)
 
 	limit := -1
-	if opt != nil && opt.Limit != nil {
-		limit = lo.FromPtr(opt.Limit)
-	}
 	skip := 0
-	if opt != nil && opt.Skip != nil {
-		skip = lo.FromPtr(opt.Skip)
-	}
 	var sorts []database.Sort
-	if opt != nil && opt.Sorts != nil {
-		sorts = opt.Sorts
+
+	if opt != nil {
+		if opt.Limit != nil {
+			limit = lo.FromPtr(opt.Limit)
+		}
+		if opt.Skip != nil {
+			skip = lo.FromPtr(opt.Skip)
+		}
+		if opt.Sorts != nil {
+			sorts = opt.Sorts
+		}
 	}
 
 	match := ParseFilter(filter)
 
-	scanSize := limit
-	if skip > 0 || len(sorts) > 0 {
-		scanSize = -1
-	}
-
-	fullScan := true
-	scan := treemap.NewWith(comparator)
-	if examples, ok := FilterToExample(filter); ok {
-		if ids, err := coll.indexView.findMany(ctx, examples); err == nil {
-			for _, id := range ids {
-				if scanSize == scan.Size() {
-					break
-				} else if doc, ok := coll.data.Get(id); ok && match(doc.(*primitive.Map)) {
-					scan.Put(id, doc)
-				}
-			}
-			fullScan = false
-		}
-	}
-	if fullScan {
-		for _, key := range coll.data.Keys() {
-			value, _ := coll.data.Get(key)
-			if scanSize == scan.Size() {
-				continue
-			}
-			if match(value.(*primitive.Map)) {
-				scan.Put(key, value)
-			}
-		}
-	}
-
-	if skip >= scan.Size() {
-		return nil, nil
-	}
-
 	var docs []*primitive.Map
-	for _, doc := range scan.Values() {
-		docs = append(docs, doc.(*primitive.Map))
+	for _, key := range coll.data.Keys() {
+		value, _ := coll.data.Get(key)
+		if len(sorts) == 0 && limit == len(docs) {
+			continue
+		}
+		if match(value.(*primitive.Map)) {
+			docs = append(docs, value.(*primitive.Map))
+		}
+	}
+
+	if skip >= len(docs) {
+		return nil, nil
 	}
 
 	if len(sorts) > 0 {
@@ -457,6 +435,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 			return compare(docs[i], docs[j])
 		})
 	}
+
 	if limit >= 0 {
 		if len(docs) > limit+skip {
 			docs = docs[skip : limit+skip]
@@ -464,6 +443,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 			docs = docs[skip:]
 		}
 	}
+
 	return docs, nil
 }
 

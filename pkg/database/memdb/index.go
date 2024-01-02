@@ -36,73 +36,78 @@ var (
 )
 
 func NewIndexView() *IndexView {
-	iv := &IndexView{
+	v := &IndexView{
 		names:  nil,
 		models: nil,
 		data:   nil,
 		lock:   sync.RWMutex{},
 	}
-	_ = iv.Create(context.Background(), database.IndexModel{
+
+	primaryModel := database.IndexModel{
 		Keys:    []string{"id"},
 		Name:    "_id",
 		Unique:  true,
 		Partial: nil,
-	})
+	}
 
-	return iv
+	v.names = append(v.names, primaryModel.Name)
+	v.models = append(v.models, primaryModel)
+	v.data = append(v.data, treemap.NewWith(comparator))
+
+	return v
 }
 
-func (iv *IndexView) List(_ context.Context) ([]database.IndexModel, error) {
-	iv.lock.RLock()
-	defer iv.lock.RUnlock()
+func (v *IndexView) List(_ context.Context) ([]database.IndexModel, error) {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
 
-	return iv.models, nil
+	return v.models, nil
 }
 
-func (iv *IndexView) Create(_ context.Context, index database.IndexModel) error {
-	iv.lock.Lock()
-	defer iv.lock.Unlock()
+func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 
 	name := index.Name
 
-	for i, n := range iv.names {
+	for i, n := range v.names {
 		if n == name {
-			iv.names = append(iv.names[:i], iv.names[i+1:]...)
-			iv.models = append(iv.models[:i], iv.models[i+1:]...)
-			iv.data = append(iv.data[:i], iv.data[i+1:]...)
+			v.names = append(v.names[:i], v.names[i+1:]...)
+			v.models = append(v.models[:i], v.models[i+1:]...)
+			v.data = append(v.data[:i], v.data[i+1:]...)
 		}
 	}
 
-	iv.names = append(iv.names, name)
-	iv.models = append(iv.models, index)
-	iv.data = append(iv.data, treemap.NewWith(comparator))
+	v.names = append(v.names, name)
+	v.models = append(v.models, index)
+	v.data = append(v.data, treemap.NewWith(comparator))
 
 	return nil
 }
 
-func (iv *IndexView) Drop(_ context.Context, name string) error {
-	iv.lock.Lock()
-	defer iv.lock.Unlock()
+func (v *IndexView) Drop(_ context.Context, name string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 
-	for i, n := range iv.names {
+	for i, n := range v.names {
 		if n == name {
-			iv.names = append(iv.names[:i], iv.names[i+1:]...)
-			iv.models = append(iv.models[:i], iv.models[i+1:]...)
-			iv.data = append(iv.data[:i], iv.data[i+1:]...)
+			v.names = append(v.names[:i], v.names[i+1:]...)
+			v.models = append(v.models[:i], v.models[i+1:]...)
+			v.data = append(v.data[:i], v.data[i+1:]...)
 		}
 	}
 
 	return nil
 }
 
-func (iv *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) error {
-	iv.lock.Lock()
-	defer iv.lock.Unlock()
+func (v *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 
 	for i, doc := range docs {
-		if err := iv.insertOne(ctx, doc); err != nil {
+		if err := v.insertOne(ctx, doc); err != nil {
 			for i--; i >= 0; i-- {
-				_ = iv.deleteOne(ctx, doc)
+				_ = v.deleteOne(ctx, doc)
 			}
 			return err
 		}
@@ -110,14 +115,14 @@ func (iv *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) erro
 	return nil
 }
 
-func (iv *IndexView) deleteMany(ctx context.Context, docs []*primitive.Map) error {
-	iv.lock.Lock()
-	defer iv.lock.Unlock()
+func (v *IndexView) deleteMany(ctx context.Context, docs []*primitive.Map) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 
 	for i, doc := range docs {
-		if err := iv.deleteOne(ctx, doc); err != nil {
+		if err := v.deleteOne(ctx, doc); err != nil {
 			for ; i >= 0; i-- {
-				_ = iv.insertOne(ctx, doc)
+				_ = v.insertOne(ctx, doc)
 			}
 			return err
 		}
@@ -125,151 +130,58 @@ func (iv *IndexView) deleteMany(ctx context.Context, docs []*primitive.Map) erro
 	return nil
 }
 
-func (iv *IndexView) deleteAll(_ context.Context) error {
-	iv.lock.Lock()
-	defer iv.lock.Unlock()
+func (v *IndexView) deleteAll(_ context.Context) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 
-	iv.data = nil
+	v.data = nil
 
 	return nil
 }
 
-func (iv *IndexView) findMany(_ context.Context, examples []*primitive.Map) ([]primitive.Value, error) {
-	iv.lock.RLock()
-	defer iv.lock.RUnlock()
-
-	ids := treeset.NewWith(comparator)
-
-	for _, example := range examples {
-		if err := func() error {
-			for i, model := range iv.models {
-				curr := iv.data[i]
-
-				visits := make(map[string]bool, example.Len())
-				for _, k := range example.Keys() {
-					if k, ok := k.(primitive.String); ok {
-						visits[k.String()] = false
-					} else {
-						return ErrInvalidDocument
-					}
-				}
-				next := false
-
-				var i int
-				var k string
-				for i, k = range model.Keys {
-					if obj, ok := primitive.Pick[primitive.Value](example, k); ok {
-						visits[k] = true
-						if sub, ok := curr.Get(obj); ok {
-							if i < len(model.Keys)-1 {
-								curr = sub.(maps.Map)
-							} else {
-								if model.Unique {
-									ids.Add(sub)
-								} else {
-									ids.Add(sub.(sets.Set).Values()...)
-									return nil
-								}
-							}
-						} else {
-							next = true
-							break
-						}
-					} else {
-						break
-					}
-				}
-
-				for _, v := range visits {
-					if !v {
-						next = true
-					}
-				}
-				if next {
-					continue
-				}
-
-				var parent []maps.Map
-				parent = append(parent, curr)
-
-				depth := len(model.Keys) - 1
-				if !model.Unique {
-					depth += 1
-				}
-
-				for ; i < depth; i++ {
-					var children []maps.Map
-					for _, curr := range parent {
-						for _, v := range curr.Values() {
-							children = append(children, v.(maps.Map))
-						}
-					}
-					parent = children
-				}
-
-				for _, curr := range parent {
-					ids.Add(curr.Values()...)
-				}
-
-				return nil
-			}
-
-			return ErrIndexNotFound
-		}(); err != nil {
-			return nil, err
-		}
-	}
-
-	var uniqueIds []primitive.Value
-	for _, v := range ids.Values() {
-		uniqueIds = append(uniqueIds, v.(primitive.Value))
-	}
-	return uniqueIds, nil
-}
-
-func (iv *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
+func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
-		return ErrIndexConflict
+		return errors.WithStack(ErrIndexConflict)
 	}
 
-	for i, model := range iv.models {
-		if err := func() error {
-			curr := iv.data[i]
+	for i, model := range v.models {
+		match := ParseFilter(model.Partial)
+		if !match(doc) {
+			continue
+		}
 
-			if !ParseFilter(model.Partial)(doc) {
-				return nil
-			}
+		if err := func() error {
+			cur := v.data[i]
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Pick[primitive.Value](doc, k)
+				value, _ := primitive.Pick[primitive.Value](doc, k)
+				child, ok := cur.Get(value)
 
 				if i < len(model.Keys)-1 {
-					sub, ok := curr.Get(obj)
 					if !ok {
-						sub = treemap.NewWith(comparator)
-						curr.Put(obj, sub)
+						child = treemap.NewWith(comparator)
+						cur.Put(value, child)
 					}
-					curr = sub.(maps.Map)
+					cur = child.(maps.Map)
 				} else if model.Unique {
-					if r, ok := curr.Get(obj); !ok {
-						curr.Put(obj, id)
-					} else if r != id {
+					if !ok {
+						cur.Put(value, id)
+					} else if child != id {
 						return ErrIndexConflict
 					}
 				} else {
-					r, ok := curr.Get(obj)
 					if !ok {
-						r = treeset.NewWith(comparator)
-						curr.Put(obj, r)
+						child = treeset.NewWith(comparator)
+						cur.Put(value, child)
 					}
-					r.(sets.Set).Add(id)
+					child.(sets.Set).Add(id)
 				}
 			}
 
 			return nil
 		}(); err != nil {
-			_ = iv.deleteOne(ctx, doc)
+			_ = v.deleteOne(ctx, doc)
 			return err
 		}
 	}
@@ -277,54 +189,54 @@ func (iv *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 	return nil
 }
 
-func (iv *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
+func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return nil
 	}
 
-	for i, model := range iv.models {
-		if err := func() error {
-			curr := iv.data[i]
+	for i, model := range v.models {
+		match := ParseFilter(model.Partial)
+		if !match(doc) {
+			continue
+		}
 
-			if !ParseFilter(model.Partial)(doc) {
-				return nil
-			}
+		if err := func() error {
+			cur := v.data[i]
 
 			var nodes []containers.Container
-			nodes = append(nodes, curr)
+			nodes = append(nodes, cur)
+
 			var keys []primitive.Value
 			keys = append(keys, nil)
 
 			for i, k := range model.Keys {
-				obj, _ := primitive.Pick[primitive.Value](doc, k)
+				value, _ := primitive.Pick[primitive.Value](doc, k)
+				child, ok := cur.Get(value)
+				if !ok {
+					return nil
+				}
 
 				if i < len(model.Keys)-1 {
-					if sub, ok := curr.Get(obj); ok {
-						curr = sub.(maps.Map)
+					cur = child.(maps.Map)
 
-						nodes = append(nodes, curr)
-						keys = append(keys, obj)
-					} else {
-						return nil
-					}
+					nodes = append(nodes, cur)
+					keys = append(keys, value)
 				} else if model.Unique {
-					if r, ok := curr.Get(obj); ok && primitive.Compare(id, r.(primitive.Value)) == 0 {
-						curr.Remove(obj)
+					if primitive.Compare(id, child.(primitive.Value)) == 0 {
+						cur.Remove(value)
 					}
 				} else {
-					if r, ok := curr.Get(obj); ok {
-						nodes = append(nodes, r.(sets.Set))
-						keys = append(keys, obj)
-						r.(sets.Set).Remove(id)
-					}
+					nodes = append(nodes, child.(sets.Set))
+					keys = append(keys, value)
+					child.(sets.Set).Remove(id)
 				}
 			}
 
 			for i := len(nodes) - 1; i >= 0; i-- {
-				node := nodes[i]
+				child := nodes[i]
 
-				if node.Empty() && i > 0 {
+				if child.Empty() && i > 0 {
 					parent := nodes[i-1]
 					key := keys[i]
 
