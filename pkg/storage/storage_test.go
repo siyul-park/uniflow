@@ -13,6 +13,9 @@ import (
 )
 
 func TestStorage_Watch(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -21,25 +24,20 @@ func TestStorage_Watch(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-	}
-
-	stream, err := st.Watch(context.Background(), nil)
+	stream, err := st.Watch(ctx, nil)
 	assert.NoError(t, err)
-	defer func() { _ = stream.Close() }()
+	assert.NotNil(t, stream)
+
+	defer stream.Close()
 
 	go func() {
 		for {
-			event, ok := <-stream.Next()
-			if ok {
+			if event, ok := <-stream.Next(); ok {
 				assert.NotNil(t, event.NodeID)
 			} else {
 				return
@@ -47,12 +45,21 @@ func TestStorage_Watch(t *testing.T) {
 		}
 	}()
 
-	_, _ = st.InsertOne(context.Background(), spec)
-	_, _ = st.UpdateOne(context.Background(), spec)
-	_, _ = st.DeleteOne(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+
+	_, _ = st.InsertOne(ctx, spec)
+	_, _ = st.UpdateOne(ctx, spec)
+	_, _ = st.DeleteOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 }
 
 func TestStorage_InsertOne(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -61,7 +68,7 @@ func TestStorage_InsertOne(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
@@ -71,12 +78,15 @@ func TestStorage_InsertOne(t *testing.T) {
 		Kind: kind,
 	}
 
-	id, err := st.InsertOne(context.Background(), spec)
+	id, err := st.InsertOne(ctx, spec)
 	assert.NoError(t, err)
-	assert.Equal(t, spec.ID, id)
+	assert.Equal(t, spec.GetID(), id)
 }
 
 func TestStorage_InsertMany(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -85,12 +95,12 @@ func TestStorage_InsertMany(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := []scheme.Spec{
+	specs := []scheme.Spec{
 		&scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
@@ -103,15 +113,18 @@ func TestStorage_InsertMany(t *testing.T) {
 		},
 	}
 
-	ids, err := st.InsertMany(context.Background(), spec)
+	ids, err := st.InsertMany(ctx, specs)
 	assert.NoError(t, err)
-	assert.Len(t, ids, len(spec))
-	for i, spec := range spec {
+	assert.Len(t, ids, len(specs))
+	for i, spec := range specs {
 		assert.Equal(t, spec.GetID(), ids[i])
 	}
 }
 
 func TestStorage_UpdateOne(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -120,28 +133,47 @@ func TestStorage_UpdateOne(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := &scheme.SpecMeta{
-		ID:   ulid.Make(),
-		Kind: kind,
+	id := ulid.Make()
+
+	origin := &scheme.SpecMeta{
+		ID:        id,
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.Word(),
+	}
+	patch := &scheme.SpecMeta{
+		ID:        id,
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.Word(),
 	}
 
-	ok, err := st.UpdateOne(context.Background(), spec)
+	ok, err := st.UpdateOne(ctx, patch)
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
-	_, _ = st.InsertOne(context.Background(), spec)
+	_, _ = st.InsertOne(ctx, origin)
 
-	ok, err = st.UpdateOne(context.Background(), spec)
+	ok, err = st.UpdateOne(ctx, patch)
 	assert.NoError(t, err)
 	assert.True(t, ok)
+
+	res, err := st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(id))
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, res, patch)
 }
 
 func TestStorage_UpdateMany(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -150,36 +182,56 @@ func TestStorage_UpdateMany(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := []scheme.Spec{
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
+	var ids []ulid.ULID
+	for i := 0; i < batch; i++ {
+		ids = append(ids, ulid.Make())
 	}
 
-	count, err := st.UpdateMany(context.Background(), spec)
+	var origins []scheme.Spec
+	var patches []scheme.Spec
+	for _, id := range ids {
+		origins = append(origins, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.Word(),
+		})
+		patches = append(patches, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.Word(),
+		})
+	}
+
+	count, err := st.UpdateMany(ctx, patches)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 
-	_, _ = st.InsertMany(context.Background(), spec)
+	_, _ = st.InsertMany(ctx, origins)
 
-	count, err = st.UpdateMany(context.Background(), spec)
+	count, err = st.UpdateMany(ctx, patches)
 	assert.NoError(t, err)
-	assert.Equal(t, len(spec), count)
+	assert.Equal(t, len(patches), count)
+
+	res, err := st.FindMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Len(t, res, len(patches))
+	for _, patch := range patches {
+		assert.Contains(t, res, patch)
+	}
 }
 
 func TestStorage_DeleteOne(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -188,7 +240,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
@@ -199,18 +251,22 @@ func TestStorage_DeleteOne(t *testing.T) {
 		Namespace: scheme.DefaultNamespace,
 	}
 
-	ok, err := st.DeleteOne(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	ok, err := st.DeleteOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
-	_, _ = st.InsertOne(context.Background(), spec)
+	_, _ = st.InsertOne(ctx, spec)
 
-	ok, err = st.DeleteOne(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	ok, err = st.DeleteOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 	assert.NoError(t, err)
 	assert.True(t, ok)
 }
 
 func TestStorage_DeleteMany(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -219,39 +275,51 @@ func TestStorage_DeleteMany(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+	var ids []ulid.ULID
+	for i := 0; i < batch; i++ {
+		ids = append(ids, ulid.Make())
 	}
 
-	count, err := st.DeleteMany(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	var specs []scheme.Spec
+	for _, id := range ids {
+		specs = append(specs, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.Word(),
+		})
+	}
+
+	count, err := st.DeleteMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 
-	_, _ = st.InsertOne(context.Background(), spec)
+	_, _ = st.InsertMany(ctx, specs)
 
-	count, err = st.DeleteMany(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	count, err = st.DeleteMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
+	assert.Equal(t, len(specs), count)
 }
 
 func TestStorage_FindOne(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.Word()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
 	t.Run("id", func(t *testing.T) {
-		kind := faker.Word()
-
-		s := scheme.New()
-		s.AddKnownType(kind, &scheme.SpecMeta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
-
-		st, _ := New(context.Background(), Config{
+		st, _ := New(ctx, Config{
 			Scheme:   s,
 			Database: memdb.New(faker.Word()),
 		})
@@ -262,24 +330,16 @@ func TestStorage_FindOne(t *testing.T) {
 			Namespace: scheme.DefaultNamespace,
 		}
 
-		_, _ = st.InsertOne(context.Background(), spec)
+		_, _ = st.InsertOne(ctx, spec)
 
-		def, err := st.FindOne(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+		def, err := st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 		assert.NoError(t, err)
 		assert.NotNil(t, def)
 		assert.Equal(t, spec.GetID(), def.GetID())
 	})
 
 	t.Run("namespace, name", func(t *testing.T) {
-		kind := faker.Word()
-
-		s := scheme.New()
-		s.AddKnownType(kind, &scheme.SpecMeta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
-
-		st, _ := New(context.Background(), Config{
+		st, _ := New(ctx, Config{
 			Scheme:   s,
 			Database: memdb.New(faker.Word()),
 		})
@@ -291,9 +351,9 @@ func TestStorage_FindOne(t *testing.T) {
 			Name:      faker.Word(),
 		}
 
-		_, _ = st.InsertOne(context.Background(), spec)
+		_, _ = st.InsertOne(ctx, spec)
 
-		def, err := st.FindOne(context.Background(), Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()).And(Where[string](scheme.KeyName).EQ(spec.GetName())))
+		def, err := st.FindOne(ctx, Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()).And(Where[string](scheme.KeyName).EQ(spec.GetName())))
 		assert.NoError(t, err)
 		assert.NotNil(t, def)
 		assert.Equal(t, spec.GetID(), def.GetID())
@@ -301,6 +361,10 @@ func TestStorage_FindOne(t *testing.T) {
 }
 
 func TestStorage_FindMany(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -309,21 +373,34 @@ func TestStorage_FindMany(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := New(context.Background(), Config{
+	st, _ := New(ctx, Config{
 		Scheme:   s,
 		Database: memdb.New(faker.Word()),
 	})
 
-	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+	var ids []ulid.ULID
+	for i := 0; i < batch; i++ {
+		ids = append(ids, ulid.Make())
 	}
 
-	_, _ = st.InsertOne(context.Background(), spec)
+	var specs []scheme.Spec
+	for _, id := range ids {
+		specs = append(specs, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.Word(),
+		})
+	}
 
-	defs, err := st.FindMany(context.Background(), Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	_, _ = st.InsertMany(ctx, specs)
+
+	res, err := st.FindMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
 	assert.NoError(t, err)
-	assert.Len(t, defs, 1)
-	assert.Equal(t, spec.GetID(), defs[0].GetID())
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Len(t, res, len(specs))
+	for _, spec := range specs {
+		assert.Contains(t, res, spec)
+	}
 }
