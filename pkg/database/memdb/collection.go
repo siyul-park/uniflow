@@ -15,16 +15,15 @@ import (
 
 type (
 	Collection struct {
-		name          string
-		data          maps.Map
-		indexView     *IndexView
-		streams       []*Stream
-		streamMatches []func(*primitive.Map) bool
-		dataLock      sync.RWMutex
-		streamLock    sync.RWMutex
+		name      string
+		data      maps.Map
+		indexView *IndexView
+		streams   []*Stream
+		matches   []func(*primitive.Map) bool
+		mu        sync.RWMutex
 	}
 
-	fullEvent struct {
+	internalEvent struct {
 		database.Event
 		Document *primitive.Map
 	}
@@ -33,44 +32,41 @@ type (
 var _ database.Collection = &Collection{}
 
 var (
-	ErrCodePKNotFound   = "primary key is not found"
-	ErrCodePKDuplicated = "primary key is duplicated"
-
-	ErrPKNotFound   = errors.New(ErrCodePKNotFound)
-	ErrPKDuplicated = errors.New(ErrCodePKDuplicated)
+	ErrPKNotFound   = errors.New("primary key is not found")
+	ErrPKDuplicated = errors.New("primary key is duplicated")
 )
 
 func NewCollection(name string) *Collection {
 	return &Collection{
-		name:       name,
-		data:       treemap.NewWith(comparator),
-		indexView:  NewIndexView(),
-		dataLock:   sync.RWMutex{},
-		streamLock: sync.RWMutex{},
+		name:      name,
+		data:      treemap.NewWith(comparator),
+		indexView: NewIndexView(),
+		mu:        sync.RWMutex{},
 	}
 }
 
 func (coll *Collection) Name() string {
-	coll.dataLock.RLock()
-	defer coll.dataLock.RUnlock()
+	coll.mu.RLock()
+	defer coll.mu.RUnlock()
 
 	return coll.name
 }
 
 func (coll *Collection) Indexes() database.IndexView {
-	coll.dataLock.RLock()
-	defer coll.dataLock.RUnlock()
+	coll.mu.RLock()
+	defer coll.mu.RUnlock()
 
 	return coll.indexView
 }
 
 func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
-	coll.streamLock.Lock()
-	defer coll.streamLock.Unlock()
+	coll.mu.Lock()
+	defer coll.mu.Unlock()
 
 	stream := NewStream()
+
 	coll.streams = append(coll.streams, stream)
-	coll.streamMatches = append(coll.streamMatches, ParseFilter(filter))
+	coll.matches = append(coll.matches, ParseFilter(filter))
 
 	go func() {
 		select {
@@ -89,7 +85,7 @@ func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (prim
 	if id, err := coll.insertOne(ctx, doc); err != nil {
 		return nil, err
 	} else {
-		coll.emit(fullEvent{
+		coll.emit(internalEvent{
 			Event: database.Event{
 				OP:         database.EventInsert,
 				DocumentID: id,
@@ -105,7 +101,7 @@ func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) (
 		return nil, err
 	} else {
 		for i, doc := range docs {
-			coll.emit(fullEvent{
+			coll.emit(internalEvent{
 				Event: database.Event{
 					OP:         database.EventInsert,
 					DocumentID: ids[i],
@@ -119,6 +115,7 @@ func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) (
 
 func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
 	opt := database.MergeUpdateOptions(opts)
+
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
 		upsert = lo.FromPtr(opt.Upsert)
@@ -172,7 +169,7 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		return false, err
 	}
 
-	coll.emit(fullEvent{
+	coll.emit(internalEvent{
 		Event: database.Event{
 			OP:         database.EventUpdate,
 			DocumentID: id,
@@ -233,19 +230,21 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 		doc = patch.Set(keyID, doc.GetOr(keyID, nil))
 		docs[i] = doc
 	}
-	if ids, err := coll.insertMany(ctx, docs); err != nil {
+
+	ids, err := coll.insertMany(ctx, docs)
+	if err != nil {
 		_, _ = coll.insertMany(ctx, old)
 		return 0, err
-	} else {
-		for i, doc := range docs {
-			coll.emit(fullEvent{
-				Event: database.Event{
-					OP:         database.EventUpdate,
-					DocumentID: ids[i],
-				},
-				Document: doc,
-			})
-		}
+	}
+
+	for i, doc := range docs {
+		coll.emit(internalEvent{
+			Event: database.Event{
+				OP:         database.EventUpdate,
+				DocumentID: ids[i],
+			},
+			Document: doc,
+		})
 	}
 
 	return len(docs), nil
@@ -259,7 +258,7 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) 
 	} else {
 		if doc != nil {
 			if id, ok := doc.Get(keyID); ok {
-				coll.emit(fullEvent{
+				coll.emit(internalEvent{
 					Event: database.Event{
 						OP:         database.EventDelete,
 						DocumentID: id,
@@ -280,7 +279,7 @@ func (coll *Collection) DeleteMany(ctx context.Context, filter *database.Filter)
 	} else {
 		for _, doc := range docs {
 			if id, ok := doc.Get(keyID); ok {
-				coll.emit(fullEvent{
+				coll.emit(internalEvent{
 					Event: database.Event{
 						OP:         database.EventDelete,
 						DocumentID: id,
@@ -303,8 +302,8 @@ func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, o
 
 func (coll *Collection) Drop(ctx context.Context) error {
 	data, err := func() (maps.Map, error) {
-		coll.dataLock.Lock()
-		defer coll.dataLock.Unlock()
+		coll.mu.Lock()
+		defer coll.mu.Unlock()
 
 		data := coll.data
 		coll.data = treemap.NewWith(comparator)
@@ -322,7 +321,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 	for _, val := range data.Values() {
 		doc := val.(*primitive.Map)
 		if id, ok := doc.Get(keyID); ok {
-			coll.emit(fullEvent{
+			coll.emit(internalEvent{
 				Event: database.Event{
 					OP:         database.EventDelete,
 					DocumentID: id,
@@ -332,8 +331,8 @@ func (coll *Collection) Drop(ctx context.Context) error {
 		}
 	}
 
-	coll.streamLock.Lock()
-	defer coll.streamLock.Unlock()
+	coll.mu.Lock()
+	defer coll.mu.Unlock()
 
 	for _, s := range coll.streams {
 		if err := s.Close(); err != nil {
@@ -354,8 +353,8 @@ func (coll *Collection) insertOne(ctx context.Context, doc *primitive.Map) (prim
 }
 
 func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	coll.dataLock.Lock()
-	defer coll.dataLock.Unlock()
+	coll.mu.Lock()
+	defer coll.mu.Unlock()
 
 	ids := make([]primitive.Value, len(docs))
 	for i, doc := range docs {
@@ -391,8 +390,8 @@ func (coll *Collection) findOne(ctx context.Context, filter *database.Filter, op
 }
 
 func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
-	coll.dataLock.RLock()
-	defer coll.dataLock.RUnlock()
+	coll.mu.RLock()
+	defer coll.mu.RUnlock()
 
 	opt := database.MergeFindOptions(opts)
 
@@ -458,8 +457,8 @@ func (coll *Collection) deleteOne(ctx context.Context, doc *primitive.Map) (*pri
 }
 
 func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) ([]*primitive.Map, error) {
-	coll.dataLock.Lock()
-	defer coll.dataLock.Unlock()
+	coll.mu.Lock()
+	defer coll.mu.Unlock()
 
 	ids := make([]primitive.Value, 0, len(docs))
 	deletes := make([]*primitive.Map, 0, len(docs))
@@ -487,24 +486,24 @@ func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) (
 }
 
 func (coll *Collection) unwatch(stream database.Stream) {
-	coll.streamLock.Lock()
-	defer coll.streamLock.Unlock()
+	coll.mu.Lock()
+	defer coll.mu.Unlock()
 
 	for i, s := range coll.streams {
 		if s == stream {
 			coll.streams = append(coll.streams[:i], coll.streams[i+1:]...)
-			coll.streamMatches = append(coll.streamMatches[:i], coll.streamMatches[i+1:]...)
+			coll.matches = append(coll.matches[:i], coll.matches[i+1:]...)
 			return
 		}
 	}
 }
 
-func (coll *Collection) emit(event fullEvent) {
-	coll.streamLock.RLock()
-	defer coll.streamLock.RUnlock()
+func (coll *Collection) emit(event internalEvent) {
+	coll.mu.RLock()
+	defer coll.mu.RUnlock()
 
 	for i, s := range coll.streams {
-		if coll.streamMatches[i](event.Document) {
+		if coll.matches[i](event.Document) {
 			s.Emit(event.Event)
 		}
 	}
