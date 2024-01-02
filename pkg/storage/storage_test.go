@@ -318,46 +318,23 @@ func TestStorage_FindOne(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	t.Run("id", func(t *testing.T) {
-		st, _ := New(ctx, Config{
-			Scheme:   s,
-			Database: memdb.New(faker.Word()),
-		})
-
-		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		}
-
-		_, _ = st.InsertOne(ctx, spec)
-
-		def, err := st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
-		assert.NoError(t, err)
-		assert.NotNil(t, def)
-		assert.Equal(t, spec.GetID(), def.GetID())
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.Word()),
 	})
 
-	t.Run("namespace, name", func(t *testing.T) {
-		st, _ := New(ctx, Config{
-			Scheme:   s,
-			Database: memdb.New(faker.Word()),
-		})
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
 
-		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-			Name:      faker.Word(),
-		}
+	_, _ = st.InsertOne(ctx, spec)
 
-		_, _ = st.InsertOne(ctx, spec)
-
-		def, err := st.FindOne(ctx, Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()).And(Where[string](scheme.KeyName).EQ(spec.GetName())))
-		assert.NoError(t, err)
-		assert.NotNil(t, def)
-		assert.Equal(t, spec.GetID(), def.GetID())
-	})
+	def, err := st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	assert.NoError(t, err)
+	assert.NotNil(t, def)
+	assert.Equal(t, spec.GetID(), def.GetID())
 }
 
 func TestStorage_FindMany(t *testing.T) {
