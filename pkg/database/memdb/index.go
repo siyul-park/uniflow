@@ -104,7 +104,7 @@ func (v *IndexView) insertMany(ctx context.Context, docs []*primitive.Map) error
 	for i, doc := range docs {
 		if err := v.insertOne(ctx, doc); err != nil {
 			for i--; i >= 0; i-- {
-				_ = v.deleteOne(ctx, doc)
+				v.deleteOne(ctx, doc)
 			}
 			return err
 		}
@@ -116,13 +116,8 @@ func (v *IndexView) deleteMany(ctx context.Context, docs []*primitive.Map) error
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	for i, doc := range docs {
-		if err := v.deleteOne(ctx, doc); err != nil {
-			for ; i >= 0; i-- {
-				_ = v.insertOne(ctx, doc)
-			}
-			return err
-		}
+	for _, doc := range docs {
+		v.deleteOne(ctx, doc)
 	}
 	return nil
 }
@@ -148,44 +143,39 @@ func (v *IndexView) insertOne(ctx context.Context, doc *primitive.Map) error {
 			continue
 		}
 
-		if err := func() error {
-			cur := v.data[i]
+		cur := v.data[i]
 
-			for i, k := range model.Keys {
-				value, _ := primitive.Pick[primitive.Value](doc, k)
+		for i, k := range model.Keys {
+			value, _ := primitive.Pick[primitive.Value](doc, k)
 
-				c, _ := cur.Get(value)
-				child, ok := c.(maps.Map)
-				if !ok {
-					child = treemap.NewWith(comparator)
-					cur.Put(value, child)
-				}
-
-				if i < len(model.Keys)-1 {
-					cur = child
-				} else {
-					child.Put(id, nil)
-					if model.Unique && child.Size() > 1 {
-						child.Remove(id)
-						return errors.WithStack(ErrIndexConflict)
-					}
-				}
+			c, _ := cur.Get(value)
+			child, ok := c.(maps.Map)
+			if !ok {
+				child = treemap.NewWith(comparator)
+				cur.Put(value, child)
 			}
 
-			return nil
-		}(); err != nil {
-			_ = v.deleteOne(ctx, doc)
-			return err
+			if i < len(model.Keys)-1 {
+				cur = child
+			} else {
+				child.Put(id, nil)
+
+				if model.Unique && child.Size() > 1 {
+					child.Remove(id)
+					v.deleteOne(ctx, doc)
+					return errors.WithStack(ErrIndexConflict)
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
+func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
-		return nil
+		return
 	}
 
 	for i, model := range v.models {
@@ -194,50 +184,45 @@ func (v *IndexView) deleteOne(_ context.Context, doc *primitive.Map) error {
 			continue
 		}
 
-		if err := func() error {
-			cur := v.data[i]
+		cur := v.data[i]
 
-			var nodes []maps.Map
-			nodes = append(nodes, cur)
+		var nodes []maps.Map
+		nodes = append(nodes, cur)
 
-			var keys []primitive.Value
-			keys = append(keys, nil)
+		var keys []primitive.Value
+		keys = append(keys, nil)
 
-			for i, k := range model.Keys {
-				value, _ := primitive.Pick[primitive.Value](doc, k)
+		for i, k := range model.Keys {
+			value, _ := primitive.Pick[primitive.Value](doc, k)
 
-				c, _ := cur.Get(value)
-				child, ok := c.(maps.Map)
-				if !ok {
-					return nil
-				}
+			c, _ := cur.Get(value)
+			child, ok := c.(maps.Map)
+			if !ok {
+				nodes = nil
+				keys = nil
 
-				nodes = append(nodes, child)
-				keys = append(keys, value)
-
-				if i < len(model.Keys)-1 {
-					cur = child
-				} else {
-					child.Remove(id)
-				}
+				break
 			}
 
-			for i := len(nodes) - 1; i >= 0; i-- {
-				child := nodes[i]
+			nodes = append(nodes, child)
+			keys = append(keys, value)
 
-				if child.Empty() && i > 0 {
-					parent := nodes[i-1]
-					key := keys[i]
-
-					parent.Remove(key)
-				}
+			if i < len(model.Keys)-1 {
+				cur = child
+			} else {
+				child.Remove(id)
 			}
+		}
 
-			return nil
-		}(); err != nil {
-			return err
+		for i := len(nodes) - 1; i >= 0; i-- {
+			child := nodes[i]
+
+			if child.Empty() && i > 0 {
+				parent := nodes[i-1]
+				key := keys[i]
+
+				parent.Remove(key)
+			}
 		}
 	}
-
-	return nil
 }
