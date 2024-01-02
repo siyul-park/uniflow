@@ -43,7 +43,7 @@ func TestOneToOneNode_Port(t *testing.T) {
 
 func TestOneToOneNode_Send(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
-		t.Run("return out", func(t *testing.T) {
+		t.Run("With Out Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil
 			})
@@ -74,7 +74,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			}
 		})
 
-		t.Run("return err", func(t *testing.T) {
+		t.Run("With Err Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return nil, packet.New(primitive.NewString(faker.Word()))
 			})
@@ -112,7 +112,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 	})
 
 	t.Run("In/Out", func(t *testing.T) {
-		t.Run("return out", func(t *testing.T) {
+		t.Run("With Out Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil
 			})
@@ -156,7 +156,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 			}
 		})
 
-		t.Run("return err", func(t *testing.T) {
+		t.Run("With Err Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return nil, packet.New(primitive.NewString(faker.Word()))
 			})

@@ -42,14 +42,18 @@ func (e *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	defer e.lock.RUnlock()
 
 	var zero T
+
+	var target T
+	var err error
 	for _, encoder := range e.encoders {
-		if target, err := encoder.Encode(source); err == nil {
+		if target, err = encoder.Encode(source); err == nil {
 			return target, nil
 		} else if !errors.Is(err, ErrUnsupportedValue) {
 			return zero, err
 		}
 	}
-	return zero, errors.WithStack(ErrUnsupportedValue)
+
+	return zero, err
 }
 
 // DecoderGroup is a group of Decoder.
@@ -87,6 +91,7 @@ func (d *DecoderGroup[S, T]) Decode(source S, target T) error {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 
+	var err error
 	for _, decoder := range d.decoders {
 		if err := decoder.Decode(source, target); err == nil {
 			return nil
@@ -94,5 +99,6 @@ func (d *DecoderGroup[S, T]) Decode(source S, target T) error {
 			return err
 		}
 	}
-	return errors.WithStack(ErrUnsupportedValue)
+
+	return err
 }
