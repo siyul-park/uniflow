@@ -434,8 +434,8 @@ func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) (
 	coll.mu.Lock()
 	defer coll.mu.Unlock()
 
-	docs = lo.Filter[*primitive.Map](docs, func(item *primitive.Map, _ int) bool { 
-		return item != nil && item.GetOr(keyID, nil) != nil 
+	docs = lo.Filter[*primitive.Map](docs, func(item *primitive.Map, _ int) bool {
+		return item != nil && item.GetOr(keyID, nil) != nil
 	})
 
 	if err := coll.indexView.deleteMany(docs); err != nil {
