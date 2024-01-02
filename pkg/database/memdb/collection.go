@@ -13,21 +13,19 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type (
-	Collection struct {
-		name      string
-		data      maps.Map
-		indexView *IndexView
-		streams   []*Stream
-		matches   []func(*primitive.Map) bool
-		mu        sync.RWMutex
-	}
+type Collection struct {
+	name      string
+	data      maps.Map
+	indexView *IndexView
+	streams   []*Stream
+	matches   []func(*primitive.Map) bool
+	mu        sync.RWMutex
+}
 
-	internalEvent struct {
-		database.Event
-		Document *primitive.Map
-	}
-)
+type internalEvent struct {
+	database.Event
+	Document *primitive.Map
+}
 
 var _ database.Collection = &Collection{}
 
@@ -403,7 +401,7 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 	}
 
 	if len(sorts) > 0 {
-		compare := ParseSorts(sorts)
+		compare := parseSorts(sorts)
 		sort.Slice(docs, func(i, j int) bool {
 			return compare(docs[i], docs[j])
 		})

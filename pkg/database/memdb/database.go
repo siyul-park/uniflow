@@ -7,13 +7,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 )
 
-type (
-	Database struct {
-		name        string
-		collections map[string]*Collection
-		lock        sync.RWMutex
-	}
-)
+type Database struct {
+	name        string
+	collections map[string]*Collection
+	lock        sync.RWMutex
+}
 
 var _ database.Database = &Database{}
 
