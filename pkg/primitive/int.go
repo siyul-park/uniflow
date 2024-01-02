@@ -159,8 +159,7 @@ func (i Int64) Interface() any {
 	return int64(i)
 }
 
-// NewIntEncoder encodes int to Int.
-func NewIntEncoder() encoding.Encoder[any, Value] {
+func newIntEncoder() encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		switch s := reflect.ValueOf(source); s.Kind() {
 		case reflect.Int:
@@ -178,8 +177,7 @@ func NewIntEncoder() encoding.Encoder[any, Value] {
 	})
 }
 
-// NewIntDecoder decodes Int to int.
-func NewIntDecoder() encoding.Decoder[Value, any] {
+func newIntDecoder() encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Integer); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {

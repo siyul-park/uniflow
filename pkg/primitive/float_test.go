@@ -41,8 +41,8 @@ func TestFloat_Compare(t *testing.T) {
 }
 
 func TestFloat_EncodeAndDecode(t *testing.T) {
-	e := NewFloatEncoder()
-	d := NewFloatDecoder()
+	e := newFloatEncoder()
+	d := newFloatDecoder()
 
 	t.Run("Float32", func(t *testing.T) {
 		source := float32(1)

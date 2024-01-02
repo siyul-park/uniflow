@@ -81,8 +81,8 @@ func TestUinteger_Compare(t *testing.T) {
 }
 
 func TestUinteger_EncodeAndDecode(t *testing.T) {
-	e := NewUintEncoder()
-	d := NewUintDecoder()
+	e := newUintEncoder()
+	d := newUintDecoder()
 
 	t.Run("Uint", func(t *testing.T) {
 		source := uint(1)

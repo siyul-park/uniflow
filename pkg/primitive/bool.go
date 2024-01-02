@@ -55,8 +55,7 @@ func (b Bool) Interface() any {
 	return bool(b)
 }
 
-// NewBoolEncoder encodes bool to Bool.
-func NewBoolEncoder() encoding.Encoder[any, Value] {
+func newBoolEncoder() encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Bool {
 			return NewBool(s.Bool()), nil
@@ -65,8 +64,7 @@ func NewBoolEncoder() encoding.Encoder[any, Value] {
 	})
 }
 
-// NewBoolDecoder decodes Bool to bool.
-func NewBoolDecoder() encoding.Decoder[Value, any] {
+func newBoolDecoder() encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(Bool); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {

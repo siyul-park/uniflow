@@ -67,7 +67,7 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	assert.NoError(t, err)
 }
 
-func TestCollection_Insert(t *testing.T, collection database.Collection) {
+func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {

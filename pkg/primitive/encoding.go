@@ -14,38 +14,38 @@ var (
 )
 
 func init() {
-	textEncoder.Add(NewShortcutEncoder())
-	textEncoder.Add(NewBoolEncoder())
-	textEncoder.Add(NewFloatEncoder())
-	textEncoder.Add(NewIntEncoder())
-	textEncoder.Add(NewUintEncoder())
-	textEncoder.Add(NewStringEncoder())
-	textEncoder.Add(NewBinaryEncoder())
-	textEncoder.Add(NewSliceEncoder(textEncoder))
-	textEncoder.Add(NewMapEncoder(textEncoder))
-	textEncoder.Add(NewPointerEncoder(textEncoder))
+	textEncoder.Add(newShortcutEncoder())
+	textEncoder.Add(newBoolEncoder())
+	textEncoder.Add(newFloatEncoder())
+	textEncoder.Add(newIntEncoder())
+	textEncoder.Add(newUintEncoder())
+	textEncoder.Add(newStringEncoder())
+	textEncoder.Add(newBinaryEncoder())
+	textEncoder.Add(newSliceEncoder(textEncoder))
+	textEncoder.Add(newMapEncoder(textEncoder))
+	textEncoder.Add(newPointerEncoder(textEncoder))
 
-	binaryEncoder.Add(NewShortcutEncoder())
-	binaryEncoder.Add(NewBoolEncoder())
-	binaryEncoder.Add(NewFloatEncoder())
-	binaryEncoder.Add(NewIntEncoder())
-	binaryEncoder.Add(NewUintEncoder())
-	binaryEncoder.Add(NewBinaryEncoder())
-	binaryEncoder.Add(NewStringEncoder())
-	binaryEncoder.Add(NewSliceEncoder(binaryEncoder))
-	binaryEncoder.Add(NewMapEncoder(binaryEncoder))
-	binaryEncoder.Add(NewPointerEncoder(binaryEncoder))
+	binaryEncoder.Add(newShortcutEncoder())
+	binaryEncoder.Add(newBoolEncoder())
+	binaryEncoder.Add(newFloatEncoder())
+	binaryEncoder.Add(newIntEncoder())
+	binaryEncoder.Add(newUintEncoder())
+	binaryEncoder.Add(newBinaryEncoder())
+	binaryEncoder.Add(newStringEncoder())
+	binaryEncoder.Add(newSliceEncoder(binaryEncoder))
+	binaryEncoder.Add(newMapEncoder(binaryEncoder))
+	binaryEncoder.Add(newPointerEncoder(binaryEncoder))
 
-	decoder.Add(NewShortcutDecoder())
-	decoder.Add(NewBoolDecoder())
-	decoder.Add(NewFloatDecoder())
-	decoder.Add(NewIntDecoder())
-	decoder.Add(NewUintDecoder())
-	decoder.Add(NewStringDecoder())
-	decoder.Add(NewBinaryDecoder())
-	decoder.Add(NewSliceDecoder(decoder))
-	decoder.Add(NewMapDecoder(decoder))
-	decoder.Add(NewPointerDecoder(decoder))
+	decoder.Add(newShortcutDecoder())
+	decoder.Add(newBoolDecoder())
+	decoder.Add(newFloatDecoder())
+	decoder.Add(newIntDecoder())
+	decoder.Add(newUintDecoder())
+	decoder.Add(newStringDecoder())
+	decoder.Add(newBinaryDecoder())
+	decoder.Add(newSliceDecoder(decoder))
+	decoder.Add(newMapDecoder(decoder))
+	decoder.Add(newPointerDecoder(decoder))
 }
 
 // MarshalText returns the Object of v.
@@ -63,8 +63,7 @@ func Unmarshal(data Value, v any) error {
 	return decoder.Decode(data, v)
 }
 
-// NewPointerEncoder is encode *T to T.
-func NewPointerEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+func newPointerEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if source == nil {
 			return nil, nil
@@ -76,8 +75,7 @@ func NewPointerEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[an
 	})
 }
 
-// NewPointerDecoder is decode T to *T.
-func NewPointerDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+func newPointerDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if source == nil {
 			return nil
@@ -93,8 +91,7 @@ func NewPointerDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Va
 	})
 }
 
-// NewPointerEncoder is encode Value to Value.
-func NewShortcutEncoder() encoding.Encoder[any, Value] {
+func newShortcutEncoder() encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s, ok := source.(Value); ok {
 			return s, nil
@@ -103,8 +100,7 @@ func NewShortcutEncoder() encoding.Encoder[any, Value] {
 	})
 }
 
-// NewShortcutDecoder is decode Value to Value.
-func NewShortcutDecoder() encoding.Decoder[Value, any] {
+func newShortcutDecoder() encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if t, ok := target.(*Value); ok {
 			*t = source

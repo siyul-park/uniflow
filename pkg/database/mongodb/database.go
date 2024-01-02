@@ -8,13 +8,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type (
-	Database struct {
-		raw         *mongo.Database
-		collections map[string]*Collection
-		lock        sync.RWMutex
-	}
-)
+type Database struct {
+	raw         *mongo.Database
+	collections map[string]*Collection
+	lock        sync.RWMutex
+}
 
 var _ database.Database = &Database{}
 

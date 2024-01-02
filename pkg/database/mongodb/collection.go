@@ -13,12 +13,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type (
-	Collection struct {
-		raw  *mongo.Collection
-		lock sync.RWMutex
-	}
-)
+type Collection struct {
+	raw  *mongo.Collection
+	lock sync.RWMutex
+}
 
 var _ database.Collection = &Collection{}
 
@@ -44,7 +42,7 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 	pipeline := mongo.Pipeline{}
 
 	if filter != nil {
-		if match, err := MarshalFilter(filter); err != nil {
+		if match, err := marshalFilter(filter); err != nil {
 			return nil, err
 		} else if match != nil {
 			pipeline = append(pipeline, bson.D{{Key: "$match", Value: match}})
@@ -56,11 +54,11 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 		return nil, err
 	}
 
-	return UpgradeStream(stream), nil
+	return UpgradeStream(ctx, stream), nil
 }
 
 func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
-	raw, err := MarshalDocument(doc)
+	raw, err := marshalDocument(doc)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +69,7 @@ func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (prim
 	}
 
 	var id primitive.Value
-	if err := UnmarshalDocument(res.InsertedID, &id); err != nil {
+	if err := unmarshalDocument(res.InsertedID, &id); err != nil {
 		return nil, err
 	}
 	return id, nil
@@ -80,7 +78,7 @@ func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (prim
 func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	var raws bson.A
 	for _, doc := range docs {
-		if raw, err := MarshalDocument(doc); err == nil {
+		if raw, err := marshalDocument(doc); err == nil {
 			raws = append(raws, raw)
 		} else {
 			return nil, err
@@ -95,7 +93,7 @@ func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) (
 	var ids []primitive.Value
 	for _, insertedID := range res.InsertedIDs {
 		var id primitive.Value
-		if err := UnmarshalDocument(insertedID, &id); err != nil {
+		if err := unmarshalDocument(insertedID, &id); err != nil {
 			return nil, err
 		}
 		ids = append(ids, id)
@@ -105,11 +103,11 @@ func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) (
 }
 
 func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
-	raw, err := MarshalDocument(patch)
+	raw, err := marshalDocument(patch)
 	if err != nil {
 		return false, err
 	}
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return false, err
 	}
@@ -123,11 +121,11 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 }
 
 func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (int, error) {
-	raw, err := MarshalDocument(patch)
+	raw, err := marshalDocument(patch)
 	if err != nil {
 		return 0, err
 	}
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return 0, err
 	}
@@ -141,7 +139,7 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 }
 
 func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return false, err
 	}
@@ -155,7 +153,7 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) 
 }
 
 func (coll *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (int, error) {
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return 0, err
 	}
@@ -169,7 +167,7 @@ func (coll *Collection) DeleteMany(ctx context.Context, filter *database.Filter)
 }
 
 func (coll *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -187,14 +185,14 @@ func (coll *Collection) FindOne(ctx context.Context, filter *database.Filter, op
 	if err := res.Decode(&r); err != nil {
 		return nil, err
 	}
-	if err := UnmarshalDocument(r, &doc); err != nil {
+	if err := unmarshalDocument(r, &doc); err != nil {
 		return nil, err
 	}
 	return doc.(*primitive.Map), nil
 }
 
 func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
-	f, err := MarshalFilter(filter)
+	f, err := marshalFilter(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +209,7 @@ func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, o
 		if err := cursor.Decode(&r); err != nil {
 			return nil, err
 		}
-		if err := UnmarshalDocument(r, &doc); err != nil {
+		if err := unmarshalDocument(r, &doc); err != nil {
 			return nil, err
 		}
 		docs = append(docs, doc.(*primitive.Map))

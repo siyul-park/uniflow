@@ -9,15 +9,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type (
-	Stream struct {
-		raw     *mongo.ChangeStream
-		channel chan database.Event
-		done    chan struct{}
-	}
-)
+type Stream struct {
+	raw     *mongo.ChangeStream
+	channel chan database.Event
+	done    chan struct{}
+}
 
-func UpgradeStream(stream *mongo.ChangeStream) *Stream {
+func UpgradeStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	s := &Stream{
 		raw:     stream,
 		channel: make(chan database.Event),
@@ -25,10 +23,10 @@ func UpgradeStream(stream *mongo.ChangeStream) *Stream {
 	}
 
 	go func() {
-		defer func() { _ = s.raw.Close(context.Background()) }()
+		defer func() { _ = s.raw.Close(ctx) }()
 		defer func() { close(s.channel) }()
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(ctx)
 		go func() {
 			defer cancel()
 			<-s.done
@@ -46,7 +44,7 @@ func UpgradeStream(stream *mongo.ChangeStream) *Stream {
 			var id primitive.Value
 			if documentKey, ok := data["documentKey"]; ok {
 				if documentKey, ok := documentKey.(bson.M); ok {
-					if err := UnmarshalDocument(documentKey["_id"], &id); err != nil {
+					if err := unmarshalDocument(documentKey["_id"], &id); err != nil {
 						continue
 					}
 				} else {

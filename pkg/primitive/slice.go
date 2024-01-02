@@ -129,8 +129,7 @@ func (s *Slice) Interface() any {
 	return sliceValue.Interface()
 }
 
-// NewSliceEncoder is encode slice or array to Slice.
-func NewSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
+func newSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
 	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
 		if s := reflect.ValueOf(source); s.Kind() == reflect.Slice || s.Kind() == reflect.Array {
 			values := make([]Value, s.Len())
@@ -147,8 +146,7 @@ func NewSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any,
 	})
 }
 
-// NewSliceDecoder is decode Slice to slice or array.
-func NewSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+func newSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Slice); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {

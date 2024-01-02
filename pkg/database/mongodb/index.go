@@ -10,11 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type (
-	IndexView struct {
-		raw mongo.IndexView
-	}
-)
+type IndexView struct {
+	raw mongo.IndexView
+}
 
 var _ database.IndexView = &IndexView{}
 
@@ -45,7 +43,7 @@ func (iv *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 			keys = append(keys, documentKey(k))
 		}
 		var partial *database.Filter
-		if err := UnmarshalFilter(partialFilterExpression, &partial); err != nil {
+		if err := unmarshalFilter(partialFilterExpression, &partial); err != nil {
 			return nil, err
 		}
 
@@ -66,7 +64,7 @@ func (iv *IndexView) Create(ctx context.Context, index database.IndexModel) erro
 		keys = append(keys, bson.E{Key: bsonKey(k), Value: 1})
 	}
 
-	partialFilterExpression, err := MarshalFilter(index.Partial)
+	partialFilterExpression, err := marshalFilter(index.Partial)
 	if err != nil {
 		return err
 	}

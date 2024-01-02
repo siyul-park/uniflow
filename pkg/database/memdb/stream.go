@@ -6,50 +6,53 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 )
 
-type (
-	Stream struct {
-		buffer  []database.Event
-		channel chan database.Event
-		pump    chan struct{}
-		done    chan struct{}
-		mu      sync.Mutex
-	}
-)
+type Stream struct {
+	in   chan database.Event
+	out  chan database.Event
+	done chan struct{}
+	mu   sync.Mutex
+}
 
 func NewStream() *Stream {
 	s := &Stream{
-		buffer:  nil,
-		channel: make(chan database.Event),
-		pump:    make(chan struct{}),
-		done:    make(chan struct{}),
-		mu:      sync.Mutex{},
+		in:   make(chan database.Event),
+		out:  make(chan database.Event),
+		done: make(chan struct{}),
+		mu:   sync.Mutex{},
 	}
 
 	go func() {
-		defer func() { close(s.channel) }()
+		defer close(s.out)
+		buffer := make([]database.Event, 0, 4)
 
+	loop:
 		for {
+			evt, ok := <-s.in
+			if !ok {
+				break loop
+			}
 			select {
-			case <-s.done:
-				return
-			case <-s.pump:
-				buffer := func() []database.Event {
-					s.mu.Lock()
-					defer s.mu.Unlock()
-
-					buffer := s.buffer
-					s.buffer = nil
-					return buffer
-				}()
-
-				for _, event := range buffer {
-					select {
-					case <-s.done:
-						return
-					case s.channel <- event:
+			case s.out <- evt:
+				continue
+			default:
+			}
+			buffer = append(buffer, evt)
+			for len(buffer) > 0 {
+				select {
+				case packet, ok := <-s.in:
+					if !ok {
+						break loop
 					}
+					buffer = append(buffer, packet)
+
+				case s.out <- buffer[0]:
+					buffer = buffer[1:]
 				}
 			}
+		}
+		for len(buffer) > 0 {
+			s.out <- buffer[0]
+			buffer = buffer[1:]
 		}
 	}()
 
@@ -57,7 +60,7 @@ func NewStream() *Stream {
 }
 
 func (s *Stream) Next() <-chan database.Event {
-	return s.channel
+	return s.out
 }
 
 func (s *Stream) Done() <-chan struct{} {
@@ -75,29 +78,18 @@ func (s *Stream) Close() error {
 	}
 
 	close(s.done)
-	s.buffer = nil
+	close(s.in)
 
 	return nil
 }
 
-func (s *Stream) Emit(event database.Event) {
+func (s *Stream) Emit(evt database.Event) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	select {
 	case <-s.done:
 	default:
-		s.buffer = append(s.buffer, event)
-		s.push()
+		s.in <- evt
 	}
-}
-
-func (p *Stream) push() {
-	go func() {
-		select {
-		case <-p.done:
-		default:
-			p.pump <- struct{}{}
-		}
-	}()
 }

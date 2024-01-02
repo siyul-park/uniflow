@@ -74,8 +74,8 @@ func TestSlice_Compare(t *testing.T) {
 }
 
 func TestSlice_EncodeAndDecode(t *testing.T) {
-	encoder := NewSliceEncoder(NewStringEncoder())
-	decoder := NewSliceDecoder(NewStringDecoder())
+	encoder := newSliceEncoder(newStringEncoder())
+	decoder := newSliceDecoder(newStringDecoder())
 
 	v1 := NewString(faker.Word())
 	v2 := NewString(faker.Word())

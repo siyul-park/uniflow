@@ -24,8 +24,8 @@ func TestBool_Compare(t *testing.T) {
 }
 
 func TestBool_EncodeAndDecode(t *testing.T) {
-	e := NewBoolEncoder()
-	d := NewBoolDecoder()
+	e := newBoolEncoder()
+	d := newBoolDecoder()
 
 	source := true
 
