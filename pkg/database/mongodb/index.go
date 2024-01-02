@@ -10,11 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type (
-	IndexView struct {
-		raw mongo.IndexView
-	}
-)
+type IndexView struct {
+	raw mongo.IndexView
+}
 
 var _ database.IndexView = &IndexView{}
 

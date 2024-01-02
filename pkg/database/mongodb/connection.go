@@ -9,13 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type (
-	Connection struct {
-		raw       *mongo.Client
-		databases map[string]*Database
-		lock      sync.RWMutex
-	}
-)
+type Connection struct {
+	raw       *mongo.Client
+	databases map[string]*Database
+	lock      sync.RWMutex
+}
 
 func Connect(ctx context.Context, uri string) (*Connection, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))

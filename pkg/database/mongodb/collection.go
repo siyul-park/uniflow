@@ -13,12 +13,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type (
-	Collection struct {
-		raw  *mongo.Collection
-		lock sync.RWMutex
-	}
-)
+type Collection struct {
+	raw  *mongo.Collection
+	lock sync.RWMutex
+}
 
 var _ database.Collection = &Collection{}
 
@@ -56,7 +54,7 @@ func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (dat
 		return nil, err
 	}
 
-	return UpgradeStream(stream), nil
+	return UpgradeStream(ctx, stream), nil
 }
 
 func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
