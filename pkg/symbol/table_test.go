@@ -11,17 +11,17 @@ import (
 )
 
 func TestTable_Insert(t *testing.T) {
-	t.Run("by ID", func(t *testing.T) {
-		t.Run("when not exists", func(t *testing.T) {
-			s := scheme.New()
+	s := scheme.New()
 
-			kind := faker.Word()
+	kind := faker.Word()
 
-			s.AddKnownType(kind, &scheme.SpecMeta{})
-			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-				return node.NewOneToOneNode(nil), nil
-			}))
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
 
+	t.Run("Link By ID", func(t *testing.T) {
+		t.Run("Unlinked", func(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 
@@ -84,16 +84,7 @@ func TestTable_Insert(t *testing.T) {
 			assert.Equal(t, 1, p3.Links())
 		})
 
-		t.Run("when exists", func(t *testing.T) {
-			s := scheme.New()
-
-			kind := faker.Word()
-
-			s.AddKnownType(kind, &scheme.SpecMeta{})
-			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-				return node.NewOneToOneNode(nil), nil
-			}))
-
+		t.Run("Linked", func(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 
@@ -160,17 +151,8 @@ func TestTable_Insert(t *testing.T) {
 		})
 	})
 
-	t.Run("by Name", func(t *testing.T) {
-		t.Run("when not exists", func(t *testing.T) {
-			s := scheme.New()
-
-			kind := faker.Word()
-
-			s.AddKnownType(kind, &scheme.SpecMeta{})
-			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-				return node.NewOneToOneNode(nil), nil
-			}))
-
+	t.Run("Link By Name", func(t *testing.T) {
+		t.Run("Unlinked", func(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 
@@ -236,16 +218,7 @@ func TestTable_Insert(t *testing.T) {
 			assert.Equal(t, 1, p3.Links())
 		})
 
-		t.Run("when exists", func(t *testing.T) {
-			s := scheme.New()
-
-			kind := faker.Word()
-
-			s.AddKnownType(kind, &scheme.SpecMeta{})
-			s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
-				return node.NewOneToOneNode(nil), nil
-			}))
-
+		t.Run("Linked", func(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 

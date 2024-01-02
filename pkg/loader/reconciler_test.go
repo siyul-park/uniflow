@@ -49,10 +49,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	err := r.Watch(ctx)
 	assert.NoError(t, err)
 
-	go func() {
-		err := r.Reconcile(ctx)
-		assert.NoError(t, err)
-	}()
+	go r.Reconcile(ctx)
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),

@@ -13,6 +13,7 @@ import (
 func TestSymbol_Getter(t *testing.T) {
 	n := node.NewOneToOneNode(nil)
 	defer n.Close()
+
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
 		Kind:      faker.Word(),
