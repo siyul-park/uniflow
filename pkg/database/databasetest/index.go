@@ -12,7 +12,9 @@ import (
 )
 
 func AssertIndexViewList(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -33,7 +35,9 @@ func AssertIndexViewList(t *testing.T, indexView database.IndexView) {
 }
 
 func AssertIndexViewCreate(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -46,7 +50,9 @@ func AssertIndexViewCreate(t *testing.T, indexView database.IndexView) {
 }
 
 func AssertIndexViewDrop(t *testing.T, indexView database.IndexView) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	model := database.IndexModel{

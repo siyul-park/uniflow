@@ -34,12 +34,12 @@ func AssertCollectionIndexes(t *testing.T, collection database.Collection) {
 func AssertCollectionWatch(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	stream, err := collection.Watch(ctx, nil)
 	assert.NoError(t, err)
-	defer func() { _ = stream.Close() }()
+	defer stream.Close()
 
 	go func() {
 		for {
@@ -67,27 +67,11 @@ func AssertCollectionWatch(t *testing.T, collection database.Collection) {
 	assert.NoError(t, err)
 }
 
-func AssertCollectionInsertOne(t *testing.T, collection database.Collection) {
+func AssertCollectionInsert(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		doc := primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
-			primitive.NewString("name"), primitive.NewString(faker.Word()),
-			primitive.NewString("version"), primitive.NewInt(0),
-			primitive.NewString("deleted"), primitive.FALSE,
-		)
-
-		id, err := collection.InsertOne(ctx, doc)
-		assert.NoError(t, err)
-		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), id)
-	})
-
-	t.Run("Conflict", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
 		doc := primitive.NewMap(
@@ -102,31 +86,84 @@ func AssertCollectionInsertOne(t *testing.T, collection database.Collection) {
 		_, err := collection.InsertOne(ctx, doc)
 		assert.Error(t, err)
 	})
+
+	t.Run("Conflict", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		doc := primitive.NewMap(
+			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("name"), primitive.NewString(faker.Word()),
+			primitive.NewString("version"), primitive.NewInt(0),
+			primitive.NewString("deleted"), primitive.FALSE,
+		)
+
+		id, err := collection.InsertOne(ctx, doc)
+		assert.NoError(t, err)
+		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), id)
+	})
 }
 
 func AssertCollectionInsertMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	t.Run("Success", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
 
-	doc := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
-		primitive.NewString("name"), primitive.NewString(faker.Word()),
-		primitive.NewString("version"), primitive.NewInt(0),
-		primitive.NewString("deleted"), primitive.FALSE,
-	)
+		docs := []*primitive.Map{
+			primitive.NewMap(
+				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("name"), primitive.NewString(faker.Word()),
+				primitive.NewString("version"), primitive.NewInt(0),
+				primitive.NewString("deleted"), primitive.FALSE,
+			),
+			primitive.NewMap(
+				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("name"), primitive.NewString(faker.Word()),
+				primitive.NewString("version"), primitive.NewInt(0),
+				primitive.NewString("deleted"), primitive.FALSE,
+			),
+		}
 
-	ids, err := collection.InsertMany(ctx, []*primitive.Map{doc})
-	assert.NoError(t, err)
-	assert.Len(t, ids, 1)
-	assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), ids[0])
+		ids, err := collection.InsertMany(ctx, docs)
+		assert.NoError(t, err)
+		assert.Len(t, ids, len(docs))
+		for i, doc := range docs {
+			assert.Equal(t, ids[i], doc.GetOr(primitive.NewString("id"), nil))
+		}
+	})
+
+	t.Run("Conflict", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		docs := []*primitive.Map{
+			primitive.NewMap(
+				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("name"), primitive.NewString(faker.Word()),
+				primitive.NewString("version"), primitive.NewInt(0),
+				primitive.NewString("deleted"), primitive.FALSE,
+			),
+			primitive.NewMap(
+				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("name"), primitive.NewString(faker.Word()),
+				primitive.NewString("version"), primitive.NewInt(0),
+				primitive.NewString("deleted"), primitive.FALSE,
+			),
+		}
+
+		_, _ = collection.InsertMany(ctx, docs)
+
+		_, err := collection.InsertMany(ctx, docs)
+		assert.Error(t, err)
+	})
 }
 
 func AssertCollectionUpdateOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	t.Run("options.Upsert = true", func(t *testing.T) {
@@ -168,7 +205,7 @@ func AssertCollectionUpdateOne(t *testing.T, collection database.Collection) {
 func AssertCollectionUpdateMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	t.Run("options.Upsert = true", func(t *testing.T) {
@@ -210,7 +247,7 @@ func AssertCollectionUpdateMany(t *testing.T, collection database.Collection) {
 func AssertCollectionDeleteOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -236,7 +273,7 @@ func AssertCollectionDeleteOne(t *testing.T, collection database.Collection) {
 func AssertCollectionDeleteMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -262,7 +299,7 @@ func AssertCollectionDeleteMany(t *testing.T, collection database.Collection) {
 func AssertCollectionFindOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -361,7 +398,7 @@ func AssertCollectionFindOne(t *testing.T, collection database.Collection) {
 func AssertCollectionFindMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -460,7 +497,7 @@ func AssertCollectionFindMany(t *testing.T, collection database.Collection) {
 func AssertCollectionDrop(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	_, err := collection.InsertOne(ctx, primitive.NewMap(

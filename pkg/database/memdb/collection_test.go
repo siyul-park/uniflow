@@ -28,7 +28,7 @@ func TestCollection_Watch(t *testing.T) {
 func TestCollection_InsertOne(t *testing.T) {
 	coll := NewCollection(faker.Name())
 
-	databasetest.AssertCollectionInsertOne(t, coll)
+	databasetest.AssertCollectionInsert(t, coll)
 }
 
 func TestCollection_InsertMany(t *testing.T) {
