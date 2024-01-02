@@ -78,11 +78,9 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 	defer s.mu.RUnlock()
 
 	unstructured := scheme.NewUnstructured(nil)
-
 	if err := unstructured.Marshal(spec); err != nil {
 		return ulid.ULID{}, err
 	}
-
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}
@@ -94,13 +92,12 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 		return ulid.ULID{}, err
 	}
 
-	var id ulid.ULID
-
 	pk, err := s.nodes.InsertOne(ctx, unstructured.Doc())
 	if err != nil {
 		return ulid.ULID{}, err
 	}
 
+	var id ulid.ULID
 	if err := primitive.Unmarshal(pk, &id); err != nil {
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).EQ(pk))
 		return ulid.ULID{}, err
@@ -110,19 +107,16 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 }
 
 // InsertMany inserts multiple scheme.Spec instances and returns their IDs.
-func (s *Storage) InsertMany(ctx context.Context, objs []scheme.Spec) ([]ulid.ULID, error) {
+func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]ulid.ULID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var docs []*primitive.Map
-
-	for _, spec := range objs {
+	for _, spec := range specs {
 		unstructured := scheme.NewUnstructured(nil)
-
 		if err := unstructured.Marshal(spec); err != nil {
 			return nil, err
 		}
-
 		if unstructured.GetNamespace() == "" {
 			unstructured.SetNamespace(scheme.DefaultNamespace)
 		}
@@ -157,11 +151,9 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 	defer s.mu.RUnlock()
 
 	unstructured := scheme.NewUnstructured(nil)
-
 	if err := unstructured.Marshal(spec); err != nil {
 		return false, err
 	}
-
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}
@@ -178,19 +170,16 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 }
 
 // UpdateMany updates multiple scheme.Spec instances and returns the number of successes.
-func (s *Storage) UpdateMany(ctx context.Context, objs []scheme.Spec) (int, error) {
+func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var unstructureds []*scheme.Unstructured
-
-	for _, spec := range objs {
+	for _, spec := range specs {
 		unstructured := scheme.NewUnstructured(nil)
-
 		if err := unstructured.Marshal(spec); err != nil {
 			return 0, err
 		}
-
 		if unstructured.GetNamespace() == "" {
 			unstructured.SetNamespace(scheme.DefaultNamespace)
 		}
@@ -258,7 +247,6 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 	if err != nil {
 		return nil, err
 	}
-
 	if doc == nil {
 		return nil, nil
 	}
@@ -326,10 +314,9 @@ func (s *Storage) ensureIndexes(ctx context.Context, indexes []database.IndexMod
 }
 
 func (s *Storage) validate(spec scheme.Spec) error {
-	if n, err := s.scheme.Decode(spec); err != nil {
+	n, err := s.scheme.Decode(spec)
+	if err != nil {
 		return err
-	} else {
-		_ = n.Close()
 	}
-	return nil
+	return n.Close()
 }
