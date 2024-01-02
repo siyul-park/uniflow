@@ -66,7 +66,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		for {
 			select {
 			case <-ctx.Done():
-				assert.Fail(t, "timeout")
+				assert.NoError(t, ctx.Err())
 				return
 			default:
 				if sym, ok := tb.LookupByID(spec.GetID()); ok {

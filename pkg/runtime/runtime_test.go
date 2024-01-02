@@ -124,20 +124,24 @@ func TestRuntime_Start(t *testing.T) {
 
 	go r.Start(ctx)
 
-	deadline := time.Second
-	tick := 5 * time.Millisecond
+	func() {
+		ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+		defer cancel()
 
-	limit := int(deadline.Milliseconds() / tick.Milliseconds())
+		ticker := time.NewTicker(5 * time.Millisecond)
+		defer ticker.Stop()
 
-	ticker := time.NewTicker(tick)
-	defer ticker.Stop()
-
-	i := 0
-	for ; i < limit; i++ {
-		<-ticker.C
-		if n, _ := r.Lookup(ctx, spec.GetID()); n != nil {
-			break
+		for {
+			select {
+			case <-ctx.Done():
+				assert.NoError(t, ctx.Err())
+				return
+			case <-ticker.C:
+				if n, _ := r.Lookup(ctx, spec.GetID()); n != nil {
+					return
+				}
+			}
 		}
-	}
-	assert.Less(t, i, limit)
+	}()
+
 }
