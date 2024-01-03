@@ -24,7 +24,7 @@ type ApplyConfig struct {
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Apply resources to runtime",
+		Short: "Apply resources in namespace",
 		RunE:  runApplyCommand(config),
 	}
 
@@ -38,11 +38,11 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
-		file, err := cmd.Flags().GetString(flagFilename)
+		filename, err := cmd.Flags().GetString(flagFilename)
 		if err != nil {
 			return err
 		}
@@ -58,9 +58,9 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
 			Storage(st).
-			Namespace(ns).
+			Namespace(namespace).
 			FS(config.FS).
-			Filename(file).
+			Filename(filename).
 			Scan(ctx)
 		if err != nil {
 			return err
@@ -71,21 +71,22 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		exists, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {
 			return err
 		}
-		existsIds := make(map[ulid.ULID]struct{}, len(exists))
-		for _, spec := range exists {
-			existsIds[spec.GetID()] = struct{}{}
+
+		exists := make(map[ulid.ULID]struct{}, len(origins))
+		for _, spec := range origins {
+			exists[spec.GetID()] = struct{}{}
 		}
 
 		var inserted []scheme.Spec
 		var updated []scheme.Spec
 		for _, spec := range specs {
-			if _, ok := existsIds[spec.GetID()]; ok {
+			if _, ok := exists[spec.GetID()]; ok {
 				updated = append(updated, spec)
 			} else {
 				inserted = append(inserted, spec)
@@ -99,10 +100,6 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if err := printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions); err != nil {
-			return err
-		}
-
-		return nil
+		return printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions)
 	}
 }

@@ -13,8 +13,8 @@ import (
 
 // TableColumnDefinition represents the definition of a table column.
 type TableColumnDefinition struct {
-	Name   string // Name is the name of the column.
-	Format string // Format is the JSONata expression for formatting the column.
+	Name   string
+	Format string
 }
 
 // TablePrinter is responsible for printing tabular data based on the provided columns.
@@ -32,7 +32,6 @@ var SpecTableColumnDefinitions = []TableColumnDefinition{
 	{Name: "links", Format: "$.links"},
 }
 
-// style is the default style configuration for the table.
 var style = table.Style{
 	Name: "StyleDefault",
 	Box: table.BoxStyle{

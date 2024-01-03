@@ -26,14 +26,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		Database: db,
 	})
 
-	patchFilepath := "patch.json"
 	kind := faker.UUIDHyphenated()
-
-	spec := &scheme.SpecMeta{
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
@@ -42,9 +35,17 @@ func TestApplyCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
+	filename := "patch.json"
+
+	spec := &scheme.SpecMeta{
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
 	data, _ := json.Marshal(spec)
 
-	fsys[patchFilepath] = &fstest.MapFile{
+	fsys[filename] = &fstest.MapFile{
 		Data: data,
 	}
 
@@ -58,7 +59,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	cmd.SetOut(output)
 	cmd.SetErr(output)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), patchFilepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
 
 	err := cmd.Execute()
 	assert.NoError(t, err)

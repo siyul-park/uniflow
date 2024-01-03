@@ -18,7 +18,7 @@ type GetConfig struct {
 func NewGetCommand(config GetConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get and display applied resources",
+		Short: "Get and display resources in namespace",
 		RunE:  runGetCommand(config),
 	}
 
@@ -31,7 +31,7 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
@@ -45,8 +45,8 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 		}
 
 		var filter *storage.Filter
-		if ns != "" {
-			filter = storage.Where[string](scheme.KeyNamespace).EQ(ns)
+		if namespace != "" {
+			filter = storage.Where[string](scheme.KeyNamespace).EQ(namespace)
 		}
 
 		specs, err := st.FindMany(ctx, filter)

@@ -22,7 +22,7 @@ type DeleteConfig struct {
 func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Delete resources to runtime",
+		Short: "Delete resources in namespace",
 		RunE:  runDeleteCommand(config),
 	}
 
@@ -36,11 +36,11 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		ns, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
 			return err
 		}
-		file, err := cmd.Flags().GetString(flagFilename)
+		filename, err := cmd.Flags().GetString(flagFilename)
 		if err != nil {
 			return err
 		}
@@ -56,9 +56,9 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
 			Storage(st).
-			Namespace(ns).
+			Namespace(namespace).
 			FS(config.FS).
-			Filename(file).
+			Filename(filename).
 			Scan(ctx)
 		if err != nil {
 			return err
@@ -66,12 +66,11 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 		var filter *storage.Filter
 		for _, spec := range specs {
-			filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
+			filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()).
+				And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
 		}
 
-		if _, err := st.DeleteMany(ctx, filter); err != nil {
-			return err
-		}
-		return nil
+		_, err = st.DeleteMany(ctx, filter)
+		return err
 	}
 }

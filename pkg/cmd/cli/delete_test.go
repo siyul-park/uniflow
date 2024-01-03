@@ -25,14 +25,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		Database: db,
 	})
 
-	filepath := "resource.json"
 	kind := faker.UUIDHyphenated()
-
-	spec := &scheme.SpecMeta{
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
@@ -41,9 +34,17 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
+	filename := "patch.json"
+
+	spec := &scheme.SpecMeta{
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
 	data, _ := json.Marshal(spec)
 
-	fsys[filepath] = &fstest.MapFile{
+	fsys[filename] = &fstest.MapFile{
 		Data: data,
 	}
 
@@ -55,7 +56,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		FS:       fsys,
 	})
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
 
 	err := cmd.Execute()
 	assert.NoError(t, err)

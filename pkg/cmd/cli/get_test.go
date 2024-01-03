@@ -24,18 +24,18 @@ func TestGetCommand_Execute(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	spec := &scheme.SpecMeta{
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
-
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
+
+	spec := &scheme.SpecMeta{
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
 
 	id, _ := st.InsertOne(context.Background(), spec)
 

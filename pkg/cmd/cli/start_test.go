@@ -30,14 +30,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		Database: db,
 	})
 
-	filepath := "boot.json"
 	kind := faker.UUIDHyphenated()
-
-	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
@@ -46,9 +39,17 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
+	filename := "patch.json"
+
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+
 	data, _ := json.Marshal(spec)
 
-	fsys[filepath] = &fstest.MapFile{
+	fsys[filename] = &fstest.MapFile{
 		Data: data,
 	}
 
@@ -67,7 +68,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filepath})
+	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
 
 	go func() {
 		_ = cmd.Execute()
@@ -82,10 +83,9 @@ func TestStartCommand_Execute(t *testing.T) {
 			r, err := st.FindOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 			assert.NoError(t, err)
 			if r != nil {
+				assert.Equal(t, spec, r)
 				return
 			}
-
-			// TODO: assert symbol is loaded.
 		}
 	}
 }
