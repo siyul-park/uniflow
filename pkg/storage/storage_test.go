@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const batch = 2
+
 func TestStorage_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -100,17 +102,12 @@ func TestStorage_InsertMany(t *testing.T) {
 		Database: memdb.New(faker.Word()),
 	})
 
-	specs := []scheme.Spec{
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
+	var specs []scheme.Spec
+	for i := 0; i < batch; i++ {
+		specs = append(specs, &scheme.SpecMeta{
+			ID:   ulid.Make(),
+			Kind: kind,
+		})
 	}
 
 	ids, err := st.InsertMany(ctx, specs)
@@ -173,7 +170,6 @@ func TestStorage_UpdateMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -266,7 +262,6 @@ func TestStorage_DeleteMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
@@ -341,7 +336,6 @@ func TestStorage_FindMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
 	kind := faker.Word()
 
 	s := scheme.New()
