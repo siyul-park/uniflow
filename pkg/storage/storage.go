@@ -24,9 +24,7 @@ type Storage struct {
 	mu     sync.RWMutex
 }
 
-const collectionName = "nodes"
-
-var defaultIndexes = []database.IndexModel{
+var indexes = []database.IndexModel{
 	{
 		Name:    "namespace_name",
 		Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
@@ -40,21 +38,19 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 	scheme := config.Scheme
 	db := config.Database
 
-	nodes, err := db.Collection(ctx, collectionName)
+	nodes, err := db.Collection(ctx, "nodes")
 	if err != nil {
 		return nil, err
 	}
 
-	s := &Storage{
-		scheme: scheme,
-		nodes:  nodes,
-	}
-
-	if err := s.ensureIndexes(ctx, defaultIndexes); err != nil {
+	if err := ensureIndexes(ctx, nodes, indexes); err != nil {
 		return nil, err
 	}
 
-	return s, nil
+	return &Storage{
+		scheme: scheme,
+		nodes:  nodes,
+	}, nil
 }
 
 // Watch returns a Stream to track changes based on the provided filter.
@@ -285,38 +281,36 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	return specs, nil
 }
 
-func (s *Storage) ensureIndexes(ctx context.Context, indexes []database.IndexModel) error {
-	existingIndexes, err := s.nodes.Indexes().List(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, index := range indexes {
-		var indexExists bool
-
-		for _, existingIndex := range existingIndexes {
-			if existingIndex.Name == index.Name {
-				if !reflect.DeepEqual(existingIndex, index) {
-					s.nodes.Indexes().Drop(ctx, existingIndex.Name)
-				} else {
-					indexExists = true
-				}
-				break
-			}
-		}
-
-		if !indexExists {
-			s.nodes.Indexes().Create(ctx, index)
-		}
-	}
-
-	return nil
-}
-
 func (s *Storage) validate(spec scheme.Spec) error {
 	n, err := s.scheme.Decode(spec)
 	if err != nil {
 		return err
 	}
 	return n.Close()
+}
+
+func ensureIndexes(ctx context.Context, coll database.Collection, indexes []database.IndexModel) error {
+	origins, err := coll.Indexes().List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, index := range indexes {
+		var exists bool
+		for _, origin := range origins {
+			if origin.Name == index.Name {
+				if !reflect.DeepEqual(origin, index) {
+					coll.Indexes().Drop(ctx, origin.Name)
+				} else {
+					exists = true
+				}
+				break
+			}
+		}
+		if !exists {
+			coll.Indexes().Create(ctx, index)
+		}
+	}
+
+	return nil
 }

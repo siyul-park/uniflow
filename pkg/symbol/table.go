@@ -142,7 +142,7 @@ func (t *Table) insert(sym *Symbol) error {
 	if err := t.links(sym); err != nil {
 		return err
 	}
-	if err := t.resolveUnlinked(sym); err != nil {
+	if err := t.relinks(sym); err != nil {
 		return err
 	}
 
@@ -169,9 +169,6 @@ func (t *Table) free(id ulid.ULID) (*Symbol, error) {
 	delete(t.symbols, id)
 
 	if err := t.unlinks(sym); err != nil {
-		return nil, err
-	}
-	if err := t.resolveLinked(sym); err != nil {
 		return nil, err
 	}
 
@@ -255,10 +252,36 @@ func (t *Table) unlinks(sym *Symbol) error {
 		}
 	}
 
+	for name, locations := range sym.linked {
+		for i, location := range locations {
+			if err := t.unload(t.symbols[location.ID]); err != nil {
+				return err
+			}
+
+			ref := t.symbols[location.ID]
+
+			var unlink scheme.PortLocation
+			if location.Name == "" {
+				unlink = scheme.PortLocation{
+					ID:   sym.ID(),
+					Port: name,
+				}
+			} else {
+				unlink = scheme.PortLocation{
+					Name: location.Name,
+					Port: name,
+				}
+			}
+
+			sym.linked[name] = append(locations[:i], locations[i+1:]...)
+			ref.unlinks[location.Port] = append(ref.unlinks[location.Port], unlink)
+		}
+	}
+
 	return nil
 }
 
-func (t *Table) resolveUnlinked(sym *Symbol) error {
+func (t *Table) relinks(sym *Symbol) error {
 	for _, ref := range t.symbols {
 		if ref.Namespace() != sym.Namespace() {
 			continue
@@ -287,36 +310,6 @@ func (t *Table) resolveUnlinked(sym *Symbol) error {
 
 		if err := t.load(ref); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func (t *Table) resolveLinked(sym *Symbol) error {
-	for name, locations := range sym.linked {
-		for i, location := range locations {
-			if err := t.unload(t.symbols[location.ID]); err != nil {
-				return err
-			}
-
-			ref := t.symbols[location.ID]
-
-			var unlink scheme.PortLocation
-			if location.Name == "" {
-				unlink = scheme.PortLocation{
-					ID:   sym.ID(),
-					Port: name,
-				}
-			} else {
-				unlink = scheme.PortLocation{
-					Name: location.Name,
-					Port: name,
-				}
-			}
-
-			sym.linked[name] = append(locations[:i], locations[i+1:]...)
-			ref.unlinks[location.Port] = append(ref.unlinks[location.Port], unlink)
 		}
 	}
 
