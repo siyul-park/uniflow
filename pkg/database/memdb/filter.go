@@ -152,76 +152,30 @@ func parseFilter(filter *database.Filter) func(*primitive.Map) bool {
 }
 
 func extractIDByFilter(filter *database.Filter) primitive.Value {
-	var id primitive.Value
-	if examples, ok := filterToExample(filter); ok {
-		for _, example := range examples {
-			if v, ok := example.Get(keyID); ok {
-				if id == nil {
-					id = v
-				} else {
-					return nil
-				}
-			}
-		}
-	}
-	return id
-}
-
-func filterToExample(filter *database.Filter) ([]*primitive.Map, bool) {
 	if filter == nil {
-		return nil, false
+		return nil
 	}
 
 	switch filter.OP {
-	case database.NE, database.LT, database.LTE, database.GT, database.GTE, database.NIN, database.NNULL:
-		return nil, false
 	case database.EQ:
-		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), filter.Value)}, true
-	case database.IN:
-		if children, ok := filter.Value.(*primitive.Slice); !ok {
-			return nil, false
-		} else {
-			examples := make([]*primitive.Map, children.Len())
-			for i := 0; i < children.Len(); i++ {
-				examples[i] = primitive.NewMap(primitive.NewString(filter.Key), children.Get(i))
-			}
-			return examples, true
+		if filter.Key == keyID.String() {
+			return filter.Value
 		}
-	case database.NULL:
-		return []*primitive.Map{primitive.NewMap(primitive.NewString(filter.Key), nil)}, true
+		return nil
 	case database.AND:
-		example := primitive.NewMap()
+		var id primitive.Value
 		for _, child := range filter.Children {
-			e, _ := filterToExample(child)
-			if len(e) == 0 {
-			} else if len(e) == 1 {
-				for _, k := range e[0].Keys() {
-					v, _ := e[0].Get(k)
-
-					if _, ok := example.Get(k); ok {
-						return nil, true
-					} else {
-						example.Set(k, v)
-					}
+			if childID := extractIDByFilter(child); childID != nil {
+				if id != nil {
+					return nil
 				}
-			} else {
-				return nil, false
+				id = childID
 			}
 		}
-		return []*primitive.Map{example}, true
-	case database.OR:
-		var examples []*primitive.Map
-		for _, child := range filter.Children {
-			if e, ok := filterToExample(child); ok {
-				examples = append(examples, e...)
-			} else {
-				return nil, false
-			}
-		}
-		return examples, true
+		return id
+	default:
+		return nil
 	}
-
-	return nil, false
 }
 
 func parsePath(key string) []string {
