@@ -410,12 +410,9 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 		})
 	}
 
+	docs = docs[skip:]
 	if limit >= 0 {
-		if len(docs) > limit+skip {
-			docs = docs[skip : limit+skip]
-		} else {
-			docs = docs[skip:]
-		}
+		docs = docs[:limit]
 	}
 
 	return docs, nil

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const batch = 100
+const batchSize = 100
 
 func TestStorage_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -103,7 +103,7 @@ func TestStorage_InsertMany(t *testing.T) {
 	})
 
 	var specs []scheme.Spec
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		specs = append(specs, &scheme.SpecMeta{
 			ID:   ulid.Make(),
 			Kind: kind,
@@ -184,7 +184,7 @@ func TestStorage_UpdateMany(t *testing.T) {
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
@@ -276,7 +276,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
@@ -350,7 +350,7 @@ func TestStorage_FindMany(t *testing.T) {
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
