@@ -59,5 +59,3 @@ require (
 )
 
 replace github.com/siyul-park/uniflow => ../
-
-replace github.com/siyul-park/uniflow/plugin => ../plugin

@@ -66,7 +66,7 @@ You can set environment variables before executing any command.
 
 Configuration can be done using `.uniflow.toml` or system environment variables.
 
-| TOML Key | Env Key | Default |
+| TOML Key | Env Key | Example |
 |---|---|---|
 | database.url | DATABASE.URL | mem:// or mongodb:// |
 | database.name | DATABASE.NAME |  |
