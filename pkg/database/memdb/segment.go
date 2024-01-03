@@ -1,32 +1,43 @@
 package memdb
 
 import (
-	"sort"
 	"sync"
 
 	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/pkg/errors"
-	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 type Segment struct {
 	data    maps.Map
 	indexes []maps.Map
-	models  []database.IndexModel
+	models  []Model
 	mu      sync.RWMutex
 }
+
+type Model struct {
+	Name   string
+	Keys   []string
+	Unique bool
+	Match  func(*primitive.Map) bool
+}
+
+var (
+	ErrPKNotFound   = errors.New("primary key is not found")
+	ErrPKDuplicated = errors.New("primary key is duplicated")
+)
+
+var keyID = primitive.NewString("id")
 
 func newSegment() *Segment {
 	s := &Segment{data: treemap.NewWith(comparator)}
 
-	primary := database.IndexModel{
-		Keys:    []string{"id"},
-		Name:    "_id",
-		Unique:  true,
-		Partial: nil,
+	primary := Model{
+		Keys:   []string{"id"},
+		Name:   "_id",
+		Unique: true,
+		Match:  func(_ *primitive.Map) bool { return true },
 	}
 
 	s.models = append(s.models, primary)
@@ -35,14 +46,7 @@ func newSegment() *Segment {
 	return s
 }
 
-func (s *Segment) Models() ([]database.IndexModel, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.models, nil
-}
-
-func (s *Segment) Index(index database.IndexModel) error {
+func (s *Segment) Index(index Model) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -65,7 +69,7 @@ func (s *Segment) Index(index database.IndexModel) error {
 	return nil
 }
 
-func (s *Segment) UnIndex(name string) error {
+func (s *Segment) Unindex(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -79,65 +83,14 @@ func (s *Segment) UnIndex(name string) error {
 	return nil
 }
 
-func (s *Segment) Find(filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	opt := database.MergeFindOptions(opts)
-
-	limit := -1
-	skip := 0
-	var sorts []database.Sort
-
-	if opt != nil {
-		if opt.Limit != nil {
-			limit = lo.FromPtr(opt.Limit)
-		}
-		if opt.Skip != nil {
-			skip = lo.FromPtr(opt.Skip)
-		}
-		if opt.Sorts != nil {
-			sorts = opt.Sorts
-		}
-	}
-
-	match := parseFilter(filter)
-
-	var docs []*primitive.Map
-	for _, value := range s.data.Values() {
-		if len(sorts) == 0 && limit >= 0 && len(docs) == limit+skip {
-			continue
-		}
-		if match(value.(*primitive.Map)) {
-			docs = append(docs, value.(*primitive.Map))
-		}
-	}
-
-	if skip >= len(docs) {
-		return nil, nil
-	}
-	if len(sorts) > 0 {
-		compare := parseSorts(sorts)
-		sort.Slice(docs, func(i, j int) bool {
-			return compare(docs[i], docs[j])
-		})
-	}
-	docs = docs[skip:]
-	if limit >= 0 && len(docs) > limit {
-		docs = docs[:limit]
-	}
-
-	return docs, nil
-}
-
-func (s *Segment) Insert(docs []*primitive.Map) ([]primitive.Value, error) {
+func (s *Segment) Set(docs []*primitive.Map) ([]primitive.Value, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	ids := make([]primitive.Value, len(docs))
 	for i, doc := range docs {
 		if id, ok := doc.Get(keyID); !ok {
-			return nil, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
+			return nil, errors.WithStack(ErrPKNotFound)
 		} else {
 			ids[i] = id
 		}
@@ -145,7 +98,7 @@ func (s *Segment) Insert(docs []*primitive.Map) ([]primitive.Value, error) {
 
 	for _, id := range ids {
 		if _, ok := s.data.Get(id); ok {
-			return nil, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
+			return nil, errors.WithStack(ErrPKDuplicated)
 		}
 	}
 
@@ -163,20 +116,27 @@ func (s *Segment) Insert(docs []*primitive.Map) ([]primitive.Value, error) {
 	return ids, nil
 }
 
-func (s *Segment) Delete(docs []*primitive.Map) ([]*primitive.Map, error) {
+func (s *Segment) Delete(docs []*primitive.Map) []*primitive.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	docs = lo.Filter[*primitive.Map](docs, func(item *primitive.Map, _ int) bool {
-		return item != nil && item.GetOr(keyID, nil) != nil
-	})
 
 	for _, doc := range docs {
 		s.unindex(doc)
 		s.data.Remove(doc.GetOr(keyID, nil))
 	}
 
-	return docs, nil
+	return docs
+}
+
+func (s *Segment) Range(f func(doc *primitive.Map) bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, doc := range s.data.Values() {
+		if !f(doc.(*primitive.Map)) {
+			break
+		}
+	}
 }
 
 func (s *Segment) Drop() []*primitive.Map {
@@ -188,9 +148,9 @@ func (s *Segment) Drop() []*primitive.Map {
 		data = append(data, doc.(*primitive.Map))
 	}
 
-	s.data = treemap.NewWith(comparator)
-	for i := range s.indexes {
-		s.indexes[i] = treemap.NewWith(comparator)
+	s.data.Clear()
+	for _, index := range s.indexes {
+		index.Clear()
 	}
 
 	return data
@@ -203,8 +163,7 @@ func (s *Segment) index(doc *primitive.Map) error {
 	}
 
 	for i, model := range s.models {
-		match := parseFilter(model.Partial)
-		if !match(doc) {
+		if !model.Match(doc) {
 			continue
 		}
 
