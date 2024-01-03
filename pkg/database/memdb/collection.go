@@ -2,11 +2,8 @@ package memdb
 
 import (
 	"context"
-	"sort"
 	"sync"
 
-	"github.com/emirpasic/gods/maps"
-	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -14,17 +11,16 @@ import (
 )
 
 type Collection struct {
-	name      string
-	data      maps.Map
-	indexView *IndexView
-	streams   []*Stream
-	matches   []func(*primitive.Map) bool
-	mu        sync.RWMutex
+	name    string
+	segment *Segment
+	streams []*Stream
+	matches []func(*primitive.Map) bool
+	mu      sync.RWMutex
 }
 
 type internalEvent struct {
-	database.Event
-	Document *primitive.Map
+	op       database.EventOP
+	document *primitive.Map
 }
 
 var _ database.Collection = &Collection{}
@@ -36,86 +32,73 @@ var (
 
 func NewCollection(name string) *Collection {
 	return &Collection{
-		name:      name,
-		data:      treemap.NewWith(comparator),
-		indexView: NewIndexView(),
-		mu:        sync.RWMutex{},
+		name:    name,
+		segment: newSegment(),
+		mu:      sync.RWMutex{},
 	}
 }
 
-func (coll *Collection) Name() string {
-	coll.mu.RLock()
-	defer coll.mu.RUnlock()
+func (c *Collection) Name() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return coll.name
+	return c.name
 }
 
-func (coll *Collection) Indexes() database.IndexView {
-	coll.mu.RLock()
-	defer coll.mu.RUnlock()
+func (c *Collection) Indexes() database.IndexView {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return coll.indexView
+	return newIndexView(c.segment)
 }
 
-func (coll *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
-	coll.mu.Lock()
-	defer coll.mu.Unlock()
+func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	stream := NewStream()
 
-	coll.streams = append(coll.streams, stream)
-	coll.matches = append(coll.matches, parseFilter(filter))
+	c.streams = append(c.streams, stream)
+	c.matches = append(c.matches, parseFilter(filter))
 
 	go func() {
 		select {
 		case <-stream.Done():
-			coll.unwatch(stream)
+			c.unwatch(stream)
 		case <-ctx.Done():
 			_ = stream.Close()
-			coll.unwatch(stream)
+			c.unwatch(stream)
 		}
 	}()
 
 	return stream, nil
 }
 
-func (coll *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
-	id, err := coll.insertOne(ctx, doc)
+func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive.Value, error) {
+	ids, err := c.segment.Insert([]*primitive.Map{doc})
 	if err != nil {
 		return nil, err
 	}
 
-	coll.emit(internalEvent{
-		Event: database.Event{
-			OP:         database.EventInsert,
-			DocumentID: id,
-		},
-		Document: doc,
-	})
+	c.emit(internalEvent{op: database.EventInsert, document: doc})
 
-	return id, nil
+	return ids[0], nil
 }
 
-func (coll *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	ids, err := coll.insertMany(ctx, docs)
+func (c *Collection) InsertMany(_ context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
+	ids, err := c.segment.Insert(docs)
 	if err != nil {
 		return nil, err
 	}
 
-	for i, doc := range docs {
-		coll.emit(internalEvent{
-			Event: database.Event{
-				OP:         database.EventInsert,
-				DocumentID: ids[i],
-			},
-			Document: doc,
-		})
+	for _, doc := range docs {
+		c.emit(internalEvent{op: database.EventInsert, document: doc})
 	}
 
 	return ids, nil
 }
 
-func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
+func (c *Collection) UpdateOne(_ context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
 	opt := database.MergeUpdateOptions(opts)
 
 	upsert := false
@@ -123,18 +106,18 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		upsert = lo.FromPtr(opt.Upsert)
 	}
 
-	origin, err := coll.findOne(ctx, filter)
+	origins, err := c.segment.Find(filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 	if err != nil {
 		return false, err
 	}
 
-	if origin == nil && !upsert {
+	if len(origins) == 0 && !upsert {
 		return false, nil
 	}
 
 	var id primitive.Value
-	if origin != nil {
-		id = origin.GetOr(keyID, nil)
+	if len(origins) > 0 {
+		id = origins[0].GetOr(keyID, nil)
 	}
 	if id == nil {
 		id = patch.GetOr(keyID, extractIDByFilter(filter))
@@ -143,8 +126,8 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		return false, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
 	}
 
-	if origin != nil {
-		if _, err := coll.deleteOne(ctx, origin); err != nil {
+	if origins != nil {
+		if _, err := c.segment.Delete(origins); err != nil {
 			return false, err
 		}
 	}
@@ -153,30 +136,24 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter *database.Filter, 
 		patch = patch.Set(keyID, id)
 	}
 
-	if _, err := coll.insertOne(ctx, patch); err != nil {
-		_, _ = coll.InsertOne(ctx, origin)
+	if _, err := c.segment.Insert([]*primitive.Map{patch}); err != nil {
+		_, _ = c.segment.Insert(origins)
 		return false, err
 	}
 
-	coll.emit(internalEvent{
-		Event: database.Event{
-			OP:         database.EventUpdate,
-			DocumentID: id,
-		},
-		Document: patch,
-	})
+	c.emit(internalEvent{op: database.EventUpdate, document: patch})
 
 	return true, nil
 }
 
-func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (int, error) {
+func (c *Collection) UpdateMany(_ context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (int, error) {
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
 		upsert = lo.FromPtr(opt.Upsert)
 	}
 
-	origins, err := coll.findMany(ctx, filter)
+	origins, err := c.segment.Find(filter)
 	if err != nil {
 		return 0, err
 	}
@@ -194,13 +171,13 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 		if _, ok := patch.Get(keyID); !ok {
 			patch = patch.Set(keyID, id)
 		}
-		if _, err := coll.insertOne(ctx, patch); err != nil {
+		if _, err := c.segment.Insert([]*primitive.Map{patch}); err != nil {
 			return 0, err
 		}
 		return 1, nil
 	}
 
-	if _, err := coll.deleteMany(ctx, origins); err != nil {
+	if _, err := c.segment.Delete(origins); err != nil {
 		return 0, err
 	}
 
@@ -209,98 +186,63 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter *database.Filter,
 		patches[i] = patch.Set(keyID, origin.GetOr(keyID, nil))
 	}
 
-	ids, err := coll.insertMany(ctx, patches)
-	if err != nil {
-		_, _ = coll.insertMany(ctx, origins)
+	if _, err := c.segment.Insert(patches); err != nil {
+		_, _ = c.segment.Insert(origins)
 		return 0, err
 	}
 
-	for i, patch := range patches {
-		coll.emit(internalEvent{
-			Event: database.Event{
-				OP:         database.EventUpdate,
-				DocumentID: ids[i],
-			},
-			Document: patch,
-		})
+	for _, patch := range patches {
+		c.emit(internalEvent{op: database.EventUpdate, document: patch})
 	}
 
 	return len(patches), nil
 }
 
-func (coll *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
-	if doc, err := coll.findOne(ctx, filter); err != nil {
+func (c *Collection) DeleteOne(_ context.Context, filter *database.Filter) (bool, error) {
+	if docs, err := c.segment.Find(filter, &database.FindOptions{Limit: lo.ToPtr[int](1)}); err != nil {
 		return false, err
-	} else if doc, err := coll.deleteOne(ctx, doc); err != nil {
+	} else if origins, err := c.segment.Delete(docs); err != nil {
 		return false, err
-	} else if doc == nil {
+	} else if len(origins) == 0 {
 		return false, nil
 	} else {
-		coll.emit(internalEvent{
-			Event: database.Event{
-				OP:         database.EventDelete,
-				DocumentID: doc.GetOr(keyID, nil),
-			},
-			Document: doc,
-		})
+		c.emit(internalEvent{op: database.EventDelete, document: origins[0]})
 		return true, nil
 	}
 }
 
-func (coll *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (int, error) {
-	if docs, err := coll.findMany(ctx, filter); err != nil {
+func (c *Collection) DeleteMany(_ context.Context, filter *database.Filter) (int, error) {
+	if docs, err := c.segment.Find(filter); err != nil {
 		return 0, err
-	} else if docs, err := coll.deleteMany(ctx, docs); err != nil {
+	} else if origins, err := c.segment.Delete(docs); err != nil {
 		return 0, err
 	} else {
-		for _, doc := range docs {
-			coll.emit(internalEvent{
-				Event: database.Event{
-					OP:         database.EventDelete,
-					DocumentID: doc.GetOr(keyID, nil),
-				},
-				Document: doc,
-			})
+		for _, doc := range origins {
+			c.emit(internalEvent{op: database.EventDelete, document: doc})
 		}
-		return len(docs), nil
+		return len(origins), nil
 	}
 }
 
-func (coll *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
-	return coll.findOne(ctx, filter, opts...)
-}
-
-func (coll *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
-	return coll.findMany(ctx, filter, opts...)
-}
-
-func (coll *Collection) Drop(ctx context.Context) error {
-	data, err := func() (maps.Map, error) {
-		coll.mu.Lock()
-		defer coll.mu.Unlock()
-
-		data := coll.data
-		coll.data = treemap.NewWith(comparator)
-
-		coll.indexView.dropData()
-
-		return data, nil
-	}()
+func (c *Collection) FindOne(_ context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
+	docs, err := c.segment.Find(filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 	if err != nil {
-		return err
+		return nil, err
 	}
+	if len(docs) == 0 {
+		return nil, nil
+	}
+	return docs[0], nil
+}
 
-	for _, val := range data.Values() {
-		doc := val.(*primitive.Map)
-		if id, ok := doc.Get(keyID); ok {
-			coll.emit(internalEvent{
-				Event: database.Event{
-					OP:         database.EventDelete,
-					DocumentID: id,
-				},
-				Document: doc,
-			})
-		}
+func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
+	return c.segment.Find(filter, opts...)
+}
+
+func (coll *Collection) Drop(_ context.Context) error {
+	data := coll.segment.Drop()
+	for _, doc := range data {
+		coll.emit(internalEvent{op: database.EventDelete, document: doc})
 	}
 
 	coll.mu.Lock()
@@ -316,154 +258,29 @@ func (coll *Collection) Drop(ctx context.Context) error {
 	return nil
 }
 
-func (coll *Collection) insertOne(ctx context.Context, doc *primitive.Map) (primitive.Value, error) {
-	if ids, err := coll.insertMany(ctx, []*primitive.Map{doc}); err != nil {
-		return nil, err
-	} else {
-		return ids[0], nil
-	}
-}
+func (c *Collection) unwatch(stream database.Stream) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-func (coll *Collection) insertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	coll.mu.Lock()
-	defer coll.mu.Unlock()
-
-	ids := make([]primitive.Value, len(docs))
-	for i, doc := range docs {
-		if id, ok := doc.Get(keyID); !ok {
-			return nil, errors.Wrap(errors.WithStack(ErrPKNotFound), database.ErrCodeWrite)
-		} else {
-			ids[i] = id
-		}
-	}
-
-	for _, id := range ids {
-		if _, ok := coll.data.Get(id); ok {
-			return nil, errors.Wrap(errors.WithStack(ErrPKDuplicated), database.ErrCodeWrite)
-		}
-	}
-
-	if err := coll.indexView.insertMany(docs); err != nil {
-		return nil, errors.Wrap(err, database.ErrCodeWrite)
-	}
-	for i, doc := range docs {
-		coll.data.Put(ids[i], doc)
-	}
-
-	return ids, nil
-}
-
-func (coll *Collection) findOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
-	opt := database.MergeFindOptions(append(opts, lo.ToPtr(database.FindOptions{Limit: lo.ToPtr(1)})))
-
-	if docs, err := coll.findMany(ctx, filter, opt); err != nil {
-		return nil, err
-	} else if len(docs) > 0 {
-		return docs[0], nil
-	} else {
-		return nil, nil
-	}
-}
-
-func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
-	coll.mu.RLock()
-	defer coll.mu.RUnlock()
-
-	opt := database.MergeFindOptions(opts)
-
-	limit := -1
-	skip := 0
-	var sorts []database.Sort
-
-	if opt != nil {
-		if opt.Limit != nil {
-			limit = lo.FromPtr(opt.Limit)
-		}
-		if opt.Skip != nil {
-			skip = lo.FromPtr(opt.Skip)
-		}
-		if opt.Sorts != nil {
-			sorts = opt.Sorts
-		}
-	}
-
-	match := parseFilter(filter)
-
-	var docs []*primitive.Map
-	for _, value := range coll.data.Values() {
-		if len(sorts) == 0 && limit >= 0 && len(docs) == limit+skip {
-			continue
-		}
-		if match(value.(*primitive.Map)) {
-			docs = append(docs, value.(*primitive.Map))
-		}
-	}
-
-	if skip >= len(docs) {
-		return nil, nil
-	}
-	if len(sorts) > 0 {
-		compare := parseSorts(sorts)
-		sort.Slice(docs, func(i, j int) bool {
-			return compare(docs[i], docs[j])
-		})
-	}
-	docs = docs[skip:]
-	if limit >= 0 && len(docs) > limit {
-		docs = docs[:limit]
-	}
-
-	return docs, nil
-}
-
-func (coll *Collection) deleteOne(ctx context.Context, doc *primitive.Map) (*primitive.Map, error) {
-	if docs, err := coll.deleteMany(ctx, []*primitive.Map{doc}); err != nil {
-		return nil, err
-	} else if len(docs) > 0 {
-		return docs[0], nil
-	} else {
-		return nil, nil
-	}
-}
-
-func (coll *Collection) deleteMany(ctx context.Context, docs []*primitive.Map) ([]*primitive.Map, error) {
-	coll.mu.Lock()
-	defer coll.mu.Unlock()
-
-	docs = lo.Filter[*primitive.Map](docs, func(item *primitive.Map, _ int) bool {
-		return item != nil && item.GetOr(keyID, nil) != nil
-	})
-
-	if err := coll.indexView.deleteMany(docs); err != nil {
-		return nil, errors.Wrap(err, database.ErrCodeDelete)
-	}
-	for _, doc := range docs {
-		coll.data.Remove(doc.GetOr(keyID, nil))
-	}
-
-	return docs, nil
-}
-
-func (coll *Collection) unwatch(stream database.Stream) {
-	coll.mu.Lock()
-	defer coll.mu.Unlock()
-
-	for i, s := range coll.streams {
+	for i, s := range c.streams {
 		if s == stream {
-			coll.streams = append(coll.streams[:i], coll.streams[i+1:]...)
-			coll.matches = append(coll.matches[:i], coll.matches[i+1:]...)
+			c.streams = append(c.streams[:i], c.streams[i+1:]...)
+			c.matches = append(c.matches[:i], c.matches[i+1:]...)
 			return
 		}
 	}
 }
 
-func (coll *Collection) emit(event internalEvent) {
-	coll.mu.RLock()
-	defer coll.mu.RUnlock()
+func (c *Collection) emit(evt internalEvent) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	for i, s := range coll.streams {
-		if coll.matches[i](event.Document) {
-			s.Emit(event.Event)
+	for i, s := range c.streams {
+		if c.matches[i](evt.document) {
+			s.Emit(database.Event{
+				OP:         evt.op,
+				DocumentID: evt.document.GetOr(keyID, nil),
+			})
 		}
 	}
 }

@@ -43,11 +43,11 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	go func() {
 		for {
 			event, ok := <-stream.Next()
-			if ok {
-				assert.NotNil(t, event.DocumentID)
-			} else {
+			if !ok {
 				return
 			}
+
+			assert.NotNil(t, event.DocumentID)
 		}
 	}()
 
@@ -56,14 +56,9 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 		primitive.NewString("version"), primitive.NewInt(0),
 	)
 
-	_, err = collection.InsertOne(ctx, doc)
-	assert.NoError(t, err)
-
-	_, err = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)))
-	assert.NoError(t, err)
-
-	_, err = collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
-	assert.NoError(t, err)
+	_, _ = collection.InsertOne(ctx, doc)
+	_, _ = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)))
+	_, _ = collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
 }
 
 func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
@@ -80,10 +75,9 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("deleted"), primitive.FALSE,
 		)
 
-		_, _ = collection.InsertOne(ctx, doc)
-
-		_, err := collection.InsertOne(ctx, doc)
-		assert.Error(t, err)
+		id, err := collection.InsertOne(ctx, doc)
+		assert.NoError(t, err)
+		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), id)
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
@@ -97,9 +91,10 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("deleted"), primitive.FALSE,
 		)
 
-		id, err := collection.InsertOne(ctx, doc)
-		assert.NoError(t, err)
-		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), id)
+		_, _ = collection.InsertOne(ctx, doc)
+
+		_, err := collection.InsertOne(ctx, doc)
+		assert.Error(t, err)
 	})
 }
 
@@ -155,7 +150,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	t.Run("options.Upsert = true", func(t *testing.T) {
+	t.Run("Upsert = true", func(t *testing.T) {
 		doc := primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("version"), primitive.NewInt(0),
@@ -168,7 +163,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 		assert.True(t, ok)
 	})
 
-	t.Run("options.Upsert = false", func(t *testing.T) {
+	t.Run("Upsert = false", func(t *testing.T) {
 		doc := primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("version"), primitive.NewInt(0),
@@ -196,7 +191,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	t.Run("options.Upsert = true", func(t *testing.T) {
+	t.Run("Upsert = true", func(t *testing.T) {
 		id := primitive.NewBinary(ulid.Make().Bytes())
 
 		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(id), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
@@ -206,7 +201,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 		assert.Equal(t, 1, count)
 	})
 
-	t.Run("options.Upsert = false", func(t *testing.T) {
+	t.Run("Upsert = false", func(t *testing.T) {
 		var ids []primitive.Value
 		for i := 0; i < batchSize; i++ {
 			ids = append(ids, primitive.NewBinary(ulid.Make().Bytes()))

@@ -5,8 +5,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-var (
-	comparator = utils.Comparator(func(a, b any) int {
-		return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
-	})
-)
+var comparator = utils.Comparator(func(a, b any) int {
+	return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
+})

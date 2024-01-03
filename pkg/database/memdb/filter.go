@@ -8,9 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-var (
-	numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
-)
+var numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 
 func parseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	if filter == nil {
