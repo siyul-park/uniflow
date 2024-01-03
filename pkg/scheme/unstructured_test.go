@@ -18,7 +18,7 @@ func TestUnstructured_GetAndSetID(t *testing.T) {
 }
 
 func TestUnstructured_GetAndSetKind(t *testing.T) {
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	u := NewUnstructured(nil)
 
@@ -27,7 +27,7 @@ func TestUnstructured_GetAndSetKind(t *testing.T) {
 }
 
 func TestUnstructured_GetAndNamespace(t *testing.T) {
-	namespace := faker.Word()
+	namespace := faker.UUIDHyphenated()
 
 	u := NewUnstructured(nil)
 
@@ -37,10 +37,10 @@ func TestUnstructured_GetAndNamespace(t *testing.T) {
 
 func TestUnstructured_GetAndLinks(t *testing.T) {
 	links := map[string][]PortLocation{
-		faker.Word(): {
+		faker.UUIDHyphenated(): {
 			{
 				ID:   ulid.Make(),
-				Port: faker.Word(),
+				Port: faker.UUIDHyphenated(),
 			},
 		},
 	}
@@ -55,7 +55,7 @@ func TestUnstructured_Marshal(t *testing.T) {
 	u := NewUnstructured(nil)
 	spec := &SpecMeta{
 		ID:   ulid.Make(),
-		Kind: faker.Word(),
+		Kind: faker.UUIDHyphenated(),
 	}
 
 	err := u.Marshal(spec)
@@ -70,7 +70,7 @@ func TestUnstructured_Unmarshal(t *testing.T) {
 
 	_ = u.Marshal(&SpecMeta{
 		ID:   ulid.Make(),
-		Kind: faker.Word(),
+		Kind: faker.UUIDHyphenated(),
 	})
 
 	err := u.Unmarshal(spec)

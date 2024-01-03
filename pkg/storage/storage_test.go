@@ -12,11 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const batchSize = 100
+
 func TestStorage_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -26,7 +28,7 @@ func TestStorage_Watch(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	stream, err := st.Watch(ctx, nil)
@@ -60,7 +62,7 @@ func TestStorage_InsertOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -70,7 +72,7 @@ func TestStorage_InsertOne(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	spec := &scheme.SpecMeta{
@@ -87,7 +89,7 @@ func TestStorage_InsertMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -97,20 +99,15 @@ func TestStorage_InsertMany(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	specs := []scheme.Spec{
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
-		&scheme.SpecMeta{
-			ID:        ulid.Make(),
-			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
-		},
+	var specs []scheme.Spec
+	for i := 0; i < batchSize; i++ {
+		specs = append(specs, &scheme.SpecMeta{
+			ID:   ulid.Make(),
+			Kind: kind,
+		})
 	}
 
 	ids, err := st.InsertMany(ctx, specs)
@@ -125,7 +122,7 @@ func TestStorage_UpdateOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -135,7 +132,7 @@ func TestStorage_UpdateOne(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	id := ulid.Make()
@@ -144,13 +141,13 @@ func TestStorage_UpdateOne(t *testing.T) {
 		ID:        id,
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
-		Name:      faker.Word(),
+		Name:      faker.UUIDHyphenated(),
 	}
 	patch := &scheme.SpecMeta{
 		ID:        id,
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
-		Name:      faker.Word(),
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	ok, err := st.UpdateOne(ctx, patch)
@@ -173,8 +170,7 @@ func TestStorage_UpdateMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -184,11 +180,11 @@ func TestStorage_UpdateMany(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
@@ -199,13 +195,13 @@ func TestStorage_UpdateMany(t *testing.T) {
 			ID:        id,
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		})
 		patches = append(patches, &scheme.SpecMeta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		})
 	}
 
@@ -232,7 +228,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -242,7 +238,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	spec := &scheme.SpecMeta{
@@ -266,8 +262,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -277,11 +272,11 @@ func TestStorage_DeleteMany(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
@@ -291,7 +286,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 			ID:        id,
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		})
 	}
 
@@ -310,7 +305,7 @@ func TestStorage_FindOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -320,7 +315,7 @@ func TestStorage_FindOne(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	spec := &scheme.SpecMeta{
@@ -341,8 +336,7 @@ func TestStorage_FindMany(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	batch := 2
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -352,11 +346,11 @@ func TestStorage_FindMany(t *testing.T) {
 
 	st, _ := New(ctx, Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	var ids []ulid.ULID
-	for i := 0; i < batch; i++ {
+	for i := 0; i < batchSize; i++ {
 		ids = append(ids, ulid.Make())
 	}
 
@@ -366,7 +360,7 @@ func TestStorage_FindMany(t *testing.T) {
 			ID:        id,
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		})
 	}
 

@@ -402,20 +402,15 @@ func (coll *Collection) findMany(ctx context.Context, filter *database.Filter, o
 	if skip >= len(docs) {
 		return nil, nil
 	}
-
 	if len(sorts) > 0 {
 		compare := parseSorts(sorts)
 		sort.Slice(docs, func(i, j int) bool {
 			return compare(docs[i], docs[j])
 		})
 	}
-
-	if limit >= 0 {
-		if len(docs) > limit+skip {
-			docs = docs[skip : limit+skip]
-		} else {
-			docs = docs[skip:]
-		}
+	docs = docs[skip:]
+	if limit >= 0 && len(docs) > limit {
+		docs = docs[:limit]
 	}
 
 	return docs, nil

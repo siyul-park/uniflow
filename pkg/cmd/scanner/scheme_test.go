@@ -11,7 +11,7 @@ import (
 
 func TestSpecCodec_Decode(t *testing.T) {
 	s := scheme.New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 

@@ -13,7 +13,7 @@ import (
 func TestTable_Insert(t *testing.T) {
 	s := scheme.New()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -291,7 +291,7 @@ func TestTable_Insert(t *testing.T) {
 func TestTable_Free(t *testing.T) {
 	s := scheme.New()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -384,7 +384,7 @@ func TestTable_Free(t *testing.T) {
 func TestTable_LookupByID(t *testing.T) {
 	s := scheme.New()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -410,7 +410,7 @@ func TestTable_LookupByID(t *testing.T) {
 func TestTable_LookupByName(t *testing.T) {
 	s := scheme.New()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -424,7 +424,7 @@ func TestTable_LookupByName(t *testing.T) {
 		ID:        ulid.Make(),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
-		Name:      faker.Word(),
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	sym, _ := tb.Insert(spec)
@@ -437,7 +437,7 @@ func TestTable_LookupByName(t *testing.T) {
 func TestTable_Keys(t *testing.T) {
 	s := scheme.New()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -451,7 +451,7 @@ func TestTable_Keys(t *testing.T) {
 		ID:        ulid.Make(),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
-		Name:      faker.Word(),
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	sym, _ := tb.Insert(spec)

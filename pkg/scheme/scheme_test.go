@@ -12,7 +12,7 @@ import (
 
 func TestScheme_KnownType(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 
@@ -23,7 +23,7 @@ func TestScheme_KnownType(t *testing.T) {
 
 func TestScheme_Codec(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	c := CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
@@ -37,7 +37,7 @@ func TestScheme_Codec(t *testing.T) {
 
 func TestScheme_NewSpec(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 
@@ -48,14 +48,14 @@ func TestScheme_NewSpec(t *testing.T) {
 
 func TestScheme_NewSpecWithDoc(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 
 	u := NewUnstructured(nil)
 	spec := &SpecMeta{
 		ID:   ulid.Make(),
-		Kind: faker.Word(),
+		Kind: faker.UUIDHyphenated(),
 	}
 
 	_ = u.Marshal(spec)
@@ -67,7 +67,7 @@ func TestScheme_NewSpecWithDoc(t *testing.T) {
 
 func TestScheme_Decode(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
@@ -81,7 +81,7 @@ func TestScheme_Decode(t *testing.T) {
 
 func TestScheme_Kinds(t *testing.T) {
 	s := New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 

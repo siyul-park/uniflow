@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetAndSetIndexInPort(t *testing.T) {
-	port := faker.Word()
+	port := faker.UUIDHyphenated()
 	index := 0
 
 	i, ok := GetIndex(port, SetIndex(port, index))

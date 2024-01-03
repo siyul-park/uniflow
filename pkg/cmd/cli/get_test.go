@@ -22,12 +22,12 @@ func TestGetCommand_Execute(t *testing.T) {
 		Database: db,
 	})
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	spec := &scheme.SpecMeta{
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
-		Name:      faker.Word(),
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {

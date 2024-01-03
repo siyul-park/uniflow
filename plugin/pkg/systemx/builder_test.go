@@ -15,7 +15,7 @@ func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 	st, _ := storage.New(context.Background(), storage.Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	err := AddToScheme(st)(s)

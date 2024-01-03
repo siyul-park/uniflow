@@ -95,11 +95,11 @@ func parseFilter(filter *database.Filter) func(*primitive.Map) bool {
 				return false
 			} else {
 				for i := 0; i < v.Len(); i++ {
-					if primitive.Compare(o, v.Get(i)) != 0 {
-						return true
+					if primitive.Compare(o, v.Get(i)) == 0 {
+						return false
 					}
 				}
-				return false
+				return true
 			}
 		}
 	case database.NULL:

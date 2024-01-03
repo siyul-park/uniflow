@@ -16,7 +16,7 @@ func TestSymbol_Getter(t *testing.T) {
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),
-		Kind:      faker.Word(),
+		Kind:      faker.UUIDHyphenated(),
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 		Links: map[string][]scheme.PortLocation{

@@ -8,19 +8,19 @@ import (
 )
 
 func TestDatabase_Name(t *testing.T) {
-	db := New(faker.Word())
+	db := New(faker.UUIDHyphenated())
 
 	databasetest.TestDatabase_Name(t, db)
 }
 
 func TestDatabase_Collection(t *testing.T) {
-	db := New(faker.Word())
+	db := New(faker.UUIDHyphenated())
 
 	databasetest.TestDatabase_Collection(t, db)
 }
 
 func TestDatabase_Drop(t *testing.T) {
-	db := New(faker.Word())
+	db := New(faker.UUIDHyphenated())
 
 	databasetest.TestDatabase_Drop(t, db)
 }

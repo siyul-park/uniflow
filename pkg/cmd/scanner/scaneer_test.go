@@ -26,7 +26,7 @@ func TestScanner_Scan(t *testing.T) {
 	})
 
 	filename := "spec.json"
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),

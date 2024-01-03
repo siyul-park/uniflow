@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewString(t *testing.T) {
-	raw := faker.Word()
+	raw := faker.UUIDHyphenated()
 	v := NewString(raw)
 
 	assert.Equal(t, KindString, v.Kind())
