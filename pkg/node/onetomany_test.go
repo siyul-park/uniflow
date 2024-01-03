@@ -83,7 +83,7 @@ func TestOneToManyNode_Send(t *testing.T) {
 
 	t.Run("With Err Port", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return nil, packet.New(primitive.NewString(faker.Word()))
+			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
 		})
 		defer n.Close()
 

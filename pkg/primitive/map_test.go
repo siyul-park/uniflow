@@ -8,8 +8,8 @@ import (
 )
 
 func TestNewMap(t *testing.T) {
-	k1 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	o := NewMap(k1, v1)
 
@@ -19,8 +19,8 @@ func TestNewMap(t *testing.T) {
 }
 
 func TestMap_GetAndSetAndDelete(t *testing.T) {
-	k1 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	o := NewMap()
 	o = o.Set(k1, v1)
@@ -37,8 +37,8 @@ func TestMap_GetAndSetAndDelete(t *testing.T) {
 }
 
 func TestMap_Keys(t *testing.T) {
-	k1 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	o := NewMap(k1, v1)
 
@@ -48,8 +48,8 @@ func TestMap_Keys(t *testing.T) {
 }
 
 func TestMap_Len(t *testing.T) {
-	k1 := NewString(faker.Word())
-	v1 := NewString(faker.Word())
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	o1 := NewMap()
 	o2 := NewMap(k1, v1)
@@ -63,8 +63,8 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 	decoder := newMapDecoder(newStringDecoder())
 
 	t.Run("Map", func(t *testing.T) {
-		k1 := NewString(faker.Word())
-		v1 := NewString(faker.Word())
+		k1 := NewString(faker.UUIDHyphenated())
+		v1 := NewString(faker.UUIDHyphenated())
 
 		// Test Encode
 		encoded, err := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
@@ -79,7 +79,7 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 	})
 
 	t.Run("Struct", func(t *testing.T) {
-		v1 := NewString(faker.Word())
+		v1 := NewString(faker.UUIDHyphenated())
 
 		// Test Encode
 		encoded, err := encoder.Encode(struct {
@@ -102,19 +102,19 @@ func BenchmarkMap_Set(b *testing.B) {
 	m := NewMap()
 
 	for i := 0; i < b.N; i++ {
-		m = m.Set(NewString(faker.Word()), NewString(faker.Word()))
+		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
 	}
 }
 
 func BenchmarkMap_Get(b *testing.B) {
 	m := NewMap()
 	for i := 0; i < 1000; i++ {
-		m = m.Set(NewString(faker.Word()), NewString(faker.Word()))
+		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = m.Get(NewString(faker.Word()))
+		_, _ = m.Get(NewString(faker.UUIDHyphenated()))
 	}
 }
 

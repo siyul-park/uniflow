@@ -31,7 +31,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	filepath := "boot.json"
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	spec := &scheme.SpecMeta{
 		ID:        ulid.Make(),

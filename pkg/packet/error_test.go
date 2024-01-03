@@ -12,7 +12,7 @@ import (
 func TestWithError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
-	pck1 := New(primitive.NewString(faker.Word()))
+	pck1 := New(primitive.NewString(faker.UUIDHyphenated()))
 	pck2 := WithError(err, pck1)
 
 	assert.NotNil(t, pck2)
@@ -27,7 +27,7 @@ func TestWithError(t *testing.T) {
 func TestAsError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
-	pck1 := New(primitive.NewString(faker.Word()))
+	pck1 := New(primitive.NewString(faker.UUIDHyphenated()))
 	pck2 := WithError(err, pck1)
 
 	err1, ok := AsError(pck2)

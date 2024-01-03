@@ -18,7 +18,7 @@ func TestRuntime_Lookup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -26,7 +26,7 @@ func TestRuntime_Lookup(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.Word())
+	db := memdb.New(faker.UUIDHyphenated())
 
 	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
@@ -56,7 +56,7 @@ func TestRuntime_Free(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -64,7 +64,7 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.Word())
+	db := memdb.New(faker.UUIDHyphenated())
 
 	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
@@ -94,7 +94,7 @@ func TestRuntime_Start(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
 	s.AddKnownType(kind, &scheme.SpecMeta{})
@@ -102,7 +102,7 @@ func TestRuntime_Start(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.Word())
+	db := memdb.New(faker.UUIDHyphenated())
 
 	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,

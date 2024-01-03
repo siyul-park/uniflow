@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewSlice(t *testing.T) {
-	v1 := NewString(faker.Word())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice(v1)
 
@@ -19,8 +19,8 @@ func TestNewSlice(t *testing.T) {
 }
 
 func TestSlice_GetAndSet(t *testing.T) {
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
+	v1 := NewString(faker.UUIDHyphenated())
+	v2 := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice(v1)
 
@@ -37,7 +37,7 @@ func TestSlice_GetAndSet(t *testing.T) {
 }
 
 func TestSlice_Prepend(t *testing.T) {
-	v := NewString(faker.Word())
+	v := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice()
 	o = o.Prepend(v)
@@ -46,7 +46,7 @@ func TestSlice_Prepend(t *testing.T) {
 }
 
 func TestSlice_Append(t *testing.T) {
-	v := NewString(faker.Word())
+	v := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice()
 	o = o.Append(v)
@@ -55,8 +55,8 @@ func TestSlice_Append(t *testing.T) {
 }
 
 func TestSlice_Sub(t *testing.T) {
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
+	v1 := NewString(faker.UUIDHyphenated())
+	v2 := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice(v1, v2)
 	o = o.Sub(0, 1)
@@ -77,8 +77,8 @@ func TestSlice_EncodeAndDecode(t *testing.T) {
 	encoder := newSliceEncoder(newStringEncoder())
 	decoder := newSliceDecoder(newStringDecoder())
 
-	v1 := NewString(faker.Word())
-	v2 := NewString(faker.Word())
+	v1 := NewString(faker.UUIDHyphenated())
+	v2 := NewString(faker.UUIDHyphenated())
 
 	encoded, err := encoder.Encode([]any{v1.Interface(), v2.Interface()})
 	assert.NoError(t, err)
@@ -94,14 +94,14 @@ func BenchmarkSlice_Append(b *testing.B) {
 	s := NewSlice()
 
 	for i := 0; i < b.N; i++ {
-		s = s.Append(NewString(faker.Word()))
+		s = s.Append(NewString(faker.UUIDHyphenated()))
 	}
 }
 
 func BenchmarkSlice_Sub(b *testing.B) {
 	s := NewSlice()
 	for i := 0; i < 1000; i++ {
-		s = s.Append(NewString(faker.Word()))
+		s = s.Append(NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()

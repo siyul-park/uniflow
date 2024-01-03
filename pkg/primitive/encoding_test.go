@@ -262,7 +262,7 @@ func TestUnmarshal(t *testing.T) {
 func TestPointer_Encode(t *testing.T) {
 	e := newPointerEncoder(newStringEncoder())
 
-	r1 := faker.Word()
+	r1 := faker.UUIDHyphenated()
 	v1 := NewString(r1)
 
 	v, err := e.Encode(&r1)
@@ -273,7 +273,7 @@ func TestPointer_Encode(t *testing.T) {
 func TestPointer_Decode(t *testing.T) {
 	d := newPointerDecoder(newStringDecoder())
 
-	v1 := NewString(faker.Word())
+	v1 := NewString(faker.UUIDHyphenated())
 
 	var v *string
 	err := d.Decode(v1, &v)

@@ -19,7 +19,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -29,7 +29,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
-			Database: memdb.New(faker.Word()),
+			Database: memdb.New(faker.UUIDHyphenated()),
 		})
 
 		tb := symbol.NewTable(s)
@@ -77,7 +77,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Reload Same ID", func(t *testing.T) {
 		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
-			Database: memdb.New(faker.Word()),
+			Database: memdb.New(faker.UUIDHyphenated()),
 		})
 
 		tb := symbol.NewTable(s)
@@ -110,7 +110,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Reload After Delete", func(t *testing.T) {
 		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
-			Database: memdb.New(faker.Word()),
+			Database: memdb.New(faker.UUIDHyphenated()),
 		})
 
 		tb := symbol.NewTable(s)
@@ -149,7 +149,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
@@ -159,7 +159,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
-			Database: memdb.New(faker.Word()),
+			Database: memdb.New(faker.UUIDHyphenated()),
 		})
 
 		tb := symbol.NewTable(s)
@@ -208,7 +208,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	t.Run("Reload", func(t *testing.T) {
 		st, _ := storage.New(ctx, storage.Config{
 			Scheme:   s,
-			Database: memdb.New(faker.Word()),
+			Database: memdb.New(faker.UUIDHyphenated()),
 		})
 
 		tb := symbol.NewTable(s)

@@ -22,7 +22,7 @@ func TestNewReflectNode(t *testing.T) {
 	s := scheme.New()
 	st, _ := storage.New(context.Background(), storage.Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	n := NewReflectNode(ReflectNodeConfig{
@@ -39,7 +39,7 @@ func TestReflectNode_Send(t *testing.T) {
 
 	st, _ := storage.New(context.Background(), storage.Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	s.AddKnownType(KindReflect, &ReflectSpec{})
@@ -227,7 +227,7 @@ func BenchmarkReflectNode_Send(b *testing.B) {
 
 	st, _ := storage.New(context.Background(), storage.Config{
 		Scheme:   s,
-		Database: memdb.New(faker.Word()),
+		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
 	s.AddKnownType(KindReflect, &ReflectSpec{})
