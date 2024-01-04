@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -8,170 +9,61 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWhere(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	wh := Where(f)
-	assert.Equal(t, &filterHelper{key: f}, wh)
-}
+func TestFilterHelper(t *testing.T) {
+	key := faker.UUIDHyphenated()
+	value := primitive.NewString(faker.UUIDHyphenated())
 
-func TestFilterHelper_EQ(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
+	var testCase = []struct {
+		when   *Filter
+		expect *Filter
+	}{
+		{
+			when:   Where(key).EQ(value),
+			expect: &Filter{OP: EQ, Key: key, Value: value},
+		},
+		{
+			when:   Where(key).NE(value),
+			expect: &Filter{OP: NE, Key: key, Value: value},
+		},
+		{
+			when:   Where(key).LT(value),
+			expect: &Filter{OP: LT, Key: key, Value: value},
+		},
+		{
+			when:   Where(key).LTE(value),
+			expect: &Filter{OP: LTE, Key: key, Value: value},
+		},
+		{
+			when:   Where(key).IN(value),
+			expect: &Filter{OP: IN, Key: key, Value: primitive.NewSlice(value)},
+		},
+		{
+			when:   Where(key).NotIN(value),
+			expect: &Filter{OP: NIN, Key: key, Value: primitive.NewSlice(value)},
+		},
+		{
+			when:   Where(key).IsNull(),
+			expect: &Filter{OP: NULL, Key: key},
+		},
+		{
+			when:   Where(key).IsNotNull(),
+			expect: &Filter{OP: NNULL, Key: key},
+		},
+		{
+			when:   Where(key).IsNull().And(Where(key).IsNotNull()),
+			expect: &Filter{OP: AND, Children: []*Filter{{OP: NULL, Key: key}, {OP: NNULL, Key: key}}},
+		},
+		{
+			when:   Where(key).IsNull().Or(Where(key).IsNotNull()),
+			expect: &Filter{OP: OR, Children: []*Filter{{OP: NULL, Key: key}, {OP: NNULL, Key: key}}},
+		},
+	}
 
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    EQ,
-		Value: v,
-	}, wh.EQ(v))
-}
-
-func TestFilterHelper_NE(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    NE,
-		Value: v,
-	}, wh.NE(v))
-}
-
-func TestFilterHelper_LT(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    LT,
-		Value: v,
-	}, wh.LT(v))
-}
-
-func TestFilterHelper_LTE(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    LTE,
-		Value: v,
-	}, wh.LTE(v))
-}
-
-func TestFilterHelper_GT(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    GT,
-		Value: v,
-	}, wh.GT(v))
-}
-
-func TestFilterHelper_GTE(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    GTE,
-		Value: v,
-	}, wh.GTE(v))
-}
-
-func TestFilterHelper_IN(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    IN,
-		Value: primitive.NewSlice(v),
-	}, wh.IN(v))
-}
-
-func TestFilterHelper_NotIN(t *testing.T) {
-	f := faker.UUIDHyphenated()
-	v := primitive.NewString(faker.UUIDHyphenated())
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key:   f,
-		OP:    NIN,
-		Value: primitive.NewSlice(v),
-	}, wh.NotIN(v))
-}
-
-func TestFilterHelper_IsNull(t *testing.T) {
-	f := faker.UUIDHyphenated()
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key: f,
-		OP:  NULL,
-	}, wh.IsNull())
-}
-
-func TestFilterHelper_IsNotNull(t *testing.T) {
-	f := faker.UUIDHyphenated()
-
-	wh := Where(f)
-
-	assert.Equal(t, &Filter{
-		Key: f,
-		OP:  NNULL,
-	}, wh.IsNotNull())
-}
-
-func TestFilter_And(t *testing.T) {
-	f1 := faker.UUIDHyphenated()
-	f2 := faker.UUIDHyphenated()
-	v1 := faker.UUIDHyphenated()
-	v2 := faker.UUIDHyphenated()
-
-	q1 := Where(f1).EQ(primitive.NewString(v1))
-	q2 := Where(f2).EQ(primitive.NewString(v2))
-
-	q := q1.And(q2)
-
-	assert.Equal(t, &Filter{
-		OP:       AND,
-		Children: []*Filter{q1, q2},
-	}, q)
-}
-
-func TestFilter_Or(t *testing.T) {
-	f1 := faker.UUIDHyphenated()
-	f2 := faker.UUIDHyphenated()
-	v1 := faker.UUIDHyphenated()
-	v2 := faker.UUIDHyphenated()
-
-	q1 := Where(f1).EQ(primitive.NewString(v1))
-	q2 := Where(f2).EQ(primitive.NewString(v2))
-
-	q := q1.Or(q2)
-
-	assert.Equal(t, &Filter{
-		OP:       OR,
-		Children: []*Filter{q1, q2},
-	}, q)
+	for _, tc := range testCase {
+		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
+			assert.Equal(t, tc.expect, tc.when)
+		})
+	}
 }
 
 func TestFilter_String(t *testing.T) {

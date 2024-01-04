@@ -162,7 +162,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 				children = append(children, c)
 			}
 		}
-		return &database.Filter{OP: database.AND, Children: children}, nil
+		return &database.Filter{OP: ft.OP, Children: children}, nil
 	}
 	if ft.OP == database.NULL || ft.OP == database.NNULL {
 		return &database.Filter{OP: ft.OP, Key: ft.Key}, nil
