@@ -69,20 +69,27 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 }
 
 func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive.Value, error) {
-	ids, err := c.segment.Set([]*primitive.Map{doc})
+	id, err := c.segment.Set(doc)
 	if err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
 	}
 
 	c.emit(internalEvent{op: database.EventInsert, document: doc})
 
-	return ids[0], nil
+	return id, nil
 }
 
 func (c *Collection) InsertMany(_ context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	ids, err := c.segment.Set(docs)
-	if err != nil {
-		return nil, errors.Wrap(err, database.ErrCodeWrite)
+	ids := make([]primitive.Value, len(docs))
+	for i, doc := range docs {
+		id, err := c.segment.Set(doc)
+		if err != nil {
+			for ; i >= 0; i-- {
+				c.segment.Delete(docs[i])
+			}
+			return nil, errors.Wrap(err, database.ErrCodeWrite)
+		}
+		ids[i] = id
 	}
 
 	for _, doc := range docs {
@@ -121,15 +128,15 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 	}
 
 	if origin != nil {
-		_ = c.segment.Delete([]*primitive.Map{origin})
+		c.segment.Delete(origin)
 	}
 
 	if _, ok := patch.Get(keyID); !ok {
 		patch = patch.Set(keyID, id)
 	}
 
-	if _, err := c.segment.Set([]*primitive.Map{patch}); err != nil {
-		_, _ = c.segment.Set([]*primitive.Map{origin})
+	if _, err := c.segment.Set(patch); err != nil {
+		_, _ = c.segment.Set(origin)
 		return false, errors.Wrap(err, database.ErrCodeWrite)
 	}
 
@@ -163,22 +170,28 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 		if _, ok := patch.Get(keyID); !ok {
 			patch = patch.Set(keyID, id)
 		}
-		if _, err := c.segment.Set([]*primitive.Map{patch}); err != nil {
+		if _, err := c.segment.Set(patch); err != nil {
 			return 0, errors.Wrap(err, database.ErrCodeWrite)
 		}
 		return 1, nil
 	}
 
-	_ = c.segment.Delete(origins)
+	for _, origin := range origins {
+		c.segment.Delete(origin)
+	}
 
 	patches := make([]*primitive.Map, len(origins))
 	for i, origin := range origins {
 		patches[i] = patch.Set(keyID, origin.GetOr(keyID, nil))
 	}
 
-	if _, err := c.segment.Set(patches); err != nil {
-		_, _ = c.segment.Set(origins)
-		return 0, errors.Wrap(err, database.ErrCodeWrite)
+	for i, patch := range patches {
+		if _, err := c.segment.Set(patch); err != nil {
+			for ; i >= 0; i-- {
+				_, _ = c.segment.Set(origins[i])
+			}
+			return 0, errors.Wrap(err, database.ErrCodeWrite)
+		}
 	}
 
 	for _, patch := range patches {
@@ -191,10 +204,9 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 func (c *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
 	if doc, err := c.FindOne(ctx, filter); err != nil || doc == nil {
 		return false, err
-	} else if origins := c.segment.Delete([]*primitive.Map{doc}); len(origins) == 0 {
-		return false, nil
 	} else {
-		c.emit(internalEvent{op: database.EventDelete, document: origins[0]})
+		c.segment.Delete(doc)
+		c.emit(internalEvent{op: database.EventDelete, document: doc})
 		return true, nil
 	}
 }
@@ -203,11 +215,11 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 	if docs, err := c.FindMany(ctx, filter); err != nil {
 		return 0, err
 	} else {
-		origins := c.segment.Delete(docs)
-		for _, doc := range origins {
+		for _, doc := range docs {
+			c.segment.Delete(doc)
 			c.emit(internalEvent{op: database.EventDelete, document: doc})
 		}
-		return len(origins), nil
+		return len(docs), nil
 	}
 }
 

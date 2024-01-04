@@ -83,49 +83,44 @@ func (s *Segment) Unindex(name string) error {
 	return nil
 }
 
-func (s *Segment) Set(docs []*primitive.Map) ([]primitive.Value, error) {
+func (s *Segment) Set(doc *primitive.Map) (primitive.Value, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ids := make([]primitive.Value, len(docs))
-	for i, doc := range docs {
-		if id, ok := doc.Get(keyID); !ok {
-			return nil, errors.WithStack(ErrPKNotFound)
-		} else {
-			ids[i] = id
-		}
+	id, ok := doc.Get(keyID)
+	if !ok {
+		return nil, errors.WithStack(ErrPKNotFound)
 	}
 
-	for _, id := range ids {
-		if _, ok := s.data.Get(id); ok {
-			return nil, errors.WithStack(ErrPKDuplicated)
-		}
+	if _, ok := s.data.Get(id); ok {
+		return nil, errors.WithStack(ErrPKDuplicated)
 	}
 
-	for i, doc := range docs {
-		if err := s.index(doc); err != nil {
-			for i--; i >= 0; i-- {
-				s.data.Remove(ids[i])
-				s.unindex(doc)
-			}
-			return nil, err
-		}
-		s.data.Put(ids[i], doc)
+	if err := s.index(doc); err != nil {
+		return nil, err
 	}
+	s.data.Put(id, doc)
 
-	return ids, nil
+	return id, nil
 }
 
-func (s *Segment) Delete(docs []*primitive.Map) []*primitive.Map {
+func (s *Segment) Delete(doc *primitive.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, doc := range docs {
-		s.unindex(doc)
-		s.data.Remove(doc.GetOr(keyID, nil))
+	id, ok := doc.Get(keyID)
+	if !ok {
+		return false
 	}
 
-	return docs
+	if _, ok := s.data.Get(id); !ok {
+		return false
+	}
+
+	s.unindex(doc)
+	s.data.Remove(doc.GetOr(keyID, nil))
+
+	return true
 }
 
 func (s *Segment) Range(f func(doc *primitive.Map) bool) {
@@ -159,7 +154,7 @@ func (s *Segment) Drop() []*primitive.Map {
 func (s *Segment) index(doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
-		return errors.WithStack(ErrIndexConflict)
+		return errors.WithStack(ErrPKNotFound)
 	}
 
 	for i, model := range s.models {
