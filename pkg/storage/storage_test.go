@@ -14,6 +14,52 @@ import (
 
 const batchSize = 100
 
+func TestNewStorage(t *testing.T) {
+	t.Run("Init", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+
+		kind := faker.UUIDHyphenated()
+
+		s := scheme.New()
+		s.AddKnownType(kind, &scheme.SpecMeta{})
+		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(nil), nil
+		}))
+
+		st, err := New(ctx, Config{
+			Scheme:   s,
+			Database: memdb.New(faker.UUIDHyphenated()),
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, st)
+	})
+
+	t.Run("Load", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+
+		kind := faker.UUIDHyphenated()
+
+		s := scheme.New()
+		s.AddKnownType(kind, &scheme.SpecMeta{})
+		s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(nil), nil
+		}))
+
+		config := Config{
+			Scheme:   s,
+			Database: memdb.New(faker.UUIDHyphenated()),
+		}
+
+		_, _ = New(ctx, config)
+
+		st, err := New(ctx, config)
+		assert.NoError(t, err)
+		assert.NotNil(t, st)
+	})
+}
+
 func TestStorage_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
