@@ -17,11 +17,14 @@ import (
 )
 
 func TestApplyCommand_Execute(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -64,7 +67,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
+	r, err := st.FindOne(ctx, storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 

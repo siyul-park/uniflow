@@ -14,10 +14,13 @@ import (
 )
 
 func TestGetCommand_Execute(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
 	db := memdb.New("")
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -37,7 +40,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	id, _ := st.InsertOne(context.Background(), spec)
+	id, _ := st.InsertOne(ctx, spec)
 
 	output := new(bytes.Buffer)
 

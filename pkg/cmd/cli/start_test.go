@@ -20,12 +20,15 @@ import (
 )
 
 func TestStartCommand_Execute(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
 	h := hook.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -53,39 +56,41 @@ func TestStartCommand_Execute(t *testing.T) {
 		Data: data,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	func() {
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
 
-	output := new(bytes.Buffer)
+		output := new(bytes.Buffer)
 
-	cmd := NewStartCommand(StartConfig{
-		Scheme:   s,
-		Hook:     h,
-		FS:       fsys,
-		Database: db,
-	})
-	cmd.SetOut(output)
-	cmd.SetErr(output)
-	cmd.SetContext(ctx)
+		cmd := NewStartCommand(StartConfig{
+			Scheme:   s,
+			Hook:     h,
+			FS:       fsys,
+			Database: db,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetContext(ctx)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
 
-	go func() {
-		_ = cmd.Execute()
-	}()
+		go func() {
+			_ = cmd.Execute()
+		}()
 
-	for {
-		select {
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-			return
-		default:
-			r, err := st.FindOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
-			assert.NoError(t, err)
-			if r != nil {
-				assert.Equal(t, spec, r)
+		for {
+			select {
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
 				return
+			default:
+				r, err := st.FindOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+				assert.NoError(t, err)
+				if r != nil {
+					assert.Equal(t, spec, r)
+					return
+				}
 			}
 		}
-	}
+	}()
 }

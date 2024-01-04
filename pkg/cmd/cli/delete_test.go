@@ -16,11 +16,14 @@ import (
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -48,7 +51,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		Data: data,
 	}
 
-	_, _ = st.InsertOne(context.Background(), spec)
+	_, _ = st.InsertOne(ctx, spec)
 
 	cmd := NewDeleteCommand(DeleteConfig{
 		Scheme:   s,
@@ -61,7 +64,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(context.Background(), storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
+	r, err := st.FindOne(ctx, storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
 	assert.NoError(t, err)
 	assert.Nil(t, r)
 }

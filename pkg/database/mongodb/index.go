@@ -27,7 +27,7 @@ func (iv *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 	}
 
 	var indexes []bson.M
-	if err := cursor.All(context.Background(), &indexes); err != nil {
+	if err := cursor.All(ctx, &indexes); err != nil {
 		return nil, err
 	}
 

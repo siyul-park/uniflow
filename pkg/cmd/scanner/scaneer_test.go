@@ -16,11 +16,14 @@ import (
 )
 
 func TestScanner_Scan(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(context.Background(), storage.Config{
+	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -54,7 +57,7 @@ func TestScanner_Scan(t *testing.T) {
 		FS(fsys).
 		Filename(filename)
 
-	specs, err := scanner.Scan(context.Background())
+	specs, err := scanner.Scan(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, specs, 1)
 }

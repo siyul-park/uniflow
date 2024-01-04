@@ -19,7 +19,7 @@ func TestExecute(t *testing.T) {
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	output := new(bytes.Buffer)

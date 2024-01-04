@@ -33,7 +33,7 @@ func TestCollection_Indexes(t *testing.T, collection database.Collection) {
 func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	stream, err := collection.Watch(ctx, nil)
@@ -65,7 +65,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		doc := primitive.NewMap(
@@ -81,7 +81,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		doc := primitive.NewMap(
@@ -102,7 +102,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		var docs []*primitive.Map
@@ -124,7 +124,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		var docs []*primitive.Map
@@ -147,7 +147,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	t.Run("Upsert = true", func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	t.Run("Upsert = true", func(t *testing.T) {
@@ -236,7 +236,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -261,7 +261,7 @@ func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	var ids []primitive.Value
@@ -297,7 +297,7 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -396,7 +396,7 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	var ids []primitive.Value
@@ -527,7 +527,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 func TestCollection_Drop(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	_, err := collection.InsertOne(ctx, primitive.NewMap(
@@ -542,8 +542,11 @@ func TestCollection_Drop(t *testing.T, collection database.Collection) {
 func BenchmarkCollection_InsertOne(b *testing.B, coll database.Collection) {
 	b.Helper()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < b.N; i++ {
-		_, err := coll.InsertOne(context.Background(), primitive.NewMap(
+		_, err := coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
@@ -554,6 +557,9 @@ func BenchmarkCollection_InsertOne(b *testing.B, coll database.Collection) {
 func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 	b.Helper()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < b.N; i++ {
 		var docs []*primitive.Map
 		for i := 0; i < benchSize; i++ {
@@ -563,7 +569,7 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 			))
 		}
 
-		_, err := coll.InsertMany(context.Background(), docs)
+		_, err := coll.InsertMany(ctx, docs)
 		assert.NoError(b, err)
 	}
 }
@@ -572,8 +578,11 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < benchSize; i++ {
-		_, _ = coll.InsertOne(context.Background(), primitive.NewMap(
+		_, _ = coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
@@ -586,7 +595,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 		primitive.NewString("name"), name,
 	)
 
-	_, err := coll.InsertOne(context.Background(), v)
+	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
 	b.StartTimer()
@@ -594,7 +603,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
 
-		_, err := coll.UpdateOne(context.Background(), database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
+		_, err := coll.UpdateOne(ctx, database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
 		assert.NoError(b, err)
 
 		name = next
@@ -605,10 +614,13 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	name := primitive.NewString(faker.UUIDHyphenated())
 
 	for i := 0; i < benchSize; i++ {
-		_, _ = coll.InsertOne(context.Background(), primitive.NewMap(
+		_, _ = coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), name,
 		))
@@ -619,7 +631,7 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
 
-		_, err := coll.UpdateMany(context.Background(), database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
+		_, err := coll.UpdateMany(ctx, database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
 		assert.NoError(b, err)
 
 		name = next
@@ -630,8 +642,11 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < benchSize; i++ {
-		_, _ = coll.InsertOne(context.Background(), primitive.NewMap(
+		_, _ = coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
@@ -647,12 +662,12 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		_, err := coll.InsertOne(context.Background(), v)
+		_, err := coll.InsertOne(ctx, v)
 		assert.NoError(b, err)
 
 		b.StartTimer()
 
-		_, err = coll.DeleteOne(context.Background(), database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+		_, err = coll.DeleteOne(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
 		assert.NoError(b, err)
 	}
 }
@@ -660,6 +675,9 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	name := primitive.NewString(faker.UUIDHyphenated())
 
@@ -676,12 +694,12 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		_, err := coll.InsertMany(context.Background(), docs)
+		_, err := coll.InsertMany(ctx, docs)
 		assert.NoError(b, err)
 
 		b.StartTimer()
 
-		_, err = coll.DeleteMany(context.Background(), database.Where("name").EQ(name))
+		_, err = coll.DeleteMany(ctx, database.Where("name").EQ(name))
 		assert.NoError(b, err)
 	}
 }
@@ -690,8 +708,11 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < benchSize; i++ {
-		_, _ = coll.InsertOne(context.Background(), primitive.NewMap(
+		_, _ = coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
@@ -702,21 +723,21 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 
-	_, err := coll.InsertOne(context.Background(), v)
+	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
 	b.StartTimer()
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindOne(context.Background(), database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+			_, err := coll.FindOne(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
 			assert.NoError(b, err)
 		}
 	})
 
 	b.Run("Without Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindOne(context.Background(), database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
+			_, err := coll.FindOne(ctx, database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
 			assert.NoError(b, err)
 		}
 	})
@@ -726,8 +747,11 @@ func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 	b.Helper()
 	b.StopTimer()
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	for i := 0; i < benchSize; i++ {
-		_, _ = coll.InsertOne(context.Background(), primitive.NewMap(
+		_, _ = coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
@@ -738,21 +762,21 @@ func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 
-	_, err := coll.InsertOne(context.Background(), v)
+	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
 	b.StartTimer()
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindMany(context.Background(), database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+			_, err := coll.FindMany(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
 			assert.NoError(b, err)
 		}
 	})
 
 	b.Run("Without Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindMany(context.Background(), database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
+			_, err := coll.FindMany(ctx, database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
 			assert.NoError(b, err)
 		}
 	})
