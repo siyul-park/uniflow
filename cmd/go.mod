@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/cmd
 
-go 1.21.0
+go 1.21.5
 
 require (
 	github.com/siyul-park/uniflow v0.0.0
