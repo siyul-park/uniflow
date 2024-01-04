@@ -50,17 +50,16 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-stream.Done():
-			stream, err = r.watch(ctx)
-			if err != nil {
-				return err
-			}
 		case event, ok := <-stream.Next():
 			if !ok {
-				return nil
-			}
-			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
-				return err
+				stream, err = r.watch(ctx)
+				if err != nil {
+					return err
+				}
+			} else {
+				if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
+					return err
+				}
 			}
 		}
 	}

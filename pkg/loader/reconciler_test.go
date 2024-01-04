@@ -41,12 +41,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	r := NewReconciler(ReconcilerConfig{
-		Storage: st,
-		Loader:  ld,
+		Namespace: scheme.DefaultNamespace,
+		Storage:   st,
+		Loader:    ld,
 	})
 	defer r.Close()
 
 	err := r.Watch(ctx)
+	assert.NoError(t, err)
+
+	err = r.Watch(ctx)
 	assert.NoError(t, err)
 
 	go r.Reconcile(ctx)
