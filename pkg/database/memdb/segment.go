@@ -5,6 +5,7 @@ import (
 
 	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -29,6 +30,10 @@ var (
 )
 
 var keyID = primitive.NewString("id")
+
+var comparator = utils.Comparator(func(a, b any) int {
+	return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
+})
 
 func newSegment() *Segment {
 	s := &Segment{data: treemap.NewWith(comparator)}
