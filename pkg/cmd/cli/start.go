@@ -79,8 +79,9 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			if err != nil {
 				return err
 			}
-			_, err = st.InsertMany(ctx, specs)
-			return err
+			if _, err = st.InsertMany(ctx, specs); err != nil {
+				return err
+			}
 		}
 
 		r, err := runtime.New(ctx, runtime.Config{
