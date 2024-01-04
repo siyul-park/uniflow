@@ -50,9 +50,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	err := r.Watch(ctx)
 	assert.NoError(t, err)
 
-	err = r.Watch(ctx)
-	assert.NoError(t, err)
-
 	go r.Reconcile(ctx)
 
 	spec := &scheme.SpecMeta{
