@@ -7,7 +7,6 @@ import (
 	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -23,19 +22,12 @@ func TestScanner_Scan(t *testing.T) {
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
+	kind := faker.UUIDHyphenated()
+
 	st, _ := storage.New(ctx, storage.Config{
 		Scheme:   s,
 		Database: db,
 	})
-
-	filename := "spec.json"
-	kind := faker.UUIDHyphenated()
-
-	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
-		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
-	}
 
 	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
@@ -44,7 +36,17 @@ func TestScanner_Scan(t *testing.T) {
 	s.AddKnownType(kind, &scheme.SpecMeta{})
 	s.AddCodec(kind, codec)
 
+	filename := "spec.json"
+
+	spec := &scheme.SpecMeta{
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
 	data, _ := json.Marshal(spec)
+
+	_, _ = st.InsertOne(ctx, spec)
 
 	fsys[filename] = &fstest.MapFile{
 		Data: data,
