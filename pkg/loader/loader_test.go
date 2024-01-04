@@ -44,11 +44,13 @@ func TestLoader_LoadOne(t *testing.T) {
 			ID:        ulid.Make(),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 		spec2 := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 			Links: map[string][]scheme.PortLocation{
 				node.PortIO: {
 					{
@@ -58,11 +60,26 @@ func TestLoader_LoadOne(t *testing.T) {
 				},
 			},
 		}
+		spec3 := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Links: map[string][]scheme.PortLocation{
+				node.PortIO: {
+					{
+						Name: spec2.GetName(),
+						Port: node.PortIO,
+					},
+				},
+			},
+		}
 
 		st.InsertOne(ctx, spec1)
 		st.InsertOne(ctx, spec2)
+		st.InsertOne(ctx, spec3)
 
-		r, err := ld.LoadOne(ctx, spec2.GetID())
+		r, err := ld.LoadOne(ctx, spec3.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
@@ -70,6 +87,9 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.True(t, ok)
 
 		_, ok = tb.LookupByID(spec2.GetID())
+		assert.True(t, ok)
+
+		_, ok = tb.LookupByID(spec3.GetID())
 		assert.True(t, ok)
 
 	})
@@ -174,11 +194,13 @@ func TestLoader_LoadAll(t *testing.T) {
 			ID:        ulid.Make(),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 		spec2 := &scheme.SpecMeta{
 			ID:        ulid.Make(),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 			Links: map[string][]scheme.PortLocation{
 				node.PortIO: {
 					{
@@ -188,13 +210,28 @@ func TestLoader_LoadAll(t *testing.T) {
 				},
 			},
 		}
+		spec3 := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Links: map[string][]scheme.PortLocation{
+				node.PortIO: {
+					{
+						Name: spec2.GetName(),
+						Port: node.PortIO,
+					},
+				},
+			},
+		}
 
 		st.InsertOne(ctx, spec1)
 		st.InsertOne(ctx, spec2)
+		st.InsertOne(ctx, spec3)
 
 		r, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
-		assert.Len(t, r, 2)
+		assert.Len(t, r, 3)
 
 		sym1, ok := tb.LookupByID(spec1.GetID())
 		assert.True(t, ok)
@@ -203,6 +240,10 @@ func TestLoader_LoadAll(t *testing.T) {
 		sym2, ok := tb.LookupByID(spec2.GetID())
 		assert.True(t, ok)
 		assert.Contains(t, r, sym2)
+
+		sym3, ok := tb.LookupByID(spec3.GetID())
+		assert.True(t, ok)
+		assert.Contains(t, r, sym3)
 	})
 
 	t.Run("Reload", func(t *testing.T) {
