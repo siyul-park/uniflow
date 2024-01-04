@@ -19,7 +19,7 @@ type Process struct {
 func New() *Process {
 	return &Process{
 		id:    ulid.Make(),
-		stack: NewStack(),
+		stack: newStack(),
 		done:  make(chan struct{}),
 		mu:    sync.RWMutex{},
 	}

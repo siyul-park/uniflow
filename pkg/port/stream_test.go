@@ -8,7 +8,7 @@ import (
 )
 
 func TestStream_New(t *testing.T) {
-	stream := NewStream()
+	stream := newStream()
 
 	select {
 	case <-stream.Done():
@@ -18,8 +18,8 @@ func TestStream_New(t *testing.T) {
 }
 
 func TestStream_Link(t *testing.T) {
-	stream1 := NewStream()
-	stream2 := NewStream()
+	stream1 := newStream()
+	stream2 := newStream()
 
 	stream1.Link(stream2)
 
@@ -31,8 +31,8 @@ func TestStream_Link(t *testing.T) {
 }
 
 func TestStream_Unlink(t *testing.T) {
-	stream1 := NewStream()
-	stream2 := NewStream()
+	stream1 := newStream()
+	stream2 := newStream()
 
 	stream1.Link(stream2)
 	stream1.Unlink(stream2)

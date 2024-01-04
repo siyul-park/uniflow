@@ -15,7 +15,7 @@ type Stream struct {
 	done    chan struct{}
 }
 
-func UpgradeStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
+func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	s := &Stream{
 		raw:     stream,
 		channel: make(chan database.Event),

@@ -14,8 +14,7 @@ type ReadPipe struct {
 	mu   sync.RWMutex
 }
 
-// NewReadPipe creates a new ReadPipe instance.
-func NewReadPipe() *ReadPipe {
+func newReadPipe() *ReadPipe {
 	p := &ReadPipe{
 		in:   make(chan *packet.Packet),
 		out:  make(chan *packet.Packet),
@@ -106,8 +105,7 @@ type WritePipe struct {
 	mu    sync.RWMutex
 }
 
-// NewWritePipe creates a new WritePipe instance.
-func NewWritePipe() *WritePipe {
+func newWritePipe() *WritePipe {
 	return &WritePipe{
 		links: nil,
 		done:  make(chan struct{}),

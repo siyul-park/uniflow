@@ -13,7 +13,7 @@ type Stream struct {
 	mu   sync.Mutex
 }
 
-func NewStream() *Stream {
+func newStream() *Stream {
 	s := &Stream{
 		in:   make(chan database.Event),
 		out:  make(chan database.Event),

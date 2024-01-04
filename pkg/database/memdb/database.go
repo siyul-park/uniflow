@@ -23,38 +23,38 @@ func New(name string) *Database {
 	}
 }
 
-func (db *Database) Name() string {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (d *Database) Name() string {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
-	return db.name
+	return d.name
 }
 
-func (db *Database) Collection(_ context.Context, name string) (database.Collection, error) {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (d *Database) Collection(_ context.Context, name string) (database.Collection, error) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
-	if coll, ok := db.collections[name]; ok {
+	if coll, ok := d.collections[name]; ok {
 		return coll, nil
 	}
 
 	coll := NewCollection(name)
-	db.collections[name] = coll
+	d.collections[name] = coll
 
 	return coll, nil
 }
 
-func (db *Database) Drop(ctx context.Context) error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (d *Database) Drop(ctx context.Context) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
-	for _, coll := range db.collections {
+	for _, coll := range d.collections {
 		if err := coll.Drop(ctx); err != nil {
 			return err
 		}
 	}
 
-	db.collections = map[string]*Collection{}
+	d.collections = map[string]*Collection{}
 
 	return nil
 }

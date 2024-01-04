@@ -223,5 +223,5 @@ func testCollection(server *memongo.Server) (*Collection, error) {
 	}
 	db := client.Database(faker.UUIDHyphenated())
 
-	return NewCollection(db.Collection(faker.UUIDHyphenated())), nil
+	return newCollection(db.Collection(faker.UUIDHyphenated())), nil
 }

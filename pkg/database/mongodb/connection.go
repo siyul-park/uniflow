@@ -15,8 +15,8 @@ type Connection struct {
 	lock      sync.RWMutex
 }
 
-func Connect(ctx context.Context, uri string) (*Connection, error) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+func Connect(ctx context.Context, opts ...*options.ClientOptions) (*Connection, error) {
+	client, err := mongo.Connect(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (con *Connection) Database(_ context.Context, name string) (database.Databa
 		return db, nil
 	}
 
-	db := NewDatabase(con.raw.Database(name))
+	db := newDatabase(con.raw.Database(name))
 	con.databases[name] = db
 
 	return db, nil

@@ -65,7 +65,7 @@ func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 		return nil, err
 	}
 
-	return NewStream(stream), nil
+	return newStream(stream), nil
 }
 
 // InsertOne inserts a single scheme.Spec and returns its ID.

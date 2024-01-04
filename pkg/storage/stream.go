@@ -12,8 +12,7 @@ type Stream struct {
 	channel chan Event
 }
 
-// NewStream returns a new Stream.
-func NewStream(stream database.Stream) *Stream {
+func newStream(stream database.Stream) *Stream {
 	s := &Stream{
 		stream:  stream,
 		channel: make(chan Event),

@@ -16,8 +16,7 @@ type Stack struct {
 	mu     sync.RWMutex
 }
 
-// NewStack creates a new Stack instance.
-func NewStack() *Stack {
+func newStack() *Stack {
 	return &Stack{
 		stems:  make(map[ulid.ULID][]ulid.ULID),
 		leaves: make(map[ulid.ULID][]ulid.ULID),

@@ -55,5 +55,5 @@ func testIndexView(server *memongo.Server) (*IndexView, error) {
 	db := client.Database(faker.UUIDHyphenated())
 	coll := db.Collection(faker.UUIDHyphenated())
 
-	return UpgradeIndexView(coll.Indexes()), nil
+	return newIndexView(coll.Indexes()), nil
 }

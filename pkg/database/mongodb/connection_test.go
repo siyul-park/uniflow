@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func TestConnect(t *testing.T) {
@@ -16,7 +17,7 @@ func TestConnect(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	con, err := Connect(ctx, server.URI())
+	con, err := Connect(ctx, options.Client().ApplyURI(server.URI()))
 	assert.NoError(t, err)
 	assert.NotNil(t, con)
 }
@@ -28,7 +29,7 @@ func TestConnection_Database(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	con, _ := Connect(ctx, server.URI())
+	con, _ := Connect(ctx, options.Client().ApplyURI(server.URI()))
 
 	dbname := faker.UUIDHyphenated()
 
@@ -46,7 +47,7 @@ func TestConnection_Disconnect(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	con, _ := Connect(ctx, server.URI())
+	con, _ := Connect(ctx, options.Client().ApplyURI(server.URI()))
 
 	err := con.Disconnect(ctx)
 	assert.NoError(t, err)

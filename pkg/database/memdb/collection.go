@@ -50,7 +50,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	stream := NewStream()
+	stream := newStream()
 
 	c.streams = append(c.streams, stream)
 	c.matches = append(c.matches, parseFilter(filter))

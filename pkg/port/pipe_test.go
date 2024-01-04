@@ -9,9 +9,9 @@ import (
 
 func TestPipe_Link(t *testing.T) {
 	t.Run("1:1", func(t *testing.T) {
-		read := NewReadPipe()
+		read := newReadPipe()
 		defer read.Close()
-		write := NewWritePipe()
+		write := newWritePipe()
 		defer write.Close()
 
 		write.Link(read)
@@ -23,11 +23,11 @@ func TestPipe_Link(t *testing.T) {
 	})
 
 	t.Run("1:N", func(t *testing.T) {
-		read1 := NewReadPipe()
+		read1 := newReadPipe()
 		defer read1.Close()
-		read2 := NewReadPipe()
+		read2 := newReadPipe()
 		defer read2.Close()
-		write := NewWritePipe()
+		write := newWritePipe()
 		defer write.Close()
 
 		write.Link(read1)
@@ -42,9 +42,9 @@ func TestPipe_Link(t *testing.T) {
 }
 
 func TestPipe_Unlink(t *testing.T) {
-	read := NewReadPipe()
+	read := newReadPipe()
 	defer read.Close()
-	write := NewWritePipe()
+	write := newWritePipe()
 	defer write.Close()
 
 	write.Link(read)
@@ -62,9 +62,9 @@ func TestPipe_Unlink(t *testing.T) {
 
 func TestPipe_SendAndReceive(t *testing.T) {
 	t.Run("Not Closed", func(t *testing.T) {
-		read := NewReadPipe()
+		read := newReadPipe()
 		defer read.Close()
-		write := NewWritePipe()
+		write := newWritePipe()
 		defer write.Close()
 
 		write.Link(read)
@@ -80,9 +80,9 @@ func TestPipe_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Closed", func(t *testing.T) {
-		read := NewReadPipe()
+		read := newReadPipe()
 		defer read.Close()
-		write := NewWritePipe()
+		write := newWritePipe()
 		defer write.Close()
 
 		write.Link(read)
@@ -101,7 +101,7 @@ func TestPipe_SendAndReceive(t *testing.T) {
 
 func TestPipe_Close(t *testing.T) {
 	t.Run("ReadPipe", func(t *testing.T) {
-		pipe := NewReadPipe()
+		pipe := newReadPipe()
 		defer pipe.Close()
 
 		select {
@@ -119,7 +119,7 @@ func TestPipe_Close(t *testing.T) {
 		}
 	})
 	t.Run("WritePipe", func(t *testing.T) {
-		pipe := NewWritePipe()
+		pipe := newWritePipe()
 		defer pipe.Close()
 
 		select {
@@ -139,9 +139,9 @@ func TestPipe_Close(t *testing.T) {
 }
 
 func BenchmarkPipe_SendAndReceive(b *testing.B) {
-	read := NewReadPipe()
+	read := newReadPipe()
 	defer read.Close()
-	write := NewWritePipe()
+	write := newWritePipe()
 	defer write.Close()
 
 	write.Link(read)

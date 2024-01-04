@@ -52,5 +52,5 @@ func testDatabase(server *memongo.Server) (*Database, error) {
 		return nil, err
 	}
 
-	return NewDatabase(client.Database(faker.UUIDHyphenated())), nil
+	return newDatabase(client.Database(faker.UUIDHyphenated())), nil
 }

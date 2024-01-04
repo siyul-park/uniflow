@@ -16,12 +16,12 @@ type IndexView struct {
 
 var _ database.IndexView = &IndexView{}
 
-func UpgradeIndexView(iv mongo.IndexView) *IndexView {
-	return &IndexView{raw: iv}
+func newIndexView(v mongo.IndexView) *IndexView {
+	return &IndexView{raw: v}
 }
 
-func (iv *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
-	cursor, err := iv.raw.List(ctx)
+func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
+	cursor, err := v.raw.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (iv *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 	return models, nil
 }
 
-func (iv *IndexView) Create(ctx context.Context, index database.IndexModel) error {
+func (v *IndexView) Create(ctx context.Context, index database.IndexModel) error {
 	keys := bson.D{}
 	for _, k := range index.Keys {
 		keys = append(keys, bson.E{Key: bsonKey(k), Value: 1})
@@ -69,7 +69,7 @@ func (iv *IndexView) Create(ctx context.Context, index database.IndexModel) erro
 		return err
 	}
 
-	_, err = iv.raw.CreateOne(ctx, mongo.IndexModel{
+	_, err = v.raw.CreateOne(ctx, mongo.IndexModel{
 		Keys: keys,
 		Options: &options.IndexOptions{
 			Name:                    lo.ToPtr(index.Name),
@@ -81,7 +81,7 @@ func (iv *IndexView) Create(ctx context.Context, index database.IndexModel) erro
 	return err
 }
 
-func (iv *IndexView) Drop(ctx context.Context, name string) error {
-	_, err := iv.raw.DropOne(ctx, name)
+func (v *IndexView) Drop(ctx context.Context, name string) error {
+	_, err := v.raw.DropOne(ctx, name)
 	return err
 }

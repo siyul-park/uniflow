@@ -16,42 +16,42 @@ type Database struct {
 
 var _ database.Database = &Database{}
 
-func NewDatabase(db *mongo.Database) *Database {
+func newDatabase(db *mongo.Database) *Database {
 	return &Database{
 		raw:         db,
 		collections: map[string]*Collection{},
 	}
 }
 
-func (db *Database) Name() string {
-	return db.raw.Name()
+func (d *Database) Name() string {
+	return d.raw.Name()
 }
 
-func (db *Database) Collection(_ context.Context, name string) (database.Collection, error) {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (d *Database) Collection(_ context.Context, name string) (database.Collection, error) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
-	if coll, ok := db.collections[name]; ok {
+	if coll, ok := d.collections[name]; ok {
 		return coll, nil
 	}
 
-	coll := NewCollection(db.raw.Collection(name))
-	db.collections[name] = coll
+	coll := newCollection(d.raw.Collection(name))
+	d.collections[name] = coll
 
 	return coll, nil
 }
 
-func (db *Database) Drop(ctx context.Context) error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (d *Database) Drop(ctx context.Context) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
-	for _, coll := range db.collections {
+	for _, coll := range d.collections {
 		if err := coll.Drop(ctx); err != nil {
 			return err
 		}
 	}
 
-	db.collections = map[string]*Collection{}
+	d.collections = map[string]*Collection{}
 
-	return db.raw.Drop(ctx)
+	return d.raw.Drop(ctx)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func TestStack_Pop(t *testing.T) {
-	st := NewStack()
+	st := newStack()
 	defer st.Close()
 
 	k1 := ulid.Make()
@@ -44,7 +44,7 @@ func TestStack_Pop(t *testing.T) {
 }
 
 func TestStack_Len(t *testing.T) {
-	st := NewStack()
+	st := newStack()
 	defer st.Close()
 
 	k1 := ulid.Make()
@@ -66,7 +66,7 @@ func TestStack_Len(t *testing.T) {
 
 func TestStack_Wait(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
-		st := NewStack()
+		st := newStack()
 		defer st.Close()
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -86,7 +86,7 @@ func TestStack_Wait(t *testing.T) {
 	})
 
 	t.Run("Not Empty", func(t *testing.T) {
-		st := NewStack()
+		st := newStack()
 		defer st.Close()
 
 		k1 := ulid.Make()
@@ -112,7 +112,7 @@ func TestStack_Wait(t *testing.T) {
 }
 
 func TestStack_Clear(t *testing.T) {
-	st := NewStack()
+	st := newStack()
 	defer st.Close()
 
 	k1 := ulid.Make()

@@ -17,12 +17,11 @@ type Stream struct {
 	mu    sync.RWMutex
 }
 
-// NewStream creates a new Stream instance.
-func NewStream() *Stream {
+func newStream() *Stream {
 	return &Stream{
 		id:    ulid.Make(),
-		read:  NewReadPipe(),
-		write: NewWritePipe(),
+		read:  newReadPipe(),
+		write: newWritePipe(),
 		done:  make(chan struct{}),
 	}
 }
