@@ -43,7 +43,7 @@ func execute() error {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	sb.Register(control.Schemes())
+	sb.Register(control.AddToScheme())
 
 	sc, err := sb.Build()
 	if err != nil {

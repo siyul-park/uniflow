@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSchemes(t *testing.T) {
+func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := Schemes()(s)
+	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
 	_, ok := s.KnownType(KindSnippet)
