@@ -1,16 +1,12 @@
 -include .env
 
+CURRENT_DIR = $(shell realpath .)
+
 .PHONY: init
 init:
 	@find . -name go.mod -execdir go install -v ./... \;
-
-.PHONY: init-staticcheck
-init-staticcheck:
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
-
-.PHONY: init-godoc
-init-godoc:
-	@go install golang.org/x/tools/cmd/godoc@latest	
+	@go install golang.org/x/tools/cmd/godoc@latest
 
 .PHONY: generate
 generate:
@@ -44,7 +40,8 @@ race:
 
 .PHONY: coverage
 coverage:
-	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -coverprofile coverage.out -covermode count $(test-options) ./...'
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -race --coverprofile=coverage.out --covermode=atomic $(test-options) ./...'
+	@find $(realpath .) -name go.mod | xargs dirname | grep '${CURRENT_DIR}/' | xargs -I {} sh -c 'cd {}; cat coverage.out >> '${CURRENT_DIR}/coverage.out' && rm coverage.out'
 
 .PHONY: benchmark
 benchmark:
@@ -62,9 +59,9 @@ fmt:
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go fmt ./...'
 
 .PHONY: staticcheck
-staticcheck: init-staticcheck
+staticcheck: init
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; staticcheck ./...'
 
 .PHONY: doc
-doc: init-godoc
+doc: init
 	@godoc -http=:6060

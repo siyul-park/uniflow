@@ -31,14 +31,14 @@ jobs:
             ${{ runner.os }}-go-
 
       - run: make init
-      - run: make check test-options="-race --coverprofile=coverage.coverprofile --covermode=atomic"
+      - run: make coverage
 
       - name: Upload coverage to Codecov
         if: success() && matrix.go == '1.21' && matrix.os == 'ubuntu-20.04'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.coverprofile
+          file: ./coverage.out
           fail_ci_if_error: false
 
   benchmark:
