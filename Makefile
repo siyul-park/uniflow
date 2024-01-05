@@ -32,10 +32,6 @@ check: lint test
 
 .PHONY: test
 test:
-	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test $(test-options) ./...'
-
-.PHONY: race
-race:
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go test -race $(test-options) ./...'
 
 .PHONY: coverage

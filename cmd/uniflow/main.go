@@ -10,8 +10,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const configFile = ".uniflow.toml"
+
 const (
-	configFile = ".uniflow.toml"
+	flagDatabaseURL  = "database.url"
+	flagDatabaseName = "database.name"
 )
 
 func init() {
@@ -33,6 +36,9 @@ func main() {
 func execute() error {
 	ctx := context.Background()
 
+	databaseURL := viper.GetString(flagDatabaseURL)
+	databaseName := viper.GetString(flagDatabaseName)
+
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
@@ -45,7 +51,7 @@ func execute() error {
 		return err
 	}
 
-	db, err := connectDatabase(ctx)
+	db, err := connectDatabase(ctx, databaseURL, databaseName)
 	if err != nil {
 		return err
 	}
