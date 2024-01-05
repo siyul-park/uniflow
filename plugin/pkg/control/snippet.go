@@ -82,6 +82,7 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 
 type SnippetNodeSpec struct {
 	scheme.SpecMeta
+
 	Lang string `map:"lang"`
 	Code string `map:"code"`
 }
