@@ -17,6 +17,15 @@ type SnippetNode struct {
 	*node.OneToOneNode
 }
 
+type SnippetNodeSpec struct {
+	scheme.SpecMeta
+
+	Lang string `map:"lang"`
+	Code string `map:"code"`
+}
+
+const KindSnippet = "snippet"
+
 const (
 	LangJSON    = "json"
 	LangYAML    = "yaml"
@@ -26,6 +35,12 @@ const (
 var ErrInvalidLanguage = errors.New("language is invalid")
 
 var _ node.Node = (*SnippetNode)(nil)
+
+func NewSnippetNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
+		return NewSnippetNode(spec.Lang, spec.Code)
+	})
+}
 
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	action, err := compile(lang, code)
@@ -78,19 +93,4 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 	default:
 		return nil, errors.WithStack(ErrInvalidLanguage)
 	}
-}
-
-type SnippetNodeSpec struct {
-	scheme.SpecMeta
-
-	Lang string `map:"lang"`
-	Code string `map:"code"`
-}
-
-const KindSnippet = "snippet"
-
-func NewSnippetNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
-		return NewSnippetNode(spec.Lang, spec.Code)
-	})
 }
