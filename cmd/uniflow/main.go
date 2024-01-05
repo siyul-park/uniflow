@@ -7,6 +7,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/spf13/viper"
 )
 
@@ -41,6 +42,8 @@ func execute() error {
 
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
+
+	sb.Register(control.Schemes())
 
 	sc, err := sb.Build()
 	if err != nil {
