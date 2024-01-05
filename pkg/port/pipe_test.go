@@ -148,8 +148,10 @@ func BenchmarkPipe_SendAndReceive(b *testing.B) {
 
 	pck := packet.New(nil)
 
-	for i := 0; i < b.N; i++ {
-		write.Send(pck)
-		<-read.Receive()
-	}
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			write.Send(pck)
+			<-read.Receive()
+		}
+	})
 }

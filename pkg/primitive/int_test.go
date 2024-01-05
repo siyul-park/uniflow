@@ -149,3 +149,63 @@ func TestInteger_EncodeAndDecode(t *testing.T) {
 		assert.Equal(t, source, decoded)
 	})
 }
+
+func BenchmarkInteger_EncodeAndDecode(b *testing.B) {
+	e := newIntEncoder()
+	d := newIntDecoder()
+
+	b.Run("Int", func(b *testing.B) {
+		source := int(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded int
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Int8", func(b *testing.B) {
+		source := int8(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded int8
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Int16", func(b *testing.B) {
+		source := int16(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded int16
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Int32", func(b *testing.B) {
+		source := int32(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded int32
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Int64", func(b *testing.B) {
+		source := int64(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded int64
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+}

@@ -70,3 +70,30 @@ func TestFloat_EncodeAndDecode(t *testing.T) {
 		assert.Equal(t, source, decoded)
 	})
 }
+
+func BenchmarkFloat_EncodeAndDecode(b *testing.B) {
+	e := newBoolEncoder()
+	d := newBoolDecoder()
+
+	b.Run("Float32", func(b *testing.B) {
+		source := float32(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded float32
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Float64", func(b *testing.B) {
+		source := float64(1)
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := e.Encode(source)
+
+			var decoded float64
+			_ = d.Decode(encoded, &decoded)
+		}
+	})
+}

@@ -142,8 +142,10 @@ func BenchmarkPort_Open(b *testing.B) {
 	port := New()
 	defer port.Close()
 
-	for i := 0; i < b.N; i++ {
-		proc := process.New()
-		_ = port.Open(proc)
-	}
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			proc := process.New()
+			_ = port.Open(proc)
+		}
+	})
 }

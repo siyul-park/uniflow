@@ -47,3 +47,21 @@ func TestStream_Unlink(t *testing.T) {
 	default:
 	}
 }
+
+func BenchmarkStream_SendAndReceive(b *testing.B) {
+	in := newStream()
+	defer in.Close()
+	out := newStream()
+	defer in.Close()
+
+	in.Link(out)
+
+	pck := packet.New(nil)
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			in.Send(pck)
+			<-out.Receive()
+		}
+	})
+}

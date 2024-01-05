@@ -109,6 +109,7 @@ func BenchmarkSlice_Sub(b *testing.B) {
 		_ = s.Sub(0, 500)
 	}
 }
+
 func BenchmarkSlice_Get(b *testing.B) {
 	size := 100000
 	s := NewSlice()
@@ -129,5 +130,20 @@ func BenchmarkSlice_Interface(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = v.Interface()
+	}
+}
+
+func BenchmarkSlice_EncodeAndDecode(b *testing.B) {
+	encoder := newSliceEncoder(newStringEncoder())
+	decoder := newSliceDecoder(newStringDecoder())
+
+	v1 := NewString(faker.UUIDHyphenated())
+	v2 := NewString(faker.UUIDHyphenated())
+
+	for i := 0; i < b.N; i++ {
+		encoded, _ := encoder.Encode([]any{v1.Interface(), v2.Interface()})
+
+		var decoded []any
+		_ = decoder.Decode(encoded, &decoded)
 	}
 }

@@ -46,13 +46,13 @@ benchmark:
 .PHONY: lint
 lint: fmt vet staticcheck
 
-.PHONY: vet
-vet:
-	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go vet ./...'
-
 .PHONY: fmt
 fmt:
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go fmt ./...'
+
+.PHONY: vet
+vet:
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go vet ./...'
 
 .PHONY: staticcheck
 staticcheck: init

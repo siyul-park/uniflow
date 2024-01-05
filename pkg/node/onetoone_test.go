@@ -246,9 +246,11 @@ func BenchmarkOneToOneNode_Send(b *testing.B) {
 
 		b.ResetTimer()
 
-		for i := 0; i < b.N; i++ {
-			inStream.Send(inPck)
-			<-outStream.Receive()
-		}
+		b.RunParallel(func(p *testing.PB) {
+			for p.Next() {
+				inStream.Send(inPck)
+				<-outStream.Receive()
+			}
+		})
 	})
 }

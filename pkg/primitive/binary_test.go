@@ -44,3 +44,17 @@ func TestBinary_EncodeAndDecode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
+
+func BenchmarkBinary_EncodeAndDecode(b *testing.B) {
+	e := newBinaryEncoder()
+	d := newBinaryDecoder()
+
+	source := []byte{0, 1, 2, 3, 4, 5, 6, 7}
+
+	for i := 0; i < b.N; i++ {
+		encoded, _ := e.Encode(source)
+
+		var decoded []byte
+		_ = d.Decode(encoded, &decoded)
+	}
+}

@@ -277,3 +277,101 @@ func TestLoader_LoadAll(t *testing.T) {
 		assert.NotEqual(t, r1, r2)
 	})
 }
+
+func BenchmarkLoader_LoadOne(b *testing.B) {
+	b.StopTimer()
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	s := scheme.New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := storage.New(ctx, storage.Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	tb := symbol.NewTable(s)
+	defer tb.Clear()
+
+	ld := New(Config{
+		Storage: st,
+		Table:   tb,
+	})
+
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
+	st.InsertOne(ctx, spec)
+
+	for i := 0; i < b.N; i++ {
+		b.StartTimer()
+
+		r, err := ld.LoadOne(ctx, spec.GetID())
+		assert.NoError(b, err)
+		assert.NotNil(b, r)
+
+		b.StopTimer()
+
+		tb.Free(spec.GetID())
+	}
+}
+
+func BenchmarkLoader_LoadAll(b *testing.B) {
+	b.StopTimer()
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	s := scheme.New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := storage.New(ctx, storage.Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	tb := symbol.NewTable(s)
+	defer tb.Clear()
+
+	ld := New(Config{
+		Storage: st,
+		Table:   tb,
+	})
+
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
+	st.InsertOne(ctx, spec)
+
+	for i := 0; i < b.N; i++ {
+		b.StartTimer()
+
+		r, err := ld.LoadAll(ctx)
+		assert.NoError(b, err)
+		assert.Len(b, r, 1)
+
+		b.StopTimer()
+
+		tb.Free(spec.GetID())
+	}
+}

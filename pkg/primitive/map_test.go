@@ -66,12 +66,10 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 		k1 := NewString(faker.UUIDHyphenated())
 		v1 := NewString(faker.UUIDHyphenated())
 
-		// Test Encode
 		encoded, err := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
 		assert.NoError(t, err)
 		assert.Equal(t, NewMap(k1, v1), encoded)
 
-		// Test Decode
 		var decoded map[any]any
 		err = decoder.Decode(encoded, &decoded)
 		assert.NoError(t, err)
@@ -81,7 +79,6 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 	t.Run("Struct", func(t *testing.T) {
 		v1 := NewString(faker.UUIDHyphenated())
 
-		// Test Encode
 		encoded, err := encoder.Encode(struct {
 			K1 string
 		}{
@@ -90,7 +87,6 @@ func TestMap_EncodeAndDecode(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, NewMap(NewString("k_1"), v1).Compare(encoded) == 0)
 
-		// Test Decode
 		var decoded struct{ K1 string }
 		err = decoder.Decode(encoded, &decoded)
 		assert.NoError(t, err)
@@ -125,4 +121,36 @@ func BenchmarkMap_Interface(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = v.Interface()
 	}
+}
+
+func BenchmarkMap_EncodeAndDecode(b *testing.B) {
+	encoder := newMapEncoder(newStringEncoder())
+	decoder := newMapDecoder(newStringDecoder())
+
+	b.Run("Map", func(b *testing.B) {
+		k1 := NewString(faker.UUIDHyphenated())
+		v1 := NewString(faker.UUIDHyphenated())
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
+
+			var decoded map[any]any
+			_ = decoder.Decode(encoded, &decoded)
+		}
+	})
+
+	b.Run("Struct", func(b *testing.B) {
+		v1 := NewString(faker.UUIDHyphenated())
+
+		for i := 0; i < b.N; i++ {
+			encoded, _ := encoder.Encode(struct {
+				K1 string
+			}{
+				K1: v1.String(),
+			})
+
+			var decoded struct{ K1 string }
+			_ = decoder.Decode(encoded, &decoded)
+		}
+	})
 }

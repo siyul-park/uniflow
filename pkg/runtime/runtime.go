@@ -83,11 +83,6 @@ func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (*symbol.Symbol, err
 	}
 }
 
-// Free unloads a node.Node from the symbol.Table.
-func (r *Runtime) Free(_ context.Context, id ulid.ULID) (bool, error) {
-	return r.table.Free(id)
-}
-
 // Start initiates the Runtime.
 // It loads all scheme.Specs as node.Nodes from the database.Collection,
 // and continuously monitors and runs them by staying up-to-date with scheme.Spec changes.

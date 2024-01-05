@@ -459,3 +459,57 @@ func TestTable_Keys(t *testing.T) {
 	ids := tb.Keys()
 	assert.Contains(t, ids, sym.ID())
 }
+
+func BenchmarkTable_Insert(b *testing.B) {
+	s := scheme.New()
+
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
+	defer tb.Clear()
+
+	for i := 0; i < b.N; i++ {
+		spec := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+		}
+
+		_, _ = tb.Insert(spec)
+	}
+}
+
+func BenchmarkTable_Free(b *testing.B) {
+	s := scheme.New()
+
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	tb := NewTable(s)
+	defer tb.Clear()
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		spec := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+		}
+
+		_, _ = tb.Insert(spec)
+
+		b.StartTimer()
+
+		_, _ = tb.Free(spec.GetID())
+	}
+}

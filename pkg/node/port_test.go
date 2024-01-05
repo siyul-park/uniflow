@@ -1,4 +1,4 @@
-package port
+package node
 
 import (
 	"testing"
@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAndSetIndexInPort(t *testing.T) {
+func TestNewMultiPortAndGetIndex(t *testing.T) {
 	port := faker.UUIDHyphenated()
 	index := 0
 
-	i, ok := GetIndex(port, SetIndex(port, index))
+	i, ok := IndexOfMultiPort(port, MultiPort(port, index))
 	assert.True(t, ok)
 	assert.Equal(t, index, i)
 }

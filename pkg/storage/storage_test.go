@@ -421,3 +421,302 @@ func TestStorage_FindMany(t *testing.T) {
 		assert.Contains(t, res, spec)
 	}
 }
+
+func BenchmarkStorage_InsertOne(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	for i := 0; i < b.N; i++ {
+		spec := &scheme.SpecMeta{
+			ID:   ulid.Make(),
+			Kind: kind,
+		}
+
+		_, _ = st.InsertOne(ctx, spec)
+	}
+}
+
+func BenchmarkStorage_InsertMany(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	for i := 0; i < b.N; i++ {
+		var specs []scheme.Spec
+		for j := 0; j < batchSize; j++ {
+			specs = append(specs, &scheme.SpecMeta{
+				ID:   ulid.Make(),
+				Kind: kind,
+			})
+		}
+
+		_, _ = st.InsertMany(ctx, specs)
+	}
+}
+
+func BenchmarkStorage_UpdateOne(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	id := ulid.Make()
+
+	origin := &scheme.SpecMeta{
+		ID:        id,
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+
+	_, _ = st.InsertOne(ctx, origin)
+
+	for i := 0; i < b.N; i++ {
+		patch := &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
+
+		_, _ = st.UpdateOne(ctx, patch)
+	}
+}
+
+func BenchmarkStorage_UpdateMany(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	var ids []ulid.ULID
+	for i := 0; i < batchSize; i++ {
+		ids = append(ids, ulid.Make())
+	}
+
+	var origins []scheme.Spec
+	for _, id := range ids {
+		origins = append(origins, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		})
+	}
+
+	_, _ = st.InsertMany(ctx, origins)
+
+	for i := 0; i < b.N; i++ {
+		var patches []scheme.Spec
+		for _, id := range ids {
+			patches = append(patches, &scheme.SpecMeta{
+				ID:        id,
+				Kind:      kind,
+				Namespace: scheme.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			})
+		}
+
+		_, _ = st.UpdateMany(ctx, patches)
+	}
+}
+
+func BenchmarkStorage_DeleteOne(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		spec := &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+		}
+		_, _ = st.InsertOne(ctx, spec)
+
+		b.StartTimer()
+
+		_, _ = st.DeleteOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	}
+}
+
+func BenchmarkStorage_DeleteMany(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		var ids []ulid.ULID
+		for i := 0; i < batchSize; i++ {
+			ids = append(ids, ulid.Make())
+		}
+
+		var specs []scheme.Spec
+		for _, id := range ids {
+			specs = append(specs, &scheme.SpecMeta{
+				ID:        id,
+				Kind:      kind,
+				Namespace: scheme.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			})
+		}
+
+		_, _ = st.InsertMany(ctx, specs)
+
+		b.StartTimer()
+
+		_, _ = st.DeleteMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
+	}
+
+}
+
+func BenchmarkStorage_FindOne(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	spec := &scheme.SpecMeta{
+		ID:        ulid.Make(),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+
+	for i := 0; i < batchSize; i++ {
+		_, _ = st.InsertOne(ctx, &scheme.SpecMeta{
+			ID:        ulid.Make(),
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+		})
+	}
+	_, _ = st.InsertOne(ctx, spec)
+
+	for i := 0; i < b.N; i++ {
+		_, _ = st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+	}
+}
+
+func BenchmarkStorage_FindMany(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	st, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: memdb.New(faker.UUIDHyphenated()),
+	})
+
+	var ids []ulid.ULID
+	for i := 0; i < batchSize; i++ {
+		ids = append(ids, ulid.Make())
+	}
+
+	var specs []scheme.Spec
+	for _, id := range ids {
+		specs = append(specs, &scheme.SpecMeta{
+			ID:        id,
+			Kind:      kind,
+			Namespace: scheme.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		})
+	}
+
+	_, _ = st.InsertMany(ctx, specs)
+
+	for i := 0; i < b.N; i++ {
+		_, _ = st.FindMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
+	}
+}

@@ -38,3 +38,17 @@ func TestBool_EncodeAndDecode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
+
+func BenchmarkBool_EncodeAndDecode(b *testing.B) {
+	e := newBoolEncoder()
+	d := newBoolDecoder()
+
+	source := true
+
+	for i := 0; i < b.N; i++ {
+		encoded, _ := e.Encode(source)
+
+		var decoded []byte
+		_ = d.Decode(encoded, &decoded)
+	}
+}

@@ -28,7 +28,7 @@ func TestOneToManyNode_Port(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(port.SetIndex(PortOut, 0))
+	p, ok = n.Port(MultiPort(PortOut, 0))
 	assert.True(t, ok)
 	assert.NotNil(t, p)
 
@@ -49,7 +49,7 @@ func TestOneToManyNode_Send(t *testing.T) {
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(port.SetIndex(PortOut, 0))
+		outPort, _ := n.Port(MultiPort(PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -129,7 +129,7 @@ func BenchmarkOneToManyNode_Send(b *testing.B) {
 	inPort.Link(in)
 
 	out := port.New()
-	outPort, _ := n.Port(port.SetIndex(PortOut, 0))
+	outPort, _ := n.Port(MultiPort(PortOut, 0))
 	outPort.Link(out)
 
 	proc := process.New()
@@ -143,8 +143,10 @@ func BenchmarkOneToManyNode_Send(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		inStream.Send(inPck)
-		<-outStream.Receive()
-	}
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			inStream.Send(inPck)
+			<-outStream.Receive()
+		}
+	})
 }
