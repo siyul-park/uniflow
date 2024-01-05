@@ -86,6 +86,8 @@ type SnippetNodeSpec struct {
 	Code string `map:"code"`
 }
 
+const KindSnippet = "snippet"
+
 func NewSnippetNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
 		return NewSnippetNode(spec.Lang, spec.Code)
