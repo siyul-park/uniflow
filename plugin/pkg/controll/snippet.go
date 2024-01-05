@@ -30,7 +30,7 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	return &SnippetNode{OneToOneNode: node.NewOneToOneNode(action)}, nil
 }
 
-func compile(lang, code string) (func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet), error) {
+func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
 	switch lang {
 	case LangJSON:
 		var data any
@@ -42,7 +42,7 @@ func compile(lang, code string) (func(proc *process.Process, inPck *packet.Packe
 		if err != nil {
 			return nil, err
 		}
-		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
 	default:
