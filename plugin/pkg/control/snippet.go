@@ -1,4 +1,4 @@
-package controll
+package control
 
 import (
 	"encoding/json"
