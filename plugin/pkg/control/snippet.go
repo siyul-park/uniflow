@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,8 +17,9 @@ type SnippetNode struct {
 }
 
 const (
-	LangJSON = "json"
-	LangYAML = "yaml"
+	LangJSON    = "json"
+	LangYAML    = "yaml"
+	LangJSONata = "jsonata"
 )
 
 var ErrInvalidLanguage = errors.New("language is invalid")
@@ -50,6 +52,26 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 			return nil, err
 		}
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return packet.New(outPayload), nil
+		}, nil
+	case LangJSONata:
+		exp, err := jsonata.Compile(code)
+		if err != nil {
+			return nil, err
+		}
+		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			inPayload := inPck.Payload()
+			input := inPayload.Interface()
+
+			output, err := exp.Eval(input)
+			if err != nil {
+				return nil, packet.WithError(err, inPck)
+			}
+			outPayload, err := primitive.MarshalBinary(output)
+			if err != nil {
+				return nil, packet.WithError(err, inPck)
+			}
+
 			return packet.New(outPayload), nil
 		}, nil
 	default:
