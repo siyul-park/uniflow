@@ -14,16 +14,18 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
-	n, err := NewSnippetNode(LangJSON, "{}")
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
+	t.Run(LangJSON, func(t *testing.T) {
+		n, err := NewSnippetNode(LangJSON, `{}`)
+		assert.NoError(t, err)
+		assert.NotNil(t, n)
 
-	assert.NoError(t, n.Close())
+		assert.NoError(t, n.Close())
+	})
 }
 
 func TestSnippetNode_SendAndReceive(t *testing.T) {
 	t.Run(LangJSON, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangJSON, "{}")
+		n, _ := NewSnippetNode(LangJSON, `{}`)
 		defer n.Close()
 
 		io := port.New()
