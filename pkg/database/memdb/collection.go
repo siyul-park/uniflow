@@ -254,6 +254,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	match := parseFilter(filter)
 
+	// TODO: Support Index Scan
 	var docs []*primitive.Map
 	c.segment.Range(func(doc *primitive.Map) bool {
 		if match(doc) {
