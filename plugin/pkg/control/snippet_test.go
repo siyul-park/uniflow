@@ -208,3 +208,16 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 }
+
+func TestSnippetNodeCodec_Decode(t *testing.T) {
+	codec := NewSnippetNodeCodec()
+
+	spec := &SnippetNodeSpec{
+		Lang: LangJSON,
+		Code: "{}",
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}

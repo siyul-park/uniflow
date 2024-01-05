@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
@@ -77,4 +78,16 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 	default:
 		return nil, errors.WithStack(ErrInvalidLanguage)
 	}
+}
+
+type SnippetNodeSpec struct {
+	scheme.SpecMeta
+	Lang string `map:"lang"`
+	Code string `map:"code"`
+}
+
+func NewSnippetNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
+		return NewSnippetNode(spec.Lang, spec.Code)
+	})
 }
