@@ -45,3 +45,10 @@ func TestProcess_Close(t *testing.T) {
 		assert.Fail(t, "proc.Done() is empty.")
 	}
 }
+
+func BenchmarkNewProcess(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		proc := New()
+		proc.Exit(nil)
+	}
+}

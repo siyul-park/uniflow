@@ -106,3 +106,26 @@ func TestRuntime_Start(t *testing.T) {
 		}
 	}()
 }
+
+func BenchmarkNewRuntime(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	db := memdb.New(faker.UUIDHyphenated())
+
+	for i := 0; i < b.N; i++ {
+		r, _ := New(ctx, Config{
+			Scheme:   s,
+			Database: db,
+		})
+		r.Close()
+	}
+}

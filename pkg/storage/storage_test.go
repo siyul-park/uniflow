@@ -423,6 +423,8 @@ func TestStorage_FindMany(t *testing.T) {
 }
 
 func BenchmarkStorage_InsertOne(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -438,6 +440,8 @@ func BenchmarkStorage_InsertOne(b *testing.B) {
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		spec := &scheme.SpecMeta{
@@ -450,6 +454,8 @@ func BenchmarkStorage_InsertOne(b *testing.B) {
 }
 
 func BenchmarkStorage_InsertMany(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -465,6 +471,8 @@ func BenchmarkStorage_InsertMany(b *testing.B) {
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		var specs []scheme.Spec
@@ -480,6 +488,8 @@ func BenchmarkStorage_InsertMany(b *testing.B) {
 }
 
 func BenchmarkStorage_UpdateOne(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -507,6 +517,8 @@ func BenchmarkStorage_UpdateOne(b *testing.B) {
 
 	_, _ = st.InsertOne(ctx, origin)
 
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
 		patch := &scheme.SpecMeta{
 			ID:        id,
@@ -520,6 +532,8 @@ func BenchmarkStorage_UpdateOne(b *testing.B) {
 }
 
 func BenchmarkStorage_UpdateMany(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -553,7 +567,11 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 
 	_, _ = st.InsertMany(ctx, origins)
 
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
 		var patches []scheme.Spec
 		for _, id := range ids {
 			patches = append(patches, &scheme.SpecMeta{
@@ -564,11 +582,15 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 			})
 		}
 
+		b.StartTimer()
+
 		_, _ = st.UpdateMany(ctx, patches)
 	}
 }
 
 func BenchmarkStorage_DeleteOne(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -584,6 +606,8 @@ func BenchmarkStorage_DeleteOne(b *testing.B) {
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
@@ -602,6 +626,8 @@ func BenchmarkStorage_DeleteOne(b *testing.B) {
 }
 
 func BenchmarkStorage_DeleteMany(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -617,6 +643,8 @@ func BenchmarkStorage_DeleteMany(b *testing.B) {
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
@@ -646,6 +674,8 @@ func BenchmarkStorage_DeleteMany(b *testing.B) {
 }
 
 func BenchmarkStorage_FindOne(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -677,12 +707,16 @@ func BenchmarkStorage_FindOne(b *testing.B) {
 	}
 	_, _ = st.InsertOne(ctx, spec)
 
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
 		_, _ = st.FindOne(ctx, Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
 	}
 }
 
 func BenchmarkStorage_FindMany(b *testing.B) {
+	b.StopTimer()
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -715,6 +749,8 @@ func BenchmarkStorage_FindMany(b *testing.B) {
 	}
 
 	_, _ = st.InsertMany(ctx, specs)
+
+	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
 		_, _ = st.FindMany(ctx, Where[ulid.ULID](scheme.KeyID).IN(ids...))
