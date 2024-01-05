@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"gopkg.in/yaml.v3"
 )
 
 type SnippetNode struct {
@@ -16,6 +17,7 @@ type SnippetNode struct {
 
 const (
 	LangJSON = "json"
+	LangYAML = "yaml"
 )
 
 var ErrInvalidLanguage = errors.New("language is invalid")
@@ -32,9 +34,14 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 
 func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
 	switch lang {
-	case LangJSON:
+	case LangJSON, LangYAML:
 		var data any
-		err := json.Unmarshal([]byte(code), &data)
+		var err error
+		if lang == LangJSON {
+			err = json.Unmarshal([]byte(code), &data)
+		} else if lang == LangYAML {
+			err = yaml.Unmarshal([]byte(code), &data)
+		}
 		if err != nil {
 			return nil, err
 		}
