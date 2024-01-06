@@ -80,7 +80,7 @@ func TestStack_Wait(t *testing.T) {
 
 		select {
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		case <-done:
 		}
 	})

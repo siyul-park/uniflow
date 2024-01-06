@@ -1,6 +1,8 @@
 package port
 
 import (
+	"sync"
+
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
@@ -9,13 +11,46 @@ type InitHook interface {
 	Init(proc *process.Process)
 }
 
-// InitHookFunc is a function type that implements the InitHook interface.
+type InitOnceHook struct {
+	Hook  InitHook
+	inits map[*process.Process]struct{}
+	mu    sync.Mutex
+}
+
 type InitHookFunc func(proc *process.Process)
 
-// Ensure InitHookFunc implements the InitHook interface.
 var _ InitHook = InitHookFunc(func(proc *process.Process) {})
+var _ InitHook = (*InitOnceHook)(nil)
 
-// Init calls the underlying function for InitHookFunc.
 func (h InitHookFunc) Init(proc *process.Process) {
 	h(proc)
+}
+
+func (h *InitOnceHook) Init(proc *process.Process) {
+	if func() bool {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+
+		if h.inits == nil {
+			h.inits = make(map[*process.Process]struct{})
+		}
+
+		if _, ok := h.inits[proc]; ok {
+			return false
+		}
+
+		h.inits[proc] = struct{}{}
+		go func() {
+			<-proc.Done()
+
+			h.mu.Lock()
+			defer h.mu.Unlock()
+
+			delete(h.inits, proc)
+		}()
+
+		return true
+	}() {
+		h.Hook.Init(proc)
+	}
 }

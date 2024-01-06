@@ -20,7 +20,7 @@ type OneToOneNode struct {
 
 var _ Node = (*OneToOneNode)(nil)
 
-// NewOneToOneNode creates a new OneToOneNode with the given configuration.
+// NewOneToOneNode creates a new OneToOneNode.
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
@@ -69,7 +69,7 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 	return n
 }
 
-// Port returns the specified port of the OneToOneNode.
+// Port returns the specified port.
 func (n *OneToOneNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -89,7 +89,7 @@ func (n *OneToOneNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
-// Close closes all ports of the OneToOneNode.
+// Close closes all.
 func (n *OneToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

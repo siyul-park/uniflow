@@ -41,7 +41,7 @@ func TestOneToOneNode_Port(t *testing.T) {
 	assert.NotNil(t, p)
 }
 
-func TestOneToOneNode_Send(t *testing.T) {
+func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	t.Run("IO", func(t *testing.T) {
 		t.Run("With Out Port", func(t *testing.T) {
 			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -105,6 +105,14 @@ func TestOneToOneNode_Send(t *testing.T) {
 			select {
 			case outPck := <-errStream.Receive():
 				assert.NotNil(t, outPck)
+
+				errStream.Send(outPck)
+				select {
+				case outPck := <-ioStream.Receive():
+					assert.NotNil(t, outPck)
+				case <-ctx.Done():
+					assert.Fail(t, "timeout")
+				}
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
 			}
@@ -187,6 +195,14 @@ func TestOneToOneNode_Send(t *testing.T) {
 			select {
 			case outPck := <-errStream.Receive():
 				assert.NotNil(t, outPck)
+
+				errStream.Send(outPck)
+				select {
+				case outPck := <-inStream.Receive():
+					assert.NotNil(t, outPck)
+				case <-ctx.Done():
+					assert.Fail(t, "timeout")
+				}
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
 			}
@@ -194,7 +210,7 @@ func TestOneToOneNode_Send(t *testing.T) {
 	})
 }
 
-func BenchmarkOneToOneNode_Send(b *testing.B) {
+func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 	b.Run("IO", func(b *testing.B) {
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
