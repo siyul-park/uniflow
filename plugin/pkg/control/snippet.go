@@ -3,7 +3,6 @@ package control
 import (
 	"encoding/json"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -27,12 +26,11 @@ type SnippetNodeSpec struct {
 const KindSnippet = "snippet"
 
 const (
+	LangText    = "text"
 	LangJSON    = "json"
 	LangYAML    = "yaml"
 	LangJSONata = "jsonata"
 )
-
-var ErrInvalidLanguage = errors.New("language is invalid")
 
 var _ node.Node = (*SnippetNode)(nil)
 
@@ -92,7 +90,10 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 
 			return packet.New(outPayload), nil
 		}, nil
-	default:
-		return nil, errors.WithStack(ErrInvalidLanguage)
 	}
+
+	outPayload := primitive.NewString(code)
+	return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+		return packet.New(outPayload), nil
+	}, nil
 }
