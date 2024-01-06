@@ -79,7 +79,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		case outPck := <-ioStream.Receive():
 			assert.Equal(t, primitive.NewMap(), outPck.Payload())
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -108,7 +108,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		case outPck := <-ioStream.Receive():
 			assert.Equal(t, primitive.NewMap(), outPck.Payload())
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -137,7 +137,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		case outPck := <-ioStream.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

@@ -78,7 +78,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 				assert.Fail(t, "timeout")
 			}
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -122,7 +122,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 				assert.Fail(t, "timeout")
 			}
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }
