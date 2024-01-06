@@ -14,6 +14,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMergeNodeCodec_Decode(t *testing.T) {
+	codec := NewMergeNodeCodec()
+
+	spec := &MergeNodeSpec{
+		Mode: ModeZip,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
 func TestNewMergeNode(t *testing.T) {
 	t.Run(ModeConcat, func(t *testing.T) {
 		n := NewMergeNode(ModeConcat)

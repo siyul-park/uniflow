@@ -6,11 +6,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 type MergeNode struct {
 	*node.ManyToOneNode
 }
+
+type MergeNodeSpec struct {
+	scheme.SpecMeta
+
+	Mode string `map:"mode"`
+}
+
+const KindMerge = "merge"
 
 const (
 	ModeConcat = "concat"
@@ -18,6 +27,12 @@ const (
 )
 
 var _ node.Node = (*MergeNode)(nil)
+
+func NewMergeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*MergeNodeSpec](func(spec *MergeNodeSpec) (node.Node, error) {
+		return NewMergeNode(spec.Mode), nil
+	})
+}
 
 func NewMergeNode(mode string) *MergeNode {
 	n := &MergeNode{}

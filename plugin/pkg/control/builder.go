@@ -7,6 +7,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
 		s.AddCodec(KindSnippet, NewSnippetNodeCodec())
 
+		s.AddKnownType(KindMerge, &MergeNodeSpec{})
+		s.AddCodec(KindMerge, NewMergeNodeCodec())
+
 		return nil
 	}
 }
