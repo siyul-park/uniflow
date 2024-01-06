@@ -50,7 +50,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 16; i++ {
 			in := port.New()
-			inPort, _ := n.Port(MultiPort(PortIn, 0))
+			inPort, _ := n.Port(MultiPort(PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
@@ -109,7 +109,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 16; i++ {
 			in := port.New()
-			inPort, _ := n.Port(MultiPort(PortIn, 0))
+			inPort, _ := n.Port(MultiPort(PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
