@@ -96,4 +96,63 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
+
+	t.Run("With Err Port", func(t *testing.T) {
+		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+			if inPcks[len(inPcks)-1] != nil {
+				return nil, inPcks[len(inPcks)-1]
+			}
+			return nil, nil
+		})
+		defer n.Close()
+
+		var ins []*port.Port
+		for i := 0; i < 16; i++ {
+			in := port.New()
+			inPort, _ := n.Port(MultiPort(PortIn, 0))
+			inPort.Link(in)
+
+			ins = append(ins, in)
+		}
+
+		err := port.New()
+		errPort, _ := n.Port(PortErr)
+		errPort.Link(err)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		var inStreams []*port.Stream
+		for _, in := range ins {
+			inStreams = append(inStreams, in.Open(proc))
+		}
+		errStream := err.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+
+		for _, inStream := range inStreams {
+			inPck := packet.New(inPayload)
+			inStream.Send(inPck)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-errStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+
+			errStream.Send(outPck)
+			for _, inStream := range inStreams {
+				select {
+				case outPck := <-inStream.Receive():
+					assert.NotNil(t, outPck)
+				case <-ctx.Done():
+					assert.Fail(t, ctx.Err().Error())
+				}
+			}
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
