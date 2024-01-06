@@ -10,11 +10,12 @@ import (
 
 // ManyToOneNode represents a node that processes *packet.Packet with many inputs and one output.
 type ManyToOneNode struct {
-	action  func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	inPorts []*port.Port
-	outPort *port.Port
-	errPort *port.Port
-	mu      sync.RWMutex
+	action      func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
+	inPorts     []*port.Port
+	outPort     *port.Port
+	errPort     *port.Port
+	forwardOnce *port.InitOnceHook
+	mu          sync.RWMutex
 }
 
 var _ Node = (*ManyToOneNode)(nil)
@@ -25,6 +26,9 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 		action:  action,
 		outPort: port.New(),
 		errPort: port.New(),
+	}
+	n.forwardOnce = &port.InitOnceHook{
+		Hook: port.InitHookFunc(n.forward),
 	}
 
 	if n.action != nil {
@@ -65,7 +69,7 @@ func (n *ManyToOneNode) Port(name string) (*port.Port, bool) {
 				if len(n.inPorts) <= j {
 					inPort := port.New()
 					if n.action != nil {
-						inPort.AddInitHook(port.InitHookFunc(n.forward))
+						inPort.AddInitHook(n.forwardOnce)
 					}
 					n.inPorts = append(n.inPorts, inPort)
 				}
