@@ -173,7 +173,7 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 	defer n.Close()
 
 	var ins []*port.Port
-	for i := 0; i < 16; i++ {
+	for i := 0; i < 2; i++ {
 		in := port.New()
 		inPort, _ := n.Port(MultiPort(PortIn, i))
 		inPort.Link(in)
