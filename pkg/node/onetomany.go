@@ -19,7 +19,7 @@ type OneToManyNode struct {
 
 var _ Node = (*OneToManyNode)(nil)
 
-// NewOneToManyNode creates a new OneToManyNode with the given configuration.
+// NewOneToManyNode creates a new OneToManyNode.
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
@@ -43,7 +43,7 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 	return n
 }
 
-// Port returns the specified port of the OneToManyNode.
+// Port returns the specified port.
 func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -79,7 +79,7 @@ func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
-// Close closes all ports of the OneToManyNode.
+// Close closes all ports.
 func (n *OneToManyNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

@@ -37,7 +37,7 @@ func TestOneToManyNode_Port(t *testing.T) {
 	assert.NotNil(t, p)
 }
 
-func TestOneToManyNode_Send(t *testing.T) {
+func TestOneToManyNode_SendAndReceive(t *testing.T) {
 	t.Run("With Out Port", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 			return []*packet.Packet{inPck}, nil
@@ -69,6 +69,7 @@ func TestOneToManyNode_Send(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
+
 			outStream.Send(outPck)
 			select {
 			case outPck := <-inStream.Receive():
@@ -112,13 +113,21 @@ func TestOneToManyNode_Send(t *testing.T) {
 		select {
 		case outPck := <-errStream.Receive():
 			assert.NotNil(t, outPck)
+
+			errStream.Send(outPck)
+			select {
+			case outPck := <-inStream.Receive():
+				assert.NotNil(t, outPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
 	})
 }
 
-func BenchmarkOneToManyNode_Send(b *testing.B) {
+func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
 	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 		return []*packet.Packet{inPck}, nil
 	})
