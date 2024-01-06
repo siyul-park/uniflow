@@ -149,7 +149,8 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						} else {
 							for i, inPck := range inPcks {
 								if inPck != nil {
-									buffers[i] = append(buffers[i], inPck)
+									buffer := buffers[i]
+									buffers[i] = append(append(buffer[:bufferLen-1], inPck), buffer[bufferLen-1:]...)
 								}
 							}
 							return
