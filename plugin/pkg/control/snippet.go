@@ -67,10 +67,12 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		if err != nil {
 			return nil, err
 		}
+
 		outPayload, err := primitive.MarshalBinary(data)
 		if err != nil {
 			return nil, err
 		}
+
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
@@ -79,6 +81,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		if err != nil {
 			return nil, err
 		}
+
 		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			inPayload := inPck.Payload()
 			input := inPayload.Interface()
@@ -97,6 +100,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 	}
 
 	outPayload := primitive.NewString(code)
+
 	return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 		return packet.New(outPayload), nil
 	}, nil
