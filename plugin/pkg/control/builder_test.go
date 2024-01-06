@@ -13,9 +13,15 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	_, ok := s.KnownType(KindSnippet)
-	assert.True(t, ok)
+	testCase := []string{KindSnippet, KindMerge}
 
-	_, ok = s.Codec(KindSnippet)
-	assert.True(t, ok)
+	for _, tc := range testCase {
+		t.Run(tc, func(t *testing.T) {
+			_, ok := s.KnownType(tc)
+			assert.True(t, ok)
+
+			_, ok = s.Codec(tc)
+			assert.True(t, ok)
+		})
+	}
 }

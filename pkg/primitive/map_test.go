@@ -47,6 +47,29 @@ func TestMap_Keys(t *testing.T) {
 	assert.Contains(t, keys, k1)
 }
 
+func TestMap_Values(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	values := o.Values()
+	assert.Len(t, values, 1)
+	assert.Contains(t, values, v1)
+}
+
+func TestMap_Pairs(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	pairs := o.Pairs()
+	assert.Len(t, pairs, 2)
+	assert.Contains(t, pairs, k1)
+	assert.Contains(t, pairs, v1)
+}
+
 func TestMap_Len(t *testing.T) {
 	k1 := NewString(faker.UUIDHyphenated())
 	v1 := NewString(faker.UUIDHyphenated())

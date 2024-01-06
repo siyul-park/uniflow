@@ -76,6 +76,30 @@ func (m *Map) Keys() []Value {
 	return keys
 }
 
+// Values returns all values in the map.
+func (m *Map) Values() []Value {
+	var values []Value
+	itr := m.value.Iterator()
+
+	for !itr.Done() {
+		_, v, _ := itr.Next()
+		values = append(values, v)
+	}
+	return values
+}
+
+// Pairs returns all keys and values in the map.
+func (m *Map) Pairs() []Value {
+	var pairs []Value
+	itr := m.value.Iterator()
+
+	for !itr.Done() {
+		k, v, _ := itr.Next()
+		pairs = append(pairs, k, v)
+	}
+	return pairs
+}
+
 // Len returns the number of key-value pairs in the map.
 func (m *Map) Len() int {
 	return m.value.Len()

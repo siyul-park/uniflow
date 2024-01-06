@@ -101,9 +101,11 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inStreams := make([]*port.Stream, len(n.inPorts))
-	for i, p := range n.inPorts {
-		inStreams[i] = p.Open(proc)
+	var inStreams []*port.Stream
+	for _, p := range n.inPorts {
+		if p.Links() > 0 {
+			inStreams = append(inStreams, p.Open(proc))
+		}
 	}
 	outStream := n.outPort.Open(proc)
 	errStream := n.errPort.Open(proc)

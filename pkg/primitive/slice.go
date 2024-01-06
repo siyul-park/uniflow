@@ -51,24 +51,39 @@ func (s *Slice) Set(index int, value Value) *Slice {
 	return &Slice{value: s.value.Set(index, value)}
 }
 
-func (s *Slice) Len() int {
-	return s.value.Len()
-}
-
-// Slice returns a raw representation.
-func (s *Slice) Slice() []any {
-	rawSlice := make([]any, s.value.Len())
+func (s *Slice) Values() []Value {
+	values := make([]Value, s.value.Len())
 
 	itr := s.value.Iterator()
 	for i := 0; !itr.Done(); i++ {
 		_, v := itr.Next()
 
 		if v != nil {
-			rawSlice[i] = v.Interface()
+			values[i] = v
 		}
 	}
 
-	return rawSlice
+	return values
+}
+
+func (s *Slice) Len() int {
+	return s.value.Len()
+}
+
+// Slice returns a raw representation.
+func (s *Slice) Slice() []any {
+	values := make([]any, s.value.Len())
+
+	itr := s.value.Iterator()
+	for i := 0; !itr.Done(); i++ {
+		_, v := itr.Next()
+
+		if v != nil {
+			values[i] = v.Interface()
+		}
+	}
+
+	return values
 }
 
 func (s *Slice) Kind() Kind {

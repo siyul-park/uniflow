@@ -3,7 +3,6 @@ package control
 import (
 	"encoding/json"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -13,10 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// SnippetNode represents a node that executes code snippets in various languages.
 type SnippetNode struct {
 	*node.OneToOneNode
 }
 
+// SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	scheme.SpecMeta
 
@@ -27,30 +28,33 @@ type SnippetNodeSpec struct {
 const KindSnippet = "snippet"
 
 const (
+	LangText    = "text"
 	LangJSON    = "json"
 	LangYAML    = "yaml"
 	LangJSONata = "jsonata"
 )
 
-var ErrInvalidLanguage = errors.New("language is invalid")
-
 var _ node.Node = (*SnippetNode)(nil)
 
+// NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
 		return NewSnippetNode(spec.Lang, spec.Code)
 	})
 }
 
+// NewSnippetNode creates a new SnippetNode with the specified language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
-	action, err := compile(lang, code)
+	n := &SnippetNode{}
+	action, err := n.compile(lang, code)
 	if err != nil {
 		return nil, err
 	}
-	return &SnippetNode{OneToOneNode: node.NewOneToOneNode(action)}, nil
+	n.OneToOneNode = node.NewOneToOneNode(action)
+	return n, nil
 }
 
-func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
+func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
 	switch lang {
 	case LangJSON, LangYAML:
 		var data any
@@ -63,10 +67,12 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 		if err != nil {
 			return nil, err
 		}
+
 		outPayload, err := primitive.MarshalBinary(data)
 		if err != nil {
 			return nil, err
 		}
+
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
@@ -75,6 +81,7 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 		if err != nil {
 			return nil, err
 		}
+
 		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			inPayload := inPck.Payload()
 			input := inPayload.Interface()
@@ -90,7 +97,11 @@ func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet
 
 			return packet.New(outPayload), nil
 		}, nil
-	default:
-		return nil, errors.WithStack(ErrInvalidLanguage)
 	}
+
+	outPayload := primitive.NewString(code)
+
+	return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+		return packet.New(outPayload), nil
+	}, nil
 }
