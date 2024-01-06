@@ -4,7 +4,7 @@ go 1.21.5
 
 require (
 	github.com/siyul-park/uniflow v0.0.0
-	github.com/siyul-park/uniflow/plugin v0.0.0-00010101000000-000000000000
+	github.com/siyul-park/uniflow/plugin v0.0.0-20240106025307-ed688716dc73
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
