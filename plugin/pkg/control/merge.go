@@ -30,10 +30,8 @@ func NewMergeNode(mode string) *MergeNode {
 }
 
 func (n *MergeNode) concat(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-	for _, inPck := range inPcks {
-		if inPck == nil {
-			return nil, nil
-		}
+	if !n.isFull(inPcks) {
+		return nil, nil
 	}
 
 	inPayloads := lo.Map[*packet.Packet, primitive.Value](inPcks, func(item *packet.Packet, _ int) primitive.Value {
@@ -45,10 +43,8 @@ func (n *MergeNode) concat(proc *process.Process, inPcks []*packet.Packet) (*pac
 }
 
 func (n *MergeNode) zip(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-	for _, inPck := range inPcks {
-		if inPck == nil {
-			return nil, nil
-		}
+	if !n.isFull(inPcks) {
+		return nil, nil
 	}
 
 	inPayloads := lo.Map[*packet.Packet, primitive.Value](inPcks, func(item *packet.Packet, _ int) primitive.Value {
@@ -71,4 +67,13 @@ func (n *MergeNode) zip(proc *process.Process, inPcks []*packet.Packet) (*packet
 	}, nil)
 
 	return packet.New(outPayload), nil
+}
+
+func (n *MergeNode) isFull(pcks []*packet.Packet) bool {
+	for _, inPck := range pcks {
+		if inPck == nil {
+			return false
+		}
+	}
+	return true
 }
