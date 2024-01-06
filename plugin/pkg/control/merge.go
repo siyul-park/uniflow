@@ -9,10 +9,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// MergeNode represents a node that merges multiple input packets into a single output packet.
 type MergeNode struct {
 	*node.ManyToOneNode
 }
 
+// MergeNodeSpec holds the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
 	scheme.SpecMeta
 
@@ -28,12 +30,14 @@ const (
 
 var _ node.Node = (*MergeNode)(nil)
 
+// NewMergeNodeCodec creates a new codec for MergeNodeSpec.
 func NewMergeNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*MergeNodeSpec](func(spec *MergeNodeSpec) (node.Node, error) {
 		return NewMergeNode(spec.Mode), nil
 	})
 }
 
+// NewMergeNode creates a new MergeNode with the specified mode.
 func NewMergeNode(mode string) *MergeNode {
 	n := &MergeNode{}
 	if mode == ModeConcat {

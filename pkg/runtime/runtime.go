@@ -15,10 +15,10 @@ import (
 
 // Config holds the configuration options for the Runtime.
 type Config struct {
-	Namespace string            // Namespace is the namespace for the Runtime.
-	Hooks     *hook.Hook        // Hooks represent the hooks for the Runtime.
-	Scheme    *scheme.Scheme    // Scheme is the scheme for the Runtime.
-	Database  database.Database // Database is the database for the Runtime.
+	Namespace string
+	Hooks     *hook.Hook
+	Scheme    *scheme.Scheme
+	Database  database.Database
 }
 
 // Runtime represents an execution environment for running Flows.

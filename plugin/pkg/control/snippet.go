@@ -12,10 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// SnippetNode represents a node that executes code snippets in various languages.
 type SnippetNode struct {
 	*node.OneToOneNode
 }
 
+// SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	scheme.SpecMeta
 
@@ -34,12 +36,14 @@ const (
 
 var _ node.Node = (*SnippetNode)(nil)
 
+// NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
 		return NewSnippetNode(spec.Lang, spec.Code)
 	})
 }
 
+// NewSnippetNode creates a new SnippetNode with the specified language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	n := &SnippetNode{}
 	action, err := n.compile(lang, code)
