@@ -15,99 +15,265 @@ import (
 )
 
 func TestNewMergeNode(t *testing.T) {
-	n := NewMergeNode()
-	assert.NotNil(t, n)
+	t.Run(ModeConcat, func(t *testing.T) {
+		n := NewMergeNode(ModeConcat)
+		assert.NotNil(t, n)
 
-	assert.NoError(t, n.Close())
+		assert.NoError(t, n.Close())
+	})
+
+	t.Run(ModeZip, func(t *testing.T) {
+		n := NewMergeNode(ModeZip)
+		assert.NotNil(t, n)
+
+		assert.NoError(t, n.Close())
+	})
 }
 
 func TestMergeNode_SendAndReceive(t *testing.T) {
-	n := NewMergeNode()
-	defer n.Close()
+	t.Run(ModeConcat, func(t *testing.T) {
+		n := NewMergeNode(ModeConcat)
+		defer n.Close()
 
-	var ins []*port.Port
-	for i := 0; i < 4; i++ {
-		in := port.New()
-		inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
-		inPort.Link(in)
+		var ins []*port.Port
+		for i := 0; i < 4; i++ {
+			in := port.New()
+			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort.Link(in)
 
-		ins = append(ins, in)
-	}
+			ins = append(ins, in)
+		}
 
-	out := port.New()
-	outPort, _ := n.Port(node.PortOut)
-	outPort.Link(out)
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	var inStreams []*port.Stream
-	for _, in := range ins {
-		inStreams = append(inStreams, in.Open(proc))
-	}
-	outStream := out.Open(proc)
+		var inStreams []*port.Stream
+		for _, in := range ins {
+			inStreams = append(inStreams, in.Open(proc))
+		}
+		outStream := out.Open(proc)
 
-	var inPayloads []primitive.Value
-	for range inStreams {
-		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
-	}
+		var inPayloads []primitive.Value
+		for range inStreams {
+			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
+		}
 
-	for i, inStream := range inStreams {
-		inPck := packet.New(inPayloads[i])
-		inStream.Send(inPck)
-	}
+		merged := primitive.NewSlice(inPayloads...).Interface()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+		for i, inStream := range inStreams {
+			inPck := packet.New(inPayloads[i])
+			inStream.Send(inPck)
+		}
 
-	select {
-	case outPck := <-outStream.Receive():
-		assert.Equal(t, primitive.NewSlice(inPayloads...).Interface(), outPck.Payload().Interface())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
-	n := NewMergeNode()
-	defer n.Close()
+		select {
+		case outPck := <-outStream.Receive():
+			assert.Equal(t, merged, outPck.Payload().Interface())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 
-	var ins []*port.Port
-	for i := 0; i < 2; i++ {
-		in := port.New()
-		inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
-		inPort.Link(in)
+	t.Run(ModeZip, func(t *testing.T) {
+		t.Run("Map", func(t *testing.T) {
+			n := NewMergeNode(ModeZip)
+			defer n.Close()
 
-		ins = append(ins, in)
-	}
+			var ins []*port.Port
+			for i := 0; i < 4; i++ {
+				in := port.New()
+				inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+				inPort.Link(in)
 
-	out := port.New()
-	outPort, _ := n.Port(node.PortOut)
-	outPort.Link(out)
+				ins = append(ins, in)
+			}
 
-	proc := process.New()
-	defer proc.Exit(nil)
+			out := port.New()
+			outPort, _ := n.Port(node.PortOut)
+			outPort.Link(out)
 
-	var inStreams []*port.Stream
-	for _, in := range ins {
-		inStreams = append(inStreams, in.Open(proc))
-	}
-	outStream := out.Open(proc)
+			proc := process.New()
+			defer proc.Exit(nil)
 
-	var inPayloads []primitive.Value
-	for range inStreams {
-		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
-	}
+			var inStreams []*port.Stream
+			for _, in := range ins {
+				inStreams = append(inStreams, in.Open(proc))
+			}
+			outStream := out.Open(proc)
 
-	b.ResetTimer()
+			var inPayloads []primitive.Value
+			merged := map[string]string{}
+			for range inStreams {
+				key := faker.UUIDHyphenated()
+				value := faker.UUIDHyphenated()
 
-	b.RunParallel(func(p *testing.PB) {
-		for p.Next() {
+				inPayloads = append(inPayloads, primitive.NewMap(primitive.NewString(key), primitive.NewString(value)))
+				merged[key] = value
+			}
+
 			for i, inStream := range inStreams {
 				inPck := packet.New(inPayloads[i])
 				inStream.Send(inPck)
 			}
-			<-outStream.Receive()
+
+			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+			defer cancel()
+
+			select {
+			case outPck := <-outStream.Receive():
+				assert.Equal(t, merged, outPck.Payload().Interface())
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+			}
+		})
+
+		t.Run("Slice", func(t *testing.T) {
+			n := NewMergeNode(ModeZip)
+			defer n.Close()
+
+			var ins []*port.Port
+			for i := 0; i < 4; i++ {
+				in := port.New()
+				inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+				inPort.Link(in)
+
+				ins = append(ins, in)
+			}
+
+			out := port.New()
+			outPort, _ := n.Port(node.PortOut)
+			outPort.Link(out)
+
+			proc := process.New()
+			defer proc.Exit(nil)
+
+			var inStreams []*port.Stream
+			for _, in := range ins {
+				inStreams = append(inStreams, in.Open(proc))
+			}
+			outStream := out.Open(proc)
+
+			var inPayloads []primitive.Value
+			var merged []string
+			for range inStreams {
+				value := faker.UUIDHyphenated()
+
+				inPayloads = append(inPayloads, primitive.NewSlice(primitive.NewString(value)))
+				merged = append(merged, value)
+			}
+
+			for i, inStream := range inStreams {
+				inPck := packet.New(inPayloads[i])
+				inStream.Send(inPck)
+			}
+
+			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+			defer cancel()
+
+			select {
+			case outPck := <-outStream.Receive():
+				assert.Equal(t, merged, outPck.Payload().Interface())
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+			}
+		})
+	})
+}
+
+func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
+	b.Run(ModeConcat, func(b *testing.B) {
+		n := NewMergeNode(ModeConcat)
+		defer n.Close()
+
+		var ins []*port.Port
+		for i := 0; i < 2; i++ {
+			in := port.New()
+			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort.Link(in)
+
+			ins = append(ins, in)
 		}
+
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		var inStreams []*port.Stream
+		for _, in := range ins {
+			inStreams = append(inStreams, in.Open(proc))
+		}
+		outStream := out.Open(proc)
+
+		var inPayloads []primitive.Value
+		for range inStreams {
+			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
+		}
+
+		b.ResetTimer()
+
+		b.RunParallel(func(p *testing.PB) {
+			for p.Next() {
+				for i, inStream := range inStreams {
+					inPck := packet.New(inPayloads[i])
+					inStream.Send(inPck)
+				}
+				<-outStream.Receive()
+			}
+		})
+	})
+
+	b.Run(ModeZip, func(b *testing.B) {
+		n := NewMergeNode(ModeZip)
+		defer n.Close()
+
+		var ins []*port.Port
+		for i := 0; i < 2; i++ {
+			in := port.New()
+			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort.Link(in)
+
+			ins = append(ins, in)
+		}
+
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		var inStreams []*port.Stream
+		for _, in := range ins {
+			inStreams = append(inStreams, in.Open(proc))
+		}
+		outStream := out.Open(proc)
+
+		var inPayloads []primitive.Value
+		for range inStreams {
+			value := faker.UUIDHyphenated()
+
+			inPayloads = append(inPayloads, primitive.NewSlice(primitive.NewString(value)))
+		}
+
+		b.ResetTimer()
+
+		b.RunParallel(func(p *testing.PB) {
+			for p.Next() {
+				for i, inStream := range inStreams {
+					inPck := packet.New(inPayloads[i])
+					inStream.Send(inPck)
+				}
+				<-outStream.Receive()
+			}
+		})
 	})
 }

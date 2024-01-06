@@ -43,14 +43,16 @@ func NewSnippetNodeCodec() scheme.Codec {
 }
 
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
-	action, err := compile(lang, code)
+	n := &SnippetNode{}
+	action, err := n.compile(lang, code)
 	if err != nil {
 		return nil, err
 	}
-	return &SnippetNode{OneToOneNode: node.NewOneToOneNode(action)}, nil
+	n.OneToOneNode = node.NewOneToOneNode(action)
+	return n, nil
 }
 
-func compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
+func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
 	switch lang {
 	case LangJSON, LangYAML:
 		var data any
