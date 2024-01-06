@@ -154,26 +154,26 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						}
 					}
 
-					sendPacket := func(pck *packet.Packet, stream *port.Stream) {
+					sendPacket := func(outPck *packet.Packet, outStream *port.Stream) {
 						for _, inPck := range inPcks {
 							if inPck != nil {
-								if pck == inPck {
-									pck = packet.New(pck.Payload())
+								if outPck == inPck {
+									outPck = packet.New(outPck.Payload())
 								}
 							}
 						}
 						for _, inPck := range inPcks {
 							if inPck != nil {
-								proc.Stack().Link(inPck.ID(), pck.ID())
+								proc.Stack().Link(inPck.ID(), outPck.ID())
 							}
 						}
 						for i, inPck := range inPcks {
 							if inPck != nil {
-								if stream.Links() > 0 {
-									proc.Stack().Push(pck.ID(), inStreams[i].ID())
-									stream.Send(pck)
+								if outStream.Links() > 0 {
+									proc.Stack().Push(outPck.ID(), inStreams[i].ID())
+									outStream.Send(outPck)
 								} else {
-									inStreams[i].Send(pck)
+									inStreams[i].Send(outPck)
 								}
 							}
 						}
