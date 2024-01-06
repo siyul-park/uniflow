@@ -3,6 +3,7 @@ package node
 import (
 	"sync"
 
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -134,6 +135,7 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						if len(buffer) >= bufferLen {
 							inPcks[i] = buffer[bufferLen-1]
 							inPckLen += 1
+
 							buffers[i] = append(buffer[:bufferLen-1], buffer[bufferLen:]...)
 						}
 					}
@@ -154,27 +156,32 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						}
 					}
 
+					inStreams = lo.Filter[*port.Stream](inStreams, func(_ *port.Stream, index int) bool {
+						return inPcks[i] != nil
+					})
+					inPcks = lo.Filter[*packet.Packet](inPcks, func(item *packet.Packet, _ int) bool {
+						return item != nil
+					})
+
 					sendPacket := func(outPck *packet.Packet, outStream *port.Stream) {
 						for _, inPck := range inPcks {
-							if inPck != nil {
-								if outPck == inPck {
-									outPck = packet.New(outPck.Payload())
-								}
+							if outPck == inPck {
+								outPck = packet.New(outPck.Payload())
 							}
 						}
 						for _, inPck := range inPcks {
-							if inPck != nil {
-								proc.Stack().Link(inPck.ID(), outPck.ID())
+							proc.Stack().Link(inPck.ID(), outPck.ID())
+						}
+						for _, inStream := range inStreams {
+							if outStream.Links() > 0 {
+								proc.Stack().Push(outPck.ID(), inStream.ID())
 							}
 						}
-						for i, inPck := range inPcks {
-							if inPck != nil {
-								if outStream.Links() > 0 {
-									proc.Stack().Push(outPck.ID(), inStreams[i].ID())
-									outStream.Send(outPck)
-								} else {
-									inStreams[i].Send(outPck)
-								}
+						for _, inStream := range inStreams {
+							if outStream.Links() > 0 {
+								outStream.Send(outPck)
+							} else {
+								inStream.Send(outPck)
 							}
 						}
 					}
@@ -203,20 +210,17 @@ func (n *ManyToOneNode) backward(proc *process.Process, outStream *port.Stream) 
 			return
 		}
 
-		if len(inStreams) < len(n.inPorts) {
-			for i := len(inStreams); i < len(n.inPorts); i++ {
-				inStreams = append(inStreams, n.inPorts[i].Open(proc))
+		if inStreams == nil {
+			inStreams = make([]*port.Stream, len(n.inPorts))
+			for i, p := range n.inPorts {
+				inStreams[i] = p.Open(proc)
 			}
 		}
 
-		candidates := inStreams[:]
-
-		for i := 0; i < len(candidates); i++ {
-			candidate := candidates[i]
-			if _, ok := proc.Stack().Pop(backPck.ID(), candidate.ID()); ok {
-				candidate.Send(backPck)
-				candidates = append(candidates[:i], candidates[i+1:]...)
-				i = -1
+		for i := len(inStreams) - 1; i >= 0; i-- {
+			inStream := inStreams[i]
+			if _, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
+				inStream.Send(backPck)
 			}
 		}
 	}

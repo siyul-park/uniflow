@@ -34,7 +34,7 @@ func (h *InitOnceHook) Init(proc *process.Process) {
 		if h.inits == nil {
 			h.inits = make(map[*process.Process]struct{})
 		}
-		
+
 		if _, ok := h.inits[proc]; ok {
 			return false
 		}

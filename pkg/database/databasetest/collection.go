@@ -576,7 +576,6 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -598,7 +597,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
@@ -612,7 +611,6 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -626,7 +624,7 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 		))
 	}
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
@@ -640,7 +638,6 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -657,7 +654,7 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
@@ -674,7 +671,6 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -689,7 +685,7 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 		))
 	}
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
@@ -706,7 +702,6 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -726,7 +721,7 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -745,7 +740,6 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 
 func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 	b.Helper()
-	b.StopTimer()
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -765,7 +759,7 @@ func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 	_, err := coll.InsertOne(ctx, v)
 	assert.NoError(b, err)
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

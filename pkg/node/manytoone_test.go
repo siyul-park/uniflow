@@ -40,10 +40,12 @@ func TestManyToOneNode_Port(t *testing.T) {
 func TestManyToOneNode_SendAndReceive(t *testing.T) {
 	t.Run("With Out Port", func(t *testing.T) {
 		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-			if inPcks[len(inPcks)-1] != nil {
-				return inPcks[len(inPcks)-1], nil
+			for _, inPck := range inPcks {
+				if inPck == nil {
+					return nil, nil
+				}
 			}
-			return nil, nil
+			return inPcks[len(inPcks)-1], nil
 		})
 		defer n.Close()
 
@@ -99,10 +101,12 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 
 	t.Run("With Err Port", func(t *testing.T) {
 		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-			if inPcks[len(inPcks)-1] != nil {
-				return nil, inPcks[len(inPcks)-1]
+			for _, inPck := range inPcks {
+				if inPck == nil {
+					return nil, nil
+				}
 			}
-			return nil, nil
+			return nil, inPcks[len(inPcks)-1]
 		})
 		defer n.Close()
 
@@ -139,10 +143,10 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		select {
-		case outPck := <-errStream.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
+		case errPck := <-errStream.Receive():
+			assert.Equal(t, inPayload, errPck.Payload())
 
-			errStream.Send(outPck)
+			errStream.Send(errPck)
 			for _, inStream := range inStreams {
 				select {
 				case outPck := <-inStream.Receive():
@@ -153,6 +157,54 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			}
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+}
+
+func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
+	n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+		for _, inPck := range inPcks {
+			if inPck == nil {
+				return nil, nil
+			}
+		}
+		return inPcks[len(inPcks)-1], nil
+	})
+	defer n.Close()
+
+	var ins []*port.Port
+	for i := 0; i < 16; i++ {
+		in := port.New()
+		inPort, _ := n.Port(MultiPort(PortIn, i))
+		inPort.Link(in)
+
+		ins = append(ins, in)
+	}
+
+	out := port.New()
+	outPort, _ := n.Port(PortOut)
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var inStreams []*port.Stream
+	for _, in := range ins {
+		inStreams = append(inStreams, in.Open(proc))
+	}
+	outStream := out.Open(proc)
+
+	inPayload := primitive.NewString(faker.UUIDHyphenated())
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			for _, inStream := range inStreams {
+				inPck := packet.New(inPayload)
+				inStream.Send(inPck)
+			}
+			<-outStream.Receive()
 		}
 	})
 }

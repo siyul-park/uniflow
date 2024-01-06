@@ -279,8 +279,6 @@ func TestLoader_LoadAll(t *testing.T) {
 }
 
 func BenchmarkLoader_LoadOne(b *testing.B) {
-	b.StopTimer()
-
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -314,9 +312,9 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 
 	st.InsertOne(ctx, spec)
 
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
+	b.ResetTimer()
 
+	for i := 0; i < b.N; i++ {
 		r, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(b, err)
 		assert.NotNil(b, r)
@@ -324,12 +322,12 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		b.StopTimer()
 
 		tb.Free(spec.GetID())
+
+		b.StartTimer()
 	}
 }
 
 func BenchmarkLoader_LoadAll(b *testing.B) {
-	b.StopTimer()
-
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -363,9 +361,9 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 
 	st.InsertOne(ctx, spec)
 
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
+	b.ResetTimer()
 
+	for i := 0; i < b.N; i++ {
 		r, err := ld.LoadAll(ctx)
 		assert.NoError(b, err)
 		assert.Len(b, r, 1)
@@ -373,5 +371,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		b.StopTimer()
 
 		tb.Free(spec.GetID())
+
+		b.StartTimer()
 	}
 }

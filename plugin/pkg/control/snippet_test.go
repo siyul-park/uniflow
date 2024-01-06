@@ -144,8 +144,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 	b.Run(LangJSON, func(b *testing.B) {
-		b.StopTimer()
-
 		n, _ := NewSnippetNode(LangJSON, "{}")
 		defer n.Close()
 
@@ -163,7 +161,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 		ioStream.Send(inPck)
 
-		b.StartTimer()
+		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
 			for p.Next() {
@@ -174,8 +172,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 	})
 
 	b.Run(LangYAML, func(b *testing.B) {
-		b.StopTimer()
-
 		n, _ := NewSnippetNode(LangYAML, "{}")
 		defer n.Close()
 
@@ -193,7 +189,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 		ioStream.Send(inPck)
 
-		b.StartTimer()
+		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
 			for p.Next() {
@@ -204,8 +200,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 	})
 
 	b.Run(LangJSONata, func(b *testing.B) {
-		b.StopTimer()
-
 		n, _ := NewSnippetNode(LangJSONata, "$")
 		defer n.Close()
 
@@ -223,7 +217,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 		ioStream.Send(inPck)
 
-		b.StartTimer()
+		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
 			for p.Next() {
