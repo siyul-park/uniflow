@@ -7,7 +7,7 @@ require (
 	github.com/emirpasic/gods v1.18.1
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jedib0t/go-pretty/v6 v6.5.0
+	github.com/jedib0t/go-pretty/v6 v6.5.2
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
@@ -42,7 +42,7 @@ require (
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
