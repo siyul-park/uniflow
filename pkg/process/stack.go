@@ -73,6 +73,28 @@ func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 	}
 }
 
+// Stems return stems of the given leaf.
+func (s *Stack) Stems(leaf ulid.ULID) []ulid.ULID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.stems == nil {
+		return nil
+	}
+	return s.stems[leaf]
+}
+
+// Leaves return leaves of the given stem.
+func (s *Stack) Leaves(stem ulid.ULID) []ulid.ULID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.leaves == nil {
+		return nil
+	}
+	return s.leaves[stem]
+}
+
 // Push adds a value to the stack associated with a key.
 func (s *Stack) Push(key, value ulid.ULID) {
 	s.mu.Lock()

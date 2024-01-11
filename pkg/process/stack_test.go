@@ -64,6 +64,30 @@ func TestStack_Len(t *testing.T) {
 	assert.Equal(t, 3, st.Len(k2))
 }
 
+func TestStack_Stems(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
+}
+
+func TestStack_Leaves(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+}
+
 func TestStack_Wait(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		st := newStack()

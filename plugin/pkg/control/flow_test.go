@@ -57,15 +57,23 @@ func TestFlowNode_SendAndReceive(t *testing.T) {
 
 	inStream.Send(inPck)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	for i := 0; i < inPayload.Len(); i++ {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, inPayload.Get(i), outPck.Payload())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
+	}
+
+	select {
+	case outPck := <-inStream.Receive():
+		assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+	case <-ctx.Done():
+		assert.Fail(t, "timeout")
 	}
 }

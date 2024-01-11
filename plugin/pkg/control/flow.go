@@ -3,6 +3,7 @@ package control
 import (
 	"sync"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -23,7 +24,10 @@ func NewFlowNode() *FlowNode {
 		inPort:  port.New(),
 		outPort: port.New(),
 	}
+
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.outPort.AddInitHook(port.InitHookFunc(n.backward))
+
 	return n
 }
 
@@ -79,11 +83,53 @@ func (n *FlowNode) forward(proc *process.Process) {
 			outPayloads = inPayload.Values()
 		}
 
+		var outPcks []*packet.Packet
 		for _, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
 			proc.Stack().Link(inPck.ID(), outPck.ID())
 			proc.Stack().Push(outPck.ID(), inStream.ID())
+			outPcks = append(outPcks, outPck)
+		}
+
+		for _, outPck := range outPcks {
 			outStream.Send(outPck)
+		}
+	}
+}
+
+func (n *FlowNode) backward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	var inStream *port.Stream
+	outStream := n.outPort.Open(proc)
+
+	buffers := make(map[ulid.ULID][]primitive.Value)
+
+	for {
+		backPck, ok := <-outStream.Receive()
+		if !ok {
+			return
+		}
+
+		if inStream == nil {
+			inStream = n.inPort.Open(proc)
+		}
+
+		stems := proc.Stack().Stems(backPck.ID())
+		if _, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
+			for _, stem := range stems {
+				buffers[stem] = append(buffers[stem], backPck.Payload())
+				if len(proc.Stack().Leaves(stem)) == 0 {
+					backPayload := primitive.NewSlice(buffers[stem]...)
+					backPck := packet.New(backPayload)
+
+					proc.Stack().Link(stem, backPck.ID())
+					inStream.Send(backPck)
+
+					delete(buffers, stem)
+				}
+			}
 		}
 	}
 }
