@@ -116,18 +116,17 @@ func (n *FlowNode) backward(proc *process.Process) {
 			inStream = n.inPort.Open(proc)
 		}
 
-		stems := proc.Stack().Stems(backPck.ID())
-		if _, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
-			for _, stem := range stems {
-				buffers[stem] = append(buffers[stem], backPck.Payload())
-				if len(proc.Stack().Leaves(stem)) == 0 {
-					backPayload := primitive.NewSlice(buffers[stem]...)
+		if heads, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
+			for _, head := range heads {
+				buffers[head] = append(buffers[head], backPck.Payload())
+				if len(proc.Stack().Leaves(head)) == 0 {
+					backPayload := primitive.NewSlice(buffers[head]...)
 					backPck := packet.New(backPayload)
 
-					proc.Stack().Link(stem, backPck.ID())
+					proc.Stack().Link(head, backPck.ID())
 					inStream.Send(backPck)
 
-					delete(buffers, stem)
+					delete(buffers, head)
 				}
 			}
 		}

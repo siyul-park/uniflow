@@ -109,12 +109,12 @@ func (s *Stack) Push(key, value ulid.ULID) {
 }
 
 // Pop removes and returns the top value from the stack associated with a key.
-func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
+func (s *Stack) Pop(key, value ulid.ULID) ([]ulid.ULID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.stems == nil || s.leaves == nil || s.stacks == nil || s.heads == nil {
-		return ulid.ULID{}, false
+		return nil, false
 	}
 
 	heads, ok := s.heads[key]
@@ -174,11 +174,11 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 			}
 
 			s.wait.RUnlock()
-			return head, true
+			return heads, true
 		}
 	}
 
-	return ulid.ULID{}, false
+	return nil, false
 }
 
 // Clear removes links from the child associated with a key.

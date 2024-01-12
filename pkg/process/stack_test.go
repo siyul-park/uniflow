@@ -30,15 +30,15 @@ func TestStack_Pop(t *testing.T) {
 
 	h1, ok := st.Pop(k3, v3)
 	assert.True(t, ok)
-	assert.Equal(t, k2, h1)
+	assert.Contains(t, h1, k2)
 
 	h2, ok := st.Pop(k3, v2)
 	assert.True(t, ok)
-	assert.Equal(t, k2, h2)
+	assert.Contains(t, h2, k1)
 
 	h3, ok := st.Pop(k3, v1)
 	assert.True(t, ok)
-	assert.Equal(t, k1, h3)
+	assert.Len(t, h3, 0)
 
 	assert.Equal(t, 0, st.Len(k3))
 }
