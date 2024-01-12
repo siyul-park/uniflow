@@ -73,22 +73,12 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, e
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	unstructured := scheme.NewUnstructured(nil)
-	if err := unstructured.Marshal(spec); err != nil {
-		return ulid.ULID{}, err
-	}
-	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(scheme.DefaultNamespace)
-	}
-	if unstructured.GetID() == (ulid.ULID{}) {
-		unstructured.SetID(ulid.Make())
-	}
-
-	if err := s.validate(unstructured); err != nil {
+	doc, err := s.specToDoc(spec)
+	if err != nil {
 		return ulid.ULID{}, err
 	}
 
-	pk, err := s.nodes.InsertOne(ctx, unstructured.Doc())
+	pk, err := s.nodes.InsertOne(ctx, doc)
 	if err != nil {
 		return ulid.ULID{}, err
 	}
@@ -109,22 +99,11 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]ulid.U
 
 	var docs []*primitive.Map
 	for _, spec := range specs {
-		unstructured := scheme.NewUnstructured(nil)
-		if err := unstructured.Marshal(spec); err != nil {
+		doc, err := s.specToDoc(spec)
+		if err != nil {
 			return nil, err
 		}
-		if unstructured.GetNamespace() == "" {
-			unstructured.SetNamespace(scheme.DefaultNamespace)
-		}
-		if unstructured.GetID() == (ulid.ULID{}) {
-			unstructured.SetID(ulid.Make())
-		}
-
-		if err := s.validate(unstructured); err != nil {
-			return nil, err
-		}
-
-		docs = append(docs, unstructured.Doc())
+		docs = append(docs, doc)
 	}
 
 	pks, err := s.nodes.InsertMany(ctx, docs)
@@ -146,18 +125,8 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	unstructured := scheme.NewUnstructured(nil)
-	if err := unstructured.Marshal(spec); err != nil {
-		return false, err
-	}
-	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(scheme.DefaultNamespace)
-	}
-	if unstructured.GetID() == (ulid.ULID{}) {
-		return false, nil
-	}
-
-	if err := s.validate(unstructured); err != nil {
+	unstructured, err := s.specToUnstructured(spec)
+	if err != nil {
 		return false, err
 	}
 
@@ -172,21 +141,10 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, err
 
 	var unstructureds []*scheme.Unstructured
 	for _, spec := range specs {
-		unstructured := scheme.NewUnstructured(nil)
-		if err := unstructured.Marshal(spec); err != nil {
+		unstructured, err := s.specToUnstructured(spec)
+		if err != nil {
 			return 0, err
 		}
-		if unstructured.GetNamespace() == "" {
-			unstructured.SetNamespace(scheme.DefaultNamespace)
-		}
-		if unstructured.GetID() == (ulid.ULID{}) {
-			continue
-		}
-
-		if err := s.validate(unstructured); err != nil {
-			return 0, err
-		}
-
 		unstructureds = append(unstructureds, unstructured)
 	}
 
@@ -279,6 +237,31 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	}
 
 	return specs, nil
+}
+
+func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
+	unstructured, err := s.specToUnstructured(spec)
+	if err != nil {
+		return nil, err
+	}
+	if unstructured.GetID() == (ulid.ULID{}) {
+		unstructured.SetID(ulid.Make())
+	}
+	return unstructured.Doc(), nil
+}
+
+func (s *Storage) specToUnstructured(spec scheme.Spec) (*scheme.Unstructured, error) {
+	unstructured := scheme.NewUnstructured(nil)
+	if err := unstructured.Marshal(spec); err != nil {
+		return nil, err
+	}
+	if unstructured.GetNamespace() == "" {
+		unstructured.SetNamespace(scheme.DefaultNamespace)
+	}
+	if err := s.validate(unstructured); err != nil {
+		return nil, err
+	}
+	return unstructured, nil
 }
 
 func (s *Storage) validate(spec scheme.Spec) error {
