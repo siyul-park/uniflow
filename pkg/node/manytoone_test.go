@@ -84,18 +84,18 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
-
 			outStream.Send(outPck)
-			for _, inStream := range inStreams {
-				select {
-				case outPck := <-inStream.Receive():
-					assert.NotNil(t, outPck)
-				case <-ctx.Done():
-					assert.Fail(t, ctx.Err().Error())
-				}
-			}
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+			}
 		}
 	})
 
@@ -145,18 +145,18 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		select {
 		case errPck := <-errStream.Receive():
 			assert.Equal(t, inPayload, errPck.Payload())
-
 			errStream.Send(errPck)
-			for _, inStream := range inStreams {
-				select {
-				case outPck := <-inStream.Receive():
-					assert.NotNil(t, outPck)
-				case <-ctx.Done():
-					assert.Fail(t, ctx.Err().Error())
-				}
-			}
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+			}
 		}
 	})
 }
