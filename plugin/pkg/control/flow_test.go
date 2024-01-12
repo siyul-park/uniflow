@@ -121,3 +121,34 @@ func TestFlowNode_SendAndReceive(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkFlowNode_SendAndReceive(b *testing.B) {
+	n := NewFlowNode()
+	defer n.Close()
+
+	in := port.New()
+	inPort, _ := n.Port(node.PortIn)
+	inPort.Link(in)
+
+	out := port.New()
+	outPort, _ := n.Port(node.PortOut)
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inStream := in.Open(proc)
+	outStream := out.Open(proc)
+
+	inPayload := primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated()), primitive.NewString(faker.UUIDHyphenated()))
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			inStream.Send(inPck)
+			<-outStream.Receive()
+		}
+	})
+}

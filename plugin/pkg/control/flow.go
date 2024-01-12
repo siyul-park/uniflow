@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// FlowNode represents a node that processes packets in a flow-like manner.
 type FlowNode struct {
 	inPort  *port.Port
 	outPort *port.Port
@@ -19,6 +20,7 @@ type FlowNode struct {
 
 var _ node.Node = (*FlowNode)(nil)
 
+// NewFlowNode creates a new FlowNode.
 func NewFlowNode() *FlowNode {
 	n := &FlowNode{
 		inPort:  port.New(),
@@ -31,6 +33,7 @@ func NewFlowNode() *FlowNode {
 	return n
 }
 
+// Port returns the specified port.
 func (n *FlowNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -46,6 +49,7 @@ func (n *FlowNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
+// Close closes all.
 func (n *FlowNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
