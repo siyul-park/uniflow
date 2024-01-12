@@ -77,10 +77,10 @@ func (n *FlowNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 
 		var outPayloads []primitive.Value
-		if inPayload, ok := inPayload.(*primitive.Slice); !ok {
+		if inPayloads, ok := inPayload.(*primitive.Slice); !ok {
 			outPayloads = []primitive.Value{inPayload}
 		} else {
-			outPayloads = inPayload.Values()
+			outPayloads = inPayloads.Values()
 		}
 
 		var outPcks []*packet.Packet

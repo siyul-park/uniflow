@@ -35,45 +35,89 @@ func TestFlowNode_Port(t *testing.T) {
 }
 
 func TestFlowNode_SendAndReceive(t *testing.T) {
-	n := NewFlowNode()
-	defer n.Close()
+	t.Run("Single", func(t *testing.T) {
+		n := NewFlowNode()
+		defer n.Close()
 
-	in := port.New()
-	inPort, _ := n.Port(node.PortIn)
-	inPort.Link(in)
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
 
-	out := port.New()
-	outPort, _ := n.Port(node.PortOut)
-	outPort.Link(out)
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	inStream := in.Open(proc)
-	outStream := out.Open(proc)
+		inStream := in.Open(proc)
+		outStream := out.Open(proc)
 
-	inPayload := primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated()), primitive.NewString(faker.UUIDHyphenated()))
-	inPck := packet.New(inPayload)
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
 
-	inStream.Send(inPck)
+		inStream.Send(inPck)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
 
-	for i := 0; i < inPayload.Len(); i++ {
 		select {
 		case outPck := <-outStream.Receive():
-			assert.Equal(t, inPayload.Get(i), outPck.Payload())
+			assert.Equal(t, inPayload, outPck.Payload())
 			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
-	}
 
-	select {
-	case outPck := <-inStream.Receive():
-		assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
-	case <-ctx.Done():
-		assert.Fail(t, "timeout")
-	}
+		select {
+		case backPck := <-inStream.Receive():
+			assert.Equal(t, primitive.NewSlice(inPayload).Interface(), backPck.Payload().Interface())
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("Slice", func(t *testing.T) {
+		n := NewFlowNode()
+		defer n.Close()
+
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
+
+		out := port.New()
+		outPort, _ := n.Port(node.PortOut)
+		outPort.Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inStream := in.Open(proc)
+		outStream := out.Open(proc)
+
+		inPayload := primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated()), primitive.NewString(faker.UUIDHyphenated()))
+		inPck := packet.New(inPayload)
+
+		inStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		for i := 0; i < inPayload.Len(); i++ {
+			select {
+			case outPck := <-outStream.Receive():
+				assert.Equal(t, inPayload.Get(i), outPck.Payload())
+				outStream.Send(outPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
+		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.Equal(t, inPayload.Interface(), backPck.Payload().Interface())
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
 }
