@@ -106,7 +106,7 @@ func TestStack_Wait(t *testing.T) {
 		st := newStack()
 		defer st.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		done := make(chan struct{})

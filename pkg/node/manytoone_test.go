@@ -78,7 +78,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			inStream.Send(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
@@ -139,7 +139,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			inStream.Send(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecute(t *testing.T) {
+func TestCommend_Execute(t *testing.T) {
 	s := scheme.New()
 	h := hook.New()
 	db := memdb.New("")
