@@ -9,6 +9,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestStack_Link(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
+	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
+	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+}
+
+func TestStack_Unlink(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	st.Unlink(k1, k2)
+
+	assert.Len(t, st.Stems(k2), 0)
+	assert.Len(t, st.Leaves(k1), 0)
+
+	st.Unlink(k1, k2)
+
+	assert.Len(t, st.Stems(k2), 0)
+	assert.Len(t, st.Leaves(k1), 0)
+}
+
 func TestStack_Pop(t *testing.T) {
 	st := newStack()
 	defer st.Close()
@@ -63,31 +101,6 @@ func TestStack_Len(t *testing.T) {
 	assert.Equal(t, 1, st.Len(k1))
 	assert.Equal(t, 3, st.Len(k2))
 }
-
-func TestStack_Stems(t *testing.T) {
-	st := newStack()
-	defer st.Close()
-
-	k1 := ulid.Make()
-	k2 := ulid.Make()
-
-	st.Link(k1, k2)
-
-	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
-}
-
-func TestStack_Leaves(t *testing.T) {
-	st := newStack()
-	defer st.Close()
-
-	k1 := ulid.Make()
-	k2 := ulid.Make()
-
-	st.Link(k1, k2)
-
-	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
-}
-
 func TestStack_Wait(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		st := newStack()
