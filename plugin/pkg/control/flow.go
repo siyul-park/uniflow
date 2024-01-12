@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 // FlowNode represents a node that processes packets in a flow-like manner.
@@ -18,7 +19,21 @@ type FlowNode struct {
 	mu      sync.RWMutex
 }
 
+// FlowNodeSpec holds the specifications for creating a FlowNode.
+type FlowNodeSpec struct {
+	scheme.SpecMeta
+}
+
+const KindFlow = "flow"
+
 var _ node.Node = (*FlowNode)(nil)
+
+// NewFlowNodeCodec creates a new codec for FlowNodeSpec.
+func NewFlowNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*FlowNodeSpec](func(_ *FlowNodeSpec) (node.Node, error) {
+		return NewFlowNode(), nil
+	})
+}
 
 // NewFlowNode creates a new FlowNode.
 func NewFlowNode() *FlowNode {

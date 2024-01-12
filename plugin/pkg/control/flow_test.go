@@ -14,6 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFlowNodeCodec_Decode(t *testing.T) {
+	codec := NewFlowNodeCodec()
+
+	spec := &FlowNodeSpec{}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
 func TestNewFlowNode(t *testing.T) {
 	n := NewFlowNode()
 	assert.NotNil(t, n)
