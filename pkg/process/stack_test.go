@@ -9,6 +9,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestStack_Link(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
+	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+
+	st.Link(k1, k2)
+
+	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
+	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+}
+
+func TestStack_Unlink(t *testing.T) {
+	st := newStack()
+	defer st.Close()
+
+	k1 := ulid.Make()
+	k2 := ulid.Make()
+
+	st.Link(k1, k2)
+
+	st.Unlink(k1, k2)
+
+	assert.Len(t, st.Stems(k2), 0)
+	assert.Len(t, st.Leaves(k1), 0)
+
+	st.Unlink(k1, k2)
+
+	assert.Len(t, st.Stems(k2), 0)
+	assert.Len(t, st.Leaves(k1), 0)
+}
+
 func TestStack_Pop(t *testing.T) {
 	st := newStack()
 	defer st.Close()
@@ -30,15 +68,15 @@ func TestStack_Pop(t *testing.T) {
 
 	h1, ok := st.Pop(k3, v3)
 	assert.True(t, ok)
-	assert.Equal(t, k2, h1)
+	assert.Contains(t, h1, k2)
 
 	h2, ok := st.Pop(k3, v2)
 	assert.True(t, ok)
-	assert.Equal(t, k2, h2)
+	assert.Contains(t, h2, k1)
 
 	h3, ok := st.Pop(k3, v1)
 	assert.True(t, ok)
-	assert.Equal(t, k1, h3)
+	assert.Len(t, h3, 0)
 
 	assert.Equal(t, 0, st.Len(k3))
 }
@@ -63,7 +101,6 @@ func TestStack_Len(t *testing.T) {
 	assert.Equal(t, 1, st.Len(k1))
 	assert.Equal(t, 3, st.Len(k2))
 }
-
 func TestStack_Wait(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		st := newStack()

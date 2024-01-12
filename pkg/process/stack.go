@@ -34,14 +34,10 @@ func (s *Stack) Link(stem, leaf ulid.ULID) {
 		return
 	}
 
-	for _, cur := range s.stems[leaf] {
-		if cur == stem {
-			return
-		}
+	if !s.isAlreadyLinked(stem, leaf) {
+		s.stems[leaf] = append(s.stems[leaf], stem)
+		s.leaves[stem] = append(s.leaves[stem], leaf)
 	}
-
-	s.stems[leaf] = append(s.stems[leaf], stem)
-	s.leaves[stem] = append(s.leaves[stem], leaf)
 }
 
 // Unlink removes a relationship between a stem and a leaf.
@@ -53,24 +49,30 @@ func (s *Stack) Unlink(stem, leaf ulid.ULID) {
 		return
 	}
 
-	for i, cur := range s.stems[leaf] {
-		if cur == stem {
-			s.stems[leaf] = append(s.stems[leaf][:i], s.stems[leaf][i+1:]...)
-			if len(s.stems[leaf]) == 0 {
-				delete(s.stems, leaf)
-			}
-			break
-		}
+	s.removeLink(s.stems, leaf, stem)
+	s.removeLink(s.leaves, stem, leaf)
+}
+
+// Stems return stems of the given leaf.
+func (s *Stack) Stems(leaf ulid.ULID) []ulid.ULID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.stems == nil {
+		return nil
 	}
-	for i, cur := range s.leaves[stem] {
-		if cur == leaf {
-			s.leaves[stem] = append(s.leaves[stem][:i], s.leaves[stem][i+1:]...)
-			if len(s.leaves[stem]) == 0 {
-				delete(s.leaves, stem)
-			}
-			break
-		}
+	return s.stems[leaf]
+}
+
+// Leaves return leaves of the given stem.
+func (s *Stack) Leaves(stem ulid.ULID) []ulid.ULID {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.leaves == nil {
+		return nil
 	}
+	return s.leaves[stem]
 }
 
 // Push adds a value to the stack associated with a key.
@@ -87,49 +89,15 @@ func (s *Stack) Push(key, value ulid.ULID) {
 }
 
 // Pop removes and returns the top value from the stack associated with a key.
-func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
+func (s *Stack) Pop(key, value ulid.ULID) ([]ulid.ULID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.stems == nil || s.leaves == nil || s.stacks == nil || s.heads == nil {
-		return ulid.ULID{}, false
+		return nil, false
 	}
 
-	heads, ok := s.heads[key]
-	if !ok {
-		heads = []ulid.ULID{key}
-	}
-
-	visits := map[ulid.ULID]struct{}{}
-	for {
-		for i, head := range heads {
-			if _, ok := visits[head]; ok && len(s.leaves[head]) != 0 {
-				continue
-			}
-			visits[head] = struct{}{}
-
-			if steams := s.move(head); steams != nil {
-				delete(s.heads, head)
-
-				heads = append(heads[:i], heads[i+1:]...)
-				heads = append(heads, steams...)
-			}
-		}
-
-		next := false
-		for _, head := range heads {
-			if _, ok := visits[head]; !ok {
-				next = true
-				break
-			}
-		}
-		if !next {
-			break
-		}
-	}
-	if len(heads) > 0 {
-		s.heads[key] = heads
-	}
+	heads := s.cleanupHeads(key)
 
 	for i, head := range heads {
 		stacks := s.stacks[head]
@@ -152,11 +120,11 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 			}
 
 			s.wait.RUnlock()
-			return head, true
+			return heads, true
 		}
 	}
 
-	return ulid.ULID{}, false
+	return nil, false
 }
 
 // Clear removes links from the child associated with a key.
@@ -275,6 +243,46 @@ func (s *Stack) Close() {
 	s.heads = nil
 }
 
+func (s *Stack) cleanupHeads(key ulid.ULID) []ulid.ULID {
+	heads, ok := s.heads[key]
+	if !ok {
+		heads = []ulid.ULID{key}
+	}
+
+	visits := map[ulid.ULID]struct{}{}
+	for {
+		for i, head := range heads {
+			if _, ok := visits[head]; ok && len(s.leaves[head]) != 0 {
+				continue
+			}
+			visits[head] = struct{}{}
+
+			if steams := s.move(head); steams != nil {
+				delete(s.heads, head)
+
+				heads = append(heads[:i], heads[i+1:]...)
+				heads = append(heads, steams...)
+			}
+		}
+
+		next := false
+		for _, head := range heads {
+			if _, ok := visits[head]; !ok {
+				next = true
+				break
+			}
+		}
+		if !next {
+			break
+		}
+	}
+	if len(heads) > 0 {
+		s.heads[key] = heads
+	}
+
+	return heads
+}
+
 func (s *Stack) move(head ulid.ULID) []ulid.ULID {
 	if len(s.leaves[head]) > 0 || len(s.stacks[head]) > 0 {
 		return nil
@@ -294,4 +302,25 @@ func (s *Stack) move(head ulid.ULID) []ulid.ULID {
 	delete(s.stems, head)
 
 	return stems
+}
+
+func (s *Stack) removeLink(links map[ulid.ULID][]ulid.ULID, key, value ulid.ULID) {
+	for i, cur := range links[key] {
+		if cur == value {
+			links[key] = append(links[key][:i], links[key][i+1:]...)
+			if len(links[key]) == 0 {
+				delete(links, key)
+			}
+			break
+		}
+	}
+}
+
+func (s *Stack) isAlreadyLinked(stem, leaf ulid.ULID) bool {
+	for _, cur := range s.stems[leaf] {
+		if cur == stem {
+			return true
+		}
+	}
+	return false
 }

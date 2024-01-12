@@ -11,6 +11,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindMerge, &MergeNodeSpec{})
 		s.AddCodec(KindMerge, NewMergeNodeCodec())
 
+		s.AddKnownType(KindFlow, &FlowNodeSpec{})
+		s.AddCodec(KindFlow, NewFlowNodeCodec())
+
 		return nil
 	}
 }

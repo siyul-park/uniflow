@@ -69,16 +69,16 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
-
 			outStream.Send(outPck)
-			select {
-			case outPck := <-inStream.Receive():
-				assert.NotNil(t, outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
 		}
 	})
 
@@ -113,16 +113,16 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-errStream.Receive():
 			assert.NotNil(t, outPck)
-
 			errStream.Send(outPck)
-			select {
-			case outPck := <-inStream.Receive():
-				assert.NotNil(t, outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
 		}
 	})
 }

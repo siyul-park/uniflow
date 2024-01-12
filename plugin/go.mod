@@ -4,6 +4,7 @@ go 1.21.5
 
 require (
 	github.com/go-faker/faker/v4 v4.2.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.0.0
 	github.com/stretchr/testify v1.8.4
@@ -17,7 +18,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
