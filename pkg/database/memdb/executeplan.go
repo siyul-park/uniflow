@@ -198,9 +198,6 @@ func (e *executePlan) or(other *executePlan) *executePlan {
 	}
 
 	z.next = e.next.or(other.next)
-	if e.next != other.next && z.next == nil {
-		return nil
-	}
 
 	allNil := true
 	for cur := z; cur != nil; cur = cur.next {
