@@ -139,11 +139,11 @@ func TestSection_Scan(t *testing.T) {
 
 		_, _ = s.Set(doc)
 
-		child1, ok := s.Scan(constraintName, doc.GetOr(keyDepth1, nil), doc.GetOr(keyDepth1, nil))
+		child1, ok := s.Scan(constraintName, nil, nil)
 		assert.True(t, ok)
 		assert.NotNil(t, child1)
 
-		child2, ok := child1.Scan(keyDepth2.String(), doc.GetOr(keyDepth2, nil), doc.GetOr(keyDepth2, nil))
+		child2, ok := child1.Scan(keyDepth2.String(), nil, nil)
 		assert.True(t, ok)
 		assert.NotNil(t, child2)
 
