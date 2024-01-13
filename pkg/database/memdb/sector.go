@@ -79,7 +79,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		value.Each(func(key, value any) {
 			v, _ := value.(*treemap.Map)
 			if old, ok := index.Get(key); ok {
-				v = merge(old.(*treemap.Map), v)
+				v = s.merge(old.(*treemap.Map), v)
 			}
 			index.Put(key, v)
 		})
@@ -114,7 +114,7 @@ func (s *Sector) inRange(key primitive.Value) bool {
 	return (min == nil || primitive.Compare(key, min) >= 0) && (max == nil || primitive.Compare(key, max) <= 0)
 }
 
-func merge(x, y *treemap.Map) *treemap.Map {
+func (s *Sector) merge(x, y *treemap.Map) *treemap.Map {
 	z := treemap.NewWith(comparator)
 
 	x.Each(func(key, value any) {
@@ -124,7 +124,7 @@ func merge(x, y *treemap.Map) *treemap.Map {
 		if old, ok := z.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					value = merge(old, v)
+					value = s.merge(old, v)
 				}
 			}
 		}

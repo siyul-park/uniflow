@@ -25,7 +25,7 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 			if p := buildExecutePlan(keys, child); p == nil {
 				return nil
 			} else {
-				plan = mergeExecutePlan(plan, p)
+				plan = plan.merge(p)
 			}
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
@@ -78,40 +78,40 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	return plan
 }
 
-func mergeExecutePlan(x *executePlan, y *executePlan) *executePlan {
-	if x == nil {
+func (e *executePlan) merge(y *executePlan) *executePlan {
+	if e == nil {
 		return y
 	}
 	if y == nil {
-		return x
+		return e
 	}
 
-	if x.key != y.key {
+	if e.key != y.key {
 		return nil
 	}
 
 	z := &executePlan{
-		key: x.key,
+		key: e.key,
 	}
 
-	if x.min == nil {
+	if e.min == nil {
 		z.min = y.min
-	} else if primitive.Compare(x.min, y.min) < 0 {
+	} else if primitive.Compare(e.min, y.min) < 0 {
 		z.min = y.min
 	} else {
-		z.min = x.min
+		z.min = e.min
 	}
 
-	if x.max == nil {
+	if e.max == nil {
 		z.max = nil
-	} else if primitive.Compare(x.max, y.max) > 0 {
+	} else if primitive.Compare(e.max, y.max) > 0 {
 		z.max = y.max
 	} else {
-		z.max = x.max
+		z.max = e.max
 	}
 
-	z.next = mergeExecutePlan(x.next, y.next)
-	if x.next != y.next && z.next == nil {
+	z.next = e.next.merge(y.next)
+	if e.next != y.next && z.next == nil {
 		return nil
 	}
 
