@@ -82,16 +82,15 @@ func (s *Sector) inRange(key primitive.Value) bool {
 	return (min == nil || primitive.Compare(key, min) >= 0) && primitive.Compare(key, min) >= 0 && (max == nil || primitive.Compare(key, min) >= 0 && primitive.Compare(key, max) <= 0)
 }
 
-func merge(x, y *treemap.Map) *treemap.Map {
+func merge(x, y *treemap.Map) {
 	y.Each(func(key, value any) {
 		if old, ok := x.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					value = merge(old, v)
+					merge(v, old)
 				}
 			}
 		}
 		x.Put(key, value)
 	})
-	return x
 }
