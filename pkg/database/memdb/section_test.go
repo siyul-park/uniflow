@@ -77,9 +77,6 @@ func TestSection_Delete(t *testing.T) {
 }
 
 func TestSection_Range(t *testing.T) {
-	t.Run("Single", func(t *testing.T) {
-
-	})
 	s := newSection()
 
 	doc := primitive.NewMap(
@@ -98,7 +95,7 @@ func TestSection_Range(t *testing.T) {
 }
 
 func TestSection_Scan(t *testing.T) {
-	t.Run("Single", func(t *testing.T) {
+	t.Run("Flat", func(t *testing.T) {
 		s := newSection()
 
 		doc := primitive.NewMap(
@@ -120,7 +117,7 @@ func TestSection_Scan(t *testing.T) {
 		assert.Equal(t, 1, count)
 	})
 
-	t.Run("Many", func(t *testing.T) {
+	t.Run("Deep", func(t *testing.T) {
 		s := newSection()
 
 		constraintName := faker.UUIDHyphenated()

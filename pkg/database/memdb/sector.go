@@ -26,18 +26,22 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.Scan(sector.keys[0], nil, nil)
 	}
 
-	iterator := s.index.Iterator()
-	for iterator.Next() {
+	for iterator := s.index.Iterator(); iterator.Next(); {
 		key := iterator.Key().(primitive.Value)
+		value := iterator.Value().(*treemap.Map)
 
 		if !sector.inRange(key) {
 			continue
 		}
 
-		doc, ok := sector.data.Get(key)
-		if ok {
-			if !f(doc.(*primitive.Map)) {
-				break
+		for iterator := value.Iterator(); iterator.Next(); {
+			key := iterator.Key().(primitive.Value)
+
+			doc, ok := sector.data.Get(key)
+			if ok {
+				if !f(doc.(*primitive.Map)) {
+					return
+				}
 			}
 		}
 	}
@@ -53,8 +57,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 
 	index := treemap.NewWith(comparator)
 
-	iterator := s.index.Iterator()
-	for iterator.Next() {
+	for iterator := s.index.Iterator(); iterator.Next(); {
 		key := iterator.Key().(primitive.Value)
 		value := iterator.Value().(*treemap.Map)
 
@@ -62,7 +65,13 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 			continue
 		}
 
-		merge(index, value)
+		value.Each(func(key, value any) {
+			v, _ := value.(*treemap.Map)
+			if old, ok := index.Get(key); ok {
+				v = merge(old.(*treemap.Map), v)
+			}
+			index.Put(key, v)
+		})
 	}
 
 	return &Sector{
@@ -82,15 +91,22 @@ func (s *Sector) inRange(key primitive.Value) bool {
 	return (min == nil || primitive.Compare(key, min) >= 0) && primitive.Compare(key, min) >= 0 && (max == nil || primitive.Compare(key, min) >= 0 && primitive.Compare(key, max) <= 0)
 }
 
-func merge(x, y *treemap.Map) {
+func merge(x, y *treemap.Map) *treemap.Map {
+	z := treemap.NewWith(comparator)
+
+	x.Each(func(key, value any) {
+		z.Put(key, value)
+	})
 	y.Each(func(key, value any) {
-		if old, ok := x.Get(key); ok {
+		if old, ok := z.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					merge(v, old)
+					value = merge(old, v)
 				}
 			}
 		}
-		x.Put(key, value)
+		z.Put(key, value)
 	})
+
+	return z
 }
