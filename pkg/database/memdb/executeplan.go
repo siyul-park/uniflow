@@ -25,9 +25,63 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 			if p := buildExecutePlan(keys, child); p == nil {
 				return nil
 			} else {
-				plan = plan.merge(p)
+				plan = plan.and(p)
 			}
 		}
+	case database.OR:
+		for _, child := range filter.Children {
+			if p := buildExecutePlan(keys, child); p == nil {
+				return nil
+			} else {
+				plan = plan.or(p)
+			}
+		}
+	case database.IN:
+		value := filter.Value.(*primitive.Slice)
+
+		var root *executePlan
+		var pre *executePlan
+
+		for _, key := range keys {
+			if key != filter.Key {
+				p := &executePlan{
+					key: key,
+				}
+
+				if pre != nil {
+					pre.next = p
+				} else {
+					root = p
+				}
+				pre = p
+			} else {
+				var min primitive.Value
+				var max primitive.Value
+				for _, v := range value.Values() {
+					if min == nil || primitive.Compare(min, v) > 0 {
+						min = v
+					}
+					if max == nil || primitive.Compare(max, v) < 0 {
+						max = v
+					}
+				}
+
+				p := &executePlan{
+					key: key,
+					min: min,
+					max: max,
+				}
+
+				if pre != nil {
+					pre.next = p
+				} else {
+					root = p
+				}
+				plan = root
+				break
+			}
+		}
+
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var root *executePlan
 		var pre *executePlan
@@ -78,15 +132,15 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	return plan
 }
 
-func (e *executePlan) merge(y *executePlan) *executePlan {
+func (e *executePlan) and(other *executePlan) *executePlan {
 	if e == nil {
-		return y
+		return other
 	}
-	if y == nil {
+	if other == nil {
 		return e
 	}
 
-	if e.key != y.key {
+	if e.key != other.key {
 		return nil
 	}
 
@@ -95,23 +149,67 @@ func (e *executePlan) merge(y *executePlan) *executePlan {
 	}
 
 	if e.min == nil {
-		z.min = y.min
-	} else if primitive.Compare(e.min, y.min) < 0 {
-		z.min = y.min
+		z.min = other.min
+	} else if primitive.Compare(e.min, other.min) < 0 {
+		z.min = other.min
 	} else {
 		z.min = e.min
 	}
 
 	if e.max == nil {
 		z.max = nil
-	} else if primitive.Compare(e.max, y.max) > 0 {
-		z.max = y.max
+	} else if primitive.Compare(e.max, other.max) > 0 {
+		z.max = other.max
 	} else {
 		z.max = e.max
 	}
 
-	z.next = e.next.merge(y.next)
-	if e.next != y.next && z.next == nil {
+	z.next = e.next.and(other.next)
+	if e.next != other.next && z.next == nil {
+		return nil
+	}
+
+	return z
+}
+
+func (e *executePlan) or(other *executePlan) *executePlan {
+	if e == nil || other == nil || e.key != other.key {
+		return nil
+	}
+
+	z := &executePlan{
+		key: e.key,
+	}
+
+	if e.min == nil || z.min == nil {
+		z.min = nil
+	} else if primitive.Compare(e.min, other.min) > 0 {
+		z.min = other.min
+	} else {
+		z.min = e.min
+	}
+
+	if e.max == nil || z.max == nil {
+		z.max = nil
+	} else if primitive.Compare(e.max, other.max) < 0 {
+		z.max = other.max
+	} else {
+		z.max = e.max
+	}
+
+	z.next = e.next.or(other.next)
+	if e.next != other.next && z.next == nil {
+		return nil
+	}
+
+	allNil := true
+	for cur := z; cur != nil; cur = cur.next {
+		if cur.min != nil || cur.max != nil {
+			allNil = false
+			break
+		}
+	}
+	if allNil {
 		return nil
 	}
 
