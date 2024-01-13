@@ -22,11 +22,11 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
-			p := buildExecutePlan(keys, child)
-			if p == nil {
+			if p := buildExecutePlan(keys, child); p == nil {
 				return nil
+			} else {
+				plan = mergeExecutePlan(plan, p)
 			}
-			plan = mergeExecutePlan(plan, p)
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		pre := plan
