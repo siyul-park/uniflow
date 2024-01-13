@@ -254,14 +254,41 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	match := parseFilter(filter)
 
-	// TODO: Support Index Scan
+	fullScan := true
+	var plan *executePlan
+	for _, constraint := range c.section.Constraints() {
+		if p := buildExecutePlan(constraint.Keys, filter); p != nil {
+			fullScan = constraint.Match != nil
+			p.key = constraint.Name
+			plan = p
+			break
+		}
+	}
+
 	var docs []*primitive.Map
-	c.section.Range(func(doc *primitive.Map) bool {
+	appendDocs := func(doc *primitive.Map) bool {
 		if match == nil || match(doc) {
 			docs = append(docs, doc)
 		}
 		return len(sorts) > 0 || limit < 0 || len(docs) < limit+skip
-	})
+	}
+
+	if plan != nil {
+		sector, ok := c.section.Scan(plan.key, plan.min, plan.max)
+		for plan != nil && ok {
+			sector, ok = sector.Scan(plan.key, plan.min, plan.max)
+			plan = plan.next
+		}
+		if ok {
+			sector.Range(appendDocs)
+		} else {
+			fullScan = true
+		}
+	}
+
+	if fullScan {
+		c.section.Range(appendDocs)
+	}
 
 	if skip >= len(docs) {
 		return nil, nil

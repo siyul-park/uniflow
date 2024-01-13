@@ -91,6 +91,12 @@ func (s *Section) DropConstraint(name string) error {
 	return nil
 }
 
+func (s *Section) Constraints() []Constraint {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.constraints
+}
 func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
