@@ -9,7 +9,7 @@ import (
 )
 
 type IndexView struct {
-	segment *Segment
+	section *Section
 	models  map[string]database.IndexModel
 	mu      sync.RWMutex
 }
@@ -22,9 +22,9 @@ var (
 	ErrInvalidDocument = errors.New("document is invalid")
 )
 
-func newIndexView(segment *Segment) *IndexView {
+func newIndexView(segment *Section) *IndexView {
 	return &IndexView{
-		segment: segment,
+		section: segment,
 		models:  make(map[string]database.IndexModel),
 	}
 }
@@ -45,7 +45,7 @@ func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	model := Model{
+	constraint := Constraint{
 		Name:   index.Name,
 		Keys:   index.Keys,
 		Unique: index.Unique,
@@ -53,7 +53,7 @@ func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
 	}
 
 	v.models[index.Name] = index
-	return v.segment.Index(model)
+	return v.section.AddConstraint(constraint)
 }
 
 func (v *IndexView) Drop(_ context.Context, name string) error {
@@ -61,5 +61,5 @@ func (v *IndexView) Drop(_ context.Context, name string) error {
 	defer v.mu.Unlock()
 
 	delete(v.models, name)
-	return v.segment.Unindex(name)
+	return v.section.DropConstraint(name)
 }

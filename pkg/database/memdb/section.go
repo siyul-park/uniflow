@@ -10,14 +10,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type Segment struct {
-	data    maps.Map
-	indexes []maps.Map
-	models  []Model
-	mu      sync.RWMutex
+type Section struct {
+	data        maps.Map
+	indexes     []maps.Map
+	constraints []Constraint
+	mu          sync.RWMutex
 }
 
-type Model struct {
+type Constraint struct {
 	Name   string
 	Keys   []string
 	Unique bool
@@ -35,34 +35,34 @@ var comparator = utils.Comparator(func(a, b any) int {
 	return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
 })
 
-func newSegment() *Segment {
-	s := &Segment{data: treemap.NewWith(comparator)}
+func newSection() *Section {
+	s := &Section{data: treemap.NewWith(comparator)}
 
-	primary := Model{
+	primary := Constraint{
 		Keys:   []string{"id"},
 		Name:   "_id",
 		Unique: true,
 		Match:  func(_ *primitive.Map) bool { return true },
 	}
 
-	s.models = append(s.models, primary)
+	s.constraints = append(s.constraints, primary)
 	s.indexes = append(s.indexes, treemap.NewWith(comparator))
 
 	return s
 }
 
-func (s *Segment) Index(index Model) error {
+func (s *Section) AddConstraint(constraint Constraint) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, model := range s.models {
-		if model.Name == index.Name {
-			s.models = append(s.models[:i], s.models[i+1:]...)
+	for i, c := range s.constraints {
+		if c.Name == constraint.Name {
+			s.constraints = append(s.constraints[:i], s.constraints[i+1:]...)
 			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
 		}
 	}
 
-	s.models = append(s.models, index)
+	s.constraints = append(s.constraints, constraint)
 	s.indexes = append(s.indexes, treemap.NewWith(comparator))
 
 	for _, doc := range s.data.Values() {
@@ -74,13 +74,13 @@ func (s *Segment) Index(index Model) error {
 	return nil
 }
 
-func (s *Segment) Unindex(name string) error {
+func (s *Section) DropConstraint(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, model := range s.models {
-		if model.Name == name {
-			s.models = append(s.models[:i], s.models[i+1:]...)
+	for i, constraint := range s.constraints {
+		if constraint.Name == name {
+			s.constraints = append(s.constraints[:i], s.constraints[i+1:]...)
 			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
 		}
 	}
@@ -88,7 +88,7 @@ func (s *Segment) Unindex(name string) error {
 	return nil
 }
 
-func (s *Segment) Set(doc *primitive.Map) (primitive.Value, error) {
+func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -109,7 +109,7 @@ func (s *Segment) Set(doc *primitive.Map) (primitive.Value, error) {
 	return id, nil
 }
 
-func (s *Segment) Delete(doc *primitive.Map) bool {
+func (s *Section) Delete(doc *primitive.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -128,7 +128,7 @@ func (s *Segment) Delete(doc *primitive.Map) bool {
 	return true
 }
 
-func (s *Segment) Range(f func(doc *primitive.Map) bool) {
+func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -139,7 +139,7 @@ func (s *Segment) Range(f func(doc *primitive.Map) bool) {
 	}
 }
 
-func (s *Segment) Drop() []*primitive.Map {
+func (s *Section) Drop() []*primitive.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -156,20 +156,20 @@ func (s *Segment) Drop() []*primitive.Map {
 	return data
 }
 
-func (s *Segment) index(doc *primitive.Map) error {
+func (s *Section) index(doc *primitive.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return errors.WithStack(ErrPKNotFound)
 	}
 
-	for i, model := range s.models {
-		if !model.Match(doc) {
+	for i, constraint := range s.constraints {
+		if !constraint.Match(doc) {
 			continue
 		}
 
 		cur := s.indexes[i]
 
-		for i, k := range model.Keys {
+		for i, k := range constraint.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
 			c, _ := cur.Get(value)
@@ -179,12 +179,12 @@ func (s *Segment) index(doc *primitive.Map) error {
 				cur.Put(value, child)
 			}
 
-			if i < len(model.Keys)-1 {
+			if i < len(constraint.Keys)-1 {
 				cur = child
 			} else {
 				child.Put(id, nil)
 
-				if model.Unique && child.Size() > 1 {
+				if constraint.Unique && child.Size() > 1 {
 					child.Remove(id)
 					s.unindex(doc)
 					return errors.WithStack(ErrIndexConflict)
@@ -196,18 +196,18 @@ func (s *Segment) index(doc *primitive.Map) error {
 	return nil
 }
 
-func (s *Segment) unindex(doc *primitive.Map) {
+func (s *Section) unindex(doc *primitive.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return
 	}
 
-	for i, model := range s.models {
+	for i, constraint := range s.constraints {
 		cur := s.indexes[i]
 		nodes := []maps.Map{cur}
 		keys := []primitive.Value{nil}
 
-		for i, k := range model.Keys {
+		for i, k := range constraint.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
 			c, _ := cur.Get(value)
@@ -222,7 +222,7 @@ func (s *Segment) unindex(doc *primitive.Map) {
 			nodes = append(nodes, child)
 			keys = append(keys, value)
 
-			if i < len(model.Keys)-1 {
+			if i < len(constraint.Keys)-1 {
 				cur = child
 			} else {
 				child.Remove(id)

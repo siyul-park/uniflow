@@ -13,7 +13,7 @@ import (
 
 type Collection struct {
 	name      string
-	segment   *Segment
+	section   *Section
 	indexView *IndexView
 	streams   []*Stream
 	matches   []func(*primitive.Map) bool
@@ -28,11 +28,11 @@ type internalEvent struct {
 var _ database.Collection = &Collection{}
 
 func NewCollection(name string) *Collection {
-	segment := newSegment()
+	segment := newSection()
 
 	return &Collection{
 		name:      name,
-		segment:   segment,
+		section:   segment,
 		indexView: newIndexView(segment),
 		mu:        sync.RWMutex{},
 	}
@@ -69,7 +69,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 }
 
 func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive.Value, error) {
-	id, err := c.segment.Set(doc)
+	id, err := c.section.Set(doc)
 	if err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
 	}
@@ -82,10 +82,10 @@ func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive
 func (c *Collection) InsertMany(_ context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	ids := make([]primitive.Value, len(docs))
 	for i, doc := range docs {
-		id, err := c.segment.Set(doc)
+		id, err := c.section.Set(doc)
 		if err != nil {
 			for ; i >= 0; i-- {
-				c.segment.Delete(docs[i])
+				c.section.Delete(docs[i])
 			}
 			return nil, errors.Wrap(err, database.ErrCodeWrite)
 		}
@@ -128,15 +128,15 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 	}
 
 	if origin != nil {
-		c.segment.Delete(origin)
+		c.section.Delete(origin)
 	}
 
 	if _, ok := patch.Get(keyID); !ok {
 		patch = patch.Set(keyID, id)
 	}
 
-	if _, err := c.segment.Set(patch); err != nil {
-		_, _ = c.segment.Set(origin)
+	if _, err := c.section.Set(patch); err != nil {
+		_, _ = c.section.Set(origin)
 		return false, errors.Wrap(err, database.ErrCodeWrite)
 	}
 
@@ -170,14 +170,14 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 		if _, ok := patch.Get(keyID); !ok {
 			patch = patch.Set(keyID, id)
 		}
-		if _, err := c.segment.Set(patch); err != nil {
+		if _, err := c.section.Set(patch); err != nil {
 			return 0, errors.Wrap(err, database.ErrCodeWrite)
 		}
 		return 1, nil
 	}
 
 	for _, origin := range origins {
-		c.segment.Delete(origin)
+		c.section.Delete(origin)
 	}
 
 	patches := make([]*primitive.Map, len(origins))
@@ -186,9 +186,9 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 	}
 
 	for i, patch := range patches {
-		if _, err := c.segment.Set(patch); err != nil {
+		if _, err := c.section.Set(patch); err != nil {
 			for ; i >= 0; i-- {
-				_, _ = c.segment.Set(origins[i])
+				_, _ = c.section.Set(origins[i])
 			}
 			return 0, errors.Wrap(err, database.ErrCodeWrite)
 		}
@@ -205,7 +205,7 @@ func (c *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bo
 	if doc, err := c.FindOne(ctx, filter); err != nil || doc == nil {
 		return false, err
 	} else {
-		c.segment.Delete(doc)
+		c.section.Delete(doc)
 		c.emit(internalEvent{op: database.EventDelete, document: doc})
 		return true, nil
 	}
@@ -216,7 +216,7 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 		return 0, err
 	} else {
 		for _, doc := range docs {
-			c.segment.Delete(doc)
+			c.section.Delete(doc)
 			c.emit(internalEvent{op: database.EventDelete, document: doc})
 		}
 		return len(docs), nil
@@ -256,7 +256,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	// TODO: Support Index Scan
 	var docs []*primitive.Map
-	c.segment.Range(func(doc *primitive.Map) bool {
+	c.section.Range(func(doc *primitive.Map) bool {
 		if match(doc) {
 			docs = append(docs, doc)
 		}
@@ -281,7 +281,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 }
 
 func (coll *Collection) Drop(_ context.Context) error {
-	data := coll.segment.Drop()
+	data := coll.section.Drop()
 	for _, doc := range data {
 		coll.emit(internalEvent{op: database.EventDelete, document: doc})
 	}
