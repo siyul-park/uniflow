@@ -22,19 +22,11 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
-			if p := buildExecutePlan(keys, child); p == nil {
-				return nil
-			} else {
-				plan = plan.and(p)
-			}
+			plan = plan.and(buildExecutePlan(keys, child))
 		}
 	case database.OR:
 		for _, child := range filter.Children {
-			if p := buildExecutePlan(keys, child); p == nil {
-				return nil
-			} else {
-				plan = plan.or(p)
-			}
+			plan = plan.or(buildExecutePlan(keys, child))
 		}
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
