@@ -153,7 +153,6 @@ func TestSection_Scan(t *testing.T) {
 				Name:   constraintName,
 				Keys:   []string{keyDepth1.String(), keyDepth2.String()},
 				Unique: false,
-				Match:  func(_ *primitive.Map) bool { return true },
 			})
 
 			doc := primitive.NewMap(
@@ -192,7 +191,6 @@ func TestSection_Scan(t *testing.T) {
 				Name:   constraintName,
 				Keys:   []string{keyDepth1.String(), keyDepth2.String()},
 				Unique: false,
-				Match:  func(_ *primitive.Map) bool { return true },
 			})
 
 			doc := primitive.NewMap(

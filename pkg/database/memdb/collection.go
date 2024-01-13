@@ -257,7 +257,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	// TODO: Support Index Scan
 	var docs []*primitive.Map
 	c.section.Range(func(doc *primitive.Map) bool {
-		if match(doc) {
+		if match == nil || match(doc) {
 			docs = append(docs, doc)
 		}
 		return len(sorts) > 0 || limit < 0 || len(docs) < limit+skip
@@ -317,7 +317,8 @@ func (c *Collection) emit(evt internalEvent) {
 	defer c.mu.RUnlock()
 
 	for i, s := range c.streams {
-		if c.matches[i](evt.document) {
+		match := c.matches[i]
+		if match == nil || match(evt.document) {
 			s.Emit(database.Event{
 				OP:         evt.op,
 				DocumentID: evt.document.GetOr(keyID, nil),

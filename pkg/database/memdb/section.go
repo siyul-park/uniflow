@@ -45,7 +45,7 @@ func newSection() *Section {
 		Keys:   []string{"id"},
 		Name:   "_id",
 		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Match:  nil,
 	}
 
 	s.constraints = append(s.constraints, primary)
@@ -188,7 +188,7 @@ func (s *Section) index(doc *primitive.Map) error {
 	}
 
 	for i, constraint := range s.constraints {
-		if !constraint.Match(doc) {
+		if constraint.Match != nil && !constraint.Match(doc) {
 			continue
 		}
 
