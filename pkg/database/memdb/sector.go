@@ -26,7 +26,7 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.Scan(sector.keys[0], nil, nil)
 	}
 
-	if sector.min != nil && sector.max != nil && sector.min == sector.max {
+	if sector.min != nil && sector.max != nil && primitive.Compare(sector.min, sector.max) == 0 {
 		value, ok := sector.index.Get(sector.min)
 		if !ok {
 			return
@@ -53,12 +53,10 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		return nil, false
 	}
 
-	index := treemap.NewWith(comparator)
-
-	if s.min != nil && s.max != nil && s.min == s.max {
+	if s.min != nil && s.max != nil && primitive.Compare(s.min, s.max) == 0 {
 		value, ok := s.index.Get(s.min)
 		if !ok {
-			return nil, false
+			value = treemap.NewWith(comparator)
 		}
 		return &Sector{
 			data:  s.data,
@@ -69,6 +67,8 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 			mu:    s.mu,
 		}, true
 	}
+
+	index := treemap.NewWith(comparator)
 
 	for iterator := s.index.Iterator(); iterator.Next(); {
 		key := iterator.Key().(primitive.Value)

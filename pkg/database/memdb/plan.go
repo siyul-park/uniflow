@@ -29,37 +29,49 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 			}
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
-		pre := plan
+		var root *executePlan
+		var pre *executePlan
 
 		for _, key := range keys {
-			var value primitive.Value
 			if key != filter.Key {
-				value = filter.Value
-			}
+				p := &executePlan{
+					key: key,
+				}
 
-			var min primitive.Value
-			var max primitive.Value
-			if filter.OP == database.EQ {
-				min = value
-				max = value
-			} else if filter.OP == database.GT || filter.OP == database.GTE {
-				min = value
-			} else if filter.OP == database.LT || filter.OP == database.LTE {
-				max = value
-			}
-
-			p := &executePlan{
-				key: key,
-				min: min,
-				max: max,
-			}
-
-			if pre == nil {
-				plan = p
+				if pre != nil {
+					pre.next = p
+				} else {
+					root = p
+				}
+				pre = p
 			} else {
-				pre.next = p
+				value := filter.Value
+
+				var min primitive.Value
+				var max primitive.Value
+				if filter.OP == database.EQ {
+					min = value
+					max = value
+				} else if filter.OP == database.GT || filter.OP == database.GTE {
+					min = value
+				} else if filter.OP == database.LT || filter.OP == database.LTE {
+					max = value
+				}
+
+				p := &executePlan{
+					key: key,
+					min: min,
+					max: max,
+				}
+
+				if pre != nil {
+					pre.next = p
+				} else {
+					root = p
+				}
+				plan = root
+				break
 			}
-			pre = p
 		}
 	}
 

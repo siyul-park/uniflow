@@ -275,6 +275,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	if plan != nil {
 		sector, ok := c.section.Scan(plan.key, plan.min, plan.max)
+		plan = plan.next
 		for plan != nil && ok {
 			sector, ok = sector.Scan(plan.key, plan.min, plan.max)
 			plan = plan.next
