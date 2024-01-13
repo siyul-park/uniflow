@@ -142,25 +142,23 @@ func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	}
 }
 
-func (s *Section) Scan(key string, min, max primitive.Value) (*Sector, bool) {
+func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	for i, constraint := range s.constraints {
-		if len(constraint.Keys) == 0 {
+		if constraint.Name != name {
 			continue
 		}
 
-		if constraint.Keys[0] == key {
-			return &Sector{
-				data:  s.data,
-				keys:  constraint.Keys[1:],
-				index: s.indexes[i],
-				min:   min,
-				max:   max,
-				mu:    s.mu,
-			}, true
-		}
+		return &Sector{
+			data:  s.data,
+			keys:  constraint.Keys[1:],
+			index: s.indexes[i],
+			min:   min,
+			max:   max,
+			mu:    s.mu,
+		}, true
 	}
 
 	return nil, false
