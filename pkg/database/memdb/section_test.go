@@ -88,7 +88,6 @@ func TestSection_Range(t *testing.T) {
 	count := 0
 	s.Range(func(d *primitive.Map) bool {
 		assert.Equal(t, doc, d)
-
 		count += 1
 		return true
 	})
@@ -107,6 +106,14 @@ func TestSection_Scan(t *testing.T) {
 	child, ok := s.Scan(keyID.String(), doc.GetOr(keyID, nil), doc.GetOr(keyID, nil))
 	assert.True(t, ok)
 	assert.NotNil(t, child)
+
+	count := 0
+	child.Range(func(d *primitive.Map) bool {
+		assert.Equal(t, doc, d)
+		count += 1
+		return true
+	})
+	assert.Equal(t, 1, count)
 }
 
 func TestSection_Drop(t *testing.T) {

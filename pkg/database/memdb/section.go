@@ -153,6 +153,7 @@ func (s *Section) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 
 		if constraint.Keys[0] == key {
 			return &Sector{
+				data:  s.data,
 				keys:  constraint.Keys[1:],
 				index: s.indexes[i],
 				min:   min,
