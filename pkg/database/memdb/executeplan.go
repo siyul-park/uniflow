@@ -38,50 +38,9 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 		}
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
-
-		var root *executePlan
-		var pre *executePlan
-
-		for _, key := range keys {
-			if key != filter.Key {
-				p := &executePlan{
-					key: key,
-				}
-
-				if pre != nil {
-					pre.next = p
-				} else {
-					root = p
-				}
-				pre = p
-			} else {
-				var min primitive.Value
-				var max primitive.Value
-				for _, v := range value.Values() {
-					if min == nil || primitive.Compare(min, v) > 0 {
-						min = v
-					}
-					if max == nil || primitive.Compare(max, v) < 0 {
-						max = v
-					}
-				}
-
-				p := &executePlan{
-					key: key,
-					min: min,
-					max: max,
-				}
-
-				if pre != nil {
-					pre.next = p
-				} else {
-					root = p
-				}
-				plan = root
-				break
-			}
+		for _, v := range value.Values() {
+			plan = plan.or(buildExecutePlan(keys, database.Where(filter.Key).EQ(v)))
 		}
-
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var root *executePlan
 		var pre *executePlan
