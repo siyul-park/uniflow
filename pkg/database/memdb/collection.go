@@ -252,18 +252,18 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 	}
 
-	match := parseFilter(filter)
-
 	fullScan := true
+
 	var plan *executePlan
 	for _, constraint := range c.section.Constraints() {
-		if p := buildExecutePlan(constraint.Keys, filter); p != nil {
+		if plan = buildExecutePlan(constraint.Keys, filter); plan != nil {
+			plan.key = constraint.Name
 			fullScan = constraint.Match != nil
-			p.key = constraint.Name
-			plan = p
 			break
 		}
 	}
+
+	match := parseFilter(filter)
 
 	var docs []*primitive.Map
 	appendDocs := func(doc *primitive.Map) bool {
@@ -276,10 +276,12 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	if plan != nil {
 		sector, ok := c.section.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
+
 		for plan != nil && ok {
 			sector, ok = sector.Scan(plan.key, plan.min, plan.max)
 			plan = plan.next
 		}
+		
 		if ok {
 			sector.Range(appendDocs)
 		} else {
