@@ -111,7 +111,7 @@ func (s *Sector) inRange(key primitive.Value) bool {
 	min := s.min
 	max := s.max
 
-	return (min == nil || primitive.Compare(key, min) >= 0) && primitive.Compare(key, min) >= 0 && (max == nil || primitive.Compare(key, min) >= 0 && primitive.Compare(key, max) <= 0)
+	return (min == nil || primitive.Compare(key, min) >= 0) && (max == nil || primitive.Compare(key, max) <= 0)
 }
 
 func merge(x, y *treemap.Map) *treemap.Map {
