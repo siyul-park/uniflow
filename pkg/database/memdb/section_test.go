@@ -77,6 +77,9 @@ func TestSection_Delete(t *testing.T) {
 }
 
 func TestSection_Range(t *testing.T) {
+	t.Run("Single", func(t *testing.T) {
+
+	})
 	s := newSection()
 
 	doc := primitive.NewMap(
@@ -95,25 +98,66 @@ func TestSection_Range(t *testing.T) {
 }
 
 func TestSection_Scan(t *testing.T) {
-	s := newSection()
+	t.Run("Single", func(t *testing.T) {
+		s := newSection()
 
-	doc := primitive.NewMap(
-		keyID, primitive.NewString(faker.UUIDHyphenated()),
-	)
+		doc := primitive.NewMap(
+			keyID, primitive.NewString(faker.UUIDHyphenated()),
+		)
 
-	_, _ = s.Set(doc)
+		_, _ = s.Set(doc)
 
-	child, ok := s.Scan(keyID.String(), doc.GetOr(keyID, nil), doc.GetOr(keyID, nil))
-	assert.True(t, ok)
-	assert.NotNil(t, child)
+		child, ok := s.Scan(keyID.String(), doc.GetOr(keyID, nil), doc.GetOr(keyID, nil))
+		assert.True(t, ok)
+		assert.NotNil(t, child)
 
-	count := 0
-	child.Range(func(d *primitive.Map) bool {
-		assert.Equal(t, doc, d)
-		count += 1
-		return true
+		count := 0
+		child.Range(func(d *primitive.Map) bool {
+			assert.Equal(t, doc, d)
+			count += 1
+			return true
+		})
+		assert.Equal(t, 1, count)
 	})
-	assert.Equal(t, 1, count)
+
+	t.Run("Many", func(t *testing.T) {
+		s := newSection()
+
+		constraintName := faker.UUIDHyphenated()
+		keyDepth1 := primitive.NewString(faker.UUIDHyphenated())
+		keyDepth2 := primitive.NewString(faker.UUIDHyphenated())
+
+		s.AddConstraint(Constraint{
+			Name:   constraintName,
+			Keys:   []string{keyDepth1.String(), keyDepth2.String()},
+			Unique: true,
+			Match:  func(_ *primitive.Map) bool { return true },
+		})
+
+		doc := primitive.NewMap(
+			keyID, primitive.NewString(faker.UUIDHyphenated()),
+			keyDepth1, primitive.NewString(faker.UUIDHyphenated()),
+			keyDepth2, primitive.NewString(faker.UUIDHyphenated()),
+		)
+
+		_, _ = s.Set(doc)
+
+		child1, ok := s.Scan(keyDepth1.String(), doc.GetOr(keyDepth1, nil), doc.GetOr(keyDepth1, nil))
+		assert.True(t, ok)
+		assert.NotNil(t, child1)
+
+		child2, ok := child1.Scan(keyDepth2.String(), doc.GetOr(keyDepth2, nil), doc.GetOr(keyDepth2, nil))
+		assert.True(t, ok)
+		assert.NotNil(t, child2)
+
+		count := 0
+		child2.Range(func(d *primitive.Map) bool {
+			assert.Equal(t, doc, d)
+			count += 1
+			return true
+		})
+		assert.Equal(t, 1, count)
+	})
 }
 
 func TestSection_Drop(t *testing.T) {

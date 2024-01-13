@@ -17,11 +17,37 @@ type Sector struct {
 	mu    *sync.RWMutex
 }
 
+func (s *Sector) Range(f func(doc *primitive.Map) bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	sector := s
+	for len(sector.keys) > 0 {
+		sector, _ = sector.Scan(sector.keys[0], nil, nil)
+	}
+
+	iterator := s.index.Iterator()
+	for iterator.Next() {
+		key := iterator.Key().(primitive.Value)
+
+		if !sector.inRange(key) {
+			continue
+		}
+
+		doc, ok := sector.data.Get(key)
+		if ok {
+			if !f(doc.(*primitive.Map)) {
+				break
+			}
+		}
+	}
+}
+
 func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if len(s.keys) == 0 || s.keys[len(s.keys)-1] != key {
+	if len(s.keys) == 0 || s.keys[0] != key {
 		return nil, false
 	}
 
@@ -47,32 +73,6 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		max:   max,
 		mu:    s.mu,
 	}, true
-}
-
-func (s *Sector) Range(f func(doc *primitive.Map) bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	sector := s
-	for len(sector.keys) > 0 {
-		sector, _ = sector.Scan(sector.keys[0], nil, nil)
-	}
-
-	iterator := s.index.Iterator()
-	for iterator.Next() {
-		key := iterator.Key().(primitive.Value)
-
-		if !sector.inRange(key) {
-			continue
-		}
-
-		doc, ok := sector.data.Get(key)
-		if ok {
-			if !f(doc.(*primitive.Map)) {
-				break
-			}
-		}
-	}
 }
 
 func (s *Sector) inRange(key primitive.Value) bool {
