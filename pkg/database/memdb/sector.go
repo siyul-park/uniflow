@@ -26,24 +26,22 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.Scan(sector.keys[0], nil, nil)
 	}
 
-	for iterator := s.index.Iterator(); iterator.Next(); {
+	if sector.min != nil && sector.max != nil && sector.min == sector.max {
+		value, ok := sector.index.Get(sector.min)
+		if !ok {
+			return
+		}
+		sector.each(value.(*treemap.Map), f)
+		return
+	}
+
+	for iterator := sector.index.Iterator(); iterator.Next(); {
 		key := iterator.Key().(primitive.Value)
 		value := iterator.Value().(*treemap.Map)
-
 		if !sector.inRange(key) {
 			continue
 		}
-
-		for iterator := value.Iterator(); iterator.Next(); {
-			key := iterator.Key().(primitive.Value)
-
-			doc, ok := sector.data.Get(key)
-			if ok {
-				if !f(doc.(*primitive.Map)) {
-					return
-				}
-			}
-		}
+		sector.each(value, f)
 	}
 }
 
@@ -57,14 +55,27 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 
 	index := treemap.NewWith(comparator)
 
+	if s.min != nil && s.max != nil && s.min == s.max {
+		value, ok := s.index.Get(s.min)
+		if !ok {
+			return nil, false
+		}
+		return &Sector{
+			data:  s.data,
+			keys:  s.keys[1:],
+			index: value.(*treemap.Map),
+			min:   min,
+			max:   max,
+			mu:    s.mu,
+		}, true
+	}
+
 	for iterator := s.index.Iterator(); iterator.Next(); {
 		key := iterator.Key().(primitive.Value)
 		value := iterator.Value().(*treemap.Map)
-
 		if !s.inRange(key) {
 			continue
 		}
-
 		value.Each(func(key, value any) {
 			v, _ := value.(*treemap.Map)
 			if old, ok := index.Get(key); ok {
@@ -82,6 +93,18 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		max:   max,
 		mu:    s.mu,
 	}, true
+}
+
+func (s *Sector) each(value *treemap.Map, f func(doc *primitive.Map) bool) {
+	for iterator := value.Iterator(); iterator.Next(); {
+		key := iterator.Key().(primitive.Value)
+		doc, ok := s.data.Get(key)
+		if ok {
+			if !f(doc.(*primitive.Map)) {
+				return
+			}
+		}
+	}
 }
 
 func (s *Sector) inRange(key primitive.Value) bool {

@@ -127,7 +127,7 @@ func TestSection_Scan(t *testing.T) {
 		s.AddConstraint(Constraint{
 			Name:   constraintName,
 			Keys:   []string{keyDepth1.String(), keyDepth2.String()},
-			Unique: true,
+			Unique: false,
 			Match:  func(_ *primitive.Map) bool { return true },
 		})
 
