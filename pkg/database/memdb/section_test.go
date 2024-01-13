@@ -95,6 +95,20 @@ func TestSection_Range(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
+func TestSection_Scan(t *testing.T) {
+	s := newSection()
+
+	doc := primitive.NewMap(
+		keyID, primitive.NewString(faker.UUIDHyphenated()),
+	)
+
+	_, _ = s.Set(doc)
+
+	child, ok := s.Scan(keyID.String(), doc.GetOr(keyID, nil), doc.GetOr(keyID, nil))
+	assert.True(t, ok)
+	assert.NotNil(t, child)
+}
+
 func TestSection_Drop(t *testing.T) {
 	s := newSection()
 
