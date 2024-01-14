@@ -9,12 +9,71 @@ import (
 )
 
 type Sector struct {
-	data  maps.Map
 	keys  []string
+	data  maps.Map
 	index *treemap.Map
-	min   primitive.Value
-	max   primitive.Value
 	mu    *sync.RWMutex
+}
+
+func newSector(
+	keys []string,
+	data maps.Map,
+	index *treemap.Map,
+	min primitive.Value,
+	max primitive.Value,
+	mu *sync.RWMutex,
+) *Sector {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	if len(keys) == 0 {
+		return &Sector{
+			data:  data,
+			index: index,
+			mu:    mu,
+		}
+	}
+
+	if min != nil && max != nil && primitive.Compare(min, max) == 0 {
+		value, ok := index.Get(min)
+		if !ok {
+			value = treemap.NewWith(comparator)
+		}
+
+		return &Sector{
+			data:  data,
+			keys:  keys[1:],
+			index: value.(*treemap.Map),
+			mu:    mu,
+		}
+	}
+
+	child := treemap.NewWith(comparator)
+
+	for iterator := index.Iterator(); iterator.Next(); {
+		key := iterator.Key().(primitive.Value)
+		value := iterator.Value().(*treemap.Map)
+
+		if (min != nil && primitive.Compare(key, min) < 0) || (max != nil && primitive.Compare(key, max) > 0) {
+			continue
+		}
+
+		value.Each(func(key, value any) {
+			if v, ok := value.(*treemap.Map); ok {
+				if old, ok := child.Get(key); ok {
+					value = mergeMap(old.(*treemap.Map), v)
+				}
+			}
+			child.Put(key, value)
+		})
+	}
+
+	return &Sector{
+		data:  data,
+		keys:  keys[1:],
+		index: child,
+		mu:    mu,
+	}
 }
 
 func (s *Sector) Range(f func(doc *primitive.Map) bool) {
@@ -26,22 +85,15 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.Scan(sector.keys[0], nil, nil)
 	}
 
-	if v := sector.single(); v != nil {
-		value, ok := sector.index.Get(v)
-		if !ok {
-			return
-		}
-		sector.each(value.(*treemap.Map), f)
-		return
-	}
-
 	for iterator := sector.index.Iterator(); iterator.Next(); {
-		key := iterator.Key().(primitive.Value)
-		value := iterator.Value().(*treemap.Map)
-		if !sector.inRange(key) {
-			continue
+		key, _ := iterator.Key().(primitive.Value)
+
+		doc, ok := s.data.Get(key)
+		if ok {
+			if !f(doc.(*primitive.Map)) {
+				return
+			}
 		}
-		sector.each(value, f)
 	}
 }
 
@@ -52,76 +104,10 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 	if len(s.keys) == 0 || s.keys[0] != key {
 		return nil, false
 	}
-
-	if v := s.single(); v != nil {
-		value, ok := s.index.Get(v)
-		if !ok {
-			value = treemap.NewWith(comparator)
-		}
-		return &Sector{
-			data:  s.data,
-			keys:  s.keys[1:],
-			index: value.(*treemap.Map),
-			min:   min,
-			max:   max,
-			mu:    s.mu,
-		}, true
-	}
-
-	index := treemap.NewWith(comparator)
-
-	for iterator := s.index.Iterator(); iterator.Next(); {
-		key := iterator.Key().(primitive.Value)
-		value := iterator.Value().(*treemap.Map)
-		if !s.inRange(key) {
-			continue
-		}
-		value.Each(func(key, value any) {
-			v, _ := value.(*treemap.Map)
-			if old, ok := index.Get(key); ok {
-				v = s.mergeMap(old.(*treemap.Map), v)
-			}
-			index.Put(key, v)
-		})
-	}
-
-	return &Sector{
-		data:  s.data,
-		keys:  s.keys[1:],
-		index: index,
-		min:   min,
-		max:   max,
-		mu:    s.mu,
-	}, true
+	return newSector(s.keys, s.data, s.index, min, max, s.mu), true
 }
 
-func (s *Sector) each(value *treemap.Map, f func(doc *primitive.Map) bool) {
-	for iterator := value.Iterator(); iterator.Next(); {
-		key := iterator.Key().(primitive.Value)
-		doc, ok := s.data.Get(key)
-		if ok {
-			if !f(doc.(*primitive.Map)) {
-				return
-			}
-		}
-	}
-}
-
-func (s *Sector) single() primitive.Value {
-	if s.min != nil && s.max != nil && primitive.Compare(s.min, s.max) == 0 {
-		return s.min
-	}
-	return nil
-}
-
-func (s *Sector) inRange(key primitive.Value) bool {
-	min := s.min
-	max := s.max
-
-	return (min == nil || primitive.Compare(key, min) >= 0) && (max == nil || primitive.Compare(key, max) <= 0)
-}
-
-func (s *Sector) mergeMap(x, y *treemap.Map) *treemap.Map {
+func mergeMap(x, y *treemap.Map) *treemap.Map {
 	z := treemap.NewWith(comparator)
 
 	x.Each(func(key, value any) {
@@ -131,7 +117,7 @@ func (s *Sector) mergeMap(x, y *treemap.Map) *treemap.Map {
 		if old, ok := z.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					value = s.mergeMap(old, v)
+					value = mergeMap(old, v)
 				}
 			}
 		}

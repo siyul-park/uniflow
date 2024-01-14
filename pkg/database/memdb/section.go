@@ -158,14 +158,14 @@ func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
 			continue
 		}
 
-		return &Sector{
-			data:  s.data,
-			keys:  constraint.Keys[1:],
-			index: s.indexes[i],
-			min:   min,
-			max:   max,
-			mu:    s.mu,
-		}, true
+		return newSector(
+			constraint.Keys,
+			s.data,
+			s.indexes[i],
+			min,
+			max,
+			s.mu,
+		), true
 	}
 
 	return nil, false
