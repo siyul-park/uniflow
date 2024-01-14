@@ -25,12 +25,11 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 	}
 
 	for iterator := sector.index.Iterator(); iterator.Next(); {
-		key, _ := iterator.Key().(primitive.Value)
-
+		key := iterator.Key()
 		doc, ok := s.data.Get(key)
 		if ok {
 			if !f(doc.(*primitive.Map)) {
-				return
+				break
 			}
 		}
 	}
@@ -60,15 +59,15 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 
 	index := treemap.NewWith(comparator)
 
-	for iterator := s.index.Iterator(); iterator.Next(); {
-		key := iterator.Key().(primitive.Value)
-		value := iterator.Value().(*treemap.Map)
+	s.index.Each(func(key, value any) {
+		k := key.(primitive.Value)
+		v := value.(*treemap.Map)
 
-		if (min != nil && primitive.Compare(key, min) < 0) || (max != nil && primitive.Compare(key, max) > 0) {
-			continue
+		if (min != nil && primitive.Compare(k, min) < 0) || (max != nil && primitive.Compare(k, max) > 0) {
+			return
 		}
 
-		value.Each(func(key, value any) {
+		v.Each(func(key, value any) {
 			if v, ok := value.(*treemap.Map); ok {
 				if old, ok := index.Get(key); ok {
 					value = mergeMap(old.(*treemap.Map), v)
@@ -76,7 +75,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 			}
 			index.Put(key, value)
 		})
-	}
+	})
 
 	return &Sector{
 		data:  s.data,
