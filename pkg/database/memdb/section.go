@@ -216,7 +216,6 @@ func (s *Section) index(doc *primitive.Map) error {
 				child.Put(id, nil)
 
 				if constraint.Unique && child.Size() > 1 {
-					child.Remove(id)
 					s.unindex(doc)
 					return errors.WithStack(ErrIndexConflict)
 				}
