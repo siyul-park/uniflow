@@ -116,9 +116,6 @@ func (e *executePlan) and(other *executePlan) *executePlan {
 	}
 
 	z.next = e.next.and(other.next)
-	if e.next != other.next && z.next == nil {
-		return nil
-	}
 
 	return z
 }
