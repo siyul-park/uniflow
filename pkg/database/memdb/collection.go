@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
@@ -265,12 +266,12 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	match := parseFilter(filter)
 
-	var docs []*primitive.Map
+	docMap := treemap.NewWith(comparator)
 	appendDocs := func(doc *primitive.Map) bool {
 		if match == nil || match(doc) {
-			docs = append(docs, doc)
+			docMap.Put(doc.GetOr(keyID, nil), doc)
 		}
-		return len(sorts) > 0 || limit < 0 || len(docs) < limit+skip
+		return len(sorts) > 0 || limit < 0 || docMap.Size() < limit+skip
 	}
 
 	if plan != nil {
@@ -291,6 +292,11 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	if fullScan {
 		c.section.Range(appendDocs)
+	}
+
+	var docs []*primitive.Map
+	for _, doc := range docMap.Values() {
+		docs = append(docs, doc.(*primitive.Map))
 	}
 
 	if skip >= len(docs) {
