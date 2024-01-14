@@ -3,7 +3,6 @@ package memdb
 import (
 	"sync"
 
-	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
@@ -11,10 +10,10 @@ import (
 )
 
 type Section struct {
-	data        maps.Map
+	data        *treemap.Map
 	indexes     []*treemap.Map
 	constraints []Constraint
-	mu          *sync.RWMutex
+	mu          sync.RWMutex
 }
 
 type Constraint struct {
@@ -36,10 +35,7 @@ var comparator = utils.Comparator(func(a, b any) int {
 })
 
 func newSection() *Section {
-	s := &Section{
-		data: treemap.NewWith(comparator),
-		mu:   &sync.RWMutex{},
-	}
+	s := &Section{data: treemap.NewWith(comparator)}
 
 	primary := Constraint{
 		Keys:    []string{"id"},
@@ -142,8 +138,8 @@ func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for _, doc := range s.data.Values() {
-		if !f(doc.(*primitive.Map)) {
+	for iterator := s.data.Iterator(); iterator.Next(); {
+		if !f(iterator.Value().(*primitive.Map)) {
 			break
 		}
 	}
@@ -162,7 +158,7 @@ func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
 			keys:  constraint.Keys,
 			data:  s.data,
 			index: s.indexes[i],
-			mu:    s.mu,
+			mu:    &s.mu,
 		}
 		return sector.Scan(constraint.Keys[0], min, max)
 	}
@@ -235,7 +231,7 @@ func (s *Section) unindex(doc *primitive.Map) {
 
 	for i, constraint := range s.constraints {
 		cur := s.indexes[i]
-		
+
 		paths := []*treemap.Map{cur}
 		keys := []primitive.Value{nil}
 

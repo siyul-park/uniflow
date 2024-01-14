@@ -3,14 +3,13 @@ package memdb
 import (
 	"sync"
 
-	"github.com/emirpasic/gods/maps"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 type Sector struct {
 	keys  []string
-	data  maps.Map
+	data  *treemap.Map
 	index *treemap.Map
 	mu    *sync.RWMutex
 }
@@ -70,7 +69,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		v.Each(func(key, value any) {
 			if v, ok := value.(*treemap.Map); ok {
 				if old, ok := index.Get(key); ok {
-					value = mergeMap(old.(*treemap.Map), v)
+					value = deepMerge(old.(*treemap.Map), v)
 				}
 			}
 			index.Put(key, value)
@@ -85,7 +84,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 	}, true
 }
 
-func mergeMap(x, y *treemap.Map) *treemap.Map {
+func deepMerge(x, y *treemap.Map) *treemap.Map {
 	z := treemap.NewWith(comparator)
 
 	x.Each(func(key, value any) {
@@ -95,7 +94,7 @@ func mergeMap(x, y *treemap.Map) *treemap.Map {
 		if old, ok := z.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					value = mergeMap(old, v)
+					value = deepMerge(old, v)
 				}
 			}
 		}
