@@ -26,8 +26,8 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.Scan(sector.keys[0], nil, nil)
 	}
 
-	if sector.min != nil && sector.max != nil && primitive.Compare(sector.min, sector.max) == 0 {
-		value, ok := sector.index.Get(sector.min)
+	if v := sector.single(); v != nil {
+		value, ok := sector.index.Get(v)
 		if !ok {
 			return
 		}
@@ -53,8 +53,8 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		return nil, false
 	}
 
-	if s.min != nil && s.max != nil && primitive.Compare(s.min, s.max) == 0 {
-		value, ok := s.index.Get(s.min)
+	if v := s.single(); v != nil {
+		value, ok := s.index.Get(v)
 		if !ok {
 			value = treemap.NewWith(comparator)
 		}
@@ -79,7 +79,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		value.Each(func(key, value any) {
 			v, _ := value.(*treemap.Map)
 			if old, ok := index.Get(key); ok {
-				v = s.merge(old.(*treemap.Map), v)
+				v = s.mergeMap(old.(*treemap.Map), v)
 			}
 			index.Put(key, v)
 		})
@@ -107,6 +107,13 @@ func (s *Sector) each(value *treemap.Map, f func(doc *primitive.Map) bool) {
 	}
 }
 
+func (s *Sector) single() primitive.Value {
+	if s.min != nil && s.max != nil && primitive.Compare(s.min, s.max) == 0 {
+		return s.min
+	}
+	return nil
+}
+
 func (s *Sector) inRange(key primitive.Value) bool {
 	min := s.min
 	max := s.max
@@ -114,7 +121,7 @@ func (s *Sector) inRange(key primitive.Value) bool {
 	return (min == nil || primitive.Compare(key, min) >= 0) && (max == nil || primitive.Compare(key, max) <= 0)
 }
 
-func (s *Sector) merge(x, y *treemap.Map) *treemap.Map {
+func (s *Sector) mergeMap(x, y *treemap.Map) *treemap.Map {
 	z := treemap.NewWith(comparator)
 
 	x.Each(func(key, value any) {
@@ -124,7 +131,7 @@ func (s *Sector) merge(x, y *treemap.Map) *treemap.Map {
 		if old, ok := z.Get(key); ok {
 			if old, ok := old.(*treemap.Map); ok {
 				if v, ok := value.(*treemap.Map); ok {
-					value = s.merge(old, v)
+					value = s.mergeMap(old, v)
 				}
 			}
 		}
