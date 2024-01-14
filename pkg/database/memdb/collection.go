@@ -259,7 +259,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	for _, constraint := range c.section.Constraints() {
 		if plan = newExecutePlan(constraint.Keys, filter); plan != nil {
 			plan.key = constraint.Name
-			fullScan = constraint.Match != nil
+			fullScan = constraint.Partial != nil
 			break
 		}
 	}

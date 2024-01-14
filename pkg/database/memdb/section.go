@@ -18,10 +18,10 @@ type Section struct {
 }
 
 type Constraint struct {
-	Name   string
-	Keys   []string
-	Unique bool
-	Match  func(*primitive.Map) bool
+	Name    string
+	Keys    []string
+	Unique  bool
+	Partial func(*primitive.Map) bool
 }
 
 var (
@@ -42,10 +42,10 @@ func newSection() *Section {
 	}
 
 	primary := Constraint{
-		Keys:   []string{"id"},
-		Name:   "_id",
-		Unique: true,
-		Match:  nil,
+		Keys:    []string{"id"},
+		Name:    "_id",
+		Unique:  true,
+		Partial: nil,
 	}
 
 	s.constraints = append(s.constraints, primary)
@@ -194,7 +194,8 @@ func (s *Section) index(doc *primitive.Map) error {
 	}
 
 	for i, constraint := range s.constraints {
-		if constraint.Match != nil && !constraint.Match(doc) {
+		partial := constraint.Partial
+		if partial != nil && !partial(doc) {
 			continue
 		}
 
@@ -234,7 +235,8 @@ func (s *Section) unindex(doc *primitive.Map) {
 
 	for i, constraint := range s.constraints {
 		cur := s.indexes[i]
-		nodes := []*treemap.Map{cur}
+		
+		paths := []*treemap.Map{cur}
 		keys := []primitive.Value{nil}
 
 		for i, k := range constraint.Keys {
@@ -243,13 +245,13 @@ func (s *Section) unindex(doc *primitive.Map) {
 			c, _ := cur.Get(value)
 			child, ok := c.(*treemap.Map)
 			if !ok {
-				nodes = nil
+				paths = nil
 				keys = nil
 
 				break
 			}
 
-			nodes = append(nodes, child)
+			paths = append(paths, child)
 			keys = append(keys, value)
 
 			if i < len(constraint.Keys)-1 {
@@ -259,11 +261,11 @@ func (s *Section) unindex(doc *primitive.Map) {
 			}
 		}
 
-		for i := len(nodes) - 1; i >= 0; i-- {
-			child := nodes[i]
+		for i := len(paths) - 1; i >= 0; i-- {
+			child := paths[i]
 
 			if child.Empty() && i > 0 {
-				parent := nodes[i-1]
+				parent := paths[i-1]
 				key := keys[i]
 
 				parent.Remove(key)

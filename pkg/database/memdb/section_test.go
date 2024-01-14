@@ -12,10 +12,10 @@ func TestSection_AddConstraint(t *testing.T) {
 	s := newSection()
 
 	c := Constraint{
-		Name:   faker.UUIDHyphenated(),
-		Keys:   []string{"_id"},
-		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Name:    faker.UUIDHyphenated(),
+		Keys:    []string{"_id"},
+		Unique:  true,
+		Partial: func(_ *primitive.Map) bool { return true },
 	}
 
 	err := s.AddConstraint(c)
@@ -29,10 +29,10 @@ func TestSection_DropConstraint(t *testing.T) {
 	s := newSection()
 
 	c := Constraint{
-		Name:   faker.UUIDHyphenated(),
-		Keys:   []string{"_id"},
-		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Name:    faker.UUIDHyphenated(),
+		Keys:    []string{"_id"},
+		Unique:  true,
+		Partial: func(_ *primitive.Map) bool { return true },
 	}
 
 	err := s.DropConstraint(c.Name)
