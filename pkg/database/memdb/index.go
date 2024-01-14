@@ -46,10 +46,10 @@ func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
 	defer v.mu.Unlock()
 
 	constraint := Constraint{
-		Name:   index.Name,
-		Keys:   index.Keys,
-		Unique: index.Unique,
-		Match:  parseFilter(index.Partial),
+		Name:    index.Name,
+		Keys:    index.Keys,
+		Unique:  index.Unique,
+		Partial: parseFilter(index.Partial),
 	}
 
 	v.models[index.Name] = index

@@ -12,10 +12,10 @@ func TestSection_AddConstraint(t *testing.T) {
 	s := newSection()
 
 	c := Constraint{
-		Name:   faker.UUIDHyphenated(),
-		Keys:   []string{"_id"},
-		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Name:    faker.UUIDHyphenated(),
+		Keys:    []string{"_id"},
+		Unique:  true,
+		Partial: func(_ *primitive.Map) bool { return true },
 	}
 
 	err := s.AddConstraint(c)
@@ -29,10 +29,10 @@ func TestSection_DropConstraint(t *testing.T) {
 	s := newSection()
 
 	c := Constraint{
-		Name:   faker.UUIDHyphenated(),
-		Keys:   []string{"_id"},
-		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Name:    faker.UUIDHyphenated(),
+		Keys:    []string{"_id"},
+		Unique:  true,
+		Partial: func(_ *primitive.Map) bool { return true },
 	}
 
 	err := s.DropConstraint(c.Name)
@@ -88,11 +88,136 @@ func TestSection_Range(t *testing.T) {
 	count := 0
 	s.Range(func(d *primitive.Map) bool {
 		assert.Equal(t, doc, d)
-
 		count += 1
 		return true
 	})
 	assert.Equal(t, 1, count)
+}
+
+func TestSection_Scan(t *testing.T) {
+	t.Run("Flat", func(t *testing.T) {
+		t.Run("FastPath", func(t *testing.T) {
+			s := newSection()
+
+			doc := primitive.NewMap(
+				keyID, primitive.NewString(faker.UUIDHyphenated()),
+			)
+
+			_, _ = s.Set(doc)
+
+			child, ok := s.Scan("_id", doc.GetOr(keyID, nil), doc.GetOr(keyID, nil))
+			assert.True(t, ok)
+			assert.NotNil(t, child)
+
+			count := 0
+			child.Range(func(d *primitive.Map) bool {
+				assert.Equal(t, doc, d)
+				count += 1
+				return true
+			})
+			assert.Equal(t, 1, count)
+		})
+
+		t.Run("SlowPath", func(t *testing.T) {
+			s := newSection()
+
+			doc := primitive.NewMap(
+				keyID, primitive.NewString(faker.UUIDHyphenated()),
+			)
+
+			_, _ = s.Set(doc)
+
+			child, ok := s.Scan("_id", nil, nil)
+			assert.True(t, ok)
+			assert.NotNil(t, child)
+
+			count := 0
+			child.Range(func(d *primitive.Map) bool {
+				assert.Equal(t, doc, d)
+				count += 1
+				return true
+			})
+			assert.Equal(t, 1, count)
+		})
+	})
+
+	t.Run("Deep", func(t *testing.T) {
+		t.Run("FastPath", func(t *testing.T) {
+			s := newSection()
+
+			constraintName := faker.UUIDHyphenated()
+			keyDepth1 := primitive.NewString(faker.UUIDHyphenated())
+			keyDepth2 := primitive.NewString(faker.UUIDHyphenated())
+
+			s.AddConstraint(Constraint{
+				Name:   constraintName,
+				Keys:   []string{keyDepth1.String(), keyDepth2.String()},
+				Unique: false,
+			})
+
+			doc := primitive.NewMap(
+				keyID, primitive.NewString(faker.UUIDHyphenated()),
+				keyDepth1, primitive.NewString(faker.UUIDHyphenated()),
+				keyDepth2, primitive.NewString(faker.UUIDHyphenated()),
+			)
+
+			_, _ = s.Set(doc)
+
+			child1, ok := s.Scan(constraintName, doc.GetOr(keyDepth1, nil), doc.GetOr(keyDepth1, nil))
+			assert.True(t, ok)
+			assert.NotNil(t, child1)
+
+			child2, ok := child1.Scan(keyDepth2.String(), doc.GetOr(keyDepth2, nil), doc.GetOr(keyDepth2, nil))
+			assert.True(t, ok)
+			assert.NotNil(t, child2)
+
+			count := 0
+			child2.Range(func(d *primitive.Map) bool {
+				assert.Equal(t, doc, d)
+				count += 1
+				return true
+			})
+			assert.Equal(t, 1, count)
+		})
+
+		t.Run("SlowPath", func(t *testing.T) {
+			s := newSection()
+
+			constraintName := faker.UUIDHyphenated()
+			keyDepth1 := primitive.NewString(faker.UUIDHyphenated())
+			keyDepth2 := primitive.NewString(faker.UUIDHyphenated())
+
+			s.AddConstraint(Constraint{
+				Name:   constraintName,
+				Keys:   []string{keyDepth1.String(), keyDepth2.String()},
+				Unique: false,
+			})
+
+			doc := primitive.NewMap(
+				keyID, primitive.NewString(faker.UUIDHyphenated()),
+				keyDepth1, primitive.NewString(faker.UUIDHyphenated()),
+				keyDepth2, primitive.NewString(faker.UUIDHyphenated()),
+			)
+
+			_, _ = s.Set(doc)
+
+			child1, ok := s.Scan(constraintName, nil, nil)
+			assert.True(t, ok)
+			assert.NotNil(t, child1)
+
+			child2, ok := child1.Scan(keyDepth2.String(), nil, nil)
+			assert.True(t, ok)
+			assert.NotNil(t, child2)
+
+			count := 0
+			child2.Range(func(d *primitive.Map) bool {
+				assert.Equal(t, doc, d)
+				count += 1
+				return true
+			})
+			assert.Equal(t, 1, count)
+		})
+	})
 }
 
 func TestSection_Drop(t *testing.T) {

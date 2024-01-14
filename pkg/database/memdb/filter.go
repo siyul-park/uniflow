@@ -12,9 +12,7 @@ var numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 
 func parseFilter(filter *database.Filter) func(*primitive.Map) bool {
 	if filter == nil {
-		return func(_ *primitive.Map) bool {
-			return true
-		}
+		return nil
 	}
 
 	switch filter.OP {

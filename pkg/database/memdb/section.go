@@ -12,16 +12,16 @@ import (
 
 type Section struct {
 	data        maps.Map
-	indexes     []maps.Map
+	indexes     []*treemap.Map
 	constraints []Constraint
-	mu          sync.RWMutex
+	mu          *sync.RWMutex
 }
 
 type Constraint struct {
-	Name   string
-	Keys   []string
-	Unique bool
-	Match  func(*primitive.Map) bool
+	Name    string
+	Keys    []string
+	Unique  bool
+	Partial func(*primitive.Map) bool
 }
 
 var (
@@ -36,13 +36,16 @@ var comparator = utils.Comparator(func(a, b any) int {
 })
 
 func newSection() *Section {
-	s := &Section{data: treemap.NewWith(comparator)}
+	s := &Section{
+		data: treemap.NewWith(comparator),
+		mu:   &sync.RWMutex{},
+	}
 
 	primary := Constraint{
-		Keys:   []string{"id"},
-		Name:   "_id",
-		Unique: true,
-		Match:  func(_ *primitive.Map) bool { return true },
+		Keys:    []string{"id"},
+		Name:    "_id",
+		Unique:  true,
+		Partial: nil,
 	}
 
 	s.constraints = append(s.constraints, primary)
@@ -86,6 +89,13 @@ func (s *Section) DropConstraint(name string) error {
 	}
 
 	return nil
+}
+
+func (s *Section) Constraints() []Constraint {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.constraints[:]
 }
 
 func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
@@ -139,6 +149,27 @@ func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	}
 }
 
+func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for i, constraint := range s.constraints {
+		if constraint.Name != name {
+			continue
+		}
+
+		sector := &Sector{
+			keys:  constraint.Keys,
+			data:  s.data,
+			index: s.indexes[i],
+			mu:    s.mu,
+		}
+		return sector.Scan(constraint.Keys[0], min, max)
+	}
+
+	return nil, false
+}
+
 func (s *Section) Drop() []*primitive.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -163,7 +194,8 @@ func (s *Section) index(doc *primitive.Map) error {
 	}
 
 	for i, constraint := range s.constraints {
-		if !constraint.Match(doc) {
+		partial := constraint.Partial
+		if partial != nil && !partial(doc) {
 			continue
 		}
 
@@ -173,7 +205,7 @@ func (s *Section) index(doc *primitive.Map) error {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
 			c, _ := cur.Get(value)
-			child, ok := c.(maps.Map)
+			child, ok := c.(*treemap.Map)
 			if !ok {
 				child = treemap.NewWith(comparator)
 				cur.Put(value, child)
@@ -185,7 +217,6 @@ func (s *Section) index(doc *primitive.Map) error {
 				child.Put(id, nil)
 
 				if constraint.Unique && child.Size() > 1 {
-					child.Remove(id)
 					s.unindex(doc)
 					return errors.WithStack(ErrIndexConflict)
 				}
@@ -204,22 +235,23 @@ func (s *Section) unindex(doc *primitive.Map) {
 
 	for i, constraint := range s.constraints {
 		cur := s.indexes[i]
-		nodes := []maps.Map{cur}
+		
+		paths := []*treemap.Map{cur}
 		keys := []primitive.Value{nil}
 
 		for i, k := range constraint.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
 			c, _ := cur.Get(value)
-			child, ok := c.(maps.Map)
+			child, ok := c.(*treemap.Map)
 			if !ok {
-				nodes = nil
+				paths = nil
 				keys = nil
 
 				break
 			}
 
-			nodes = append(nodes, child)
+			paths = append(paths, child)
 			keys = append(keys, value)
 
 			if i < len(constraint.Keys)-1 {
@@ -229,11 +261,11 @@ func (s *Section) unindex(doc *primitive.Map) {
 			}
 		}
 
-		for i := len(nodes) - 1; i >= 0; i-- {
-			child := nodes[i]
+		for i := len(paths) - 1; i >= 0; i-- {
+			child := paths[i]
 
 			if child.Empty() && i > 0 {
-				parent := nodes[i-1]
+				parent := paths[i-1]
 				key := keys[i]
 
 				parent.Remove(key)
