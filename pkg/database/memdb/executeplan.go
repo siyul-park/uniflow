@@ -12,7 +12,7 @@ type executePlan struct {
 	next *executePlan
 }
 
-func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
+func newExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	if filter == nil {
 		return nil
 	}
@@ -22,16 +22,16 @@ func buildExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
-			plan = plan.and(buildExecutePlan(keys, child))
+			plan = plan.and(newExecutePlan(keys, child))
 		}
 	case database.OR:
 		for _, child := range filter.Children {
-			plan = plan.or(buildExecutePlan(keys, child))
+			plan = plan.or(newExecutePlan(keys, child))
 		}
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
 		for _, v := range value.Values() {
-			plan = plan.or(buildExecutePlan(keys, database.Where(filter.Key).EQ(v)))
+			plan = plan.or(newExecutePlan(keys, database.Where(filter.Key).EQ(v)))
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var root *executePlan
