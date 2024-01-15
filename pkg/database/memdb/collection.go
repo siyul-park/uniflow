@@ -253,6 +253,8 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 	}
 
+	match := parseFilter(filter)
+
 	fullScan := true
 
 	var plan *executionPlan
@@ -264,14 +266,12 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 	}
 
-	match := parseFilter(filter)
-
-	docMap := treemap.NewWith(comparator)
-	appendDocs := func(doc *primitive.Map) bool {
+	scan := treemap.NewWith(comparator)
+	appends := func(doc *primitive.Map) bool {
 		if match == nil || match(doc) {
-			docMap.Put(doc.GetOr(keyID, nil), doc)
+			scan.Put(doc.GetOr(keyID, nil), doc)
 		}
-		return len(sorts) > 0 || limit < 0 || docMap.Size() < limit+skip
+		return len(sorts) > 0 || limit < 0 || scan.Size() < limit+skip
 	}
 
 	if plan != nil {
@@ -284,18 +284,18 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 
 		if ok {
-			sector.Range(appendDocs)
+			sector.Range(appends)
 		} else {
 			fullScan = true
 		}
 	}
 
 	if fullScan {
-		c.section.Range(appendDocs)
+		c.section.Range(appends)
 	}
 
 	var docs []*primitive.Map
-	for _, doc := range docMap.Values() {
+	for _, doc := range scan.Values() {
 		docs = append(docs, doc.(*primitive.Map))
 	}
 

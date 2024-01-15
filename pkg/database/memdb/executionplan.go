@@ -34,21 +34,13 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).EQ(v)))
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
-		var root *executionPlan
 		var pre *executionPlan
-
 		for _, key := range keys {
+			var cur *executionPlan
 			if key != filter.Key {
-				p := &executionPlan{
+				cur = &executionPlan{
 					key: key,
 				}
-
-				if pre != nil {
-					pre.next = p
-				} else {
-					root = p
-				}
-				pre = p
 			} else {
 				value := filter.Value
 
@@ -63,20 +55,26 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 					max = value
 				}
 
-				p := &executionPlan{
+				cur = &executionPlan{
 					key: key,
 					min: min,
 					max: max,
 				}
+			}
 
-				if pre != nil {
-					pre.next = p
-				} else {
-					root = p
-				}
-				plan = root
+			if pre == nil {
+				plan = cur
+			} else {
+				pre.next = cur
+			}
+			pre = cur
+
+			if cur.min != nil || cur.max != nil {
 				break
 			}
+		}
+		if pre != nil && pre.min == nil && pre.max == nil {
+			plan = nil
 		}
 	}
 
