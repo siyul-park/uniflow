@@ -5,41 +5,41 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-type executePlan struct {
+type executionPlan struct {
 	key  string
 	min  primitive.Value
 	max  primitive.Value
-	next *executePlan
+	next *executionPlan
 }
 
-func newExecutePlan(keys []string, filter *database.Filter) *executePlan {
+func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	if filter == nil {
 		return nil
 	}
 
-	var plan *executePlan
+	var plan *executionPlan
 
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
-			plan = plan.and(newExecutePlan(keys, child))
+			plan = plan.and(newExecutionPlan(keys, child))
 		}
 	case database.OR:
 		for _, child := range filter.Children {
-			plan = plan.or(newExecutePlan(keys, child))
+			plan = plan.or(newExecutionPlan(keys, child))
 		}
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
 		for _, v := range value.Values() {
-			plan = plan.or(newExecutePlan(keys, database.Where(filter.Key).EQ(v)))
+			plan = plan.or(newExecutionPlan(keys, database.Where(filter.Key).EQ(v)))
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
-		var root *executePlan
-		var pre *executePlan
+		var root *executionPlan
+		var pre *executionPlan
 
 		for _, key := range keys {
 			if key != filter.Key {
-				p := &executePlan{
+				p := &executionPlan{
 					key: key,
 				}
 
@@ -63,7 +63,7 @@ func newExecutePlan(keys []string, filter *database.Filter) *executePlan {
 					max = value
 				}
 
-				p := &executePlan{
+				p := &executionPlan{
 					key: key,
 					min: min,
 					max: max,
@@ -83,7 +83,7 @@ func newExecutePlan(keys []string, filter *database.Filter) *executePlan {
 	return plan
 }
 
-func (e *executePlan) and(other *executePlan) *executePlan {
+func (e *executionPlan) and(other *executionPlan) *executionPlan {
 	if e == nil {
 		return other
 	}
@@ -95,7 +95,7 @@ func (e *executePlan) and(other *executePlan) *executePlan {
 		return nil
 	}
 
-	z := &executePlan{
+	z := &executionPlan{
 		key: e.key,
 	}
 
@@ -120,12 +120,12 @@ func (e *executePlan) and(other *executePlan) *executePlan {
 	return z
 }
 
-func (e *executePlan) or(other *executePlan) *executePlan {
+func (e *executionPlan) or(other *executionPlan) *executionPlan {
 	if e == nil || other == nil || e.key != other.key {
 		return nil
 	}
 
-	z := &executePlan{
+	z := &executionPlan{
 		key: e.key,
 	}
 

@@ -255,9 +255,9 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 
 	fullScan := true
 
-	var plan *executePlan
+	var plan *executionPlan
 	for _, constraint := range c.section.Constraints() {
-		if plan = newExecutePlan(constraint.Keys, filter); plan != nil {
+		if plan = newExecutionPlan(constraint.Keys, filter); plan != nil {
 			plan.key = constraint.Name
 			fullScan = constraint.Partial != nil
 			break
