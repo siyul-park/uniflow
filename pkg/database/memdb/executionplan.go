@@ -22,16 +22,16 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
-			plan = plan.and(newExecutionPlan(keys, child))
+			plan = plan.intersect(newExecutionPlan(keys, child))
 		}
 	case database.OR:
 		for _, child := range filter.Children {
-			plan = plan.or(newExecutionPlan(keys, child))
+			plan = plan.union(newExecutionPlan(keys, child))
 		}
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
 		for _, v := range value.Values() {
-			plan = plan.or(newExecutionPlan(keys, database.Where(filter.Key).EQ(v)))
+			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).EQ(v)))
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var root *executionPlan
@@ -83,7 +83,7 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	return plan
 }
 
-func (e *executionPlan) and(other *executionPlan) *executionPlan {
+func (e *executionPlan) intersect(other *executionPlan) *executionPlan {
 	if e == nil {
 		return other
 	}
@@ -115,12 +115,12 @@ func (e *executionPlan) and(other *executionPlan) *executionPlan {
 		z.max = e.max
 	}
 
-	z.next = e.next.and(other.next)
+	z.next = e.next.intersect(other.next)
 
 	return z
 }
 
-func (e *executionPlan) or(other *executionPlan) *executionPlan {
+func (e *executionPlan) union(other *executionPlan) *executionPlan {
 	if e == nil || other == nil || e.key != other.key {
 		return nil
 	}
@@ -145,7 +145,7 @@ func (e *executionPlan) or(other *executionPlan) *executionPlan {
 		z.max = e.max
 	}
 
-	z.next = e.next.or(other.next)
+	z.next = e.next.union(other.next)
 
 	allNil := true
 	for cur := z; cur != nil; cur = cur.next {
