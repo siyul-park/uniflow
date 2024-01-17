@@ -12,3 +12,12 @@ func TestServerAndRelease(t *testing.T) {
 
 	ReleaseServer(server)
 }
+
+func BenchmarkServerAndRelease(b *testing.B) {
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			server := Server()
+			ReleaseServer(server)
+		}
+	})
+}
