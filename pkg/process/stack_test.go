@@ -1,190 +1,192 @@
 package process
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStack_Link(t *testing.T) {
-	st := newStack()
-	defer st.Close()
+func TestStack_Push(t *testing.T) {
+	t.Run("Flat", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	k1 := ulid.Make()
-	k2 := ulid.Make()
+		k := ulid.Make()
+		v := ulid.Make()
 
-	st.Link(k1, k2)
+		s.Push(k, v)
+		assert.Equal(t, 1, s.Size(k))
+	})
 
-	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
-	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
+	t.Run("Deep", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	st.Link(k1, k2)
+		k1 := ulid.Make()
+		k2 := ulid.Make()
 
-	assert.Equal(t, []ulid.ULID{k1}, st.Stems(k2))
-	assert.Equal(t, []ulid.ULID{k2}, st.Leaves(k1))
-}
+		v1 := ulid.Make()
+		v2 := ulid.Make()
 
-func TestStack_Unlink(t *testing.T) {
-	st := newStack()
-	defer st.Close()
+		g.Add(k1, k2)
 
-	k1 := ulid.Make()
-	k2 := ulid.Make()
+		s.Push(k1, v1)
+		s.Push(k2, v2)
+		assert.Equal(t, 2, s.Size(k2))
+	})
 
-	st.Link(k1, k2)
+	t.Run("Recursive", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	st.Unlink(k1, k2)
+		k1 := ulid.Make()
+		k2 := ulid.Make()
 
-	assert.Len(t, st.Stems(k2), 0)
-	assert.Len(t, st.Leaves(k1), 0)
+		v1 := ulid.Make()
+		v2 := ulid.Make()
 
-	st.Unlink(k1, k2)
+		g.Add(k1, k2)
+		g.Add(k2, k1)
 
-	assert.Len(t, st.Stems(k2), 0)
-	assert.Len(t, st.Leaves(k1), 0)
+		s.Push(k1, v1)
+		s.Push(k2, v2)
+		assert.Equal(t, 2, s.Size(k2))
+	})
 }
 
 func TestStack_Pop(t *testing.T) {
-	st := newStack()
-	defer st.Close()
+	t.Run("Flat", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	k1 := ulid.Make()
-	k2 := ulid.Make()
-	k3 := ulid.Make()
+		k := ulid.Make()
+		v := ulid.Make()
 
-	v1 := ulid.Make()
-	v2 := ulid.Make()
-	v3 := ulid.Make()
+		s.Push(k, v)
 
-	st.Link(k1, k2)
-	st.Link(k2, k3)
-
-	st.Push(k1, v1)
-	st.Push(k2, v2)
-	st.Push(k2, v3)
-
-	h1, ok := st.Pop(k3, v3)
-	assert.True(t, ok)
-	assert.Contains(t, h1, k2)
-
-	h2, ok := st.Pop(k3, v2)
-	assert.True(t, ok)
-	assert.Contains(t, h2, k1)
-
-	h3, ok := st.Pop(k3, v1)
-	assert.True(t, ok)
-	assert.Len(t, h3, 0)
-
-	assert.Equal(t, 0, st.Len(k3))
-}
-
-func TestStack_Len(t *testing.T) {
-	st := newStack()
-	defer st.Close()
-
-	k1 := ulid.Make()
-	k2 := ulid.Make()
-
-	v1 := ulid.Make()
-	v2 := ulid.Make()
-	v3 := ulid.Make()
-
-	st.Link(k1, k2)
-
-	st.Push(k1, v1)
-	st.Push(k2, v2)
-	st.Push(k2, v3)
-
-	assert.Equal(t, 1, st.Len(k1))
-	assert.Equal(t, 3, st.Len(k2))
-}
-func TestStack_Wait(t *testing.T) {
-	t.Run("Empty", func(t *testing.T) {
-		st := newStack()
-		defer st.Close()
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		done := make(chan struct{})
-		go func() {
-			st.Wait()
-			close(done)
-		}()
-
-		select {
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		case <-done:
-		}
+		head, ok := s.Pop(k, v)
+		assert.True(t, ok)
+		assert.Equal(t, k, head)
+		assert.Equal(t, 0, s.Size(k))
 	})
 
-	t.Run("Not Empty", func(t *testing.T) {
-		st := newStack()
-		defer st.Close()
+	t.Run("Deep", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
 		k1 := ulid.Make()
+		k2 := ulid.Make()
+
 		v1 := ulid.Make()
+		v2 := ulid.Make()
 
-		st.Push(k1, v1)
+		g.Add(k1, k2)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-		defer cancel()
+		s.Push(k1, v1)
+		s.Push(k2, v2)
 
-		done := make(chan struct{})
-		go func() {
-			st.Wait()
-			close(done)
-		}()
+		head, ok := s.Pop(k2, v2)
+		assert.True(t, ok)
+		assert.Equal(t, k2, head)
+		assert.Equal(t, 1, s.Size(k2))
 
-		select {
-		case <-ctx.Done():
-		case <-done:
-			assert.Fail(t, "timeout")
-		}
+		head, ok = s.Pop(k2, v1)
+		assert.True(t, ok)
+		assert.Equal(t, k1, head)
+		assert.Equal(t, 0, s.Size(k2))
+	})
+
+	t.Run("Recursive", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
+
+		k1 := ulid.Make()
+		k2 := ulid.Make()
+
+		v1 := ulid.Make()
+		v2 := ulid.Make()
+
+		g.Add(k1, k2)
+		g.Add(k2, k1)
+
+		s.Push(k1, v1)
+		s.Push(k2, v2)
+
+		head, ok := s.Pop(k2, v2)
+		assert.True(t, ok)
+		assert.Equal(t, k2, head)
+		assert.Equal(t, 1, s.Size(k2))
+
+		head, ok = s.Pop(k2, v1)
+		assert.True(t, ok)
+		assert.Equal(t, k1, head)
+		assert.Equal(t, 0, s.Size(k2))
 	})
 }
 
 func TestStack_Clear(t *testing.T) {
-	st := newStack()
-	defer st.Close()
+	t.Run("Flat", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	k1 := ulid.Make()
-	k2 := ulid.Make()
-	k3 := ulid.Make()
-	k4 := ulid.Make()
+		k := ulid.Make()
+		v := ulid.Make()
 
-	v1 := ulid.Make()
-	v2 := ulid.Make()
-	v3 := ulid.Make()
+		s.Push(k, v)
 
-	st.Link(k1, k2)
-	st.Link(k2, k3)
-	st.Link(k2, k4)
+		s.Clear(k)
+		assert.Equal(t, 0, s.Size(k))
+	})
 
-	st.Push(k1, v1)
-	st.Push(k2, v2)
-	st.Push(k2, v3)
+	t.Run("Deep", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	st.Clear(k4)
+		k1 := ulid.Make()
+		k2 := ulid.Make()
 
-	_, ok := st.Pop(k4, v3)
-	assert.False(t, ok)
+		v1 := ulid.Make()
+		v2 := ulid.Make()
 
-	_, ok = st.Pop(k4, v2)
-	assert.False(t, ok)
+		g.Add(k1, k2)
 
-	_, ok = st.Pop(k3, v3)
-	assert.True(t, ok)
+		s.Push(k1, v1)
+		s.Push(k2, v2)
 
-	_, ok = st.Pop(k3, v2)
-	assert.True(t, ok)
+		s.Clear(k2)
+		assert.Equal(t, 0, s.Size(k2))
+	})
+}
 
-	_, ok = st.Pop(k3, v1)
-	assert.True(t, ok)
+func TestStack_Heads(t *testing.T) {
+	t.Run("Flat", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	assert.Equal(t, 0, st.Len(k3))
+		k := ulid.Make()
+		v := ulid.Make()
+
+		s.Push(k, v)
+
+		heads := s.Heads(k)
+		assert.Equal(t, []ulid.ULID{k}, heads)
+	})
+
+	t.Run("Deep", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
+
+		k1 := ulid.Make()
+		k2 := ulid.Make()
+
+		v1 := ulid.Make()
+
+		g.Add(k1, k2)
+
+		s.Push(k1, v1)
+
+		heads := s.Heads(k2)
+		assert.Equal(t, []ulid.ULID{k1}, heads)
+	})
 }

@@ -114,7 +114,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			if errPck == inPck {
 				errPck = packet.New(errPck.Payload())
 			}
-			proc.Stack().Link(inPck.ID(), errPck.ID())
+			proc.Graph().Add(inPck.ID(), errPck.ID())
 			if errStream.Links() > 0 {
 				proc.Stack().Push(errPck.ID(), inStream.ID())
 				errStream.Send(errPck)
@@ -134,7 +134,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				if outPck == inPck {
 					outPck = packet.New(outPck.Payload())
 				}
-				proc.Stack().Link(inPck.ID(), outPck.ID())
+				proc.Graph().Add(inPck.ID(), outPck.ID())
 				proc.Stack().Push(outPck.ID(), inStream.ID())
 				outStream.Send(outPck)
 			}

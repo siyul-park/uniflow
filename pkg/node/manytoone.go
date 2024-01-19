@@ -173,7 +173,7 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 							}
 						}
 						for _, inPck := range inPcks {
-							proc.Stack().Link(inPck.ID(), outPck.ID())
+							proc.Graph().Add(inPck.ID(), outPck.ID())
 						}
 						for _, inStream := range inStreams {
 							if outStream.Links() > 0 {

@@ -105,7 +105,7 @@ func (n *FlowNode) forward(proc *process.Process) {
 		var outPcks []*packet.Packet
 		for _, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
-			proc.Stack().Link(inPck.ID(), outPck.ID())
+			proc.Graph().Add(inPck.ID(), outPck.ID())
 			proc.Stack().Push(outPck.ID(), inStream.ID())
 			outPcks = append(outPcks, outPck)
 		}
@@ -135,18 +135,30 @@ func (n *FlowNode) backward(proc *process.Process) {
 			inStream = n.inPort.Open(proc)
 		}
 
-		if heads, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
-			for _, head := range heads {
-				buffers[head] = append(buffers[head], backPck.Payload())
-				if len(proc.Stack().Leaves(head)) == 0 {
-					backPayload := primitive.NewSlice(buffers[head]...)
-					backPck := packet.New(backPayload)
+		if head, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
+			for _, steam := range proc.Graph().Stems(head) {
+				buffers[steam] = append(buffers[steam], backPck.Payload())
 
-					proc.Stack().Link(head, backPck.ID())
-					inStream.Send(backPck)
-
-					delete(buffers, head)
+				noLeaf := true
+				for _, leaf := range proc.Graph().Leaves(steam) {
+					for _, head := range proc.Stack().Heads(leaf) {
+						if !proc.Graph().Has(head, steam) {
+							noLeaf = false
+							break
+						}
+					}
 				}
+				if !noLeaf {
+					continue
+				}
+
+				backPayload := primitive.NewSlice(buffers[steam]...)
+				backPck := packet.New(backPayload)
+
+				proc.Graph().Add(steam, backPck.ID())
+				inStream.Send(backPck)
+
+				delete(buffers, steam)
 			}
 		}
 	}

@@ -42,10 +42,18 @@ func (g *Graph) Delete(stem, leaf ulid.ULID) {
 }
 
 func (g *Graph) Has(stem, leaf ulid.ULID) bool {
-	g.mu.RLock()
-	defer g.mu.RUnlock()
-
-	return g.stems.has(leaf, stem) && g.leaves.has(stem, leaf)
+	var ok bool
+	g.Up(leaf, func(key ulid.ULID) bool {
+		if ok {
+			return false
+		}
+		if key == stem {
+			ok = true
+			return false
+		}
+		return true
+	})
+	return ok
 }
 
 func (g *Graph) Stems(leaf ulid.ULID) []ulid.ULID {
@@ -66,6 +74,30 @@ func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
 		return nil
 	}
 	return g.leaves[stem]
+}
+
+func (g *Graph) Up(leaf ulid.ULID, f func(ulid.ULID) bool) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	heads := []ulid.ULID{leaf}
+	visits := make(map[ulid.ULID]struct{})
+
+	for len(heads) > 0 {
+		head := heads[0]
+		heads = heads[1:]
+
+		if _, ok := visits[head]; ok {
+			continue
+		}
+		visits[head] = struct{}{}
+
+		if !f(head) {
+			continue
+		}
+
+		heads = append(heads, g.stems[head]...)
+	}
 }
 
 func (l links) has(key, value ulid.ULID) bool {
