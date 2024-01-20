@@ -107,7 +107,6 @@ func (g *Graph) Up(leaf ulid.ULID, f func(ulid.ULID) bool) {
 	}
 }
 
-// has checks if the given key is associated with the specified value in the links.
 func (l links) has(key, value ulid.ULID) bool {
 	for _, cur := range l[key] {
 		if cur == value {
@@ -117,7 +116,6 @@ func (l links) has(key, value ulid.ULID) bool {
 	return false
 }
 
-// delete removes the specified value from the links associated with the given key.
 func (l links) delete(key, value ulid.ULID) {
 	for i, cur := range l[key] {
 		if cur == value {
