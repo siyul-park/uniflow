@@ -47,7 +47,7 @@ func (g *Graph) Delete(stem, leaf ulid.ULID) {
 // Has checks if there is a directed path from stem to leaf in the graph.
 func (g *Graph) Has(stem, leaf ulid.ULID) bool {
 	var ok bool
-	g.Up(leaf, func(key ulid.ULID) bool {
+	g.Upwards(leaf, func(key ulid.ULID) bool {
 		if ok {
 			return false
 		}
@@ -82,8 +82,8 @@ func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
 	return g.leaves[stem]
 }
 
-// Up traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
-func (g *Graph) Up(leaf ulid.ULID, f func(ulid.ULID) bool) {
+// Upwards traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
+func (g *Graph) Upwards(leaf ulid.ULID, f func(ulid.ULID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 

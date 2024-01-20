@@ -57,7 +57,7 @@ func (s *Stack) Clear(key ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.graph.Up(key, func(key ulid.ULID) bool {
+	s.graph.Upwards(key, func(key ulid.ULID) bool {
 		for _, leaf := range s.graph.Leaves(key) {
 			if len(s.values[leaf]) > 0 {
 				return false
@@ -75,7 +75,7 @@ func (s *Stack) Size(key ulid.ULID) int {
 	defer s.mu.RUnlock()
 
 	size := 0
-	s.graph.Up(key, func(key ulid.ULID) bool {
+	s.graph.Upwards(key, func(key ulid.ULID) bool {
 		size += len(s.values[key])
 		return true
 	})
@@ -85,7 +85,7 @@ func (s *Stack) Size(key ulid.ULID) int {
 
 func (s *Stack) heads(key ulid.ULID) []ulid.ULID {
 	var heads []ulid.ULID
-	s.graph.Up(key, func(key ulid.ULID) bool {
+	s.graph.Upwards(key, func(key ulid.ULID) bool {
 		if len(s.values[key]) > 0 {
 			heads = append(heads, key)
 			return false

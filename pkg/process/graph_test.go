@@ -43,7 +43,7 @@ func TestGraph_Delete(t *testing.T) {
 	assert.False(t, g.Has(v2, v1))
 }
 
-func TestGraph_Up(t *testing.T) {
+func TestGraph_Upwards(t *testing.T) {
 	g := newGraph()
 
 	v1 := ulid.Make()
@@ -52,7 +52,7 @@ func TestGraph_Up(t *testing.T) {
 	g.Add(v1, v2)
 
 	var trace []ulid.ULID
-	g.Up(v2, func(v ulid.ULID) bool {
+	g.Upwards(v2, func(v ulid.ULID) bool {
 		trace = append(trace, v)
 		return true
 	})
