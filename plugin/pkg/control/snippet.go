@@ -43,7 +43,10 @@ const (
 
 var _ node.Node = (*SnippetNode)(nil)
 
-var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
+var (
+	ErrUnsupportedLanguage     = errors.New("language not supported")
+	ErrEntryPointNotUndeclared = errors.New("entry point not defined")
+)
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
@@ -64,7 +67,17 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 }
 
 func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
+	if lang == "" {
+		lang = LangText
+	}
+
 	switch lang {
+	case LangText:
+		outPayload := primitive.NewString(code)
+
+		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return packet.New(outPayload), nil
+		}, nil
 	case LangJSON, LangYAML:
 		var data any
 		var err error
@@ -167,9 +180,5 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}, nil
 	}
 
-	outPayload := primitive.NewString(code)
-
-	return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
-		return packet.New(outPayload), nil
-	}, nil
+	return nil, ErrUnsupportedLanguage
 }
