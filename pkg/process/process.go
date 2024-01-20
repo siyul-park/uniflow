@@ -9,6 +9,7 @@ import (
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
 	id    ulid.ULID
+	graph *Graph
 	stack *Stack
 	err   error
 	done  chan struct{}
@@ -17,9 +18,13 @@ type Process struct {
 
 // New creates a new Process.
 func New() *Process {
+	g := newGraph()
+	s := newStack(g)
+
 	return &Process{
 		id:    ulid.Make(),
-		stack: newStack(),
+		graph: g,
+		stack: s,
 		done:  make(chan struct{}),
 		mu:    sync.RWMutex{},
 	}
@@ -31,6 +36,14 @@ func (p *Process) ID() ulid.ULID {
 	defer p.mu.RUnlock()
 
 	return p.id
+}
+
+// Graph returns a process's graph.
+func (p *Process) Graph() *Graph {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.graph
 }
 
 // Stack returns a process's stack.
@@ -68,5 +81,4 @@ func (p *Process) Exit(err error) {
 	close(p.done)
 
 	p.err = err
-	p.stack.Close()
 }

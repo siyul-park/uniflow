@@ -21,6 +21,13 @@ func TestProcess_ID(t *testing.T) {
 	assert.NotEqual(t, ulid.ULID{}, proc.ID())
 }
 
+func TestProcess_Graph(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	assert.NotNil(t, proc.Graph())
+}
+
 func TestProcess_Stack(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)

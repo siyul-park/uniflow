@@ -105,7 +105,7 @@ func (n *FlowNode) forward(proc *process.Process) {
 		var outPcks []*packet.Packet
 		for _, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
-			proc.Stack().Link(inPck.ID(), outPck.ID())
+			proc.Graph().Add(inPck.ID(), outPck.ID())
 			proc.Stack().Push(outPck.ID(), inStream.ID())
 			outPcks = append(outPcks, outPck)
 		}
@@ -120,34 +120,43 @@ func (n *FlowNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var inStream *port.Stream
 	outStream := n.outPort.Open(proc)
-
 	buffers := make(map[ulid.ULID][]primitive.Value)
 
-	for {
-		backPck, ok := <-outStream.Receive()
-		if !ok {
-			return
-		}
+	processBackwardPacket := func(backPck *packet.Packet) {
+		inStream := n.inPort.Open(proc)
 
-		if inStream == nil {
-			inStream = n.inPort.Open(proc)
-		}
+		if head, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
+			for _, steam := range proc.Graph().Stems(head) {
+				buffers[steam] = append(buffers[steam], backPck.Payload())
 
-		if heads, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
-			for _, head := range heads {
-				buffers[head] = append(buffers[head], backPck.Payload())
-				if len(proc.Stack().Leaves(head)) == 0 {
-					backPayload := primitive.NewSlice(buffers[head]...)
-					backPck := packet.New(backPayload)
-
-					proc.Stack().Link(head, backPck.ID())
-					inStream.Send(backPck)
-
-					delete(buffers, head)
+				if !n.hasLeaf(proc, steam) {
+					continue
 				}
+
+				backPayload := primitive.NewSlice(buffers[steam]...)
+				backPck := packet.New(backPayload)
+
+				proc.Graph().Add(steam, backPck.ID())
+				inStream.Send(backPck)
+
+				delete(buffers, steam)
 			}
 		}
 	}
+
+	for backPck := range outStream.Receive() {
+		processBackwardPacket(backPck)
+	}
+}
+
+func (n *FlowNode) hasLeaf(proc *process.Process, steam ulid.ULID) bool {
+	for _, leaf := range proc.Graph().Leaves(steam) {
+		for _, h := range proc.Stack().Heads(leaf) {
+			if !proc.Graph().Has(h, steam) {
+				return false
+			}
+		}
+	}
+	return true
 }
