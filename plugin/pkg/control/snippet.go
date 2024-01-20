@@ -2,7 +2,10 @@ package control
 
 import (
 	"encoding/json"
+	"sync"
 
+	"github.com/dop251/goja"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -28,13 +31,16 @@ type SnippetNodeSpec struct {
 const KindSnippet = "snippet"
 
 const (
-	LangText    = "text"
-	LangJSON    = "json"
-	LangYAML    = "yaml"
-	LangJSONata = "jsonata"
+	LangText       = "text"
+	LangJSON       = "json"
+	LangYAML       = "yaml"
+	LangJavascript = "javascript"
+	LangJSONata    = "jsonata"
 )
 
 var _ node.Node = (*SnippetNode)(nil)
+
+var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
@@ -75,6 +81,51 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
+		}, nil
+	case LangJavascript:
+		program, err := goja.Compile("", code, true)
+		if err != nil {
+			return nil, err
+		}
+
+		vm := goja.New()
+		_, err = vm.RunProgram(program)
+		if err != nil {
+			return nil, err
+		}
+
+		_, ok := goja.AssertFunction(vm.Get("main"))
+		if !ok {
+			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
+		}
+
+		vmPool := &sync.Pool{
+			New: func() any {
+				vm := goja.New()
+				_, _ = vm.RunProgram(program)
+				return vm
+			},
+		}
+
+		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			vm := vmPool.Get().(*goja.Runtime)
+			defer vmPool.Put(vm)
+
+			main, ok := goja.AssertFunction(vm.Get("main"))
+			if !ok {
+				return nil, packet.WithError(ErrEntryPointNotUndeclared, inPck)
+			}
+
+			inPayload := inPck.Payload()
+			input := inPayload.Interface()
+
+			if output, err := main(goja.Undefined(), vm.ToValue(input)); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else if outPayload, err := primitive.MarshalBinary(output.Export()); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else {
+				return packet.New(outPayload), nil
+			}
 		}, nil
 	case LangJSONata:
 		exp, err := jsonata.Compile(code)
