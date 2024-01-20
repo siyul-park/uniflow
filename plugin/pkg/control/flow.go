@@ -120,35 +120,17 @@ func (n *FlowNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var inStream *port.Stream
 	outStream := n.outPort.Open(proc)
-
 	buffers := make(map[ulid.ULID][]primitive.Value)
 
-	for {
-		backPck, ok := <-outStream.Receive()
-		if !ok {
-			return
-		}
-
-		if inStream == nil {
-			inStream = n.inPort.Open(proc)
-		}
+	processBackwardPacket := func(backPck *packet.Packet) {
+		inStream := n.inPort.Open(proc)
 
 		if head, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
 			for _, steam := range proc.Graph().Stems(head) {
 				buffers[steam] = append(buffers[steam], backPck.Payload())
 
-				noLeaf := true
-				for _, leaf := range proc.Graph().Leaves(steam) {
-					for _, head := range proc.Stack().Heads(leaf) {
-						if !proc.Graph().Has(head, steam) {
-							noLeaf = false
-							break
-						}
-					}
-				}
-				if !noLeaf {
+				if !n.hasLeaf(proc, steam) {
 					continue
 				}
 
@@ -162,4 +144,19 @@ func (n *FlowNode) backward(proc *process.Process) {
 			}
 		}
 	}
+
+	for backPck := range outStream.Receive() {
+		processBackwardPacket(backPck)
+	}
+}
+
+func (n *FlowNode) hasLeaf(proc *process.Process, steam ulid.ULID) bool {
+	for _, leaf := range proc.Graph().Leaves(steam) {
+		for _, h := range proc.Stack().Heads(leaf) {
+			if !proc.Graph().Has(h, steam) {
+				return false
+			}
+		}
+	}
+	return true
 }
