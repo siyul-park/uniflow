@@ -545,6 +545,8 @@ func BenchmarkCollection_InsertOne(b *testing.B, coll database.Collection) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		_, err := coll.InsertOne(ctx, primitive.NewMap(
 			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
@@ -559,6 +561,8 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
+
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var docs []*primitive.Map
