@@ -6,6 +6,7 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+// Stack represents a stack data structure with associated graph-based relationships.
 type Stack struct {
 	graph  *Graph
 	values map[ulid.ULID][]ulid.ULID
@@ -19,6 +20,7 @@ func newStack(graph *Graph) *Stack {
 	}
 }
 
+// Push adds a value to the stack associated with the given key.
 func (s *Stack) Push(key, value ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -26,6 +28,7 @@ func (s *Stack) Push(key, value ulid.ULID) {
 	s.values[key] = append(s.values[key], value)
 }
 
+// Pop removes and returns the top value from the stack associated with the given key.
 func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -56,6 +59,7 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 	return head, ok
 }
 
+// Heads returns the unique heads (keys) with non-empty stacks reachable from the given key.
 func (s *Stack) Heads(key ulid.ULID) []ulid.ULID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -72,6 +76,7 @@ func (s *Stack) Heads(key ulid.ULID) []ulid.ULID {
 	return heads
 }
 
+// Clear removes the stack associated with the given key and its branches if their stacks are empty.
 func (s *Stack) Clear(key ulid.ULID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -88,6 +93,7 @@ func (s *Stack) Clear(key ulid.ULID) {
 	})
 }
 
+// Has checks if the stack associated with the given key is non-empty.
 func (s *Stack) Has(key ulid.ULID) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -95,6 +101,7 @@ func (s *Stack) Has(key ulid.ULID) bool {
 	return len(s.values[key]) > 0
 }
 
+// Size returns the total number of elements in the stack and its branches reachable from the given key.
 func (s *Stack) Size(key ulid.ULID) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

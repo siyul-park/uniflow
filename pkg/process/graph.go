@@ -6,6 +6,7 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+// Graph represents a directed acyclic graph with stems and leaves.
 type Graph struct {
 	stems  links
 	leaves links
@@ -21,6 +22,7 @@ func newGraph() *Graph {
 	}
 }
 
+// Add creates a directed edge from stem to leaf in the graph.
 func (g *Graph) Add(stem, leaf ulid.ULID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -33,6 +35,7 @@ func (g *Graph) Add(stem, leaf ulid.ULID) {
 	}
 }
 
+// Delete removes the directed edge from stem to leaf in the graph.
 func (g *Graph) Delete(stem, leaf ulid.ULID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -41,6 +44,7 @@ func (g *Graph) Delete(stem, leaf ulid.ULID) {
 	g.leaves.delete(stem, leaf)
 }
 
+// Has checks if there is a directed path from stem to leaf in the graph.
 func (g *Graph) Has(stem, leaf ulid.ULID) bool {
 	var ok bool
 	g.Up(leaf, func(key ulid.ULID) bool {
@@ -56,6 +60,7 @@ func (g *Graph) Has(stem, leaf ulid.ULID) bool {
 	return ok
 }
 
+// Stems returns the stems associated with the given leaf in the graph.
 func (g *Graph) Stems(leaf ulid.ULID) []ulid.ULID {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
@@ -66,6 +71,7 @@ func (g *Graph) Stems(leaf ulid.ULID) []ulid.ULID {
 	return g.stems[leaf]
 }
 
+// Leaves returns the leaves associated with the given stem in the graph.
 func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
@@ -76,6 +82,7 @@ func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
 	return g.leaves[stem]
 }
 
+// Up traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
 func (g *Graph) Up(leaf ulid.ULID, f func(ulid.ULID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
@@ -100,6 +107,7 @@ func (g *Graph) Up(leaf ulid.ULID, f func(ulid.ULID) bool) {
 	}
 }
 
+// has checks if the given key is associated with the specified value in the links.
 func (l links) has(key, value ulid.ULID) bool {
 	for _, cur := range l[key] {
 		if cur == value {
@@ -109,6 +117,7 @@ func (l links) has(key, value ulid.ULID) bool {
 	return false
 }
 
+// delete removes the specified value from the links associated with the given key.
 func (l links) delete(key, value ulid.ULID) {
 	for i, cur := range l[key] {
 		if cur == value {
