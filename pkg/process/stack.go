@@ -77,8 +77,8 @@ func (s *Stack) Clear(key ulid.ULID) {
 	defer s.mu.Unlock()
 
 	s.graph.Up(key, func(key ulid.ULID) bool {
-		for _, leave := range s.graph.Leaves(key) {
-			if len(s.values[leave]) > 0 {
+		for _, leaf := range s.graph.Leaves(key) {
+			if len(s.values[leaf]) > 0 {
 				return false
 			}
 		}
