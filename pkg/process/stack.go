@@ -33,30 +33,15 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var head ulid.ULID
-	var ok bool
-	s.graph.Up(key, func(key ulid.ULID) bool {
-		if ok {
-			return false
-		}
-
-		values := s.values[key]
-		if len(values) == 0 {
-			return true
-		}
-
+	for _, head := range s.heads(key) {
+		values := s.values[head]
 		if values[len(values)-1] == value {
-			s.values[key] = values[:len(values)-1]
-
-			head = key
-			ok = true
-
-			return false
+			s.values[head] = values[:len(values)-1]
+			return head, true
 		}
-		return true
-	})
+	}
 
-	return head, ok
+	return ulid.ULID{}, false
 }
 
 // Heads returns the unique heads (keys) with non-empty stacks reachable from the given key.
@@ -64,16 +49,7 @@ func (s *Stack) Heads(key ulid.ULID) []ulid.ULID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var heads []ulid.ULID
-	s.graph.Up(key, func(key ulid.ULID) bool {
-		if len(s.values[key]) > 0 {
-			heads = append(heads, key)
-			return false
-		}
-		return true
-	})
-
-	return heads
+	return s.heads(key)
 }
 
 // Clear removes the stack associated with the given key and its branches if their stacks are empty.
@@ -105,4 +81,17 @@ func (s *Stack) Size(key ulid.ULID) int {
 	})
 
 	return size
+}
+
+func (s *Stack) heads(key ulid.ULID) []ulid.ULID {
+	var heads []ulid.ULID
+	s.graph.Up(key, func(key ulid.ULID) bool {
+		if len(s.values[key]) > 0 {
+			heads = append(heads, key)
+			return false
+		}
+		return true
+	})
+
+	return heads
 }
