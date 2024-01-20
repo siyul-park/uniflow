@@ -110,7 +110,7 @@ func TestFlowNode_SendAndReceive(t *testing.T) {
 
 		inStream.Send(inPck)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
 		for i := 0; i < inPayload.Len(); i++ {
