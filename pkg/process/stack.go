@@ -93,14 +93,6 @@ func (s *Stack) Clear(key ulid.ULID) {
 	})
 }
 
-// Has checks if the stack associated with the given key is non-empty.
-func (s *Stack) Has(key ulid.ULID) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return len(s.values[key]) > 0
-}
-
 // Size returns the total number of elements in the stack and its branches reachable from the given key.
 func (s *Stack) Size(key ulid.ULID) int {
 	s.mu.RLock()
