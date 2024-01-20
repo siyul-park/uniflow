@@ -2,9 +2,11 @@ package control
 
 import (
 	"encoding/json"
+	"strings"
 	"sync"
 
 	"github.com/dop251/goja"
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -32,6 +34,7 @@ const KindSnippet = "snippet"
 
 const (
 	LangText       = "text"
+	LangTypescript = "typescript"
 	LangJSON       = "json"
 	LangYAML       = "yaml"
 	LangJavascript = "javascript"
@@ -82,7 +85,21 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
-	case LangJavascript:
+	case LangJavascript, LangTypescript:
+		if lang == LangTypescript {
+			if result := api.Transform(code, api.TransformOptions{
+				Loader: api.LoaderTS,
+			}); len(result.Errors) > 0 {
+				var msgs []string
+				for _, msg := range result.Errors {
+					msgs = append(msgs, msg.Text)
+				}
+				return nil, errors.New(strings.Join(msgs, ", "))
+			} else {
+				code = string(result.Code)
+			}
+		}
+
 		program, err := goja.Compile("", code, true)
 		if err != nil {
 			return nil, err

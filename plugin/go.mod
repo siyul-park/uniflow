@@ -4,6 +4,7 @@ go 1.21.6
 
 require (
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
+	github.com/evanw/esbuild v0.19.11
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
@@ -26,6 +27,7 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
 
