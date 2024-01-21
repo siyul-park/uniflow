@@ -2,7 +2,6 @@ package control
 
 import (
 	"encoding/json"
-	"strings"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -13,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
@@ -99,18 +99,14 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return packet.New(outPayload), nil
 		}, nil
 	case LangJavascript, LangTypescript:
+		var err error
 		if lang == LangTypescript {
-			if result := api.Transform(code, api.TransformOptions{
-				Loader: api.LoaderTS,
-			}); len(result.Errors) > 0 {
-				var msgs []string
-				for _, msg := range result.Errors {
-					msgs = append(msgs, msg.Text)
-				}
-				return nil, errors.New(strings.Join(msgs, ", "))
-			} else {
-				code = string(result.Code)
+			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+				return nil, err
 			}
+		}
+		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
+			return nil, err
 		}
 
 		program, err := goja.Compile("", code, true)
@@ -118,20 +114,20 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, err
 		}
 
-		vm := goja.New()
-		_, err = vm.RunProgram(program)
-		if err != nil {
+		vm := js.New()
+		if _, err := vm.RunProgram(program); err != nil {
 			return nil, err
 		}
 
-		_, ok := goja.AssertFunction(vm.Get("main"))
-		if !ok {
+		if defaults := js.Export(vm, "default"); defaults == nil {
+			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
+		} else if _, ok := goja.AssertFunction(defaults); !ok {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
 
 		vmPool := &sync.Pool{
 			New: func() any {
-				vm := goja.New()
+				vm := js.New()
 				_, _ = vm.RunProgram(program)
 				return vm
 			},
@@ -141,10 +137,8 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			vm := vmPool.Get().(*goja.Runtime)
 			defer vmPool.Put(vm)
 
-			main, ok := goja.AssertFunction(vm.Get("main"))
-			if !ok {
-				return nil, packet.WithError(ErrEntryPointNotUndeclared, inPck)
-			}
+			defaults := js.Export(vm, "default")
+			main, _ := goja.AssertFunction(defaults)
 
 			inPayload := inPck.Payload()
 			input := inPayload.Interface()
