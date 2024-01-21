@@ -37,7 +37,7 @@ func TestNewSnippetNode(t *testing.T) {
 	})
 
 	t.Run(LangTypescript, func(t *testing.T) {
-		n, err := NewSnippetNode(LangTypescript, `function main(input: any): any {
+		n, err := NewSnippetNode(LangTypescript, `export default function (input: any): any {
 			return input;
 		}`)
 		assert.NoError(t, err)
@@ -63,7 +63,7 @@ func TestNewSnippetNode(t *testing.T) {
 	})
 
 	t.Run(LangJavascript, func(t *testing.T) {
-		n, err := NewSnippetNode(LangJavascript, `function main(input) {
+		n, err := NewSnippetNode(LangJavascript, `export default function (input) {
 			return input;
 		}`)
 		assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(LangTypescript, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangTypescript, `function main(input: any): any {
+		n, _ := NewSnippetNode(LangTypescript, `export default function (input: any): any {
 			return input;
 		}`)
 		defer n.Close()
@@ -201,7 +201,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(LangJavascript, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangJavascript, `function main(input) {
+		n, _ := NewSnippetNode(LangJavascript, `export default function (input) {
 			return input;
 		}`)
 		defer n.Close()
@@ -291,7 +291,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 	})
 
 	b.Run(LangTypescript, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangTypescript, `function main(input: any): any {
+		n, _ := NewSnippetNode(LangTypescript, `export default function (input: any): any {
 			return input;
 		}`)
 
@@ -376,7 +376,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 	})
 
 	b.Run(LangJavascript, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangJavascript, `function main(input) {
+		n, _ := NewSnippetNode(LangJavascript, `export default function (input) {
 			return input;
 		}`)
 

@@ -100,17 +100,14 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}, nil
 	case LangJavascript, LangTypescript:
 		if lang == LangTypescript {
-			if result := api.Transform(code, api.TransformOptions{
-				Loader: api.LoaderTS,
-			}); len(result.Errors) > 0 {
-				var msgs []string
-				for _, msg := range result.Errors {
-					msgs = append(msgs, msg.Text)
-				}
-				return nil, errors.New(strings.Join(msgs, ", "))
-			} else {
-				code = string(result.Code)
+			var err error
+			if code, err = transformJavascript(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+				return nil, err
 			}
+		}
+		var err error
+		if code, err = transformJavascript(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
+			return nil, err
 		}
 
 		program, err := goja.Compile("", code, true)
@@ -119,12 +116,19 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}
 
 		vm := goja.New()
+		if err := useCommonJSModule(vm); err != nil {
+			return nil, err
+		}
 		_, err = vm.RunProgram(program)
 		if err != nil {
 			return nil, err
 		}
 
-		_, ok := goja.AssertFunction(vm.Get("main"))
+		defaults := getCommonJSExport(vm, "default")
+		if defaults == nil {
+			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
+		}
+		_, ok := goja.AssertFunction(defaults)
 		if !ok {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
@@ -132,6 +136,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		vmPool := &sync.Pool{
 			New: func() any {
 				vm := goja.New()
+				_ = useCommonJSModule(vm)
 				_, _ = vm.RunProgram(program)
 				return vm
 			},
@@ -141,10 +146,8 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			vm := vmPool.Get().(*goja.Runtime)
 			defer vmPool.Put(vm)
 
-			main, ok := goja.AssertFunction(vm.Get("main"))
-			if !ok {
-				return nil, packet.WithError(ErrEntryPointNotUndeclared, inPck)
-			}
+			defaults := getCommonJSExport(vm, "default")
+			main, _ := goja.AssertFunction(defaults)
 
 			inPayload := inPck.Payload()
 			input := inPayload.Interface()
@@ -181,4 +184,52 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 	}
 
 	return nil, ErrUnsupportedLanguage
+}
+
+func transformJavascript(code string, options api.TransformOptions) (string, error) {
+	if result := api.Transform(code, options); len(result.Errors) > 0 {
+		var msgs []string
+		for _, msg := range result.Errors {
+			msgs = append(msgs, msg.Text)
+		}
+		return "", errors.New(strings.Join(msgs, ", "))
+	} else {
+		return string(result.Code), nil
+	}
+}
+
+func useCommonJSModule(vm *goja.Runtime) error {
+	module := vm.NewObject()
+	exports := vm.NewObject()
+
+	if err := vm.Set("module", module); err != nil {
+		return err
+	}
+	if err := vm.Set("exports", exports); err != nil {
+		return err
+	}
+	if err := module.Set("exports", exports); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getCommonJSExport(vm *goja.Runtime, name string) goja.Value {
+	module := vm.Get("module")
+	if module == nil {
+		return nil
+	}
+	exports := module.ToObject(vm).Get("exports")
+	if exports == nil {
+		return nil
+	}
+
+	if name == "default" {
+		if exports.ToObject(vm).Get("__esModule").Export() == true {
+			return exports.ToObject(vm).Get("default")
+		} else {
+			return exports
+		}
+	}
+	return exports.ToObject(vm).Get(name)
 }
