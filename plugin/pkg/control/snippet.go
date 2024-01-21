@@ -25,28 +25,15 @@ type SnippetNode struct {
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	scheme.SpecMeta
-
 	Lang string `map:"lang"`
 	Code string `map:"code"`
 }
 
 const KindSnippet = "snippet"
 
-const (
-	LangText       = "text"
-	LangTypescript = "typescript"
-	LangJSON       = "json"
-	LangYAML       = "yaml"
-	LangJavascript = "javascript"
-	LangJSONata    = "jsonata"
-)
-
 var _ node.Node = (*SnippetNode)(nil)
 
-var (
-	ErrUnsupportedLanguage     = errors.New("language not supported")
-	ErrEntryPointNotUndeclared = errors.New("entry point not defined")
-)
+var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
@@ -125,7 +112,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
 
-		vmPool := &sync.Pool{
+		vms := &sync.Pool{
 			New: func() any {
 				vm := js.New()
 				_, _ = vm.RunProgram(program)
@@ -134,8 +121,8 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}
 
 		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			vm := vmPool.Get().(*goja.Runtime)
-			defer vmPool.Put(vm)
+			vm := vms.Get().(*goja.Runtime)
+			defer vms.Put(vm)
 
 			defaults := js.Export(vm, "default")
 			main, _ := goja.AssertFunction(defaults)
