@@ -10,19 +10,46 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/xiatechs/jsonata-go"
 )
 
 type SwitchNode struct {
 	*node.OneToManyNode
-	lang    string
-	matches []func(any) (bool, error)
-	ports   []int
-	mu      sync.RWMutex
+	lang  string
+	whens []func(any) (bool, error)
+	ports []int
+	mu    sync.RWMutex
 }
 
+type SwitchNodeSpec struct {
+	scheme.SpecMeta
+	Lang  string      `map:"lang"`
+	Match []Condition `map:"match"`
+}
+
+type Condition struct {
+	When string `map:"when"`
+	Port string `map:"port"`
+}
+
+const KindSwitch = "swtich"
+
 var _ node.Node = (*SwitchNode)(nil)
+
+func NewSwitchNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
+		n := NewSwitchNode(spec.Lang)
+		for _, condition := range spec.Match {
+			if err := n.Add(condition.When, condition.Port); err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
+}
 
 func NewSwitchNode(lang string) *SwitchNode {
 	n := &SwitchNode{lang: lang}
@@ -30,7 +57,7 @@ func NewSwitchNode(lang string) *SwitchNode {
 	return n
 }
 
-func (n *SwitchNode) Add(match, port string) error {
+func (n *SwitchNode) Add(when, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -43,12 +70,12 @@ func (n *SwitchNode) Add(match, port string) error {
 	case LangJavascript, LangTypescript:
 		var err error
 		if n.lang == LangTypescript {
-			if match, err = js.Transform(match, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+			if when, err = js.Transform(when, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return err
 			}
 		}
 
-		code := fmt.Sprintf("module.exports = ($) => { return %s }", match)
+		code := fmt.Sprintf("module.exports = ($) => { return %s }", when)
 		program, err := goja.Compile("", code, true)
 		if err != nil {
 			return err
@@ -62,7 +89,7 @@ func (n *SwitchNode) Add(match, port string) error {
 			},
 		}
 
-		n.matches = append(n.matches, func(input any) (bool, error) {
+		n.whens = append(n.whens, func(input any) (bool, error) {
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 
@@ -77,11 +104,11 @@ func (n *SwitchNode) Add(match, port string) error {
 			}
 		})
 	case LangJSONata:
-		exp, err := jsonata.Compile(match)
+		exp, err := jsonata.Compile(when)
 		if err != nil {
 			return err
 		}
-		n.matches = append(n.matches, func(input any) (bool, error) {
+		n.whens = append(n.whens, func(input any) (bool, error) {
 			if output, err := exp.Eval(input); err != nil {
 				return false, err
 			} else {
@@ -104,10 +131,10 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 	inPayload := inPck.Payload()
 	input := inPayload.Interface()
 
-	outPcks := make([]*packet.Packet, len(n.matches))
-	for i, match := range n.matches {
+	outPcks := make([]*packet.Packet, len(n.whens))
+	for i, when := range n.whens {
 		port := n.ports[i]
-		if ok, err := match(input); err != nil {
+		if ok, err := when(input); err != nil {
 			return nil, packet.WithError(err, inPck)
 		} else if ok {
 			outPcks[port] = inPck

@@ -13,6 +13,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSwitchNodeCodec_Decode(t *testing.T) {
+	codec := NewSwitchNodeCodec()
+
+	spec := &SwitchNodeSpec{
+		Lang: LangJSONata,
+		Match: []Condition{
+			{
+				When: "$.foo = \"bar\"",
+				Port: node.MultiPort(node.PortOut, 0),
+			},
+		},
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
 func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode(LangJSONata)
 	assert.NotNil(t, n)

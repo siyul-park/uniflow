@@ -25,7 +25,6 @@ type SnippetNode struct {
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	scheme.SpecMeta
-
 	Lang string `map:"lang"`
 	Code string `map:"code"`
 }

@@ -17,7 +17,6 @@ type MergeNode struct {
 // MergeNodeSpec holds the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
 	scheme.SpecMeta
-
 	Mode string `map:"mode"`
 }
 
