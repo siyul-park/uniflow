@@ -100,9 +100,9 @@ func (n *SwitchNode) Add(when, port string) error {
 			defer vms.Put(vm)
 
 			defaults := js.Export(vm, "default")
-			match, _ := goja.AssertFunction(defaults)
+			when, _ := goja.AssertFunction(defaults)
 
-			if output, err := match(goja.Undefined(), vm.ToValue(input)); err != nil {
+			if output, err := when(goja.Undefined(), vm.ToValue(input)); err != nil {
 				return false, err
 			} else {
 				output := output.ToBoolean()
