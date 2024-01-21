@@ -49,11 +49,11 @@ func (n *SwitchNode) Add(match, port string) error {
 		}
 
 		code := fmt.Sprintf("module.exports = ($) => { return %s }", match)
-
 		program, err := goja.Compile("", code, true)
 		if err != nil {
 			return err
 		}
+
 		vms := &sync.Pool{
 			New: func() any {
 				vm := js.New()
