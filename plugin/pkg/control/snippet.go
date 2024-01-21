@@ -119,7 +119,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		if err := jsutil.UseModule(vm); err != nil {
 			return nil, err
 		}
-		if _, err = vm.RunProgram(program); err != nil {
+		if _, err := vm.RunProgram(program); err != nil {
 			return nil, err
 		}
 
