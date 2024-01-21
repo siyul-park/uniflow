@@ -1,4 +1,4 @@
-package js
+package jshelper
 
 import (
 	"github.com/dop251/goja"

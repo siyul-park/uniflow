@@ -1,4 +1,4 @@
-package js
+package jshelper
 
 import (
 	"testing"

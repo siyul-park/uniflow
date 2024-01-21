@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/js"
+	"github.com/siyul-park/uniflow/plugin/internal/jshelper"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
@@ -101,12 +101,12 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 	case LangJavascript, LangTypescript:
 		if lang == LangTypescript {
 			var err error
-			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+			if code, err = jshelper.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return nil, err
 			}
 		}
 		var err error
-		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
+		if code, err = jshelper.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
 			return nil, err
 		}
 
@@ -116,27 +116,23 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}
 
 		vm := goja.New()
-		if err := js.UseModule(vm); err != nil {
+		if err := jshelper.UseModule(vm); err != nil {
 			return nil, err
 		}
-		_, err = vm.RunProgram(program)
-		if err != nil {
+		if _, err = vm.RunProgram(program); err != nil {
 			return nil, err
 		}
 
-		defaults := js.GetExport(vm, "default")
-		if defaults == nil {
+		if defaults := jshelper.GetExport(vm, "default"); defaults == nil {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
-		}
-		_, ok := goja.AssertFunction(defaults)
-		if !ok {
+		} else if _, ok := goja.AssertFunction(defaults); !ok {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
 
 		vmPool := &sync.Pool{
 			New: func() any {
 				vm := goja.New()
-				_ = js.UseModule(vm)
+				_ = jshelper.UseModule(vm)
 				_, _ = vm.RunProgram(program)
 				return vm
 			},
@@ -146,7 +142,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			vm := vmPool.Get().(*goja.Runtime)
 			defer vmPool.Put(vm)
 
-			defaults := js.GetExport(vm, "default")
+			defaults := jshelper.GetExport(vm, "default")
 			main, _ := goja.AssertFunction(defaults)
 
 			inPayload := inPck.Payload()
