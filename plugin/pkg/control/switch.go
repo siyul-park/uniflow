@@ -15,6 +15,7 @@ import (
 	"github.com/xiatechs/jsonata-go"
 )
 
+// SwitchNode represents a switch node that directs incoming packets based on specified conditions.
 type SwitchNode struct {
 	*node.OneToManyNode
 	lang  string
@@ -23,12 +24,14 @@ type SwitchNode struct {
 	mu    sync.RWMutex
 }
 
+// SwitchNodeSpec holds the specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	scheme.SpecMeta
 	Lang  string      `map:"lang"`
 	Match []Condition `map:"match"`
 }
 
+// Condition represents a condition for directing packets to specific ports.
 type Condition struct {
 	When string `map:"when"`
 	Port string `map:"port"`
@@ -38,6 +41,7 @@ const KindSwitch = "swtich"
 
 var _ node.Node = (*SwitchNode)(nil)
 
+// NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
 		n := NewSwitchNode(spec.Lang)
@@ -51,12 +55,14 @@ func NewSwitchNodeCodec() scheme.Codec {
 	})
 }
 
+// NewSwitchNode creates a new SwitchNode with the specified language.
 func NewSwitchNode(lang string) *SwitchNode {
 	n := &SwitchNode{lang: lang}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
 
+// Add adds a condition to the SwitchNode, associating it with a specific output port.
 func (n *SwitchNode) Add(when, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
