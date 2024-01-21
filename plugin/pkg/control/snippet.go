@@ -2,7 +2,6 @@ package control
 
 import (
 	"encoding/json"
-	"strings"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -13,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
@@ -101,12 +101,12 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 	case LangJavascript, LangTypescript:
 		if lang == LangTypescript {
 			var err error
-			if code, err = transformJavascript(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return nil, err
 			}
 		}
 		var err error
-		if code, err = transformJavascript(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
+		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
 			return nil, err
 		}
 
@@ -116,7 +116,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}
 
 		vm := goja.New()
-		if err := useCommonJSModule(vm); err != nil {
+		if err := js.UseModule(vm); err != nil {
 			return nil, err
 		}
 		_, err = vm.RunProgram(program)
@@ -124,7 +124,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, err
 		}
 
-		defaults := getCommonJSExport(vm, "default")
+		defaults := js.GetExport(vm, "default")
 		if defaults == nil {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
@@ -136,7 +136,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		vmPool := &sync.Pool{
 			New: func() any {
 				vm := goja.New()
-				_ = useCommonJSModule(vm)
+				_ = js.UseModule(vm)
 				_, _ = vm.RunProgram(program)
 				return vm
 			},
@@ -146,7 +146,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			vm := vmPool.Get().(*goja.Runtime)
 			defer vmPool.Put(vm)
 
-			defaults := getCommonJSExport(vm, "default")
+			defaults := js.GetExport(vm, "default")
 			main, _ := goja.AssertFunction(defaults)
 
 			inPayload := inPck.Payload()
@@ -184,52 +184,4 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 	}
 
 	return nil, ErrUnsupportedLanguage
-}
-
-func transformJavascript(code string, options api.TransformOptions) (string, error) {
-	if result := api.Transform(code, options); len(result.Errors) > 0 {
-		var msgs []string
-		for _, msg := range result.Errors {
-			msgs = append(msgs, msg.Text)
-		}
-		return "", errors.New(strings.Join(msgs, ", "))
-	} else {
-		return string(result.Code), nil
-	}
-}
-
-func useCommonJSModule(vm *goja.Runtime) error {
-	module := vm.NewObject()
-	exports := vm.NewObject()
-
-	if err := vm.Set("module", module); err != nil {
-		return err
-	}
-	if err := vm.Set("exports", exports); err != nil {
-		return err
-	}
-	if err := module.Set("exports", exports); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getCommonJSExport(vm *goja.Runtime, name string) goja.Value {
-	module := vm.Get("module")
-	if module == nil {
-		return nil
-	}
-	exports := module.ToObject(vm).Get("exports")
-	if exports == nil {
-		return nil
-	}
-
-	if name == "default" {
-		if exports.ToObject(vm).Get("__esModule").Export() == true {
-			return exports.ToObject(vm).Get("default")
-		} else {
-			return exports
-		}
-	}
-	return exports.ToObject(vm).Get(name)
 }
