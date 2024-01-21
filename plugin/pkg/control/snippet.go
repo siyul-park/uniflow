@@ -113,7 +113,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		}
 
-		vmPool := &sync.Pool{
+		vms := &sync.Pool{
 			New: func() any {
 				vm := js.New()
 				_, _ = vm.RunProgram(program)
@@ -122,8 +122,8 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 		}
 
 		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			vm := vmPool.Get().(*goja.Runtime)
-			defer vmPool.Put(vm)
+			vm := vms.Get().(*goja.Runtime)
+			defer vms.Put(vm)
 
 			defaults := js.Export(vm, "default")
 			main, _ := goja.AssertFunction(defaults)
