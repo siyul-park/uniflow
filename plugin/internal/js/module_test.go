@@ -1,4 +1,4 @@
-package jsutil
+package js
 
 import (
 	"testing"

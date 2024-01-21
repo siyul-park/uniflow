@@ -1,4 +1,4 @@
-package jsutil
+package js
 
 import (
 	"github.com/dop251/goja"
