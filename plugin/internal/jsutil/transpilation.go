@@ -1,4 +1,4 @@
-package jshelper
+package jsutil
 
 import (
 	"errors"
