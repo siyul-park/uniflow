@@ -99,13 +99,12 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return packet.New(outPayload), nil
 		}, nil
 	case LangJavascript, LangTypescript:
+		var err error
 		if lang == LangTypescript {
-			var err error
 			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return nil, err
 			}
 		}
-		var err error
 		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
 			return nil, err
 		}
@@ -115,10 +114,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, err
 		}
 
-		vm := goja.New()
-		if err := js.UseModule(vm); err != nil {
-			return nil, err
-		}
+		vm := js.New()
 		if _, err := vm.RunProgram(program); err != nil {
 			return nil, err
 		}
@@ -131,8 +127,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 
 		vmPool := &sync.Pool{
 			New: func() any {
-				vm := goja.New()
-				_ = js.UseModule(vm)
+				vm := js.New()
 				_, _ = vm.RunProgram(program)
 				return vm
 			},
