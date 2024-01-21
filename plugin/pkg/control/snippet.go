@@ -123,7 +123,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			return nil, err
 		}
 
-		if defaults := js.GetExport(vm, "default"); defaults == nil {
+		if defaults := js.Export(vm, "default"); defaults == nil {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
 		} else if _, ok := goja.AssertFunction(defaults); !ok {
 			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
@@ -142,7 +142,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			vm := vmPool.Get().(*goja.Runtime)
 			defer vmPool.Put(vm)
 
-			defaults := js.GetExport(vm, "default")
+			defaults := js.Export(vm, "default")
 			main, _ := goja.AssertFunction(defaults)
 
 			inPayload := inPck.Payload()

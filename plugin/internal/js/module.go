@@ -20,7 +20,7 @@ func UseModule(vm *goja.Runtime) error {
 	return nil
 }
 
-func GetExport(vm *goja.Runtime, name string) goja.Value {
+func Export(vm *goja.Runtime, name string) goja.Value {
 	module := vm.Get("module")
 	if module == nil {
 		return nil

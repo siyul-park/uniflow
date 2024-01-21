@@ -16,6 +16,6 @@ func TestUseModuleAndExport(t *testing.T) {
 	_, err = vm.RunString("module.exports = {};")
 	assert.NoError(t, err)
 
-	v := GetExport(vm, "default")
+	v := Export(vm, "default")
 	assert.NotNil(t, v)
 }
