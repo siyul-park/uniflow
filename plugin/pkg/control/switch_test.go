@@ -21,6 +21,14 @@ func TestNewSwitchNode(t *testing.T) {
 }
 
 func TestSwitchNode_Add(t *testing.T) {
+	t.Run(LangTypescript, func(t *testing.T) {
+		n := NewSwitchNode(LangTypescript)
+		defer n.Close()
+
+		err := n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		assert.NoError(t, err)
+	})
+
 	t.Run(LangJavascript, func(t *testing.T) {
 		n := NewSwitchNode(LangJavascript)
 		defer n.Close()
@@ -39,6 +47,43 @@ func TestSwitchNode_Add(t *testing.T) {
 }
 
 func TestSwitchNode_SendAndReceive(t *testing.T) {
+	t.Run(LangTypescript, func(t *testing.T) {
+		n := NewSwitchNode(LangTypescript)
+		defer n.Close()
+
+		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
+
+		out := port.New()
+		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort.Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inStream := in.Open(proc)
+		outStream := out.Open(proc)
+
+		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+		inPck := packet.New(inPayload)
+
+		inStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-outStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+			outStream.Send(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
 	t.Run(LangJavascript, func(t *testing.T) {
 		n := NewSwitchNode(LangJavascript)
 		defer n.Close()
@@ -115,6 +160,39 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
+	b.Run(LangTypescript, func(b *testing.B) {
+		n := NewSwitchNode(LangTypescript)
+		defer n.Close()
+
+		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+
+		in := port.New()
+		inPort, _ := n.Port(node.PortIn)
+		inPort.Link(in)
+
+		out := port.New()
+		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort.Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inStream := in.Open(proc)
+		outStream := out.Open(proc)
+
+		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+		inPck := packet.New(inPayload)
+
+		b.ResetTimer()
+
+		b.RunParallel(func(p *testing.PB) {
+			for p.Next() {
+				inStream.Send(inPck)
+				<-outStream.Receive()
+			}
+		})
+	})
+
 	b.Run(LangJavascript, func(b *testing.B) {
 		n := NewSwitchNode(LangJavascript)
 		defer n.Close()

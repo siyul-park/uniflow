@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -39,8 +40,16 @@ func (n *SwitchNode) Add(match, port string) error {
 	}
 
 	switch n.lang {
-	case LangJavascript:
+	case LangJavascript, LangTypescript:
+		var err error
+		if n.lang == LangTypescript {
+			if match, err = js.Transform(match, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+				return err
+			}
+		}
+
 		code := fmt.Sprintf("module.exports = ($) => { return %s }", match)
+
 		program, err := goja.Compile("", code, true)
 		if err != nil {
 			return err
