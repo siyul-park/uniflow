@@ -278,8 +278,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioStream.Send(inPck)
-
 		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
@@ -307,8 +305,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
 
-		ioStream.Send(inPck)
-
 		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
@@ -335,8 +331,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioStream.Send(inPck)
-
 		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
@@ -362,8 +356,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
-
-		ioStream.Send(inPck)
 
 		b.ResetTimer()
 
@@ -392,8 +384,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
 
-		ioStream.Send(inPck)
-
 		b.ResetTimer()
 
 		b.RunParallel(func(p *testing.PB) {
@@ -419,8 +409,6 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
-
-		ioStream.Send(inPck)
 
 		b.ResetTimer()
 

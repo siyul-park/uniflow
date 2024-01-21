@@ -32,21 +32,9 @@ type SnippetNodeSpec struct {
 
 const KindSnippet = "snippet"
 
-const (
-	LangText       = "text"
-	LangTypescript = "typescript"
-	LangJSON       = "json"
-	LangYAML       = "yaml"
-	LangJavascript = "javascript"
-	LangJSONata    = "jsonata"
-)
-
 var _ node.Node = (*SnippetNode)(nil)
 
-var (
-	ErrUnsupportedLanguage     = errors.New("language not supported")
-	ErrEntryPointNotUndeclared = errors.New("entry point not defined")
-)
+var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
