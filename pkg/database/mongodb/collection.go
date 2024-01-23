@@ -112,7 +112,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 		return false, err
 	}
 
-	res, err := c.raw.UpdateOne(ctx, f, bson.M{"$set": raw}, mongoUpdateOptions(database.MergeUpdateOptions(opts)))
+	res, err := c.raw.UpdateOne(ctx, f, bson.M{"$set": raw}, marshalUpdateOptions(database.MergeUpdateOptions(opts)))
 	if err != nil {
 		return false, errors.Wrap(database.ErrWrite, err.Error())
 	}
@@ -130,7 +130,7 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 		return 0, err
 	}
 
-	res, err := c.raw.UpdateMany(ctx, f, bson.M{"$set": raw}, mongoUpdateOptions(database.MergeUpdateOptions(opts)))
+	res, err := c.raw.UpdateMany(ctx, f, bson.M{"$set": raw}, marshalUpdateOptions(database.MergeUpdateOptions(opts)))
 	if err != nil {
 		return 0, errors.Wrap(database.ErrWrite, err.Error())
 	}
@@ -172,7 +172,7 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 		return nil, err
 	}
 
-	res := c.raw.FindOne(ctx, f, mongoFindOneOptions(database.MergeFindOptions(opts)))
+	res := c.raw.FindOne(ctx, f, marshalFindOneOptions(database.MergeFindOptions(opts)))
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
 			return nil, nil
@@ -197,7 +197,7 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 		return nil, err
 	}
 
-	cursor, err := c.raw.Find(ctx, f, mongoFindOptions(database.MergeFindOptions(opts)))
+	cursor, err := c.raw.Find(ctx, f, marshalFindOptions(database.MergeFindOptions(opts)))
 	if err != nil {
 		return nil, errors.Wrap(database.ErrRead, err.Error())
 	}
@@ -229,7 +229,7 @@ func (c *Collection) Drop(ctx context.Context) error {
 	return nil
 }
 
-func mongoUpdateOptions(opts *database.UpdateOptions) *options.UpdateOptions {
+func marshalUpdateOptions(opts *database.UpdateOptions) *options.UpdateOptions {
 	if opts == nil {
 		return nil
 	}
@@ -238,7 +238,7 @@ func mongoUpdateOptions(opts *database.UpdateOptions) *options.UpdateOptions {
 	})
 }
 
-func mongoFindOneOptions(opts *database.FindOptions) *options.FindOneOptions {
+func marshalFindOneOptions(opts *database.FindOptions) *options.FindOneOptions {
 	if opts == nil {
 		return nil
 	}
@@ -248,7 +248,7 @@ func mongoFindOneOptions(opts *database.FindOptions) *options.FindOneOptions {
 	})
 }
 
-func mongoFindOptions(opts *database.FindOptions) *options.FindOptions {
+func marshalFindOptions(opts *database.FindOptions) *options.FindOptions {
 	if opts == nil {
 		return nil
 	}
