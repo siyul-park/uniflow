@@ -42,7 +42,9 @@ func ReleaseServer(server *memongo.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if client, err := mongo.Connect(ctx, options.Client().ApplyURI(server.URI()+"/retryWrites=false")); err == nil {
+	if client, err := mongo.Connect(ctx, options.Client().ApplyURI(server.URI()+"/retryWrites=false")); err != nil {
+		server.Stop()
+	} else {
 		if databases, err := client.ListDatabaseNames(ctx, bson.D{}); err == nil {
 			for _, db := range databases {
 				_ = client.Database(db).Drop(ctx)
@@ -50,8 +52,5 @@ func ReleaseServer(server *memongo.Server) {
 		}
 		_ = client.Disconnect(ctx)
 		serverPool.Put(server)
-		return
 	}
-
-	server.Stop()
 }
