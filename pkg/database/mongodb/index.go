@@ -40,7 +40,7 @@ func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 
 		var keys []string
 		for k := range key {
-			keys = append(keys, documentKey(k))
+			keys = append(keys, unmarshalKey(k))
 		}
 		var partial *database.Filter
 		if err := unmarshalFilter(partialFilterExpression, &partial); err != nil {
@@ -61,7 +61,7 @@ func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 func (v *IndexView) Create(ctx context.Context, index database.IndexModel) error {
 	keys := bson.D{}
 	for _, k := range index.Keys {
-		keys = append(keys, bson.E{Key: bsonKey(k), Value: 1})
+		keys = append(keys, bson.E{Key: marshalKey(k), Value: 1})
 	}
 
 	partialFilterExpression, err := marshalFilter(index.Partial)

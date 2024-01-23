@@ -244,7 +244,7 @@ func mongoFindOneOptions(opts *database.FindOptions) *options.FindOneOptions {
 	}
 	return lo.ToPtr(options.FindOneOptions{
 		Skip: lo.EmptyableToPtr(int64(lo.FromPtr(opts.Skip))),
-		Sort: mongoSorts(opts.Sorts),
+		Sort: marshalSorts(opts.Sorts),
 	})
 }
 
@@ -255,6 +255,6 @@ func mongoFindOptions(opts *database.FindOptions) *options.FindOptions {
 	return lo.ToPtr(options.FindOptions{
 		Limit: lo.EmptyableToPtr(int64(lo.FromPtr(opts.Limit))),
 		Skip:  lo.EmptyableToPtr(int64(lo.FromPtr(opts.Skip))),
-		Sort:  mongoSorts(opts.Sorts),
+		Sort:  marshalSorts(opts.Sorts),
 	})
 }

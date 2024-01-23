@@ -17,6 +17,16 @@ var (
 	toSnake      = changeCase(strcase.ToSnake)
 )
 
+func changeCase(convert func(string) string) func(string) string {
+	return func(str string) string {
+		var tokens []string
+		for _, curr := range strings.Split(str, ".") {
+			tokens = append(tokens, convert(curr))
+		}
+		return strings.Join(tokens, ".")
+	}
+}
+
 func marshalFilter(filter *database.Filter) (any, error) {
 	if filter == nil {
 		return bson.D{}, nil
@@ -39,7 +49,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 			return bson.D{{Key: "$or", Value: values}}, nil
 		}
 	case database.NULL, database.NNULL:
-		k := bsonKey(filter.Key)
+		k := marshalKey(filter.Key)
 
 		if filter.OP == database.NULL {
 			return bson.D{{Key: k, Value: bson.M{"$eq": nil}}}, nil
@@ -47,7 +57,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 			return bson.D{{Key: k, Value: bson.M{"$ne": nil}}}, nil
 		}
 	default:
-		k := bsonKey(filter.Key)
+		k := marshalKey(filter.Key)
 		v, err := marshalDocument(filter.Value)
 		if err != nil {
 			return nil, err
@@ -210,7 +220,7 @@ func marshalDocument(data primitive.Value) (any, error) {
 				if v, err := marshalDocument(v); err != nil {
 					return nil, err
 				} else {
-					t[bsonKey(k.String())] = v
+					t[marshalKey(k.String())] = v
 				}
 			}
 		}
@@ -261,7 +271,7 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 			if err := unmarshalDocument(e.Value, &value); err != nil {
 				return err
 			}
-			pairs[i*2] = primitive.NewString(documentKey(e.Key))
+			pairs[i*2] = primitive.NewString(unmarshalKey(e.Key))
 			pairs[i*2+1] = value
 		}
 		*v = primitive.NewMap(pairs...)
@@ -274,7 +284,7 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 			if err := unmarshalDocument(v, &value); err != nil {
 				return err
 			}
-			pairs[i*2] = primitive.NewString(documentKey(k))
+			pairs[i*2] = primitive.NewString(unmarshalKey(k))
 			pairs[i*2+1] = value
 			i += 1
 		}
@@ -288,46 +298,36 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 	return errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-func mongoSorts(sorts []database.Sort) bson.D {
+func marshalSorts(sorts []database.Sort) bson.D {
 	sort := bson.D{}
 	for _, s := range sorts {
 		sort = append(sort, bson.E{
-			Key:   bsonKey(s.Key),
-			Value: mongoOrder(s.Order),
+			Key:   marshalKey(s.Key),
+			Value: marshalOrder(s.Order),
 		})
 	}
 	return sort
 }
 
-func mongoOrder(order database.Order) int {
+func marshalOrder(order database.Order) int {
 	if order == database.OrderASC {
 		return 1
 	}
 	return -1
 }
 
-func bsonKey(key string) string {
+func marshalKey(key string) string {
 	if key == "id" {
 		return "_id"
 	}
 	return toLowerCamel(key)
 }
 
-func documentKey(key string) string {
+func unmarshalKey(key string) string {
 	if key == "_id" {
 		return "id"
 	}
 	return toSnake(key)
-}
-
-func changeCase(convert func(string) string) func(string) string {
-	return func(str string) string {
-		var tokens []string
-		for _, curr := range strings.Split(str, ".") {
-			tokens = append(tokens, convert(curr))
-		}
-		return strings.Join(tokens, ".")
-	}
 }
 
 func bsonMA(value any) ([]bson.M, bool) {
