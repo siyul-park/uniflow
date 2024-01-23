@@ -20,6 +20,10 @@ import (
 // SnippetNode represents a node that executes code snippets in various languages.
 type SnippetNode struct {
 	*node.OneToOneNode
+	lang   string
+	code   string
+	action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+	mu     sync.RWMutex
 }
 
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
@@ -44,72 +48,77 @@ func NewSnippetNodeCodec() scheme.Codec {
 
 // NewSnippetNode creates a new SnippetNode with the specified language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
-	n := &SnippetNode{}
-	action, err := n.compile(lang, code)
-	if err != nil {
+	n := &SnippetNode{lang: lang, code: code}
+	if err := n.compile(); err != nil {
 		return nil, err
 	}
-	n.OneToOneNode = node.NewOneToOneNode(action)
+	if err := n.link(); err != nil {
+		return nil, err
+	}
 	return n, nil
 }
 
-func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
-	if lang == "" {
-		lang = LangText
+func (n *SnippetNode) compile() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.lang == "" {
+		n.lang = LangText
 	}
 
-	switch lang {
+	switch n.lang {
 	case LangText:
-		outPayload := primitive.NewString(code)
-
-		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+		outPayload := primitive.NewString(n.code)
+		n.action = func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
-		}, nil
+		}
+		return nil
 	case LangJSON, LangYAML:
 		var data any
 		var err error
-		if lang == LangJSON {
-			err = json.Unmarshal([]byte(code), &data)
-		} else if lang == LangYAML {
-			err = yaml.Unmarshal([]byte(code), &data)
+		if n.lang == LangJSON {
+			err = json.Unmarshal([]byte(n.code), &data)
+		} else if n.lang == LangYAML {
+			err = yaml.Unmarshal([]byte(n.code), &data)
 		}
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		outPayload, err := primitive.MarshalBinary(data)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
+		n.action = func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
-		}, nil
+		}
+		return nil
 	case LangJavascript, LangTypescript:
 		var err error
-		if lang == LangTypescript {
-			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
-				return nil, err
+		if n.lang == LangTypescript {
+			if n.code, err = js.Transform(n.code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+				return err
 			}
 		}
-		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
-			return nil, err
+		if n.code, err = js.Transform(n.code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
+			return err
 		}
 
-		program, err := goja.Compile("", code, true)
+		program, err := goja.Compile("", n.code, true)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		vm := js.New()
 		if _, err := vm.RunProgram(program); err != nil {
-			return nil, err
+			return err
 		}
 
 		if defaults := js.Export(vm, "default"); defaults == nil {
-			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
+			return errors.WithStack(ErrEntryPointNotUndeclared)
 		} else if _, ok := goja.AssertFunction(defaults); !ok {
-			return nil, errors.WithStack(ErrEntryPointNotUndeclared)
+			return errors.WithStack(ErrEntryPointNotUndeclared)
 		}
 
 		vms := &sync.Pool{
@@ -120,7 +129,7 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			},
 		}
 
-		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		n.action = func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 
@@ -137,14 +146,15 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			} else {
 				return packet.New(outPayload), nil
 			}
-		}, nil
+		}
+		return nil
 	case LangJSONata:
-		exp, err := jsonata.Compile(code)
+		exp, err := jsonata.Compile(n.code)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		n.action = func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			inPayload := inPck.Payload()
 			input := inPayload.Interface()
 
@@ -158,8 +168,23 @@ func (n *SnippetNode) compile(lang, code string) (func(*process.Process, *packet
 			}
 
 			return packet.New(outPayload), nil
-		}, nil
+		}
+		return nil
 	}
 
-	return nil, ErrUnsupportedLanguage
+	return ErrUnsupportedLanguage
+}
+
+func (n *SnippetNode) link() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.OneToOneNode != nil {
+		if err := n.OneToOneNode.Close(); err != nil {
+			return err
+		}
+	}
+
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
+	return nil
 }
