@@ -3,7 +3,7 @@ package process
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 )
 
 // Graph represents a directed acyclic graph with stems and leaves.
@@ -13,7 +13,7 @@ type Graph struct {
 	mu     sync.RWMutex
 }
 
-type links map[ulid.ULID][]ulid.ULID
+type links map[uuid.UUID][]uuid.UUID
 
 func newGraph() *Graph {
 	return &Graph{
@@ -23,7 +23,7 @@ func newGraph() *Graph {
 }
 
 // Add creates a directed edge from stem to leaf in the graph.
-func (g *Graph) Add(stem, leaf ulid.ULID) {
+func (g *Graph) Add(stem, leaf uuid.UUID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (g *Graph) Add(stem, leaf ulid.ULID) {
 }
 
 // Delete removes the directed edge from stem to leaf in the graph.
-func (g *Graph) Delete(stem, leaf ulid.ULID) {
+func (g *Graph) Delete(stem, leaf uuid.UUID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -45,9 +45,9 @@ func (g *Graph) Delete(stem, leaf ulid.ULID) {
 }
 
 // Has checks if there is a directed path from stem to leaf in the graph.
-func (g *Graph) Has(stem, leaf ulid.ULID) bool {
+func (g *Graph) Has(stem, leaf uuid.UUID) bool {
 	var ok bool
-	g.Upwards(leaf, func(key ulid.ULID) bool {
+	g.Upwards(leaf, func(key uuid.UUID) bool {
 		if ok {
 			return false
 		}
@@ -61,7 +61,7 @@ func (g *Graph) Has(stem, leaf ulid.ULID) bool {
 }
 
 // Stems returns the stems associated with the given leaf in the graph.
-func (g *Graph) Stems(leaf ulid.ULID) []ulid.ULID {
+func (g *Graph) Stems(leaf uuid.UUID) []uuid.UUID {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
@@ -72,7 +72,7 @@ func (g *Graph) Stems(leaf ulid.ULID) []ulid.ULID {
 }
 
 // Leaves returns the leaves associated with the given stem in the graph.
-func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
+func (g *Graph) Leaves(stem uuid.UUID) []uuid.UUID {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
@@ -83,12 +83,12 @@ func (g *Graph) Leaves(stem ulid.ULID) []ulid.ULID {
 }
 
 // Upwards traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
-func (g *Graph) Upwards(leaf ulid.ULID, f func(ulid.ULID) bool) {
+func (g *Graph) Upwards(leaf uuid.UUID, f func(uuid.UUID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	heads := []ulid.ULID{leaf}
-	visits := make(map[ulid.ULID]struct{})
+	heads := []uuid.UUID{leaf}
+	visits := make(map[uuid.UUID]struct{})
 
 	for len(heads) > 0 {
 		head := heads[0]
@@ -107,7 +107,7 @@ func (g *Graph) Upwards(leaf ulid.ULID, f func(ulid.ULID) bool) {
 	}
 }
 
-func (l links) has(key, value ulid.ULID) bool {
+func (l links) has(key, value uuid.UUID) bool {
 	for _, cur := range l[key] {
 		if cur == value {
 			return true
@@ -116,7 +116,7 @@ func (l links) has(key, value ulid.ULID) bool {
 	return false
 }
 
-func (l links) delete(key, value ulid.ULID) {
+func (l links) delete(key, value uuid.UUID) {
 	for i, cur := range l[key] {
 		if cur == value {
 			l[key] = append(l[key][:i], l[key][i+1:]...)

@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUnstructured_GetAndSetID(t *testing.T) {
-	id := ulid.Make()
+	id := uuid.Must(uuid.NewV7())
 
 	u := NewUnstructured(nil)
 
@@ -39,7 +39,7 @@ func TestUnstructured_GetAndLinks(t *testing.T) {
 	links := map[string][]PortLocation{
 		faker.UUIDHyphenated(): {
 			{
-				ID:   ulid.Make(),
+				ID:   uuid.Must(uuid.NewV7()),
 				Port: faker.UUIDHyphenated(),
 			},
 		},
@@ -54,7 +54,7 @@ func TestUnstructured_GetAndLinks(t *testing.T) {
 func TestUnstructured_Marshal(t *testing.T) {
 	u := NewUnstructured(nil)
 	spec := &SpecMeta{
-		ID:   ulid.Make(),
+		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
 	}
 
@@ -69,7 +69,7 @@ func TestUnstructured_Unmarshal(t *testing.T) {
 	spec := &SpecMeta{}
 
 	_ = u.Marshal(&SpecMeta{
-		ID:   ulid.Make(),
+		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
 	})
 

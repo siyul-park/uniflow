@@ -6,9 +6,9 @@ require (
 	github.com/benbjohnson/immutable v0.4.3
 	github.com/emirpasic/gods v1.18.1
 	github.com/go-faker/faker/v4 v4.2.0
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jedib0t/go-pretty/v6 v6.5.0
-	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
 	github.com/spf13/cobra v1.8.0

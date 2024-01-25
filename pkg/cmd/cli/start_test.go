@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -45,7 +45,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	filename := "patch.json"
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
@@ -84,7 +84,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				r, err := st.FindOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+				r, err := st.FindOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
 				assert.NoError(t, err)
 				if r != nil {
 					assert.Equal(t, spec, r)

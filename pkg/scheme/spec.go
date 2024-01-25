@@ -1,15 +1,15 @@
 package scheme
 
 import (
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 )
 
 // Spec represents the specification defining the attributes and connections of a node.
 type Spec interface {
 	// GetID returns the unique identifier of the node.
-	GetID() ulid.ULID
+	GetID() uuid.UUID
 	// SetID sets the unique identifier of the node.
-	SetID(val ulid.ULID)
+	SetID(val uuid.UUID)
 	// GetKind returns the category or type of the node.
 	GetKind() string
 	// SetKind sets the category or type of the node.
@@ -30,7 +30,7 @@ type Spec interface {
 
 // SpecMeta is the metadata that every persisted resource must have, including user-created objects.
 type SpecMeta struct {
-	ID        ulid.ULID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID        uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	Kind      string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
 	Namespace string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
 	Name      string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
@@ -39,7 +39,7 @@ type SpecMeta struct {
 
 // PortLocation represents the location of a port within the network.
 type PortLocation struct {
-	ID   ulid.ULID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID   uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	Name string    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	Port string    `json:"port" yaml:"port" map:"port"`
 }
@@ -48,12 +48,12 @@ type PortLocation struct {
 const DefaultNamespace = "default"
 
 // GetID returns the unique identifier of the SpecMeta.
-func (m *SpecMeta) GetID() ulid.ULID {
+func (m *SpecMeta) GetID() uuid.UUID {
 	return m.ID
 }
 
 // SetID sets the unique identifier of the SpecMeta.
-func (m *SpecMeta) SetID(val ulid.ULID) {
+func (m *SpecMeta) SetID(val uuid.UUID) {
 	m.ID = val
 }
 

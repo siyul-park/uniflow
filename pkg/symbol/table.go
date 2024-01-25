@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -19,8 +19,8 @@ type TableOptions struct {
 // Table manages the storage and operations for Symbols.
 type Table struct {
 	scheme      *scheme.Scheme
-	symbols     map[ulid.ULID]*Symbol
-	index       map[string]map[string]ulid.ULID
+	symbols     map[uuid.UUID]*Symbol
+	index       map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
 	unloadHooks []UnloadHook
 	mu          sync.RWMutex
@@ -38,8 +38,8 @@ func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 
 	return &Table{
 		scheme:      sh,
-		symbols:     make(map[ulid.ULID]*Symbol),
-		index:       make(map[string]map[string]ulid.ULID),
+		symbols:     make(map[uuid.UUID]*Symbol),
+		index:       make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
 	}
@@ -72,7 +72,7 @@ func (t *Table) Insert(spec scheme.Spec) (*Symbol, error) {
 }
 
 // Free removes a Symbol from the table.
-func (t *Table) Free(id ulid.ULID) (bool, error) {
+func (t *Table) Free(id uuid.UUID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (t *Table) Free(id ulid.ULID) (bool, error) {
 }
 
 // LookupByID retrieves a Symbol by its ID.
-func (t *Table) LookupByID(id ulid.ULID) (*Symbol, bool) {
+func (t *Table) LookupByID(id uuid.UUID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -107,11 +107,11 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 }
 
 // Keys returns all Symbol's ID.
-func (t *Table) Keys() []ulid.ULID {
+func (t *Table) Keys() []uuid.UUID {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	var ids []ulid.ULID
+	var ids []uuid.UUID
 	for id := range t.symbols {
 		ids = append(ids, id)
 	}
@@ -136,7 +136,7 @@ func (t *Table) Clear() error {
 func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
-		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]ulid.ULID{sym.Name(): sym.ID()})
+		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
 	}
 
 	if err := t.links(sym); err != nil {
@@ -149,7 +149,7 @@ func (t *Table) insert(sym *Symbol) error {
 	return nil
 }
 
-func (t *Table) free(id ulid.ULID) (*Symbol, error) {
+func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 	sym, ok := t.symbols[id]
 	if !ok {
 		return nil, nil
@@ -191,7 +191,7 @@ func (t *Table) links(sym *Symbol) error {
 				}
 			}
 
-			if id != (ulid.ULID{}) {
+			if id != (uuid.UUID{}) {
 				if ref, ok := t.symbols[id]; ok {
 					if ref.Namespace() == sym.Namespace() {
 						if p2, ok := ref.Port(location.Port); ok {
@@ -228,7 +228,7 @@ func (t *Table) unlinks(sym *Symbol) error {
 				}
 			}
 
-			if id == (ulid.ULID{}) {
+			if id == (uuid.UUID{}) {
 				continue
 			}
 

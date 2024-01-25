@@ -3,12 +3,12 @@ package process
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 )
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	id    ulid.ULID
+	id    uuid.UUID
 	graph *Graph
 	stack *Stack
 	err   error
@@ -22,7 +22,7 @@ func New() *Process {
 	s := newStack(g)
 
 	return &Process{
-		id:    ulid.Make(),
+		id:    uuid.Must(uuid.NewV7()),
 		graph: g,
 		stack: s,
 		done:  make(chan struct{}),
@@ -31,7 +31,7 @@ func New() *Process {
 }
 
 // ID returns the ID of the process.
-func (p *Process) ID() ulid.ULID {
+func (p *Process) ID() uuid.UUID {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 

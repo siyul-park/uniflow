@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
@@ -26,17 +26,17 @@ func TestTable_Insert(t *testing.T) {
 			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec2 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
@@ -88,7 +88,7 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 
-			id := ulid.Make()
+			id := uuid.Must(uuid.NewV7())
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
@@ -103,12 +103,12 @@ func TestTable_Insert(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
 			spec4 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 			}
@@ -157,19 +157,19 @@ func TestTable_Insert(t *testing.T) {
 			defer tb.Clear()
 
 			spec1 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec2 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
@@ -222,7 +222,7 @@ func TestTable_Insert(t *testing.T) {
 			tb := NewTable(s)
 			defer tb.Clear()
 
-			id := ulid.Make()
+			id := uuid.Must(uuid.NewV7())
 
 			spec1 := &scheme.SpecMeta{
 				ID:        id,
@@ -237,13 +237,13 @@ func TestTable_Insert(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec3 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			spec4 := &scheme.SpecMeta{
-				ID:        ulid.Make(),
+				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: scheme.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
@@ -302,17 +302,17 @@ func TestTable_Free(t *testing.T) {
 	defer tb.Clear()
 
 	spec1 := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 	spec2 := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
 	spec3 := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
@@ -395,7 +395,7 @@ func TestTable_LookupByID(t *testing.T) {
 	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}
@@ -421,7 +421,7 @@ func TestTable_LookupByName(t *testing.T) {
 	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
@@ -448,7 +448,7 @@ func TestTable_Keys(t *testing.T) {
 	defer tb.Clear()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
@@ -475,7 +475,7 @@ func BenchmarkTable_Insert(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 		}
@@ -501,7 +501,7 @@ func BenchmarkTable_Free(b *testing.B) {
 		b.StopTimer()
 
 		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 		}

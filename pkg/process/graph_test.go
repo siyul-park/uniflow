@@ -3,15 +3,15 @@ package process
 import (
 	"testing"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGraph_Add(t *testing.T) {
 	g := newGraph()
 
-	v1 := ulid.Make()
-	v2 := ulid.Make()
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
 
 	g.Add(v1, v2)
 
@@ -27,8 +27,8 @@ func TestGraph_Add(t *testing.T) {
 func TestGraph_Delete(t *testing.T) {
 	g := newGraph()
 
-	v1 := ulid.Make()
-	v2 := ulid.Make()
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
 
 	g.Add(v1, v2)
 
@@ -46,15 +46,15 @@ func TestGraph_Delete(t *testing.T) {
 func TestGraph_Upwards(t *testing.T) {
 	g := newGraph()
 
-	v1 := ulid.Make()
-	v2 := ulid.Make()
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
 
 	g.Add(v1, v2)
 
-	var trace []ulid.ULID
-	g.Upwards(v2, func(v ulid.ULID) bool {
+	var trace []uuid.UUID
+	g.Upwards(v2, func(v uuid.UUID) bool {
 		trace = append(trace, v)
 		return true
 	})
-	assert.Equal(t, []ulid.ULID{v2, v1}, trace)
+	assert.Equal(t, []uuid.UUID{v2, v1}, trace)
 }

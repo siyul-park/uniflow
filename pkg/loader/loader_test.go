@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -41,13 +41,13 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		spec1 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 		spec2 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
@@ -61,7 +61,7 @@ func TestLoader_LoadOne(t *testing.T) {
 			},
 		}
 		spec3 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
@@ -109,7 +109,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 		}
@@ -142,7 +142,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		})
 
 		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 		}
@@ -153,7 +153,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()))
+		st.DeleteOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
 
 		r2, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
@@ -191,13 +191,13 @@ func TestLoader_LoadAll(t *testing.T) {
 		})
 
 		spec1 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 		spec2 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
@@ -211,7 +211,7 @@ func TestLoader_LoadAll(t *testing.T) {
 			},
 		}
 		spec3 := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
@@ -261,7 +261,7 @@ func TestLoader_LoadAll(t *testing.T) {
 		})
 
 		spec := &scheme.SpecMeta{
-			ID:        ulid.Make(),
+			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: scheme.DefaultNamespace,
 		}
@@ -304,7 +304,7 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 	})
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
@@ -353,7 +353,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 	})
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),

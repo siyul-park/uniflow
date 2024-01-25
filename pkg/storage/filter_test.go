@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -12,50 +12,50 @@ import (
 )
 
 func TestFilterHelper(t *testing.T) {
-	id := ulid.Make()
+	id := uuid.Must(uuid.NewV7())
 
 	var testCase = []struct {
 		when   *Filter
 		expect *Filter
 	}{
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).EQ(id),
+			when:   Where[uuid.UUID](scheme.KeyID).EQ(id),
 			expect: &Filter{OP: database.EQ, Key: scheme.KeyID, Value: id},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).NE(id),
+			when:   Where[uuid.UUID](scheme.KeyID).NE(id),
 			expect: &Filter{OP: database.NE, Key: scheme.KeyID, Value: id},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).LT(id),
+			when:   Where[uuid.UUID](scheme.KeyID).LT(id),
 			expect: &Filter{OP: database.LT, Key: scheme.KeyID, Value: id},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).LTE(id),
+			when:   Where[uuid.UUID](scheme.KeyID).LTE(id),
 			expect: &Filter{OP: database.LTE, Key: scheme.KeyID, Value: id},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IN(id),
+			when:   Where[uuid.UUID](scheme.KeyID).IN(id),
 			expect: &Filter{OP: database.IN, Key: scheme.KeyID, Value: []any{id}},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).NotIN(id),
+			when:   Where[uuid.UUID](scheme.KeyID).NotIN(id),
 			expect: &Filter{OP: database.NIN, Key: scheme.KeyID, Value: []any{id}},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull(),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull(),
 			expect: &Filter{OP: database.NULL, Key: scheme.KeyID},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNotNull(),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNotNull(),
 			expect: &Filter{OP: database.NNULL, Key: scheme.KeyID},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull().And(Where[ulid.ULID](scheme.KeyID).IsNotNull()),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull().And(Where[uuid.UUID](scheme.KeyID).IsNotNull()),
 			expect: &Filter{OP: database.AND, Children: []*Filter{{OP: database.NULL, Key: scheme.KeyID}, {OP: database.NNULL, Key: scheme.KeyID}}},
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull().Or(Where[ulid.ULID](scheme.KeyID).IsNotNull()),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull().Or(Where[uuid.UUID](scheme.KeyID).IsNotNull()),
 			expect: &Filter{OP: database.OR, Children: []*Filter{{OP: database.NULL, Key: scheme.KeyID}, {OP: database.NNULL, Key: scheme.KeyID}}},
 		},
 	}
@@ -68,7 +68,7 @@ func TestFilterHelper(t *testing.T) {
 }
 
 func TestFilter_Encode(t *testing.T) {
-	id := ulid.Make()
+	id := uuid.Must(uuid.NewV7())
 	pk := primitive.NewBinary(id.Bytes())
 
 	testCases := []struct {
@@ -76,43 +76,43 @@ func TestFilter_Encode(t *testing.T) {
 		expect *database.Filter
 	}{
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).EQ(id),
+			when:   Where[uuid.UUID](scheme.KeyID).EQ(id),
 			expect: database.Where(scheme.KeyID).EQ(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).NE(id),
+			when:   Where[uuid.UUID](scheme.KeyID).NE(id),
 			expect: database.Where(scheme.KeyID).NE(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).LT(id),
+			when:   Where[uuid.UUID](scheme.KeyID).LT(id),
 			expect: database.Where(scheme.KeyID).LT(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).LTE(id),
+			when:   Where[uuid.UUID](scheme.KeyID).LTE(id),
 			expect: database.Where(scheme.KeyID).LTE(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IN(id),
+			when:   Where[uuid.UUID](scheme.KeyID).IN(id),
 			expect: database.Where(scheme.KeyID).IN(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).NotIN(id),
+			when:   Where[uuid.UUID](scheme.KeyID).NotIN(id),
 			expect: database.Where(scheme.KeyID).NotIN(pk),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull(),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull(),
 			expect: database.Where(scheme.KeyID).IsNull(),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNotNull(),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNotNull(),
 			expect: database.Where(scheme.KeyID).IsNotNull(),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull().And(Where[ulid.ULID](scheme.KeyID).IsNotNull()),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull().And(Where[uuid.UUID](scheme.KeyID).IsNotNull()),
 			expect: database.Where(scheme.KeyID).IsNull().And(database.Where(scheme.KeyID).IsNotNull()),
 		},
 		{
-			when:   Where[ulid.ULID](scheme.KeyID).IsNull().Or(Where[ulid.ULID](scheme.KeyID).IsNotNull()),
+			when:   Where[uuid.UUID](scheme.KeyID).IsNull().Or(Where[uuid.UUID](scheme.KeyID).IsNotNull()),
 			expect: database.Where(scheme.KeyID).IsNull().Or(database.Where(scheme.KeyID).IsNotNull()),
 		},
 	}

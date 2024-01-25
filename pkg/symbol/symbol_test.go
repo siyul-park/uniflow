@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
@@ -15,14 +15,14 @@ func TestSymbol_Getter(t *testing.T) {
 	defer n.Close()
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      faker.UUIDHyphenated(),
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 		Links: map[string][]scheme.PortLocation{
 			node.PortOut: {
 				{
-					ID:   ulid.Make(),
+					ID:   uuid.Must(uuid.NewV7()),
 					Port: node.PortIn,
 				},
 			},

@@ -1,7 +1,7 @@
 package symbol
 
 import (
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -31,7 +31,7 @@ func New(spec scheme.Spec, node node.Node) *Symbol {
 }
 
 // ID returns the unique identifier.
-func (s *Symbol) ID() ulid.ULID {
+func (s *Symbol) ID() uuid.UUID {
 	return s.spec.GetID()
 }
 

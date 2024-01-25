@@ -3,7 +3,7 @@ package cli
 import (
 	"io/fs"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -66,7 +66,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 		var filter *storage.Filter
 		for _, spec := range specs {
-			filter = filter.And(storage.Where[ulid.ULID](scheme.KeyID).EQ(spec.GetID()).
+			filter = filter.And(storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()).
 				And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
 		}
 

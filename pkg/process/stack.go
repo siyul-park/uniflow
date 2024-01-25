@@ -3,25 +3,25 @@ package process
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 )
 
 // Stack represents a stack data structure with associated graph-based relationships.
 type Stack struct {
 	graph  *Graph
-	values map[ulid.ULID][]ulid.ULID
+	values map[uuid.UUID][]uuid.UUID
 	mu     sync.RWMutex
 }
 
 func newStack(graph *Graph) *Stack {
 	return &Stack{
 		graph:  graph,
-		values: make(map[ulid.ULID][]ulid.ULID),
+		values: make(map[uuid.UUID][]uuid.UUID),
 	}
 }
 
 // Push adds a value to the stack associated with the given key.
-func (s *Stack) Push(key, value ulid.ULID) {
+func (s *Stack) Push(key, value uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -29,7 +29,7 @@ func (s *Stack) Push(key, value ulid.ULID) {
 }
 
 // Pop removes and returns the top value from the stack associated with the given key.
-func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
+func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -41,11 +41,11 @@ func (s *Stack) Pop(key, value ulid.ULID) (ulid.ULID, bool) {
 		}
 	}
 
-	return ulid.ULID{}, false
+	return uuid.UUID{}, false
 }
 
 // Heads returns the unique heads (keys) with non-empty stacks reachable from the given key.
-func (s *Stack) Heads(key ulid.ULID) []ulid.ULID {
+func (s *Stack) Heads(key uuid.UUID) []uuid.UUID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -53,11 +53,11 @@ func (s *Stack) Heads(key ulid.ULID) []ulid.ULID {
 }
 
 // Clear removes the stack associated with the given key and its branches if their stacks are empty.
-func (s *Stack) Clear(key ulid.ULID) {
+func (s *Stack) Clear(key uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.graph.Upwards(key, func(key ulid.ULID) bool {
+	s.graph.Upwards(key, func(key uuid.UUID) bool {
 		for _, leaf := range s.graph.Leaves(key) {
 			if len(s.values[leaf]) > 0 {
 				return false
@@ -70,12 +70,12 @@ func (s *Stack) Clear(key ulid.ULID) {
 }
 
 // Size returns the total number of elements in the stack and its branches reachable from the given key.
-func (s *Stack) Size(key ulid.ULID) int {
+func (s *Stack) Size(key uuid.UUID) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	size := 0
-	s.graph.Upwards(key, func(key ulid.ULID) bool {
+	s.graph.Upwards(key, func(key uuid.UUID) bool {
 		size += len(s.values[key])
 		return true
 	})
@@ -83,9 +83,9 @@ func (s *Stack) Size(key ulid.ULID) int {
 	return size
 }
 
-func (s *Stack) heads(key ulid.ULID) []ulid.ULID {
-	var heads []ulid.ULID
-	s.graph.Upwards(key, func(key ulid.ULID) bool {
+func (s *Stack) heads(key uuid.UUID) []uuid.UUID {
+	var heads []uuid.UUID
+	s.graph.Upwards(key, func(key uuid.UUID) bool {
 		if len(s.values[key]) > 0 {
 			heads = append(heads, key)
 			return false

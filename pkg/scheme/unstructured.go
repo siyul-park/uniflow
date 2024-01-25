@@ -3,7 +3,7 @@ package scheme
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
@@ -34,14 +34,14 @@ func NewUnstructured(doc *primitive.Map) *Unstructured {
 }
 
 // GetID returns the ID of the Unstructured.
-func (u *Unstructured) GetID() ulid.ULID {
-	var val ulid.ULID
+func (u *Unstructured) GetID() uuid.UUID {
+	var val uuid.UUID
 	_ = u.Get(KeyID, &val)
 	return val
 }
 
 // SetID sets the ID of the Unstructured.
-func (u *Unstructured) SetID(val ulid.ULID) {
+func (u *Unstructured) SetID(val uuid.UUID) {
 	u.Set(KeyID, val)
 }
 

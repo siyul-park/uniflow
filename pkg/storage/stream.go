@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
@@ -26,7 +26,7 @@ func newStream(stream database.Stream) *Stream {
 			case <-s.stream.Done():
 				return
 			case e := <-s.stream.Next():
-				var id ulid.ULID
+				var id uuid.UUID
 				if err := primitive.Unmarshal(e.DocumentID, &id); err != nil {
 					continue
 				}

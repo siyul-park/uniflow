@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -40,7 +40,7 @@ func New(config Config) *Loader {
 // It processes the specified ID and recursively loads linked scheme.Spec.
 // If the loader is associated with a namespace, it uses that namespace.
 // The loaded nodes are added to the symbol table for future reference.
-func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, error) {
+func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
 
@@ -58,8 +58,8 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 			exists[key] = false
 
 			switch k := key.(type) {
-			case ulid.ULID:
-				filter = filter.Or(storage.Where[ulid.ULID](scheme.KeyID).EQ(k))
+			case uuid.UUID:
+				filter = filter.Or(storage.Where[uuid.UUID](scheme.KeyID).EQ(k))
 			case string:
 				filter = filter.Or(storage.Where[string](scheme.KeyName).EQ(k))
 			}
@@ -92,7 +92,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 
 			for _, locations := range spec.GetLinks() {
 				for _, location := range locations {
-					if location.ID != (ulid.ULID{}) {
+					if location.ID != (uuid.UUID{}) {
 						next = append(next, location.ID)
 					} else if location.Name != "" {
 						next = append(next, location.Name)
@@ -103,7 +103,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 
 		for key, exist := range exists {
 			if !exist {
-				id, ok := key.(ulid.ULID)
+				id, ok := key.(uuid.UUID)
 				if !ok {
 					if name, ok := key.(string); ok {
 						if sym, ok := ld.table.LookupByName(namespace, name); ok {
@@ -112,7 +112,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id ulid.ULID) (*symbol.Symbol, er
 					}
 				}
 
-				if id != (ulid.ULID{}) {
+				if id != (uuid.UUID{}) {
 					if _, err := ld.table.Free(id); err != nil {
 						return nil, err
 					}

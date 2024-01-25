@@ -3,7 +3,7 @@ package process
 import (
 	"testing"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func TestProcess_ID(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
-	assert.NotEqual(t, ulid.ULID{}, proc.ID())
+	assert.NotEqual(t, uuid.UUID{}, proc.ID())
 }
 
 func TestProcess_Graph(t *testing.T) {

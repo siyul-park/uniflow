@@ -5,7 +5,7 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
@@ -96,7 +96,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
 
 	if s.storage != nil {
 		for _, spec := range specs {
-			if spec.GetID() == (ulid.ULID{}) {
+			if spec.GetID() == (uuid.UUID{}) {
 				if spec.GetName() != "" {
 					filter := storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
 					if exist, err := s.storage.FindOne(ctx, filter); err != nil {
@@ -107,8 +107,8 @@ func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
 				}
 			}
 
-			if spec.GetID() == (ulid.ULID{}) {
-				spec.SetID(ulid.Make())
+			if spec.GetID() == (uuid.UUID{}) {
+				spec.SetID(uuid.Must(uuid.NewV7()))
 			}
 		}
 	}

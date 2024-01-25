@@ -3,7 +3,7 @@ package cli
 import (
 	"io/fs"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
@@ -66,19 +66,19 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		var ids []ulid.ULID
+		var ids []uuid.UUID
 		for _, spec := range specs {
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := st.FindMany(ctx, storage.Where[ulid.ULID](scheme.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := st.FindMany(ctx, storage.Where[uuid.UUID](scheme.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {
 			return err
 		}
 
-		exists := make(map[ulid.ULID]struct{}, len(origins))
+		exists := make(map[uuid.UUID]struct{}, len(origins))
 		for _, spec := range origins {
 			exists[spec.GetID()] = struct{}{}
 		}

@@ -3,7 +3,7 @@ package runtime
 import (
 	"context"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -75,7 +75,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 }
 
 // Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from storage.Storage.
-func (r *Runtime) Lookup(ctx context.Context, id ulid.ULID) (*symbol.Symbol, error) {
+func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)
 	} else {

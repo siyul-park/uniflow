@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -52,7 +52,7 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	}()
 
 	doc := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("version"), primitive.NewInt(0),
 	)
 
@@ -69,7 +69,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 		defer cancel()
 
 		doc := primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 			primitive.NewString("version"), primitive.NewInt(0),
 			primitive.NewString("deleted"), primitive.FALSE,
@@ -85,7 +85,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 		defer cancel()
 
 		doc := primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 			primitive.NewString("version"), primitive.NewInt(0),
 			primitive.NewString("deleted"), primitive.FALSE,
@@ -108,7 +108,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		var docs []*primitive.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, primitive.NewMap(
-				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 				primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 				primitive.NewString("version"), primitive.NewInt(0),
 				primitive.NewString("deleted"), primitive.FALSE,
@@ -130,7 +130,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		var docs []*primitive.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, primitive.NewMap(
-				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 				primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 				primitive.NewString("version"), primitive.NewInt(0),
 				primitive.NewString("deleted"), primitive.FALSE,
@@ -152,7 +152,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 
 	t.Run("Upsert = true", func(t *testing.T) {
 		doc := primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
@@ -165,7 +165,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 
 	t.Run("Upsert = false", func(t *testing.T) {
 		doc := primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
@@ -192,7 +192,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	defer cancel()
 
 	t.Run("Upsert = true", func(t *testing.T) {
-		id := primitive.NewBinary(ulid.Make().Bytes())
+		id := primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes())
 
 		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(id), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(true),
@@ -204,7 +204,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	t.Run("Upsert = false", func(t *testing.T) {
 		var ids []primitive.Value
 		for i := 0; i < batchSize; i++ {
-			ids = append(ids, primitive.NewBinary(ulid.Make().Bytes()))
+			ids = append(ids, primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 		}
 
 		var docs []*primitive.Map
@@ -240,7 +240,7 @@ func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 	defer cancel()
 
 	doc := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 	)
 
 	ok, err := collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
@@ -266,7 +266,7 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 
 	var ids []primitive.Value
 	for i := 0; i < batchSize; i++ {
-		ids = append(ids, primitive.NewBinary(ulid.Make().Bytes()))
+		ids = append(ids, primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
 	var docs []*primitive.Map
@@ -301,7 +301,7 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 	defer cancel()
 
 	doc := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		primitive.NewString("version"), primitive.NewInt(0),
 		primitive.NewString("deleted"), primitive.FALSE,
@@ -401,7 +401,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 
 	var ids []primitive.Value
 	for i := 0; i < batchSize; i++ {
-		ids = append(ids, primitive.NewBinary(ulid.Make().Bytes()))
+		ids = append(ids, primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
 	var docs []*primitive.Map
@@ -531,7 +531,7 @@ func TestCollection_Drop(t *testing.T, collection database.Collection) {
 	defer cancel()
 
 	_, err := collection.InsertOne(ctx, primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 	))
 	assert.NoError(t, err)
 
@@ -549,7 +549,7 @@ func BenchmarkCollection_InsertOne(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < b.N; i++ {
 		_, err := coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
 		assert.NoError(b, err)
@@ -568,7 +568,7 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 		var docs []*primitive.Map
 		for i := 0; i < benchSize; i++ {
 			docs = append(docs, primitive.NewMap(
-				primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+				primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 				primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 			))
 		}
@@ -586,7 +586,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < benchSize; i++ {
 		_, _ = coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
 	}
@@ -594,7 +594,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	name := primitive.NewString(faker.UUIDHyphenated())
 
 	v := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("name"), name,
 	)
 
@@ -623,7 +623,7 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < benchSize; i++ {
 		_, _ = coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), name,
 		))
 	}
@@ -648,13 +648,13 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < benchSize; i++ {
 		_, _ = coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
 	}
 
 	v := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 
@@ -684,7 +684,7 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 	var docs []*primitive.Map
 	for i := 0; i < benchSize; i++ {
 		docs = append(docs, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), name,
 		))
 	}
@@ -712,13 +712,13 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < benchSize; i++ {
 		_, _ = coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
 	}
 
 	v := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 
@@ -750,13 +750,13 @@ func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 
 	for i := 0; i < benchSize; i++ {
 		_, _ = coll.InsertOne(ctx, primitive.NewMap(
-			primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+			primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 		))
 	}
 
 	v := primitive.NewMap(
-		primitive.NewString("id"), primitive.NewBinary(ulid.Make().Bytes()),
+		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		primitive.NewString("name"), primitive.NewString(faker.UUIDHyphenated()),
 	)
 

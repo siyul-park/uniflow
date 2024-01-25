@@ -3,13 +3,13 @@ package port
 import (
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
 // Stream represents a communication channel for exchanging *packet.Packet.
 type Stream struct {
-	id    ulid.ULID
+	id    uuid.UUID
 	read  *ReadPipe
 	write *WritePipe
 	links []*Stream
@@ -19,7 +19,7 @@ type Stream struct {
 
 func newStream() *Stream {
 	return &Stream{
-		id:    ulid.Make(),
+		id:    uuid.Must(uuid.NewV7()),
 		read:  newReadPipe(),
 		write: newWritePipe(),
 		done:  make(chan struct{}),
@@ -27,7 +27,7 @@ func newStream() *Stream {
 }
 
 // ID returns the Stream's ID.
-func (s *Stream) ID() ulid.ULID {
+func (s *Stream) ID() uuid.UUID {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

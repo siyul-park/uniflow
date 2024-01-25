@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -53,7 +53,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	go r.Reconcile(ctx)
 
 	spec := &scheme.SpecMeta{
-		ID:        ulid.Make(),
+		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: scheme.DefaultNamespace,
 	}

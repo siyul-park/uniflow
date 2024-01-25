@@ -1,11 +1,11 @@
 package storage
 
-import "github.com/oklog/ulid/v2"
+import "github.com/gofrs/uuid"
 
 // Event is an event that occurs when a scheme.Spec is changed.
 type Event struct {
 	OP     eventOP
-	NodeID ulid.ULID
+	NodeID uuid.UUID
 }
 
 type eventOP int

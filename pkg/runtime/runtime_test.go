@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -40,7 +40,7 @@ func TestRuntime_Lookup(t *testing.T) {
 	defer r.Close()
 
 	spec := &scheme.SpecMeta{
-		ID:   ulid.Make(),
+		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
@@ -78,7 +78,7 @@ func TestRuntime_Start(t *testing.T) {
 	defer r.Close()
 
 	spec := &scheme.SpecMeta{
-		ID:   ulid.Make(),
+		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,7 +54,7 @@ func TestScheme_NewSpecWithDoc(t *testing.T) {
 
 	u := NewUnstructured(nil)
 	spec := &SpecMeta{
-		ID:   ulid.Make(),
+		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
 	}
 

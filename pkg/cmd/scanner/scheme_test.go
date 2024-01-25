@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,7 +20,7 @@ func TestSpecCodec_Decode(t *testing.T) {
 	})
 
 	data := map[string]any{
-		scheme.KeyID:   ulid.Make().String(),
+		scheme.KeyID:   uuid.Must(uuid.NewV7()).String(),
 		scheme.KeyKind: kind,
 	}
 

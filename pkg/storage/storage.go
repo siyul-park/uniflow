@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -69,31 +69,31 @@ func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 }
 
 // InsertOne inserts a single scheme.Spec and returns its ID.
-func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (ulid.ULID, error) {
+func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	doc, err := s.specToDoc(spec)
 	if err != nil {
-		return ulid.ULID{}, err
+		return uuid.UUID{}, err
 	}
 
 	pk, err := s.nodes.InsertOne(ctx, doc)
 	if err != nil {
-		return ulid.ULID{}, err
+		return uuid.UUID{}, err
 	}
 
-	var id ulid.ULID
+	var id uuid.UUID
 	if err := primitive.Unmarshal(pk, &id); err != nil {
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).EQ(pk))
-		return ulid.ULID{}, err
+		return uuid.UUID{}, err
 	}
 
 	return id, nil
 }
 
 // InsertMany inserts multiple scheme.Spec instances and returns their IDs.
-func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]ulid.ULID, error) {
+func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -111,7 +111,7 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]ulid.U
 		return nil, err
 	}
 
-	var ids []ulid.ULID
+	var ids []uuid.UUID
 	if err := primitive.Unmarshal(primitive.NewSlice(pks...), &ids); err != nil {
 		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).IN(pks...))
 		return nil, err
@@ -130,7 +130,7 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 		return false, err
 	}
 
-	filter, _ := Where[ulid.ULID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
+	filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
 	return s.nodes.UpdateOne(ctx, filter, unstructured.Doc())
 }
 
@@ -150,7 +150,7 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, err
 
 	count := 0
 	for _, unstructured := range unstructureds {
-		filter, _ := Where[ulid.ULID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
+		filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
 		if ok, err := s.nodes.UpdateOne(ctx, filter, unstructured.Doc()); err != nil {
 			return count, err
 		} else if ok {
@@ -244,8 +244,8 @@ func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
 	if err != nil {
 		return nil, err
 	}
-	if unstructured.GetID() == (ulid.ULID{}) {
-		unstructured.SetID(ulid.Make())
+	if unstructured.GetID() == (uuid.UUID{}) {
+		unstructured.SetID(uuid.Must(uuid.NewV7()))
 	}
 	return unstructured.Doc(), nil
 }

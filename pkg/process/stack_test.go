@@ -3,7 +3,7 @@ package process
 import (
 	"testing"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,8 +12,8 @@ func TestStack_Push(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k := ulid.Make()
-		v := ulid.Make()
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
 
 		s.Push(k, v)
 		assert.Equal(t, 1, s.Size(k))
@@ -23,11 +23,11 @@ func TestStack_Push(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
-		v2 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 
@@ -40,11 +40,11 @@ func TestStack_Push(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
-		v2 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 		g.Add(k2, k1)
@@ -60,8 +60,8 @@ func TestStack_Pop(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k := ulid.Make()
-		v := ulid.Make()
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
 
 		s.Push(k, v)
 
@@ -75,11 +75,11 @@ func TestStack_Pop(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
-		v2 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 
@@ -101,11 +101,11 @@ func TestStack_Pop(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
-		v2 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 		g.Add(k2, k1)
@@ -130,8 +130,8 @@ func TestStack_Clear(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k := ulid.Make()
-		v := ulid.Make()
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
 
 		s.Push(k, v)
 
@@ -143,11 +143,11 @@ func TestStack_Clear(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
-		v2 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 
@@ -164,29 +164,29 @@ func TestStack_Heads(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k := ulid.Make()
-		v := ulid.Make()
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
 
 		s.Push(k, v)
 
 		heads := s.Heads(k)
-		assert.Equal(t, []ulid.ULID{k}, heads)
+		assert.Equal(t, []uuid.UUID{k}, heads)
 	})
 
 	t.Run("Deep", func(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
-		k1 := ulid.Make()
-		k2 := ulid.Make()
+		k1 := uuid.Must(uuid.NewV7())
+		k2 := uuid.Must(uuid.NewV7())
 
-		v1 := ulid.Make()
+		v1 := uuid.Must(uuid.NewV7())
 
 		g.Add(k1, k2)
 
 		s.Push(k1, v1)
 
 		heads := s.Heads(k2)
-		assert.Equal(t, []ulid.ULID{k1}, heads)
+		assert.Equal(t, []uuid.UUID{k1}, heads)
 	})
 }
