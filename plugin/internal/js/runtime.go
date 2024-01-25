@@ -14,7 +14,7 @@ var _ goja.FieldNameMapper = &fieldNameMapper{}
 func New() *goja.Runtime {
 	vm := goja.New()
 	vm.SetFieldNameMapper(&fieldNameMapper{})
-	_ = UseModule(vm)
+	UseModule(vm)
 	return vm
 }
 

@@ -10,10 +10,9 @@ import (
 func TestUseModuleAndExport(t *testing.T) {
 	vm := goja.New()
 
-	err := UseModule(vm)
-	assert.NoError(t, err)
+	UseModule(vm)
 
-	_, err = vm.RunString("module.exports = {};")
+	_, err := vm.RunString("module.exports = {};")
 	assert.NoError(t, err)
 
 	v := Export(vm, "default")

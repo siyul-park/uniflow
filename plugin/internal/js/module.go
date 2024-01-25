@@ -4,28 +4,27 @@ import (
 	"github.com/dop251/goja"
 )
 
-func UseModule(vm *goja.Runtime) error {
+const (
+	keyModule  = "module"
+	keyExports = "exports"
+)
+
+func UseModule(vm *goja.Runtime) {
 	module := vm.NewObject()
 	exports := vm.NewObject()
 
-	if err := vm.Set("module", module); err != nil {
-		return err
-	}
-	if err := vm.Set("exports", exports); err != nil {
-		return err
-	}
-	if err := module.Set("exports", exports); err != nil {
-		return err
-	}
-	return nil
+	_ = module.Set(keyExports, exports)
+
+	_ = vm.Set(keyModule, module)
+	_ = vm.Set(keyExports, exports)
 }
 
 func Export(vm *goja.Runtime, name string) goja.Value {
-	module := vm.Get("module")
+	module := vm.Get(keyModule)
 	if module == nil {
 		return nil
 	}
-	exports := module.ToObject(vm).Get("exports")
+	exports := module.ToObject(vm).Get(keyExports)
 	if exports == nil {
 		return nil
 	}
