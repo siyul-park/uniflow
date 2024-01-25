@@ -1,6 +1,8 @@
 package control
 
 import (
+	"sync"
+
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -12,6 +14,8 @@ import (
 // MergeNode represents a node that merges multiple input packets into a single output packet.
 type MergeNode struct {
 	*node.ManyToOneNode
+	mode string
+	mu   sync.RWMutex
 }
 
 // MergeNodeSpec holds the specifications for creating a MergeNode.
@@ -38,13 +42,20 @@ func NewMergeNodeCodec() scheme.Codec {
 
 // NewMergeNode creates a new MergeNode with the specified mode.
 func NewMergeNode(mode string) *MergeNode {
-	n := &MergeNode{}
-	if mode == ModeConcat {
-		n.ManyToOneNode = node.NewManyToOneNode(n.concat)
-	} else {
-		n.ManyToOneNode = node.NewManyToOneNode(n.zip)
-	}
+	n := &MergeNode{mode: mode}
+	n.ManyToOneNode = node.NewManyToOneNode(n.action)
 	return n
+}
+
+func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if n.mode == ModeConcat {
+		return n.concat(proc, inPcks)
+	} else {
+		return n.zip(proc, inPcks)
+	}
 }
 
 func (n *MergeNode) concat(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
