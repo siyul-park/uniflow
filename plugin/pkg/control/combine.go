@@ -11,43 +11,43 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// MergeNode represents a node that merges multiple input packets into a single output packet.
-type MergeNode struct {
+// CombineNode represents a node that Combines multiple input packets into a single output packet.
+type CombineNode struct {
 	*node.ManyToOneNode
 	mode string
 	mu   sync.RWMutex
 }
 
-// MergeNodeSpec holds the specifications for creating a MergeNode.
-type MergeNodeSpec struct {
+// CombineNodeSpec holds the specifications for creating a CombineNode.
+type CombineNodeSpec struct {
 	scheme.SpecMeta
 	Mode string `map:"mode"`
 }
 
-const KindMerge = "merge"
+const KindCombine = "combine"
 
 const (
 	ModeConcat = "concat"
 	ModeZip    = "zip"
 )
 
-var _ node.Node = (*MergeNode)(nil)
+var _ node.Node = (*CombineNode)(nil)
 
-// NewMergeNodeCodec creates a new codec for MergeNodeSpec.
-func NewMergeNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*MergeNodeSpec](func(spec *MergeNodeSpec) (node.Node, error) {
-		return NewMergeNode(spec.Mode), nil
+// NewCombineNodeCodec creates a new codec for CombineNodeSpec.
+func NewCombineNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
+		return NewCombineNode(spec.Mode), nil
 	})
 }
 
-// NewMergeNode creates a new MergeNode with the specified mode.
-func NewMergeNode(mode string) *MergeNode {
-	n := &MergeNode{mode: mode}
+// NewCombineNode creates a new CombineNode with the specified mode.
+func NewCombineNode(mode string) *CombineNode {
+	n := &CombineNode{mode: mode}
 	n.ManyToOneNode = node.NewManyToOneNode(n.action)
 	return n
 }
 
-func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *CombineNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -58,7 +58,7 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 	}
 }
 
-func (n *MergeNode) concat(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *CombineNode) concat(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 	if !n.isFull(inPcks) {
 		return nil, nil
 	}
@@ -71,7 +71,7 @@ func (n *MergeNode) concat(proc *process.Process, inPcks []*packet.Packet) (*pac
 	return packet.New(outPayload), nil
 }
 
-func (n *MergeNode) zip(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *CombineNode) zip(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 	if !n.isFull(inPcks) {
 		return nil, nil
 	}
@@ -98,7 +98,7 @@ func (n *MergeNode) zip(proc *process.Process, inPcks []*packet.Packet) (*packet
 	return packet.New(outPayload), nil
 }
 
-func (n *MergeNode) isFull(pcks []*packet.Packet) bool {
+func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
 	for _, inPck := range pcks {
 		if inPck == nil {
 			return false

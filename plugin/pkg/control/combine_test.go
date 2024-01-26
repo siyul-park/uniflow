@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeNodeCodec_Decode(t *testing.T) {
-	codec := NewMergeNodeCodec()
+func TestCombineNodeCodec_Decode(t *testing.T) {
+	codec := NewCombineNodeCodec()
 
-	spec := &MergeNodeSpec{
+	spec := &CombineNodeSpec{
 		Mode: ModeZip,
 	}
 
@@ -26,25 +26,25 @@ func TestMergeNodeCodec_Decode(t *testing.T) {
 	assert.NotNil(t, n)
 }
 
-func TestNewMergeNode(t *testing.T) {
+func TestNewCombineNode(t *testing.T) {
 	t.Run(ModeConcat, func(t *testing.T) {
-		n := NewMergeNode(ModeConcat)
+		n := NewCombineNode(ModeConcat)
 		assert.NotNil(t, n)
 
 		assert.NoError(t, n.Close())
 	})
 
 	t.Run(ModeZip, func(t *testing.T) {
-		n := NewMergeNode(ModeZip)
+		n := NewCombineNode(ModeZip)
 		assert.NotNil(t, n)
 
 		assert.NoError(t, n.Close())
 	})
 }
 
-func TestMergeNode_SendAndReceive(t *testing.T) {
+func TestCombineNode_SendAndReceive(t *testing.T) {
 	t.Run(ModeConcat, func(t *testing.T) {
-		n := NewMergeNode(ModeConcat)
+		n := NewCombineNode(ModeConcat)
 		defer n.Close()
 
 		var ins []*port.Port
@@ -74,7 +74,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
-		merged := primitive.NewSlice(inPayloads...).Interface()
+		combined := primitive.NewSlice(inPayloads...).Interface()
 
 		for i, inStream := range inStreams {
 			inPck := packet.New(inPayloads[i])
@@ -86,7 +86,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outStream.Receive():
-			assert.Equal(t, merged, outPck.Payload().Interface())
+			assert.Equal(t, combined, outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -94,7 +94,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 	t.Run(ModeZip, func(t *testing.T) {
 		t.Run("Map", func(t *testing.T) {
-			n := NewMergeNode(ModeZip)
+			n := NewCombineNode(ModeZip)
 			defer n.Close()
 
 			var ins []*port.Port
@@ -120,13 +120,13 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 			outStream := out.Open(proc)
 
 			var inPayloads []primitive.Value
-			merged := map[string]string{}
+			combined := map[string]string{}
 			for range inStreams {
 				key := faker.UUIDHyphenated()
 				value := faker.UUIDHyphenated()
 
 				inPayloads = append(inPayloads, primitive.NewMap(primitive.NewString(key), primitive.NewString(value)))
-				merged[key] = value
+				combined[key] = value
 			}
 
 			for i, inStream := range inStreams {
@@ -139,14 +139,14 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 			select {
 			case outPck := <-outStream.Receive():
-				assert.Equal(t, merged, outPck.Payload().Interface())
+				assert.Equal(t, combined, outPck.Payload().Interface())
 			case <-ctx.Done():
 				assert.Fail(t, ctx.Err().Error())
 			}
 		})
 
 		t.Run("Slice", func(t *testing.T) {
-			n := NewMergeNode(ModeZip)
+			n := NewCombineNode(ModeZip)
 			defer n.Close()
 
 			var ins []*port.Port
@@ -172,12 +172,12 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 			outStream := out.Open(proc)
 
 			var inPayloads []primitive.Value
-			var merged []string
+			var combined []string
 			for range inStreams {
 				value := faker.UUIDHyphenated()
 
 				inPayloads = append(inPayloads, primitive.NewSlice(primitive.NewString(value)))
-				merged = append(merged, value)
+				combined = append(combined, value)
 			}
 
 			for i, inStream := range inStreams {
@@ -190,7 +190,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 			select {
 			case outPck := <-outStream.Receive():
-				assert.Equal(t, merged, outPck.Payload().Interface())
+				assert.Equal(t, combined, outPck.Payload().Interface())
 			case <-ctx.Done():
 				assert.Fail(t, ctx.Err().Error())
 			}
@@ -198,9 +198,9 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
+func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 	b.Run(ModeConcat, func(b *testing.B) {
-		n := NewMergeNode(ModeConcat)
+		n := NewCombineNode(ModeConcat)
 		defer n.Close()
 
 		var ins []*port.Port
@@ -244,7 +244,7 @@ func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
 	})
 
 	b.Run(ModeZip, func(b *testing.B) {
-		n := NewMergeNode(ModeZip)
+		n := NewCombineNode(ModeZip)
 		defer n.Close()
 
 		var ins []*port.Port
