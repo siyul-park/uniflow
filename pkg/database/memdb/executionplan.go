@@ -81,6 +81,19 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	return plan
 }
 
+func (e *executionPlan) Cost() int {
+	cur := 0
+	if e.min == nil || e.max == nil || primitive.Compare(e.min, e.max) != 0 {
+		cur = 1
+	}
+
+	if e.next != nil {
+		cur += e.next.Cost()
+	}
+
+	return cur
+}
+
 func (e *executionPlan) intersect(other *executionPlan) *executionPlan {
 	if e == nil {
 		return other
