@@ -14,14 +14,16 @@ import (
 // CombineNode represents a node that Combines multiple input packets into a single output packet.
 type CombineNode struct {
 	*node.ManyToOneNode
-	depth int
-	mu    sync.RWMutex
+	depth   int
+	inplace bool
+	mu      sync.RWMutex
 }
 
 // CombineNodeSpec holds the specifications for creating a CombineNode.
 type CombineNodeSpec struct {
 	scheme.SpecMeta
-	Depth int `map:"depth"`
+	Depth   int  `map:"depth"`
+	Inplace bool `map:"inplace"`
 }
 
 const KindCombine = "combine"
@@ -31,13 +33,13 @@ var _ node.Node = (*CombineNode)(nil)
 // NewCombineNodeCodec creates a new codec for CombineNodeSpec.
 func NewCombineNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
-		return NewCombineNode(spec.Depth), nil
+		return NewCombineNode(spec.Depth, spec.Inplace), nil
 	})
 }
 
 // NewCombineNode creates a new CombineNode.
-func NewCombineNode(depth int) *CombineNode {
-	n := &CombineNode{depth: depth}
+func NewCombineNode(depth int, inplace bool) *CombineNode {
+	n := &CombineNode{depth: depth, inplace: inplace}
 	n.ManyToOneNode = node.NewManyToOneNode(n.action)
 	return n
 }
@@ -76,10 +78,6 @@ func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
 }
 
 func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
-	if depth == 0 {
-		return y
-	}
-
 	if x == nil {
 		return y
 	}
@@ -87,10 +85,30 @@ func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
 		return x
 	}
 
+	if depth == 0 {
+		return y
+	}
+
 	switch x := x.(type) {
 	case *primitive.Slice:
 		if y, ok := y.(*primitive.Slice); ok {
-			return primitive.NewSlice(append(x.Values(), y.Values()...)...)
+			var values []primitive.Value
+			if n.inplace {
+				len := x.Len()
+				if len < y.Len() {
+					len = y.Len()
+				}
+				for i := 0; i < len; i++ {
+					value1 := x.Get(i)
+					value2 := y.Get(i)
+
+					values = append(values, n.merge(value1, value2, depth-1))
+				}
+			} else {
+				values = append(x.Values(), y.Values()...)
+			}
+
+			return primitive.NewSlice(values...)
 		}
 	case *primitive.Map:
 		if y, ok := y.(*primitive.Map); ok {
