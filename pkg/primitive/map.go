@@ -176,7 +176,13 @@ func (m *Map) Interface() any {
 
 		if k != nil {
 			keys = append(keys, k.Interface())
+		} else {
+			keys = append(keys, nil)
+		}
+		if v != nil {
 			values = append(values, v.Interface())
+		} else {
+			values = append(values, nil)
 		}
 	}
 
