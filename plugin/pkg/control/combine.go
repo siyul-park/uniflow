@@ -76,5 +76,43 @@ func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
 }
 
 func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
+	if depth == 0 {
+		return y
+	}
+
+	if x == nil {
+		return y
+	}
+	if y == nil {
+		return x
+	}
+
+	switch x := x.(type) {
+	case *primitive.Slice:
+		if y, ok := y.(*primitive.Slice); ok {
+			return primitive.NewSlice(append(x.Values(), y.Values()...)...)
+		}
+	case *primitive.Map:
+		if y, ok := y.(*primitive.Map); ok {
+			var pairs []primitive.Value
+			for _, key := range x.Keys() {
+				value1, _ := x.Get(key)
+				value2, _ := y.Get(key)
+
+				pairs = append(pairs, key, n.merge(value1, value2, depth-1))
+			}
+			for _, key := range y.Keys() {
+				_, ok := x.Get(key)
+				value, _ := y.Get(key)
+				if ok {
+					continue
+				}
+				pairs = append(pairs, key, value)
+			}
+
+			return primitive.NewMap(pairs...)
+		}
+	}
+
 	return y
 }
