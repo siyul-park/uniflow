@@ -53,7 +53,15 @@ func (n *CombineNode) action(proc *process.Process, inPcks []*packet.Packet) (*p
 	inPayloads := lo.Map[*packet.Packet, primitive.Value](inPcks, func(item *packet.Packet, _ int) primitive.Value {
 		return item.Payload()
 	})
-	outPayload := primitive.NewSlice(inPayloads...)
+
+	var outPayload primitive.Value
+	if n.depth == 0 {
+		outPayload = primitive.NewSlice(inPayloads...)
+	} else {
+		outPayload = lo.Reduce[primitive.Value, primitive.Value](inPayloads, func(agg primitive.Value, item primitive.Value, index int) primitive.Value {
+			return n.merge(agg, item, n.depth-1)
+		}, nil)
+	}
 
 	return packet.New(outPayload), nil
 }
@@ -65,4 +73,8 @@ func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
 		}
 	}
 	return true
+}
+
+func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
+	return y
 }

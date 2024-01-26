@@ -82,11 +82,9 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
-}
 
-func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
-	b.Run("depth = 0", func(b *testing.B) {
-		n := NewCombineNode(0)
+	t.Run("depth = 1", func(t *testing.T) {
+		n := NewCombineNode(1)
 		defer n.Close()
 
 		var ins []*port.Port
@@ -116,16 +114,65 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
-		b.ResetTimer()
+		combined := inPayloads[len(inPayloads)-1].Interface()
 
-		b.RunParallel(func(p *testing.PB) {
-			for p.Next() {
-				for i, inStream := range inStreams {
-					inPck := packet.New(inPayloads[i])
-					inStream.Send(inPck)
-				}
-				<-outStream.Receive()
+		for i, inStream := range inStreams {
+			inPck := packet.New(inPayloads[i])
+			inStream.Send(inPck)
+		}
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-outStream.Receive():
+			assert.Equal(t, combined, outPck.Payload().Interface())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+}
+
+func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
+	n := NewCombineNode(0)
+	defer n.Close()
+
+	var ins []*port.Port
+	for i := 0; i < 4; i++ {
+		in := port.New()
+		inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+		inPort.Link(in)
+
+		ins = append(ins, in)
+	}
+
+	out := port.New()
+	outPort, _ := n.Port(node.PortOut)
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var inStreams []*port.Stream
+	for _, in := range ins {
+		inStreams = append(inStreams, in.Open(proc))
+	}
+	outStream := out.Open(proc)
+
+	var inPayloads []primitive.Value
+	for range inStreams {
+		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
+	}
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			for i, inStream := range inStreams {
+				inPck := packet.New(inPayloads[i])
+				inStream.Send(inPck)
 			}
-		})
+			<-outStream.Receive()
+		}
 	})
 }
