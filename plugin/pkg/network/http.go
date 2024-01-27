@@ -2,16 +2,20 @@ package network
 
 import (
 	"context"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 type HTTPNode struct {
@@ -134,7 +138,16 @@ func (n *HTTPNode) Listen() error {
 }
 
 func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	if err := n.serve(proc, w, r); err != nil {
+		// TODO: handle error
+		proc.Exit(err)
+	}
 }
 
 func (n *HTTPNode) Close() error {
@@ -146,6 +159,118 @@ func (n *HTTPNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 
+	return nil
+}
+
+func (n *HTTPNode) serve(proc *process.Process, w http.ResponseWriter, r *http.Request) error {
+	ioStream := n.ioPort.Open(proc)
+	inStream := n.inPort.Open(proc)
+	outStream := n.outPort.Open(proc)
+
+	if ioStream.Links()+outStream.Links() == 0 {
+		return nil
+	}
+
+	req, err := n.read(r)
+	if err != nil {
+		return err
+	}
+
+	outPayload, err := primitive.MarshalBinary(req)
+	if err != nil {
+		return err
+	}
+	outPck := packet.New(outPayload)
+
+	ioStream.Send(outPck)
+	outStream.Send(outPck)
+
+	if ioStream.Links()+inStream.Links() == 0 {
+		return nil
+	}
+
+	var inPck *packet.Packet
+	var ok bool
+	select {
+	case inPck, ok = <-ioStream.Receive():
+	case inPck, ok = <-inStream.Receive():
+	}
+	if !ok {
+		return nil
+	}
+
+	inPayload := inPck.Payload()
+	var res HTTPPayload
+	if err := primitive.Unmarshal(inPayload, &res); err != nil {
+		res.Body = inPayload
+	}
+
+	return n.write(w, res)
+}
+
+func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {
+	contentType := r.Header.Get(HeaderContentType)
+
+	if b, err := io.ReadAll(r.Body); err != nil {
+		return HTTPPayload{}, err
+	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
+		return HTTPPayload{}, err
+	} else {
+		r.Header.Set(HeaderContentType, contentType)
+		return HTTPPayload{
+			Proto:   r.Proto,
+			Path:    r.URL.Path,
+			Method:  r.Method,
+			Header:  r.Header,
+			Query:   r.URL.Query(),
+			Cookies: r.Cookies(),
+			Body:    b,
+		}, nil
+	}
+}
+
+func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
+	contentType := res.Header.Get(HeaderContentType)
+
+	b, err := MarshalMIME(res.Body, &contentType)
+	if err != nil {
+		return err
+	}
+
+	if res.Header == nil {
+		res.Header = http.Header{}
+	}
+	res.Header.Set(HeaderContentType, contentType)
+	for key := range w.Header() {
+		w.Header().Del(key)
+	}
+	for key, headers := range res.Header {
+		if !IsResponseHeader(key) {
+			continue
+		}
+		for _, header := range headers {
+			w.Header().Add(key, header)
+		}
+	}
+	w.Header().Set(HeaderContentLength, strconv.Itoa(len(b)))
+	w.Header().Set(HeaderContentType, contentType)
+
+	status := res.Status
+	if status == 0 {
+		if len(b) == 0 {
+			status = http.StatusNoContent
+		} else {
+			status = http.StatusOK
+		}
+	}
+	w.WriteHeader(status)
+
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
 	return nil
 }
 

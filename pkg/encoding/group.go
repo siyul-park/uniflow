@@ -93,7 +93,7 @@ func (d *DecoderGroup[S, T]) Decode(source S, target T) error {
 
 	var err error
 	for _, decoder := range d.decoders {
-		if err := decoder.Decode(source, target); err == nil {
+		if err = decoder.Decode(source, target); err == nil {
 			return nil
 		} else if !errors.Is(err, ErrUnsupportedValue) {
 			return err
