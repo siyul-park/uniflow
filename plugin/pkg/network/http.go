@@ -144,8 +144,8 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	if err := n.serve(proc, w, r); err != nil {
-		// TODO: handle error
+	if err := n.action(proc, w, r); err != nil {
+		n.write(w, NewHTTPPayloadWithStatus(http.StatusInternalServerError))
 		proc.Exit(err)
 	}
 }
@@ -162,7 +162,7 @@ func (n *HTTPNode) Close() error {
 	return nil
 }
 
-func (n *HTTPNode) serve(proc *process.Process, w http.ResponseWriter, r *http.Request) error {
+func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.Request) error {
 	ioStream := n.ioPort.Open(proc)
 	inStream := n.inPort.Open(proc)
 	outStream := n.outPort.Open(proc)
@@ -199,8 +199,12 @@ func (n *HTTPNode) serve(proc *process.Process, w http.ResponseWriter, r *http.R
 		return nil
 	}
 
-	inPayload := inPck.Payload()
+	if err, ok := packet.AsError(inPck); ok {
+		return err
+	}
+
 	var res HTTPPayload
+	inPayload := inPck.Payload()
 	if err := primitive.Unmarshal(inPayload, &res); err != nil {
 		res.Body = inPayload
 	}
@@ -272,6 +276,13 @@ func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
+}
+
+func NewHTTPPayloadWithStatus(status int) HTTPPayload {
+	return HTTPPayload{
+		Body:   primitive.String(http.StatusText(status)),
+		Status: status,
+	}
 }
 
 func newListener(address, network string) (*tcpKeepAliveListener, error) {

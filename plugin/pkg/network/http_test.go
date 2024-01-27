@@ -7,7 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/phayes/freeport"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -79,7 +81,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, 200, w.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, "", w.Body.String())
 	})
 
@@ -113,7 +115,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, 200, w.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, body, w.Body.String())
 	})
@@ -152,8 +154,43 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, 200, w.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, body, w.Body.String())
+	})
+
+	t.Run("Error Response", func(t *testing.T) {
+		n := NewHTTPNode("")
+		defer n.Close()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			ioStream := io.Open(proc)
+
+			for {
+				inPck, ok := <-ioStream.Receive()
+				if !ok {
+					return
+				}
+
+				err := errors.New(faker.Sentence())
+
+				errPck := packet.WithError(err, inPck)
+				proc.Graph().Add(inPck.ID(), errPck.ID())
+				ioStream.Send(errPck)
+			}
+		}))
+
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, "Internal Server Error", w.Body.String())
 	})
 }
