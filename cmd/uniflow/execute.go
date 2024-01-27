@@ -18,7 +18,7 @@ func execute(ctx context.Context, databaseURL, databaseName string) error {
 	sb.Register(control.AddToScheme())
 	sb.Register(network.AddToScheme())
 
-	hb.Register(network.AddToHooks(ctx, 30*time.Second))
+	hb.Register(network.AddToHooks(ctx, time.Second))
 
 	sc, err := sb.Build()
 	if err != nil {

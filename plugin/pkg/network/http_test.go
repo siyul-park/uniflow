@@ -79,6 +79,10 @@ func TestHTTPNode_ListenAndClose(t *testing.T) {
 
 	err = n.Listen(ctx)
 	assert.NoError(t, err)
+
+	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
+	assert.NoError(t, err)
+
 	assert.NoError(t, n.Close())
 }
 
