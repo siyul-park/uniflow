@@ -21,9 +21,9 @@ type CombineNode struct {
 
 // CombineNodeSpec holds the specifications for creating a CombineNode.
 type CombineNodeSpec struct {
-	scheme.SpecMeta
-	Depth   int  `map:"depth"`
-	Inplace bool `map:"inplace"`
+	scheme.SpecMeta `map:",inline"`
+	Depth           int  `map:"depth"`
+	Inplace         bool `map:"inplace"`
 }
 
 const KindCombine = "combine"

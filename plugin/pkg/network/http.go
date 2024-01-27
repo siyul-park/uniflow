@@ -1,12 +1,14 @@
 package network
 
 import (
+	"context"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -29,8 +31,8 @@ type HTTPNode struct {
 
 // HTTPNodeSpec holds the specifications for creating a HTTPNode.
 type HTTPNodeSpec struct {
-	scheme.SpecMeta
-	Address string `map:"address"`
+	scheme.SpecMeta `map:",inline"`
+	Address         string `map:"address"`
 }
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
@@ -156,7 +158,7 @@ func (n *HTTPNode) Address() net.Addr {
 	return n.listener.Addr()
 }
 
-func (n *HTTPNode) Listen() error {
+func (n *HTTPNode) Listen(ctx context.Context) error {
 	if err := func() error {
 		n.mu.Lock()
 		defer n.mu.Unlock()
@@ -174,7 +176,35 @@ func (n *HTTPNode) Listen() error {
 		return err
 	}
 
-	return n.server.Serve(n.listener)
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	errChan := make(chan error)
+
+	go func() {
+		if err := n.server.Serve(n.listener); err != nil {
+			errChan <- err
+		}
+	}()
+
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if addr := n.Address(); addr != nil {
+				return nil
+			}
+		case err := <-errChan:
+			if err == http.ErrServerClosed {
+				return nil
+			}
+			return err
+		}
+	}
 }
 
 func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {

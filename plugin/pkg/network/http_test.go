@@ -74,38 +74,10 @@ func TestHTTPNode_ListenAndClose(t *testing.T) {
 
 	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 
-	errChan := make(chan error)
-
-	go func() {
-		if err := n.Listen(); err != nil {
-			errChan <- err
-		}
-	}()
-
-	ctx, cancel := context.WithTimeout(context.TODO(), 200*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	ticker := time.NewTicker(5 * time.Millisecond)
-	defer ticker.Stop()
-
-	err = func() error {
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-ticker.C:
-				if addr := n.Address(); addr != nil {
-					return nil
-				}
-			case err := <-errChan:
-				if err == http.ErrServerClosed {
-					return nil
-				}
-				return err
-			}
-		}
-	}()
-
+	err = n.Listen(ctx)
 	assert.NoError(t, err)
 	assert.NoError(t, n.Close())
 }
