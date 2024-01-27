@@ -126,16 +126,21 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 				}
 
 				for _, element := range elements.Values() {
-					var data string
-					if d, ok := element.(primitive.Binary); ok {
-						data = string(d.Bytes())
-					} else if d, ok := element.(primitive.String); ok {
-						data = d.String()
-					} else {
-						data = fmt.Sprintf("%v", element.Interface())
+					contentType := ""
+					bytes, err := MarshalMIME(element, &contentType)
+					if err != nil {
+						return err
 					}
 
-					if err := mw.WriteField(key.String(), data); err != nil {
+					h := textproto.MIMEHeader{}
+					h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, quoteEscaper.Replace(key.String())))
+					if contentType != "" && contentType != TextPlainCharsetUTF8 {
+						h.Set(HeaderContentType, contentType)
+					}
+
+					if writer, err := mw.CreatePart(h); err != nil {
+						return err
+					} else if _, err := writer.Write(bytes); err != nil {
 						return err
 					}
 				}
@@ -195,7 +200,6 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 							if err := primitive.Unmarshal(header, &h); err != nil {
 								return err
 							}
-
 							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, quoteEscaper.Replace(key.String()), quoteEscaper.Replace(filename)))
 							h.Set(HeaderContentType, contentType)
 
