@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -39,14 +38,61 @@ type HTTPPayload struct {
 	Status  int             `map:"status"`
 }
 
-type tcpKeepAliveListener struct {
-	*net.TCPListener
-}
-
-var ErrInvalidListenerNetwork = errors.New("invalid listener network")
+var (
+	PayloadBadRequest                    = NewHTTPPayload(http.StatusBadRequest)                    // HTTP 400 Bad Request
+	PayloadUnauthorized                  = NewHTTPPayload(http.StatusUnauthorized)                  // HTTP 401 Unauthorized
+	PayloadPaymentRequired               = NewHTTPPayload(http.StatusPaymentRequired)               // HTTP 402 Payment Required
+	PayloadForbidden                     = NewHTTPPayload(http.StatusForbidden)                     // HTTP 403 Forbidden
+	PayloadNotFound                      = NewHTTPPayload(http.StatusNotFound)                      // HTTP 404 Not Found
+	PayloadMethodNotAllowed              = NewHTTPPayload(http.StatusMethodNotAllowed)              // HTTP 405 Method Not Allowed
+	PayloadNotAcceptable                 = NewHTTPPayload(http.StatusNotAcceptable)                 // HTTP 406 Not Acceptable
+	PayloadProxyAuthRequired             = NewHTTPPayload(http.StatusProxyAuthRequired)             // HTTP 407 Proxy AuthRequired
+	PayloadRequestTimeout                = NewHTTPPayload(http.StatusRequestTimeout)                // HTTP 408 Request Timeout
+	PayloadConflict                      = NewHTTPPayload(http.StatusConflict)                      // HTTP 409 Conflict
+	PayloadGone                          = NewHTTPPayload(http.StatusGone)                          // HTTP 410 Gone
+	PayloadLengthRequired                = NewHTTPPayload(http.StatusLengthRequired)                // HTTP 411 Length Required
+	PayloadPreconditionFailed            = NewHTTPPayload(http.StatusPreconditionFailed)            // HTTP 412 Precondition Failed
+	PayloadRequestEntityTooLarge         = NewHTTPPayload(http.StatusRequestEntityTooLarge)         // HTTP 413 Payload Too Large
+	PayloadRequestURITooLong             = NewHTTPPayload(http.StatusRequestURITooLong)             // HTTP 414 URI Too Long
+	PayloadUnsupportedMediaType          = NewHTTPPayload(http.StatusUnsupportedMediaType)          // HTTP 415 Unsupported Media Type
+	PayloadRequestedRangeNotSatisfiable  = NewHTTPPayload(http.StatusRequestedRangeNotSatisfiable)  // HTTP 416 Range Not Satisfiable
+	PayloadExpectationFailed             = NewHTTPPayload(http.StatusExpectationFailed)             // HTTP 417 Expectation Failed
+	PayloadTeapot                        = NewHTTPPayload(http.StatusTeapot)                        // HTTP 418 I'm a teapot
+	PayloadMisdirectedRequest            = NewHTTPPayload(http.StatusMisdirectedRequest)            // HTTP 421 Misdirected Request
+	PayloadUnprocessableEntity           = NewHTTPPayload(http.StatusUnprocessableEntity)           // HTTP 422 Unprocessable Entity
+	PayloadLocked                        = NewHTTPPayload(http.StatusLocked)                        // HTTP 423 Locked
+	PayloadFailedDependency              = NewHTTPPayload(http.StatusFailedDependency)              // HTTP 424 Failed Dependency
+	PayloadTooEarly                      = NewHTTPPayload(http.StatusTooEarly)                      // HTTP 425 Too Early
+	PayloadUpgradeRequired               = NewHTTPPayload(http.StatusUpgradeRequired)               // HTTP 426 Upgrade Required
+	PayloadPreconditionRequired          = NewHTTPPayload(http.StatusPreconditionRequired)          // HTTP 428 Precondition Required
+	PayloadTooManyRequests               = NewHTTPPayload(http.StatusTooManyRequests)               // HTTP 429 Too Many Requests
+	PayloadRequestHeaderFieldsTooLarge   = NewHTTPPayload(http.StatusRequestHeaderFieldsTooLarge)   // HTTP 431 Request Header Fields Too Large
+	PayloadUnavailableForLegalReasons    = NewHTTPPayload(http.StatusUnavailableForLegalReasons)    // HTTP 451 Unavailable For Legal Reasons
+	PayloadInternalServerError           = NewHTTPPayload(http.StatusInternalServerError)           // HTTP 500 Internal Server Error
+	PayloadNotImplemented                = NewHTTPPayload(http.StatusNotImplemented)                // HTTP 501 Not Implemented
+	PayloadBadGateway                    = NewHTTPPayload(http.StatusBadGateway)                    // HTTP 502 Bad Gateway
+	PayloadServiceUnavailable            = NewHTTPPayload(http.StatusServiceUnavailable)            // HTTP 503 Service Unavailable
+	PayloadGatewayTimeout                = NewHTTPPayload(http.StatusGatewayTimeout)                // HTTP 504 Gateway Timeout
+	PayloadHTTPVersionNotSupported       = NewHTTPPayload(http.StatusHTTPVersionNotSupported)       // HTTP 505 HTTP Version Not Supported
+	PayloadVariantAlsoNegotiates         = NewHTTPPayload(http.StatusVariantAlsoNegotiates)         // HTTP 506 Variant Also Negotiates
+	PayloadInsufficientStorage           = NewHTTPPayload(http.StatusInsufficientStorage)           // HTTP 507 Insufficient Storage
+	PayloadLoopDetected                  = NewHTTPPayload(http.StatusLoopDetected)                  // HTTP 508 Loop Detected
+	PayloadNotExtended                   = NewHTTPPayload(http.StatusNotExtended)                   // HTTP 510 Not Extended
+	PayloadNetworkAuthenticationRequired = NewHTTPPayload(http.StatusNetworkAuthenticationRequired) // HTTP 511 Network Authentication Required
+)
 
 var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = (*HTTPNode)(nil)
+
+func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
+	if len(body) == 0 {
+		body = []primitive.Value{primitive.String(http.StatusText(status))}
+	}
+	return HTTPPayload{
+		Body:   body[0],
+		Status: status,
+	}
+}
 
 func NewHTTPNode(address string) *HTTPNode {
 	n := &HTTPNode{
@@ -124,7 +170,7 @@ func (n *HTTPNode) Listen() error {
 		if n.listener != nil {
 			return nil
 		}
-		if l, err := newListener(n.server.Addr, "tcp"); err != nil {
+		if l, err := newTCPKeepAliveListener(n.server.Addr, "tcp"); err != nil {
 			return err
 		} else {
 			n.listener = l
@@ -197,7 +243,7 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 	case inPck, ok = <-inStream.Receive():
 	}
 	if !ok {
-		return nil
+		return n.write(w, PayloadServiceUnavailable)
 	}
 
 	if err, ok := packet.AsError(inPck); ok {
@@ -214,11 +260,9 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 }
 
 func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload {
-	defaultPayload := NewHTTPPayloadWithStatus(http.StatusInternalServerError)
-
 	errStream := n.errPort.Open(proc)
 	if errStream.Links() == 0 {
-		return defaultPayload
+		return PayloadInternalServerError
 	}
 
 	errPck := packet.WithError(err, nil)
@@ -226,11 +270,11 @@ func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload
 
 	inPck, ok := <-errStream.Receive()
 	if !ok {
-		return defaultPayload
+		return PayloadInternalServerError
 	}
 
 	if _, ok := packet.AsError(inPck); ok {
-		return defaultPayload
+		return PayloadInternalServerError
 	}
 
 	var res HTTPPayload
@@ -305,33 +349,4 @@ func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
-}
-
-func NewHTTPPayloadWithStatus(status int) HTTPPayload {
-	return HTTPPayload{
-		Body:   primitive.String(http.StatusText(status)),
-		Status: status,
-	}
-}
-
-func newListener(address, network string) (*tcpKeepAliveListener, error) {
-	if network != "tcp" && network != "tcp4" && network != "tcp6" {
-		return nil, ErrInvalidListenerNetwork
-	}
-	l, err := net.Listen(network, address)
-	if err != nil {
-		return nil, err
-	}
-	return &tcpKeepAliveListener{l.(*net.TCPListener)}, nil
-}
-
-func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
-	if c, err := ln.AcceptTCP(); err != nil {
-		return nil, err
-	} else if err = c.SetKeepAlive(true); err != nil {
-		return nil, err
-	} else {
-		_ = c.SetKeepAlivePeriod(3 * time.Minute)
-		return c, nil
-	}
 }
