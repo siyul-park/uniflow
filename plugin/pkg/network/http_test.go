@@ -294,3 +294,40 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, body, w.Body.String())
 	})
 }
+
+func BenchmarkHTTPNode_ServeHTTP(b *testing.B) {
+	n := NewHTTPNode("")
+	defer n.Close()
+
+	io := port.New()
+	ioPort, _ := n.Port(node.PortIO)
+	ioPort.Link(io)
+
+	io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+		ioStream := io.Open(proc)
+
+		for {
+			inPck, ok := <-ioStream.Receive()
+			if !ok {
+				return
+			}
+
+			outPck := packet.New(inPck.Payload())
+			proc.Graph().Add(inPck.ID(), outPck.ID())
+			ioStream.Send(outPck)
+		}
+	}))
+
+	body := faker.Sentence()
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+			w := httptest.NewRecorder()
+
+			n.ServeHTTP(w, r)
+		}
+	})
+}
