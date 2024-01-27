@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -14,6 +15,20 @@ func TestMarshalMIME(t *testing.T) {
 		expect          []byte
 	}{
 		{
+			whenValue: primitive.NewBinary([]byte("testtesttest")),
+			expect:    []byte("testtesttest"),
+		},
+		{
+			whenValue:       primitive.NewString("testtesttest"),
+			whenContentType: TextPlain,
+			expect:          []byte("testtesttest"),
+		},
+		{
+			whenValue:       primitive.NewBinary([]byte("testtesttest")),
+			whenContentType: TextPlain,
+			expect:          []byte("testtesttest"),
+		},
+		{
 			whenValue: primitive.NewMap(
 				primitive.NewString("foo"), primitive.NewFloat64(1),
 				primitive.NewString("bar"), primitive.NewFloat64(2),
@@ -21,7 +36,6 @@ func TestMarshalMIME(t *testing.T) {
 			whenContentType: ApplicationJSON,
 			expect:          []byte(`{"bar":2,"foo":1}`),
 		},
-		// TODO: add xml test case
 		{
 			whenValue: primitive.NewMap(
 				primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("foo")),
@@ -31,19 +45,80 @@ func TestMarshalMIME(t *testing.T) {
 			expect:          []byte("bar=bar&foo=foo"),
 		},
 		{
-			whenValue:       primitive.NewString("testtesttest"),
-			whenContentType: TextPlain,
-			expect:          []byte("testtesttest"),
+			whenValue:       primitive.NewMap(primitive.NewString("test"), primitive.NewString("test")),
+			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			expect: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary--\r\n"),
 		},
 		{
 			whenValue: primitive.NewMap(
 				primitive.NewString("value"), primitive.NewMap(
 					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(),
+				primitive.NewString("file"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewString("test"),
+				),
 			),
-			whenContentType: MultipartForm + "; boundary=MyBoundary",
+			whenContentType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: text/plain; charset=utf-8\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary--\r\n"),
+		},
+		{
+			whenValue: primitive.NewMap(
+				primitive.NewString("value"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+				),
+				primitive.NewString("file"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+				),
+			),
+			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			expect: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: text/plain; charset=utf-8\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary--\r\n"),
+		},
+		{
+			whenValue: primitive.NewMap(
+				primitive.NewString("value"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+				),
+				primitive.NewString("file"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewSlice(primitive.NewMap(
+						primitive.NewString("data"), primitive.NewBinary([]byte("test")),
+						primitive.NewString("filename"), primitive.NewString("test"),
+						primitive.NewString("header"), primitive.NewMap(
+							primitive.NewString("Content-Disposition"), primitive.NewSlice(primitive.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							primitive.NewString("Content-Type"), primitive.NewSlice(primitive.NewString(ApplicationOctetStream)),
+						),
+						primitive.NewString("size"), primitive.NewInt64(4),
+					)),
+				),
+			),
+			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			expect: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: application/octet-stream\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
 				"test\r\n" +
@@ -51,7 +126,7 @@ func TestMarshalMIME(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.whenContentType, func(t *testing.T) {
+		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenContentType), func(t *testing.T) {
 			encode, err := MarshalMIME(tc.whenValue, &tc.whenContentType)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, encode)
@@ -78,7 +153,6 @@ func TestUnmarshalMIME(t *testing.T) {
 				primitive.NewString("bar"), primitive.NewFloat64(2),
 			),
 		},
-		// TODO: add xml test case
 		{
 			whenValue:       []byte("foo=foo&bar=bar"),
 			whenContentType: ApplicationForm,
@@ -94,21 +168,36 @@ func TestUnmarshalMIME(t *testing.T) {
 		},
 		{
 			whenValue: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: application/octet-stream\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
-			whenContentType: MultipartForm + "; boundary=MyBoundary",
+			whenContentType: MultipartFormData + "; boundary=MyBoundary",
 			expect: primitive.NewMap(
 				primitive.NewString("value"), primitive.NewMap(
 					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(),
+				primitive.NewString("file"), primitive.NewMap(
+					primitive.NewString("test"), primitive.NewSlice(primitive.NewMap(
+						primitive.NewString("data"), primitive.NewBinary([]byte("test")),
+						primitive.NewString("filename"), primitive.NewString("test"),
+						primitive.NewString("header"), primitive.NewMap(
+							primitive.NewString("Content-Disposition"), primitive.NewSlice(primitive.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							primitive.NewString("Content-Type"), primitive.NewSlice(primitive.NewString("application/octet-stream")),
+						),
+						primitive.NewString("size"), primitive.NewInt64(4),
+					)),
+				),
 			),
 		},
 		{
 			whenValue:       []byte("testtesttest"),
-			whenContentType: OctetStream,
+			whenContentType: ApplicationOctetStream,
 			expect:          primitive.NewBinary([]byte("testtesttest")),
 		},
 	}
