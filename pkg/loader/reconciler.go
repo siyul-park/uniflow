@@ -21,7 +21,7 @@ type Reconciler struct {
 	storage   *storage.Storage
 	loader    *Loader
 	stream    *storage.Stream
-	mu        sync.Mutex
+	mu        sync.RWMutex
 }
 
 // NewReconciler creates a new Reconciler with the given configuration.
@@ -35,15 +35,48 @@ func NewReconciler(config ReconcilerConfig) *Reconciler {
 
 // Watch starts watching for changes to scheme.Spec.
 func (r *Reconciler) Watch(ctx context.Context) error {
-	_, err := r.watch(ctx)
-	return err
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.stream != nil {
+		return nil
+	}
+
+	var filter *storage.Filter
+	if r.namespace != "" {
+		filter = storage.Where[string](scheme.KeyNamespace).EQ(r.namespace)
+	}
+
+	s, err := r.storage.Watch(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		<-s.Done()
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		if r.stream == s {
+			r.stream = nil
+		}
+	}()
+
+	r.stream = s
+	return nil
 }
 
 // Reconcile reflects changes to scheme.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	stream, err := r.watch(ctx)
-	if err != nil {
-		return err
+	stream := func() *storage.Stream {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+
+		return r.stream
+	}()
+	if stream == nil {
+		return nil
 	}
 
 	for {
@@ -52,14 +85,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return ctx.Err()
 		case event, ok := <-stream.Next():
 			if !ok {
-				stream, err = r.watch(ctx)
-				if err != nil {
-					return err
-				}
-			} else {
-				if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
-					return err
-				}
+				return nil
+			}
+			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
+				return err
 			}
 		}
 	}
@@ -79,37 +108,4 @@ func (r *Reconciler) Close() error {
 	r.stream = nil
 
 	return nil
-}
-
-func (r *Reconciler) watch(ctx context.Context) (*storage.Stream, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.stream != nil {
-		return r.stream, nil
-	}
-
-	var filter *storage.Filter
-	if r.namespace != "" {
-		filter = storage.Where[string](scheme.KeyNamespace).EQ(r.namespace)
-	}
-
-	s, err := r.storage.Watch(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		<-s.Done()
-
-		r.mu.Lock()
-		defer r.mu.Unlock()
-
-		if r.stream == s {
-			r.stream = nil
-		}
-	}()
-
-	r.stream = s
-	return s, nil
 }

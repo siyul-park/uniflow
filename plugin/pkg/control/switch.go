@@ -26,9 +26,9 @@ type SwitchNode struct {
 
 // SwitchNodeSpec holds the specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
-	scheme.SpecMeta
-	Lang  string      `map:"lang"`
-	Match []Condition `map:"match"`
+	scheme.SpecMeta `map:",inline"`
+	Lang            string      `map:"lang"`
+	Match           []Condition `map:"match"`
 }
 
 // Condition represents a condition for directing packets to specific ports.

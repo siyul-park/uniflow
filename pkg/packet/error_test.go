@@ -20,6 +20,7 @@ func TestWithError(t *testing.T) {
 
 	payload, ok := pck2.Payload().(*primitive.Map)
 	assert.True(t, ok)
+	assert.Equal(t, primitive.TRUE, payload.GetOr(primitive.NewString("__error"), nil))
 	assert.Equal(t, err.Error(), payload.GetOr(primitive.NewString("error"), nil).Interface())
 	assert.Equal(t, pck1.Payload(), payload.GetOr(primitive.NewString("cause"), nil))
 }

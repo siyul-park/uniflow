@@ -10,6 +10,7 @@ import (
 type Stack struct {
 	graph  *Graph
 	values map[uuid.UUID][]uuid.UUID
+	wait   sync.RWMutex
 	mu     sync.RWMutex
 }
 
@@ -25,6 +26,7 @@ func (s *Stack) Push(key, value uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.wait.RLock()
 	s.values[key] = append(s.values[key], value)
 }
 
@@ -37,6 +39,7 @@ func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
 		values := s.values[head]
 		if values[len(values)-1] == value {
 			s.values[head] = values[:len(values)-1]
+			s.wait.RUnlock()
 			return head, true
 		}
 	}
@@ -64,6 +67,9 @@ func (s *Stack) Clear(key uuid.UUID) {
 			}
 		}
 
+		for range s.values[key] {
+			s.wait.RUnlock()
+		}
 		delete(s.values, key)
 		return true
 	})
@@ -81,6 +87,12 @@ func (s *Stack) Size(key uuid.UUID) int {
 	})
 
 	return size
+}
+
+// Wait blocks until all values in the stack are emptied.
+func (s *Stack) Wait() {
+	s.wait.Lock()
+	defer s.wait.Unlock()
 }
 
 func (s *Stack) heads(key uuid.UUID) []uuid.UUID {

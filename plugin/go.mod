@@ -7,6 +7,7 @@ require (
 	github.com/evanw/esbuild v0.19.11
 	github.com/go-faker/faker/v4 v4.2.0
 	github.com/iancoleman/strcase v0.3.0
+	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.0.0

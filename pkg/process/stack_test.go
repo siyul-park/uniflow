@@ -1,7 +1,9 @@
 package process
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
@@ -189,4 +191,30 @@ func TestStack_Heads(t *testing.T) {
 		heads := s.Heads(k2)
 		assert.Equal(t, []uuid.UUID{k1}, heads)
 	})
+}
+
+func TestStack_Wait(t *testing.T) {
+	g := newGraph()
+	s := newStack(g)
+
+	k := uuid.Must(uuid.NewV7())
+	v := uuid.Must(uuid.NewV7())
+
+	s.Push(k, v)
+	s.Pop(k, v)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		s.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	case <-done:
+	}
 }

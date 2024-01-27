@@ -1,0 +1,12 @@
+- kind: http
+  name: server
+  address: :8000
+  links:
+    io:
+      - name: pong
+        port: io
+
+- kind: snippet
+  name: pong
+  lang: text
+  code: pong

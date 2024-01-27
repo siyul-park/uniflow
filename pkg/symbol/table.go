@@ -283,7 +283,7 @@ func (t *Table) unlinks(sym *Symbol) error {
 
 func (t *Table) relinks(sym *Symbol) error {
 	for _, ref := range t.symbols {
-		if ref.Namespace() != sym.Namespace() {
+		if !t.shouldSkipLoad(ref) || ref.Namespace() != sym.Namespace() {
 			continue
 		}
 
@@ -303,6 +303,9 @@ func (t *Table) relinks(sym *Symbol) error {
 							Port: name,
 						})
 						ref.unlinks[name] = append(locations[:i], locations[i+1:]...)
+						if len(ref.unlinks[name]) == 0 {
+							delete(ref.unlinks, name)
+						}
 					}
 				}
 			}
