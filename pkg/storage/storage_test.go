@@ -559,10 +559,10 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 
 	_, _ = st.InsertMany(ctx, origins)
 
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		b.ResetTimer()
+		b.StopTimer()
 
 		var patches []scheme.Spec
 		for _, id := range ids {
