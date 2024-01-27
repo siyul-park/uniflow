@@ -1,11 +1,13 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/phayes/freeport"
@@ -65,7 +67,29 @@ func TestHTTPNode_ListenAndClose(t *testing.T) {
 		}
 	}()
 
-	err = n.WaitForListen(errChan)
+	ctx, cancel := context.WithTimeout(context.TODO(), 200*time.Millisecond)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Millisecond)
+	defer ticker.Stop()
+
+	err = func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				if addr := n.Address(); addr != nil {
+					return nil
+				}
+			case err := <-errChan:
+				if err == http.ErrServerClosed {
+					return nil
+				}
+				return err
+			}
+		}
+	}()
 
 	assert.NoError(t, err)
 	assert.NoError(t, n.Close())

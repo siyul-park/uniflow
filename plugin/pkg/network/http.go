@@ -1,14 +1,12 @@
 package network
 
 import (
-	"context"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -136,30 +134,6 @@ func (n *HTTPNode) Address() net.Addr {
 		return nil
 	}
 	return n.listener.Addr()
-}
-
-func (n *HTTPNode) WaitForListen(errChan <-chan error) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
-	defer cancel()
-
-	ticker := time.NewTicker(5 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			if addr := n.Address(); addr != nil {
-				return nil
-			}
-		case err := <-errChan:
-			if err == http.ErrServerClosed {
-				return nil
-			}
-			return err
-		}
-	}
 }
 
 func (n *HTTPNode) Listen() error {
