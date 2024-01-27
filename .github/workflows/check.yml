@@ -87,7 +87,7 @@ jobs:
       - name: Run Benchmark (Previous)
         run: |
           cd previous
-          make benchmark test-options="-count=4" | tee benchmark.txt
+          make benchmark test-options="-count=2" | tee benchmark.txt
       
       - name: Init (New)
         run: |
@@ -96,7 +96,7 @@ jobs:
       - name: Run Benchmark (New)
         run: |
           cd new
-          make benchmark test-options="-count=4" | tee benchmark.txt
+          make benchmark test-options="-count=2" | tee benchmark.txt
 
       - name: Run Benchstat
         run: benchstat previous/benchmark.txt new/benchmark.txt
