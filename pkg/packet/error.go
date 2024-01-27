@@ -16,6 +16,8 @@ var (
 // If a cause is provided, it is attached to the error packet.
 func WithError(err error, cause *Packet) *Packet {
 	pairs := []primitive.Value{
+		primitive.NewString("__error"),
+		primitive.TRUE,
 		primitive.NewString("error"),
 		primitive.NewString(err.Error()),
 	}
@@ -32,9 +34,14 @@ func WithError(err error, cause *Packet) *Packet {
 // returned error is nil, and the boolean is false.
 func AsError(pck *Packet) (error, bool) {
 	payload := pck.Payload()
-	err, ok := primitive.Pick[string](payload, "error")
-	if !ok {
+
+	if isError, ok := primitive.Pick[bool](payload, "__error"); !ok && !isError {
 		return nil, false
 	}
-	return errors.New(err), true
+
+	if err, ok := primitive.Pick[string](payload, "error"); !ok {
+		return nil, false
+	} else {
+		return errors.New(err), true
+	}
 }
