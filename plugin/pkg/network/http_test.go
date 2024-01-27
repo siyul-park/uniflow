@@ -2,6 +2,8 @@ package network
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/phayes/freeport"
@@ -60,4 +62,19 @@ func TestHTTPNode_ListenAndClose(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NoError(t, n.Close())
+}
+
+func TestHTTPNode_ServeHTTP(t *testing.T) {
+	t.Run("Not Linked", func(t *testing.T) {
+		n := NewHTTPNode("")
+		defer n.Close()
+
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, 200, w.Result().StatusCode)
+		assert.Equal(t, "", w.Body.String())
+	})
 }

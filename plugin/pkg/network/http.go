@@ -4,12 +4,14 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 type HTTPNode struct {
@@ -22,6 +24,17 @@ type HTTPNode struct {
 	mu       sync.RWMutex
 }
 
+type HTTPPayload struct {
+	Proto   string          `map:"proto,omitempty"`
+	Path    string          `map:"path,omitempty"`
+	Method  string          `map:"method,omitempty"`
+	Header  http.Header     `map:"header,omitempty"`
+	Query   url.Values      `map:"query,omitempty"`
+	Cookies []*http.Cookie  `map:"cookies,omitempty"`
+	Body    primitive.Value `map:"body,omitempty"`
+	Status  int             `map:"status"`
+}
+
 type tcpKeepAliveListener struct {
 	*net.TCPListener
 }
@@ -29,18 +42,22 @@ type tcpKeepAliveListener struct {
 var ErrInvalidListenerNetwork = errors.New("invalid listener network")
 
 var _ node.Node = (*HTTPNode)(nil)
+var _ http.Handler = (*HTTPNode)(nil)
 
 func NewHTTPNode(address string) *HTTPNode {
-	s := new(http.Server)
-	s.Addr = address
-
-	return &HTTPNode{
-		server:  s,
+	n := &HTTPNode{
 		ioPort:  port.New(),
 		inPort:  port.New(),
 		outPort: port.New(),
 		errPort: port.New(),
 	}
+
+	s := new(http.Server)
+	s.Addr = address
+	s.Handler = n
+	n.server = s
+
+	return n
 }
 
 func (n *HTTPNode) Port(name string) (*port.Port, bool) {
@@ -96,15 +113,28 @@ func (n *HTTPNode) WaitForListen(errChan <-chan error) error {
 }
 
 func (n *HTTPNode) Listen() error {
-	n.mu.Lock()
-	if l, err := newListener(n.server.Addr, "tcp"); err != nil {
-		n.mu.Unlock()
+	if err := func() error {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
+		if n.listener != nil {
+			return nil
+		}
+		if l, err := newListener(n.server.Addr, "tcp"); err != nil {
+			return err
+		} else {
+			n.listener = l
+		}
+		return nil
+	}(); err != nil {
 		return err
-	} else {
-		n.listener = l
 	}
-	n.mu.Unlock()
+
 	return n.server.Serve(n.listener)
+}
+
+func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement
 }
 
 func (n *HTTPNode) Close() error {
