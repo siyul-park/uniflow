@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
@@ -79,6 +80,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	exists := map[uuid.UUID]struct{}{}
+	var priority []uuid.UUID
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -87,8 +91,18 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			if !ok {
 				return nil
 			}
-			if _, err := r.loader.LoadOne(ctx, event.NodeID); err != nil {
-				return err
+
+			if _, ok := exists[event.NodeID]; !ok {
+				exists[event.NodeID] = struct{}{}
+				priority = append(priority, event.NodeID)
+			}
+
+			for i := len(priority) - 1; i >= 0; i-- {
+				id := priority[i]
+				if _, err := r.loader.LoadOne(ctx, id); err == nil {
+					delete(exists, id)
+					priority = append(priority[:i], priority[i+1:]...)
+				}
 			}
 		}
 	}
