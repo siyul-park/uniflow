@@ -66,12 +66,12 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 		*contentType = ApplicationJSONCharsetUTF8
 	}
 
-	mediatype, params, err := mime.ParseMediaType(*contentType)
+	mediaType, params, err := mime.ParseMediaType(*contentType)
 	if err != nil {
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	}
 
-	switch mediatype {
+	switch mediaType {
 	case ApplicationJSON:
 		return json.Marshal(value.Interface())
 	case ApplicationXML, TextXML:
@@ -104,7 +104,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 		if !ok {
 			boundary = randomMultiPartBoundary()
 			params["boundary"] = boundary
-			*contentType = mime.FormatMediaType(mediatype, params)
+			*contentType = mime.FormatMediaType(mediaType, params)
 		}
 
 		bodyBuffer := new(bytes.Buffer)
