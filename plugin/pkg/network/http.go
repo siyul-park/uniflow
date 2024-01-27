@@ -163,6 +163,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
+	defer proc.Stack().Wait()
 
 	if err := n.action(proc, w, r); err != nil {
 		errPayload := n.newErrorPayload(proc, err)
