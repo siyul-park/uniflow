@@ -7,6 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
+	"github.com/siyul-park/uniflow/plugin/pkg/network"
 )
 
 func execute(ctx context.Context, databaseURL, databaseName string) error {
@@ -14,6 +15,7 @@ func execute(ctx context.Context, databaseURL, databaseName string) error {
 	hb := hook.NewBuilder()
 
 	sb.Register(control.AddToScheme())
+	sb.Register(network.AddToScheme())
 
 	sc, err := sb.Build()
 	if err != nil {

@@ -199,12 +199,9 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, quoteEscaper.Replace(key.String()), quoteEscaper.Replace(filename)))
 							h.Set(HeaderContentType, contentType)
 
-							writer, err := mw.CreatePart(h)
-							if err != nil {
+							if writer, err := mw.CreatePart(h); err != nil {
 								return err
-							}
-
-							if _, err := writer.Write(bytes); err != nil {
+							} else if _, err := writer.Write(bytes); err != nil {
 								return err
 							}
 						}

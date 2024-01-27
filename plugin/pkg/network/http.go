@@ -13,8 +13,10 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// HTTPNode represents a Node for handling HTTP requests.
 type HTTPNode struct {
 	server   *http.Server
 	listener net.Listener
@@ -25,6 +27,13 @@ type HTTPNode struct {
 	mu       sync.RWMutex
 }
 
+// HTTPNodeSpec holds the specifications for creating a HTTPNode.
+type HTTPNodeSpec struct {
+	scheme.SpecMeta
+	Address string `map:"address"`
+}
+
+// HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
 	Proto   string          `map:"proto,omitempty"`
 	Path    string          `map:"path,omitempty"`
@@ -35,6 +44,8 @@ type HTTPPayload struct {
 	Body    primitive.Value `map:"body,omitempty"`
 	Status  int             `map:"status"`
 }
+
+const KindHTTP = "http"
 
 var (
 	PayloadBadRequest                    = NewHTTPPayload(http.StatusBadRequest)                    // HTTP 400 Bad Request
@@ -82,6 +93,14 @@ var (
 var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = (*HTTPNode)(nil)
 
+// NewHTTPNodeCodec creates a new codec for HTTPNodeSpec.
+func NewHTTPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*HTTPNodeSpec](func(spec *HTTPNodeSpec) (node.Node, error) {
+		return NewHTTPNode(spec.Address), nil
+	})
+}
+
+// NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
 func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
 	if len(body) == 0 {
 		body = []primitive.Value{primitive.String(http.StatusText(status))}
@@ -92,6 +111,7 @@ func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
 	}
 }
 
+// NewHTTPNode creates a new HTTPNode with the specified address.
 func NewHTTPNode(address string) *HTTPNode {
 	n := &HTTPNode{
 		ioPort:  port.New(),
