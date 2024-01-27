@@ -145,7 +145,8 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer proc.Exit(nil)
 
 	if err := n.action(proc, w, r); err != nil {
-		n.write(w, NewHTTPPayloadWithStatus(http.StatusInternalServerError))
+		errPayload := n.newErrorPayload(proc, err)
+		n.write(w, errPayload)
 		proc.Exit(err)
 	}
 }
@@ -210,6 +211,34 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 	}
 
 	return n.write(w, res)
+}
+
+func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload {
+	defaultPayload := NewHTTPPayloadWithStatus(http.StatusInternalServerError)
+
+	errStream := n.errPort.Open(proc)
+	if errStream.Links() == 0 {
+		return defaultPayload
+	}
+
+	errPck := packet.WithError(err, nil)
+	errStream.Send(errPck)
+
+	inPck, ok := <-errStream.Receive()
+	if !ok {
+		return defaultPayload
+	}
+
+	if _, ok := packet.AsError(inPck); ok {
+		return defaultPayload
+	}
+
+	var res HTTPPayload
+	inPayload := inPck.Payload()
+	if err := primitive.Unmarshal(inPayload, &res); err != nil {
+		res.Body = inPayload
+	}
+	return res
 }
 
 func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {

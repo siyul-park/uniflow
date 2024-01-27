@@ -108,7 +108,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 			}
 		}))
 
-		body := "Hello, world!"
+		body := faker.Sentence()
 
 		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
 		w := httptest.NewRecorder()
@@ -147,7 +147,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 			}
 		}))
 
-		body := "Hello, world!"
+		body := faker.Sentence()
 
 		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
 		w := httptest.NewRecorder()
@@ -192,5 +192,66 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, "Internal Server Error", w.Body.String())
+	})
+
+	t.Run("Handel Error Response", func(t *testing.T) {
+		n := NewHTTPNode("")
+		defer n.Close()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		err := port.New()
+		errPort, _ := n.Port(node.PortErr)
+		errPort.Link(err)
+
+		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			ioStream := io.Open(proc)
+
+			for {
+				inPck, ok := <-ioStream.Receive()
+				if !ok {
+					return
+				}
+
+				var req HTTPPayload
+				inPayload := inPck.Payload()
+				_ = primitive.Unmarshal(inPayload, &req)
+
+				err := errors.New(req.Body.(primitive.String).String())
+
+				errPck := packet.WithError(err, inPck)
+				proc.Graph().Add(inPck.ID(), errPck.ID())
+				ioStream.Send(errPck)
+			}
+		}))
+		err.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			errStream := err.Open(proc)
+
+			for {
+				inPck, ok := <-errStream.Receive()
+				if !ok {
+					return
+				}
+
+				err, _ := packet.AsError(inPck)
+
+				outPck := packet.New(primitive.NewString(err.Error()))
+				proc.Graph().Add(inPck.ID(), outPck.ID())
+				errStream.Send(outPck)
+			}
+		}))
+
+		body := faker.Sentence()
+
+		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, body, w.Body.String())
 	})
 }
