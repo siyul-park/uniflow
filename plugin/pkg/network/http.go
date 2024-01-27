@@ -206,7 +206,7 @@ func (n *HTTPNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 
-	return nil
+	return n.server.Close()
 }
 
 func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.Request) error {
