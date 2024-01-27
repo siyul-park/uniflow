@@ -152,7 +152,6 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 			}
 			return nil
 		}
-
 		writeFiles := func(value primitive.Value) error {
 			if value, ok := value.(*primitive.Map); ok {
 				for _, key := range value.Keys() {
@@ -175,9 +174,9 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 							if !ok {
 								filename = key.String()
 							}
-							header, _ := primitive.Pick[primitive.Value](element, "header")
 
 							contentType := ""
+							header, _ := primitive.Pick[primitive.Value](element, "header")
 							contentTypes, _ := primitive.Pick[primitive.Value](header, HeaderContentType)
 							if contentTypes != nil {
 								if c, ok := contentTypes.(*primitive.Slice); ok {
@@ -285,16 +284,17 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 				if err != nil {
 					return nil, err
 				}
-				content, err := io.ReadAll(file)
+				bytes, err := io.ReadAll(file)
 				if err != nil {
 					return nil, err
 				}
 
 				contentType := fh.Header.Get(HeaderContentType)
-				data, err := UnmarshalMIME(content, &contentType)
+				data, err := UnmarshalMIME(bytes, &contentType)
 				if err != nil {
 					return nil, err
 				}
+				fh.Header.Set(HeaderContentType, contentType)
 
 				files[name] = append(files[name], map[string]any{
 					"filename": fh.Filename,
