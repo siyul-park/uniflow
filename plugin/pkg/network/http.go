@@ -185,10 +185,31 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proc := process.New()
 
-	err := n.action(proc, w, r)
-	if err != nil {
-		errPayload := n.newErrorPayload(proc, err)
-		n.write(w, errPayload)
+	acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
+	contentEncoding := Negotiate(acceptEncoding, []string{EncodingGzip, EncodingDeflate, EncodingBr, EncodingIdentity})
+
+	write := func(payload HTTPPayload) error {
+		if payload.Header == nil {
+			payload.Header = http.Header{}
+		}
+		if payload.Header.Get(HeaderContentEncoding) == "" {
+			payload.Header.Set(HeaderContentEncoding, contentEncoding)
+		}
+		return n.write(w, payload)
+	}
+	writeError := func(err error) error {
+		return write(n.newErrorPayload(proc, err))
+	}
+
+	var req HTTPPayload
+	var res HTTPPayload
+	var err error
+	if req, err = n.read(r); err != nil {
+		_ = writeError(err)
+	} else if res, err = n.action(proc, req); err != nil {
+		_ = writeError(err)
+	} else if err = write(res); err != nil {
+		_ = writeError(err)
 	}
 
 	proc.Stack().Wait()
@@ -207,23 +228,18 @@ func (n *HTTPNode) Close() error {
 	return n.server.Close()
 }
 
-func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.Request) error {
+func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, error) {
 	ioStream := n.ioPort.Open(proc)
 	inStream := n.inPort.Open(proc)
 	outStream := n.outPort.Open(proc)
 
 	if ioStream.Links()+outStream.Links() == 0 {
-		return nil
-	}
-
-	req, err := n.read(r)
-	if err != nil {
-		return err
+		return HTTPPayload{}, nil
 	}
 
 	outPayload, err := primitive.MarshalBinary(req)
 	if err != nil {
-		return err
+		return HTTPPayload{}, err
 	}
 	outPck := packet.New(outPayload)
 
@@ -231,7 +247,7 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 	outStream.Send(outPck)
 
 	if ioStream.Links()+inStream.Links() == 0 {
-		return nil
+		return HTTPPayload{}, nil
 	}
 
 	var inPck *packet.Packet
@@ -241,11 +257,11 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 	case inPck, ok = <-inStream.Receive():
 	}
 	if !ok {
-		return n.write(w, PayloadServiceUnavailable)
+		return PayloadServiceUnavailable, nil
 	}
 
 	if err, ok := packet.AsError(inPck); ok {
-		return err
+		return HTTPPayload{}, err
 	}
 
 	var res HTTPPayload
@@ -254,7 +270,7 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 		res.Body = inPayload
 	}
 
-	return n.write(w, res)
+	return res, nil
 }
 
 func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {

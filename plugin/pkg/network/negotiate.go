@@ -5,6 +5,10 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"io"
+	"mime"
+	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/andybalholm/brotli"
 )
@@ -15,6 +19,25 @@ const (
 	EncodingBr       = "br"
 	EncodingIdentity = "identity"
 )
+
+func Negotiate(value string, offers []string) string {
+	tokens := strings.Split(value, ",")
+
+	typ := ""
+	quality := 0.0
+	for _, token := range tokens {
+		if mediaType, params, err := mime.ParseMediaType(strings.Trim(token, " ")); err == nil {
+			if offers == nil || slices.Contains(offers, mediaType) {
+				if q, _ := strconv.ParseFloat(strings.Trim(params["q"], " "), 32); q >= quality {
+					typ = mediaType
+					quality = q
+				}
+			}
+		}
+	}
+
+	return typ
+}
 
 func Compress(data []byte, encoding string) ([]byte, error) {
 	var b bytes.Buffer
