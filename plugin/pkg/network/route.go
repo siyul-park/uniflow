@@ -21,8 +21,8 @@ type RouteNode struct {
 type route struct {
 	kind           routeKind
 	prefix         string
-	originalPath   string
-	methods        map[string]*routeMethod
+	paramNames     []string
+	ports          map[string]string
 	parent         *route
 	staticChildren []*route
 	paramChild     *route
@@ -30,12 +30,6 @@ type route struct {
 }
 
 type routeKind uint8
-
-type routeMethod struct {
-	originalPath string
-	paramNames   []string
-	port         string
-}
 
 const (
 	staticKind routeKind = iota
@@ -47,11 +41,7 @@ const (
 )
 
 func NewRouteNode() *RouteNode {
-	n := &RouteNode{
-		tree: &route{
-			methods: map[string]*routeMethod{},
-		},
-	}
+	n := &RouteNode{tree: &route{}}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
@@ -72,7 +62,6 @@ func (n *RouteNode) Add(method, path, port string) error {
 		path = "/" + path
 	}
 
-	originalPath := path
 	paramNames := []string{}
 
 	for i, lcpIndex := 0, len(path); i < lcpIndex; i++ {
@@ -85,7 +74,7 @@ func (n *RouteNode) Add(method, path, port string) error {
 			}
 			j := i + 1
 
-			n.insert(method, path[:i], staticKind, routeMethod{})
+			n.insert(method, path[:i], staticKind, nil, "")
 			for ; i < lcpIndex && path[i] != '/'; i++ {
 			}
 
@@ -94,18 +83,18 @@ func (n *RouteNode) Add(method, path, port string) error {
 			i, lcpIndex = j, len(path)
 
 			if i == lcpIndex {
-				n.insert(method, path[:i], paramKind, routeMethod{originalPath, paramNames, port})
+				n.insert(method, path[:i], paramKind, paramNames, port)
 			} else {
-				n.insert(method, path[:i], paramKind, routeMethod{})
+				n.insert(method, path[:i], paramKind, nil, "")
 			}
 		} else if path[i] == '*' {
-			n.insert(method, path[:i], staticKind, routeMethod{})
+			n.insert(method, path[:i], staticKind, nil, "")
 			paramNames = append(paramNames, "*")
-			n.insert(method, path[:i+1], anyKind, routeMethod{originalPath, paramNames, port})
+			n.insert(method, path[:i+1], anyKind, paramNames, port)
 		}
 	}
 
-	n.insert(method, path, staticKind, routeMethod{originalPath, paramNames, port})
+	n.insert(method, path, staticKind, paramNames, port)
 
 	return nil
 }
@@ -118,20 +107,20 @@ func (n *RouteNode) Find(method, path string) (string, map[string]string) {
 	if route == nil {
 		return "", nil
 	}
-	rmethod := route.findMethod(method)
-	if rmethod == nil {
+	port := route.findPort(method)
+	if port == "" {
 		return "", nil
 	}
 
 	var params map[string]string
-	if len(rmethod.paramNames) > 0 {
-		params = make(map[string]string, len(rmethod.paramNames))
-		for i, name := range rmethod.paramNames {
+	if len(route.paramNames) > 0 {
+		params = make(map[string]string, len(route.paramNames))
+		for i, name := range route.paramNames {
 			params[name] = paramValues[i]
 		}
 	}
 
-	return rmethod.port, params
+	return port, params
 }
 
 func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
@@ -152,8 +141,8 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 		return nil, packet.New(outPayload)
 	}
 
-	rmethod := route.findMethod(method)
-	if rmethod == nil {
+	port := route.findPort(method)
+	if port == "" {
 		var res HTTPPayload
 		if method == http.MethodOptions {
 			res = NewHTTPPayload(http.StatusNoContent, nil)
@@ -166,14 +155,14 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 	}
 
 	params := make([]primitive.Value, 0, len(paramValues)*2)
-	for i, name := range rmethod.paramNames {
+	for i, name := range route.paramNames {
 		params = append(params, primitive.NewString(name), primitive.NewString(paramValues[i]))
 	}
 
 	outPayload := inPayload.Set(primitive.NewString("params"), primitive.NewMap(params...))
 	outPck := packet.New(outPayload)
 
-	i, _ := node.IndexOfMultiPort(node.PortOut, rmethod.port)
+	i, _ := node.IndexOfMultiPort(node.PortOut, port)
 
 	outPcks := make([]*packet.Packet, i+1)
 	outPcks[i] = outPck
@@ -181,7 +170,7 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 	return outPcks, nil
 }
 
-func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMethod) {
+func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []string, port string) {
 	cur := n.tree
 	search := path
 
@@ -201,10 +190,10 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 		if lcpLen == 0 {
 			// At root node
 			cur.prefix = search
-			if rmethod.port != "" {
+			if port != "" {
 				cur.kind = rkind
-				cur.addMethod(method, &rmethod)
-				cur.originalPath = rmethod.originalPath
+				cur.paramNames = paramNames
+				cur.addMethod(method, port)
 			}
 		} else if lcpLen < prefixLen {
 			// Split node into two before we insert new node.
@@ -216,8 +205,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 			r := &route{
 				kind:           cur.kind,
 				prefix:         cur.prefix[lcpLen:],
-				originalPath:   cur.originalPath,
-				methods:        cur.methods,
+				ports:          cur.ports,
 				parent:         cur,
 				staticChildren: cur.staticChildren,
 				paramChild:     cur.paramChild,
@@ -239,8 +227,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 			cur.kind = staticKind
 			cur.prefix = cur.prefix[:lcpLen]
 			cur.staticChildren = nil
-			cur.originalPath = ""
-			cur.methods = map[string]*routeMethod{}
+			cur.ports = map[string]string{}
 			cur.paramChild = nil
 			cur.anyChild = nil
 
@@ -250,23 +237,22 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 			if lcpLen == searchLen {
 				// At parent node
 				cur.kind = rkind
-				if rmethod.port != "" {
-					cur.addMethod(method, &rmethod)
-					cur.originalPath = rmethod.originalPath
+				if port != "" {
+					cur.paramNames = paramNames
+					cur.addMethod(method, port)
 				}
 			} else {
 				// Create child node
 				r := &route{
-					kind:         rkind,
-					prefix:       search[lcpLen:],
-					originalPath: cur.originalPath,
-					methods:      map[string]*routeMethod{},
-					parent:       cur,
+					kind:   rkind,
+					prefix: search[lcpLen:],
+					ports:  map[string]string{},
+					parent: cur,
 				}
 
-				if rmethod.port != "" {
-					r.addMethod(method, &rmethod)
-					r.originalPath = rmethod.originalPath
+				if port != "" {
+					r.paramNames = paramNames
+					r.addMethod(method, port)
 				}
 				// Only Static children could reach here
 				cur.addStaticChild(r)
@@ -281,14 +267,14 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 			}
 			// Create child node
 			r := &route{
-				kind:         rkind,
-				prefix:       search,
-				originalPath: rmethod.originalPath,
-				methods:      map[string]*routeMethod{},
-				parent:       cur,
+				kind:   rkind,
+				prefix: search,
+				ports:  map[string]string{},
+				parent: cur,
 			}
-			if rmethod.port != "" {
-				r.addMethod(method, &rmethod)
+			if port != "" {
+				r.paramNames = paramNames
+				r.addMethod(method, port)
 			}
 
 			switch rkind {
@@ -299,9 +285,9 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 			case anyKind:
 				cur.anyChild = r
 			}
-		} else if rmethod.port != "" { // Node already exists
-			cur.addMethod(method, &rmethod)
-			cur.originalPath = rmethod.originalPath
+		} else if port != "" { // Node already exists
+			cur.paramNames = paramNames
+			cur.addMethod(method, port)
 		}
 		return
 	}
@@ -403,13 +389,13 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		// Finish routing if is no request path remaining to search
 		if search == "" {
 			// in case of node that is handler we have exact method type match or something for 405 to use
-			if bestMatchedRoute.hasMethod() {
+			if bestMatchedRoute.hasPort() {
 				// check if current node has handler registered for http method we are looking for. we store currentNode as
 				// best matching in case we do no find no more routes matching this path+method
 				if prevBestMatchedRoute == nil {
 					prevBestMatchedRoute = bestMatchedRoute
 				}
-				if m := bestMatchedRoute.findMethod(method); m != nil {
+				if port := bestMatchedRoute.findPort(method); port != "" {
 					break
 				}
 			}
@@ -454,10 +440,10 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		if child := bestMatchedRoute.anyChild; child != nil {
 			// If any node is found, use remaining path for paramValues
 			bestMatchedRoute = child
-			if len(paramValues) < bestMatchedRoute.paramLen() {
+			if len(paramValues) < len(bestMatchedRoute.paramNames) {
 				paramValues = append(paramValues, search)
 			} else {
-				paramValues[bestMatchedRoute.paramLen()-1] = search
+				paramValues[len(bestMatchedRoute.paramNames)-1] = search
 			}
 			paramIndex++
 
@@ -465,7 +451,7 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 			searchIndex += len(search)
 			search = ""
 
-			if h := bestMatchedRoute.findMethod(method); h != nil {
+			if port := bestMatchedRoute.findPort(method); port != "" {
 				break
 			}
 			// we store currentNode as best matching in case we do not find more routes matching this path+method. Needed for 405
@@ -503,14 +489,14 @@ func (r *route) addStaticChild(child *route) {
 	r.staticChildren = append(r.staticChildren, child)
 }
 
-func (r *route) addMethod(method string, rm *routeMethod) {
-	if r.methods == nil {
-		r.methods = make(map[string]*routeMethod)
+func (r *route) addMethod(method, port string) {
+	if r.ports == nil {
+		r.ports = make(map[string]string)
 	}
-	if rm.port == "" {
-		delete(r.methods, method)
+	if port == "" {
+		delete(r.ports, method)
 	} else {
-		r.methods[method] = rm
+		r.ports[method] = port
 	}
 }
 
@@ -529,37 +515,27 @@ func (r *route) findChild(label byte) *route {
 	return nil
 }
 
-func (r *route) findMethod(method string) *routeMethod {
-	return r.methods[method]
-}
-
 func (r *route) hasChild() bool {
 	return len(r.staticChildren) > 0 || r.anyChild != nil || r.paramChild != nil
 }
 
-func (r *route) hasMethod() bool {
-	return len(r.methods) > 0
+func (r *route) findPort(method string) string {
+	return r.ports[method]
+}
+
+func (r *route) hasPort() bool {
+	return len(r.ports) > 0
 }
 
 func (r *route) allowHeader() string {
 	buf := new(bytes.Buffer)
 	buf.WriteString(http.MethodOptions)
 
-	for method := range r.methods {
+	for method := range r.ports {
 		buf.WriteString(", ")
 		buf.WriteString(method)
 	}
 	return buf.String()
-}
-
-func (r *route) paramLen() int {
-	count := 0
-	for _, method := range r.methods {
-		if len(method.paramNames) > count {
-			count = len(method.paramNames)
-		}
-	}
-	return count
 }
 
 func (r *route) label() byte {
