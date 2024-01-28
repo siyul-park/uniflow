@@ -205,7 +205,7 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 	return outPcks, nil
 }
 
-func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []string, port string) {
+func (n *RouteNode) insert(method, path string, kind routeKind, paramNames []string, port string) {
 	cur := n.tree
 	search := path
 
@@ -225,7 +225,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 		if lcpLen == 0 {
 			cur.prefix = search
 			if port != "" {
-				cur.kind = rkind
+				cur.kind = kind
 				cur.paramNames = paramNames
 				cur.addMethod(method, port)
 			}
@@ -260,14 +260,14 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 			cur.addStaticChild(r)
 
 			if lcpLen == searchLen {
-				cur.kind = rkind
+				cur.kind = kind
 				if port != "" {
 					cur.paramNames = paramNames
 					cur.addMethod(method, port)
 				}
 			} else {
 				r := &route{
-					kind:   rkind,
+					kind:   kind,
 					prefix: search[lcpLen:],
 					ports:  map[string]string{},
 					parent: cur,
@@ -287,7 +287,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 				continue
 			}
 			r := &route{
-				kind:   rkind,
+				kind:   kind,
 				prefix: search,
 				ports:  map[string]string{},
 				parent: cur,
@@ -297,7 +297,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 				r.addMethod(method, port)
 			}
 
-			switch rkind {
+			switch kind {
 			case staticKind:
 				cur.addStaticChild(r)
 			case paramKind:
