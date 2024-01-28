@@ -186,7 +186,10 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proc := process.New()
 
 	acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
+	accept := r.Header.Get(HeaderAccept)
+
 	contentEncoding := Negotiate(acceptEncoding, []string{EncodingGzip, EncodingDeflate, EncodingBr, EncodingIdentity})
+	contentType := Negotiate(accept, []string{ApplicationJSON, ApplicationForm, ApplicationOctetStream, TextPlain, MultipartFormData})
 
 	write := func(payload HTTPPayload) error {
 		if payload.Header == nil {
@@ -194,6 +197,9 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if payload.Header.Get(HeaderContentEncoding) == "" {
 			payload.Header.Set(HeaderContentEncoding, contentEncoding)
+		}
+		if payload.Header.Get(HeaderContentType) == "" {
+			payload.Header.Set(HeaderContentType, contentType)
 		}
 		return n.write(w, payload)
 	}
