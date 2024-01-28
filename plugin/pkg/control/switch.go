@@ -39,8 +39,6 @@ type Condition struct {
 
 const KindSwitch = "swtich"
 
-var _ node.Node = (*SwitchNode)(nil)
-
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {

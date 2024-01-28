@@ -34,8 +34,6 @@ type SnippetNodeSpec struct {
 
 const KindSnippet = "snippet"
 
-var _ node.Node = (*SnippetNode)(nil)
-
 var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.

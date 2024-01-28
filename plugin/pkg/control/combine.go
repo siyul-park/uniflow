@@ -28,8 +28,6 @@ type CombineNodeSpec struct {
 
 const KindCombine = "combine"
 
-var _ node.Node = (*CombineNode)(nil)
-
 // NewCombineNodeCodec creates a new codec for CombineNodeSpec.
 func NewCombineNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
