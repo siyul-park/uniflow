@@ -256,23 +256,39 @@ func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, 
 	if err != nil {
 		return HTTPPayload{}, err
 	}
+
+	ioPck := packet.New(outPayload)
 	outPck := packet.New(outPayload)
 
-	ioStream.Send(outPck)
-	outStream.Send(outPck)
-
-	if ioStream.Links()+inStream.Links() == 0 {
-		return HTTPPayload{}, nil
+	if ioStream.Links() > 0 {
+		proc.Stack().Push(ioPck.ID(), ioStream.ID())
+		ioStream.Send(ioPck)
+	}
+	if outStream.Links() > 0 {
+		proc.Stack().Push(outPck.ID(), outStream.ID())
+		outStream.Send(outPck)
 	}
 
 	var inPck *packet.Packet
 	var ok bool
 	select {
 	case inPck, ok = <-ioStream.Receive():
+		if ok {
+			_, ok = proc.Stack().Pop(inPck.ID(), ioStream.ID())
+		}
 	case inPck, ok = <-inStream.Receive():
+	case inPck, ok = <-outStream.Receive():
+		if ok {
+			_, ok = proc.Stack().Pop(inPck.ID(), outStream.ID())
+		}
 	}
+	
+	proc.Stack().Clear(ioPck.ID())
+	proc.Stack().Clear(inPck.ID())
+	proc.Stack().Clear(outPck.ID())
+
 	if !ok {
-		return PayloadServiceUnavailable, nil
+		return PayloadInternalServerError, nil
 	}
 
 	if err, ok := packet.AsError(inPck); ok {
