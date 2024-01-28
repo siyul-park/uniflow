@@ -208,12 +208,12 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 	cur := n.tree
 	search := path
 
+	// LCP - Longest Common Prefix (https://en.wikipedia.org/wiki/LCP_array)
 	for {
 		searchLen := len(search)
 		prefixLen := len(cur.prefix)
 		lcpLen := 0
 
-		// LCP - Longest Common Prefix (https://en.wikipedia.org/wiki/LCP_array)
 		max := prefixLen
 		if searchLen < max {
 			max = searchLen
@@ -222,7 +222,6 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 		}
 
 		if lcpLen == 0 {
-			// At root node
 			cur.prefix = search
 			if port != "" {
 				cur.kind = rkind
@@ -230,12 +229,6 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 				cur.addMethod(method, port)
 			}
 		} else if lcpLen < prefixLen {
-			// Split node into two before we insert new node.
-			// This happens when we are inserting path that is submatch of any existing inserted paths.
-			// For example, we have node `/test` and now are about to insert `/te/*`. In that case
-			// 1. overlapping part is `/te` that is used as parent node
-			// 2. `st` is part from existing node that is not matching - it gets its own node (child to `/te`)
-			// 3. `/*` is the new part we are about to insert (child to `/te`)
 			r := &route{
 				kind:           cur.kind,
 				prefix:         cur.prefix[lcpLen:],
@@ -246,7 +239,6 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 				anyChild:       cur.anyChild,
 			}
 
-			// Update parent path for all children to new node
 			for _, child := range cur.staticChildren {
 				child.parent = r
 			}
@@ -257,7 +249,6 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 				cur.anyChild.parent = r
 			}
 
-			// Reset parent node
 			cur.kind = staticKind
 			cur.prefix = cur.prefix[:lcpLen]
 			cur.staticChildren = nil
@@ -265,18 +256,15 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 			cur.paramChild = nil
 			cur.anyChild = nil
 
-			// Only Static children could reach here
 			cur.addStaticChild(r)
 
 			if lcpLen == searchLen {
-				// At parent node
 				cur.kind = rkind
 				if port != "" {
 					cur.paramNames = paramNames
 					cur.addMethod(method, port)
 				}
 			} else {
-				// Create child node
 				r := &route{
 					kind:   rkind,
 					prefix: search[lcpLen:],
@@ -288,18 +276,15 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 					r.paramNames = paramNames
 					r.addMethod(method, port)
 				}
-				// Only Static children could reach here
 				cur.addStaticChild(r)
 			}
 		} else if lcpLen < searchLen {
 			search = search[lcpLen:]
 			c := cur.findChild(search[0])
 			if c != nil {
-				// Go deeper
 				cur = c
 				continue
 			}
-			// Create child node
 			r := &route{
 				kind:   rkind,
 				prefix: search,
@@ -319,7 +304,7 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, paramNames []st
 			case anyKind:
 				cur.anyChild = r
 			}
-		} else if port != "" { // Node already exists
+		} else if port != "" {
 			cur.paramNames = paramNames
 			cur.addMethod(method, port)
 		}
@@ -332,25 +317,17 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 
 	var (
 		prevBestMatchedRoute *route
-		// search stores the remaining path to check for match. By each iteration we move from start of path to end of the path
-		// and search value gets shorter and shorter.
-		search      = path
-		searchIndex = 0
-		paramIndex  int          // Param counter
-		paramValues = []string{} // Use the internal slice so the interface can keep the illusion of a dynamic slice
+		search               = path
+		searchIndex          = 0
+		paramIndex           int
+		paramValues          = []string{}
 	)
 
-	// Backtracking is needed when a dead end (leaf node) is reached in the router tree.
-	// To backtrack the current node will be changed to the parent node and the next kind for the
-	// router logic will be returned based on fromKind or kind of the dead end node (static > param > any).
-	// For example if there is no static node match we should check parent next sibling by kind (param).
-	// Backtracking itself does not check if there is a next sibling, this is done by the router logic.
 	backtrackToNextRouteKind := func(fromKind routeKind) (nextRouteKind routeKind, valid bool) {
 		prev := bestMatchedRoute
 		bestMatchedRoute = prev.parent
 		valid = bestMatchedRoute != nil
 
-		// Next node type by priority
 		if prev.kind == anyKind {
 			nextRouteKind = staticKind
 		} else {
@@ -358,17 +335,13 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		}
 
 		if fromKind == staticKind {
-			// when backtracking is done from static kind block we did not change search so nothing to restore
 			return
 		}
 
-		// restore search to value it was before we move to current node we are backtracking from.
 		if prev.kind == staticKind {
 			searchIndex -= len(prev.prefix)
 		} else {
 			paramIndex--
-			// for param/any node.prefix value is always `:` so we can not deduce searchIndex from that and must use pValue
-			// for that index as it would also contain part of path we cut off before moving into node we are backtracking from
 			searchIndex -= len(paramValues[paramIndex])
 			paramValues[paramIndex] = ""
 		}
@@ -376,22 +349,14 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		return
 	}
 
-	// Router tree is implemented by longest common prefix array (LCP array) https://en.wikipedia.org/wiki/LCP_array
-	// Tree search is implemented as for loop where one loop iteration is divided into 3 separate blocks
-	// Each of these blocks checks specific kind of node (static/param/any). Order of blocks reflex their priority in routing.
-	// Search order/priority is: static > param > any.
-	//
-	// Note: backtracking in tree is implemented by replacing/switching currentNode to previous node
-	// and hoping to (goto statement) next block by priority to check if it is the match.
 	for {
-		prefixLen := 0 // Prefix length
-		lcpLen := 0    // LCP (longest common prefix) length
+		prefixLen := 0
+		lcpLen := 0
 
 		if bestMatchedRoute.kind == staticKind {
 			searchLen := len(search)
 			prefixLen = len(bestMatchedRoute.prefix)
 
-			// LCP - Longest Common Prefix (https://en.wikipedia.org/wiki/LCP_array)
 			max := prefixLen
 			if searchLen < max {
 				max = searchLen
@@ -401,31 +366,20 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		}
 
 		if lcpLen != prefixLen {
-			// No matching prefix, let's backtrack to the first possible alternative node of the decision path
-			nk, ok := backtrackToNextRouteKind(staticKind)
-			if !ok {
-				return nil, nil // No other possibilities on the decision path, handler will be whatever context is reset to.
-			} else if nk == paramKind {
+			if rk, ok := backtrackToNextRouteKind(staticKind); !ok {
+				return nil, nil
+			} else if rk == paramKind {
 				goto Param
-				// NOTE: this case (backtracking from static node to previous any node) can not happen by current any matching logic. Any node is end of search currently
-				//} else if nk == anyKind {
-				//	goto Any
 			} else {
-				// Not found (this should never be possible for static node we are looking currently)
 				break
 			}
 		}
 
-		// The full prefix has matched, remove the prefix from the remaining search
 		search = search[lcpLen:]
 		searchIndex = searchIndex + lcpLen
 
-		// Finish routing if is no request path remaining to search
 		if search == "" {
-			// in case of node that is handler we have exact method type match or something for 405 to use
 			if bestMatchedRoute.hasPort() {
-				// check if current node has handler registered for http method we are looking for. we store currentNode as
-				// best matching in case we do no find no more routes matching this path+method
 				if prevBestMatchedRoute == nil {
 					prevBestMatchedRoute = bestMatchedRoute
 				}
@@ -435,7 +389,6 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 			}
 		}
 
-		// Static node
 		if search != "" {
 			if child := bestMatchedRoute.findChild(search[0]); child != nil {
 				bestMatchedRoute = child
@@ -444,14 +397,11 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		}
 
 	Param:
-		// Param node
 		if child := bestMatchedRoute.paramChild; search != "" && child != nil {
 			bestMatchedRoute = child
 			i := 0
 			l := len(search)
 			if !bestMatchedRoute.hasChild() {
-				// when param node does not have any children (path param is last piece of route path) then param node should
-				// act similarly to any node - consider all remaining search as match
 				i = l
 			} else {
 				for ; i < l && search[i] != '/'; i++ {
@@ -470,9 +420,7 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		}
 
 	Any:
-		// Any node
 		if child := bestMatchedRoute.anyChild; child != nil {
-			// If any node is found, use remaining path for paramValues
 			bestMatchedRoute = child
 			if len(paramValues) < len(bestMatchedRoute.paramNames) {
 				paramValues = append(paramValues, search)
@@ -481,38 +429,31 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 			}
 			paramIndex++
 
-			// update indexes/search in case we need to backtrack when no handler match is found
 			searchIndex += len(search)
 			search = ""
 
 			if port := bestMatchedRoute.findPort(method); port != "" {
 				break
 			}
-			// we store currentNode as best matching in case we do not find more routes matching this path+method. Needed for 405
 			if prevBestMatchedRoute == nil {
 				prevBestMatchedRoute = bestMatchedRoute
 			}
 		}
 
-		// Let's backtrack to the first possible alternative node of the decision path
-		nk, ok := backtrackToNextRouteKind(anyKind)
-		if !ok {
-			break // No other possibilities on the decision path
-		} else if nk == paramKind {
+		if rk, ok := backtrackToNextRouteKind(anyKind); !ok {
+			break
+		} else if rk == paramKind {
 			goto Param
-		} else if nk == anyKind {
+		} else if rk == anyKind {
 			goto Any
 		} else {
-			// Not found
 			break
 		}
 	}
 
 	if bestMatchedRoute == nil && prevBestMatchedRoute == nil {
 		return nil, nil
-	}
-
-	if bestMatchedRoute != nil {
+	} else if bestMatchedRoute != nil {
 		return bestMatchedRoute, paramValues
 	} else {
 		return prevBestMatchedRoute, nil
