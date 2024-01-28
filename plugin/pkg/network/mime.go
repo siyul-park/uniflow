@@ -180,8 +180,9 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 								filename = key.String()
 							}
 
-							contentType := ""
 							header, _ := primitive.Pick[primitive.Value](element, "header")
+
+							contentType := ""
 							contentTypes, _ := primitive.Pick[primitive.Value](header, HeaderContentType)
 							if contentTypes != nil {
 								if c, ok := contentTypes.(*primitive.Slice); ok {
@@ -191,7 +192,21 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 								}
 							}
 
+							contentEncoding := ""
+							contentEncodings, _ := primitive.Pick[primitive.Value](header, HeaderContentEncoding)
+							if contentEncodings != nil {
+								if c, ok := contentEncodings.(*primitive.Slice); ok {
+									contentEncoding, _ = primitive.Pick[string](c, "0")
+								} else if c, ok := contentEncodings.(primitive.String); ok {
+									contentEncoding = c.String()
+								}
+							}
+
 							bytes, err := MarshalMIME(data, &contentType)
+							if err != nil {
+								return err
+							}
+							bytes, err = Compress(bytes, contentEncoding)
 							if err != nil {
 								return err
 							}
@@ -291,10 +306,17 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 				}
 
 				contentType := fh.Header.Get(HeaderContentType)
+				contentEncoding := fh.Header.Get(HeaderContentEncoding)
+
+				bytes, err = Decompress(bytes, contentEncoding)
+				if err != nil {
+					return nil, err
+				}
 				data, err := UnmarshalMIME(bytes, &contentType)
 				if err != nil {
 					return nil, err
 				}
+
 				fh.Header.Set(HeaderContentType, contentType)
 
 				files[name] = append(files[name], map[string]any{

@@ -257,36 +257,13 @@ func (n *HTTPNode) action(proc *process.Process, w http.ResponseWriter, r *http.
 	return n.write(w, res)
 }
 
-func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload {
-	errStream := n.errPort.Open(proc)
-	if errStream.Links() == 0 {
-		return PayloadInternalServerError
-	}
-
-	errPck := packet.WithError(err, nil)
-	errStream.Send(errPck)
-
-	inPck, ok := <-errStream.Receive()
-	if !ok {
-		return PayloadInternalServerError
-	}
-
-	if _, ok := packet.AsError(inPck); ok {
-		return PayloadInternalServerError
-	}
-
-	var res HTTPPayload
-	inPayload := inPck.Payload()
-	if err := primitive.Unmarshal(inPayload, &res); err != nil {
-		res.Body = inPayload
-	}
-	return res
-}
-
 func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {
 	contentType := r.Header.Get(HeaderContentType)
+	contentEncoding := r.Header.Get(HeaderContentEncoding)
 
 	if b, err := io.ReadAll(r.Body); err != nil {
+		return HTTPPayload{}, err
+	} else if b, err := Decompress(b, contentEncoding); err != nil {
 		return HTTPPayload{}, err
 	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
 		return HTTPPayload{}, err
@@ -306,8 +283,13 @@ func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {
 
 func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 	contentType := res.Header.Get(HeaderContentType)
+	contentEncoding := res.Header.Get(HeaderContentEncoding)
 
 	b, err := MarshalMIME(res.Body, &contentType)
+	if err != nil {
+		return err
+	}
+	b, err = Compress(b, contentEncoding)
 	if err != nil {
 		return err
 	}
@@ -347,4 +329,30 @@ func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
+}
+
+func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload {
+	errStream := n.errPort.Open(proc)
+	if errStream.Links() == 0 {
+		return PayloadInternalServerError
+	}
+
+	errPck := packet.WithError(err, nil)
+	errStream.Send(errPck)
+
+	inPck, ok := <-errStream.Receive()
+	if !ok {
+		return PayloadInternalServerError
+	}
+
+	if _, ok := packet.AsError(inPck); ok {
+		return PayloadInternalServerError
+	}
+
+	var res HTTPPayload
+	inPayload := inPck.Payload()
+	if err := primitive.Unmarshal(inPayload, &res); err != nil {
+		res.Body = inPayload
+	}
+	return res
 }

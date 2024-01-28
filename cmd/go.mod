@@ -14,6 +14,7 @@ require (
 
 require (
 	github.com/acobaugh/osrelease v0.1.0 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
