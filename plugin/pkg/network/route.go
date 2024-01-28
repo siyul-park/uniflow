@@ -10,12 +10,24 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 type RouteNode struct {
 	*node.OneToManyNode
 	tree *route
 	mu   sync.RWMutex
+}
+
+type RouteNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Routes          []Route `map:"routes"`
+}
+
+type Route struct {
+	Method string `map:"method"`
+	Path   string `map:"path"`
+	Port   string `map:"port"`
 }
 
 type route struct {
@@ -31,6 +43,8 @@ type route struct {
 
 type routeKind uint8
 
+const KindRoute = "route"
+
 const (
 	staticKind routeKind = iota
 	paramKind
@@ -39,6 +53,20 @@ const (
 	paramLabel = byte(':')
 	anyLabel   = byte('*')
 )
+
+// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
+func NewRouteNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*RouteNodeSpec](func(spec *RouteNodeSpec) (node.Node, error) {
+		n := NewRouteNode()
+		for _, route := range spec.Routes {
+			if err := n.Add(route.Method, route.Path, route.Port); err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
+}
 
 func NewRouteNode() *RouteNode {
 	n := &RouteNode{tree: &route{}}

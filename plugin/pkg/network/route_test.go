@@ -15,6 +15,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRouteNodeCodec_Decode(t *testing.T) {
+	codec := NewRouteNodeCodec()
+
+	spec := &RouteNodeSpec{
+		Routes: []Route{
+			{
+				Method: http.MethodGet,
+				Path:   "/",
+				Port:   node.MultiPort(node.PortOut, 0),
+			},
+		},
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
 func TestNewRouteNode(t *testing.T) {
 	n := NewRouteNode()
 	assert.NotNil(t, n)
