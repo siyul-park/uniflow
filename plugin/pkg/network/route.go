@@ -1,11 +1,14 @@
 package network
 
 import (
+	"bytes"
+	"net/http"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
@@ -112,23 +115,70 @@ func (n *RouteNode) Find(method, path string) (string, map[string]string) {
 	defer n.mu.RUnlock()
 
 	route, paramValues := n.find(method, path)
-	if route == nil || route.port == "" {
+	if route == nil {
+		return "", nil
+	}
+	rmethod := route.findMethod(method)
+	if rmethod == nil {
 		return "", nil
 	}
 
-	var param map[string]string
-	if len(route.paramNames) > 0 {
-		param = make(map[string]string, len(route.paramNames))
-		for i, name := range route.paramNames {
-			param[name] = paramValues[i]
+	var params map[string]string
+	if len(rmethod.paramNames) > 0 {
+		params = make(map[string]string, len(rmethod.paramNames))
+		for i, name := range rmethod.paramNames {
+			params[name] = paramValues[i]
 		}
 	}
 
-	return route.port, param
+	return rmethod.port, params
 }
 
 func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-	return nil, nil
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inPayload, ok := inPck.Payload().(*primitive.Map)
+	if !ok {
+		return nil, nil
+	}
+
+	method, _ := primitive.Pick[string](inPayload, "method")
+	path, _ := primitive.Pick[string](inPayload, "path")
+
+	route, paramValues := n.find(method, path)
+	if route == nil {
+		outPayload, _ := primitive.MarshalBinary(PayloadNotFound)
+		return nil, packet.New(outPayload)
+	}
+
+	rmethod := route.findMethod(method)
+	if rmethod == nil {
+		var res HTTPPayload
+		if method == http.MethodOptions {
+			res = NewHTTPPayload(http.StatusNoContent, nil)
+		} else {
+			res = NewHTTPPayload(http.StatusMethodNotAllowed)
+		}
+		res.Header.Set(HeaderAllow, route.allowHeader())
+		outPayload, _ := primitive.MarshalBinary(res)
+		return nil, packet.New(outPayload)
+	}
+
+	params := make([]primitive.Value, 0, len(paramValues)*2)
+	for i, name := range rmethod.paramNames {
+		params = append(params, primitive.NewString(name), primitive.NewString(paramValues[i]))
+	}
+
+	outPayload := inPayload.Set(primitive.NewString("params"), primitive.NewMap(params...))
+	outPck := packet.New(outPayload)
+
+	i, _ := node.IndexOfMultiPort(node.PortOut, rmethod.port)
+
+	outPcks := make([]*packet.Packet, i+1)
+	outPcks[i] = outPck
+
+	return outPcks, nil
 }
 
 func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMethod) {
@@ -257,12 +307,11 @@ func (n *RouteNode) insert(method, path string, rkind routeKind, rmethod routeMe
 	}
 }
 
-func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
-	cur := n.tree
+func (n *RouteNode) find(method, path string) (*route, []string) {
+	bestMatchedRoute := n.tree
 
 	var (
 		prevBestMatchedRoute *route
-		matchedRouteMethod   *routeMethod
 		// search stores the remaining path to check for match. By each iteration we move from start of path to end of the path
 		// and search value gets shorter and shorter.
 		search      = path
@@ -277,9 +326,9 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 	// For example if there is no static node match we should check parent next sibling by kind (param).
 	// Backtracking itself does not check if there is a next sibling, this is done by the router logic.
 	backtrackToNextRouteKind := func(fromKind routeKind) (nextRouteKind routeKind, valid bool) {
-		prev := cur
-		cur = prev.parent
-		valid = cur != nil
+		prev := bestMatchedRoute
+		bestMatchedRoute = prev.parent
+		valid = bestMatchedRoute != nil
 
 		// Next node type by priority
 		if prev.kind == anyKind {
@@ -318,16 +367,16 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 		prefixLen := 0 // Prefix length
 		lcpLen := 0    // LCP (longest common prefix) length
 
-		if cur.kind == staticKind {
+		if bestMatchedRoute.kind == staticKind {
 			searchLen := len(search)
-			prefixLen = len(cur.prefix)
+			prefixLen = len(bestMatchedRoute.prefix)
 
 			// LCP - Longest Common Prefix (https://en.wikipedia.org/wiki/LCP_array)
 			max := prefixLen
 			if searchLen < max {
 				max = searchLen
 			}
-			for ; lcpLen < max && search[lcpLen] == cur.prefix[lcpLen]; lcpLen++ {
+			for ; lcpLen < max && search[lcpLen] == bestMatchedRoute.prefix[lcpLen]; lcpLen++ {
 			}
 		}
 
@@ -354,14 +403,13 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 		// Finish routing if is no request path remaining to search
 		if search == "" {
 			// in case of node that is handler we have exact method type match or something for 405 to use
-			if cur.hasMethod() {
+			if bestMatchedRoute.hasMethod() {
 				// check if current node has handler registered for http method we are looking for. we store currentNode as
 				// best matching in case we do no find no more routes matching this path+method
 				if prevBestMatchedRoute == nil {
-					prevBestMatchedRoute = cur
+					prevBestMatchedRoute = bestMatchedRoute
 				}
-				if m := cur.findMethod(method); m != nil {
-					matchedRouteMethod = m
+				if m := bestMatchedRoute.findMethod(method); m != nil {
 					break
 				}
 			}
@@ -369,19 +417,19 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 
 		// Static node
 		if search != "" {
-			if child := cur.findChild(search[0]); child != nil {
-				cur = child
+			if child := bestMatchedRoute.findChild(search[0]); child != nil {
+				bestMatchedRoute = child
 				continue
 			}
 		}
 
 	Param:
 		// Param node
-		if child := cur.paramChild; search != "" && child != nil {
-			cur = child
+		if child := bestMatchedRoute.paramChild; search != "" && child != nil {
+			bestMatchedRoute = child
 			i := 0
 			l := len(search)
-			if !cur.hasChild() {
+			if !bestMatchedRoute.hasChild() {
 				// when param node does not have any children (path param is last piece of route path) then param node should
 				// act similarly to any node - consider all remaining search as match
 				i = l
@@ -403,13 +451,13 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 
 	Any:
 		// Any node
-		if child := cur.anyChild; child != nil {
+		if child := bestMatchedRoute.anyChild; child != nil {
 			// If any node is found, use remaining path for paramValues
-			cur = child
-			if len(paramValues) < cur.paramLen() {
+			bestMatchedRoute = child
+			if len(paramValues) < bestMatchedRoute.paramLen() {
 				paramValues = append(paramValues, search)
 			} else {
-				paramValues[cur.paramLen()-1] = search
+				paramValues[bestMatchedRoute.paramLen()-1] = search
 			}
 			paramIndex++
 
@@ -417,13 +465,12 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 			searchIndex += len(search)
 			search = ""
 
-			if h := cur.findMethod(method); h != nil {
-				matchedRouteMethod = h
+			if h := bestMatchedRoute.findMethod(method); h != nil {
 				break
 			}
 			// we store currentNode as best matching in case we do not find more routes matching this path+method. Needed for 405
 			if prevBestMatchedRoute == nil {
-				prevBestMatchedRoute = cur
+				prevBestMatchedRoute = bestMatchedRoute
 			}
 		}
 
@@ -441,14 +488,14 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 		}
 	}
 
-	if cur == nil && prevBestMatchedRoute == nil {
+	if bestMatchedRoute == nil && prevBestMatchedRoute == nil {
 		return nil, nil
 	}
 
-	if matchedRouteMethod != nil {
-		return matchedRouteMethod, paramValues
+	if bestMatchedRoute != nil {
+		return bestMatchedRoute, paramValues
 	} else {
-		return &routeMethod{originalPath: prevBestMatchedRoute.originalPath}, nil
+		return prevBestMatchedRoute, nil
 	}
 }
 
@@ -492,6 +539,17 @@ func (r *route) hasChild() bool {
 
 func (r *route) hasMethod() bool {
 	return len(r.methods) > 0
+}
+
+func (r *route) allowHeader() string {
+	buf := new(bytes.Buffer)
+	buf.WriteString(http.MethodOptions)
+
+	for method := range r.methods {
+		buf.WriteString(", ")
+		buf.WriteString(method)
+	}
+	return buf.String()
 }
 
 func (r *route) paramLen() int {
