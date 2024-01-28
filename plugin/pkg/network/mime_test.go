@@ -8,6 +8,62 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsCompatibleMIMEType(t *testing.T) {
+	testCases := []struct {
+		whenX  string
+		whenY  string
+		expect bool
+	}{
+		{
+			whenX:  "",
+			whenY:  "",
+			expect: true,
+		},
+		{
+			whenX:  "*",
+			whenY:  "*",
+			expect: true,
+		},
+		{
+			whenX:  "text/plain",
+			whenY:  "text/plain",
+			expect: true,
+		},
+		{
+			whenX:  "text/plain",
+			whenY:  "*",
+			expect: true,
+		},
+		{
+			whenX:  "*",
+			whenY:  "text/plain",
+			expect: true,
+		},
+		{
+			whenX:  "text/plain",
+			whenY:  "*/plain",
+			expect: true,
+		},
+		{
+			whenX:  "text/plain",
+			whenY:  "text/*",
+			expect: true,
+		},
+		{
+			whenX:  "application/json",
+			whenY:  "text/plain",
+			expect: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s, %s", tc.whenX, tc.whenY), func(t *testing.T) {
+			ok := IsCompatibleMIMEType(tc.whenX, tc.whenY)
+			assert.Equal(t, tc.expect, ok)
+		})
+	}
+}
+
 func TestMarshalMIME(t *testing.T) {
 	testCases := []struct {
 		whenValue       primitive.Value
@@ -125,6 +181,7 @@ func TestMarshalMIME(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 	}
+
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenContentType), func(t *testing.T) {
 			encode, err := MarshalMIME(tc.whenValue, &tc.whenContentType)

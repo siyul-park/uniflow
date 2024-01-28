@@ -16,6 +16,7 @@ const (
 	EncodingIdentity = "identity"
 )
 
+// Compress compresses input data using the specified encoding, returns original if unsupported.
 func Compress(data []byte, encoding string) ([]byte, error) {
 	var b bytes.Buffer
 	var w io.Writer
@@ -40,6 +41,7 @@ func Compress(data []byte, encoding string) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// Decompress decompresses input data using the specified encoding, returns original if unsupported.
 func Decompress(data []byte, encoding string) ([]byte, error) {
 	var r io.Reader
 	var err error

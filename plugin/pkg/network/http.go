@@ -128,6 +128,7 @@ func NewHTTPNode(address string) *HTTPNode {
 	return n
 }
 
+// Port returns the specified port.
 func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -147,6 +148,7 @@ func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
+// Address returns the listener address if available.
 func (n *HTTPNode) Address() net.Addr {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -156,6 +158,7 @@ func (n *HTTPNode) Address() net.Addr {
 	return n.listener.Addr()
 }
 
+// Listen starts the HTTP server.
 func (n *HTTPNode) Listen() error {
 	if err := func() error {
 		n.mu.Lock()
@@ -179,6 +182,7 @@ func (n *HTTPNode) Listen() error {
 	return nil
 }
 
+// ServeHTTP handles HTTP requests.
 func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -225,6 +229,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proc.Exit(err)
 }
 
+// Close closes all ports and stops the HTTP server.
 func (n *HTTPNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

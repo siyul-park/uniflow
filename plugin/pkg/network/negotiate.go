@@ -6,45 +6,44 @@ import (
 	"strings"
 )
 
+// Negotiate selects the best media type from the given value based on the provided offers.
 func Negotiate(value string, offers []string) string {
 	tokens := strings.Split(value, ",")
 
-	value = ""
-	quality := 0.0
+	bestMediaType := ""
+	bestQuality := 0.0
+
 	for _, token := range tokens {
-		if mediaType, params, err := mime.ParseMediaType(strings.Trim(token, " ")); err == nil {
-			accept := ""
-			if offers == nil {
-				accept = mediaType
-			} else if mediaType == "*" {
-				if len(offers) > 0 {
-					accept = offers[0]
-				} else {
-					accept = mediaType
-				}
-			} else {
-				for _, offer := range offers {
-					types := strings.Split(mediaType, "/")
-					offerTypes := strings.Split(offer, "/")
-					if mediaType == offer || (len(types) == 2 && len(offerTypes) == 2 && types[0] == offerTypes[0] && (types[1] == "*" || offerTypes[1] == "*")) {
-						accept = offer
-						break
-					}
+		mediaType, params, err := mime.ParseMediaType(strings.Trim(token, " "))
+		if err != nil {
+			continue
+		}
+
+		accept := ""
+
+		if offers == nil {
+			accept = mediaType
+		} else {
+			for _, offer := range offers {
+				if IsCompatibleMIMEType(mediaType, offer) {
+					accept = offer
+					break
 				}
 			}
+		}
 
-			if accept != "" {
-				q, err := strconv.ParseFloat(strings.Trim(params["q"], " "), 32)
-				if err != nil {
-					q = 1.0
-				}
-				if q > quality {
-					value = accept
-					quality = q
-				}
+		if accept != "" {
+			q, err := strconv.ParseFloat(strings.Trim(params["q"], " "), 32)
+			if err != nil {
+				q = 1.0
+			}
+
+			if q > bestQuality {
+				bestMediaType = accept
+				bestQuality = q
 			}
 		}
 	}
 
-	return value
+	return bestMediaType
 }

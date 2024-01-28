@@ -43,6 +43,32 @@ const charsetUTF8 = "charset=utf-8"
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
+// IsCompatibleMIMEType checks if two media types are compatible.
+func IsCompatibleMIMEType(x, y string) bool {
+	if x == "*" || y == "*" || x == y {
+		return true
+	}
+
+	tokensX := strings.Split(x, "/")
+	tokensY := strings.Split(y, "/")
+
+	if len(tokensX) != len(tokensY) {
+		return false
+	}
+
+	for i := 0; i < len(tokensX); i++ {
+		tokenX := tokensX[i]
+		tokenY := tokensY[i]
+
+		if tokenX != tokenY && tokenX != "*" && tokenY != "*" {
+			return false
+		}
+	}
+
+	return true
+}
+
+// MarshalMIME converts a primitive.Value to MIME data.
 func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 	if contentType == nil {
 		contentType = lo.ToPtr[string]("")
@@ -253,6 +279,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
+// UnmarshalMIME converts MIME data into a primitive.Value.
 func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 	if len(data) == 0 {
 		return nil, nil
