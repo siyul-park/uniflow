@@ -16,7 +16,6 @@ func Pick[T any](v Value, paths ...string) (T, bool) {
 				return zero, false
 			}
 			cur = child
-
 		case *Slice:
 			index, err := strconv.Atoi(path)
 			if err != nil || index >= v.Len() {

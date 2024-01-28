@@ -32,7 +32,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindHTTP}
+	testCase := []string{KindHTTP, KindRoute}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

@@ -3,6 +3,17 @@
   address: :8000
   links:
     io:
+      - name: route
+        port: in
+
+- kind: route
+  name: route
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  links:
+    out[0]:
       - name: pong
         port: io
 

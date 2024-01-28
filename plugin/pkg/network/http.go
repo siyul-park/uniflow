@@ -106,6 +106,7 @@ func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
 		body = []primitive.Value{primitive.String(http.StatusText(status))}
 	}
 	return HTTPPayload{
+		Header: http.Header{},
 		Body:   body[0],
 		Status: status,
 	}
