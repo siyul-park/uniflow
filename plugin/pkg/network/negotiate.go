@@ -22,7 +22,11 @@ func Negotiate(value string, offers []string) string {
 	for _, token := range tokens {
 		if mediaType, params, err := mime.ParseMediaType(strings.Trim(token, " ")); err == nil {
 			if offers == nil || slices.Contains(offers, mediaType) {
-				if q, _ := strconv.ParseFloat(strings.Trim(params["q"], " "), 32); q >= quality {
+				q, err := strconv.ParseFloat(strings.Trim(params["q"], " "), 32)
+				if err != nil {
+					q = 1.0
+				}
+				if q > quality {
 					val = mediaType
 					quality = q
 				}

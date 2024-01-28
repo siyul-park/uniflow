@@ -17,11 +17,11 @@ func TestNegotiate(t *testing.T) {
 		},
 		{
 			when:   "gzip, compress, br",
-			expect: "br",
+			expect: "gzip",
 		},
 		{
 			when:   "deflate, gzip;q=1.0, *;q=0.5",
-			expect: "gzip",
+			expect: "deflate",
 		},
 	}
 
