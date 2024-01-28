@@ -9,6 +9,13 @@ import (
 	"github.com/andybalholm/brotli"
 )
 
+const (
+	EncodingGzip     = "gzip"
+	EncodingDeflate  = "deflate"
+	EncodingBr       = "br"
+	EncodingIdentity = "identity"
+)
+
 func Compress(data []byte, encoding string) ([]byte, error) {
 	var b bytes.Buffer
 	var w io.Writer
