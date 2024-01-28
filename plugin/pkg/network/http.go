@@ -184,14 +184,15 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
-	defer proc.Exit(nil)
-	defer proc.Stack().Wait()
 
-	if err := n.action(proc, w, r); err != nil {
+	err := n.action(proc, w, r)
+	if err != nil {
 		errPayload := n.newErrorPayload(proc, err)
 		n.write(w, errPayload)
-		proc.Exit(err)
 	}
+
+	proc.Stack().Wait()
+	proc.Exit(err)
 }
 
 func (n *HTTPNode) Close() error {
