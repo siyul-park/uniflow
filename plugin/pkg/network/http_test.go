@@ -1,13 +1,11 @@
 package network
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/phayes/freeport"
@@ -74,10 +72,7 @@ func TestHTTPNode_ListenAndClose(t *testing.T) {
 
 	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	err = n.Listen(ctx)
+	err = n.Listen()
 	assert.NoError(t, err)
 
 	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))

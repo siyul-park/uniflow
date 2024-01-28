@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -18,7 +17,7 @@ func execute(ctx context.Context, databaseURL, databaseName string) error {
 	sb.Register(control.AddToScheme())
 	sb.Register(network.AddToScheme())
 
-	hb.Register(network.AddToHooks(ctx, time.Second))
+	hb.Register(network.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {

@@ -1,10 +1,8 @@
 package network
 
 import (
-	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -12,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddToHooks(t *testing.T) {
+func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
-	err := AddToHooks(context.TODO(), time.Second)(h)
+	err := AddToHook()(h)
 	assert.NoError(t, err)
 
 	port, err := freeport.GetFreePort()
