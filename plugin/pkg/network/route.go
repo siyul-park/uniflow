@@ -276,16 +276,16 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 	// router logic will be returned based on fromKind or kind of the dead end node (static > param > any).
 	// For example if there is no static node match we should check parent next sibling by kind (param).
 	// Backtracking itself does not check if there is a next sibling, this is done by the router logic.
-	backtrackToNextRouteKind := func(fromKind routeKind) (nextNodeKind routeKind, valid bool) {
+	backtrackToNextRouteKind := func(fromKind routeKind) (nextRouteKind routeKind, valid bool) {
 		prev := cur
 		cur = prev.parent
 		valid = cur != nil
 
 		// Next node type by priority
 		if prev.kind == anyKind {
-			nextNodeKind = staticKind
+			nextRouteKind = staticKind
 		} else {
-			nextNodeKind = prev.kind + 1
+			nextRouteKind = prev.kind + 1
 		}
 
 		if fromKind == staticKind {
@@ -360,8 +360,8 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 				if prevBestMatchedRoute == nil {
 					prevBestMatchedRoute = cur
 				}
-				if h := cur.findMethod(method); h != nil {
-					matchedRouteMethod = h
+				if m := cur.findMethod(method); m != nil {
+					matchedRouteMethod = m
 					break
 				}
 			}
@@ -390,7 +390,11 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 				}
 			}
 
-			paramValues = append(paramValues, search[:i])
+			if len(paramValues) <= paramIndex {
+				paramValues = append(paramValues, search[:i])
+			} else {
+				paramValues[paramIndex] = search[:i]
+			}
 			paramIndex++
 			search = search[i:]
 			searchIndex = searchIndex + i
@@ -402,11 +406,15 @@ func (n *RouteNode) find(method, path string) (*routeMethod, []string) {
 		if child := cur.anyChild; child != nil {
 			// If any node is found, use remaining path for paramValues
 			cur = child
-			paramValues = append(paramValues, search)
+			if len(paramValues) < cur.paramLen() {
+				paramValues = append(paramValues, search)
+			} else {
+				paramValues[cur.paramLen()-1] = search
+			}
 			paramIndex++
 
 			// update indexes/search in case we need to backtrack when no handler match is found
-			searchIndex += +len(search)
+			searchIndex += len(search)
 			search = ""
 
 			if h := cur.findMethod(method); h != nil {
@@ -484,6 +492,16 @@ func (r *route) hasChild() bool {
 
 func (r *route) hasMethod() bool {
 	return len(r.methods) > 0
+}
+
+func (r *route) paramLen() int {
+	count := 0
+	for _, method := range r.methods {
+		if len(method.paramNames) > count {
+			count = len(method.paramNames)
+		}
+	}
+	return count
 }
 
 func (r *route) label() byte {
