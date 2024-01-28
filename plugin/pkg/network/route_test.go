@@ -97,11 +97,11 @@ func TestRouteNode_Find(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
-	n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
-	n.Add(http.MethodGet, "/a/c/df", node.MultiPort(node.PortOut, 2))
-	n.Add(http.MethodGet, "/:e/c/f", node.MultiPort(node.PortOut, 3))
-	n.Add(http.MethodGet, "/*", node.MultiPort(node.PortOut, 4))
+	_ = n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
+	_ = n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
+	_ = n.Add(http.MethodGet, "/a/c/df", node.MultiPort(node.PortOut, 2))
+	_ = n.Add(http.MethodGet, "/:e/c/f", node.MultiPort(node.PortOut, 3))
+	_ = n.Add(http.MethodGet, "/*", node.MultiPort(node.PortOut, 4))
 
 	testCases := []struct {
 		whenMethod   string
@@ -152,9 +152,9 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
-	n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
-	n.Add(http.MethodGet, "/a/*", node.MultiPort(node.PortOut, 2))
+	_ = n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
+	_ = n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
+	_ = n.Add(http.MethodGet, "/a/*", node.MultiPort(node.PortOut, 2))
 
 	testCases := []struct {
 		whenMethod   string
@@ -242,4 +242,40 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
+	n := NewRouteNode()
+	defer n.Close()
+
+	_ = n.Add(http.MethodGet, "/a/b/c", node.MultiPort(node.PortOut, 0))
+
+	in := port.New()
+	inPort, _ := n.Port(node.PortIn)
+	inPort.Link(in)
+
+	out := port.New()
+	outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+	outPort.Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inStream := in.Open(proc)
+	outStream := out.Open(proc)
+
+	inPayload := primitive.NewMap(
+		primitive.NewString("method"), primitive.NewString(http.MethodGet),
+		primitive.NewString("path"), primitive.NewString("/a/b/c"),
+	)
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			inStream.Send(inPck)
+			<-outStream.Receive()
+		}
+	})
 }
