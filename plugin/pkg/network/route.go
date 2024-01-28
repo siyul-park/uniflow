@@ -13,17 +13,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// RouteNode represents a node for routing based on HTTP method, path, and port.
 type RouteNode struct {
 	*node.OneToManyNode
 	tree *route
 	mu   sync.RWMutex
 }
 
+// RouteNodeSpec defines the specification for configuring a RouteNode.
 type RouteNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Routes          []Route `map:"routes"`
 }
 
+// Route represents a routing configuration with a specific HTTP method, path, and port.
 type Route struct {
 	Method string `map:"method"`
 	Path   string `map:"path"`
@@ -68,12 +71,14 @@ func NewRouteNodeCodec() scheme.Codec {
 	})
 }
 
+// NewRouteNode creates a new RouteNode.
 func NewRouteNode() *RouteNode {
 	n := &RouteNode{tree: &route{}}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
 
+// Add adds a new route to the routing tree for the specified HTTP method, path, and port.
 func (n *RouteNode) Add(method, path, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -127,6 +132,7 @@ func (n *RouteNode) Add(method, path, port string) error {
 	return nil
 }
 
+// Find searches for a matching route based on the provided HTTP method and path.
 func (n *RouteNode) Find(method, path string) (string, map[string]string) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
