@@ -20,7 +20,7 @@ require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/evanw/esbuild v0.19.12 // indirect
+	github.com/evanw/esbuild v0.20.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
