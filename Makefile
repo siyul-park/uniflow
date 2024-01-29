@@ -27,6 +27,15 @@ clean:
 tidy:
 	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go mod tidy'
 
+.PHONY: update
+update:
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go get -u all'
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go mod tidy'
+
+.PHONY: sync
+sync:
+	@go work sync
+
 .PHONY: check
 check: lint test
 
