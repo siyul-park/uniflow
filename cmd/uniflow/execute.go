@@ -33,11 +33,11 @@ func execute(ctx context.Context, databaseURL, databaseName string) error {
 		return err
 	}
 
-	curDir, err := os.Getwd()
+	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	fsys := os.DirFS(curDir)
+	fsys := os.DirFS(wd)
 
 	cmd := NewCommand(Config{
 		Scheme:   sc,

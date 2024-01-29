@@ -16,7 +16,7 @@ import (
 // Config holds the configuration options for the Runtime.
 type Config struct {
 	Namespace string
-	Hooks     *hook.Hook
+	Hook      *hook.Hook
 	Scheme    *scheme.Scheme
 	Database  database.Database
 }
@@ -31,8 +31,8 @@ type Runtime struct {
 
 // New creates a new Runtime instance with the specified configuration.
 func New(ctx context.Context, config Config) (*Runtime, error) {
-	if config.Hooks == nil {
-		config.Hooks = hook.New()
+	if config.Hook == nil {
+		config.Hook = hook.New()
 	}
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
@@ -50,8 +50,8 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}
 
 	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
-		LoadHooks:   []symbol.LoadHook{config.Hooks},
-		UnloadHooks: []symbol.UnloadHook{config.Hooks},
+		LoadHooks:   []symbol.LoadHook{config.Hook},
+		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 
 	ld := loader.New(loader.Config{

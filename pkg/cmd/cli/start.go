@@ -87,7 +87,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		r, err := runtime.New(ctx, runtime.Config{
 			Namespace: namespace,
 			Scheme:    config.Scheme,
-			Hooks:     config.Hook,
+			Hook:      config.Hook,
 			Database:  config.Database,
 		})
 		if err != nil {
