@@ -52,7 +52,7 @@ func TestStream_Unlink(t *testing.T) {
 
 func TestStream_Close(t *testing.T) {
 	stream := newStream()
-	
+
 	stream.Close()
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)

@@ -31,6 +31,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - run: make init
+      - run: make lint
       - run: make coverage
 
       - name: Upload coverage to Codecov
