@@ -1,4 +1,4 @@
-# Plugins
+# Plugin
 
 Unleash the full potential of your system with our diverse range of first-party plugins. Seamlessly integrate these plugins to enhance functionalities and introduce new features, enriching your system's ecosystem. Experience a flexible and extensible platform, providing users with the freedom to explore various possibilities and effortlessly amplify their system's capabilities.
 
