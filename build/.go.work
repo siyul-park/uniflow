@@ -1,0 +1,13 @@
+go 1.21.6
+
+use (
+	.
+	./cmd
+	./plugin
+)
+
+replace (
+	github.com/siyul-park/uniflow v0.0.0 => ./
+	github.com/siyul-park/uniflow/cmd v0.0.0 => ./cmd/
+	github.com/siyul-park/uniflow/plugin v0.0.0 => ./plugin/
+)

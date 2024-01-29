@@ -72,22 +72,18 @@ jobs:
         run: go install golang.org/x/perf/cmd/benchstat@latest
 
       - name: Init (Previous)
-        run: |
-          cd previous
-          make init
+        working-directory: previous
+        run: make init
       - name: Run Benchmark (Previous)
-        run: |
-          cd previous
-          make benchmark test-options="-count=2" | tee benchmark.txt
-      
+        working-directory: previous
+        run: make benchmark test-options="-count=2" | tee benchmark.txt
+
       - name: Init (New)
-        run: |
-          cd new
-          make init
+        working-directory: new
+        run: make init
       - name: Run Benchmark (New)
-        run: |
-          cd new
-          make benchmark test-options="-count=2" | tee benchmark.txt
+        working-directory: new
+        run: make benchmark test-options="-count=2" | tee benchmark.txt
 
       - name: Run Benchstat
         run: benchstat previous/benchmark.txt new/benchmark.txt

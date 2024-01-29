@@ -4,7 +4,8 @@ CURRENT_DIR = $(shell realpath .)
 
 .PHONY: init
 init:
-	@find . -name go.mod -execdir go install -v ./... \;
+	@cp build/.go.work ./go.work
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go install -v ./...'
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@go install golang.org/x/tools/cmd/godoc@latest
 
@@ -29,8 +30,7 @@ tidy:
 
 .PHONY: update
 update:
-	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go get -u all'
-	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go mod tidy'
+	@find $(realpath .) -name go.mod | xargs dirname | xargs -I {} sh -c 'cd {}; go get -u all && go mod tidy'
 
 .PHONY: sync
 sync:
