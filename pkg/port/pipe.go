@@ -84,6 +84,14 @@ func (p *ReadPipe) Close() {
 
 	close(p.done)
 	close(p.in)
+
+	go func() {
+		for {
+			if _, ok := <-p.out; !ok {
+				return
+			}
+		}
+	}()
 }
 
 // send sends a packet through the pipe.
