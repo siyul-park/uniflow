@@ -4,7 +4,7 @@ MemDB is a lightweight, in-memory database library for Go, designed with simplic
 
 ## Features
 
-- **In-Memory Storage**: MemDB stores data entirely in memory for quick access.
+- **In-Memory**: MemDB stores data entirely in memory for quick access.
 - **Indexing**: Efficiently indexes documents using red-black trees, accelerating search operations.
 - **Filtering**: Supports complex filter conditions for retrieving documents that match specific criteria.
 - **Execution Plan**: Generates an execution plan based on filter conditions to optimize search performance.
