@@ -105,6 +105,8 @@ github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5g
 github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/siyul-park/uniflow v0.0.0-20240129014152-ac1d827089c5 h1:un4Z0Fv2bBktWq4/oYvpUrutpLA3nnlbg/t6XtY3oWY=
 github.com/siyul-park/uniflow v0.0.0-20240129014152-ac1d827089c5/go.mod h1:OhFN/R5h49VJ1A6e+UuQQtuLsfA/PrtcEaZaCIAOPBg=
+github.com/siyul-park/uniflow v0.0.0-20240129015707-74122705c3f0 h1:ep9YdpM/cXGArSS7wD+tNJH2WsY5IEUfxIkxqR+52Wg=
+github.com/siyul-park/uniflow v0.0.0-20240129015707-74122705c3f0/go.mod h1:OhFN/R5h49VJ1A6e+UuQQtuLsfA/PrtcEaZaCIAOPBg=
 github.com/siyul-park/uniflow/plugin v0.0.0-20240129020247-ac91e17a66ad h1:fP81Uw9d2x/xoxPgb5a9X9Zsk/ckAfagDxwCavnHyEM=
 github.com/siyul-park/uniflow/plugin v0.0.0-20240129020247-ac91e17a66ad/go.mod h1:uDaj9zLfYk6cVXQj7jyQZw215lJH40xJPpKp0EV+0+k=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=

@@ -57,6 +57,8 @@ github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5g
 github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/siyul-park/uniflow v0.0.0-20240129014152-ac1d827089c5 h1:un4Z0Fv2bBktWq4/oYvpUrutpLA3nnlbg/t6XtY3oWY=
 github.com/siyul-park/uniflow v0.0.0-20240129014152-ac1d827089c5/go.mod h1:OhFN/R5h49VJ1A6e+UuQQtuLsfA/PrtcEaZaCIAOPBg=
+github.com/siyul-park/uniflow v0.0.0-20240129015707-74122705c3f0 h1:ep9YdpM/cXGArSS7wD+tNJH2WsY5IEUfxIkxqR+52Wg=
+github.com/siyul-park/uniflow v0.0.0-20240129015707-74122705c3f0/go.mod h1:OhFN/R5h49VJ1A6e+UuQQtuLsfA/PrtcEaZaCIAOPBg=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/xiatechs/jsonata-go v1.8.4 h1:wkh0Wh2DhjS5ShI0iTxFnICcjlNCF3Amujm0SM7IdH0=
