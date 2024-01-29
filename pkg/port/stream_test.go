@@ -1,7 +1,9 @@
 package port
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
@@ -45,6 +47,21 @@ func TestStream_Unlink(t *testing.T) {
 	case <-stream2.Receive():
 		assert.Fail(t, "stream should not receive and packet.")
 	default:
+	}
+}
+
+func TestStream_Close(t *testing.T) {
+	stream := newStream()
+	
+	stream.Close()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-stream.Done():
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
 	}
 }
 

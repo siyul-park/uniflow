@@ -1,6 +1,7 @@
 package port
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -120,21 +121,28 @@ func TestPort_Open(t *testing.T) {
 func TestPort_Close(t *testing.T) {
 	port := New()
 	defer port.Close()
+
 	proc := process.New()
 	stream := port.Open(proc)
 
+	pck := packet.New(nil)
+	stream.Send(pck)
+
 	port.Close()
 
-	select {
-	case <-stream.Done():
-	default:
-		assert.Fail(t, "stream.Done() is empty.")
-	}
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
 	select {
 	case <-port.Done():
-	default:
-		assert.Fail(t, "port.Done() is empty.")
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+
+	select {
+	case <-stream.Done():
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
 	}
 }
 

@@ -124,8 +124,9 @@ func (p *Port) Open(proc *process.Process) *Stream {
 		}()
 
 		for _, hook := range inits {
-			hook := hook
-			go func() { hook.Init(proc) }()
+			go func(hook InitHook) {
+				hook.Init(proc)
+			}(hook)
 		}
 
 		return stream

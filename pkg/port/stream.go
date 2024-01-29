@@ -13,7 +13,6 @@ type Stream struct {
 	read  *ReadPipe
 	write *WritePipe
 	links []*Stream
-	done  chan struct{}
 	mu    sync.RWMutex
 }
 
@@ -22,7 +21,6 @@ func newStream() *Stream {
 		id:    uuid.Must(uuid.NewV7()),
 		read:  newReadPipe(),
 		write: newWritePipe(),
-		done:  make(chan struct{}),
 	}
 }
 
@@ -66,21 +64,11 @@ func (s *Stream) Links() int {
 
 // Done returns a channel that's closed when the Stream is closed.
 func (s *Stream) Done() <-chan struct{} {
-	return s.done
+	return s.read.Done()
 }
 
 // Close closes the Stream, discarding any unprocessed packets.
 func (s *Stream) Close() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	select {
-	case <-s.done:
-		return
-	default:
-	}
-	close(s.done)
-
 	s.read.Close()
 	s.write.Close()
 }

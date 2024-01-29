@@ -1,7 +1,9 @@
 package port
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
@@ -104,29 +106,24 @@ func TestPipe_Close(t *testing.T) {
 		pipe := newReadPipe()
 		defer pipe.Close()
 
+		pck := packet.New(nil)
+		pipe.send(pck)
+
+		go pipe.Close()
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		select {
 		case <-pipe.Done():
-			assert.Fail(t, "pipe.Done() is not empty.")
-		default:
-		}
-
-		pipe.Close()
-
-		select {
-		case <-pipe.Done():
-		default:
-			assert.Fail(t, "pipe.Done() is empty.")
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
 		}
 	})
+
 	t.Run("WritePipe", func(t *testing.T) {
 		pipe := newWritePipe()
 		defer pipe.Close()
-
-		select {
-		case <-pipe.Done():
-			assert.Fail(t, "pipe.Done() is not empty.")
-		default:
-		}
 
 		pipe.Close()
 

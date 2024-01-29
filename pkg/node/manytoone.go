@@ -98,9 +98,6 @@ func (n *ManyToOneNode) Close() error {
 }
 
 func (n *ManyToOneNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	var inStreams []*port.Stream
 	for _, p := range n.inPorts {
 		if p.Links() > 0 {
@@ -202,9 +199,6 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 }
 
 func (n *ManyToOneNode) backward(proc *process.Process, outStream *port.Stream) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	var inStreams []*port.Stream
 
 	for {

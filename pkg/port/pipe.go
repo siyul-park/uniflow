@@ -19,7 +19,6 @@ func newReadPipe() *ReadPipe {
 		in:   make(chan *packet.Packet),
 		out:  make(chan *packet.Packet),
 		done: make(chan struct{}),
-		mu:   sync.RWMutex{},
 	}
 
 	go func() {

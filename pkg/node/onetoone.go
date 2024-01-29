@@ -103,9 +103,6 @@ func (n *OneToOneNode) Close() error {
 }
 
 func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.Stream) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errStream := n.errPort.Open(proc)
 
 	for {
@@ -143,9 +140,6 @@ func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.
 }
 
 func (n *OneToOneNode) backward(proc *process.Process, outStream *port.Stream) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	var ioStream *port.Stream
 	var inStream *port.Stream
 

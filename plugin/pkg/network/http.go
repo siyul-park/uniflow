@@ -153,6 +153,7 @@ func (n *HTTPNode) Port(name string) (*port.Port, bool) {
 func (n *HTTPNode) Address() net.Addr {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
 	if n.listener == nil {
 		return nil
 	}
@@ -282,7 +283,7 @@ func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, 
 			_, ok = proc.Stack().Pop(inPck.ID(), outStream.ID())
 		}
 	}
-	
+
 	proc.Stack().Clear(ioPck.ID())
 	proc.Stack().Clear(inPck.ID())
 	proc.Stack().Clear(outPck.ID())
