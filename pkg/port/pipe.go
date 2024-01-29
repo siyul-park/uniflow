@@ -45,15 +45,10 @@ func newReadPipe() *ReadPipe {
 						break loop
 					}
 					buffer = append(buffer, packet)
-
 				case p.out <- buffer[0]:
 					buffer = buffer[1:]
 				}
 			}
-		}
-		for len(buffer) > 0 {
-			p.out <- buffer[0]
-			buffer = buffer[1:]
 		}
 	}()
 
@@ -84,14 +79,6 @@ func (p *ReadPipe) Close() {
 
 	close(p.done)
 	close(p.in)
-
-	go func() {
-		for {
-			if _, ok := <-p.out; !ok {
-				return
-			}
-		}
-	}()
 }
 
 // send sends a packet through the pipe.
