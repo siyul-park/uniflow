@@ -4,8 +4,8 @@ go 1.21.6
 
 require (
 	github.com/go-faker/faker/v4 v4.2.0
-	github.com/siyul-park/uniflow v0.0.0
-	github.com/siyul-park/uniflow/plugin v0.0.0
+	github.com/siyul-park/uniflow v0.0.0-20240129014152-ac1d827089c5
+	github.com/siyul-park/uniflow/plugin v0.0.0-20240129020247-ac91e17a66ad
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
@@ -64,7 +64,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/siyul-park/uniflow => ../
-
-replace github.com/siyul-park/uniflow/plugin => ../plugin
