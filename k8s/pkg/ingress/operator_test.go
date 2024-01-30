@@ -7,8 +7,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestNewIngress(t *testing.T) {
+func TestNewOperator(t *testing.T) {
 	k8s := fake.NewSimpleClientset()
-	i := New(k8s)
-	assert.NotNil(t, i)
+	o := NewOperator(k8s)
+	assert.NotNil(t, o)
 }
