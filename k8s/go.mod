@@ -1,4 +1,4 @@
-module github.com/siyul-park/uniflow/ingress
+module github.com/siyul-park/uniflow/k8s
 
 go 1.21.6
 
