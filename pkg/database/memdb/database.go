@@ -13,7 +13,7 @@ type Database struct {
 	lock        sync.RWMutex
 }
 
-var _ database.Database = &Database{}
+var _ database.Database = (*Database)(nil)
 
 func New(name string) *Database {
 	return &Database{

@@ -26,7 +26,7 @@ type internalEvent struct {
 	document *primitive.Map
 }
 
-var _ database.Collection = &Collection{}
+var _ database.Collection = (*Collection)(nil)
 
 func NewCollection(name string) *Collection {
 	segment := newSection()

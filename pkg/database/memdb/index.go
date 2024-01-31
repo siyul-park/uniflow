@@ -14,7 +14,7 @@ type IndexView struct {
 	mu      sync.RWMutex
 }
 
-var _ database.IndexView = &IndexView{}
+var _ database.IndexView = (*IndexView)(nil)
 
 var (
 	ErrIndexConflict   = errors.New("index is conflict")
