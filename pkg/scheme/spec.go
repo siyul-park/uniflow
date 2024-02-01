@@ -22,6 +22,10 @@ type Spec interface {
 	GetName() string
 	// SetName sets the human-readable name of the node.
 	SetName(val string)
+	// GetAnnotations returns the annotations of the nodes.
+	GetAnnotations() map[string]string
+	// SetAnnotations sets the annotations of the nodes.
+	SetAnnotations(val map[string]string)
 	// GetLinks returns the connections or links between nodes.
 	GetLinks() map[string][]PortLocation
 	// SetLinks sets the connections or links between nodes.
@@ -30,11 +34,12 @@ type Spec interface {
 
 // SpecMeta is the metadata that every persisted resource must have, including user-created objects.
 type SpecMeta struct {
-	ID        uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Kind      string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
-	Namespace string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-	Name      string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	Links     map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
+	ID          uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	Kind        string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
+	Namespace   string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Name        string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Annotations map[string]string         `json:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	Links       map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
 }
 
 // PortLocation represents the location of a port within the network.
@@ -46,6 +51,8 @@ type PortLocation struct {
 
 // DefaultNamespace is the default value for logical node grouping.
 const DefaultNamespace = "default"
+
+var _ Spec = (*SpecMeta)(nil)
 
 // GetID returns the unique identifier of the SpecMeta.
 func (m *SpecMeta) GetID() uuid.UUID {
@@ -85,6 +92,16 @@ func (m *SpecMeta) GetName() string {
 // SetName sets the human-readable name of the SpecMeta.
 func (m *SpecMeta) SetName(val string) {
 	m.Name = val
+}
+
+// GetAnnotations returns the annotations of the nodes.
+func (m *SpecMeta) GetAnnotations() map[string]string {
+	return m.Annotations
+}
+
+// SetAnnotations sets the annotations of the nodes.
+func (m *SpecMeta) SetAnnotations(val map[string]string) {
+	m.Annotations = val
 }
 
 // GetLinks returns the connections or links of the SpecMeta.

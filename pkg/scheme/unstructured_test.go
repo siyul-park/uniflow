@@ -35,6 +35,17 @@ func TestUnstructured_GetAndNamespace(t *testing.T) {
 	assert.Equal(t, namespace, u.GetNamespace())
 }
 
+func TestUnstructured_GetAndAnnotations(t *testing.T) {
+	annotations := map[string]string{
+		faker.UUIDHyphenated(): faker.UUIDHyphenated(),
+	}
+
+	u := NewUnstructured(nil)
+
+	u.SetAnnotations(annotations)
+	assert.Equal(t, annotations, u.GetAnnotations())
+}
+
 func TestUnstructured_GetAndLinks(t *testing.T) {
 	links := map[string][]PortLocation{
 		faker.UUIDHyphenated(): {

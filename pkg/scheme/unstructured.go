@@ -15,11 +15,12 @@ type Unstructured struct {
 
 // Key constants for commonly used fields in Unstructured.
 const (
-	KeyID        = "id"
-	KeyKind      = "kind"
-	KeyNamespace = "namespace"
-	KeyName      = "name"
-	KeyLinks     = "links"
+	KeyID          = "id"
+	KeyKind        = "kind"
+	KeyNamespace   = "namespace"
+	KeyName        = "name"
+	KeyAnnotations = "annotations"
+	KeyLinks       = "links"
 )
 
 var _ Spec = (*Unstructured)(nil)
@@ -74,12 +75,23 @@ func (u *Unstructured) GetName() string {
 	var val string
 	_ = u.Get(KeyName, &val)
 	return val
-
 }
 
 // SetName sets the Name of the Unstructured.
 func (u *Unstructured) SetName(val string) {
 	u.Set(KeyName, val)
+}
+
+// GetAnnotations returns the annotations of the nodes.
+func (u *Unstructured) GetAnnotations() map[string]string {
+	var val map[string]string
+	_ = u.Get(KeyAnnotations, &val)
+	return val
+}
+
+// SetAnnotations sets the annotations of the nodes.
+func (u *Unstructured) SetAnnotations(val map[string]string) {
+	u.Set(KeyAnnotations, val)
 }
 
 // GetLinks returns the Links of the Unstructured.

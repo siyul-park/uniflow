@@ -19,6 +19,9 @@ func TestSymbol_Getter(t *testing.T) {
 		Kind:      faker.UUIDHyphenated(),
 		Namespace: scheme.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
+		Annotations: map[string]string{
+			faker.UUIDHyphenated(): faker.UUIDHyphenated(),
+		},
 		Links: map[string][]scheme.PortLocation{
 			node.PortOut: {
 				{
@@ -35,6 +38,7 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Equal(t, spec.GetKind(), sym.Kind())
 	assert.Equal(t, spec.GetNamespace(), sym.Namespace())
 	assert.Equal(t, spec.GetName(), sym.Name())
+	assert.Equal(t, spec.GetAnnotations(), sym.Annotations())
 
 	p1, _ := n.Port(node.PortIn)
 	p2, _ := sym.Port(node.PortIn)

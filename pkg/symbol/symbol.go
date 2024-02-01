@@ -50,6 +50,11 @@ func (s *Symbol) Name() string {
 	return s.spec.GetName()
 }
 
+// Annotations returns the annotations.
+func (s *Symbol) Annotations() map[string]string {
+	return s.spec.GetAnnotations()
+}
+
 // Port returns the specified port.
 func (s *Symbol) Port(name string) (*port.Port, bool) {
 	return s.node.Port(name)
