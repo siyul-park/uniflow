@@ -91,7 +91,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusNoContent, w.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, "", w.Body.String())
 	})
 

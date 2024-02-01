@@ -101,11 +101,11 @@ func NewHTTPNodeCodec() scheme.Codec {
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...primitive.Value) HTTPPayload {
+func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
 	if len(body) == 0 {
 		body = []primitive.Value{primitive.String(http.StatusText(status))}
 	}
-	return HTTPPayload{
+	return &HTTPPayload{
 		Header: http.Header{},
 		Body:   body[0],
 		Status: status,
@@ -197,7 +197,10 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	contentEncoding := Negotiate(acceptEncoding, []string{EncodingIdentity, EncodingGzip, EncodingDeflate, EncodingBr})
 	contentType := Negotiate(accept, []string{ApplicationJSON, ApplicationForm, ApplicationOctetStream, TextPlain, MultipartFormData})
 
-	negotiate := func(payload HTTPPayload) HTTPPayload {
+	negotiate := func(payload *HTTPPayload) {
+		if payload == nil {
+			return
+		}
 		if payload.Header == nil {
 			payload.Header = http.Header{}
 		}
@@ -207,17 +210,17 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if payload.Header.Get(HeaderContentType) == "" {
 			payload.Header.Set(HeaderContentType, contentType)
 		}
-		return payload
 	}
-	write := func(payload HTTPPayload) error {
-		return n.write(w, negotiate(payload))
+	write := func(payload *HTTPPayload) error {
+		negotiate(payload)
+		return n.write(w, payload)
 	}
 	writeError := func(err error) error {
 		return write(n.newErrorPayload(proc, err))
 	}
 
-	var req HTTPPayload
-	var res HTTPPayload
+	var req *HTTPPayload
+	var res *HTTPPayload
 	var err error
 	if req, err = n.read(r); err != nil {
 		_ = writeError(err)
@@ -244,18 +247,18 @@ func (n *HTTPNode) Close() error {
 	return n.server.Close()
 }
 
-func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, error) {
+func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload, error) {
 	ioStream := n.ioPort.Open(proc)
 	inStream := n.inPort.Open(proc)
 	outStream := n.outPort.Open(proc)
 
 	if ioStream.Links()+outStream.Links() == 0 {
-		return HTTPPayload{}, nil
+		return nil, nil
 	}
 
 	outPayload, err := primitive.MarshalBinary(req)
 	if err != nil {
-		return HTTPPayload{}, err
+		return nil, err
 	}
 
 	ioPck := packet.New(outPayload)
@@ -293,11 +296,15 @@ func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, 
 	}
 
 	if err, ok := packet.AsError(inPck); ok {
-		return HTTPPayload{}, err
+		return nil, err
 	}
 
-	var res HTTPPayload
 	inPayload := inPck.Payload()
+	if inPayload == nil {
+		return nil, nil
+	}
+
+	var res *HTTPPayload
 	if err := primitive.Unmarshal(inPayload, &res); err != nil {
 		res.Body = inPayload
 	}
@@ -305,19 +312,19 @@ func (n *HTTPNode) action(proc *process.Process, req HTTPPayload) (HTTPPayload, 
 	return res, nil
 }
 
-func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {
+func (n *HTTPNode) read(r *http.Request) (*HTTPPayload, error) {
 	contentType := r.Header.Get(HeaderContentType)
 	contentEncoding := r.Header.Get(HeaderContentEncoding)
 
 	if b, err := io.ReadAll(r.Body); err != nil {
-		return HTTPPayload{}, err
+		return nil, err
 	} else if b, err := Decompress(b, contentEncoding); err != nil {
-		return HTTPPayload{}, err
+		return nil, err
 	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
-		return HTTPPayload{}, err
+		return nil, err
 	} else {
 		r.Header.Set(HeaderContentType, contentType)
-		return HTTPPayload{
+		return &HTTPPayload{
 			Proto:   r.Proto,
 			Path:    r.URL.Path,
 			Method:  r.Method,
@@ -329,7 +336,11 @@ func (n *HTTPNode) read(r *http.Request) (HTTPPayload, error) {
 	}
 }
 
-func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
+func (n *HTTPNode) write(w http.ResponseWriter, res *HTTPPayload) error {
+	if res == nil {
+		return nil
+	}
+
 	contentType := res.Header.Get(HeaderContentType)
 	contentEncoding := res.Header.Get(HeaderContentEncoding)
 
@@ -362,11 +373,7 @@ func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 
 	status := res.Status
 	if status == 0 {
-		if len(b) == 0 {
-			status = http.StatusNoContent
-		} else {
-			status = http.StatusOK
-		}
+		status = http.StatusOK
 	}
 	w.WriteHeader(status)
 
@@ -379,7 +386,7 @@ func (n *HTTPNode) write(w http.ResponseWriter, res HTTPPayload) error {
 	return nil
 }
 
-func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload {
+func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) *HTTPPayload {
 	errStream := n.errPort.Open(proc)
 	if errStream.Links() == 0 {
 		return PayloadInternalServerError
@@ -397,7 +404,7 @@ func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) HTTPPayload
 		return PayloadInternalServerError
 	}
 
-	var res HTTPPayload
+	var res *HTTPPayload
 	inPayload := inPck.Payload()
 	if err := primitive.Unmarshal(inPayload, &res); err != nil {
 		res.Body = inPayload

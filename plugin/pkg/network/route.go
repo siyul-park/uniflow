@@ -178,7 +178,7 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 
 	port := route.findPort(method)
 	if port == "" {
-		var res HTTPPayload
+		var res *HTTPPayload
 		if method == http.MethodOptions {
 			res = NewHTTPPayload(http.StatusNoContent, nil)
 		} else {
