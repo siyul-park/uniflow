@@ -35,14 +35,15 @@ type HTTPNodeSpec struct {
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
-	Proto   string          `map:"proto,omitempty"`
-	Path    string          `map:"path,omitempty"`
-	Method  string          `map:"method,omitempty"`
-	Header  http.Header     `map:"header,omitempty"`
-	Query   url.Values      `map:"query,omitempty"`
-	Cookies []*http.Cookie  `map:"cookies,omitempty"`
-	Body    primitive.Value `map:"body,omitempty"`
-	Status  int             `map:"status"`
+	Method string          `map:"method,omitempty"`
+	Scheme string          `map:"scheme,omitempty"`
+	Host   string          `map:"host,omitempty"`
+	Path   string          `map:"path,omitempty"`
+	Query  url.Values      `map:"query,omitempty"`
+	Proto  string          `map:"proto,omitempty"`
+	Header http.Header     `map:"header,omitempty"`
+	Body   primitive.Value `map:"body,omitempty"`
+	Status int             `map:"status"`
 }
 
 const KindHTTP = "http"
@@ -285,13 +286,14 @@ func (n *HTTPNode) read(r *http.Request) (*HTTPPayload, error) {
 	} else {
 		r.Header.Set(HeaderContentType, contentType)
 		return &HTTPPayload{
-			Proto:   r.Proto,
-			Path:    r.URL.Path,
-			Method:  r.Method,
-			Header:  r.Header,
-			Query:   r.URL.Query(),
-			Cookies: r.Cookies(),
-			Body:    b,
+			Method: r.Method,
+			Scheme: r.URL.Scheme,
+			Host:   r.Host,
+			Path:   r.URL.Path,
+			Query:  r.URL.Query(),
+			Proto:  r.Proto,
+			Header: r.Header,
+			Body:   b,
 		}, nil
 	}
 }
