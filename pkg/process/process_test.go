@@ -35,6 +35,13 @@ func TestProcess_Stack(t *testing.T) {
 	assert.NotNil(t, proc.Stack())
 }
 
+func TestProcess_Share(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	assert.NotNil(t, proc.Share())
+}
+
 func TestProcess_Close(t *testing.T) {
 	proc := New()
 

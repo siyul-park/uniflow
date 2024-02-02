@@ -107,6 +107,15 @@ func (g *Graph) Upwards(leaf uuid.UUID, f func(uuid.UUID) bool) {
 	}
 }
 
+// Close remove all values in the graph.
+func (g *Graph) Close() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	g.stems = make(links)
+	g.leaves = make(links)
+}
+
 func (l links) has(key, value uuid.UUID) bool {
 	for _, cur := range l[key] {
 		if cur == value {

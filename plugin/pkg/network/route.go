@@ -172,7 +172,7 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 
 	route, paramValues := n.find(method, path)
 	if route == nil {
-		outPayload, _ := primitive.MarshalBinary(PayloadNotFound)
+		outPayload, _ := primitive.MarshalBinary(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
 	}
 

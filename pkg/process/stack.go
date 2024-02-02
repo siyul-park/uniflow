@@ -89,6 +89,20 @@ func (s *Stack) Size(key uuid.UUID) int {
 	return size
 }
 
+// Close removes all values in the stack.
+func (s *Stack) Close() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, values := range s.values {
+		for range values {
+			s.wait.RUnlock()
+		}
+	}
+
+	s.values = make(map[uuid.UUID][]uuid.UUID)
+}
+
 // Wait blocks until all values in the stack are emptied.
 func (s *Stack) Wait() {
 	s.wait.Lock()

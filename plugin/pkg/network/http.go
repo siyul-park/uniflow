@@ -47,48 +47,7 @@ type HTTPPayload struct {
 
 const KindHTTP = "http"
 
-var (
-	PayloadBadRequest                    = NewHTTPPayload(http.StatusBadRequest)                    // HTTP 400 Bad Request
-	PayloadUnauthorized                  = NewHTTPPayload(http.StatusUnauthorized)                  // HTTP 401 Unauthorized
-	PayloadPaymentRequired               = NewHTTPPayload(http.StatusPaymentRequired)               // HTTP 402 Payment Required
-	PayloadForbidden                     = NewHTTPPayload(http.StatusForbidden)                     // HTTP 403 Forbidden
-	PayloadNotFound                      = NewHTTPPayload(http.StatusNotFound)                      // HTTP 404 Not Found
-	PayloadMethodNotAllowed              = NewHTTPPayload(http.StatusMethodNotAllowed)              // HTTP 405 Method Not Allowed
-	PayloadNotAcceptable                 = NewHTTPPayload(http.StatusNotAcceptable)                 // HTTP 406 Not Acceptable
-	PayloadProxyAuthRequired             = NewHTTPPayload(http.StatusProxyAuthRequired)             // HTTP 407 Proxy AuthRequired
-	PayloadRequestTimeout                = NewHTTPPayload(http.StatusRequestTimeout)                // HTTP 408 Request Timeout
-	PayloadConflict                      = NewHTTPPayload(http.StatusConflict)                      // HTTP 409 Conflict
-	PayloadGone                          = NewHTTPPayload(http.StatusGone)                          // HTTP 410 Gone
-	PayloadLengthRequired                = NewHTTPPayload(http.StatusLengthRequired)                // HTTP 411 Length Required
-	PayloadPreconditionFailed            = NewHTTPPayload(http.StatusPreconditionFailed)            // HTTP 412 Precondition Failed
-	PayloadRequestEntityTooLarge         = NewHTTPPayload(http.StatusRequestEntityTooLarge)         // HTTP 413 Payload Too Large
-	PayloadRequestURITooLong             = NewHTTPPayload(http.StatusRequestURITooLong)             // HTTP 414 URI Too Long
-	PayloadUnsupportedMediaType          = NewHTTPPayload(http.StatusUnsupportedMediaType)          // HTTP 415 Unsupported Media Type
-	PayloadRequestedRangeNotSatisfiable  = NewHTTPPayload(http.StatusRequestedRangeNotSatisfiable)  // HTTP 416 Range Not Satisfiable
-	PayloadExpectationFailed             = NewHTTPPayload(http.StatusExpectationFailed)             // HTTP 417 Expectation Failed
-	PayloadTeapot                        = NewHTTPPayload(http.StatusTeapot)                        // HTTP 418 I'm a teapot
-	PayloadMisdirectedRequest            = NewHTTPPayload(http.StatusMisdirectedRequest)            // HTTP 421 Misdirected Request
-	PayloadUnprocessableEntity           = NewHTTPPayload(http.StatusUnprocessableEntity)           // HTTP 422 Unprocessable Entity
-	PayloadLocked                        = NewHTTPPayload(http.StatusLocked)                        // HTTP 423 Locked
-	PayloadFailedDependency              = NewHTTPPayload(http.StatusFailedDependency)              // HTTP 424 Failed Dependency
-	PayloadTooEarly                      = NewHTTPPayload(http.StatusTooEarly)                      // HTTP 425 Too Early
-	PayloadUpgradeRequired               = NewHTTPPayload(http.StatusUpgradeRequired)               // HTTP 426 Upgrade Required
-	PayloadPreconditionRequired          = NewHTTPPayload(http.StatusPreconditionRequired)          // HTTP 428 Precondition Required
-	PayloadTooManyRequests               = NewHTTPPayload(http.StatusTooManyRequests)               // HTTP 429 Too Many Requests
-	PayloadRequestHeaderFieldsTooLarge   = NewHTTPPayload(http.StatusRequestHeaderFieldsTooLarge)   // HTTP 431 Request Header Fields Too Large
-	PayloadUnavailableForLegalReasons    = NewHTTPPayload(http.StatusUnavailableForLegalReasons)    // HTTP 451 Unavailable For Legal Reasons
-	PayloadInternalServerError           = NewHTTPPayload(http.StatusInternalServerError)           // HTTP 500 Internal Server Error
-	PayloadNotImplemented                = NewHTTPPayload(http.StatusNotImplemented)                // HTTP 501 Not Implemented
-	PayloadBadGateway                    = NewHTTPPayload(http.StatusBadGateway)                    // HTTP 502 Bad Gateway
-	PayloadServiceUnavailable            = NewHTTPPayload(http.StatusServiceUnavailable)            // HTTP 503 Service Unavailable
-	PayloadGatewayTimeout                = NewHTTPPayload(http.StatusGatewayTimeout)                // HTTP 504 Gateway Timeout
-	PayloadHTTPVersionNotSupported       = NewHTTPPayload(http.StatusHTTPVersionNotSupported)       // HTTP 505 HTTP Version Not Supported
-	PayloadVariantAlsoNegotiates         = NewHTTPPayload(http.StatusVariantAlsoNegotiates)         // HTTP 506 Variant Also Negotiates
-	PayloadInsufficientStorage           = NewHTTPPayload(http.StatusInsufficientStorage)           // HTTP 507 Insufficient Storage
-	PayloadLoopDetected                  = NewHTTPPayload(http.StatusLoopDetected)                  // HTTP 508 Loop Detected
-	PayloadNotExtended                   = NewHTTPPayload(http.StatusNotExtended)                   // HTTP 510 Not Extended
-	PayloadNetworkAuthenticationRequired = NewHTTPPayload(http.StatusNetworkAuthenticationRequired) // HTTP 511 Network Authentication Required
-)
+const KeyHTTPResponseWriter = "http.ResponseWriter"
 
 var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = (*HTTPNode)(nil)
@@ -190,6 +149,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
+	proc.Share().Store(KeyHTTPResponseWriter, w)
 
 	acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
 	accept := r.Header.Get(HeaderAccept)
@@ -292,7 +252,7 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 	proc.Stack().Clear(outPck.ID())
 
 	if !ok {
-		return PayloadInternalServerError, nil
+		return NewHTTPPayload(http.StatusInternalServerError), nil
 	}
 
 	if err, ok := packet.AsError(inPck); ok {
@@ -389,7 +349,7 @@ func (n *HTTPNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) *HTTPPayload {
 	errStream := n.errPort.Open(proc)
 	if errStream.Links() == 0 {
-		return PayloadInternalServerError
+		return NewHTTPPayload(http.StatusInternalServerError)
 	}
 
 	errPck := packet.WithError(err, nil)
@@ -397,15 +357,18 @@ func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) *HTTPPayloa
 
 	inPck, ok := <-errStream.Receive()
 	if !ok {
-		return PayloadInternalServerError
+		return NewHTTPPayload(http.StatusInternalServerError)
+	}
+	if _, ok := packet.AsError(inPck); ok {
+		return NewHTTPPayload(http.StatusInternalServerError)
 	}
 
-	if _, ok := packet.AsError(inPck); ok {
-		return PayloadInternalServerError
+	inPayload := inPck.Payload()
+	if inPayload == nil {
+		return nil
 	}
 
 	var res *HTTPPayload
-	inPayload := inPck.Payload()
 	if err := primitive.Unmarshal(inPayload, &res); err != nil {
 		res.Body = inPayload
 	}

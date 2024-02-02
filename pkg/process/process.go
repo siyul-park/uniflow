@@ -11,6 +11,7 @@ type Process struct {
 	id    uuid.UUID
 	graph *Graph
 	stack *Stack
+	share *Share
 	err   error
 	done  chan struct{}
 	mu    sync.RWMutex
@@ -25,6 +26,7 @@ func New() *Process {
 		id:    uuid.Must(uuid.NewV7()),
 		graph: g,
 		stack: s,
+		share: newShare(),
 		done:  make(chan struct{}),
 		mu:    sync.RWMutex{},
 	}
@@ -54,6 +56,14 @@ func (p *Process) Stack() *Stack {
 	return p.stack
 }
 
+// Share returns a process's share.
+func (p *Process) Share() *Share {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.share
+}
+
 // Err returns the last error encountered by the process.
 func (p *Process) Err() error {
 	p.mu.RLock()
@@ -78,7 +88,10 @@ func (p *Process) Exit(err error) {
 	default:
 	}
 
-	close(p.done)
+	p.stack.Close()
+	p.share.Close()
+	p.graph.Close()
 
 	p.err = err
+	close(p.done)
 }

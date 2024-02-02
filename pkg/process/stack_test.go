@@ -218,3 +218,16 @@ func TestStack_Wait(t *testing.T) {
 	case <-done:
 	}
 }
+
+func TestStack_Close(t *testing.T) {
+	g := newGraph()
+	s := newStack(g)
+
+	k := uuid.Must(uuid.NewV7())
+	v := uuid.Must(uuid.NewV7())
+
+	s.Push(k, v)
+
+	s.Close()
+	assert.Equal(t, 0, s.Size(k))
+}

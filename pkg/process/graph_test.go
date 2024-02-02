@@ -58,3 +58,16 @@ func TestGraph_Upwards(t *testing.T) {
 	})
 	assert.Equal(t, []uuid.UUID{v2, v1}, trace)
 }
+
+func TestGraph_Close(t *testing.T) {
+	g := newGraph()
+
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
+
+	g.Add(v1, v2)
+
+	g.Close()
+	assert.False(t, g.Has(v1, v2))
+	assert.False(t, g.Has(v2, v1))
+}
