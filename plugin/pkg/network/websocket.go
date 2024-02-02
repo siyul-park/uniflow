@@ -1,10 +1,15 @@
 package network
 
 import (
+	"net/http"
+	"net/url"
 	"sync"
 
+	"github.com/gorilla/websocket"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
@@ -18,6 +23,8 @@ type WebSocketNode struct {
 
 var _ node.Node = (*WebSocketNode)(nil)
 
+var upgrader = websocket.Upgrader{}
+
 func NewWebsocketNode() *WebSocketNode {
 	n := &WebSocketNode{
 		ioPort:  port.New(),
@@ -26,7 +33,7 @@ func NewWebsocketNode() *WebSocketNode {
 		errPort: port.New(),
 	}
 
-	n.inPort.AddInitHook(port.InitHookFunc(n.upgrade))
+	n.ioPort.AddInitHook(port.InitHookFunc(n.action))
 
 	return n
 }
@@ -62,7 +69,60 @@ func (n *WebSocketNode) Close() error {
 	return nil
 }
 
-func (n *WebSocketNode) upgrade(proc *process.Process) {
+func (n *WebSocketNode) action(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	ioStream := n.ioPort.Open(proc)
+	errStream := n.errPort.Open(proc)
+
+	for {
+		inPck, ok := <-ioStream.Receive()
+		if !ok {
+			return
+		}
+
+		if err := func() error {
+			var inPayload *HTTPPayload
+			if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+				return err
+			}
+
+			w, ok := proc.Share().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
+			if !ok {
+				return packet.ErrInvalidPacket
+			}
+			r := &http.Request{
+				Method: inPayload.Method,
+				URL: &url.URL{
+					Scheme:   inPayload.Scheme,
+					Host:     inPayload.Host,
+					Path:     inPayload.Path,
+					RawQuery: inPayload.Query.Encode(),
+				},
+				Proto:  inPayload.Proto,
+				Header: inPayload.Header,
+			}
+
+			_, err := upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}(); err != nil {
+			errPck := packet.WithError(err, inPck)
+			proc.Graph().Add(inPck.ID(), errPck.ID())
+			if errStream.Links() > 0 {
+				proc.Stack().Push(errPck.ID(), ioStream.ID())
+				errStream.Send(errPck)
+			} else {
+				ioStream.Send(errPck)
+			}
+		} else {
+			outPck := packet.New(nil)
+			proc.Graph().Add(inPck.ID(), outPck.ID())
+			ioStream.Send(outPck)
+		}
+	}
 }

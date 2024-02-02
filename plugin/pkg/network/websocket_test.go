@@ -1,15 +1,12 @@
 package network
 
 import (
-	"context"
+	"fmt"
 	"testing"
-	"time"
 
+	"github.com/gorilla/websocket"
+	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
-	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,31 +37,23 @@ func TestWebsocketNode_Port(t *testing.T) {
 	assert.NotNil(t, p)
 }
 
-func TestWebsocketNode_Upgrade(t *testing.T) {
-	n := NewWebsocketNode()
-	defer n.Close()
+func TestWebsocketNode_SendAndReceive(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
 
-	io := port.New()
-	ioPort, _ := n.Port(node.PortIO)
-	ioPort.Link(io)
+	http := NewHTTPNode(fmt.Sprintf(":%d", port))
+	defer http.Close()
 
-	proc := process.New()
-	defer proc.Exit(nil)
+	ws := NewWebsocketNode()
+	defer ws.Close()
 
-	ioStream := io.Open(proc)
+	io1, _ := http.Port(node.PortIO)
+	io2, _ := ws.Port(node.PortIO)
 
-	var inPayload primitive.Value
-	inPck := packet.New(inPayload)
+	io1.Link(io2)
 
-	ioStream.Send(inPck)
+	assert.NoError(t, http.Listen())
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	select {
-	case outPck := <-ioStream.Receive():
-		assert.Equal(t, primitive.NewMap(), outPck.Payload())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+	_, _, err = websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
+	assert.NoError(t, err)
 }
