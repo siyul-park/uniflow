@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/gorilla/websocket"
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -69,24 +70,74 @@ func TestWebsocketNode_Port(t *testing.T) {
 }
 
 func TestWebsocketNode_SendAndReceive(t *testing.T) {
-	t.Run("Upgrade", func(t *testing.T) {
-		port, err := freeport.GetFreePort()
-		assert.NoError(t, err)
-	
-		http := NewHTTPNode(fmt.Sprintf(":%d", port))
-		defer http.Close()
-	
-		ws := NewWebsocketNode()
-		defer ws.Close()
-	
-		io1, _ := http.Port(node.PortIO)
-		io2, _ := ws.Port(node.PortIO)
-	
-		io1.Link(io2)
-	
-		assert.NoError(t, http.Listen())
-	
-		_, _, err = websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
-		assert.NoError(t, err)
-	})
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	http := NewHTTPNode(fmt.Sprintf(":%d", port))
+	defer http.Close()
+
+	ws := NewWebsocketNode()
+	defer ws.Close()
+
+	io1, _ := http.Port(node.PortIO)
+	io2, _ := ws.Port(node.PortIO)
+
+	io1.Link(io2)
+
+	in, _ := ws.Port(node.PortIn)
+	out, _ := ws.Port(node.PortOut)
+
+	out.Link(in)
+
+	assert.NoError(t, http.Listen())
+
+	conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	conn.SetWriteDeadline(time.Now().Add(time.Second))
+	conn.SetReadDeadline(time.Now().Add(time.Second))
+
+	msg := faker.UUIDHyphenated()
+
+	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+
+	typ, p, err := conn.ReadMessage()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte(msg), p)
+	assert.Equal(t, websocket.TextMessage, typ)
+}
+
+func BenchmarkWebsocketNode_SendAndReceive(b *testing.B) {
+	port, _ := freeport.GetFreePort()
+
+	http := NewHTTPNode(fmt.Sprintf(":%d", port))
+	defer http.Close()
+
+	ws := NewWebsocketNode()
+	defer ws.Close()
+
+	io1, _ := http.Port(node.PortIO)
+	io2, _ := ws.Port(node.PortIO)
+
+	io1.Link(io2)
+
+	in, _ := ws.Port(node.PortIn)
+	out, _ := ws.Port(node.PortOut)
+
+	out.Link(in)
+
+	_ = http.Listen()
+
+	conn, _, _ := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
+	defer conn.Close()
+
+	msg := faker.UUIDHyphenated()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+	}
 }

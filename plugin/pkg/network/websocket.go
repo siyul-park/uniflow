@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -14,6 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// WebSocketNode is a node for WebSocket communication.
 type WebSocketNode struct {
 	upgrader *websocket.Upgrader
 	ioPort   *port.Port
@@ -23,8 +25,15 @@ type WebSocketNode struct {
 	mu       sync.RWMutex
 }
 
+// WebsocketPayload represents the payload structure for WebSocket communication.
+type WebsocketPayload struct {
+	Type int             `map:"type"`
+	Data primitive.Value `map:"data,omitempty"`
+}
+
 var _ node.Node = (*WebSocketNode)(nil)
 
+// NewWebsocketNode creates a new WebSocketNode instance.
 func NewWebsocketNode() *WebSocketNode {
 	n := &WebSocketNode{
 		upgrader: &websocket.Upgrader{},
@@ -34,11 +43,13 @@ func NewWebsocketNode() *WebSocketNode {
 		errPort:  port.New(),
 	}
 
-	n.ioPort.AddInitHook(port.InitHookFunc(n.action))
+	n.ioPort.AddInitHook(port.InitHookFunc(n.upgrade))
 
 	return n
 }
 
+
+// HandshakeTimeout returns the handshake timeout duration.
 func (n *WebSocketNode) HandshakeTimeout() time.Duration {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -46,6 +57,7 @@ func (n *WebSocketNode) HandshakeTimeout() time.Duration {
 	return n.upgrader.HandshakeTimeout
 }
 
+// SetHandshakeTimeout sets the handshake timeout duration.
 func (n *WebSocketNode) SetHandshakeTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -53,6 +65,7 @@ func (n *WebSocketNode) SetHandshakeTimeout(timeout time.Duration) {
 	n.upgrader.HandshakeTimeout = timeout
 }
 
+// ReadBufferSize returns the read buffer size.
 func (n *WebSocketNode) ReadBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -60,6 +73,7 @@ func (n *WebSocketNode) ReadBufferSize() int {
 	return n.upgrader.ReadBufferSize
 }
 
+// SetReadBufferSize sets the read buffer size.
 func (n *WebSocketNode) SetReadBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -67,6 +81,7 @@ func (n *WebSocketNode) SetReadBufferSize(size int) {
 	n.upgrader.ReadBufferSize = size
 }
 
+// SetWriteBufferSize sets the write buffer size.
 func (n *WebSocketNode) SetWriteBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -74,6 +89,7 @@ func (n *WebSocketNode) SetWriteBufferSize(size int) {
 	n.upgrader.WriteBufferSize = size
 }
 
+// WriteBufferSize returns the write buffer size.
 func (n *WebSocketNode) WriteBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -81,6 +97,7 @@ func (n *WebSocketNode) WriteBufferSize() int {
 	return n.upgrader.WriteBufferSize
 }
 
+// Port returns the specified port of the WebSocketNode.
 func (n *WebSocketNode) Port(name string) (*port.Port, bool) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -100,6 +117,7 @@ func (n *WebSocketNode) Port(name string) (*port.Port, bool) {
 	return nil, false
 }
 
+// Close closes all ports of the WebSocketNode.
 func (n *WebSocketNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -112,7 +130,7 @@ func (n *WebSocketNode) Close() error {
 	return nil
 }
 
-func (n *WebSocketNode) action(proc *process.Process) {
+func (n *WebSocketNode) upgrade(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -125,15 +143,15 @@ func (n *WebSocketNode) action(proc *process.Process) {
 			return
 		}
 
-		if err := func() error {
+		conn, err := func() (*websocket.Conn, error) {
 			var inPayload *HTTPPayload
 			if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
-				return err
+				return nil, err
 			}
 
 			w, ok := proc.Share().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
 			if !ok {
-				return packet.ErrInvalidPacket
+				return nil, packet.ErrInvalidPacket
 			}
 			r := &http.Request{
 				Method: inPayload.Method,
@@ -147,13 +165,10 @@ func (n *WebSocketNode) action(proc *process.Process) {
 				Header: inPayload.Header,
 			}
 
-			_, err := n.upgrader.Upgrade(w, r, nil)
-			if err != nil {
-				return err
-			}
+			return n.upgrader.Upgrade(w, r, nil)
+		}()
 
-			return nil
-		}(); err != nil {
+		if err != nil {
 			errPck := packet.WithError(err, inPck)
 			proc.Graph().Add(inPck.ID(), errPck.ID())
 			if errStream.Links() > 0 {
@@ -166,6 +181,65 @@ func (n *WebSocketNode) action(proc *process.Process) {
 			outPck := packet.New(nil)
 			proc.Graph().Add(inPck.ID(), outPck.ID())
 			ioStream.Send(outPck)
+
+			proc := process.New()
+
+			go n.write(proc, conn)
+			go n.read(proc, conn)
 		}
+	}
+}
+
+func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inStream := n.inPort.Open(proc)
+
+	for {
+		inPck, ok := <-inStream.Receive()
+		if !ok {
+			_ = conn.Close()
+			return
+		}
+
+		proc.Stack().Clear(inPck.ID())
+
+		var inPayload *WebsocketPayload
+		if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+			inPayload.Data = inPck.Payload()
+		}
+
+		data, _ := MarshalMIME(inPayload.Data, lo.ToPtr[string](""))
+		_ = conn.WriteMessage(inPayload.Type, data)
+	}
+}
+
+func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	outStream := n.outPort.Open(proc)
+
+	for {
+		typ, p, err := conn.ReadMessage()
+		if err != nil {
+			proc.Stack().Wait()
+			proc.Exit(nil)
+			return
+		}
+
+		var data primitive.Value
+		if data, err = UnmarshalMIME(p, lo.ToPtr[string]("")); err != nil {
+			data = primitive.NewString(err.Error())
+		}
+
+		outPayload, _ := primitive.MarshalBinary(&WebsocketPayload{
+			Type: typ,
+			Data: data,
+		})
+
+		outPck := packet.New(outPayload)
+		outStream.Send(outPck)
 	}
 }
