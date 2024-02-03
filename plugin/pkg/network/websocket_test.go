@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -9,6 +10,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,42 +88,86 @@ func TestWebsocketNode_Port(t *testing.T) {
 }
 
 func TestWebsocketNode_SendAndReceive(t *testing.T) {
-	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	t.Run("Upgrade", func(t *testing.T) {
+		port, err := freeport.GetFreePort()
+		assert.NoError(t, err)
 
-	http := NewHTTPNode(fmt.Sprintf(":%d", port))
-	defer http.Close()
+		http := NewHTTPNode(fmt.Sprintf(":%d", port))
+		defer http.Close()
 
-	ws := NewWebsocketNode()
-	defer ws.Close()
+		ws := NewWebsocketNode()
+		defer ws.Close()
 
-	io1, _ := http.Port(node.PortIO)
-	io2, _ := ws.Port(node.PortIO)
+		io1, _ := http.Port(node.PortIO)
+		io2, _ := ws.Port(node.PortIO)
 
-	io1.Link(io2)
+		io1.Link(io2)
 
-	in, _ := ws.Port(node.PortIn)
-	out, _ := ws.Port(node.PortOut)
+		in, _ := ws.Port(node.PortIn)
+		out, _ := ws.Port(node.PortOut)
 
-	out.Link(in)
+		out.Link(in)
 
-	assert.NoError(t, http.Listen())
+		assert.NoError(t, http.Listen())
 
-	conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
-	assert.NoError(t, err)
-	defer conn.Close()
+		conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
+		assert.NoError(t, err)
+		defer conn.Close()
 
-	conn.SetWriteDeadline(time.Now().Add(time.Second))
-	conn.SetReadDeadline(time.Now().Add(time.Second))
+		conn.SetWriteDeadline(time.Now().Add(time.Second))
+		conn.SetReadDeadline(time.Now().Add(time.Second))
 
-	msg := faker.UUIDHyphenated()
+		msg := faker.UUIDHyphenated()
 
-	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 
-	typ, p, err := conn.ReadMessage()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte(msg), p)
-	assert.Equal(t, websocket.TextMessage, typ)
+		typ, p, err := conn.ReadMessage()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte(msg), p)
+		assert.Equal(t, websocket.TextMessage, typ)
+	})
+
+	t.Run("With Error", func(t *testing.T) {
+		n := NewWebsocketNode()
+		defer n.Close()
+
+		io := port.New()
+		ioPort, _ := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		err := port.New()
+		errPort, _ := n.Port(node.PortErr)
+		errPort.Link(err)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+		errStream := err.Open(proc)
+
+		inPayload := primitive.NewString("invalid payload")
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-errStream.Receive():
+			assert.NotNil(t, outPck)
+			errStream.Send(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case backPck := <-ioStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
 }
 
 func BenchmarkWebsocketNode_SendAndReceive(b *testing.B) {

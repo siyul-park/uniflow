@@ -65,6 +65,7 @@ func NewWebsocketNode() *WebSocketNode {
 	}
 
 	n.ioPort.AddInitHook(port.InitHookFunc(n.upgrade))
+	n.errPort.AddInitHook(port.InitHookFunc(n.backward))
 
 	return n
 }
@@ -261,5 +262,28 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 
 		outPck := packet.New(outPayload)
 		outStream.Send(outPck)
+	}
+}
+
+func (n *WebSocketNode) backward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	errStream := n.errPort.Open(proc)
+	var ioStream *port.Stream
+
+	for {
+		backPck, ok := <-errStream.Receive()
+		if !ok {
+			return
+		}
+
+		if ioStream == nil {
+			ioStream = n.ioPort.Open(proc)
+		}
+
+		if _, ok := proc.Stack().Pop(backPck.ID(), ioStream.ID()); ok {
+			ioStream.Send(backPck)
+		}
 	}
 }
