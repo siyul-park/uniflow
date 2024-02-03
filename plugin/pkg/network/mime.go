@@ -289,7 +289,12 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 		contentType = lo.ToPtr[string]("")
 	}
 	if *contentType == "" {
-		*contentType = http.DetectContentType(data)
+		var rawJSON json.RawMessage
+		if json.Unmarshal(data, &rawJSON) == nil {
+			*contentType = ApplicationJSONCharsetUTF8
+		} else {
+			*contentType = http.DetectContentType(data)
+		}
 	}
 
 	mediaType, params, err := mime.ParseMediaType(*contentType)
