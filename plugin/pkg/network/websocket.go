@@ -13,16 +13,25 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 // WebSocketNode is a node for WebSocket communication.
 type WebSocketNode struct {
-	upgrader *websocket.Upgrader
+	upgrader websocket.Upgrader
 	ioPort   *port.Port
 	inPort   *port.Port
 	outPort  *port.Port
 	errPort  *port.Port
 	mu       sync.RWMutex
+}
+
+// WebsocketNodeSpec holds the specifications for creating a WebsocketNode.
+type WebsocketNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Timeout         time.Duration `map:"timeout"`
+	Read            int           `map:"read"`
+	Write           int           `map:"write"`
 }
 
 // WebsocketPayload represents the payload structure for WebSocket communication.
@@ -31,16 +40,28 @@ type WebsocketPayload struct {
 	Data primitive.Value `map:"data,omitempty"`
 }
 
+const KindWebsocket = "websocket"
+
 var _ node.Node = (*WebSocketNode)(nil)
+
+// NewWebsocketNodeCodec creates a new codec for WebsocketNodeSpec.
+func NewWebsocketNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*WebsocketNodeSpec](func(spec *WebsocketNodeSpec) (node.Node, error) {
+		n := NewWebsocketNode()
+		n.SetTimeout(spec.Timeout)
+		n.SetReadBuffer(spec.Read)
+		n.SetWriteBuffer(spec.Write)
+		return n, nil
+	})
+}
 
 // NewWebsocketNode creates a new WebSocketNode instance.
 func NewWebsocketNode() *WebSocketNode {
 	n := &WebSocketNode{
-		upgrader: &websocket.Upgrader{},
-		ioPort:   port.New(),
-		inPort:   port.New(),
-		outPort:  port.New(),
-		errPort:  port.New(),
+		ioPort:  port.New(),
+		inPort:  port.New(),
+		outPort: port.New(),
+		errPort: port.New(),
 	}
 
 	n.ioPort.AddInitHook(port.InitHookFunc(n.upgrade))
@@ -48,49 +69,48 @@ func NewWebsocketNode() *WebSocketNode {
 	return n
 }
 
-
-// HandshakeTimeout returns the handshake timeout duration.
-func (n *WebSocketNode) HandshakeTimeout() time.Duration {
+// Timeout returns the timeout duration.
+func (n *WebSocketNode) Timeout() time.Duration {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.HandshakeTimeout
 }
 
-// SetHandshakeTimeout sets the handshake timeout duration.
-func (n *WebSocketNode) SetHandshakeTimeout(timeout time.Duration) {
+// SetTimeout sets the timeout duration.
+func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.upgrader.HandshakeTimeout = timeout
 }
 
-// ReadBufferSize returns the read buffer size.
-func (n *WebSocketNode) ReadBufferSize() int {
+// ReadBuffer returns the read buffer size.
+func (n *WebSocketNode) ReadBuffer() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.ReadBufferSize
 }
 
-// SetReadBufferSize sets the read buffer size.
-func (n *WebSocketNode) SetReadBufferSize(size int) {
+// SetReadBuffer sets the read buffer size.
+func (n *WebSocketNode) SetReadBuffer(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.upgrader.ReadBufferSize = size
 }
 
-// SetWriteBufferSize sets the write buffer size.
-func (n *WebSocketNode) SetWriteBufferSize(size int) {
+// SetWriteBuffer sets the write buffer size.
+func (n *WebSocketNode) SetWriteBuffer(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.upgrader.WriteBufferSize = size
 }
 
-// WriteBufferSize returns the write buffer size.
-func (n *WebSocketNode) WriteBufferSize() int {
+// WriteBuffer returns the write buffer size.
+func (n *WebSocketNode) WriteBuffer() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 

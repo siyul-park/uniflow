@@ -12,40 +12,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWebsocketNodeCodec_Decode(t *testing.T) {
+	codec := NewWebsocketNodeCodec()
+
+	spec := &WebsocketNodeSpec{
+		Timeout: time.Second,
+		Read:    64,
+		Write:   64,
+	}
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
 func TestNewWebsocketNode(t *testing.T) {
 	n := NewWebsocketNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestWebsocket_HandshakeTimeout(t *testing.T) {
+func TestWebsocket_Timeout(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
 	v := time.Second
 
-	n.SetHandshakeTimeout(v)
-	assert.Equal(t, v, n.HandshakeTimeout())
+	n.SetTimeout(v)
+	assert.Equal(t, v, n.Timeout())
 }
 
-func TestWebsocket_ReadBufferSize(t *testing.T) {
+func TestWebsocket_ReadBuffer(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
 	v := 64
 
-	n.SetReadBufferSize(v)
-	assert.Equal(t, v, n.ReadBufferSize())
+	n.SetReadBuffer(v)
+	assert.Equal(t, v, n.ReadBuffer())
 }
 
-func TestWebsocket_WriteBufferSize(t *testing.T) {
+func TestWebsocket_WriteBuffer(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
 	v := 64
 
-	n.SetWriteBufferSize(v)
-	assert.Equal(t, v, n.WriteBufferSize())
+	n.SetWriteBuffer(v)
+	assert.Equal(t, v, n.WriteBuffer())
 }
 
 func TestWebsocketNode_Port(t *testing.T) {

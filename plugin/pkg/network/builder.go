@@ -29,6 +29,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindRoute, &RouteNodeSpec{})
 		s.AddCodec(KindRoute, NewRouteNodeCodec())
 
+		s.AddKnownType(KindWebsocket, &WebsocketNodeSpec{})
+		s.AddCodec(KindWebsocket, NewWebsocketNodeCodec())
+
 		return nil
 	}
 }
