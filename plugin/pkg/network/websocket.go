@@ -228,6 +228,7 @@ func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
 
 		var inPayload *WebsocketPayload
 		if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+			inPayload.Type = websocket.TextMessage
 			inPayload.Data = inPck.Payload()
 		}
 
