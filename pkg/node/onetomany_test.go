@@ -143,6 +143,7 @@ func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
+	defer proc.Stack().Close()
 
 	inStream := in.Open(proc)
 	outStream := out.Open(proc)

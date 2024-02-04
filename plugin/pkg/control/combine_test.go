@@ -81,8 +81,18 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, combined, outPck.Payload().Interface())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 	})
 
@@ -130,8 +140,18 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, combined, outPck.Payload().Interface())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 	})
 
@@ -182,8 +202,18 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, combined, outPck.Payload().Interface())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 	})
 
@@ -234,8 +264,18 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, combined, outPck.Payload().Interface())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 	})
 
@@ -286,8 +326,18 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outStream.Receive():
 			assert.Equal(t, combined, outPck.Payload().Interface())
+			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		for _, inStream := range inStreams {
+			select {
+			case backPck := <-inStream.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 	})
 }
@@ -311,6 +361,7 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
+	defer proc.Stack().Close()
 
 	var inStreams []*port.Stream
 	for _, in := range ins {

@@ -187,6 +187,7 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
+	defer proc.Stack().Close()
 
 	var inStreams []*port.Stream
 	for _, in := range ins {

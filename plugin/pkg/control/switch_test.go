@@ -102,6 +102,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 	})
 
 	t.Run(LangJavascript, func(t *testing.T) {
@@ -138,6 +145,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 			outStream.Send(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
 		}
 	})
 
@@ -176,6 +190,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
+
+		select {
+		case backPck := <-inStream.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 	})
 }
 
@@ -196,6 +217,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		proc := process.New()
 		defer proc.Exit(nil)
+		defer proc.Stack().Close()
 
 		inStream := in.Open(proc)
 		outStream := out.Open(proc)
@@ -229,6 +251,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		proc := process.New()
 		defer proc.Exit(nil)
+		defer proc.Stack().Close()
 
 		inStream := in.Open(proc)
 		outStream := out.Open(proc)
@@ -262,6 +285,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		proc := process.New()
 		defer proc.Exit(nil)
+		defer proc.Stack().Close()
 
 		inStream := in.Open(proc)
 		outStream := out.Open(proc)

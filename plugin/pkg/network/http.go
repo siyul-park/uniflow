@@ -192,10 +192,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = writeError(err)
 	}
 
-	go func() {
-		proc.Stack().Wait()
-		proc.Exit(err)
-	}()
+	go proc.Exit(err)
 }
 
 // Close closes all ports and stops the HTTP server.

@@ -114,8 +114,8 @@ func TestWebsocketNode_SendAndReceive(t *testing.T) {
 		assert.NoError(t, err)
 		defer conn.Close()
 
-		// conn.SetWriteDeadline(time.Now().Add(time.Second))
-		// conn.SetReadDeadline(time.Now().Add(time.Second))
+		conn.SetWriteDeadline(time.Now().Add(time.Second))
+		conn.SetReadDeadline(time.Now().Add(time.Second))
 
 		msg := faker.UUIDHyphenated()
 
@@ -141,6 +141,7 @@ func TestWebsocketNode_SendAndReceive(t *testing.T) {
 
 		proc := process.New()
 		defer proc.Exit(nil)
+		defer proc.Stack().Close()
 
 		ioStream := io.Open(proc)
 		errStream := err.Open(proc)

@@ -28,39 +28,26 @@ func New() *Process {
 		stack: s,
 		share: newShare(),
 		done:  make(chan struct{}),
-		mu:    sync.RWMutex{},
 	}
 }
 
 // ID returns the ID of the process.
 func (p *Process) ID() uuid.UUID {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	return p.id
 }
 
 // Graph returns a process's graph.
 func (p *Process) Graph() *Graph {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	return p.graph
 }
 
 // Stack returns a process's stack.
 func (p *Process) Stack() *Stack {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	return p.stack
 }
 
 // Share returns a process's share.
 func (p *Process) Share() *Share {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	return p.share
 }
 
@@ -79,17 +66,11 @@ func (p *Process) Done() <-chan struct{} {
 
 // Lock acquires a read lock on the process.
 func (p *Process) Lock() {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.stack.Push(p.ID(), p.ID())
 }
 
 // Unlock releases the read lock on the process.
 func (p *Process) Unlock() {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	p.stack.Pop(p.ID(), p.ID())
 }
 
@@ -103,6 +84,8 @@ func (p *Process) Exit(err error) {
 		return
 	default:
 	}
+
+	p.stack.Wait()
 
 	p.stack.Close()
 	p.share.Close()
