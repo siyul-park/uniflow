@@ -150,6 +150,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
+
 	proc.Share().Store(KeyHTTPResponseWriter, w)
 
 	acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
@@ -191,8 +192,10 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = writeError(err)
 	}
 
-	proc.Stack().Wait()
-	proc.Exit(err)
+	go func() {
+		proc.Stack().Wait()
+		proc.Exit(err)
+	}()
 }
 
 // Close closes all ports and stops the HTTP server.

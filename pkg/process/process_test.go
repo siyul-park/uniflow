@@ -1,7 +1,9 @@
 package process
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +44,30 @@ func TestProcess_Share(t *testing.T) {
 	assert.NotNil(t, proc.Share())
 }
 
-func TestProcess_Close(t *testing.T) {
+func TestProcess_Lock(t *testing.T) {
+	proc := New()
+
+	proc.Lock()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		proc.Stack().Wait()
+		close(done)
+	}()
+
+	proc.Unlock()
+
+	select {
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	case <-done:
+	}
+}
+
+func TestProcess_Exit(t *testing.T) {
 	proc := New()
 
 	select {

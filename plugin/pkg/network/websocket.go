@@ -203,11 +203,11 @@ func (n *WebSocketNode) upgrade(proc *process.Process) {
 				ioStream.Send(errPck)
 			}
 		} else {
+			proc.Lock()
+
 			outPck := packet.New(nil)
 			proc.Graph().Add(inPck.ID(), outPck.ID())
 			ioStream.Send(outPck)
-
-			proc := process.New()
 
 			go n.write(proc, conn)
 			go n.read(proc, conn)
@@ -253,8 +253,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 	for {
 		typ, p, err := conn.ReadMessage()
 		if err != nil {
-			proc.Stack().Wait()
-			proc.Exit(nil)
+			proc.Unlock()
 			return
 		}
 

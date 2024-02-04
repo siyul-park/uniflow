@@ -10,7 +10,7 @@ import (
 type Stack struct {
 	graph  *Graph
 	values map[uuid.UUID][]uuid.UUID
-	wait   sync.RWMutex
+	wait   sync.WaitGroup
 	mu     sync.RWMutex
 }
 
@@ -26,7 +26,7 @@ func (s *Stack) Push(key, value uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.wait.RLock()
+	s.wait.Add(1)
 	s.values[key] = append(s.values[key], value)
 }
 
@@ -39,7 +39,7 @@ func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
 		values := s.values[head]
 		if values[len(values)-1] == value {
 			s.values[head] = values[:len(values)-1]
-			s.wait.RUnlock()
+			s.wait.Done()
 			return head, true
 		}
 	}
@@ -67,9 +67,7 @@ func (s *Stack) Clear(key uuid.UUID) {
 			}
 		}
 
-		for range s.values[key] {
-			s.wait.RUnlock()
-		}
+		s.wait.Add(-1 * len(s.values[key]))
 		delete(s.values, key)
 		return true
 	})
@@ -95,9 +93,7 @@ func (s *Stack) Close() {
 	defer s.mu.Unlock()
 
 	for _, values := range s.values {
-		for range values {
-			s.wait.RUnlock()
-		}
+		s.wait.Add(-1 * len(values))
 	}
 
 	s.values = make(map[uuid.UUID][]uuid.UUID)
@@ -105,8 +101,7 @@ func (s *Stack) Close() {
 
 // Wait blocks until all values in the stack are emptied.
 func (s *Stack) Wait() {
-	s.wait.Lock()
-	defer s.wait.Unlock()
+	s.wait.Wait()
 }
 
 func (s *Stack) heads(key uuid.UUID) []uuid.UUID {

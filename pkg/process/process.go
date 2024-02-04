@@ -77,6 +77,22 @@ func (p *Process) Done() <-chan struct{} {
 	return p.done
 }
 
+// Lock acquires a read lock on the process.
+func (p *Process) Lock() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.stack.Push(p.ID(), p.ID())
+}
+
+// Unlock releases the read lock on the process.
+func (p *Process) Unlock() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	p.stack.Pop(p.ID(), p.ID())
+}
+
 // Exit closes the process with an optional error.
 func (p *Process) Exit(err error) {
 	p.mu.Lock()
