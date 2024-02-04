@@ -105,6 +105,15 @@ func (n *OneToOneNode) Close() error {
 func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.Stream) {
 	errStream := n.errPort.Open(proc)
 
+	if inStream != outStream {
+		outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+			proc.Stack().Push(pck.ID(), outStream.ID())
+		}))
+	}
+	errStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), errStream.ID())
+	}))
+
 	for {
 		inPck, ok := <-inStream.Receive()
 		if !ok {
@@ -112,9 +121,6 @@ func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.
 		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			if errPck == inPck {
-				errPck = packet.New(errPck.Payload())
-			}
 			proc.Graph().Add(inPck.ID(), errPck.ID())
 			if errStream.Links() > 0 {
 				proc.Stack().Push(errPck.ID(), inStream.ID())
@@ -123,9 +129,6 @@ func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.
 				inStream.Send(errPck)
 			}
 		} else if outPck != nil && outStream.Links() > 0 {
-			if outPck == inPck {
-				outPck = packet.New(outPck.Payload())
-			}
 			proc.Graph().Add(inPck.ID(), outPck.ID())
 			if outStream != inStream {
 				proc.Stack().Push(outPck.ID(), inStream.ID())
@@ -147,6 +150,10 @@ func (n *OneToOneNode) backward(proc *process.Process, outStream *port.Stream) {
 		backPck, ok := <-outStream.Receive()
 		if !ok {
 			return
+		}
+
+		if _, ok := proc.Stack().Pop(backPck.ID(), outStream.ID()); !ok {
+			continue
 		}
 
 		if ioStream == nil {

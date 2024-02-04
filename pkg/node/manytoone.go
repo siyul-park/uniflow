@@ -107,6 +107,13 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 	outStream := n.outPort.Open(proc)
 	errStream := n.errPort.Open(proc)
 
+	outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), outStream.ID())
+	}))
+	errStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), errStream.ID())
+	}))
+
 	buffers := make([][]*packet.Packet, len(inStreams))
 	mu := &sync.Mutex{}
 
@@ -163,33 +170,27 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						return item != nil
 					})
 
-					sendPacket := func(outPck *packet.Packet, outStream *port.Stream) {
-						for _, inPck := range inPcks {
-							if outPck == inPck {
-								outPck = packet.New(outPck.Payload())
-							}
-						}
+					sendPacket := func(outStream *port.Stream, outPck *packet.Packet) {
 						for _, inPck := range inPcks {
 							proc.Graph().Add(inPck.ID(), outPck.ID())
 						}
-						for _, inStream := range inStreams {
-							if outStream.Links() > 0 {
+
+						if outStream.Links() > 0 {
+							for _, inStream := range inStreams {
 								proc.Stack().Push(outPck.ID(), inStream.ID())
 							}
-						}
-						for _, inStream := range inStreams {
-							if outStream.Links() > 0 {
-								outStream.Send(outPck)
-							} else {
+							outStream.Send(outPck)
+						} else {
+							for _, inStream := range inStreams {
 								inStream.Send(outPck)
 							}
 						}
 					}
 
 					if errPck != nil {
-						sendPacket(errPck, errStream)
+						sendPacket(errStream, errPck)
 					} else if outPck != nil {
-						sendPacket(outPck, outStream)
+						sendPacket(outStream, outPck)
 					}
 				}()
 			}
@@ -205,6 +206,10 @@ func (n *ManyToOneNode) backward(proc *process.Process, outStream *port.Stream) 
 		backPck, ok := <-outStream.Receive()
 		if !ok {
 			return
+		}
+
+		if _, ok := proc.Stack().Pop(backPck.ID(), outStream.ID()); !ok {
+			continue
 		}
 
 		if inStreams == nil {

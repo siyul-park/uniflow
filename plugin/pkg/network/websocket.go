@@ -158,6 +158,10 @@ func (n *WebSocketNode) upgrade(proc *process.Process) {
 	ioStream := n.ioPort.Open(proc)
 	errStream := n.errPort.Open(proc)
 
+	errStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), errStream.ID())
+	}))
+
 	for {
 		inPck, ok := <-ioStream.Receive()
 		if !ok {
@@ -242,6 +246,9 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 	defer n.mu.RUnlock()
 
 	outStream := n.outPort.Open(proc)
+	outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), outStream.ID())
+	}))
 
 	for {
 		typ, p, err := conn.ReadMessage()
@@ -277,6 +284,10 @@ func (n *WebSocketNode) backward(proc *process.Process) {
 		backPck, ok := <-errStream.Receive()
 		if !ok {
 			return
+		}
+
+		if _, ok := proc.Stack().Pop(backPck.ID(), errStream.ID()); !ok {
+			continue
 		}
 
 		if ioStream == nil {

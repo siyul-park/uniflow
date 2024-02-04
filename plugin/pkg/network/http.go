@@ -213,6 +213,13 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 	inStream := n.inPort.Open(proc)
 	outStream := n.outPort.Open(proc)
 
+	ioStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), ioStream.ID())
+	}))
+	outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
+		proc.Stack().Push(pck.ID(), outStream.ID())
+	}))
+
 	if ioStream.Links()+outStream.Links() == 0 {
 		return nil, nil
 	}
@@ -226,11 +233,9 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 	outPck := packet.New(outPayload)
 
 	if ioStream.Links() > 0 {
-		proc.Stack().Push(ioPck.ID(), ioStream.ID())
 		ioStream.Send(ioPck)
 	}
 	if outStream.Links() > 0 {
-		proc.Stack().Push(outPck.ID(), outStream.ID())
 		outStream.Send(outPck)
 	}
 
