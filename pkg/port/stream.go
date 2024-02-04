@@ -1,10 +1,9 @@
 package port
 
 import (
-	"sync"
-
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // Stream represents a communication channel for exchanging *packet.Packet.
@@ -12,24 +11,24 @@ type Stream struct {
 	id    uuid.UUID
 	read  *ReadPipe
 	write *WritePipe
-	links []*Stream
-	mu    sync.RWMutex
 }
 
-func newStream() *Stream {
+func newStream(proc *process.Process) *Stream {
 	return &Stream{
 		id:    uuid.Must(uuid.NewV7()),
-		read:  newReadPipe(),
-		write: newWritePipe(),
+		read:  newReadPipe(proc),
+		write: newWritePipe(proc),
 	}
 }
 
 // ID returns the Stream's ID.
 func (s *Stream) ID() uuid.UUID {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	return s.id
+}
+
+// AddSendHook adds an SendHook to the WritePipe.
+func (s *Stream) AddSendHook(hook SendHook) {
+	s.write.AddSendHook(hook)
 }
 
 // Send sends a *packet.Packet to linked Streams.
@@ -44,22 +43,19 @@ func (s *Stream) Receive() <-chan *packet.Packet {
 
 // Link connects two Streams for communication.
 func (s *Stream) Link(stream *Stream) {
-	s.link(stream)
-	stream.link(s)
+	s.write.Link(stream.read)
+	stream.write.Link(s.read)
 }
 
 // Unlink disconnects two linked Streams.
 func (s *Stream) Unlink(stream *Stream) {
-	s.unlink(stream)
-	stream.unlink(s)
+	s.write.Unlink(stream.read)
+	stream.write.Unlink(s.read)
 }
 
 // Links returns the number of linked Streams.
 func (s *Stream) Links() int {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return len(s.links)
+	return s.write.Links()
 }
 
 // Done returns a channel that's closed when the Stream is closed.
@@ -71,35 +67,4 @@ func (s *Stream) Done() <-chan struct{} {
 func (s *Stream) Close() {
 	s.read.Close()
 	s.write.Close()
-}
-
-func (s *Stream) link(stream *Stream) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if stream == s {
-		return
-	}
-
-	for _, link := range s.links {
-		if stream == link {
-			return
-		}
-	}
-
-	s.links = append(s.links, stream)
-	s.write.Link(stream.read)
-}
-
-func (s *Stream) unlink(stream *Stream) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i, link := range s.links {
-		if stream == link {
-			s.links = append(s.links[:i], s.links[i+1:]...)
-			s.write.Unlink(stream.read)
-			break
-		}
-	}
 }

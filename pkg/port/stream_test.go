@@ -6,11 +6,15 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStream_New(t *testing.T) {
-	stream := newStream()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	stream := newStream(proc)
 
 	select {
 	case <-stream.Done():
@@ -20,21 +24,32 @@ func TestStream_New(t *testing.T) {
 }
 
 func TestStream_Link(t *testing.T) {
-	stream1 := newStream()
-	stream2 := newStream()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	stream1 := newStream(proc)
+	stream2 := newStream(proc)
 
 	stream1.Link(stream2)
+
+	count := 0
+	stream1.AddSendHook(SendHookFunc(func(_ *packet.Packet) {
+		count += 1
+	}))
 
 	pck := packet.New(nil)
 
 	stream1.Send(pck)
-
+	assert.Equal(t, 1, count)
 	assert.Equal(t, pck, <-stream2.Receive())
 }
 
 func TestStream_Unlink(t *testing.T) {
-	stream1 := newStream()
-	stream2 := newStream()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	stream1 := newStream(proc)
+	stream2 := newStream(proc)
 
 	stream1.Link(stream2)
 	stream1.Unlink(stream2)
@@ -51,7 +66,10 @@ func TestStream_Unlink(t *testing.T) {
 }
 
 func TestStream_Close(t *testing.T) {
-	stream := newStream()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	stream := newStream(proc)
 
 	stream.Close()
 
@@ -66,9 +84,12 @@ func TestStream_Close(t *testing.T) {
 }
 
 func BenchmarkStream_SendAndReceive(b *testing.B) {
-	in := newStream()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	in := newStream(proc)
 	defer in.Close()
-	out := newStream()
+	out := newStream(proc)
 	defer in.Close()
 
 	in.Link(out)

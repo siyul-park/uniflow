@@ -56,7 +56,7 @@ func (p *Port) Links() int {
 // It broadcasts sent and received packets to all other Ports connected to it.
 func (p *Port) Open(proc *process.Process) *Stream {
 	newClosedStream := func() *Stream {
-		stream := newStream()
+		stream := newStream(proc)
 		stream.Close()
 		return stream
 	}
@@ -85,7 +85,7 @@ func (p *Port) Open(proc *process.Process) *Stream {
 			if ok {
 				return stream, true
 			}
-			stream = newStream()
+			stream = newStream(proc)
 			p.streams[proc] = stream
 			return stream, false
 		}()

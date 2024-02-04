@@ -19,7 +19,7 @@ type InitOnceHook struct {
 
 type InitHookFunc func(proc *process.Process)
 
-var _ InitHook = InitHookFunc(func(proc *process.Process) {})
+var _ InitHook = InitHookFunc(nil)
 var _ InitHook = (*InitOnceHook)(nil)
 
 func (h InitHookFunc) Init(proc *process.Process) {

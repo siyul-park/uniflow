@@ -6,14 +6,18 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPipe_Link(t *testing.T) {
 	t.Run("1:1", func(t *testing.T) {
-		read := newReadPipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		read := newReadPipe(proc)
 		defer read.Close()
-		write := newWritePipe()
+		write := newWritePipe(proc)
 		defer write.Close()
 
 		write.Link(read)
@@ -25,32 +29,42 @@ func TestPipe_Link(t *testing.T) {
 	})
 
 	t.Run("1:N", func(t *testing.T) {
-		read1 := newReadPipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		read1 := newReadPipe(proc)
 		defer read1.Close()
-		read2 := newReadPipe()
+		read2 := newReadPipe(proc)
 		defer read2.Close()
-		write := newWritePipe()
+		write := newWritePipe(proc)
 		defer write.Close()
 
 		write.Link(read1)
 		write.Link(read2)
 
+		assert.Equal(t, 2, write.Links())
+
 		pck := packet.New(nil)
 		write.Send(pck)
 
-		assert.Equal(t, pck, <-read1.Receive())
-		assert.Equal(t, pck, <-read2.Receive())
+		assert.True(t, proc.Graph().Has(pck.ID(), (<-read1.Receive()).ID()))
+		assert.True(t, proc.Graph().Has(pck.ID(), (<-read2.Receive()).ID()))
 	})
 }
 
 func TestPipe_Unlink(t *testing.T) {
-	read := newReadPipe()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	read := newReadPipe(proc)
 	defer read.Close()
-	write := newWritePipe()
+	write := newWritePipe(proc)
 	defer write.Close()
 
 	write.Link(read)
 	write.Unlink(read)
+
+	assert.Equal(t, 0, write.Links())
 
 	pck := packet.New(nil)
 	write.Send(pck)
@@ -64,9 +78,12 @@ func TestPipe_Unlink(t *testing.T) {
 
 func TestPipe_SendAndReceive(t *testing.T) {
 	t.Run("Not Closed", func(t *testing.T) {
-		read := newReadPipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		read := newReadPipe(proc)
 		defer read.Close()
-		write := newWritePipe()
+		write := newWritePipe(proc)
 		defer write.Close()
 
 		write.Link(read)
@@ -82,9 +99,12 @@ func TestPipe_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Closed", func(t *testing.T) {
-		read := newReadPipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		read := newReadPipe(proc)
 		defer read.Close()
-		write := newWritePipe()
+		write := newWritePipe(proc)
 		defer write.Close()
 
 		write.Link(read)
@@ -103,7 +123,10 @@ func TestPipe_SendAndReceive(t *testing.T) {
 
 func TestPipe_Close(t *testing.T) {
 	t.Run("ReadPipe", func(t *testing.T) {
-		pipe := newReadPipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		pipe := newReadPipe(proc)
 		defer pipe.Close()
 
 		pck := packet.New(nil)
@@ -122,7 +145,10 @@ func TestPipe_Close(t *testing.T) {
 	})
 
 	t.Run("WritePipe", func(t *testing.T) {
-		pipe := newWritePipe()
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		pipe := newWritePipe(proc)
 		defer pipe.Close()
 
 		pipe.Close()
@@ -135,10 +161,39 @@ func TestPipe_Close(t *testing.T) {
 	})
 }
 
+func TestPipe_SendHook(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	read1 := newReadPipe(proc)
+	defer read1.Close()
+	read2 := newReadPipe(proc)
+	defer read2.Close()
+
+	write := newWritePipe(proc)
+	defer write.Close()
+
+	write.Link(read1)
+	write.Link(read2)
+
+	pck := packet.New(nil)
+
+	count := 0
+	write.AddSendHook(SendHookFunc(func(_ *packet.Packet) {
+		count += 1
+	}))
+
+	write.Send(pck)
+	assert.Equal(t, 2, count)
+}
+
 func BenchmarkPipe_SendAndReceive(b *testing.B) {
-	read := newReadPipe()
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	read := newReadPipe(proc)
 	defer read.Close()
-	write := newWritePipe()
+	write := newWritePipe(proc)
 	defer write.Close()
 
 	write.Link(read)

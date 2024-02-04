@@ -4,18 +4,21 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // ReadPipe represents a unidirectional pipe for receiving packets.
 type ReadPipe struct {
+	proc *process.Process
 	in   chan *packet.Packet
 	out  chan *packet.Packet
 	done chan struct{}
 	mu   sync.RWMutex
 }
 
-func newReadPipe() *ReadPipe {
+func newReadPipe(proc *process.Process) *ReadPipe {
 	p := &ReadPipe{
+		proc: proc,
 		in:   make(chan *packet.Packet),
 		out:  make(chan *packet.Packet),
 		done: make(chan struct{}),
@@ -48,6 +51,14 @@ func newReadPipe() *ReadPipe {
 					buffer = buffer[1:]
 				}
 			}
+		}
+	}()
+
+	go func() {
+		select {
+		case <-proc.Done():
+			p.Close()
+		case <-p.Done():
 		}
 	}()
 
@@ -94,17 +105,36 @@ func (p *ReadPipe) send(pck *packet.Packet) {
 
 // WritePipe represents a unidirectional pipe for sending packets.
 type WritePipe struct {
-	links []*ReadPipe
-	done  chan struct{}
-	mu    sync.RWMutex
+	proc      *process.Process
+	links     []*ReadPipe
+	sendHooks []SendHook
+	done      chan struct{}
+	mu        sync.RWMutex
 }
 
-func newWritePipe() *WritePipe {
-	return &WritePipe{
-		links: nil,
-		done:  make(chan struct{}),
-		mu:    sync.RWMutex{},
+func newWritePipe(proc *process.Process) *WritePipe {
+	p := &WritePipe{
+		proc: proc,
+		done: make(chan struct{}),
 	}
+
+	go func() {
+		select {
+		case <-proc.Done():
+			p.Close()
+		case <-p.Done():
+		}
+	}()
+
+	return p
+}
+
+// AddSendHook adds an SendHook to the WritePipe.
+func (p *WritePipe) AddSendHook(hook SendHook) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.sendHooks = append(p.sendHooks, hook)
 }
 
 // Send sends a packet to all linked ReadPipe instances.
@@ -112,16 +142,31 @@ func (p *WritePipe) Send(pck *packet.Packet) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	wg := &sync.WaitGroup{}
 	for _, l := range p.links {
-		wg.Add(1)
-		l := l
-		go func() {
-			defer wg.Done()
-			l.send(pck)
+		child := func() *packet.Packet {
+			if len(p.links) < 2 {
+				return pck
+			}
+
+			child := packet.New(pck.Payload())
+			p.proc.Graph().Add(pck.ID(), child.ID())
+			return child
 		}()
+
+		for _, hook := range p.sendHooks {
+			hook.Send(child)
+		}
+
+		l.send(child)
 	}
-	wg.Wait()
+}
+
+// Links returns the number of linked ReadPipe.
+func (p *WritePipe) Links() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return len(p.links)
 }
 
 // Link links a ReadPipe to enable communication with each other.
