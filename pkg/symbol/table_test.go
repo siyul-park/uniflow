@@ -75,9 +75,9 @@ func TestTable_Insert(t *testing.T) {
 			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
 
-			p1, _ := sym1.Port(node.PortIn)
-			p2, _ := sym2.Port(node.PortIn)
-			p3, _ := sym3.Port(node.PortIn)
+			p1 := sym1.Port(node.PortIn)
+			p2 := sym2.Port(node.PortIn)
+			p3 := sym3.Port(node.PortIn)
 
 			assert.Equal(t, 1, p1.Links())
 			assert.Equal(t, 1, p2.Links())
@@ -136,8 +136,8 @@ func TestTable_Insert(t *testing.T) {
 			sym4, err := tb.Insert(spec4)
 			assert.NoError(t, err)
 
-			p3, _ := sym3.Port(node.PortIn)
-			p4, _ := sym4.Port(node.PortIn)
+			p3 := sym3.Port(node.PortIn)
+			p4 := sym4.Port(node.PortIn)
 
 			_, err = tb.Insert(spec1)
 			assert.NoError(t, err)
@@ -209,9 +209,9 @@ func TestTable_Insert(t *testing.T) {
 			sym3, err := tb.Insert(spec3)
 			assert.NoError(t, err)
 
-			p1, _ := sym1.Port(node.PortIn)
-			p2, _ := sym2.Port(node.PortIn)
-			p3, _ := sym3.Port(node.PortIn)
+			p1 := sym1.Port(node.PortIn)
+			p2 := sym2.Port(node.PortIn)
+			p3 := sym3.Port(node.PortIn)
 
 			assert.Equal(t, 1, p1.Links())
 			assert.Equal(t, 1, p2.Links())
@@ -272,8 +272,8 @@ func TestTable_Insert(t *testing.T) {
 			sym4, err := tb.Insert(spec4)
 			assert.NoError(t, err)
 
-			p3, _ := sym3.Port(node.PortIn)
-			p4, _ := sym4.Port(node.PortIn)
+			p3 := sym3.Port(node.PortIn)
+			p4 := sym4.Port(node.PortIn)
 
 			_, err = tb.Insert(spec1)
 			assert.NoError(t, err)
@@ -351,9 +351,9 @@ func TestTable_Free(t *testing.T) {
 	sym3, err := tb.Insert(spec3)
 	assert.NoError(t, err)
 
-	p1, _ := sym1.Port(node.PortIn)
-	p2, _ := sym2.Port(node.PortIn)
-	p3, _ := sym3.Port(node.PortIn)
+	p1 := sym1.Port(node.PortIn)
+	p2 := sym2.Port(node.PortIn)
+	p3 := sym3.Port(node.PortIn)
 
 	assert.Equal(t, 1, p1.Links())
 	assert.Equal(t, 1, p2.Links())

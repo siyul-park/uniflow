@@ -216,14 +216,14 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	}
 
 	in := port.New()
-	inPort, _ := n.Port(node.PortIn)
+	inPort := n.Port(node.PortIn)
 	inPort.Link(in)
 
 	outs := map[string]*port.Port{}
 	for _, tc := range testCases {
 		if _, ok := outs[tc.expectPort]; !ok {
 			out := port.New()
-			outPort, _ := n.Port(tc.expectPort)
+			outPort := n.Port(tc.expectPort)
 			outPort.Link(out)
 			outs[tc.expectPort] = out
 		}
@@ -276,11 +276,11 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	_ = n.Add(http.MethodGet, "/a/b/c", node.MultiPort(node.PortOut, 0))
 
 	in := port.New()
-	inPort, _ := n.Port(node.PortIn)
+	inPort := n.Port(node.PortIn)
 	inPort.Link(in)
 
 	out := port.New()
-	outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+	outPort := n.Port(node.MultiPort(node.PortOut, 0))
 	outPort.Link(out)
 
 	proc := process.New()

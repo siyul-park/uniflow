@@ -90,23 +90,23 @@ func NewHTTPNode(address string) *HTTPNode {
 }
 
 // Port returns the specified port.
-func (n *HTTPNode) Port(name string) (*port.Port, bool) {
+func (n *HTTPNode) Port(name string) *port.Port {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	switch name {
 	case node.PortIO:
-		return n.ioPort, true
+		return n.ioPort
 	case node.PortIn:
-		return n.inPort, true
+		return n.inPort
 	case node.PortOut:
-		return n.outPort, true
+		return n.outPort
 	case node.PortErr:
-		return n.errPort, true
+		return n.errPort
 	default:
 	}
 
-	return nil, false
+	return nil
 }
 
 // Address returns the listener address if available.

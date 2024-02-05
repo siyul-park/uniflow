@@ -70,23 +70,23 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 }
 
 // Port returns the specified port.
-func (n *OneToOneNode) Port(name string) (*port.Port, bool) {
+func (n *OneToOneNode) Port(name string) *port.Port {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	switch name {
 	case PortIO:
-		return n.ioPort, true
+		return n.ioPort
 	case PortIn:
-		return n.inPort, true
+		return n.inPort
 	case PortOut:
-		return n.outPort, true
+		return n.outPort
 	case PortErr:
-		return n.errPort, true
+		return n.errPort
 	default:
 	}
 
-	return nil, false
+	return nil
 }
 
 // Close closes all.

@@ -119,23 +119,23 @@ func (n *WebSocketNode) WriteBuffer() int {
 }
 
 // Port returns the specified port of the WebSocketNode.
-func (n *WebSocketNode) Port(name string) (*port.Port, bool) {
+func (n *WebSocketNode) Port(name string) *port.Port {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	switch name {
 	case node.PortIO:
-		return n.ioPort, true
+		return n.ioPort
 	case node.PortIn:
-		return n.inPort, true
+		return n.inPort
 	case node.PortOut:
-		return n.outPort, true
+		return n.outPort
 	case node.PortErr:
-		return n.errPort, true
+		return n.errPort
 	default:
 	}
 
-	return nil, false
+	return nil
 }
 
 // Close closes all ports of the WebSocketNode.

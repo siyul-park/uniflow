@@ -56,7 +56,7 @@ func (s *Symbol) Annotations() map[string]string {
 }
 
 // Port returns the specified port.
-func (s *Symbol) Port(name string) (*port.Port, bool) {
+func (s *Symbol) Port(name string) *port.Port {
 	return s.node.Port(name)
 }
 

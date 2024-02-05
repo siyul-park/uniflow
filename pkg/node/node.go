@@ -6,6 +6,6 @@ import (
 
 // Node is an operational unit that processes *packet.Packet.
 type Node interface {
-	Port(name string) (*port.Port, bool)
+	Port(name string) *port.Port
 	Close() error
 }

@@ -44,14 +44,14 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort := n.Port(node.MultiPort(node.PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(node.PortOut)
+		outPort := n.Port(node.PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -103,14 +103,14 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort := n.Port(node.MultiPort(node.PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(node.PortOut)
+		outPort := n.Port(node.PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -162,14 +162,14 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort := n.Port(node.MultiPort(node.PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(node.PortOut)
+		outPort := n.Port(node.PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -224,14 +224,14 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort := n.Port(node.MultiPort(node.PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(node.PortOut)
+		outPort := n.Port(node.PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -286,14 +286,14 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+			inPort := n.Port(node.MultiPort(node.PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(node.PortOut)
+		outPort := n.Port(node.PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -349,14 +349,14 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 	var ins []*port.Port
 	for i := 0; i < 4; i++ {
 		in := port.New()
-		inPort, _ := n.Port(node.MultiPort(node.PortIn, i))
+		inPort := n.Port(node.MultiPort(node.PortIn, i))
 		inPort.Link(in)
 
 		ins = append(ins, in)
 	}
 
 	out := port.New()
-	outPort, _ := n.Port(node.PortOut)
+	outPort := n.Port(node.PortOut)
 	outPort.Link(out)
 
 	proc := process.New()

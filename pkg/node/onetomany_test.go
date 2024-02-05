@@ -24,16 +24,13 @@ func TestOneToManyNode_Port(t *testing.T) {
 	n := NewOneToManyNode(nil)
 	defer n.Close()
 
-	p, ok := n.Port(PortIn)
-	assert.True(t, ok)
+	p := n.Port(PortIn)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(MultiPort(PortOut, 0))
-	assert.True(t, ok)
+	p = n.Port(MultiPort(PortOut, 0))
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortErr)
-	assert.True(t, ok)
+	p = n.Port(PortErr)
 	assert.NotNil(t, p)
 }
 
@@ -45,11 +42,11 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		in := port.New()
-		inPort, _ := n.Port(PortIn)
+		inPort := n.Port(PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(MultiPort(PortOut, 0))
+		outPort := n.Port(MultiPort(PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -89,11 +86,11 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		in := port.New()
-		inPort, _ := n.Port(PortIn)
+		inPort := n.Port(PortIn)
 		inPort.Link(in)
 
 		err := port.New()
-		errPort, _ := n.Port(PortErr)
+		errPort := n.Port(PortErr)
 		errPort.Link(err)
 
 		proc := process.New()
@@ -134,11 +131,11 @@ func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
 	defer n.Close()
 
 	in := port.New()
-	inPort, _ := n.Port(PortIn)
+	inPort := n.Port(PortIn)
 	inPort.Link(in)
 
 	out := port.New()
-	outPort, _ := n.Port(MultiPort(PortOut, 0))
+	outPort := n.Port(MultiPort(PortOut, 0))
 	outPort.Link(out)
 
 	proc := process.New()

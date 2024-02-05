@@ -49,20 +49,16 @@ func TestHTTPNode_Port(t *testing.T) {
 	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
-	p, ok := n.Port(node.PortIO)
-	assert.True(t, ok)
+	p := n.Port(node.PortIO)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(node.PortIn)
-	assert.True(t, ok)
+	p = n.Port(node.PortIn)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(node.PortOut)
-	assert.True(t, ok)
+	p = n.Port(node.PortOut)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(node.PortErr)
-	assert.True(t, ok)
+	p = n.Port(node.PortErr)
 	assert.NotNil(t, p)
 }
 
@@ -100,7 +96,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
@@ -135,7 +131,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
@@ -174,7 +170,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
@@ -209,11 +205,11 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		err := port.New()
-		errPort, _ := n.Port(node.PortErr)
+		errPort := n.Port(node.PortErr)
 		errPort.Link(err)
 
 		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
@@ -271,7 +267,7 @@ func BenchmarkHTTPNode_ServeHTTP(b *testing.B) {
 	defer n.Close()
 
 	io := port.New()
-	ioPort, _ := n.Port(node.PortIO)
+	ioPort := n.Port(node.PortIO)
 	ioPort.Link(io)
 
 	io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {

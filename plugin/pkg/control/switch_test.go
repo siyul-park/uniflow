@@ -74,11 +74,11 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -118,11 +118,11 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -162,11 +162,11 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -208,11 +208,11 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -242,11 +242,11 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()
@@ -276,11 +276,11 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
 
 		in := port.New()
-		inPort, _ := n.Port(node.PortIn)
+		inPort := n.Port(node.PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(node.MultiPort(node.PortOut, 0))
+		outPort := n.Port(node.MultiPort(node.PortOut, 0))
 		outPort.Link(out)
 
 		proc := process.New()

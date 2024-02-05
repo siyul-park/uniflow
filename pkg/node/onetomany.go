@@ -44,15 +44,15 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 }
 
 // Port returns the specified port.
-func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
+func (n *OneToManyNode) Port(name string) *port.Port {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	switch name {
 	case PortIn:
-		return n.inPort, true
+		return n.inPort
 	case PortErr:
-		return n.errPort, true
+		return n.errPort
 	default:
 		if i, ok := IndexOfMultiPort(PortOut, name); ok {
 			for j := 0; j <= i; j++ {
@@ -72,11 +72,11 @@ func (n *OneToManyNode) Port(name string) (*port.Port, bool) {
 				}
 			}
 
-			return n.outPorts[i], true
+			return n.outPorts[i]
 		}
 	}
 
-	return nil, false
+	return nil
 }
 
 // Close closes all ports.

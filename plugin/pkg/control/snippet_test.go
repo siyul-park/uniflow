@@ -89,7 +89,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -120,7 +120,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -149,7 +149,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -178,7 +178,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -209,7 +209,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -238,7 +238,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -269,7 +269,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -296,7 +296,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		}`)
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -322,7 +322,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -348,7 +348,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -375,7 +375,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		}`)
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -401,7 +401,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(node.PortIO)
+		ioPort := n.Port(node.PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()

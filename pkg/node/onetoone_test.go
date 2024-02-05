@@ -24,20 +24,16 @@ func TestOneToOneNode_Port(t *testing.T) {
 	n := NewOneToOneNode(nil)
 	defer n.Close()
 
-	p, ok := n.Port(PortIO)
-	assert.True(t, ok)
+	p := n.Port(PortIO)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortIn)
-	assert.True(t, ok)
+	p = n.Port(PortIn)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortOut)
-	assert.True(t, ok)
+	p = n.Port(PortOut)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortErr)
-	assert.True(t, ok)
+	p = n.Port(PortErr)
 	assert.NotNil(t, p)
 }
 
@@ -50,7 +46,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			defer n.Close()
 
 			io := port.New()
-			ioPort, _ := n.Port(PortIO)
+			ioPort := n.Port(PortIO)
 			ioPort.Link(io)
 
 			proc := process.New()
@@ -81,11 +77,11 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			defer n.Close()
 
 			io := port.New()
-			ioPort, _ := n.Port(PortIO)
+			ioPort := n.Port(PortIO)
 			ioPort.Link(io)
 
 			err := port.New()
-			errPort, _ := n.Port(PortErr)
+			errPort := n.Port(PortErr)
 			errPort.Link(err)
 
 			proc := process.New()
@@ -127,11 +123,11 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			defer n.Close()
 
 			in := port.New()
-			inPort, _ := n.Port(PortIn)
+			inPort := n.Port(PortIn)
 			inPort.Link(in)
 
 			out := port.New()
-			outPort, _ := n.Port(PortOut)
+			outPort := n.Port(PortOut)
 			outPort.Link(out)
 
 			proc := process.New()
@@ -171,11 +167,11 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			defer n.Close()
 
 			in := port.New()
-			inPort, _ := n.Port(PortIn)
+			inPort := n.Port(PortIn)
 			inPort.Link(in)
 
 			err := port.New()
-			errPort, _ := n.Port(PortErr)
+			errPort := n.Port(PortErr)
 			errPort.Link(err)
 
 			proc := process.New()
@@ -218,7 +214,7 @@ func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		io := port.New()
-		ioPort, _ := n.Port(PortIO)
+		ioPort := n.Port(PortIO)
 		ioPort.Link(io)
 
 		proc := process.New()
@@ -244,11 +240,11 @@ func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		in := port.New()
-		inPort, _ := n.Port(PortIn)
+		inPort := n.Port(PortIn)
 		inPort.Link(in)
 
 		out := port.New()
-		outPort, _ := n.Port(PortOut)
+		outPort := n.Port(PortOut)
 		outPort.Link(out)
 
 		proc := process.New()

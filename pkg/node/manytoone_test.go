@@ -24,16 +24,13 @@ func TestManyToOneNode_Port(t *testing.T) {
 	n := NewManyToOneNode(nil)
 	defer n.Close()
 
-	p, ok := n.Port(MultiPort(PortIn, 0))
-	assert.True(t, ok)
+	p := n.Port(MultiPort(PortIn, 0))
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortOut)
-	assert.True(t, ok)
+	p = n.Port(PortOut)
 	assert.NotNil(t, p)
 
-	p, ok = n.Port(PortErr)
-	assert.True(t, ok)
+	p = n.Port(PortErr)
 	assert.NotNil(t, p)
 }
 
@@ -52,14 +49,14 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(MultiPort(PortIn, i))
+			inPort := n.Port(MultiPort(PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		out := port.New()
-		outPort, _ := n.Port(PortOut)
+		outPort := n.Port(PortOut)
 		outPort.Link(out)
 
 		proc := process.New()
@@ -113,14 +110,14 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		var ins []*port.Port
 		for i := 0; i < 4; i++ {
 			in := port.New()
-			inPort, _ := n.Port(MultiPort(PortIn, i))
+			inPort := n.Port(MultiPort(PortIn, i))
 			inPort.Link(in)
 
 			ins = append(ins, in)
 		}
 
 		err := port.New()
-		errPort, _ := n.Port(PortErr)
+		errPort := n.Port(PortErr)
 		errPort.Link(err)
 
 		proc := process.New()
@@ -175,14 +172,14 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 	var ins []*port.Port
 	for i := 0; i < 2; i++ {
 		in := port.New()
-		inPort, _ := n.Port(MultiPort(PortIn, i))
+		inPort := n.Port(MultiPort(PortIn, i))
 		inPort.Link(in)
 
 		ins = append(ins, in)
 	}
 
 	out := port.New()
-	outPort, _ := n.Port(PortOut)
+	outPort := n.Port(PortOut)
 	outPort.Link(out)
 
 	proc := process.New()
