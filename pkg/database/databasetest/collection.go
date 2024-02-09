@@ -57,8 +57,8 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	)
 
 	_, _ = collection.InsertOne(ctx, doc)
-	_, _ = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)))
-	_, _ = collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+	_, _ = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)))
+	_, _ = collection.DeleteOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 }
 
 func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
@@ -156,7 +156,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
@@ -169,7 +169,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 			primitive.NewString("version"), primitive.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -177,7 +177,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 
 		_, _ = collection.InsertOne(ctx, doc)
 
-		ok, err = collection.UpdateOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -194,7 +194,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	t.Run("Upsert = true", func(t *testing.T) {
 		id := primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes())
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").EQ(id), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		count, err := collection.UpdateMany(ctx, database.Where("id").Equal(id), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
@@ -217,7 +217,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 			))
 		}
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").IN(ids...), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		count, err := collection.UpdateMany(ctx, database.Where("id").In(ids...), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 
 		_, _ = collection.InsertMany(ctx, docs)
 
-		count, err = collection.UpdateMany(ctx, database.Where("id").IN(ids...), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
+		count, err = collection.UpdateMany(ctx, database.Where("id").In(ids...), primitive.NewMap(primitive.NewString("version"), primitive.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -243,17 +243,17 @@ func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 		primitive.NewString("id"), primitive.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 	)
 
-	ok, err := collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+	ok, err := collection.DeleteOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
 	_, _ = collection.InsertOne(ctx, doc)
 
-	ok, err = collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+	ok, err = collection.DeleteOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	ok, err = collection.DeleteOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+	ok, err = collection.DeleteOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 	assert.NoError(t, err)
 	assert.False(t, ok)
 }
@@ -279,17 +279,17 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 		))
 	}
 
-	count, err := collection.DeleteMany(ctx, database.Where("id").IN(ids...))
+	count, err := collection.DeleteMany(ctx, database.Where("id").In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 
 	_, _ = collection.InsertMany(ctx, docs)
 
-	count, err = collection.DeleteMany(ctx, database.Where("id").IN(ids...))
+	count, err = collection.DeleteMany(ctx, database.Where("id").In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, len(ids), count)
 
-	count, err = collection.DeleteMany(ctx, database.Where("id").IN(ids...))
+	count, err = collection.DeleteMany(ctx, database.Where("id").In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 }
@@ -307,7 +307,7 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 		primitive.NewString("deleted"), primitive.FALSE,
 	)
 
-	res, err := collection.FindOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+	res, err := collection.FindOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 	assert.NoError(t, err)
 	assert.Nil(t, res)
 
@@ -315,49 +315,49 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 	assert.NoError(t, err)
 
 	t.Run(string(database.EQ), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)))
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
 	})
 
 	t.Run(string(database.NE), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("id").NE(doc.GetOr(primitive.NewString("id"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("id").NotEqual(doc.GetOr(primitive.NewString("id"), nil)))
 		assert.NoError(t, err)
 		assert.Nil(t, res)
 	})
 
 	t.Run(string(database.GT), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").GT(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").GreaterThan(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Nil(t, res)
 	})
 
 	t.Run(string(database.GTE), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").GTE(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").GreaterThanOrEqual(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
 	})
 
 	t.Run(string(database.LT), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").LT(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").LessThan(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Nil(t, res)
 	})
 
 	t.Run(string(database.LTE), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").LTE(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").LessThanOrEqual(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
 	})
 
 	t.Run(string(database.IN), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").IN(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").In(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
 	})
 
 	t.Run(string(database.NIN), func(t *testing.T) {
-		res, err = collection.FindOne(ctx, database.Where("version").NotIN(doc.GetOr(primitive.NewString("version"), nil)))
+		res, err = collection.FindOne(ctx, database.Where("version").NotIn(doc.GetOr(primitive.NewString("version"), nil)))
 		assert.NoError(t, err)
 		assert.Nil(t, res)
 	})
@@ -376,8 +376,8 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 
 	t.Run(string(database.AND), func(t *testing.T) {
 		res, err = collection.FindOne(ctx,
-			database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)).
-				And(database.Where("name").EQ(doc.GetOr(primitive.NewString("name"), nil))),
+			database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)).
+				And(database.Where("name").Equal(doc.GetOr(primitive.NewString("name"), nil))),
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
@@ -385,8 +385,8 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 
 	t.Run(string(database.OR), func(t *testing.T) {
 		res, err = collection.FindOne(ctx,
-			database.Where("id").EQ(doc.GetOr(primitive.NewString("id"), nil)).
-				Or(database.Where("name").EQ(doc.GetOr(primitive.NewString("name"), nil))),
+			database.Where("id").Equal(doc.GetOr(primitive.NewString("id"), nil)).
+				Or(database.Where("name").Equal(doc.GetOr(primitive.NewString("name"), nil))),
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, doc.GetOr(primitive.NewString("id"), nil), res.GetOr(primitive.NewString("id"), nil))
@@ -417,49 +417,49 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	_, _ = collection.InsertMany(ctx, docs)
 
 	t.Run(string(database.EQ), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").EQ(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").Equal(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.NE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").NE(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").NotEqual(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.GT), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GT(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.GTE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GTE(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThanOrEqual(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.LT), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").LT(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").LessThan(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.LTE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").LTE(primitive.NewInt(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").LessThanOrEqual(primitive.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.IN), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("id").IN(ids...))
+		res, err := collection.FindMany(ctx, database.Where("id").In(ids...))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.NIN), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("id").NotIN(ids...))
+		res, err := collection.FindMany(ctx, database.Where("id").NotIn(ids...))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
@@ -477,13 +477,13 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run(string(database.AND), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GT(primitive.NewInt(0)).And(database.Where("version").LTE(primitive.NewInt(0))))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(primitive.NewInt(0)).And(database.Where("version").LessThanOrEqual(primitive.NewInt(0))))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.OR), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GT(primitive.NewInt(0)).Or(database.Where("version").LTE(primitive.NewInt(0))))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(primitive.NewInt(0)).Or(database.Where("version").LessThanOrEqual(primitive.NewInt(0))))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
@@ -491,7 +491,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	t.Run("Limit", func(t *testing.T) {
 		limit := len(ids) / 2
 
-		res, err := collection.FindMany(ctx, database.Where("id").IN(ids...), &database.FindOptions{
+		res, err := collection.FindMany(ctx, database.Where("id").In(ids...), &database.FindOptions{
 			Limit: &limit,
 		})
 		assert.NoError(t, err)
@@ -501,7 +501,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	t.Run("Skip", func(t *testing.T) {
 		skip := len(ids) / 2
 
-		res, err := collection.FindMany(ctx, database.Where("id").IN(ids...), &database.FindOptions{
+		res, err := collection.FindMany(ctx, database.Where("id").In(ids...), &database.FindOptions{
 			Skip: &skip,
 		})
 		assert.NoError(t, err)
@@ -509,7 +509,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Sorts", func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("id").IN(ids...), &database.FindOptions{
+		res, err := collection.FindMany(ctx, database.Where("id").In(ids...), &database.FindOptions{
 			Sorts: []database.Sort{{Key: "id", Order: database.OrderASC}},
 		})
 		assert.NoError(t, err)
@@ -606,7 +606,7 @@ func BenchmarkCollection_UpdateOne(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
 
-		_, err := coll.UpdateOne(ctx, database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
+		_, err := coll.UpdateOne(ctx, database.Where("name").Equal(name), primitive.NewMap(primitive.NewString("name"), next))
 		assert.NoError(b, err)
 
 		name = next
@@ -633,7 +633,7 @@ func BenchmarkCollection_UpdateMany(b *testing.B, coll database.Collection) {
 	for i := 0; i < b.N; i++ {
 		next := primitive.NewString(faker.UUIDHyphenated())
 
-		_, err := coll.UpdateMany(ctx, database.Where("name").EQ(name), primitive.NewMap(primitive.NewString("name"), next))
+		_, err := coll.UpdateMany(ctx, database.Where("name").Equal(name), primitive.NewMap(primitive.NewString("name"), next))
 		assert.NoError(b, err)
 
 		name = next
@@ -668,7 +668,7 @@ func BenchmarkCollection_DeleteOne(b *testing.B, coll database.Collection) {
 
 		b.StartTimer()
 
-		_, err = coll.DeleteOne(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+		_, err = coll.DeleteOne(ctx, database.Where("id").Equal(v.GetOr(primitive.NewString("id"), nil)))
 		assert.NoError(b, err)
 	}
 }
@@ -699,7 +699,7 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 
 		b.StartTimer()
 
-		_, err = coll.DeleteMany(ctx, database.Where("name").EQ(name))
+		_, err = coll.DeleteMany(ctx, database.Where("name").Equal(name))
 		assert.NoError(b, err)
 	}
 }
@@ -729,14 +729,14 @@ func BenchmarkCollection_FindOne(b *testing.B, coll database.Collection) {
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindOne(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+			_, err := coll.FindOne(ctx, database.Where("id").Equal(v.GetOr(primitive.NewString("id"), nil)))
 			assert.NoError(b, err)
 		}
 	})
 
 	b.Run("Without Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindOne(ctx, database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
+			_, err := coll.FindOne(ctx, database.Where("name").Equal(v.GetOr(primitive.NewString("name"), nil)))
 			assert.NoError(b, err)
 		}
 	})
@@ -767,14 +767,14 @@ func BenchmarkCollection_FindMany(b *testing.B, coll database.Collection) {
 
 	b.Run("With Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindMany(ctx, database.Where("id").EQ(v.GetOr(primitive.NewString("id"), nil)))
+			_, err := coll.FindMany(ctx, database.Where("id").Equal(v.GetOr(primitive.NewString("id"), nil)))
 			assert.NoError(b, err)
 		}
 	})
 
 	b.Run("Without Index", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := coll.FindMany(ctx, database.Where("name").EQ(v.GetOr(primitive.NewString("name"), nil)))
+			_, err := coll.FindMany(ctx, database.Where("name").Equal(v.GetOr(primitive.NewString("name"), nil)))
 			assert.NoError(b, err)
 		}
 	})

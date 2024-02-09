@@ -9,14 +9,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
-// ReconcilerConfig holds the configuration for the Reconciler.
+// ReconcilerConfig holds the configuration settings for the Reconciler.
 type ReconcilerConfig struct {
-	Namespace string
-	Storage   *storage.Storage
-	Loader    *Loader
+	Namespace string           // Namespace associated with the Reconciler
+	Storage   *storage.Storage // Storage used for watching changes to scheme.Spec
+	Loader    *Loader          // Loader to load scheme.Spec into the symbol.Table
 }
 
-// Reconciler keeps the symbol.Table up to date by tracking changes to scheme.Spec.
+// Reconciler tracks changes to scheme.Spec and keeps the symbol.Table up to date.
 type Reconciler struct {
 	namespace string
 	storage   *storage.Storage
@@ -25,7 +25,7 @@ type Reconciler struct {
 	mu        sync.RWMutex
 }
 
-// NewReconciler creates a new Reconciler with the given configuration.
+// NewReconciler creates a new Reconciler instance with the given configuration.
 func NewReconciler(config ReconcilerConfig) *Reconciler {
 	return &Reconciler{
 		namespace: config.Namespace,
@@ -80,7 +80,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	exists := map[uuid.UUID]struct{}{}
+	exists := make(map[uuid.UUID]struct{})
 	var priority []uuid.UUID
 
 	for {
@@ -116,6 +116,7 @@ func (r *Reconciler) Close() error {
 	if r.stream == nil {
 		return nil
 	}
+
 	if err := r.stream.Close(); err != nil {
 		return err
 	}

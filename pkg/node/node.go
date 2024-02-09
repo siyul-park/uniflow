@@ -4,8 +4,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 )
 
-// Node is an operational unit that processes *packet.Packet.
+// Node represents an operational unit that processes packets.
 type Node interface {
-	Port(name string) *port.Port
-	Close() error
+	Port(name string) *port.Port // Port retrieves the port with the specified name.
+	Close() error                // Close closes the node and releases any resources it holds.
 }

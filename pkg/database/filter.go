@@ -8,30 +8,30 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-// Filter is a filter for finding matched primitive.
+// Filter represents a filter used to find matching primitives.
 type Filter struct {
-	OP       OP
-	Key      string
-	Value    primitive.Value
-	Children []*Filter
+	OP       OP              // Comparison operator for the filter.
+	Key      string          // Key to apply the filter on.
+	Value    primitive.Value // Value to compare against.
+	Children []*Filter       // Child filters for logical operations.
 }
 
 // OP represents comparison operators for filters.
 type OP string
 
 const (
-	EQ    OP = "="
-	NE    OP = "!="
-	LT    OP = "<"
-	LTE   OP = "<="
-	GT    OP = ">"
-	GTE   OP = ">="
-	IN    OP = "IN"
-	NIN   OP = "NOT IN"
-	NULL  OP = "IS NULL"
-	NNULL OP = "IS NOT NULL"
-	AND   OP = "AND"
-	OR    OP = "OR"
+	EQ    OP = "="           // Equal comparison operator.
+	NE    OP = "!="          // Not equal comparison operator.
+	LT    OP = "<"           // Less than comparison operator.
+	LTE   OP = "<="          // Less than or equal comparison operator.
+	GT    OP = ">"           // Greater than comparison operator.
+	GTE   OP = ">="          // Greater than or equal comparison operator.
+	IN    OP = "IN"          // In comparison operator.
+	NIN   OP = "NOT IN"      // Not in comparison operator.
+	NULL  OP = "IS NULL"     // Is null comparison operator.
+	NNULL OP = "IS NOT NULL" // Is not null comparison operator.
+	AND   OP = "AND"         // Logical AND operator.
+	OR    OP = "OR"          // Logical OR operator.
 )
 
 // filterHelper is a helper for building filters.
@@ -46,8 +46,8 @@ func Where(key string) *filterHelper {
 	}
 }
 
-// EQ creates an equality filter.
-func (fh *filterHelper) EQ(value primitive.Value) *Filter {
+// Equal creates an equality filter.
+func (fh *filterHelper) Equal(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    EQ,
 		Key:   fh.key,
@@ -55,8 +55,8 @@ func (fh *filterHelper) EQ(value primitive.Value) *Filter {
 	}
 }
 
-// NE creates a not-equal filter.
-func (fh *filterHelper) NE(value primitive.Value) *Filter {
+// NotEqual creates a not-equal filter.
+func (fh *filterHelper) NotEqual(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    NE,
 		Key:   fh.key,
@@ -64,17 +64,17 @@ func (fh *filterHelper) NE(value primitive.Value) *Filter {
 	}
 }
 
-// LT creates a less-than filter.
-func (fh *filterHelper) LT(value primitive.Value) *Filter {
+// LessThan creates a less-than filter.
+func (fh *filterHelper) LessThan(value primitive.Value) *Filter {
 	return &Filter{
-		Key:   fh.key,
 		OP:    LT,
+		Key:   fh.key,
 		Value: value,
 	}
 }
 
-// LTE creates a less-than-or-equal filter.
-func (fh *filterHelper) LTE(value primitive.Value) *Filter {
+// LessThanOrEqual creates a less-than-or-equal filter.
+func (fh *filterHelper) LessThanOrEqual(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    LTE,
 		Key:   fh.key,
@@ -82,8 +82,8 @@ func (fh *filterHelper) LTE(value primitive.Value) *Filter {
 	}
 }
 
-// GT creates a greater-than filter.
-func (fh *filterHelper) GT(value primitive.Value) *Filter {
+// GreaterThan creates a greater-than filter.
+func (fh *filterHelper) GreaterThan(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    GT,
 		Key:   fh.key,
@@ -91,8 +91,8 @@ func (fh *filterHelper) GT(value primitive.Value) *Filter {
 	}
 }
 
-// GTE creates a greater-than-or-equal filter.
-func (fh *filterHelper) GTE(value primitive.Value) *Filter {
+// GreaterThanOrEqual creates a greater-than-or-equal filter.
+func (fh *filterHelper) GreaterThanOrEqual(value primitive.Value) *Filter {
 	return &Filter{
 		OP:    GTE,
 		Key:   fh.key,
@@ -100,8 +100,8 @@ func (fh *filterHelper) GTE(value primitive.Value) *Filter {
 	}
 }
 
-// IN creates an "in" filter.
-func (fh *filterHelper) IN(slice ...primitive.Value) *Filter {
+// In creates an in filter.
+func (fh *filterHelper) In(slice ...primitive.Value) *Filter {
 	return &Filter{
 		OP:    IN,
 		Key:   fh.key,
@@ -109,8 +109,8 @@ func (fh *filterHelper) IN(slice ...primitive.Value) *Filter {
 	}
 }
 
-// NotIN creates a "not in" filter.
-func (fh *filterHelper) NotIN(slice ...primitive.Value) *Filter {
+// NotIn creates a not-in filter.
+func (fh *filterHelper) NotIn(slice ...primitive.Value) *Filter {
 	return &Filter{
 		OP:    NIN,
 		Key:   fh.key,
@@ -118,7 +118,7 @@ func (fh *filterHelper) NotIN(slice ...primitive.Value) *Filter {
 	}
 }
 
-// IsNull creates an "is null" filter.
+// IsNull creates an is-null filter.
 func (fh *filterHelper) IsNull() *Filter {
 	return &Filter{
 		OP:  NULL,
@@ -126,7 +126,7 @@ func (fh *filterHelper) IsNull() *Filter {
 	}
 }
 
-// IsNotNull creates an "is not null" filter.
+// IsNotNull creates an is-no-null filter.
 func (fh *filterHelper) IsNotNull() *Filter {
 	return &Filter{
 		OP:  NNULL,
@@ -134,7 +134,7 @@ func (fh *filterHelper) IsNotNull() *Filter {
 	}
 }
 
-// And creates an "and" filter.
+// And creates an and filter.
 func (ft *Filter) And(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -149,7 +149,7 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 }
 
-// Or creates an "or" filter.
+// Or creates an or filter.
 func (ft *Filter) Or(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -164,7 +164,7 @@ func (ft *Filter) Or(x ...*Filter) *Filter {
 	}
 }
 
-// String converts a filter to a string representation.
+// String converts a filter to its string representation.
 func (ft *Filter) String() (string, error) {
 	if ft.OP == AND || ft.OP == OR {
 		var parsed []string

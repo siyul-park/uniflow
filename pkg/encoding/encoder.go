@@ -2,6 +2,7 @@ package encoding
 
 // Encoder is an interface for encoding data.
 type Encoder[S, T any] interface {
+	// Encode encodes data from the source to the target.
 	Encode(source S) (T, error)
 }
 

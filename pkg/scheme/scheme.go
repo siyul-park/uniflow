@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
-// Scheme defines a registry for handling decoding of Spec objects.
+// Scheme is a registry for decoding Spec objects.
 type Scheme struct {
 	types  map[string]reflect.Type
 	codecs map[string]Codec
@@ -27,7 +27,7 @@ func New() *Scheme {
 	}
 }
 
-// AddKnownType adds a new Spec type to the Scheme, associating it with a kind.
+// AddKnownType adds a Spec type to the Scheme, associating it with a kind.
 func (s *Scheme) AddKnownType(kind string, spec Spec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -69,16 +69,16 @@ func (s *Scheme) NewSpec(kind string) (Spec, bool) {
 	if t, ok := s.types[kind]; !ok {
 		return nil, false
 	} else {
-		zero := reflect.New(t)
-		if zero.Elem().Kind() == reflect.Pointer {
-			zero.Elem().Set(reflect.New(t.Elem()))
+		value := reflect.New(t).Elem()
+		if value.Kind() == reflect.Ptr {
+			value.Set(reflect.New(t.Elem()))
 		}
-		v, ok := zero.Elem().Interface().(Spec)
+		v, ok := value.Interface().(Spec)
 		return v, ok
 	}
 }
 
-// NewSpecWithDoc creates a new instance of Spec with the given doc.
+// NewSpecWithDoc creates a new instance of Spec with the given document.
 func (s *Scheme) NewSpecWithDoc(doc *primitive.Map) (Spec, error) {
 	unstructured := NewUnstructured(doc)
 	if spec, ok := s.NewSpec(unstructured.GetKind()); !ok {

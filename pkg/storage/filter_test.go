@@ -77,27 +77,27 @@ func TestFilter_Encode(t *testing.T) {
 	}{
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).EQ(id),
-			expect: database.Where(scheme.KeyID).EQ(pk),
+			expect: database.Where(scheme.KeyID).Equal(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).NE(id),
-			expect: database.Where(scheme.KeyID).NE(pk),
+			expect: database.Where(scheme.KeyID).NotEqual(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).LT(id),
-			expect: database.Where(scheme.KeyID).LT(pk),
+			expect: database.Where(scheme.KeyID).LessThan(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).LTE(id),
-			expect: database.Where(scheme.KeyID).LTE(pk),
+			expect: database.Where(scheme.KeyID).LessThanOrEqual(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).IN(id),
-			expect: database.Where(scheme.KeyID).IN(pk),
+			expect: database.Where(scheme.KeyID).In(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).NotIN(id),
-			expect: database.Where(scheme.KeyID).NotIN(pk),
+			expect: database.Where(scheme.KeyID).NotIn(pk),
 		},
 		{
 			when:   Where[uuid.UUID](scheme.KeyID).IsNull(),

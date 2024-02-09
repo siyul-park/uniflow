@@ -31,7 +31,7 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	case database.IN:
 		value := filter.Value.(*primitive.Slice)
 		for _, v := range value.Values() {
-			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).EQ(v)))
+			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).Equal(v)))
 		}
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var pre *executionPlan

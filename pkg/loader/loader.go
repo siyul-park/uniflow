@@ -12,14 +12,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Config represents the configuration for the Loader.
+// Config contains the configuration settings for the Loader.
 type Config struct {
-	Namespace string
-	Table     *symbol.Table
-	Storage   *storage.Storage
+	Namespace string           // Namespace associated with the Loader
+	Table     *symbol.Table    // Symbol table for storing loaded symbols
+	Storage   *storage.Storage // Storage to retrieve scheme.Spec from
 }
 
-// Loader loads scheme.Spec into the symbol.Table.
+// Loader is responsible for loading scheme.Spec into the symbol.Table.
 type Loader struct {
 	namespace string
 	table     *symbol.Table
@@ -27,7 +27,7 @@ type Loader struct {
 	mu        sync.RWMutex
 }
 
-// New returns a new Loader.
+// New creates a new Loader instance with the given configuration.
 func New(config Config) *Loader {
 	return &Loader{
 		namespace: config.Namespace,
@@ -36,10 +36,10 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single scheme.Spec from the storage.Storage.
-// It processes the specified ID and recursively loads linked scheme.Spec.
-// If the loader is associated with a namespace, it uses that namespace.
-// The loaded nodes are added to the symbol table for future reference.
+// LoadOne loads a single scheme.Spec from storage.Storage.
+// It recursively loads linked scheme.Spec based on the specified ID.
+// If the Loader is associated with a namespace, it uses that namespace.
+// Loaded symbols are added to the symbol table for future reference.
 func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	ld.mu.Lock()
 	defer ld.mu.Unlock()
@@ -129,7 +129,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 }
 
 // LoadAll loads all scheme.Spec from the storage.Storage.
-// It loads all available scheme.Spec and adds them to the symbol table for future reference.
+// It adds the retrieved scheme.Spec to the symbol table for future reference.
 // If the loader is associated with a namespace, it filters the loading based on that namespace.
 func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 	ld.mu.Lock()

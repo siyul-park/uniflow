@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Hook is a collection of hook functions for loading and unloading nodes.
+// Hook represents a collection of hook functions.
 type Hook struct {
 	loadHooks   []symbol.LoadHook
 	unloadHooks []symbol.UnloadHook
@@ -17,7 +17,7 @@ type Hook struct {
 var _ symbol.LoadHook = (*Hook)(nil)
 var _ symbol.UnloadHook = (*Hook)(nil)
 
-// New creates a new Hook instance.
+// New creates a new instance of Hook.
 func New() *Hook {
 	return &Hook{}
 }

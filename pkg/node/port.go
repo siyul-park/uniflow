@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// Port names.
 const (
 	PortIO  = "io"
 	PortIn  = "in"
@@ -24,13 +25,16 @@ func IndexOfMultiPort(source string, target string) (int, bool) {
 	if err != nil {
 		return 0, false
 	}
+
 	groups := regex.FindAllStringSubmatch(target, -1)
 	if len(groups) == 0 {
 		return 0, false
 	}
+
 	index, err := strconv.Atoi(groups[0][1])
 	if err != nil {
 		return 0, false
 	}
+
 	return index, true
 }

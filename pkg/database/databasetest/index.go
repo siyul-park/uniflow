@@ -21,7 +21,7 @@ func TestIndexView_List(t *testing.T, indexView database.IndexView) {
 		Keys:    []string{"sub_key"},
 		Name:    faker.UUIDHyphenated(),
 		Unique:  false,
-		Partial: database.Where("type").EQ(primitive.NewString("any")),
+		Partial: database.Where("type").Equal(primitive.NewString("any")),
 	}
 
 	err := indexView.Create(ctx, model)

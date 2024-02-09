@@ -29,7 +29,7 @@ var indexes = []database.IndexModel{
 		Name:    "namespace_name",
 		Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
 		Unique:  true,
-		Partial: database.Where(scheme.KeyName).NE(primitive.NewString("")).And(database.Where(scheme.KeyName).IsNotNull()),
+		Partial: database.Where(scheme.KeyName).NotEqual(primitive.NewString("")).And(database.Where(scheme.KeyName).IsNotNull()),
 	},
 }
 
@@ -85,7 +85,7 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (uuid.UUID, e
 
 	var id uuid.UUID
 	if err := primitive.Unmarshal(pk, &id); err != nil {
-		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).EQ(pk))
+		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
 
@@ -113,7 +113,7 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 
 	var ids []uuid.UUID
 	if err := primitive.Unmarshal(primitive.NewSlice(pks...), &ids); err != nil {
-		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).IN(pks...))
+		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).In(pks...))
 		return nil, err
 	}
 

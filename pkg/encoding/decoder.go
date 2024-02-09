@@ -1,7 +1,8 @@
 package encoding
 
-// Decoder is the interface for decoding data.
+// Decoder is an interface for decoding data.
 type Decoder[S, T any] interface {
+	// Decode decodes data from the source to the target.
 	Decode(source S, target T) error
 }
 

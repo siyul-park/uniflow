@@ -6,13 +6,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// EncoderGroup is a group of Encoder.
+// EncoderGroup is a group of encoders.
 type EncoderGroup[S, T any] struct {
 	encoders []Encoder[S, T]
 	lock     sync.RWMutex
 }
 
-// Ensure EncoderGroup implements the Encoder interface.
 var _ Encoder[any, any] = (*EncoderGroup[any, any])(nil)
 
 // NewEncoderGroup creates a new EncoderGroup instance.
@@ -56,13 +55,12 @@ func (e *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	return zero, err
 }
 
-// DecoderGroup is a group of Decoder.
+// DecoderGroup is a group of decoders.
 type DecoderGroup[S, T any] struct {
 	decoders []Decoder[S, T]
 	lock     sync.RWMutex
 }
 
-// Ensure DecoderGroup implements the Decoder interface.
 var _ Decoder[any, any] = (*DecoderGroup[any, any])(nil)
 
 // NewDecoderGroup creates a new DecoderGroup instance.

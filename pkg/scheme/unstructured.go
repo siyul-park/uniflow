@@ -106,7 +106,7 @@ func (u *Unstructured) SetLinks(val map[string][]PortLocation) {
 	u.Set(KeyLinks, val)
 }
 
-// Get returns the value of the given key.
+// Get retrieves the value of the given key.
 func (u *Unstructured) Get(key string, val any) error {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
@@ -119,7 +119,7 @@ func (u *Unstructured) Get(key string, val any) error {
 	return nil
 }
 
-// Set sets the val of the given key.
+// Set sets the value of the given key.
 func (u *Unstructured) Set(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -132,7 +132,7 @@ func (u *Unstructured) Set(key string, val any) error {
 	return nil
 }
 
-// GetOrSet returns the value of the given key. if the value is not exist, sets the val of the given key.
+// GetOrSet returns the value of the given key, setting it if it does not exist.
 func (u *Unstructured) GetOrSet(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -157,7 +157,7 @@ func (u *Unstructured) Doc() *primitive.Map {
 	return u.doc
 }
 
-// Marshall sets the spec as a marshal and raw object to use.
+// Marshal sets the spec as a marshal and raw object to use.
 func (u *Unstructured) Marshal(spec Spec) error {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
@@ -175,7 +175,7 @@ func (u *Unstructured) Marshal(spec Spec) error {
 	return nil
 }
 
-// Unmarshal unmarshal the stored raw object and stores it in spec.
+// Unmarshal unmarshals the stored raw object and stores it in spec.
 func (u *Unstructured) Unmarshal(spec Spec) error {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
