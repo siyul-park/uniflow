@@ -46,24 +46,24 @@ func TestWebsocket_Timeout(t *testing.T) {
 	assert.Equal(t, v, n.Timeout())
 }
 
-func TestWebsocket_ReadBuffer(t *testing.T) {
+func TestWebsocket_ReadBufferSize(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
 	v := 64
 
-	n.SetReadBuffer(v)
-	assert.Equal(t, v, n.ReadBuffer())
+	n.SetReadBufferSize(v)
+	assert.Equal(t, v, n.ReadBufferSize())
 }
 
-func TestWebsocket_WriteBuffer(t *testing.T) {
+func TestWebsocket_WriteBufferSize(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
 	v := 64
 
-	n.SetWriteBuffer(v)
-	assert.Equal(t, v, n.WriteBuffer())
+	n.SetWriteBufferSize(v)
+	assert.Equal(t, v, n.WriteBufferSize())
 }
 
 func TestWebsocketNode_Port(t *testing.T) {

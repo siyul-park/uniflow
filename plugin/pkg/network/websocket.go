@@ -49,8 +49,8 @@ func NewWebsocketNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*WebsocketNodeSpec](func(spec *WebsocketNodeSpec) (node.Node, error) {
 		n := NewWebsocketNode()
 		n.SetTimeout(spec.Timeout)
-		n.SetReadBuffer(spec.Read)
-		n.SetWriteBuffer(spec.Write)
+		n.SetReadBufferSize(spec.Read)
+		n.SetWriteBufferSize(spec.Write)
 		return n, nil
 	})
 }
@@ -86,32 +86,32 @@ func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
 	n.upgrader.HandshakeTimeout = timeout
 }
 
-// ReadBuffer returns the read buffer size.
-func (n *WebSocketNode) ReadBuffer() int {
+// ReadBufferSize returns the read buffer size.
+func (n *WebSocketNode) ReadBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.ReadBufferSize
 }
 
-// SetReadBuffer sets the read buffer size.
-func (n *WebSocketNode) SetReadBuffer(size int) {
+// SetReadBufferSize sets the read buffer size.
+func (n *WebSocketNode) SetReadBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.upgrader.ReadBufferSize = size
 }
 
-// SetWriteBuffer sets the write buffer size.
-func (n *WebSocketNode) SetWriteBuffer(size int) {
+// SetWriteBufferSize sets the write buffer size.
+func (n *WebSocketNode) SetWriteBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.upgrader.WriteBufferSize = size
 }
 
-// WriteBuffer returns the write buffer size.
-func (n *WebSocketNode) WriteBuffer() int {
+// WriteBufferSize returns the write buffer size.
+func (n *WebSocketNode) WriteBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -232,8 +232,12 @@ func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
 
 		var inPayload *WebsocketPayload
 		if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
-			inPayload.Type = websocket.TextMessage
 			inPayload.Data = inPck.Payload()
+			if _, ok := inPayload.Data.(primitive.Binary); !ok {
+				inPayload.Type = websocket.TextMessage
+			} else {
+				inPayload.Type = websocket.BinaryMessage
+			}
 		}
 
 		data, _ := MarshalMIME(inPayload.Data, lo.ToPtr[string](""))
