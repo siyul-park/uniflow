@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
 	github.com/evanw/esbuild v0.20.0
-	github.com/go-faker/faker/v4 v4.2.1
+	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5

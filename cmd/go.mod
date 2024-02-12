@@ -3,7 +3,7 @@ module github.com/siyul-park/uniflow/cmd
 go 1.22.0
 
 require (
-	github.com/go-faker/faker/v4 v4.2.1
+	github.com/go-faker/faker/v4 v4.3.0
 	github.com/siyul-park/uniflow v0.1.0
 	github.com/siyul-park/uniflow/plugin v0.1.0
 	github.com/spf13/cobra v1.8.0
