@@ -14,6 +14,7 @@ type Process struct {
 	share *Share
 	err   error
 	done  chan struct{}
+	wait  sync.WaitGroup
 	mu    sync.RWMutex
 }
 
@@ -66,12 +67,12 @@ func (p *Process) Done() <-chan struct{} {
 
 // Lock acquires a read lock on the process.
 func (p *Process) Lock() {
-	p.stack.Push(p.ID(), p.ID())
+	p.wait.Add(1)
 }
 
 // Unlock releases the read lock on the process.
 func (p *Process) Unlock() {
-	p.stack.Pop(p.ID(), p.ID())
+	p.wait.Done()
 }
 
 // Exit closes the process with an optional error.
@@ -85,6 +86,7 @@ func (p *Process) Exit(err error) {
 	default:
 	}
 
+	p.wait.Wait()
 	p.stack.Wait()
 
 	p.stack.Close()
