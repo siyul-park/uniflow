@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/benbjohnson/immutable v0.4.3
 	github.com/emirpasic/gods v1.18.1
-	github.com/go-faker/faker/v4 v4.2.1
+	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jedib0t/go-pretty/v6 v6.5.4
