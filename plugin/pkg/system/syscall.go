@@ -20,6 +20,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// SyscallNode represents a node for executing system calls.
 type SyscallNode struct {
 	*node.OneToOneNode
 	fn        reflect.Value
@@ -28,8 +29,11 @@ type SyscallNode struct {
 	mu        sync.RWMutex
 }
 
+// ErrInvalidOperation is returned when an invalid operation is performed.
 var ErrInvalidOperation = errors.New("operation is invalid")
 
+// NewSyscallNode creates a new SyscallNode with the provided function.
+// It returns an error if the provided function is not valid.
 func NewSyscallNode(fn any) (*SyscallNode, error) {
 	rfn := reflect.ValueOf(fn)
 	if rfn.Kind() != reflect.Func {
@@ -42,6 +46,8 @@ func NewSyscallNode(fn any) (*SyscallNode, error) {
 	return n, nil
 }
 
+// SetArguments sets the language and arguments for the SyscallNode.
+// It processes the arguments based on the specified language.
 func (n *SyscallNode) SetArguments(lang string, arguments ...string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
