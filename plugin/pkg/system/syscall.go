@@ -18,7 +18,7 @@ import (
 	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/xiatechs/jsonata-go"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // SyscallNode represents a node for executing system calls.
