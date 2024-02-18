@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +18,7 @@ func TestSwitchNodeCodec_Decode(t *testing.T) {
 	codec := NewSwitchNodeCodec()
 
 	spec := &SwitchNodeSpec{
-		Lang: LangJSONata,
+		Lang: language.JSONata,
 		Match: []Condition{
 			{
 				When: "$.foo = \"bar\"",
@@ -34,31 +35,31 @@ func TestSwitchNodeCodec_Decode(t *testing.T) {
 }
 
 func TestNewSwitchNode(t *testing.T) {
-	n := NewSwitchNode(LangJSONata)
+	n := NewSwitchNode(language.JSONata)
 	assert.NotNil(t, n)
 
 	assert.NoError(t, n.Close())
 }
 
 func TestSwitchNode_Add(t *testing.T) {
-	t.Run(LangTypescript, func(t *testing.T) {
-		n := NewSwitchNode(LangTypescript)
+	t.Run(language.Typescript, func(t *testing.T) {
+		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
 		err := n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
-	t.Run(LangJavascript, func(t *testing.T) {
-		n := NewSwitchNode(LangJavascript)
+	t.Run(language.Javascript, func(t *testing.T) {
+		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
 		err := n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
-	t.Run(LangJSONata, func(t *testing.T) {
-		n := NewSwitchNode(LangJSONata)
+	t.Run(language.JSONata, func(t *testing.T) {
+		n := NewSwitchNode(language.JSONata)
 		defer n.Close()
 
 		err := n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -67,8 +68,8 @@ func TestSwitchNode_Add(t *testing.T) {
 }
 
 func TestSwitchNode_SendAndReceive(t *testing.T) {
-	t.Run(LangTypescript, func(t *testing.T) {
-		n := NewSwitchNode(LangTypescript)
+	t.Run(language.Typescript, func(t *testing.T) {
+		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -111,8 +112,8 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangJavascript, func(t *testing.T) {
-		n := NewSwitchNode(LangJavascript)
+	t.Run(language.Javascript, func(t *testing.T) {
+		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -155,8 +156,8 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangJSONata, func(t *testing.T) {
-		n := NewSwitchNode(LangJSONata)
+	t.Run(language.JSONata, func(t *testing.T) {
+		n := NewSwitchNode(language.JSONata)
 		defer n.Close()
 
 		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -201,8 +202,8 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
-	b.Run(LangTypescript, func(b *testing.B) {
-		n := NewSwitchNode(LangTypescript)
+	b.Run(language.Typescript, func(b *testing.B) {
+		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -235,8 +236,8 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangJavascript, func(b *testing.B) {
-		n := NewSwitchNode(LangJavascript)
+	b.Run(language.Javascript, func(b *testing.B) {
+		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
@@ -269,8 +270,8 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangJSONata, func(b *testing.B) {
-		n := NewSwitchNode(LangJSONata)
+	b.Run(language.JSONata, func(b *testing.B) {
+		n := NewSwitchNode(language.JSONata)
 		defer n.Close()
 
 		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))

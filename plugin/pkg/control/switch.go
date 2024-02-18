@@ -12,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/js"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/xiatechs/jsonata-go"
 )
 
@@ -75,9 +76,9 @@ func (n *SwitchNode) Add(when, port string) error {
 	}
 
 	switch n.lang {
-	case LangJavascript, LangTypescript:
+	case language.Javascript, language.Typescript:
 		var err error
-		if n.lang == LangTypescript {
+		if n.lang == language.Typescript {
 			if when, err = js.Transform(when, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return err
 			}
@@ -111,7 +112,7 @@ func (n *SwitchNode) Add(when, port string) error {
 				return output, nil
 			}
 		})
-	case LangJSONata:
+	case language.JSONata:
 		exp, err := jsonata.Compile(when)
 		if err != nil {
 			return err
@@ -125,7 +126,7 @@ func (n *SwitchNode) Add(when, port string) error {
 			}
 		})
 	default:
-		return errors.WithStack(ErrUnsupportedLanguage)
+		return errors.WithStack(language.ErrUnsupportedLanguage)
 	}
 
 	n.ports = append(n.ports, index)

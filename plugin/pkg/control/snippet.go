@@ -13,11 +13,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/js"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
 
-// SnippetNode represents a node that executes code snippets in various languages.
+// SnippetNode represents a node that executes code snippets in various language.
 type SnippetNode struct {
 	*node.OneToOneNode
 	lang string
@@ -43,7 +44,7 @@ func NewSnippetNodeCodec() scheme.Codec {
 	})
 }
 
-// NewSnippetNode creates a new SnippetNode with the specified language and code.
+// NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	n := &SnippetNode{lang: lang, code: code}
 	if action, err := n.compile(); err != nil {
@@ -59,21 +60,21 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 	defer n.mu.RUnlock()
 
 	if n.lang == "" {
-		n.lang = LangText
+		n.lang = language.Text
 	}
 
 	switch n.lang {
-	case LangText:
+	case language.Text:
 		outPayload := primitive.NewString(n.code)
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
-	case LangJSON, LangYAML:
+	case language.JSON, language.YAML:
 		var data any
 		var err error
-		if n.lang == LangJSON {
+		if n.lang == language.JSON {
 			err = json.Unmarshal([]byte(n.code), &data)
-		} else if n.lang == LangYAML {
+		} else if n.lang == language.YAML {
 			err = yaml.Unmarshal([]byte(n.code), &data)
 		}
 		if err != nil {
@@ -88,9 +89,9 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return packet.New(outPayload), nil
 		}, nil
-	case LangJavascript, LangTypescript:
+	case language.Javascript, language.Typescript:
 		var err error
-		if n.lang == LangTypescript {
+		if n.lang == language.Typescript {
 			if n.code, err = js.Transform(n.code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return nil, err
 			}
@@ -141,7 +142,7 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 				return packet.New(outPayload), nil
 			}
 		}, nil
-	case LangJSONata:
+	case language.JSONata:
 		exp, err := jsonata.Compile(n.code)
 		if err != nil {
 			return nil, err
@@ -164,5 +165,5 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 		}, nil
 	}
 
-	return nil, ErrUnsupportedLanguage
+	return nil, language.ErrUnsupportedLanguage
 }

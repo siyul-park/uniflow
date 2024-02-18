@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func TestSnippetNodeCodec_Decode(t *testing.T) {
 	codec := NewSnippetNodeCodec()
 
 	spec := &SnippetNodeSpec{
-		Lang: LangText,
+		Lang: language.Text,
 		Code: "",
 	}
 
@@ -30,16 +31,16 @@ func TestSnippetNodeCodec_Decode(t *testing.T) {
 }
 
 func TestNewSnippetNode(t *testing.T) {
-	t.Run(LangText, func(t *testing.T) {
-		n, err := NewSnippetNode(LangText, "")
+	t.Run(language.Text, func(t *testing.T) {
+		n, err := NewSnippetNode(language.Text, "")
 		assert.NoError(t, err)
 		assert.NotNil(t, n)
 
 		assert.NoError(t, n.Close())
 	})
 
-	t.Run(LangTypescript, func(t *testing.T) {
-		n, err := NewSnippetNode(LangTypescript, `export default function (input: any): any {
+	t.Run(language.Typescript, func(t *testing.T) {
+		n, err := NewSnippetNode(language.Typescript, `export default function (input: any): any {
 			return input;
 		}`)
 		assert.NoError(t, err)
@@ -48,24 +49,24 @@ func TestNewSnippetNode(t *testing.T) {
 		assert.NoError(t, n.Close())
 	})
 
-	t.Run(LangJSON, func(t *testing.T) {
-		n, err := NewSnippetNode(LangJSON, `{}`)
+	t.Run(language.JSON, func(t *testing.T) {
+		n, err := NewSnippetNode(language.JSON, `{}`)
 		assert.NoError(t, err)
 		assert.NotNil(t, n)
 
 		assert.NoError(t, n.Close())
 	})
 
-	t.Run(LangYAML, func(t *testing.T) {
-		n, err := NewSnippetNode(LangYAML, `{}`)
+	t.Run(language.YAML, func(t *testing.T) {
+		n, err := NewSnippetNode(language.YAML, `{}`)
 		assert.NoError(t, err)
 		assert.NotNil(t, n)
 
 		assert.NoError(t, n.Close())
 	})
 
-	t.Run(LangJavascript, func(t *testing.T) {
-		n, err := NewSnippetNode(LangJavascript, `export default function (input) {
+	t.Run(language.Javascript, func(t *testing.T) {
+		n, err := NewSnippetNode(language.Javascript, `export default function (input) {
 			return input;
 		}`)
 		assert.NoError(t, err)
@@ -74,8 +75,8 @@ func TestNewSnippetNode(t *testing.T) {
 		assert.NoError(t, n.Close())
 	})
 
-	t.Run(LangJSONata, func(t *testing.T) {
-		n, err := NewSnippetNode(LangJSONata, `$`)
+	t.Run(language.JSONata, func(t *testing.T) {
+		n, err := NewSnippetNode(language.JSONata, `$`)
 		assert.NoError(t, err)
 		assert.NotNil(t, n)
 
@@ -84,8 +85,8 @@ func TestNewSnippetNode(t *testing.T) {
 }
 
 func TestSnippetNode_SendAndReceive(t *testing.T) {
-	t.Run(LangText, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangText, "")
+	t.Run(language.Text, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.Text, "")
 		defer n.Close()
 
 		io := port.New()
@@ -113,8 +114,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangTypescript, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangTypescript, `export default function (input: any): any {
+	t.Run(language.Typescript, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.Typescript, `export default function (input: any): any {
 			return input;
 		}`)
 		defer n.Close()
@@ -144,8 +145,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangJSON, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangJSON, `{}`)
+	t.Run(language.JSON, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.JSON, `{}`)
 		defer n.Close()
 
 		io := port.New()
@@ -173,8 +174,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangYAML, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangYAML, `{}`)
+	t.Run(language.YAML, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.YAML, `{}`)
 		defer n.Close()
 
 		io := port.New()
@@ -202,8 +203,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangJavascript, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangJavascript, `export default function (input) {
+	t.Run(language.Javascript, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.Javascript, `export default function (input) {
 			return input;
 		}`)
 		defer n.Close()
@@ -233,8 +234,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run(LangJSONata, func(t *testing.T) {
-		n, _ := NewSnippetNode(LangJSONata, `$`)
+	t.Run(language.JSONata, func(t *testing.T) {
+		n, _ := NewSnippetNode(language.JSONata, `$`)
 		defer n.Close()
 
 		io := port.New()
@@ -264,8 +265,8 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
-	b.Run(LangText, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangText, "")
+	b.Run(language.Text, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.Text, "")
 		defer n.Close()
 
 		io := port.New()
@@ -290,8 +291,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangTypescript, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangTypescript, `export default function (input: any): any {
+	b.Run(language.Typescript, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.Typescript, `export default function (input: any): any {
 			return input;
 		}`)
 
@@ -317,8 +318,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangJSON, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangJSON, "{}")
+	b.Run(language.JSON, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.JSON, "{}")
 		defer n.Close()
 
 		io := port.New()
@@ -343,8 +344,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangYAML, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangYAML, "{}")
+	b.Run(language.YAML, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.YAML, "{}")
 		defer n.Close()
 
 		io := port.New()
@@ -369,8 +370,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangJavascript, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangJavascript, `export default function (input) {
+	b.Run(language.Javascript, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.Javascript, `export default function (input) {
 			return input;
 		}`)
 
@@ -396,8 +397,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		})
 	})
 
-	b.Run(LangJSONata, func(b *testing.B) {
-		n, _ := NewSnippetNode(LangJSONata, "$")
+	b.Run(language.JSONata, func(b *testing.B) {
+		n, _ := NewSnippetNode(language.JSONata, "$")
 		defer n.Close()
 
 		io := port.New()
