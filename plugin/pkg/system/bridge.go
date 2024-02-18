@@ -21,8 +21,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// SyscallNode represents a node for executing system calls.
-type SyscallNode struct {
+// BridgeNode represents a node for executing internal calls.
+type BridgeNode struct {
 	*node.OneToOneNode
 	fn        reflect.Value
 	lang      string
@@ -30,41 +30,41 @@ type SyscallNode struct {
 	mu        sync.RWMutex
 }
 
-// SyscallNodeSpec holds the specifications for creating a SyscallNode.
-type SyscallNodeSpec struct {
+// BridgeNodeSpec holds the specifications for creating a BridgeNode.
+type BridgeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Opcode          string   `map:"opcode"`
 	Lang            string   `map:"lang"`
 	Arguments       []string `map:"arguments"`
 }
 
-// SyscallTable represents a table of system call operations.
-type SyscallTable struct {
+// BridgeTable represents a table of system call operations.
+type BridgeTable struct {
 	data map[string]any
 	mu   sync.RWMutex
 }
 
-const KindSyscall = "syscall"
+const KindBridge = "bridge"
 
 var ErrInvalidOperation = errors.New("operation is invalid")
 
-// NewSyscallNode creates a new SyscallNode with the provided function.
+// NewBridgeNode creates a new BridgeNode with the provided function.
 // It returns an error if the provided function is not valid.
-func NewSyscallNode(fn any) (*SyscallNode, error) {
+func NewBridgeNode(fn any) (*BridgeNode, error) {
 	rfn := reflect.ValueOf(fn)
 	if rfn.Kind() != reflect.Func {
 		return nil, errors.WithStack(ErrInvalidOperation)
 	}
 
-	n := &SyscallNode{fn: rfn}
+	n := &BridgeNode{fn: rfn}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
 }
 
-// SetArguments sets the language and arguments for the SyscallNode.
+// SetArguments sets the language and arguments for the BridgeNode.
 // It processes the arguments based on the specified language.
-func (n *SyscallNode) SetArguments(lang string, arguments ...string) error {
+func (n *BridgeNode) SetArguments(lang string, arguments ...string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -149,7 +149,7 @@ func (n *SyscallNode) SetArguments(lang string, arguments ...string) error {
 	return nil
 }
 
-func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -217,15 +217,15 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
 }
 
-// NewSyscallTable creates a new SyscallTable instance.
-func NewSyscallTable() *SyscallTable {
-	return &SyscallTable{
+// NewBridgeTable creates a new BridgeTable instance.
+func NewBridgeTable() *BridgeTable {
+	return &BridgeTable{
 		data: make(map[string]any),
 	}
 }
 
 // Store adds or updates a system call opcode in the table.
-func (t *SyscallTable) Store(opcode string, fn any) {
+func (t *BridgeTable) Store(opcode string, fn any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -234,7 +234,7 @@ func (t *SyscallTable) Store(opcode string, fn any) {
 
 // Load retrieves a system call opcode from the table.
 // It returns the opcode function and a boolean indicating if the opcode exists.
-func (t *SyscallTable) Load(opcode string) (any, bool) {
+func (t *BridgeTable) Load(opcode string) (any, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -242,14 +242,14 @@ func (t *SyscallTable) Load(opcode string) (any, bool) {
 	return fn, ok
 }
 
-// NewSyscallNodeCodec creates a new codec for SyscallNodeSpec.
-func NewSyscallNodeCodec(table *SyscallTable) scheme.Codec {
-	return scheme.CodecWithType[*SyscallNodeSpec](func(spec *SyscallNodeSpec) (node.Node, error) {
+// NewBridgeNodeCodec creates a new codec for BridgeNodeSpec.
+func NewBridgeNodeCodec(table *BridgeTable) scheme.Codec {
+	return scheme.CodecWithType[*BridgeNodeSpec](func(spec *BridgeNodeSpec) (node.Node, error) {
 		fn, ok := table.Load(spec.Opcode)
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)
 		}
-		n, err := NewSyscallNode(fn)
+		n, err := NewBridgeNode(fn)
 		if err != nil {
 			return nil, err
 		}

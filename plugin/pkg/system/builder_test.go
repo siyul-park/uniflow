@@ -13,7 +13,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme(nil)(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindSyscall}
+	testCase := []string{KindBridge}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

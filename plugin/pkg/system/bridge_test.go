@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewSyscallNode(t *testing.T) {
-	n, err := NewSyscallNode(func() {})
+func TestNewBridgeNode(t *testing.T) {
+	n, err := NewBridgeNode(func() {})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
@@ -25,9 +25,9 @@ func TestNewSyscallNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestSyscallNode_SetArguments(t *testing.T) {
+func TestBridgeNode_SetArguments(t *testing.T) {
 	t.Run(language.Text, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.Text, "foo")
@@ -35,7 +35,7 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 
 	t.Run(language.Typescript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.Typescript, "$")
@@ -43,7 +43,7 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 
 	t.Run(language.Javascript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.Javascript, "$")
@@ -51,7 +51,7 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 
 	t.Run(language.JSON, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.JSON, "\"foo\"")
@@ -59,7 +59,7 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 
 	t.Run(language.JSONata, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.JSONata, "$")
@@ -67,7 +67,7 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 
 	t.Run(language.YAML, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
 		err := n.SetArguments(language.YAML, "\"foo\"")
@@ -75,9 +75,9 @@ func TestSyscallNode_SetArguments(t *testing.T) {
 	})
 }
 
-func TestSyscallNode_SendAndReceive(t *testing.T) {
+func TestBridgeNode_SendAndReceive(t *testing.T) {
 	t.Run("Arguments, Returns = 0", func(t *testing.T) {
-		n, _ := NewSyscallNode(func() {})
+		n, _ := NewBridgeNode(func() {})
 		defer n.Close()
 
 		io := port.New()
@@ -106,7 +106,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments = 1, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -139,7 +139,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments > 1, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg1, arg2 any) any {
+		n, _ := NewBridgeNode(func(arg1, arg2 any) any {
 			return arg2
 		})
 		defer n.Close()
@@ -172,7 +172,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == Context, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any {
+		n, _ := NewBridgeNode(func(ctx context.Context, arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -205,7 +205,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == 1, Returns > 2", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) (any, any) {
+		n, _ := NewBridgeNode(func(arg any) (any, any) {
 			return arg, arg
 		})
 		defer n.Close()
@@ -238,7 +238,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == 1, Returns == error", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) error {
+		n, _ := NewBridgeNode(func(arg any) error {
 			return fmt.Errorf("%v", arg)
 		})
 		defer n.Close()
@@ -284,7 +284,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Text, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -317,7 +317,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Typescript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -350,7 +350,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Javascript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -383,7 +383,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSON, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -416,7 +416,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSONata, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -449,7 +449,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.YAML, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any {
+		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -482,8 +482,8 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestSyscallNodeCodec_Decode(t *testing.T) {
-	table := NewSyscallTable()
+func TestBridgeNodeCodec_Decode(t *testing.T) {
+	table := NewBridgeTable()
 
 	operation := faker.UUIDHyphenated()
 
@@ -491,9 +491,9 @@ func TestSyscallNodeCodec_Decode(t *testing.T) {
 		return arg
 	})
 
-	codec := NewSyscallNodeCodec(table)
+	codec := NewBridgeNodeCodec(table)
 
-	spec := &SyscallNodeSpec{
+	spec := &BridgeNodeSpec{
 		Opcode:    operation,
 		Lang:      language.Text,
 		Arguments: []string{"foo"},
