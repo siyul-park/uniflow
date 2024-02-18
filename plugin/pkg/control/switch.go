@@ -40,20 +40,6 @@ type Condition struct {
 
 const KindSwitch = "swtich"
 
-// NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
-func NewSwitchNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
-		n := NewSwitchNode(spec.Lang)
-		for _, condition := range spec.Match {
-			if err := n.Add(condition.When, condition.Port); err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-		}
-		return n, nil
-	})
-}
-
 // NewSwitchNode creates a new SwitchNode with the specified language.
 func NewSwitchNode(lang string) *SwitchNode {
 	n := &SwitchNode{lang: lang}
@@ -151,4 +137,18 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 		}
 	}
 	return outPcks, nil
+}
+
+// NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
+func NewSwitchNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
+		n := NewSwitchNode(spec.Lang)
+		for _, condition := range spec.Match {
+			if err := n.Add(condition.When, condition.Port); err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
 }

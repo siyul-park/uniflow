@@ -4,5 +4,8 @@ Unleash the full potential of your system with our diverse range of first-party 
 
 ## Available Plugins
 
-- [**Control Plugin**](./pkg/control/): Empowers users with various functions for data manipulation, including the execution of code snippets in languages such as JavaScript, TypeScript, JSON, and YAML. This plugin is a versatile tool for performing powerful data manipulation operations.
-- [**Network Plugin**](./pkg/network/): Equips your system with essential functions for network processing. Improve networking capabilities by efficiently handling HTTP requests, implementing routing, and supporting seamless communication. This plugin is a valuable addition to your toolkit for building powerful and dynamic backend workflows.
+- **Control Plugin**: This plugin enhances user capabilities with a variety of functions for manipulating data, including executing code snippets in languages such as JavaScript, TypeScript, JSON, and YAML. It serves as a versatile tool for conducting robust data manipulation operations.
+
+- **Network Plugin**: This plugin equips your system with essential functions for network processing. Enhance networking capabilities by efficiently handling HTTP requests, implementing routing, and supporting seamless communication. It serves as a valuable addition to your toolkit for constructing powerful and dynamic backend workflows.
+
+- **System Plugin**: This plugin streamlines access to internal functionalities within the runtime system, enabling users to seamlessly manage and modify system components as needed.

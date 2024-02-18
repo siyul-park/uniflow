@@ -53,13 +53,6 @@ const KeyHTTPResponseWriter = "http.ResponseWriter"
 var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = (*HTTPNode)(nil)
 
-// NewHTTPNodeCodec creates a new codec for HTTPNodeSpec.
-func NewHTTPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*HTTPNodeSpec](func(spec *HTTPNodeSpec) (node.Node, error) {
-		return NewHTTPNode(spec.Address), nil
-	})
-}
-
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
 func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
 	if len(body) == 0 {
@@ -380,4 +373,11 @@ func (n *HTTPNode) newErrorPayload(proc *process.Process, err error) *HTTPPayloa
 		res.Body = inPayload
 	}
 	return res
+}
+
+// NewHTTPNodeCodec creates a new codec for HTTPNodeSpec.
+func NewHTTPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*HTTPNodeSpec](func(spec *HTTPNodeSpec) (node.Node, error) {
+		return NewHTTPNode(spec.Address), nil
+	})
 }

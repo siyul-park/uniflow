@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
+	"github.com/siyul-park/uniflow/plugin/pkg/system"
 )
 
 func execute(ctx context.Context, databaseURL, databaseName string) error {
@@ -16,6 +17,7 @@ func execute(ctx context.Context, databaseURL, databaseName string) error {
 
 	sb.Register(control.AddToScheme())
 	sb.Register(network.AddToScheme())
+	sb.Register(system.AddToScheme(nil))
 
 	hb.Register(network.AddToHook())
 

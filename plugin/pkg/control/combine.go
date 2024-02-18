@@ -28,13 +28,6 @@ type CombineNodeSpec struct {
 
 const KindCombine = "combine"
 
-// NewCombineNodeCodec creates a new codec for CombineNodeSpec.
-func NewCombineNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
-		return NewCombineNode(spec.Depth, spec.Inplace), nil
-	})
-}
-
 // NewCombineNode creates a new CombineNode.
 func NewCombineNode(depth int, inplace bool) *CombineNode {
 	n := &CombineNode{depth: depth, inplace: inplace}
@@ -131,4 +124,11 @@ func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
 	}
 
 	return y
+}
+
+// NewCombineNodeCodec creates a new codec for CombineNodeSpec.
+func NewCombineNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
+		return NewCombineNode(spec.Depth, spec.Inplace), nil
+	})
 }

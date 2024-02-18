@@ -18,21 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHTTPNodeCodec_Decode(t *testing.T) {
-	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
-
-	codec := NewHTTPNodeCodec()
-
-	spec := &HTTPNodeSpec{
-		Address: fmt.Sprintf(":%d", port),
-	}
-
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-}
-
 func TestNewHTTPNode(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
@@ -260,6 +245,23 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, body, w.Body.String())
 	})
+}
+
+func TestHTTPNodeCodec_Decode(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	codec := NewHTTPNodeCodec()
+
+	spec := &HTTPNodeSpec{
+		Address: fmt.Sprintf(":%d", port),
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }
 
 func BenchmarkHTTPNode_ServeHTTP(b *testing.B) {

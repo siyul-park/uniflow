@@ -37,13 +37,6 @@ const KindSnippet = "snippet"
 
 var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
-// NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
-func NewSnippetNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
-		return NewSnippetNode(spec.Lang, spec.Code)
-	})
-}
-
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 	n := &SnippetNode{lang: lang, code: code}
@@ -166,4 +159,11 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 	}
 
 	return nil, language.ErrUnsupportedLanguage
+}
+
+// NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
+func NewSnippetNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
+		return NewSnippetNode(spec.Lang, spec.Code)
+	})
 }
