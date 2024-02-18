@@ -28,7 +28,6 @@ type SyscallNode struct {
 }
 
 var ErrInvalidOperation = errors.New("operation is invalid")
-var ErrInvalidArguments = errors.New("arguments is invalid")
 
 func NewSyscallNode(fn any) (*SyscallNode, error) {
 	rfn := reflect.ValueOf(fn)
@@ -42,32 +41,28 @@ func NewSyscallNode(fn any) (*SyscallNode, error) {
 	return n, nil
 }
 
-func (n *SyscallNode) SetArguments(lang string, args ...string) error {
+func (n *SyscallNode) SetArguments(lang string, arguments ...string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-
-	if len(args) != n.fn.Type().NumIn() {
-		return errors.WithStack(ErrInvalidArguments)
-	}
 
 	n.lang = lang
 	n.arguments = nil
 
-	for _, arg := range args {
-		arg := arg
+	for _, argument := range arguments {
+		argument := argument
 
 		switch n.lang {
 		case language.Text:
 			n.arguments = append(n.arguments, func(_ any) (any, error) {
-				return arg, nil
+				return argument, nil
 			})
 		case language.JSON, language.YAML:
 			var data any
 			var err error
 			if n.lang == language.JSON {
-				err = json.Unmarshal([]byte(arg), &data)
+				err = json.Unmarshal([]byte(argument), &data)
 			} else if n.lang == language.YAML {
-				err = yaml.Unmarshal([]byte(arg), &data)
+				err = yaml.Unmarshal([]byte(argument), &data)
 			}
 			if err != nil {
 				return err
@@ -79,12 +74,12 @@ func (n *SyscallNode) SetArguments(lang string, args ...string) error {
 		case language.Javascript, language.Typescript:
 			var err error
 			if n.lang == language.Typescript {
-				if arg, err = js.Transform(arg, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
+				if argument, err = js.Transform(argument, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 					return err
 				}
 			}
 
-			code := fmt.Sprintf("module.exports = ($) => { return %s }", arg)
+			code := fmt.Sprintf("module.exports = ($) => { return %s }", argument)
 			program, err := goja.Compile("", code, true)
 			if err != nil {
 				return err
@@ -112,7 +107,7 @@ func (n *SyscallNode) SetArguments(lang string, args ...string) error {
 				}
 			})
 		case language.JSONata:
-			exp, err := jsonata.Compile(arg)
+			exp, err := jsonata.Compile(argument)
 			if err != nil {
 				return err
 			}
@@ -138,22 +133,22 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	inPayload := inPck.Payload()
 	input := inPayload.Interface()
 
-	if len(n.arguments) != n.fn.Type().NumIn() {
-		return nil, packet.WithError(ErrInvalidArguments, inPck)
-	}
+	ins := make([]reflect.Value, n.fn.Type().NumIn())
 
-	ins := make([]reflect.Value, len(n.arguments))
-	for i, argument := range n.arguments {
+	for i := range ins {
 		in := reflect.New(n.fn.Type().In(i))
-		if argument, err := argument(input); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else if argument, err := primitive.MarshalBinary(argument); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else {
-			ins[i] = in.Elem()
+
+		if len(n.arguments) > i {
+			if argument, err := n.arguments[i](input); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else if argument, err := primitive.MarshalBinary(argument); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
+				return nil, packet.WithError(err, inPck)
+			}
 		}
+
+		ins[i] = in.Elem()
 	}
 
 	outs := n.fn.Call(ins)
@@ -166,9 +161,6 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 	}
 
-	if len(outs) == 0 {
-		return nil, nil
-	}
 	if len(outs) == 1 {
 		if outPayload, err := primitive.MarshalBinary(outs[0].Interface()); err != nil {
 			return nil, packet.WithError(err, inPck)
@@ -184,6 +176,10 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		} else {
 			outPayloads[i] = outPayload
 		}
+	}
+
+	if len(outPayloads) == 0 {
+		return packet.New(nil), nil
 	}
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
 }
