@@ -14,26 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSwitchNodeCodec_Decode(t *testing.T) {
-	codec := NewSwitchNodeCodec()
-
-	spec := &SwitchNodeSpec{
-		Lang: language.JSONata,
-		Match: []Condition{
-			{
-				When: "$.foo = \"bar\"",
-				Port: node.MultiPort(node.PortOut, 0),
-			},
-		},
-	}
-
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-
-	assert.NoError(t, n.Close())
-}
-
 func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode(language.JSONata)
 	assert.NotNil(t, n)
@@ -199,6 +179,26 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
+}
+
+func TestSwitchNodeCodec_Decode(t *testing.T) {
+	codec := NewSwitchNodeCodec()
+
+	spec := &SwitchNodeSpec{
+		Lang: language.JSONata,
+		Match: []Condition{
+			{
+				When: "$.foo = \"bar\"",
+				Port: node.MultiPort(node.PortOut, 0),
+			},
+		},
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }
 
 func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {

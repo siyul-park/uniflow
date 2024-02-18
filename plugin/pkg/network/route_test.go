@@ -15,24 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRouteNodeCodec_Decode(t *testing.T) {
-	codec := NewRouteNodeCodec()
-
-	spec := &RouteNodeSpec{
-		Routes: []Route{
-			{
-				Method: http.MethodGet,
-				Path:   "/",
-				Port:   node.MultiPort(node.PortOut, 0),
-			},
-		},
-	}
-
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-}
-
 func TestNewRouteNode(t *testing.T) {
 	n := NewRouteNode()
 	assert.NotNil(t, n)
@@ -267,6 +249,26 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRouteNodeCodec_Decode(t *testing.T) {
+	codec := NewRouteNodeCodec()
+
+	spec := &RouteNodeSpec{
+		Routes: []Route{
+			{
+				Method: http.MethodGet,
+				Path:   "/",
+				Port:   node.MultiPort(node.PortOut, 0),
+			},
+		},
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	
+	assert.NoError(t, n.Close())
 }
 
 func BenchmarkRouteNode_SendAndReceive(b *testing.B) {

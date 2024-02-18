@@ -106,7 +106,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments = 1, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$")
@@ -137,7 +139,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments > 1, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg1, arg2 any) any { return arg2 })
+		n, _ := NewSyscallNode(func(arg1, arg2 any) any {
+			return arg2
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$", "$")
@@ -168,7 +172,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == Context, Returns == 1", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any { return arg })
+		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$", "$")
@@ -199,7 +205,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == 1, Returns > 2", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) (any, any) { return arg, arg })
+		n, _ := NewSyscallNode(func(arg any) (any, any) {
+			return arg, arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$")
@@ -230,7 +238,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == 1, Returns == error", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) error { return fmt.Errorf("%v", arg) })
+		n, _ := NewSyscallNode(func(arg any) error {
+			return fmt.Errorf("%v", arg)
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$")
@@ -274,7 +284,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Text, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.Text, "foo")
@@ -305,7 +317,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Typescript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.Typescript, "$")
@@ -336,7 +350,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Javascript, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.Javascript, "$")
@@ -367,7 +383,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSON, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSON, "\"foo\"")
@@ -398,7 +416,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSONata, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$")
@@ -429,7 +449,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.YAML, func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		n, _ := NewSyscallNode(func(arg any) any {
+			return arg
+		})
 		defer n.Close()
 
 		_ = n.SetArguments(language.YAML, "\"foo\"")
@@ -458,4 +480,27 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
+}
+
+func TestSyscallNodeCodec_Decode(t *testing.T) {
+	table := NewSyscallTable()
+
+	operation := faker.UUIDHyphenated()
+
+	table.Store(operation, func(arg any) any {
+		return arg
+	})
+
+	codec := NewSyscallNodeCodec(table)
+
+	spec := &SyscallNodeSpec{
+		Opcode:    operation,
+		Lang:      language.Text,
+		Arguments: []string{"foo"},
+	}
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }

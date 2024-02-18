@@ -14,21 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCombineNodeCodec_Decode(t *testing.T) {
-	codec := NewCombineNodeCodec()
-
-	spec := &CombineNodeSpec{
-		Depth:   0,
-		Inplace: false,
-	}
-
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-
-	assert.NoError(t, n.Close())
-}
-
 func TestNewCombineNode(t *testing.T) {
 	n := NewCombineNode(0, false)
 	assert.NotNil(t, n)
@@ -340,6 +325,21 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestCombineNodeCodec_Decode(t *testing.T) {
+	codec := NewCombineNodeCodec()
+
+	spec := &CombineNodeSpec{
+		Depth:   0,
+		Inplace: false,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }
 
 func BenchmarkCombineNode_SendAndReceive(b *testing.B) {

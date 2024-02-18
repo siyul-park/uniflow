@@ -14,6 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/xiatechs/jsonata-go"
@@ -29,7 +30,22 @@ type SyscallNode struct {
 	mu        sync.RWMutex
 }
 
-// ErrInvalidOperation is returned when an invalid operation is performed.
+// SyscallNodeSpec holds the specifications for creating a SyscallNode.
+type SyscallNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Opcode          string   `map:"opcode"`
+	Lang            string   `map:"lang"`
+	Arguments       []string `map:"arguments"`
+}
+
+// SyscallTable represents a table of system call operations.
+type SyscallTable struct {
+	data map[string]any
+	mu   sync.RWMutex
+}
+
+const KindSyscall = "syscall"
+
 var ErrInvalidOperation = errors.New("operation is invalid")
 
 // NewSyscallNode creates a new SyscallNode with the provided function.
@@ -199,4 +215,50 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		return packet.New(outPayloads[0]), nil
 	}
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
+}
+
+// NewSyscallTable creates a new SyscallTable instance.
+func NewSyscallTable() *SyscallTable {
+	return &SyscallTable{
+		data: make(map[string]any),
+	}
+}
+
+// Store adds or updates a system call opcode in the table.
+func (t *SyscallTable) Store(opcode string, fn any) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.data[opcode] = fn
+}
+
+// Load retrieves a system call opcode from the table.
+// It returns the opcode function and a boolean indicating if the opcode exists.
+func (t *SyscallTable) Load(opcode string) (any, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	fn, ok := t.data[opcode]
+	return fn, ok
+}
+
+// NewSyscallNodeCodec creates a new codec for SyscallNodeSpec.
+func NewSyscallNodeCodec(table *SyscallTable) scheme.Codec {
+	return scheme.CodecWithType[*SyscallNodeSpec](func(spec *SyscallNodeSpec) (node.Node, error) {
+		fn, ok := table.Load(spec.Opcode)
+		if !ok {
+			return nil, errors.WithStack(ErrInvalidOperation)
+		}
+		n, err := NewSyscallNode(fn)
+		if err != nil {
+			return nil, err
+		}
+		if len(spec.Arguments) > 0 {
+			if err := n.SetArguments(spec.Lang, spec.Arguments...); err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
 }

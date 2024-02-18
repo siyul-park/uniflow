@@ -44,17 +44,6 @@ const KindWebsocket = "websocket"
 
 var _ node.Node = (*WebSocketNode)(nil)
 
-// NewWebsocketNodeCodec creates a new codec for WebsocketNodeSpec.
-func NewWebsocketNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*WebsocketNodeSpec](func(spec *WebsocketNodeSpec) (node.Node, error) {
-		n := NewWebsocketNode()
-		n.SetTimeout(spec.Timeout)
-		n.SetReadBufferSize(spec.Read)
-		n.SetWriteBufferSize(spec.Write)
-		return n, nil
-	})
-}
-
 // NewWebsocketNode creates a new WebSocketNode instance.
 func NewWebsocketNode() *WebSocketNode {
 	n := &WebSocketNode{
@@ -301,4 +290,15 @@ func (n *WebSocketNode) backward(proc *process.Process) {
 			ioStream.Send(backPck)
 		}
 	}
+}
+
+// NewWebsocketNodeCodec creates a new codec for WebsocketNodeSpec.
+func NewWebsocketNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*WebsocketNodeSpec](func(spec *WebsocketNodeSpec) (node.Node, error) {
+		n := NewWebsocketNode()
+		n.SetTimeout(spec.Timeout)
+		n.SetReadBufferSize(spec.Read)
+		n.SetWriteBufferSize(spec.Write)
+		return n, nil
+	})
 }

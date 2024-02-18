@@ -15,21 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSnippetNodeCodec_Decode(t *testing.T) {
-	codec := NewSnippetNodeCodec()
-
-	spec := &SnippetNodeSpec{
-		Lang: language.Text,
-		Code: "",
-	}
-
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-
-	assert.NoError(t, n.Close())
-}
-
 func TestNewSnippetNode(t *testing.T) {
 	t.Run(language.Text, func(t *testing.T) {
 		n, err := NewSnippetNode(language.Text, "")
@@ -262,6 +247,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
+}
+
+func TestSnippetNodeCodec_Decode(t *testing.T) {
+	codec := NewSnippetNodeCodec()
+
+	spec := &SnippetNodeSpec{
+		Lang: language.Text,
+		Code: "",
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }
 
 func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {

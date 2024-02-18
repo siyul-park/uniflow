@@ -58,20 +58,6 @@ const (
 	anyLabel   = byte('*')
 )
 
-// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
-func NewRouteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*RouteNodeSpec](func(spec *RouteNodeSpec) (node.Node, error) {
-		n := NewRouteNode()
-		for _, route := range spec.Routes {
-			if err := n.Add(route.Method, route.Path, route.Port); err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-		}
-		return n, nil
-	})
-}
-
 // NewRouteNode creates a new RouteNode.
 func NewRouteNode() *RouteNode {
 	n := &RouteNode{tree: &route{}}
@@ -516,4 +502,18 @@ func (r *route) allowHeader() string {
 
 func (r *route) label() byte {
 	return r.prefix[0]
+}
+
+// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
+func NewRouteNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*RouteNodeSpec](func(spec *RouteNodeSpec) (node.Node, error) {
+		n := NewRouteNode()
+		for _, route := range spec.Routes {
+			if err := n.Add(route.Method, route.Path, route.Port); err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
 }
