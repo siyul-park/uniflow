@@ -2,7 +2,6 @@ package system
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -168,6 +167,37 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
+	t.Run("Arguments == Context, Returns == 1", func(t *testing.T) {
+		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.JSONata, "$", "$")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
 	t.Run("Arguments == 1, Returns > 2", func(t *testing.T) {
 		n, _ := NewSyscallNode(func(arg any) (any, any) { return arg, arg })
 		defer n.Close()
@@ -200,7 +230,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Arguments == 1, Returns == error", func(t *testing.T) {
-		n, _ := NewSyscallNode(func(arg any) error { return errors.New(fmt.Sprintf("%v", arg)) })
+		n, _ := NewSyscallNode(func(arg any) error { return fmt.Errorf("%v", arg) })
 		defer n.Close()
 
 		_ = n.SetArguments(language.JSONata, "$")

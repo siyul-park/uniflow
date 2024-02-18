@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -130,15 +131,31 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
+
 	inPayload := inPck.Payload()
 	input := inPayload.Interface()
 
 	ins := make([]reflect.Value, n.fn.Type().NumIn())
 
-	for i := range ins {
+	offset := 0
+	if n.fn.Type().NumIn() > 0 {
+		if n.fn.Type().In(0).Implements(contextInterface) {
+			ctx, cancel := context.WithCancel(context.Background())
+			go func() {
+				<-proc.Done()
+				cancel()
+			}()
+
+			ins[0] = reflect.ValueOf(ctx)
+			offset++
+		}
+	}
+
+	for i := offset; i < len(ins); i++ {
 		in := reflect.New(n.fn.Type().In(i))
-		if len(n.arguments) > i {
-			if argument, err := n.arguments[i](input); err != nil {
+		if len(n.arguments) > i-offset {
+			if argument, err := n.arguments[i-offset](input); err != nil {
 				return nil, packet.WithError(err, inPck)
 			} else if argument, err := primitive.MarshalBinary(argument); err != nil {
 				return nil, packet.WithError(err, inPck)
