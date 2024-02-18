@@ -137,7 +137,6 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	for i := range ins {
 		in := reflect.New(n.fn.Type().In(i))
-
 		if len(n.arguments) > i {
 			if argument, err := n.arguments[i](input); err != nil {
 				return nil, packet.WithError(err, inPck)
@@ -147,11 +146,11 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 				return nil, packet.WithError(err, inPck)
 			}
 		}
-
 		ins[i] = in.Elem()
 	}
 
 	outs := n.fn.Call(ins)
+
 	if len(outs) > 0 {
 		if err, ok := outs[len(outs)-1].Interface().(error); ok {
 			outs = outs[:len(outs)-1]
