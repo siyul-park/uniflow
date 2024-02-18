@@ -242,4 +242,190 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
+
+	t.Run(language.Text, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.Text, "foo")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run(language.Typescript, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.Typescript, "$")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run(language.Javascript, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.Javascript, "$")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run(language.JSON, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.JSON, "\"foo\"")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run(language.JSONata, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.JSONata, "$")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run(language.YAML, func(t *testing.T) {
+		n, _ := NewSyscallNode(func(arg any) any { return arg })
+		defer n.Close()
+
+		_ = n.SetArguments(language.YAML, "\"foo\"")
+
+		io := port.New()
+		ioPort := n.Port(node.PortIO)
+		ioPort.Link(io)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		ioStream := io.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		ioStream.Send(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioStream.Receive():
+			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
