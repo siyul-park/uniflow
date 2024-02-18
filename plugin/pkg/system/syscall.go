@@ -161,14 +161,6 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		}
 	}
 
-	if len(outs) == 1 {
-		if outPayload, err := primitive.MarshalBinary(outs[0].Interface()); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else {
-			return packet.New(outPayload), nil
-		}
-	}
-
 	outPayloads := make([]primitive.Value, len(outs))
 	for i, out := range outs {
 		if outPayload, err := primitive.MarshalBinary(out.Interface()); err != nil {
@@ -180,6 +172,9 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	if len(outPayloads) == 0 {
 		return packet.New(nil), nil
+	}
+	if len(outPayloads) == 1 {
+		return packet.New(outPayloads[0]), nil
 	}
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
 }
