@@ -126,9 +126,9 @@ func (g *Graph) Downwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 
 	var heads []uuid.UUID
 	if stem == (uuid.UUID{}) {
-		for cur, stems := range g.stems {
+		for leaf, stems := range g.stems {
 			if len(stems) == 0 {
-				heads = append(heads, cur)
+				heads = append(heads, leaf)
 			}
 		}
 	} else {
