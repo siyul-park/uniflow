@@ -146,8 +146,37 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 						}
 					}
 
-					outPck, errPck := n.action(proc, inPcks)
-					if outPck == nil && errPck == nil {
+					forward := func(outStream *port.Stream, outPck *packet.Packet, backward bool) {
+						inStreams = lo.Filter[*port.Stream](inStreams, func(_ *port.Stream, index int) bool {
+							return inPcks[i] != nil
+						})
+						inPcks = lo.Filter[*packet.Packet](inPcks, func(item *packet.Packet, _ int) bool {
+							return item != nil
+						})
+
+						for _, inPck := range inPcks {
+							proc.Graph().Add(inPck.ID(), outPck.ID())
+						}
+
+						if outStream.Links() > 0 {
+							for _, inStream := range inStreams {
+								proc.Stack().Push(outPck.ID(), inStream.ID())
+							}
+							outStream.Send(outPck)
+						} else if backward {
+							for _, inStream := range inStreams {
+								inStream.Send(outPck)
+							}
+						} else {
+							proc.Stack().Clear(outPck.ID())
+						}
+					}
+
+					if outPck, errPck := n.action(proc, inPcks); errPck != nil {
+						forward(errStream, errPck, true)
+					} else if outPck != nil {
+						forward(outStream, outPck, false)
+					} else {
 						if inPckLen == len(inStreams) {
 							for _, inPck := range inPcks {
 								proc.Stack().Clear(inPck.ID())
@@ -159,38 +188,7 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 									buffers[i][bufferLen-1] = inPck
 								}
 							}
-							return
 						}
-					}
-
-					inStreams = lo.Filter[*port.Stream](inStreams, func(_ *port.Stream, index int) bool {
-						return inPcks[i] != nil
-					})
-					inPcks = lo.Filter[*packet.Packet](inPcks, func(item *packet.Packet, _ int) bool {
-						return item != nil
-					})
-
-					sendPacket := func(outStream *port.Stream, outPck *packet.Packet) {
-						for _, inPck := range inPcks {
-							proc.Graph().Add(inPck.ID(), outPck.ID())
-						}
-
-						if outStream.Links() > 0 {
-							for _, inStream := range inStreams {
-								proc.Stack().Push(outPck.ID(), inStream.ID())
-							}
-							outStream.Send(outPck)
-						} else {
-							for _, inStream := range inStreams {
-								inStream.Send(outPck)
-							}
-						}
-					}
-
-					if errPck != nil {
-						sendPacket(errStream, errPck)
-					} else if outPck != nil {
-						sendPacket(outStream, outPck)
 					}
 				}()
 			}

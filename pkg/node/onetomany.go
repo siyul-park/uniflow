@@ -125,19 +125,24 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			} else {
 				inStream.Send(errPck)
 			}
-		} else if len(outPcks) > 0 && len(outStreams) > 0 {
+		} else if len(outPcks) > 0 {
+			forwarded := false
 			for i, outPck := range outPcks {
-				if len(outStreams) <= i || outPck == nil {
-					continue
-				}
-				outStream := outStreams[i]
-				if outStream.Links() == 0 {
-					continue
-				}
+				if outPck != nil && len(outStreams) > i {
+					outStream := outStreams[i]
+					if outStream.Links() == 0 {
+						continue
+					}
 
-				proc.Graph().Add(inPck.ID(), outPck.ID())
-				proc.Stack().Push(outPck.ID(), inStream.ID())
-				outStream.Send(outPck)
+					forwarded = true
+
+					proc.Graph().Add(inPck.ID(), outPck.ID())
+					proc.Stack().Push(outPck.ID(), inStream.ID())
+					outStream.Send(outPck)
+				}
+			}
+			if !forwarded {
+				proc.Stack().Clear(inPck.ID())
 			}
 		} else {
 			proc.Stack().Clear(inPck.ID())
