@@ -10,7 +10,7 @@ import (
 type Stack struct {
 	graph  *Graph
 	values map[uuid.UUID][]uuid.UUID
-	wait   sync.WaitGroup
+	waits  map[uuid.UUID]chan struct{}
 	mu     sync.RWMutex
 }
 
@@ -18,6 +18,7 @@ func newStack(graph *Graph) *Stack {
 	return &Stack{
 		graph:  graph,
 		values: make(map[uuid.UUID][]uuid.UUID),
+		waits:  make(map[uuid.UUID]chan struct{}),
 	}
 }
 
@@ -26,7 +27,6 @@ func (s *Stack) Push(key, value uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.wait.Add(1)
 	s.values[key] = append(s.values[key], value)
 }
 
@@ -39,7 +39,7 @@ func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
 		values := s.values[head]
 		if values[len(values)-1] == value {
 			s.values[head] = values[:len(values)-1]
-			s.wait.Done()
+			s.unwait(head)
 			return head, true
 		}
 	}
@@ -66,11 +66,11 @@ func (s *Stack) Clear(key uuid.UUID) {
 				return false
 			}
 		}
-
-		s.wait.Add(-1 * len(s.values[key]))
 		delete(s.values, key)
 		return true
 	})
+
+	s.unwait(key)
 }
 
 // Size returns the total number of elements in the stack and its branches reachable from the given key.
@@ -92,16 +92,44 @@ func (s *Stack) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, values := range s.values {
-		s.wait.Add(-1 * len(values))
+	for _, wait := range s.waits {
+		close(wait)
 	}
 
 	s.values = make(map[uuid.UUID][]uuid.UUID)
+	s.waits = make(map[uuid.UUID]chan struct{})
 }
 
 // Wait blocks until all values in the stack are emptied.
-func (s *Stack) Wait() {
-	s.wait.Wait()
+func (s *Stack) Wait(key uuid.UUID) {
+	wait := func() chan struct{} {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		wait, ok := s.waits[key]
+		if !ok {
+			wait = make(chan struct{})
+			s.waits[key] = wait
+		}
+
+		if s.leaves(key) == 0 {
+			close(wait)
+			delete(s.waits, key)
+		}
+
+		return wait
+	}()
+
+	<-wait
+}
+
+func (s *Stack) unwait(key uuid.UUID) {
+	for cur, wait := range s.waits {
+		if s.graph.Has(cur, key) && s.leaves(cur) == 0 {
+			close(wait)
+			delete(s.waits, cur)
+		}
+	}
 }
 
 func (s *Stack) heads(key uuid.UUID) []uuid.UUID {
@@ -115,4 +143,13 @@ func (s *Stack) heads(key uuid.UUID) []uuid.UUID {
 	})
 
 	return heads
+}
+
+func (s *Stack) leaves(key uuid.UUID) int {
+	leaves := 0
+	s.graph.Downwards(key, func(key uuid.UUID) bool {
+		leaves += len(s.values[key])
+		return true
+	})
+	return leaves
 }
