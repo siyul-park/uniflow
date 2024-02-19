@@ -87,7 +87,7 @@ func (p *Process) Exit(err error) {
 	}
 
 	p.wait.Wait()
-	p.stack.Wait()
+	p.stack.Wait(uuid.UUID{})
 
 	p.stack.Close()
 	p.share.Close()

@@ -194,29 +194,86 @@ func TestStack_Heads(t *testing.T) {
 }
 
 func TestStack_Wait(t *testing.T) {
-	g := newGraph()
-	s := newStack(g)
+	t.Run("Root Wait", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
 
-	k := uuid.Must(uuid.NewV7())
-	v := uuid.Must(uuid.NewV7())
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
 
-	s.Push(k, v)
-	s.Pop(k, v)
+		s.Push(k, v)
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	done := make(chan struct{})
-	go func() {
-		s.Wait()
-		close(done)
-	}()
+		done := make(chan struct{})
+		go func() {
+			s.Wait(uuid.UUID{})
+			close(done)
+		}()
 
-	select {
-	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
-	case <-done:
-	}
+		s.Pop(k, v)
+
+		select {
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+		case <-done:
+		}
+	})
+
+	t.Run("Node Wait", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
+
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
+
+		s.Push(k, v)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		done := make(chan struct{})
+		go func() {
+			s.Wait(k)
+			close(done)
+		}()
+
+		s.Pop(k, v)
+
+		select {
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+		case <-done:
+		}
+	})
+
+	t.Run("Lazy Wait", func(t *testing.T) {
+		g := newGraph()
+		s := newStack(g)
+
+		k := uuid.Must(uuid.NewV7())
+		v := uuid.Must(uuid.NewV7())
+
+		s.Push(k, v)
+		s.Pop(k, v)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		done := make(chan struct{})
+		go func() {
+			s.Wait(uuid.UUID{})
+			close(done)
+		}()
+
+		select {
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+		case <-done:
+		}
+	})
+
 }
 
 func TestStack_Close(t *testing.T) {

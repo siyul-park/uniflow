@@ -47,11 +47,11 @@ func (g *Graph) Delete(stem, leaf uuid.UUID) {
 // Has checks if there is a directed path from stem to leaf in the graph.
 func (g *Graph) Has(stem, leaf uuid.UUID) bool {
 	var ok bool
-	g.Upwards(leaf, func(key uuid.UUID) bool {
+	g.Downwards(stem, func(key uuid.UUID) bool {
 		if ok {
 			return false
 		}
-		if key == stem {
+		if key == leaf {
 			ok = true
 			return false
 		}
@@ -68,7 +68,7 @@ func (g *Graph) Stems(leaf uuid.UUID) []uuid.UUID {
 	if g.stems == nil {
 		return nil
 	}
-	return g.stems[leaf]
+	return g.stems[leaf][:]
 }
 
 // Leaves returns the leaves associated with the given stem in the graph.
@@ -79,15 +79,37 @@ func (g *Graph) Leaves(stem uuid.UUID) []uuid.UUID {
 	if g.leaves == nil {
 		return nil
 	}
-	return g.leaves[stem]
+
+	var leaves []uuid.UUID
+	if stem == (uuid.UUID{}) {
+		for leaf, stems := range g.stems {
+			if len(stems) == 0 {
+				leaves = append(leaves, leaf)
+			}
+		}
+	} else {
+		leaves = append(leaves, g.leaves[stem]...)
+	}
+
+	return leaves
 }
 
 // Upwards traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
-func (g *Graph) Upwards(leaf uuid.UUID, f func(uuid.UUID) bool) {
+func (g *Graph) Upwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	heads := []uuid.UUID{leaf}
+	var heads []uuid.UUID
+	if stem == (uuid.UUID{}) {
+		for leaf, stems := range g.stems {
+			if len(stems) == 0 {
+				heads = append(heads, leaf)
+			}
+		}
+	} else {
+		heads = append(heads, stem)
+	}
+
 	visits := make(map[uuid.UUID]struct{})
 
 	for len(heads) > 0 {
