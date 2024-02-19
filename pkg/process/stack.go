@@ -39,7 +39,7 @@ func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
 		values := s.values[head]
 		if values[len(values)-1] == value {
 			s.values[head] = values[:len(values)-1]
-			s.unwait(key)
+			s.unwait(head)
 			return head, true
 		}
 	}
@@ -147,17 +147,9 @@ func (s *Stack) heads(key uuid.UUID) []uuid.UUID {
 
 func (s *Stack) leaves(key uuid.UUID) int {
 	leaves := 0
-
-	if key == (uuid.UUID{}) {
-		for _, value := range s.values {
-			leaves += len(value)
-		}
-	} else {
-		s.graph.Downwards(key, func(key uuid.UUID) bool {
-			leaves += len(s.values[key])
-			return true
-		})
-	}
-
+	s.graph.Downwards(key, func(key uuid.UUID) bool {
+		leaves += len(s.values[key])
+		return true
+	})
 	return leaves
 }

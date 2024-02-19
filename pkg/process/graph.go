@@ -95,21 +95,11 @@ func (g *Graph) Leaves(stem uuid.UUID) []uuid.UUID {
 }
 
 // Upwards traverses the graph upwards from the specified leaf, invoking the provided function on each visited node.
-func (g *Graph) Upwards(stem uuid.UUID, f func(uuid.UUID) bool) {
+func (g *Graph) Upwards(leaf uuid.UUID, f func(uuid.UUID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	var heads []uuid.UUID
-	if stem == (uuid.UUID{}) {
-		for leaf, stems := range g.stems {
-			if len(stems) == 0 {
-				heads = append(heads, leaf)
-			}
-		}
-	} else {
-		heads = append(heads, stem)
-	}
-
+	heads := []uuid.UUID{leaf}
 	visits := make(map[uuid.UUID]struct{})
 
 	for len(heads) > 0 {
@@ -130,11 +120,20 @@ func (g *Graph) Upwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 }
 
 // Downwards traverses the graph downwards from the specified steam, invoking the provided function on each visited node.
-func (g *Graph) Downwards(steam uuid.UUID, f func(uuid.UUID) bool) {
+func (g *Graph) Downwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	heads := []uuid.UUID{steam}
+	var heads []uuid.UUID
+	if stem == (uuid.UUID{}) {
+		for cur, stems := range g.stems {
+			if len(stems) == 0 {
+				heads = append(heads, cur)
+			}
+		}
+	} else {
+		heads = append(heads, stem)
+	}
 	visits := make(map[uuid.UUID]struct{})
 
 	for len(heads) > 0 {
