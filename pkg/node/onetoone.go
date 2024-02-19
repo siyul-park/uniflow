@@ -120,22 +120,24 @@ func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.
 			return
 		}
 
-		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Graph().Add(inPck.ID(), errPck.ID())
-			if errStream.Links() > 0 {
-				proc.Stack().Push(errPck.ID(), inStream.ID())
-				errStream.Send(errPck)
-			} else {
-				inStream.Send(errPck)
-			}
-		} else if outPck != nil && outStream.Links() > 0 {
+		forward := func(outStream *port.Stream, outPck *packet.Packet, backward bool) {
 			proc.Graph().Add(inPck.ID(), outPck.ID())
-			if outStream != inStream {
-				proc.Stack().Push(outPck.ID(), inStream.ID())
+			if outStream.Links() > 0 {
+				if outStream != inStream {
+					proc.Stack().Push(outPck.ID(), inStream.ID())
+				}
 				outStream.Send(outPck)
-			} else {
+			} else if backward {
 				inStream.Send(outPck)
+			} else {
+				proc.Stack().Clear(outPck.ID())
 			}
+		}
+
+		if outPck, errPck := n.action(proc, inPck); errPck != nil {
+			forward(errStream, errPck, true)
+		} else if outPck != nil {
+			forward(outStream, outPck, false)
 		} else {
 			proc.Stack().Clear(inPck.ID())
 		}
