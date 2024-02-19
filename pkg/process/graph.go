@@ -82,11 +82,7 @@ func (g *Graph) Leaves(stem uuid.UUID) []uuid.UUID {
 
 	var leaves []uuid.UUID
 	if stem == (uuid.UUID{}) {
-		for key := range g.leaves {
-			if len(g.stems[key]) == 0 {
-				leaves = append(leaves, key)
-			}
-		}
+		leaves = append(leaves, g.roots()...)
 	} else {
 		leaves = append(leaves, g.leaves[stem]...)
 	}
@@ -126,11 +122,7 @@ func (g *Graph) Downwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 
 	var heads []uuid.UUID
 	if stem == (uuid.UUID{}) {
-		for key := range g.leaves {
-			if len(g.stems[key]) == 0 {
-				heads = append(heads, key)
-			}
-		}
+		heads = append(heads, g.roots()...)
 	} else {
 		heads = append(heads, stem)
 	}
@@ -160,6 +152,16 @@ func (g *Graph) Close() {
 
 	g.stems = make(links)
 	g.leaves = make(links)
+}
+
+func (g *Graph) roots() []uuid.UUID {
+	var roots []uuid.UUID
+	for key := range g.leaves {
+		if len(g.stems[key]) == 0 {
+			roots = append(roots, key)
+		}
+	}
+	return roots
 }
 
 func (l links) has(key, value uuid.UUID) bool {
