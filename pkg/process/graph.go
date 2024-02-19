@@ -82,9 +82,9 @@ func (g *Graph) Leaves(stem uuid.UUID) []uuid.UUID {
 
 	var leaves []uuid.UUID
 	if stem == (uuid.UUID{}) {
-		for leaf, stems := range g.stems {
-			if len(stems) == 0 {
-				leaves = append(leaves, leaf)
+		for key := range g.leaves {
+			if len(g.stems[key]) == 0 {
+				leaves = append(leaves, key)
 			}
 		}
 	} else {
@@ -126,9 +126,9 @@ func (g *Graph) Downwards(stem uuid.UUID, f func(uuid.UUID) bool) {
 
 	var heads []uuid.UUID
 	if stem == (uuid.UUID{}) {
-		for leaf, stems := range g.stems {
-			if len(stems) == 0 {
-				heads = append(heads, leaf)
+		for key := range g.leaves {
+			if len(g.stems[key]) == 0 {
+				heads = append(heads, key)
 			}
 		}
 	} else {

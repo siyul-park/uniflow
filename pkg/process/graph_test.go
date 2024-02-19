@@ -43,6 +43,29 @@ func TestGraph_Delete(t *testing.T) {
 	assert.False(t, g.Has(v2, v1))
 }
 
+func TestGraph_Stems(t *testing.T) {
+	g := newGraph()
+
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
+
+	g.Add(v1, v2)
+
+	assert.Equal(t, []uuid.UUID{v1}, g.Stems(v2))
+}
+
+func TestGraph_Leaves(t *testing.T) {
+	g := newGraph()
+
+	v1 := uuid.Must(uuid.NewV7())
+	v2 := uuid.Must(uuid.NewV7())
+
+	g.Add(v1, v2)
+
+	assert.Equal(t, []uuid.UUID{v1}, g.Leaves(uuid.UUID{}))
+	assert.Equal(t, []uuid.UUID{v2}, g.Leaves(v1))
+}
+
 func TestGraph_Upwards(t *testing.T) {
 	g := newGraph()
 
@@ -60,19 +83,37 @@ func TestGraph_Upwards(t *testing.T) {
 }
 
 func TestGraph_Downwards(t *testing.T) {
-	g := newGraph()
+	t.Run("Root", func(t *testing.T) {
+		g := newGraph()
 
-	v1 := uuid.Must(uuid.NewV7())
-	v2 := uuid.Must(uuid.NewV7())
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
 
-	g.Add(v1, v2)
+		g.Add(v1, v2)
 
-	var trace []uuid.UUID
-	g.Downwards(v1, func(v uuid.UUID) bool {
-		trace = append(trace, v)
-		return true
+		var trace []uuid.UUID
+		g.Downwards(uuid.UUID{}, func(v uuid.UUID) bool {
+			trace = append(trace, v)
+			return true
+		})
+		assert.Equal(t, []uuid.UUID{v1, v2}, trace)
 	})
-	assert.Equal(t, []uuid.UUID{v1, v2}, trace)
+
+	t.Run("Node", func(t *testing.T) {
+		g := newGraph()
+
+		v1 := uuid.Must(uuid.NewV7())
+		v2 := uuid.Must(uuid.NewV7())
+
+		g.Add(v1, v2)
+
+		var trace []uuid.UUID
+		g.Downwards(v1, func(v uuid.UUID) bool {
+			trace = append(trace, v)
+			return true
+		})
+		assert.Equal(t, []uuid.UUID{v1, v2}, trace)
+	})
 }
 
 func TestGraph_Close(t *testing.T) {
