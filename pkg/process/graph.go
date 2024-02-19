@@ -107,6 +107,31 @@ func (g *Graph) Upwards(leaf uuid.UUID, f func(uuid.UUID) bool) {
 	}
 }
 
+// Downwards traverses the graph downwards from the specified steam, invoking the provided function on each visited node.
+func (g *Graph) Downwards(steam uuid.UUID, f func(uuid.UUID) bool) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	heads := []uuid.UUID{steam}
+	visits := make(map[uuid.UUID]struct{})
+
+	for len(heads) > 0 {
+		head := heads[0]
+		heads = heads[1:]
+
+		if _, ok := visits[head]; ok {
+			continue
+		}
+		visits[head] = struct{}{}
+
+		if !f(head) {
+			continue
+		}
+
+		heads = append(heads, g.leaves[head]...)
+	}
+}
+
 // Close remove all values in the graph.
 func (g *Graph) Close() {
 	g.mu.Lock()
