@@ -54,7 +54,7 @@ func TestProcess_Lock(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		proc.Stack().Wait(uuid.UUID{})
+		proc.Stack().Done(uuid.UUID{})
 		close(done)
 	}()
 

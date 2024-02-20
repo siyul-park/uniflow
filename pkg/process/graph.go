@@ -46,6 +46,10 @@ func (g *Graph) Delete(stem, leaf uuid.UUID) {
 
 // Has checks if there is a directed path from stem to leaf in the graph.
 func (g *Graph) Has(stem, leaf uuid.UUID) bool {
+	if stem == (uuid.UUID{}) {
+		return true
+	}
+
 	var ok bool
 	g.Downwards(stem, func(key uuid.UUID) bool {
 		if ok {

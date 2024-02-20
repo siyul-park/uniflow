@@ -86,8 +86,9 @@ func (p *Process) Exit(err error) {
 	default:
 	}
 
+	<-p.stack.Done(uuid.UUID{})
+
 	p.wait.Wait()
-	p.stack.Wait(uuid.UUID{})
 
 	p.stack.Close()
 	p.share.Close()

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -235,6 +236,8 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 	var inPck *packet.Packet
 	var ok bool
 	select {
+	case <-proc.Stack().Done(uuid.UUID{}):
+		return nil, nil
 	case inPck, ok = <-ioStream.Receive():
 		if ok {
 			_, ok = proc.Stack().Pop(inPck.ID(), ioStream.ID())

@@ -193,8 +193,8 @@ func TestStack_Heads(t *testing.T) {
 	})
 }
 
-func TestStack_Wait(t *testing.T) {
-	t.Run("Root Wait", func(t *testing.T) {
+func TestStack_Done(t *testing.T) {
+	t.Run("Root Done", func(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
@@ -206,11 +206,7 @@ func TestStack_Wait(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		done := make(chan struct{})
-		go func() {
-			s.Wait(uuid.UUID{})
-			close(done)
-		}()
+		done := s.Done(uuid.UUID{})
 
 		s.Pop(k, v)
 
@@ -221,7 +217,7 @@ func TestStack_Wait(t *testing.T) {
 		}
 	})
 
-	t.Run("Node Wait", func(t *testing.T) {
+	t.Run("Node Done", func(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
@@ -233,11 +229,7 @@ func TestStack_Wait(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		done := make(chan struct{})
-		go func() {
-			s.Wait(k)
-			close(done)
-		}()
+		done := s.Done(k)
 
 		s.Pop(k, v)
 
@@ -248,7 +240,7 @@ func TestStack_Wait(t *testing.T) {
 		}
 	})
 
-	t.Run("Lazy Wait", func(t *testing.T) {
+	t.Run("Lazy Done", func(t *testing.T) {
 		g := newGraph()
 		s := newStack(g)
 
@@ -261,11 +253,7 @@ func TestStack_Wait(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		done := make(chan struct{})
-		go func() {
-			s.Wait(uuid.UUID{})
-			close(done)
-		}()
+		done := s.Done(uuid.UUID{})
 
 		select {
 		case <-ctx.Done():
