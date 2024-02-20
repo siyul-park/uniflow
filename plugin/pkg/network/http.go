@@ -214,10 +214,6 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 		proc.Stack().Push(pck.ID(), outStream.ID())
 	}))
 
-	if ioStream.Links()+outStream.Links() == 0 {
-		return nil, nil
-	}
-
 	outPayload, err := primitive.MarshalBinary(req)
 	if err != nil {
 		return nil, err
@@ -226,12 +222,8 @@ func (n *HTTPNode) action(proc *process.Process, req *HTTPPayload) (*HTTPPayload
 	ioPck := packet.New(outPayload)
 	outPck := packet.New(outPayload)
 
-	if ioStream.Links() > 0 {
-		ioStream.Send(ioPck)
-	}
-	if outStream.Links() > 0 {
-		outStream.Send(outPck)
-	}
+	ioStream.Send(ioPck)
+	outStream.Send(outPck)
 
 	var inPck *packet.Packet
 	var ok bool
