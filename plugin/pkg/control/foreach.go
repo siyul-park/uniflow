@@ -112,13 +112,13 @@ func (n *ForeachNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 		inPayloads := n.slice(inPayload, n.depth)
 
-		var outPcks []*packet.Packet
-		for _, inPayload := range inPayloads {
+		outPcks := make([]*packet.Packet, len(inPayloads))
+		for i, inPayload := range inPayloads {
 			outPck := packet.New(inPayload)
 			proc.Graph().Add(inPck.ID(), outPck.ID())
 			ioStream.Send(outPck)
 
-			outPcks = append(outPcks, outPck)
+			outPcks[i] = outPck
 		}
 
 		backPcks[inPck] = nil
@@ -137,8 +137,12 @@ func (n *ForeachNode) forward(proc *process.Process) {
 			}
 
 			outPck := packet.New(primitive.NewSlice(outPayloads...))
-			proc.Graph().Add(inPck.ID(), outPck.ID())
-			outStream.Send(outPck)
+			if outStream.Links() > 0 {
+				proc.Graph().Add(inPck.ID(), outPck.ID())
+				outStream.Send(outPck)
+			} else {
+				proc.Stack().Clear(inPck.ID())
+			}
 		}()
 	}
 }
