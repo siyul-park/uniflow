@@ -28,6 +28,9 @@ func TestIterateNode_Port(t *testing.T) {
 	p := n.Port(node.PortIn)
 	assert.NotNil(t, p)
 
+	p = n.Port(node.PortOut)
+	assert.NotNil(t, p)
+
 	p = n.Port(node.MultiPort(node.PortOut, 0))
 	assert.NotNil(t, p)
 
