@@ -44,6 +44,8 @@ func (n *IterateNode) Port(name string) *port.Port {
 	switch name {
 	case node.PortIn:
 		return n.inPort
+	case node.PortOut:
+		return n.outPorts[0]
 	default:
 		if i, ok := node.IndexOfMultiPort(node.PortOut, name); ok {
 			if i < len(n.outPorts) {
