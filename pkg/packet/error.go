@@ -33,6 +33,10 @@ func WithError(err error, cause *Packet) *Packet {
 // the Packet contains error information. If the Packet does not represent an error, the
 // returned error is nil, and the boolean is false.
 func AsError(pck *Packet) (error, bool) {
+	if pck == nil {
+		return nil, false
+	}
+	
 	payload := pck.Payload()
 
 	if isError, ok := primitive.Pick[bool](payload, "__error"); !ok && !isError {
