@@ -36,7 +36,7 @@ func AsError(pck *Packet) (error, bool) {
 	if pck == nil {
 		return nil, false
 	}
-	
+
 	payload := pck.Payload()
 
 	if isError, ok := primitive.Pick[bool](payload, "__error"); !ok && !isError {

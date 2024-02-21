@@ -3,6 +3,7 @@ package control
 import (
 	"sync"
 
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -92,12 +93,16 @@ func (n *IterateNode) forward(proc *process.Process) {
 
 		var outPayloads []primitive.Value
 		if inPayloads, ok := inPayload.(*primitive.Slice); ok {
-			outPayloads = inPayloads.Values()
+			if n.batch == 1 {
+				outPayloads = inPayloads.Values()
+			} else {
+				for _, chunk := range lo.Chunk(inPayloads.Values(), n.batch) {
+					outPayloads = append(outPayloads, primitive.NewSlice(chunk...))
+				}
+			}
 		} else {
 			outPayloads = append(outPayloads, inPayload)
 		}
-
-		// TODO: batch
 
 		var backPcks []*packet.Packet
 		var errPck *packet.Packet
