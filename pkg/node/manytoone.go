@@ -115,8 +115,63 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 	}))
 
 	buffers := make([][]*packet.Packet, len(inStreams))
-	mu := &sync.Mutex{}
 
+	consume := func(index int) {
+		inPcks := make([]*packet.Packet, len(inStreams))
+		for i, buffer := range buffers {
+			if len(buffer) > index {
+				inPcks[i] = buffer[index]
+				buffers[i] = append(buffer[:index], buffer[index+1:]...)
+			}
+		}
+
+		forward := func(outStream *port.Stream, outPck *packet.Packet, backward bool) {
+			inStreams = lo.Filter[*port.Stream](inStreams, func(_ *port.Stream, i int) bool {
+				return inPcks[i] != nil
+			})
+			inPcks = lo.Filter[*packet.Packet](inPcks, func(item *packet.Packet, _ int) bool {
+				return item != nil
+			})
+
+			for _, inPck := range inPcks {
+				proc.Graph().Add(inPck.ID(), outPck.ID())
+			}
+
+			if outStream.Links() > 0 {
+				for _, inStream := range inStreams {
+					proc.Stack().Push(outPck.ID(), inStream.ID())
+				}
+				outStream.Send(outPck)
+			} else if backward {
+				for _, inStream := range inStreams {
+					inStream.Send(outPck)
+				}
+			} else {
+				proc.Stack().Clear(outPck.ID())
+			}
+		}
+
+		if outPck, errPck := n.action(proc, inPcks); errPck != nil {
+			forward(errStream, errPck, true)
+		} else if outPck != nil {
+			forward(outStream, outPck, false)
+		} else {
+			if lo.Count[*packet.Packet](inPcks, nil) == 0 {
+				for _, inPck := range inPcks {
+					proc.Stack().Clear(inPck.ID())
+				}
+			} else {
+				for i, inPck := range inPcks {
+					if inPck != nil {
+						buffers[i] = append(buffers[i][:index+1], buffers[i][index:]...)
+						buffers[i][index] = inPck
+					}
+				}
+			}
+		}
+	}
+
+	mu := &sync.Mutex{}
 	wg := &sync.WaitGroup{}
 	for i, inStream := range inStreams {
 		wg.Add(1)
@@ -128,69 +183,12 @@ func (n *ManyToOneNode) forward(proc *process.Process) {
 					return
 				}
 
-				func() {
-					mu.Lock()
-					defer mu.Unlock()
+				mu.Lock()
 
-					buffers[i] = append(buffers[i], inPck)
-					bufferLen := len(buffers[i])
+				buffers[i] = append(buffers[i], inPck)
+				consume(len(buffers[i]) - 1)
 
-					inPcks := make([]*packet.Packet, len(inStreams))
-					inPckLen := 0
-					for i, buffer := range buffers {
-						if len(buffer) >= bufferLen {
-							inPcks[i] = buffer[bufferLen-1]
-							inPckLen += 1
-
-							buffers[i] = append(buffer[:bufferLen-1], buffer[bufferLen:]...)
-						}
-					}
-
-					forward := func(outStream *port.Stream, outPck *packet.Packet, backward bool) {
-						inStreams = lo.Filter[*port.Stream](inStreams, func(_ *port.Stream, index int) bool {
-							return inPcks[i] != nil
-						})
-						inPcks = lo.Filter[*packet.Packet](inPcks, func(item *packet.Packet, _ int) bool {
-							return item != nil
-						})
-
-						for _, inPck := range inPcks {
-							proc.Graph().Add(inPck.ID(), outPck.ID())
-						}
-
-						if outStream.Links() > 0 {
-							for _, inStream := range inStreams {
-								proc.Stack().Push(outPck.ID(), inStream.ID())
-							}
-							outStream.Send(outPck)
-						} else if backward {
-							for _, inStream := range inStreams {
-								inStream.Send(outPck)
-							}
-						} else {
-							proc.Stack().Clear(outPck.ID())
-						}
-					}
-
-					if outPck, errPck := n.action(proc, inPcks); errPck != nil {
-						forward(errStream, errPck, true)
-					} else if outPck != nil {
-						forward(outStream, outPck, false)
-					} else {
-						if inPckLen == len(inStreams) {
-							for _, inPck := range inPcks {
-								proc.Stack().Clear(inPck.ID())
-							}
-						} else {
-							for i, inPck := range inPcks {
-								if inPck != nil {
-									buffers[i] = append(buffers[i][:bufferLen], buffers[i][bufferLen-1:]...)
-									buffers[i][bufferLen-1] = inPck
-								}
-							}
-						}
-					}
-				}()
+				mu.Unlock()
 			}
 		}(i, inStream)
 	}
