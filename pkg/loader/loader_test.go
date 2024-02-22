@@ -274,7 +274,9 @@ func TestLoader_LoadAll(t *testing.T) {
 
 		r2, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
-		assert.NotEqual(t, r1, r2)
+		assert.Len(t, r2, 1)
+
+		assert.False(t, r1[0] == r2[0])
 	})
 }
 

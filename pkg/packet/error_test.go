@@ -16,7 +16,6 @@ func TestWithError(t *testing.T) {
 	pck2 := WithError(err, pck1)
 
 	assert.NotNil(t, pck2)
-	assert.NotZero(t, pck2.ID())
 
 	payload, ok := pck2.Payload().(*primitive.Map)
 	assert.True(t, ok)

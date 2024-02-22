@@ -3,72 +3,69 @@ package node
 import (
 	"sync"
 
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// OneToManyNode represents a node that processes *packet.Packet with one input and many outputs.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-	inPort   *port.Port
-	outPorts []*port.Port
-	errPort  *port.Port
+	inPort   *port.InPort
+	outPorts []*port.OutPort
+	errPort  *port.OutPort
 	mu       sync.RWMutex
 }
 
 var _ Node = (*OneToManyNode)(nil)
 
-// NewOneToManyNode creates a new OneToManyNode.
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
-		inPort:   port.New(),
+		inPort:   port.NewIn(),
 		outPorts: nil,
-		errPort:  port.New(),
+		errPort:  port.NewOut(),
 	}
 
 	if n.action != nil {
-		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-		n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			n.mu.RLock()
-			defer n.mu.RUnlock()
-
-			errStream := n.errPort.Open(proc)
-
-			n.backward(proc, errStream)
-		}))
+		n.inPort.AddHandler(port.HandlerFunc(n.forward))
+		n.errPort.AddHandler(port.HandlerFunc(n.catch))
 	}
 
 	return n
 }
 
-// Port returns the specified port.
-func (n *OneToManyNode) Port(name string) *port.Port {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (n *OneToManyNode) In(name string) *port.InPort {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	switch name {
 	case PortIn:
 		return n.inPort
+	}
+
+	return nil
+}
+
+func (n *OneToManyNode) Out(name string) *port.OutPort {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	switch name {
 	case PortErr:
 		return n.errPort
 	default:
 		if i, ok := IndexOfMultiPort(PortOut, name); ok {
 			for j := 0; j <= i; j++ {
 				if len(n.outPorts) <= j {
-					outPort := port.New()
+					outPort := port.NewOut()
+					n.outPorts = append(n.outPorts, outPort)
+
 					if n.action != nil {
-						outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-							n.mu.RLock()
-							defer n.mu.RUnlock()
-
-							outStream := outPort.Open(proc)
-
-							n.backward(proc, outStream)
+						outPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+							n.backward(proc, j)
 						}))
 					}
-					n.outPorts = append(n.outPorts, outPort)
 				}
 			}
 
@@ -79,7 +76,6 @@ func (n *OneToManyNode) Port(name string) *port.Port {
 	return nil
 }
 
-// Close closes all ports.
 func (n *OneToManyNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -94,73 +90,81 @@ func (n *OneToManyNode) Close() error {
 }
 
 func (n *OneToManyNode) forward(proc *process.Process) {
-	inStream := n.inPort.Open(proc)
-	outStreams := make([]*port.Stream, len(n.outPorts))
-	for i, p := range n.outPorts {
-		outStreams[i] = p.Open(proc)
-	}
-	errStream := n.errPort.Open(proc)
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
-	for _, outStream := range outStreams {
-		outStream := outStream
-		outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
-			proc.Stack().Push(pck.ID(), outStream.ID())
-		}))
+	inReader := n.inPort.Open(proc)
+	outWriters := make([]*port.Writer, len(n.outPorts))
+	for i, outPort := range n.outPorts {
+		outWriters[i] = outPort.Open(proc)
 	}
-	errStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
-		proc.Stack().Push(pck.ID(), errStream.ID())
-	}))
+	errWriter := n.errPort.Open(proc)
 
 	for {
-		inPck, ok := <-inStream.Receive()
+		inPck, ok := <-inReader.Read()
 		if !ok {
 			return
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Graph().Add(inPck.ID(), errPck.ID())
-			if errStream.Links() > 0 {
-				errStream.Send(errPck)
+			proc.Stack().Add(inPck, errPck)
+			if errWriter.Links() > 0 {
+				errWriter.Write(errPck)
 			} else {
-				inStream.Send(errPck)
-			}
-		} else if len(outPcks) > 0 {
-			outLinks := 0
-			for i, outPck := range outPcks {
-				if outPck != nil && len(outStreams) > i {
-					outStream := outStreams[i]
-					outLinks += outStream.Links()
-
-					proc.Graph().Add(inPck.ID(), outPck.ID())
-					outStream.Send(outPck)
-				}
-			}
-			if outLinks == 0 {
-				proc.Stack().Clear(inPck.ID())
+				inReader.Receive(errPck)
 			}
 		} else {
-			proc.Stack().Clear(inPck.ID())
+			outWriters = lo.Filter(outWriters, func(_ *port.Writer, i int) bool {
+				return len(outPcks) > i && outPcks[i] != nil
+			})
+			outPcks = lo.Filter(outPcks, func(item *packet.Packet, _ int) bool {
+				return item != nil
+			})
+
+			if len(outPcks) > 0 {
+				for _, outPck := range outPcks {
+					proc.Stack().Add(inPck, outPck)
+				}
+				for i, outPck := range outPcks {
+					outWriters[i].Write(outPck)
+				}
+			} else {
+				proc.Stack().Clear(inPck)
+			}
 		}
 	}
 }
 
-func (n *OneToManyNode) backward(proc *process.Process, outStream *port.Stream) {
-	var inStream *port.Stream
+func (n *OneToManyNode) backward(proc *process.Process, index int) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inReader := n.inPort.Open(proc)
+	outWriter := n.outPorts[index].Open(proc)
 
 	for {
-		backPck, ok := <-outStream.Receive()
+		backPck, ok := <-outWriter.Receive()
 		if !ok {
 			return
 		}
 
-		if _, ok := proc.Stack().Pop(backPck.ID(), outStream.ID()); !ok {
-			continue
+		inReader.Receive(backPck)
+	}
+}
+
+func (n *OneToManyNode) catch(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inReader := n.inPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
+
+	for {
+		backPck, ok := <-errWriter.Receive()
+		if !ok {
+			return
 		}
 
-		if inStream == nil {
-			inStream = n.inPort.Open(proc)
-		}
-
-		inStream.Send(backPck)
+		inReader.Receive(backPck)
 	}
 }

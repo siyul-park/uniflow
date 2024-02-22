@@ -54,38 +54,36 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
-		inStream.Send(inPck)
+		inWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
-			outStream.Send(outPck)
+			outReader0.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
-		case backPck := <-inStream.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -98,38 +96,36 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
-		inStream.Send(inPck)
+		inWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
-			outStream.Send(outPck)
+			outReader0.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
-		case backPck := <-inStream.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -142,38 +138,36 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
-		inStream.Send(inPck)
+		inWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
-			outStream.Send(outPck)
+			outReader0.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
-		case backPck := <-inStream.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -208,32 +202,29 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
-		defer proc.Stack().Close()
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
 		b.ResetTimer()
 
-		b.RunParallel(func(p *testing.PB) {
-			for p.Next() {
-				inStream.Send(inPck)
-				<-outStream.Receive()
-			}
-		})
+		for i := 0; i < b.N; i++ {
+			inWriter.Write(inPck)
+			outPck := <-outReader0.Read()
+			outReader0.Receive(outPck)
+			<-inWriter.Receive()
+		}
 	})
 
 	b.Run(language.Javascript, func(b *testing.B) {
@@ -242,65 +233,59 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
-		defer proc.Stack().Close()
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
 		b.ResetTimer()
 
-		b.RunParallel(func(p *testing.PB) {
-			for p.Next() {
-				inStream.Send(inPck)
-				<-outStream.Receive()
-			}
-		})
+		for i := 0; i < b.N; i++ {
+			inWriter.Write(inPck)
+			outPck := <-outReader0.Read()
+			outReader0.Receive(outPck)
+			<-inWriter.Receive()
+		}
 	})
 
 	b.Run(language.JSONata, func(b *testing.B) {
-		n := NewSwitchNode(language.JSONata)
+		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
-		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
 
-		in := port.New()
-		inPort := n.Port(node.PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		out := port.New()
-		outPort := n.Port(node.MultiPort(node.PortOut, 0))
-		outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Exit(nil)
-		defer proc.Stack().Close()
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
 		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
 		inPck := packet.New(inPayload)
 
 		b.ResetTimer()
 
-		b.RunParallel(func(p *testing.PB) {
-			for p.Next() {
-				inStream.Send(inPck)
-				<-outStream.Receive()
-			}
-		})
+		for i := 0; i < b.N; i++ {
+			inWriter.Write(inPck)
+			outPck := <-outReader0.Read()
+			outReader0.Receive(outPck)
+			<-inWriter.Receive()
+		}
 	})
 }

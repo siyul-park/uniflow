@@ -24,246 +24,253 @@ func TestOneToOneNode_Port(t *testing.T) {
 	n := NewOneToOneNode(nil)
 	defer n.Close()
 
-	p := n.Port(PortIO)
-	assert.NotNil(t, p)
-
-	p = n.Port(PortIn)
-	assert.NotNil(t, p)
-
-	p = n.Port(PortOut)
-	assert.NotNil(t, p)
-
-	p = n.Port(PortErr)
-	assert.NotNil(t, p)
+	assert.NotNil(t, n.In(PortIO))
+	assert.NotNil(t, n.In(PortIn))
+	assert.NotNil(t, n.Out(PortOut))
+	assert.NotNil(t, n.Out(PortErr))
 }
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
-	t.Run("IO", func(t *testing.T) {
-		t.Run("With Out Port", func(t *testing.T) {
-			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			})
-			defer n.Close()
-
-			io := port.New()
-			ioPort := n.Port(PortIO)
-			ioPort.Link(io)
-
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			ioStream := io.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
-			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
-
-			select {
-			case outPck := <-ioStream.Receive():
-				assert.Equal(t, inPayload, outPck.Payload())
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
+	t.Run("IO -> IO", func(t *testing.T) {
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
 		})
+		defer n.Close()
 
-		t.Run("With Err Port", func(t *testing.T) {
-			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
-			})
-			defer n.Close()
+		io := port.NewOut()
+		io.Link(n.In(PortIO))
 
-			io := port.New()
-			ioPort := n.Port(PortIO)
-			ioPort.Link(io)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-			err := port.New()
-			errPort := n.Port(PortErr)
-			errPort.Link(err)
+		ioWriter := io.Open(proc)
 
-			proc := process.New()
-			defer proc.Exit(nil)
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
 
-			ioStream := io.Open(proc)
-			errStream := err.Open(proc)
+		ioWriter.Write(inPck)
 
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-			ioStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
-
-			select {
-			case outPck := <-errStream.Receive():
-				assert.NotNil(t, outPck)
-				errStream.Send(outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
-
-			select {
-			case backPck := <-ioStream.Receive():
-				assert.NotNil(t, backPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
-		})
+		select {
+		case outPck := <-ioWriter.Receive():
+			assert.Equal(t, inPayload, outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 	})
 
-	t.Run("In/Out", func(t *testing.T) {
-		t.Run("With Out Port", func(t *testing.T) {
-			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			})
-			defer n.Close()
-
-			in := port.New()
-			inPort := n.Port(PortIn)
-			inPort.Link(in)
-
-			out := port.New()
-			outPort := n.Port(PortOut)
-			outPort.Link(out)
-
-			proc := process.New()
-			defer proc.Exit(nil)
-
-			inStream := in.Open(proc)
-			outStream := out.Open(proc)
-
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
-			inStream.Send(inPck)
-
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
-
-			select {
-			case outPck := <-outStream.Receive():
-				assert.Equal(t, inPayload, outPck.Payload())
-				outStream.Send(outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
-
-			select {
-			case backPck := <-inStream.Receive():
-				assert.NotNil(t, backPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
+	t.Run("IO -> Error -> IO", func(t *testing.T) {
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
 		})
+		defer n.Close()
 
-		t.Run("With Err Port", func(t *testing.T) {
-			n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
-			})
-			defer n.Close()
+		io := port.NewOut()
+		io.Link(n.In(PortIO))
 
-			in := port.New()
-			inPort := n.Port(PortIn)
-			inPort.Link(in)
+		err := port.NewIn()
+		n.Out(PortErr).Link(err)
 
-			err := port.New()
-			errPort := n.Port(PortErr)
-			errPort.Link(err)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-			proc := process.New()
-			defer proc.Exit(nil)
+		ioWriter := io.Open(proc)
+		errReader := err.Open(proc)
 
-			inStream := in.Open(proc)
-			errStream := err.Open(proc)
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
 
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
+		ioWriter.Write(inPck)
 
-			inStream.Send(inPck)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
+		select {
+		case outPck := <-errReader.Read():
+			assert.NotNil(t, outPck)
+			errReader.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 
-			select {
-			case outPck := <-errStream.Receive():
-				assert.NotNil(t, outPck)
-				errStream.Send(outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
+		select {
+		case backPck := <-ioWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
 
-			select {
-			case backPck := <-inStream.Receive():
-				assert.NotNil(t, backPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
+	t.Run("In -> None", func(t *testing.T) {
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return nil, nil
 		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case <-proc.Stack().Done(inPck):
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("In -> Out -> In", func(t *testing.T) {
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
+		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		out := port.NewIn()
+		n.Out(PortOut).Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-outReader.Read():
+			assert.Equal(t, inPayload, outPck.Payload())
+			outReader.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("In -> Error -> In", func(t *testing.T) {
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
+		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		err := port.NewIn()
+		n.Out(PortErr).Link(err)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+		errReader := err.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-errReader.Read():
+			assert.NotNil(t, outPck)
+			errReader.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 	})
 }
 
 func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
-	b.Run("IO", func(b *testing.B) {
+	b.Run("IO -> IO", func(b *testing.B) {
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(PortIO)
-		ioPort.Link(io)
+		io := port.NewOut()
+		io.Link(n.In(PortIO))
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		ioStream := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
+		ioWriter := io.Open(proc)
 
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioStream.Send(inPck)
-			<-ioStream.Receive()
+			inPayload := primitive.NewString(faker.UUIDHyphenated())
+			inPck := packet.New(inPayload)
+
+			ioWriter.Write(inPck)
+			<-ioWriter.Receive()
 		}
 	})
 
-	b.Run("In/Out", func(b *testing.B) {
+	b.Run("In -> Out -> In", func(b *testing.B) {
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
 		defer n.Close()
 
-		in := port.New()
-		inPort := n.Port(PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
 
-		out := port.New()
-		outPort := n.Port(PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
-		defer proc.Stack().Close()
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
 
 		b.ResetTimer()
 
-		b.RunParallel(func(p *testing.PB) {
-			for p.Next() {
-				inStream.Send(inPck)
-				<-outStream.Receive()
-			}
-		})
+		for i := 0; i < b.N; i++ {
+			inPayload := primitive.NewString(faker.UUIDHyphenated())
+			inPck := packet.New(inPayload)
+
+			inWriter.Write(inPck)
+			outPck := <-outReader.Read()
+			outReader.Receive(outPck)
+			<-inWriter.Receive()
+		}
 	})
 }

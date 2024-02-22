@@ -9,5 +9,4 @@ import (
 func TestNew(t *testing.T) {
 	pck := New(nil)
 	assert.NotNil(t, pck)
-	assert.NotZero(t, pck.ID())
 }

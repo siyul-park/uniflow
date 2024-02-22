@@ -6,6 +6,7 @@ import (
 
 // Node represents an operational unit that processes packets.
 type Node interface {
-	Port(name string) *port.Port // Port retrieves the port with the specified name.
-	Close() error                // Close closes the node and releases any resources it holds.
+	In(name string) *port.InPort
+	Out(name string) *port.OutPort
+	Close() error
 }

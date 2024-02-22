@@ -24,99 +24,120 @@ func TestOneToManyNode_Port(t *testing.T) {
 	n := NewOneToManyNode(nil)
 	defer n.Close()
 
-	p := n.Port(PortIn)
-	assert.NotNil(t, p)
-
-	p = n.Port(MultiPort(PortOut, 0))
-	assert.NotNil(t, p)
-
-	p = n.Port(PortErr)
-	assert.NotNil(t, p)
+	assert.NotNil(t, n.In(PortIn))
+	assert.NotNil(t, n.Out(MultiPort(PortOut, 0)))
+	assert.NotNil(t, n.Out(PortErr))
 }
 
 func TestOneToManyNode_SendAndReceive(t *testing.T) {
-	t.Run("With Out Port", func(t *testing.T) {
+	t.Run("In -> None", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return []*packet.Packet{inPck}, nil
+			return nil, nil
 		})
 		defer n.Close()
 
-		in := port.New()
-		inPort := n.Port(PortIn)
-		inPort.Link(in)
-
-		out := port.New()
-		outPort := n.Port(MultiPort(PortOut, 0))
-		outPort.Link(out)
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inStream := in.Open(proc)
-		outStream := out.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		inStream.Send(inPck)
+		inWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-			outStream.Send(outPck)
+		case <-proc.Stack().Done(inPck):
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("In -> Out0 -> In", func(t *testing.T) {
+		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return []*packet.Packet{inPck}, nil
+		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		out0 := port.NewIn()
+		n.Out(MultiPort(PortOut, 0)).Link(out0)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+		defer proc.Stack().Close()
+
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-outReader0.Read():
+			assert.Equal(t, inPayload, outPck.Payload())
+			outReader0.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
 		}
 
 		select {
-		case backPck := <-inStream.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
 	})
 
-	t.Run("With Err Port", func(t *testing.T) {
+	t.Run("In -> Error -> In", func(t *testing.T) {
 		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
+			return nil, inPck
 		})
 		defer n.Close()
 
-		in := port.New()
-		inPort := n.Port(PortIn)
-		inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
 
-		err := port.New()
-		errPort := n.Port(PortErr)
-		errPort.Link(err)
+		err := port.NewIn()
+		n.Out(PortErr).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inStream := in.Open(proc)
-		errStream := err.Open(proc)
+		inWriter := in.Open(proc)
+		errReader := err.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		inStream.Send(inPck)
+		inWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-errStream.Receive():
+		case outPck := <-errReader.Read():
 			assert.NotNil(t, outPck)
-			errStream.Send(outPck)
+			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			assert.Fail(t, "timeout")
 		}
 
 		select {
-		case backPck := <-inStream.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -125,35 +146,34 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
-	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-		return []*packet.Packet{inPck}, nil
-	})
-	defer n.Close()
+	b.Run("In -> Out -> In", func(b *testing.B) {
+		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return []*packet.Packet{inPck}, nil
+		})
+		defer n.Close()
 
-	in := port.New()
-	inPort := n.Port(PortIn)
-	inPort.Link(in)
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
 
-	out := port.New()
-	outPort := n.Port(MultiPort(PortOut, 0))
-	outPort.Link(out)
+		out0 := port.NewIn()
+		n.Out(MultiPort(PortOut, 0)).Link(out0)
 
-	proc := process.New()
-	defer proc.Exit(nil)
-	defer proc.Stack().Close()
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	inStream := in.Open(proc)
-	outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
 
-	inPayload := primitive.NewString(faker.UUIDHyphenated())
-	inPck := packet.New(inPayload)
+		b.ResetTimer()
 
-	b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			inPayload := primitive.NewString(faker.UUIDHyphenated())
+			inPck := packet.New(inPayload)
 
-	b.RunParallel(func(p *testing.PB) {
-		for p.Next() {
-			inStream.Send(inPck)
-			<-outStream.Receive()
+			inWriter.Write(inPck)
+			outPck := <-outReader0.Read()
+			outReader0.Receive(outPck)
+			<-inWriter.Receive()
 		}
 	})
 }

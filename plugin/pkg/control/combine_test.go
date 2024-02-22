@@ -26,54 +26,51 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n := NewCombineNode(0, false)
 		defer n.Close()
 
-		var ins []*port.Port
+		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
-			in := port.New()
-			inPort := n.Port(node.MultiPort(node.PortIn, i))
-			inPort.Link(in)
-
+			in := port.NewOut()
+			in.Link(n.In(node.MultiPort(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
-		out := port.New()
-		outPort := n.Port(node.PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		var inStreams []*port.Stream
-		for _, in := range ins {
-			inStreams = append(inStreams, in.Open(proc))
+		inWriters := make([]*port.Writer, len(ins))
+		for i, in := range ins {
+			inWriters[i] = in.Open(proc)
 		}
-		outStream := out.Open(proc)
+		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
-		for range inStreams {
+		for range inWriters {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
 		combined := primitive.NewSlice(inPayloads...).Interface()
 
-		for i, inStream := range inStreams {
+		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
-			inStream.Send(inPck)
+			inWriter.Write(inPck)
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
-			outStream.Send(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		for _, inStream := range inStreams {
+		for _, inWriter := range inWriters {
 			select {
-			case backPck := <-inStream.Receive():
+			case backPck := <-inWriter.Receive():
 				assert.NotNil(t, backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -85,54 +82,51 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n := NewCombineNode(1, false)
 		defer n.Close()
 
-		var ins []*port.Port
+		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
-			in := port.New()
-			inPort := n.Port(node.MultiPort(node.PortIn, i))
-			inPort.Link(in)
-
+			in := port.NewOut()
+			in.Link(n.In(node.MultiPort(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
-		out := port.New()
-		outPort := n.Port(node.PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		var inStreams []*port.Stream
-		for _, in := range ins {
-			inStreams = append(inStreams, in.Open(proc))
+		inWriters := make([]*port.Writer, len(ins))
+		for i, in := range ins {
+			inWriters[i] = in.Open(proc)
 		}
-		outStream := out.Open(proc)
+		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
-		for range inStreams {
+		for range inWriters {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
 		combined := inPayloads[len(inPayloads)-1].Interface()
 
-		for i, inStream := range inStreams {
+		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
-			inStream.Send(inPck)
+			inWriter.Write(inPck)
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
-			outStream.Send(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		for _, inStream := range inStreams {
+		for _, inWriter := range inWriters {
 			select {
-			case backPck := <-inStream.Receive():
+			case backPck := <-inWriter.Receive():
 				assert.NotNil(t, backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -144,31 +138,28 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n := NewCombineNode(2, false)
 		defer n.Close()
 
-		var ins []*port.Port
+		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
-			in := port.New()
-			inPort := n.Port(node.MultiPort(node.PortIn, i))
-			inPort.Link(in)
-
+			in := port.NewOut()
+			in.Link(n.In(node.MultiPort(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
-		out := port.New()
-		outPort := n.Port(node.PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		var inStreams []*port.Stream
-		for _, in := range ins {
-			inStreams = append(inStreams, in.Open(proc))
+		inWriters := make([]*port.Writer, len(ins))
+		for i, in := range ins {
+			inWriters[i] = in.Open(proc)
 		}
-		outStream := out.Open(proc)
+		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
 		combined := map[string]string{}
-		for range inStreams {
+		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
@@ -176,25 +167,25 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			combined[key] = value
 		}
 
-		for i, inStream := range inStreams {
+		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
-			inStream.Send(inPck)
+			inWriter.Write(inPck)
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
-			outStream.Send(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		for _, inStream := range inStreams {
+		for _, inWriter := range inWriters {
 			select {
-			case backPck := <-inStream.Receive():
+			case backPck := <-inWriter.Receive():
 				assert.NotNil(t, backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -206,31 +197,28 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n := NewCombineNode(-1, false)
 		defer n.Close()
 
-		var ins []*port.Port
+		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
-			in := port.New()
-			inPort := n.Port(node.MultiPort(node.PortIn, i))
-			inPort.Link(in)
-
+			in := port.NewOut()
+			in.Link(n.In(node.MultiPort(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
-		out := port.New()
-		outPort := n.Port(node.PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		var inStreams []*port.Stream
-		for _, in := range ins {
-			inStreams = append(inStreams, in.Open(proc))
+		inWriters := make([]*port.Writer, len(ins))
+		for i, in := range ins {
+			inWriters[i] = in.Open(proc)
 		}
-		outStream := out.Open(proc)
+		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
 		var combined []map[string]string
-		for range inStreams {
+		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
@@ -238,25 +226,25 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			combined = append(combined, map[string]string{key: value})
 		}
 
-		for i, inStream := range inStreams {
+		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
-			inStream.Send(inPck)
+			inWriter.Write(inPck)
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
-			outStream.Send(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		for _, inStream := range inStreams {
+		for _, inWriter := range inWriters {
 			select {
-			case backPck := <-inStream.Receive():
+			case backPck := <-inWriter.Receive():
 				assert.NotNil(t, backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -268,31 +256,28 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n := NewCombineNode(-1, true)
 		defer n.Close()
 
-		var ins []*port.Port
+		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
-			in := port.New()
-			inPort := n.Port(node.MultiPort(node.PortIn, i))
-			inPort.Link(in)
-
+			in := port.NewOut()
+			in.Link(n.In(node.MultiPort(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
-		out := port.New()
-		outPort := n.Port(node.PortOut)
-		outPort.Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		var inStreams []*port.Stream
-		for _, in := range ins {
-			inStreams = append(inStreams, in.Open(proc))
+		inWriters := make([]*port.Writer, len(ins))
+		for i, in := range ins {
+			inWriters[i] = in.Open(proc)
 		}
-		outStream := out.Open(proc)
+		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
 		combined := []map[string]string{{}}
-		for range inStreams {
+		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
@@ -300,25 +285,25 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			combined[0][key] = value
 		}
 
-		for i, inStream := range inStreams {
+		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
-			inStream.Send(inPck)
+			inWriter.Write(inPck)
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-outStream.Receive():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
-			outStream.Send(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		for _, inStream := range inStreams {
+		for _, inWriter := range inWriters {
 			select {
-			case backPck := <-inStream.Receive():
+			case backPck := <-inWriter.Receive():
 				assert.NotNil(t, backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -346,43 +331,41 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 	n := NewCombineNode(0, false)
 	defer n.Close()
 
-	var ins []*port.Port
+	var ins []*port.OutPort
 	for i := 0; i < 4; i++ {
-		in := port.New()
-		inPort := n.Port(node.MultiPort(node.PortIn, i))
-		inPort.Link(in)
-
+		in := port.NewOut()
+		in.Link(n.In(node.MultiPort(node.PortIn, i)))
 		ins = append(ins, in)
 	}
 
-	out := port.New()
-	outPort := n.Port(node.PortOut)
-	outPort.Link(out)
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
 
 	proc := process.New()
 	defer proc.Exit(nil)
-	defer proc.Stack().Close()
 
-	var inStreams []*port.Stream
-	for _, in := range ins {
-		inStreams = append(inStreams, in.Open(proc))
+	inWriters := make([]*port.Writer, len(ins))
+	for i, in := range ins {
+		inWriters[i] = in.Open(proc)
 	}
-	outStream := out.Open(proc)
+	outReader := out.Open(proc)
 
 	var inPayloads []primitive.Value
-	for range inStreams {
+	for range inWriters {
 		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()
 
-	b.RunParallel(func(p *testing.PB) {
-		for p.Next() {
-			for i, inStream := range inStreams {
-				inPck := packet.New(inPayloads[i])
-				inStream.Send(inPck)
-			}
-			<-outStream.Receive()
+	for i := 0; i < b.N; i++ {
+		for i, inWriter := range inWriters {
+			inPck := packet.New(inPayloads[i])
+			inWriter.Write(inPck)
 		}
-	})
+		outPck := <-outReader.Read()
+		outReader.Receive(outPck)
+		for _, inWriter := range inWriters {
+			<-inWriter.Receive()
+		}
+	}
 }

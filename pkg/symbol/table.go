@@ -177,8 +177,8 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 
 func (t *Table) links(sym *Symbol) error {
 	for name, locations := range sym.links {
-		p1 := sym.Port(name)
-		if p1 == nil {
+		out := sym.Out(name)
+		if out == nil {
 			sym.unlinks[name] = locations
 			continue
 		}
@@ -194,8 +194,8 @@ func (t *Table) links(sym *Symbol) error {
 			if id != (uuid.UUID{}) {
 				if ref, ok := t.symbols[id]; ok {
 					if ref.Namespace() == sym.Namespace() {
-						if p2 := ref.Port(location.Port); p2 != nil {
-							p1.Link(p2)
+						if in := ref.In(location.Port); in != nil {
+							out.Link(in)
 							ref.linked[location.Port] = append(ref.linked[location.Port], scheme.PortLocation{
 								ID:   sym.ID(),
 								Name: location.Name,
@@ -288,15 +288,15 @@ func (t *Table) relinks(sym *Symbol) error {
 		}
 
 		for name, locations := range ref.unlinks {
-			p1 := ref.Port(name)
-			if p1 == nil {
+			out := ref.Out(name)
+			if out == nil {
 				continue
 			}
 
 			for i, location := range locations {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					if p2 := sym.Port(location.Port); p2 != nil {
-						p1.Link(p2)
+					if in := sym.In(location.Port); in != nil {
+						out.Link(in)
 						sym.linked[location.Port] = append(sym.linked[location.Port], scheme.PortLocation{
 							ID:   ref.ID(),
 							Name: location.Name,
