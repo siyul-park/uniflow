@@ -261,7 +261,6 @@ func TestStack_Done(t *testing.T) {
 		case <-done:
 		}
 	})
-
 }
 
 func TestStack_Close(t *testing.T) {
