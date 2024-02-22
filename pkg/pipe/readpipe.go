@@ -9,7 +9,7 @@ type ReadPipe[T any] struct {
 	mu   sync.RWMutex
 }
 
-func NewRead[T any](capacity int) *ReadPipe[T] {
+func newRead[T any](capacity int) *ReadPipe[T] {
 	p := &ReadPipe[T]{
 		in:   make(chan T, capacity),
 		out:  make(chan T),
@@ -20,11 +20,10 @@ func NewRead[T any](capacity int) *ReadPipe[T] {
 		defer close(p.out)
 		buffer := make([]T, 0, capacity)
 
-	loop:
 		for {
 			data, ok := <-p.in
 			if !ok {
-				break loop
+				return
 			}
 			select {
 			case p.out <- data:
@@ -38,7 +37,7 @@ func NewRead[T any](capacity int) *ReadPipe[T] {
 				select {
 				case packet, ok := <-p.in:
 					if !ok {
-						break loop
+						return
 					}
 					buffer = append(buffer, packet)
 				case p.out <- buffer[0]:
