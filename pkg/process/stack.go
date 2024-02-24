@@ -53,16 +53,13 @@ func (s *Stack) Add(stem, leaf *packet.Packet) {
 
 	delete(s.leaves, nil)
 
-	s.touch(stem)
-	s.touch(leaf)
-
 	if stem != leaf && leaf != nil && stem != nil {
 		s.stems[leaf] = s.stems[leaf].append(stem)
 		s.leaves[stem] = s.leaves[stem].append(leaf)
 	}
 
-	s.refreshRoot(stem)
-	s.refreshRoot(leaf)
+	s.touch(stem)
+	s.touch(leaf)
 }
 
 func (s *Stack) Unwind(leaf, stem *packet.Packet) bool {
@@ -161,24 +158,27 @@ func (s *Stack) touch(node *packet.Packet) {
 		s.leaves[node] = nil
 	}
 
-	if _, ok := s.heads[node]; !ok {
-		s.heads[node] = edges{node}
-	} else {
-		for _, head := range s.heads[node] {
-			var ok bool
-			s.downwards(node, func(node *packet.Packet, cur []*packet.Packet) bool {
-				if node == head {
-					ok = true
-				}
-				return !ok
-			})
-
-			if !ok {
-				s.stems[node] = s.stems[node].append(head)
-				s.leaves[head] = s.leaves[head].append(node)
+	for _, head := range s.heads[node] {
+		var ok bool
+		s.downwards(node, func(node *packet.Packet, cur []*packet.Packet) bool {
+			if node == head {
+				ok = true
 			}
+			return !ok
+		})
+
+		if !ok {
+			s.stems[node] = s.stems[node].append(head)
+			s.leaves[head] = s.leaves[head].append(node)
+			s.heads[node] = s.heads[node].delete(head)
 		}
 	}
+
+	if len(s.heads[node]) == 0 {
+		s.heads[node] = edges{node}
+	}
+
+	s.refreshRoot(node)
 }
 
 func (s *Stack) has(node *packet.Packet) bool {
@@ -222,14 +222,14 @@ func (s *Stack) remove(node *packet.Packet) {
 	s.done(nil)
 }
 
-func (s *Stack) refreshRoot(leaf *packet.Packet) {
-	if leaf == nil {
+func (s *Stack) refreshRoot(node *packet.Packet) {
+	if node == nil {
 		return
 	}
-	if len(s.stems[leaf]) > 0 {
-		s.leaves[nil] = s.leaves[nil].delete(leaf)
+	if len(s.stems[node]) > 0 {
+		s.leaves[nil] = s.leaves[nil].delete(node)
 	} else {
-		s.leaves[nil] = s.leaves[nil].append(leaf)
+		s.leaves[nil] = s.leaves[nil].append(node)
 	}
 }
 

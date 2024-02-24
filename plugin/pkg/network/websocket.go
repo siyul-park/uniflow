@@ -198,7 +198,6 @@ func (n *WebSocketNode) upgrade(proc *process.Process) {
 			}
 		} else {
 			proc.Lock()
-
 			proc.Stack().Clear(inPck)
 
 			go n.write(proc, conn)

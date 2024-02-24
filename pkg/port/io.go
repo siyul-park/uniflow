@@ -134,7 +134,7 @@ func (r *Reader) Cost(pck *packet.Packet) int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.cleanUp()
+	r.clean()
 
 	if len(r.read) > 0 {
 		return r.stack.Cost(r.read[0], pck)
@@ -150,7 +150,7 @@ func (r *Reader) Receive(pck *packet.Packet) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.cleanUp()
+	r.clean()
 
 	if len(r.read) == 0 || !r.stack.Unwind(pck, r.read[0]) {
 		return
@@ -180,7 +180,7 @@ func (r *Reader) push(pck *packet.Packet) *packet.Packet {
 	return leaf
 }
 
-func (r *Reader) cleanUp() {
+func (r *Reader) clean() {
 	for len(r.read) > 0 && !r.stack.Has(nil, r.read[0]) {
 		r.read = r.read[1:]
 	}
