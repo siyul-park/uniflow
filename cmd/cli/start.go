@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
+	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"

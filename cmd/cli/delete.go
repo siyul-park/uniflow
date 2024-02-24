@@ -4,7 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
+	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"

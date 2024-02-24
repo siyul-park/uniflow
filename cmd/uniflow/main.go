@@ -4,8 +4,19 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/siyul-park/uniflow/cmd/cli"
+	"github.com/siyul-park/uniflow/pkg/database"
+	"github.com/siyul-park/uniflow/pkg/database/memdb"
+	"github.com/siyul-park/uniflow/pkg/database/mongodb"
+	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/pkg/control"
+	"github.com/siyul-park/uniflow/plugin/pkg/network"
+	"github.com/siyul-park/uniflow/plugin/pkg/system"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const configFile = ".uniflow.toml"
@@ -30,8 +41,52 @@ func main() {
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
 
-	if err := execute(ctx, databaseURL, databaseName); err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(1)
+	sb := scheme.NewBuilder()
+	hb := hook.NewBuilder()
+
+	sb.Register(control.AddToScheme())
+	sb.Register(network.AddToScheme())
+	sb.Register(system.AddToScheme(nil))
+
+	hb.Register(network.AddToHook())
+
+	sc, err := sb.Build()
+	if err != nil {
+		panic(err)
 	}
+	hk, err := hb.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	var db database.Database
+	if strings.HasPrefix(databaseURL, "mongodb://") {
+		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
+		client, err := mongodb.Connect(ctx, opts)
+		if err != nil {
+			panic(err)
+		}
+		db, err = client.Database(ctx, databaseName)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		db = memdb.New(databaseName)
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	fsys := os.DirFS(wd)
+
+	cmd := cli.NewCommand(cli.Config{
+		Scheme:   sc,
+		Hook:     hk,
+		Database: db,
+		FS:       fsys,
+	})
+
+	cmd.Execute()
 }

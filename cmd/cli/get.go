@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/siyul-park/uniflow/pkg/cmd/printer"
+	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"

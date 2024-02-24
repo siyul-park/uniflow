@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/cmd/printer"
-	"github.com/siyul-park/uniflow/pkg/cmd/scanner"
+	"github.com/siyul-park/uniflow/cmd/printer"
+	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"

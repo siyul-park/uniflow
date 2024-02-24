@@ -1,9 +1,8 @@
-package main
+package cli
 
 import (
 	"io/fs"
 
-	"github.com/siyul-park/uniflow/pkg/cmd/cli"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -30,21 +29,21 @@ func NewCommand(config Config) *cobra.Command {
 		Long: "Low-Code Engine for Backend Workflows",
 	}
 
-	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
+	cmd.AddCommand(NewApplyCommand(ApplyConfig{
 		Scheme:   sc,
 		Database: db,
 		FS:       fsys,
 	}))
-	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
+	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
 		Scheme:   sc,
 		Database: db,
 		FS:       fsys,
 	}))
-	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
+	cmd.AddCommand(NewGetCommand(GetConfig{
 		Scheme:   sc,
 		Database: db,
 	}))
-	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
+	cmd.AddCommand(NewStartCommand(StartConfig{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,
