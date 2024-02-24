@@ -8,69 +8,37 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// OneToOneNode represents a node that processes *packet.Packet with one input and one output.
 type OneToOneNode struct {
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-	ioPort  *port.Port
-	inPort  *port.Port
-	outPort *port.Port
-	errPort *port.Port
+	ioPort  *port.InPort
+	inPort  *port.InPort
+	outPort *port.OutPort
+	errPort *port.OutPort
 	mu      sync.RWMutex
 }
 
 var _ Node = (*OneToOneNode)(nil)
 
-// NewOneToOneNode creates a new OneToOneNode.
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
-		ioPort:  port.New(),
-		inPort:  port.New(),
-		outPort: port.New(),
-		errPort: port.New(),
+		ioPort:  port.NewIn(),
+		inPort:  port.NewIn(),
+		outPort: port.NewOut(),
+		errPort: port.NewOut(),
 	}
 
 	if n.action != nil {
-		n.ioPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			n.mu.RLock()
-			defer n.mu.RUnlock()
-
-			ioStream := n.ioPort.Open(proc)
-
-			n.forward(proc, ioStream, ioStream)
-		}))
-		n.inPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			n.mu.RLock()
-			defer n.mu.RUnlock()
-
-			inStream := n.inPort.Open(proc)
-			outStream := n.outPort.Open(proc)
-
-			n.forward(proc, inStream, outStream)
-		}))
-		n.outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			n.mu.RLock()
-			defer n.mu.RUnlock()
-
-			outStream := n.outPort.Open(proc)
-
-			n.backward(proc, outStream)
-		}))
-		n.errPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			n.mu.RLock()
-			defer n.mu.RUnlock()
-
-			errStream := n.errPort.Open(proc)
-
-			n.backward(proc, errStream)
-		}))
+		n.ioPort.AddHandler(port.HandlerFunc(n.turn))
+		n.inPort.AddHandler(port.HandlerFunc(n.forward))
+		n.outPort.AddHandler(port.HandlerFunc(n.backward))
+		n.errPort.AddHandler(port.HandlerFunc(n.catch))
 	}
 
 	return n
 }
 
-// Port returns the specified port.
-func (n *OneToOneNode) Port(name string) *port.Port {
+func (n *OneToOneNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -79,6 +47,17 @@ func (n *OneToOneNode) Port(name string) *port.Port {
 		return n.ioPort
 	case PortIn:
 		return n.inPort
+	default:
+	}
+
+	return nil
+}
+
+func (n *OneToOneNode) Out(name string) *port.OutPort {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	switch name {
 	case PortOut:
 		return n.outPort
 	case PortErr:
@@ -89,7 +68,6 @@ func (n *OneToOneNode) Port(name string) *port.Port {
 	return nil
 }
 
-// Close closes all.
 func (n *OneToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -102,73 +80,108 @@ func (n *OneToOneNode) Close() error {
 	return nil
 }
 
-func (n *OneToOneNode) forward(proc *process.Process, inStream, outStream *port.Stream) {
-	errStream := n.errPort.Open(proc)
+func (n *OneToOneNode) turn(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
-	if inStream != outStream {
-		outStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
-			proc.Stack().Push(pck.ID(), outStream.ID())
-		}))
-	}
-	errStream.AddSendHook(port.SendHookFunc(func(pck *packet.Packet) {
-		proc.Stack().Push(pck.ID(), errStream.ID())
-	}))
+	ioReader := n.ioPort.Open(proc)
 
 	for {
-		inPck, ok := <-inStream.Receive()
+		inPck, ok := <-ioReader.Read()
 		if !ok {
 			return
 		}
 
-		forward := func(outStream *port.Stream, outPck *packet.Packet, backward bool) {
-			proc.Graph().Add(inPck.ID(), outPck.ID())
-			if outStream.Links() > 0 {
-				if outStream != inStream {
-					proc.Stack().Push(outPck.ID(), inStream.ID())
-				}
-				outStream.Send(outPck)
-			} else if backward {
-				inStream.Send(outPck)
-			} else {
-				proc.Stack().Clear(outPck.ID())
-			}
-		}
-
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			forward(errStream, errPck, true)
+			proc.Stack().Add(inPck, errPck)
+			n.throw(proc, errPck)
 		} else if outPck != nil {
-			forward(outStream, outPck, false)
+			proc.Stack().Add(inPck, outPck)
+			ioReader.Receive(outPck)
 		} else {
-			proc.Stack().Clear(inPck.ID())
+			proc.Stack().Clear(inPck)
 		}
 	}
 }
 
-func (n *OneToOneNode) backward(proc *process.Process, outStream *port.Stream) {
-	var ioStream *port.Stream
-	var inStream *port.Stream
+func (n *OneToOneNode) forward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inReader := n.inPort.Open(proc)
+	outWriter := n.outPort.Open(proc)
 
 	for {
-		backPck, ok := <-outStream.Receive()
+		inPck, ok := <-inReader.Read()
 		if !ok {
 			return
 		}
 
-		if _, ok := proc.Stack().Pop(backPck.ID(), outStream.ID()); !ok {
-			continue
+		if outPck, errPck := n.action(proc, inPck); errPck != nil {
+			proc.Stack().Add(inPck, errPck)
+			n.throw(proc, errPck)
+		} else if outPck != nil {
+			proc.Stack().Add(inPck, outPck)
+			outWriter.Write(outPck)
+		} else {
+			proc.Stack().Clear(inPck)
+		}
+	}
+}
+
+func (n *OneToOneNode) backward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inReader := n.inPort.Open(proc)
+	outWriter := n.outPort.Open(proc)
+
+	for {
+		backPck, ok := <-outWriter.Receive()
+		if !ok {
+			return
 		}
 
-		if ioStream == nil {
-			ioStream = n.ioPort.Open(proc)
-		}
-		if inStream == nil {
-			inStream = n.inPort.Open(proc)
+		inReader.Receive(backPck)
+	}
+}
+
+func (n *OneToOneNode) catch(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	errWriter := n.errPort.Open(proc)
+
+	for {
+		backPck, ok := <-errWriter.Receive()
+		if !ok {
+			return
 		}
 
-		if _, ok := proc.Stack().Pop(backPck.ID(), ioStream.ID()); ok {
-			ioStream.Send(backPck)
-		} else if _, ok := proc.Stack().Pop(backPck.ID(), inStream.ID()); ok {
-			inStream.Send(backPck)
-		}
+		n.receive(proc, backPck)
+	}
+}
+
+func (n *OneToOneNode) throw(proc *process.Process, errPck *packet.Packet) {
+	errWriter := n.errPort.Open(proc)
+
+	if errWriter.Links() > 0 {
+		errWriter.Write(errPck)
+	} else {
+		n.receive(proc, errPck)
+	}
+}
+
+func (n *OneToOneNode) receive(proc *process.Process, backPck *packet.Packet) {
+	ioReader := n.ioPort.Open(proc)
+	inReader := n.inPort.Open(proc)
+
+	ioCost := ioReader.Cost(backPck)
+	inCost := inReader.Cost(backPck)
+
+	if ioCost < inCost {
+		ioReader.Receive(backPck)
+	} else {
+		inReader.Receive(backPck)
 	}
 }

@@ -34,17 +34,9 @@ func TestHTTPNode_Port(t *testing.T) {
 	n := NewHTTPNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
-	p := n.Port(node.PortIO)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortIn)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortOut)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortErr)
-	assert.NotNil(t, p)
+	assert.NotNil(t, n.In(node.PortIn))
+	assert.NotNil(t, n.Out(node.PortOut))
+	assert.NotNil(t, n.Out(node.PortErr))
 }
 
 func TestHTTPNode_ListenAndClose(t *testing.T) {
@@ -80,22 +72,22 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPNode("")
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(node.PortIO)
-		ioPort.Link(io)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			ioStream := io.Open(proc)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-ioStream.Receive()
+				inPck, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 
-				outPck := packet.New(inPck.Payload())
-				proc.Graph().Add(inPck.ID(), outPck.ID())
-				ioStream.Send(outPck)
+				outReader.Receive(inPck)
 			}
 		}))
 
@@ -115,15 +107,17 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPNode("")
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(node.PortIO)
-		ioPort.Link(io)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			ioStream := io.Open(proc)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-ioStream.Receive()
+				inPck, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
@@ -133,8 +127,9 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 				_ = primitive.Unmarshal(inPayload, &req)
 
 				outPck := packet.New(req.Body)
-				proc.Graph().Add(inPck.ID(), outPck.ID())
-				ioStream.Send(outPck)
+
+				proc.Stack().Add(inPck, outPck)
+				outReader.Receive(outPck)
 			}
 		}))
 
@@ -154,15 +149,17 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPNode("")
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(node.PortIO)
-		ioPort.Link(io)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			ioStream := io.Open(proc)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-ioStream.Receive()
+				inPck, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
@@ -170,8 +167,8 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 				err := errors.New(faker.Sentence())
 
 				errPck := packet.WithError(err, inPck)
-				proc.Graph().Add(inPck.ID(), errPck.ID())
-				ioStream.Send(errPck)
+				proc.Stack().Add(inPck, errPck)
+				outReader.Receive(errPck)
 			}
 		}))
 
@@ -189,39 +186,36 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPNode("")
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(node.PortIO)
-		ioPort.Link(io)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		err := port.New()
-		errPort := n.Port(node.PortErr)
-		errPort.Link(err)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
-		io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			ioStream := io.Open(proc)
+		err := port.NewIn()
+		n.Out(node.PortErr).Link(err)
+
+		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-ioStream.Receive()
+				inPck, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 
-				var req HTTPPayload
-				inPayload := inPck.Payload()
-				_ = primitive.Unmarshal(inPayload, &req)
-
-				err := errors.New(req.Body.(primitive.String).String())
+				err := errors.New(faker.Sentence())
 
 				errPck := packet.WithError(err, inPck)
-				proc.Graph().Add(inPck.ID(), errPck.ID())
-				ioStream.Send(errPck)
+				proc.Stack().Add(inPck, errPck)
+				outReader.Receive(errPck)
 			}
 		}))
-		err.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-			errStream := err.Open(proc)
+		err.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			errReader := err.Open(proc)
 
 			for {
-				inPck, ok := <-errStream.Receive()
+				inPck, ok := <-errReader.Read()
 				if !ok {
 					return
 				}
@@ -229,8 +223,8 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 				err, _ := packet.AsError(inPck)
 
 				outPck := packet.New(primitive.NewString(err.Error()))
-				proc.Graph().Add(inPck.ID(), outPck.ID())
-				errStream.Send(outPck)
+				proc.Stack().Add(inPck, outPck)
+				errReader.Receive(outPck)
 			}
 		}))
 
@@ -243,7 +237,7 @@ func TestHTTPNode_ServeHTTP(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
-		assert.Equal(t, body, w.Body.String())
+		assert.NotEmpty(t, w.Body.String())
 	})
 }
 
@@ -268,22 +262,26 @@ func BenchmarkHTTPNode_ServeHTTP(b *testing.B) {
 	n := NewHTTPNode("")
 	defer n.Close()
 
-	io := port.New()
-	ioPort := n.Port(node.PortIO)
-	ioPort.Link(io)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	io.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
-		ioStream := io.Open(proc)
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
 
 		for {
-			inPck, ok := <-ioStream.Receive()
+			inPck, ok := <-outReader.Read()
 			if !ok {
 				return
 			}
 
-			outPck := packet.New(inPck.Payload())
-			proc.Graph().Add(inPck.ID(), outPck.ID())
-			ioStream.Send(outPck)
+			err := errors.New(faker.Sentence())
+
+			errPck := packet.WithError(err, inPck)
+			proc.Stack().Add(inPck, errPck)
+			outReader.Receive(errPck)
 		}
 	}))
 

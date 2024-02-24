@@ -55,9 +55,14 @@ func (s *Symbol) Annotations() map[string]string {
 	return s.spec.GetAnnotations()
 }
 
-// Port returns the specified port.
-func (s *Symbol) Port(name string) *port.Port {
-	return s.node.Port(name)
+// In returns the specified InPort.
+func (s *Symbol) In(name string) *port.InPort {
+	return s.node.In(name)
+}
+
+// Out returns the specified OutPort.
+func (s *Symbol) Out(name string) *port.OutPort {
+	return s.node.Out(name)
 }
 
 // Close closes the Symbol, invoking the Close method of its Node.

@@ -40,8 +40,8 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Equal(t, spec.GetName(), sym.Name())
 	assert.Equal(t, spec.GetAnnotations(), sym.Annotations())
 
-	p1 := n.Port(node.PortIn)
-	p2 := sym.Port(node.PortIn)
+	p1 := n.In(node.PortIn)
+	p2 := sym.In(node.PortIn)
 
 	assert.Equal(t, p1, p2)
 }

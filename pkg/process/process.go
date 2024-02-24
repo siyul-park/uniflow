@@ -2,16 +2,12 @@ package process
 
 import (
 	"sync"
-
-	"github.com/gofrs/uuid"
 )
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	id    uuid.UUID
-	graph *Graph
 	stack *Stack
-	share *Share
+	heap  *Heap
 	err   error
 	done  chan struct{}
 	wait  sync.WaitGroup
@@ -20,26 +16,11 @@ type Process struct {
 
 // New creates a new Process.
 func New() *Process {
-	g := newGraph()
-	s := newStack(g)
-
 	return &Process{
-		id:    uuid.Must(uuid.NewV7()),
-		graph: g,
-		stack: s,
-		share: newShare(),
+		stack: newStack(),
+		heap:  newHeap(),
 		done:  make(chan struct{}),
 	}
-}
-
-// ID returns the ID of the process.
-func (p *Process) ID() uuid.UUID {
-	return p.id
-}
-
-// Graph returns a process's graph.
-func (p *Process) Graph() *Graph {
-	return p.graph
 }
 
 // Stack returns a process's stack.
@@ -47,9 +28,9 @@ func (p *Process) Stack() *Stack {
 	return p.stack
 }
 
-// Share returns a process's share.
-func (p *Process) Share() *Share {
-	return p.share
+// Heap returns a process's heap.
+func (p *Process) Heap() *Heap {
+	return p.heap
 }
 
 // Err returns the last error encountered by the process.
@@ -86,13 +67,10 @@ func (p *Process) Exit(err error) {
 	default:
 	}
 
-	<-p.stack.Done(uuid.UUID{})
-
 	p.wait.Wait()
 
-	p.stack.Close()
-	p.share.Close()
-	p.graph.Close()
+	<-p.stack.Done(nil)
+	p.heap.Close()
 
 	p.err = err
 	close(p.done)

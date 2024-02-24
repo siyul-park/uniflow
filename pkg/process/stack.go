@@ -1,159 +1,348 @@
 package process
 
 import (
+	"math"
+	"slices"
 	"sync"
 
-	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
-// Stack represents a stack data structure with associated graph-based relationships.
 type Stack struct {
-	graph  *Graph
-	values map[uuid.UUID][]uuid.UUID
-	dones  map[uuid.UUID]chan struct{}
+	stems  nodes
+	leaves nodes
+	heads  nodes
+	dones  map[*packet.Packet]chan struct{}
 	mu     sync.RWMutex
 }
 
-func newStack(graph *Graph) *Stack {
+type nodes map[*packet.Packet]edges
+type edges []*packet.Packet
+
+func newStack() *Stack {
 	return &Stack{
-		graph:  graph,
-		values: make(map[uuid.UUID][]uuid.UUID),
-		dones:  make(map[uuid.UUID]chan struct{}),
+		stems:  make(nodes),
+		leaves: make(nodes),
+		heads:  make(nodes),
+		dones:  make(map[*packet.Packet]chan struct{}),
 	}
 }
 
-// Push adds a value to the stack associated with the given key.
-func (s *Stack) Push(key, value uuid.UUID) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.values[key] = append(s.values[key], value)
-}
-
-// Pop removes and returns the top value from the stack associated with the given key.
-func (s *Stack) Pop(key, value uuid.UUID) (uuid.UUID, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, head := range s.heads(key) {
-		values := s.values[head]
-		if values[len(values)-1] == value {
-			s.values[head] = values[:len(values)-1]
-			s.done(head)
-			return head, true
-		}
-	}
-
-	return uuid.UUID{}, false
-}
-
-// Heads returns the unique heads (keys) with non-empty stacks reachable from the given key.
-func (s *Stack) Heads(key uuid.UUID) []uuid.UUID {
+func (s *Stack) Has(stem, leaf *packet.Packet) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.heads(key)
+	if stem == nil {
+		_, ok := s.stems[leaf]
+		return ok
+	}
+
+	var ok bool
+	s.downwards(stem, func(node *packet.Packet, _ []*packet.Packet) bool {
+		if node == leaf {
+			ok = true
+		}
+		return !ok
+	})
+	return ok
 }
 
-// Clear removes the stack associated with the given key and its branches if their stacks are empty.
-func (s *Stack) Clear(key uuid.UUID) {
+func (s *Stack) Add(stem, leaf *packet.Packet) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.graph.Upwards(key, func(key uuid.UUID) bool {
-		for _, leaf := range s.graph.Leaves(key) {
-			if len(s.values[leaf]) > 0 {
+	delete(s.leaves, nil)
+
+	s.touch(stem)
+	s.touch(leaf)
+
+	if stem != leaf && leaf != nil && stem != nil {
+		s.stems[leaf] = s.stems[leaf].append(stem)
+		s.leaves[stem] = s.leaves[stem].append(leaf)
+	}
+
+	s.refreshRoot(stem)
+	s.refreshRoot(leaf)
+}
+
+func (s *Stack) Unwind(leaf, stem *packet.Packet) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	path := s.path(stem, leaf)
+	if len(path) == 0 {
+		return false
+	}
+
+	for _, node := range path {
+		s.remove(node)
+	}
+	return true
+}
+
+func (s *Stack) Clear(leaf *packet.Packet) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, head := range s.heads[leaf] {
+		s.upwards(head, func(node *packet.Packet, _ []*packet.Packet) bool {
+			if len(s.leaves[node]) > 0 {
 				return false
 			}
-		}
-		delete(s.values, key)
-		return true
-	})
-
-	s.done(key)
+			s.remove(node)
+			return true
+		})
+	}
 }
 
-// Size returns the total number of elements in the stack and its branches reachable from the given key.
-func (s *Stack) Size(key uuid.UUID) int {
+func (s *Stack) Cost(stem, leaf *packet.Packet) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	size := 0
-	s.graph.Upwards(key, func(key uuid.UUID) bool {
-		size += len(s.values[key])
-		return true
-	})
-
-	return size
-}
-
-// Close removes all values in the stack.
-func (s *Stack) Close() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, wait := range s.dones {
-		close(wait)
+	cost := len(s.path(stem, leaf)) - 1
+	if cost < 0 {
+		return math.MaxInt
 	}
-
-	s.values = make(map[uuid.UUID][]uuid.UUID)
-	s.dones = make(map[uuid.UUID]chan struct{})
+	return cost
 }
 
-// Done blocks until related values in the stack are emptied.
-func (s *Stack) Done(key uuid.UUID) <-chan struct{} {
+func (s *Stack) Done(stem *packet.Packet) <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	done, ok := s.dones[key]
+	done, ok := s.dones[stem]
 	if !ok {
 		done = make(chan struct{})
-		s.dones[key] = done
+		s.dones[stem] = done
 	}
 
-	if s.leaves(key) == 0 {
-		close(done)
-		delete(s.dones, key)
-	}
+	s.done(stem)
 
 	return done
 }
 
-func (s *Stack) done(key uuid.UUID) {
-	for cur, done := range s.dones {
-		if s.graph.Has(cur, key) && s.leaves(cur) == 0 {
-			close(done)
-			delete(s.dones, cur)
-		}
+func (s *Stack) Close() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, done := range s.dones {
+		close(done)
 	}
+
+	s.stems = make(nodes)
+	s.leaves = make(nodes)
+	s.heads = make(nodes)
+	s.dones = make(map[*packet.Packet]chan struct{})
 }
 
-func (s *Stack) heads(key uuid.UUID) []uuid.UUID {
-	var heads []uuid.UUID
-	s.graph.Upwards(key, func(key uuid.UUID) bool {
-		if len(s.values[key]) > 0 {
-			heads = append(heads, key)
-			return false
-		}
-		return true
-	})
-
-	return heads
-}
-
-func (s *Stack) leaves(key uuid.UUID) int {
-	leaves := 0
-
-	if key == (uuid.UUID{}) {
-		for _, values := range s.values {
-			leaves += len(values)
-		}
-	} else {
-		s.graph.Downwards(key, func(key uuid.UUID) bool {
-			leaves += len(s.values[key])
-			return true
+func (s *Stack) path(stem, leaf *packet.Packet) []*packet.Packet {
+	var path []*packet.Packet
+	for _, head := range s.heads[leaf] {
+		s.upwards(head, func(node *packet.Packet, cur []*packet.Packet) bool {
+			if node == stem {
+				path = cur
+			}
+			return path == nil
 		})
 	}
+	slices.Reverse(path)
+	return path
+}
 
-	return leaves
+func (s *Stack) touch(node *packet.Packet) {
+	if node == nil {
+		return
+	}
+
+	if _, ok := s.stems[node]; !ok {
+		s.stems[node] = nil
+	}
+	if _, ok := s.leaves[node]; !ok {
+		s.leaves[node] = nil
+	}
+
+	if _, ok := s.heads[node]; !ok {
+		s.heads[node] = edges{node}
+	} else {
+		for _, head := range s.heads[node] {
+			var ok bool
+			s.downwards(node, func(node *packet.Packet, cur []*packet.Packet) bool {
+				if node == head {
+					ok = true
+				}
+				return !ok
+			})
+
+			if !ok {
+				s.stems[node] = s.stems[node].append(head)
+				s.leaves[head] = s.leaves[head].append(node)
+			}
+		}
+	}
+}
+
+func (s *Stack) has(node *packet.Packet) bool {
+	if node == nil {
+		return len(s.stems[node]) > 0
+	}
+	_, ok := s.stems[node]
+	return ok
+}
+
+func (s *Stack) remove(node *packet.Packet) {
+	for cur, heads := range s.heads {
+		if heads.has(node) {
+			heads = heads.delete(node)
+			heads = heads.append(s.stems[node]...)
+		}
+		if len(heads) > 0 {
+			s.heads[cur] = heads
+		} else {
+			delete(s.heads, cur)
+		}
+	}
+
+	for _, stem := range s.stems[node] {
+		s.leaves[stem] = s.leaves[stem].delete(node)
+	}
+	for _, leaf := range s.leaves[node] {
+		s.stems[leaf] = s.stems[leaf].delete(node)
+	}
+
+	if s.leaves[nil].has(node) {
+		for _, leaf := range s.leaves[node] {
+			s.refreshRoot(leaf)
+		}
+	}
+
+	delete(s.stems, node)
+	delete(s.leaves, node)
+
+	s.done(node)
+	s.done(nil)
+}
+
+func (s *Stack) refreshRoot(leaf *packet.Packet) {
+	if leaf == nil {
+		return
+	}
+	if len(s.stems[leaf]) > 0 {
+		s.leaves[nil] = s.leaves[nil].delete(leaf)
+	} else {
+		s.leaves[nil] = s.leaves[nil].append(leaf)
+	}
+}
+
+func (s *Stack) done(node *packet.Packet) {
+	if !s.has(node) {
+		if done, ok := s.dones[node]; ok {
+			close(done)
+			delete(s.dones, node)
+		}
+	}
+}
+
+func (s *Stack) upwards(leaf *packet.Packet, loop func(*packet.Packet, []*packet.Packet) bool) {
+	heads := []*packet.Packet{leaf}
+	parents := make(map[*packet.Packet]*packet.Packet)
+	visits := make(map[*packet.Packet]struct{})
+	for len(heads) > 0 {
+		head := heads[0]
+		heads = heads[1:]
+
+		if _, ok := visits[head]; ok {
+			continue
+		}
+		visits[head] = struct{}{}
+
+		stems := s.stems[head]
+		for _, stem := range stems {
+			parents[stem] = head
+		}
+
+		path := []*packet.Packet{head}
+		for {
+			if parent, ok := parents[path[len(path)-1]]; ok {
+				path = append(path, parent)
+			} else {
+				break
+			}
+		}
+
+		if !loop(head, path) {
+			continue
+		}
+
+		heads = append(heads, stems...)
+	}
+}
+
+func (s *Stack) downwards(stem *packet.Packet, loop func(*packet.Packet, []*packet.Packet) bool) {
+	var heads []*packet.Packet
+	if stem == nil {
+		heads = append(heads, s.leaves[nil]...)
+	} else {
+		heads = append(heads, stem)
+	}
+	parents := make(map[*packet.Packet]*packet.Packet)
+	visits := make(map[*packet.Packet]struct{})
+	for len(heads) > 0 {
+		head := heads[0]
+		heads = heads[1:]
+
+		if _, ok := visits[head]; ok {
+			continue
+		}
+		visits[head] = struct{}{}
+
+		leaves := s.leaves[head]
+		for _, leaf := range leaves {
+			parents[leaf] = head
+		}
+
+		path := []*packet.Packet{head}
+		for {
+			if parent, ok := parents[path[len(path)-1]]; ok {
+				path = append(path, parent)
+			} else {
+				break
+			}
+		}
+
+		if !loop(head, path) {
+			continue
+		}
+
+		heads = append(heads, leaves...)
+	}
+}
+
+func (e edges) has(element *packet.Packet) bool {
+	for _, v := range e {
+		if v == element {
+			return true
+		}
+	}
+	return false
+}
+
+func (e edges) append(elements ...*packet.Packet) edges {
+	for _, v := range elements {
+		if !e.has(v) {
+			e = append(e, v)
+		}
+	}
+	return e
+}
+
+func (e edges) delete(elements ...*packet.Packet) edges {
+	for _, v := range elements {
+		for i, cur := range e {
+			if cur == v {
+				e = append(e[:i], e[i+1:]...)
+				break
+			}
+		}
+	}
+	return e
 }

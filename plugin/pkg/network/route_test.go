@@ -197,57 +197,53 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 		},
 	}
 
-	in := port.New()
-	inPort := n.Port(node.PortIn)
-	inPort.Link(in)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	outs := map[string]*port.Port{}
+	outs := map[string]*port.InPort{}
 	for _, tc := range testCases {
 		if _, ok := outs[tc.expectPort]; !ok {
-			out := port.New()
-			outPort := n.Port(tc.expectPort)
-			outPort.Link(out)
+			out := port.NewIn()
+			n.Out(tc.expectPort).Link(out)
 			outs[tc.expectPort] = out
 		}
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
-			out := outs[tc.expectPort]
+		out := outs[tc.expectPort]
 
-			proc := process.New()
-			defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-			inStream := in.Open(proc)
-			outStream := out.Open(proc)
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
 
-			inPayload := primitive.NewMap(
-				primitive.NewString("method"), primitive.NewString(tc.whenMethod),
-				primitive.NewString("path"), primitive.NewString(tc.whenPath),
-			)
-			inPck := packet.New(inPayload)
+		inPayload := primitive.NewMap(
+			primitive.NewString("method"), primitive.NewString(tc.whenMethod),
+			primitive.NewString("path"), primitive.NewString(tc.whenPath),
+		)
+		inPck := packet.New(inPayload)
 
-			inStream.Send(inPck)
+		inWriter.Write(inPck)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-			select {
-			case outPck := <-outStream.Receive():
-				params, _ := primitive.Pick[map[string]string](outPck.Payload(), "params")
-				assert.Equal(t, tc.expectParams, params)
-				outStream.Send(outPck)
-			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
-			}
+		select {
+		case outPck := <-outReader.Read():
+			params, _ := primitive.Pick[map[string]string](outPck.Payload(), "params")
+			assert.Equal(t, tc.expectParams, params)
+			outReader.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
 
-			select {
-			case backPck := <-inStream.Receive():
-				assert.NotNil(t, backPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
-		})
+		select {
+		case backPck := <-inWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
 	}
 }
 
@@ -277,20 +273,17 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 
 	_ = n.Add(http.MethodGet, "/a/b/c", node.MultiPort(node.PortOut, 0))
 
-	in := port.New()
-	inPort := n.Port(node.PortIn)
-	inPort.Link(in)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	out := port.New()
-	outPort := n.Port(node.MultiPort(node.PortOut, 0))
-	outPort.Link(out)
+	out0 := port.NewIn()
+	n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
 	defer proc.Exit(nil)
-	defer proc.Stack().Close()
 
-	inStream := in.Open(proc)
-	outStream := out.Open(proc)
+	inWriter := in.Open(proc)
+	outReader0 := out0.Open(proc)
 
 	inPayload := primitive.NewMap(
 		primitive.NewString("method"), primitive.NewString(http.MethodGet),
@@ -300,10 +293,10 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 
 	b.ResetTimer()
 
-	b.RunParallel(func(p *testing.PB) {
-		for p.Next() {
-			inStream.Send(inPck)
-			<-outStream.Receive()
-		}
-	})
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		outPck := <-outReader0.Read()
+		outReader0.Receive(outPck)
+		<-inWriter.Receive()
+	}
 }

@@ -6,200 +6,176 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// Port is a linking terminal that allows *packet.Packet to be exchanged.
-type Port struct {
-	streams   map[*process.Process]*Stream
-	links     []*Port
-	initHooks []InitHook
-	done      chan struct{}
-	mu        sync.RWMutex
+type InPort struct {
+	readers  map[*process.Process]*Reader
+	handlers []Handler
+	mu       sync.RWMutex
 }
 
-// New returns a new Port.
-func New() *Port {
-	return &Port{
-		streams: make(map[*process.Process]*Stream),
-		done:    make(chan struct{}),
+func NewIn() *InPort {
+	return &InPort{
+		readers: make(map[*process.Process]*Reader),
 	}
 }
 
-// AddInitHook adds an InitHook to the Port.
-func (p *Port) AddInitHook(hook InitHook) {
+func (p *InPort) AddHandler(h Handler) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.initHooks = append(p.initHooks, hook)
+	p.handlers = append(p.handlers, h)
 }
 
-// Link connects two Ports to enable communication with each other.
-func (p *Port) Link(port *Port) {
-	p.link(port)
-	port.link(p)
-}
+func (p *InPort) Open(proc *process.Process) *Reader {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-// Unlink removes the linked Port from being able to communicate further.
-func (p *Port) Unlink(port *Port) {
-	p.unlink(port)
-	port.unlink(p)
-}
+	reader, ok := p.readers[proc]
+	if !ok {
+		reader = newReader(proc.Stack(), 0)
+		p.readers[proc] = reader
 
-// Links returns the number of linked Ports.
-func (p *Port) Links() int {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	return len(p.links)
-}
-
-// Open creates or returns an existing Stream for communication with a process.
-// The Stream is closed when the associated Process or Port is closed.
-// It broadcasts sent and received packets to all other Ports connected to it.
-func (p *Port) Open(proc *process.Process) *Stream {
-	newClosedStream := func() *Stream {
-		stream := newStream(proc)
-		stream.Close()
-		return stream
+		for _, h := range p.handlers {
+			h := h
+			go h.Serve(proc)
+		}
+		go func() {
+			select {
+			case <-proc.Done():
+				p.closeWithLock(proc)
+			case <-reader.Done():
+				p.closeWithLock(proc)
+			}
+		}()
 	}
 
 	select {
 	case <-proc.Done():
-		return newClosedStream()
-	case <-p.Done():
-		return newClosedStream()
+		p.close(proc)
+	case <-reader.Done():
+		p.close(proc)
 	default:
-		if stream, ok := func() (*Stream, bool) {
-			p.mu.RLock()
-			defer p.mu.RUnlock()
+	}
 
-			stream, ok := p.streams[proc]
-			return stream, ok
-		}(); ok {
-			return stream
+	return reader
+}
+
+func (p *InPort) Close() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for proc := range p.readers {
+		p.close(proc)
+	}
+}
+
+func (p *InPort) closeWithLock(proc *process.Process) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.close(proc)
+}
+
+func (p *InPort) close(proc *process.Process) {
+	if reader, ok := p.readers[proc]; ok {
+		reader.Close()
+		delete(p.readers, proc)
+	}
+}
+
+type OutPort struct {
+	ins      []*InPort
+	writers  map[*process.Process]*Writer
+	handlers []Handler
+	mu       sync.RWMutex
+}
+
+func NewOut() *OutPort {
+	return &OutPort{
+		writers: make(map[*process.Process]*Writer),
+	}
+}
+
+func (p *OutPort) AddHandler(h Handler) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.handlers = append(p.handlers, h)
+}
+
+func (p *OutPort) Links() int {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return len(p.ins)
+}
+
+func (p *OutPort) Link(in *InPort) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.ins = append(p.ins, in)
+}
+
+func (p *OutPort) Open(proc *process.Process) *Writer {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	writer, ok := p.writers[proc]
+	if !ok {
+		writer = newWriter(proc.Stack(), 0)
+		p.writers[proc] = writer
+
+		for _, in := range p.ins {
+			reader := in.Open(proc)
+			writer.Link(reader)
 		}
 
-		stream, ok := func() (*Stream, bool) {
-			p.mu.Lock()
-			defer p.mu.Unlock()
-
-			stream, ok := p.streams[proc]
-			if ok {
-				return stream, true
-			}
-			stream = newStream(proc)
-			p.streams[proc] = stream
-			return stream, false
-		}()
-		if ok {
-			return stream
-		}
-
-		p.mu.RLock()
-		links := p.links
-		inits := p.initHooks
-		p.mu.RUnlock()
-
-		for _, link := range links {
-			stream.Link(link.Open(proc))
-		}
-
-		closeStream := func() {
-			p.mu.Lock()
-			defer p.mu.Unlock()
-
-			if s := p.streams[proc]; s == stream {
-				delete(p.streams, proc)
-			}
-
-			stream.Close()
+		for _, h := range p.handlers {
+			h := h
+			go h.Serve(proc)
 		}
 
 		go func() {
 			select {
-			case <-p.Done():
 			case <-proc.Done():
-				closeStream()
-			case <-stream.Done():
-				closeStream()
+				p.closeWithLock(proc)
+			case <-writer.Done():
+				p.closeWithLock(proc)
 			}
 		}()
-
-		for _, hook := range inits {
-			go func(hook InitHook) {
-				hook.Init(proc)
-			}(hook)
-		}
-
-		return stream
 	}
-}
-
-// Done returns a channel that is closed when the Port is closed.
-func (p *Port) Done() <-chan struct{} {
-	return p.done
-}
-
-// Close closes the Port.
-// All Streams currently open will also be shut down, and any unprocessed packets will be discarded.
-func (p *Port) Close() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	select {
-	case <-p.done:
-		return
+	case <-proc.Done():
+		p.close(proc)
+	case <-writer.Done():
+		p.close(proc)
 	default:
 	}
 
-	for _, stream := range p.streams {
-		stream.Close()
-	}
-
-	p.streams = nil
-	p.links = nil
-	p.initHooks = nil
-
-	close(p.done)
+	return writer
 }
 
-func (p *Port) link(port *Port) {
-	if p == port {
-		return
-	}
-
-	if ok := func() bool {
-		p.mu.Lock()
-		defer p.mu.Unlock()
-
-		for _, link := range p.links {
-			if link == port {
-				return false
-			}
-		}
-
-		p.links = append(p.links, port)
-		return true
-	}(); !ok {
-		return
-	}
-
-	go func() {
-		select {
-		case <-p.Done():
-			return
-		case <-port.Done():
-			p.unlink(port)
-		}
-	}()
-}
-
-func (p *Port) unlink(port *Port) {
+func (p *OutPort) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for i, link := range p.links {
-		if port == link {
-			p.links = append(p.links[:i], p.links[i+1:]...)
-			break
-		}
+	for proc := range p.writers {
+		p.close(proc)
+	}
+	p.ins = nil
+}
+
+func (p *OutPort) closeWithLock(proc *process.Process) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.close(proc)
+}
+
+func (p *OutPort) close(proc *process.Process) {
+	if writer, ok := p.writers[proc]; ok {
+		writer.Close()
+		delete(p.writers, proc)
 	}
 }

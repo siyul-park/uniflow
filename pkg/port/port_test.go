@@ -2,158 +2,75 @@ package port
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	port := New()
-	defer port.Close()
+func TestPort_Open(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
 
-	assert.NotNil(t, port)
+	in := NewIn()
+	defer in.Close()
+
+	out := NewOut()
+	defer out.Close()
+
+	out.Link(in)
+
+	r := in.Open(proc)
+	w := out.Open(proc)
+
+	assert.Equal(t, r, in.Open(proc))
+	assert.Equal(t, w, out.Open(proc))
 }
 
 func TestPort_Link(t *testing.T) {
-	port1 := New()
-	defer port1.Close()
-	port2 := New()
-	defer port2.Close()
+	in := NewIn()
+	defer in.Close()
 
-	port1.Link(port2)
+	out := NewOut()
+	defer out.Close()
 
+	out.Link(in)
+
+	assert.Equal(t, 1, out.Links())
+}
+
+func TestPort_AddHandler(t *testing.T) {
 	proc := process.New()
+	defer proc.Exit(nil)
 
-	stream1 := port1.Open(proc)
-	stream2 := port2.Open(proc)
+	in := NewIn()
+	defer in.Close()
 
-	pck1 := packet.New(nil)
-	pck2 := packet.New(nil)
+	out := NewOut()
+	defer out.Close()
 
-	stream1.Send(pck1)
-	stream2.Send(pck2)
-
-	assert.Equal(t, pck1, <-stream2.Receive())
-	assert.Equal(t, pck2, <-stream1.Receive())
-}
-
-func TestPort_UnLink(t *testing.T) {
-	port1 := New()
-	defer port1.Close()
-	port2 := New()
-	defer port2.Close()
-
-	port1.Link(port2)
-	port1.Unlink(port2)
-
-	proc := process.New()
-
-	stream1 := port1.Open(proc)
-	stream2 := port2.Open(proc)
-
-	pck1 := packet.New(nil)
-	pck2 := packet.New(nil)
-
-	stream1.Send(pck1)
-	stream2.Send(pck2)
-
-	select {
-	case <-stream1.Receive():
-		assert.Fail(t, "pipe should not receive and packet.")
-	default:
-	}
-	select {
-	case <-stream2.Receive():
-		assert.Fail(t, "pipe should not receive and packet.")
-	default:
-	}
-}
-
-func TestPortLinks(t *testing.T) {
-	port1 := New()
-	defer port1.Close()
-	port2 := New()
-	defer port2.Close()
-
-	assert.Equal(t, port1.Links(), 0)
-	assert.Equal(t, port2.Links(), 0)
-
-	port1.Link(port2)
-
-	assert.Equal(t, port1.Links(), 1)
-	assert.Equal(t, port2.Links(), 1)
-}
-
-func TestPort_Open(t *testing.T) {
-	port := New()
-	defer port.Close()
-
-	t.Run("Not Closed", func(t *testing.T) {
-		proc := process.New()
-		stream := port.Open(proc)
-
-		proc.Exit(nil)
-
-		select {
-		case <-stream.Done():
-		case <-time.Tick(time.Second):
-			assert.Fail(t, "pipe.Done() is empty.")
+	done := make(chan struct{})
+	count := atomic.Int32{}
+	h := HandlerFunc(func(proc *process.Process) {
+		if count.Add(1) == 2 {
+			close(done)
 		}
 	})
 
-	t.Run("Closed", func(t *testing.T) {
-		proc := process.New()
-		proc.Exit(nil)
+	in.AddHandler(h)
+	out.AddHandler(h)
 
-		stream := port.Open(proc)
-
-		select {
-		case <-stream.Done():
-		default:
-			assert.Fail(t, "stream.Done() is empty.")
-		}
-	})
-}
-
-func TestPort_Close(t *testing.T) {
-	port := New()
-	defer port.Close()
-
-	proc := process.New()
-	stream := port.Open(proc)
-
-	pck := packet.New(nil)
-	stream.Send(pck)
-
-	port.Close()
+	_ = in.Open(proc)
+	_ = out.Open(proc)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	select {
-	case <-port.Done():
+	case <-done:
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
-
-	select {
-	case <-stream.Done():
-	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
-	}
-}
-
-func BenchmarkPort_Open(b *testing.B) {
-	port := New()
-	defer port.Close()
-
-	b.RunParallel(func(p *testing.PB) {
-		for p.Next() {
-			proc := process.New()
-			_ = port.Open(proc)
-		}
-	})
 }

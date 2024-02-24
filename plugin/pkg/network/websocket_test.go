@@ -57,17 +57,10 @@ func TestWebsocketNode_Port(t *testing.T) {
 	n := NewWebsocketNode()
 	defer n.Close()
 
-	p := n.Port(node.PortIO)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortIn)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortOut)
-	assert.NotNil(t, p)
-
-	p = n.Port(node.PortErr)
-	assert.NotNil(t, p)
+	assert.NotNil(t, n.In(node.PortIO))
+	assert.NotNil(t, n.In(node.PortIn))
+	assert.NotNil(t, n.Out(node.PortOut))
+	assert.NotNil(t, n.Out(node.PortErr))
 }
 
 func TestWebsocketNode_SendAndReceive(t *testing.T) {
@@ -81,15 +74,8 @@ func TestWebsocketNode_SendAndReceive(t *testing.T) {
 		ws := NewWebsocketNode()
 		defer ws.Close()
 
-		io1 := http.Port(node.PortIO)
-		io2 := ws.Port(node.PortIO)
-
-		io1.Link(io2)
-
-		in := ws.Port(node.PortIn)
-		out := ws.Port(node.PortOut)
-
-		out.Link(in)
+		http.Out(node.PortOut).Link(ws.In(node.PortIO))
+		ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
 		assert.NoError(t, http.Listen())
 
@@ -110,43 +96,41 @@ func TestWebsocketNode_SendAndReceive(t *testing.T) {
 		assert.Equal(t, websocket.TextMessage, typ)
 	})
 
-	t.Run("With Error", func(t *testing.T) {
+	t.Run("IO -> Error -> IO", func(t *testing.T) {
 		n := NewWebsocketNode()
 		defer n.Close()
 
-		io := port.New()
-		ioPort := n.Port(node.PortIO)
-		ioPort.Link(io)
+		io := port.NewOut()
+		io.Link(n.In(node.PortIO))
 
-		err := port.New()
-		errPort := n.Port(node.PortErr)
-		errPort.Link(err)
+		err := port.NewIn()
+		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 		defer proc.Stack().Close()
 
-		ioStream := io.Open(proc)
-		errStream := err.Open(proc)
+		ioWriter := io.Open(proc)
+		errReader := err.Open(proc)
 
 		inPayload := primitive.NewString("invalid payload")
 		inPck := packet.New(inPayload)
 
-		ioStream.Send(inPck)
+		ioWriter.Write(inPck)
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		select {
-		case outPck := <-errStream.Receive():
+		case outPck := <-errReader.Read():
 			assert.NotNil(t, outPck)
-			errStream.Send(outPck)
+			errReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
 
 		select {
-		case backPck := <-ioStream.Receive():
+		case backPck := <-ioWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -178,15 +162,8 @@ func BenchmarkWebsocketNode_SendAndReceive(b *testing.B) {
 	ws := NewWebsocketNode()
 	defer ws.Close()
 
-	io1 := http.Port(node.PortIO)
-	io2 := ws.Port(node.PortIO)
-
-	io1.Link(io2)
-
-	in := ws.Port(node.PortIn)
-	out := ws.Port(node.PortOut)
-
-	out.Link(in)
+	http.Out(node.PortOut).Link(ws.In(node.PortIO))
+	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
 	_ = http.Listen()
 

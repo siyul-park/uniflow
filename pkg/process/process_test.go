@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,20 +15,6 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, proc)
 }
 
-func TestProcess_ID(t *testing.T) {
-	proc := New()
-	defer proc.Exit(nil)
-
-	assert.NotEqual(t, uuid.UUID{}, proc.ID())
-}
-
-func TestProcess_Graph(t *testing.T) {
-	proc := New()
-	defer proc.Exit(nil)
-
-	assert.NotNil(t, proc.Graph())
-}
-
 func TestProcess_Stack(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
@@ -37,11 +22,11 @@ func TestProcess_Stack(t *testing.T) {
 	assert.NotNil(t, proc.Stack())
 }
 
-func TestProcess_Share(t *testing.T) {
+func TestProcess_Heap(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
-	assert.NotNil(t, proc.Share())
+	assert.NotNil(t, proc.Heap())
 }
 
 func TestProcess_Lock(t *testing.T) {
@@ -54,16 +39,16 @@ func TestProcess_Lock(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		proc.Stack().Done(uuid.UUID{})
+		proc.Exit(nil)
 		close(done)
 	}()
 
 	proc.Unlock()
 
 	select {
+	case <-done:
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
-	case <-done:
 	}
 }
 

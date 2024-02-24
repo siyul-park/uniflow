@@ -2,277 +2,142 @@ package process
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStack_Push(t *testing.T) {
-	t.Run("Flat", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+func TestStack_Has(t *testing.T) {
+	s := newStack()
+	defer s.Close()
 
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
 
-		s.Push(k, v)
-		assert.Equal(t, 1, s.Size(k))
-	})
+	assert.False(t, s.Has(pck1, pck2))
+	assert.False(t, s.Has(nil, pck1))
+	assert.False(t, s.Has(nil, pck2))
 
-	t.Run("Deep", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
-
-		v1 := uuid.Must(uuid.NewV7())
-		v2 := uuid.Must(uuid.NewV7())
-
-		g.Add(k1, k2)
-
-		s.Push(k1, v1)
-		s.Push(k2, v2)
-		assert.Equal(t, 2, s.Size(k2))
-	})
-
-	t.Run("Recursive", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
-
-		v1 := uuid.Must(uuid.NewV7())
-		v2 := uuid.Must(uuid.NewV7())
-
-		g.Add(k1, k2)
-		g.Add(k2, k1)
-
-		s.Push(k1, v1)
-		s.Push(k2, v2)
-		assert.Equal(t, 2, s.Size(k2))
-	})
+	s.Add(pck1, pck2)
+	assert.True(t, s.Has(pck1, pck2))
+	assert.True(t, s.Has(nil, pck1))
+	assert.True(t, s.Has(nil, pck2))
 }
 
-func TestStack_Pop(t *testing.T) {
-	t.Run("Flat", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+func TestStack_Add(t *testing.T) {
+	s := newStack()
+	defer s.Close()
 
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
 
-		s.Push(k, v)
+	s.Add(nil, pck1)
+	assert.True(t, s.Has(nil, pck1))
 
-		head, ok := s.Pop(k, v)
-		assert.True(t, ok)
-		assert.Equal(t, k, head)
-		assert.Equal(t, 0, s.Size(k))
-	})
+	s.Add(nil, pck2)
+	assert.True(t, s.Has(nil, pck2))
 
-	t.Run("Deep", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+	s.Add(pck1, pck2)
+	assert.True(t, s.Has(pck1, pck2))
+}
 
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
+func TestStack_Unwind(t *testing.T) {
+	s := newStack()
+	defer s.Close()
 
-		v1 := uuid.Must(uuid.NewV7())
-		v2 := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+	pck3 := packet.New(nil)
 
-		g.Add(k1, k2)
+	s.Add(pck1, pck2)
+	s.Add(pck2, pck3)
 
-		s.Push(k1, v1)
-		s.Push(k2, v2)
+	s.Unwind(pck3, pck2)
+	assert.False(t, s.Has(pck2, pck3))
+	assert.False(t, s.Has(nil, pck2))
+	assert.False(t, s.Has(nil, pck3))
 
-		head, ok := s.Pop(k2, v2)
-		assert.True(t, ok)
-		assert.Equal(t, k2, head)
-		assert.Equal(t, 1, s.Size(k2))
-
-		head, ok = s.Pop(k2, v1)
-		assert.True(t, ok)
-		assert.Equal(t, k1, head)
-		assert.Equal(t, 0, s.Size(k2))
-	})
-
-	t.Run("Recursive", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
-
-		v1 := uuid.Must(uuid.NewV7())
-		v2 := uuid.Must(uuid.NewV7())
-
-		g.Add(k1, k2)
-		g.Add(k2, k1)
-
-		s.Push(k1, v1)
-		s.Push(k2, v2)
-
-		head, ok := s.Pop(k2, v2)
-		assert.True(t, ok)
-		assert.Equal(t, k2, head)
-		assert.Equal(t, 1, s.Size(k2))
-
-		head, ok = s.Pop(k2, v1)
-		assert.True(t, ok)
-		assert.Equal(t, k1, head)
-		assert.Equal(t, 0, s.Size(k2))
-	})
+	s.Unwind(pck3, pck1)
+	assert.False(t, s.Has(nil, pck1))
 }
 
 func TestStack_Clear(t *testing.T) {
-	t.Run("Flat", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+	s := newStack()
+	defer s.Close()
 
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+	pck3 := packet.New(nil)
 
-		s.Push(k, v)
+	s.Add(pck1, pck2)
+	s.Add(pck1, pck3)
 
-		s.Clear(k)
-		assert.Equal(t, 0, s.Size(k))
-	})
+	s.Clear(pck3)
+	assert.True(t, s.Has(nil, pck1))
+	assert.False(t, s.Has(nil, pck3))
 
-	t.Run("Deep", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
-
-		v1 := uuid.Must(uuid.NewV7())
-		v2 := uuid.Must(uuid.NewV7())
-
-		g.Add(k1, k2)
-
-		s.Push(k1, v1)
-		s.Push(k2, v2)
-
-		s.Clear(k2)
-		assert.Equal(t, 0, s.Size(k2))
-	})
+	s.Clear(pck2)
+	assert.False(t, s.Has(nil, pck1))
+	assert.False(t, s.Has(nil, pck2))
 }
 
-func TestStack_Heads(t *testing.T) {
-	t.Run("Flat", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+func TestStack_Cost(t *testing.T) {
+	s := newStack()
+	defer s.Close()
 
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+	pck3 := packet.New(nil)
 
-		s.Push(k, v)
+	s.Add(pck1, pck2)
+	s.Add(pck1, pck3)
 
-		heads := s.Heads(k)
-		assert.Equal(t, []uuid.UUID{k}, heads)
-	})
+	cost := s.Cost(pck3, pck3)
+	assert.Equal(t, 0, cost)
 
-	t.Run("Deep", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+	cost = s.Cost(pck2, pck2)
+	assert.Equal(t, 0, cost)
 
-		k1 := uuid.Must(uuid.NewV7())
-		k2 := uuid.Must(uuid.NewV7())
+	cost = s.Cost(pck1, pck2)
+	assert.Equal(t, 1, cost)
 
-		v1 := uuid.Must(uuid.NewV7())
+	cost = s.Cost(pck1, pck3)
+	assert.Equal(t, 1, cost)
 
-		g.Add(k1, k2)
-
-		s.Push(k1, v1)
-
-		heads := s.Heads(k2)
-		assert.Equal(t, []uuid.UUID{k1}, heads)
-	})
+	cost = s.Cost(pck2, pck3)
+	assert.Equal(t, math.MaxInt, cost)
 }
 
 func TestStack_Done(t *testing.T) {
-	t.Run("Root Done", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
+	s := newStack()
+	defer s.Close()
 
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+	pck3 := packet.New(nil)
 
-		s.Push(k, v)
+	s.Add(pck1, pck2)
+	s.Add(pck1, pck3)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-		done := s.Done(uuid.UUID{})
+	s.Unwind(pck3, pck1)
 
-		s.Pop(k, v)
+	select {
+	case <-s.Done(pck3):
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
 
-		select {
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		case <-done:
-		}
-	})
+	s.Unwind(pck2, pck1)
 
-	t.Run("Node Done", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
-
-		s.Push(k, v)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		done := s.Done(k)
-
-		s.Pop(k, v)
-
-		select {
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		case <-done:
-		}
-	})
-
-	t.Run("Lazy Done", func(t *testing.T) {
-		g := newGraph()
-		s := newStack(g)
-
-		k := uuid.Must(uuid.NewV7())
-		v := uuid.Must(uuid.NewV7())
-
-		s.Push(k, v)
-		s.Pop(k, v)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		done := s.Done(uuid.UUID{})
-
-		select {
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		case <-done:
-		}
-	})
-
-}
-
-func TestStack_Close(t *testing.T) {
-	g := newGraph()
-	s := newStack(g)
-
-	k := uuid.Must(uuid.NewV7())
-	v := uuid.Must(uuid.NewV7())
-
-	s.Push(k, v)
-
-	s.Close()
-	assert.Equal(t, 0, s.Size(k))
+	select {
+	case <-s.Done(nil):
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
 }
