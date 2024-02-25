@@ -26,34 +26,35 @@ func (p *InPort) AddHandler(h Handler) {
 }
 
 func (p *InPort) Open(proc *process.Process) *Reader {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	reader, ok := func() (*Reader, bool) {
+		p.mu.Lock()
+		defer p.mu.Unlock()
 
-	reader, ok := p.readers[proc]
+		reader, ok := p.readers[proc]
+		if !ok {
+			reader = newReader(proc.Stack(), 0)
+			p.readers[proc] = reader
+
+			go func() {
+				select {
+				case <-proc.Done():
+					p.closeWithLock(proc)
+				case <-reader.Done():
+					p.closeWithLock(proc)
+				}
+			}()
+		}
+		return reader, ok
+	}()
+
 	if !ok {
-		reader = newReader(proc.Stack(), 0)
-		p.readers[proc] = reader
+		p.mu.RLock()
+		defer p.mu.RUnlock()
 
 		for _, h := range p.handlers {
 			h := h
 			go h.Serve(proc)
 		}
-		go func() {
-			select {
-			case <-proc.Done():
-				p.closeWithLock(proc)
-			case <-reader.Done():
-				p.closeWithLock(proc)
-			}
-		}()
-	}
-
-	select {
-	case <-proc.Done():
-		p.close(proc)
-	case <-reader.Done():
-		p.close(proc)
-	default:
 	}
 
 	return reader
@@ -117,13 +118,30 @@ func (p *OutPort) Link(in *InPort) {
 }
 
 func (p *OutPort) Open(proc *process.Process) *Writer {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	writer, ok := func() (*Writer, bool) {
+		p.mu.Lock()
+		defer p.mu.Unlock()
 
-	writer, ok := p.writers[proc]
+		writer, ok := p.writers[proc]
+		if !ok {
+			writer = newWriter(proc.Stack(), 0)
+			p.writers[proc] = writer
+
+			go func() {
+				select {
+				case <-proc.Done():
+					p.closeWithLock(proc)
+				case <-writer.Done():
+					p.closeWithLock(proc)
+				}
+			}()
+		}
+		return writer, ok
+	}()
+
 	if !ok {
-		writer = newWriter(proc.Stack(), 0)
-		p.writers[proc] = writer
+		p.mu.RLock()
+		defer p.mu.RUnlock()
 
 		for _, in := range p.ins {
 			reader := in.Open(proc)
@@ -134,23 +152,6 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 			h := h
 			go h.Serve(proc)
 		}
-
-		go func() {
-			select {
-			case <-proc.Done():
-				p.closeWithLock(proc)
-			case <-writer.Done():
-				p.closeWithLock(proc)
-			}
-		}()
-	}
-
-	select {
-	case <-proc.Done():
-		p.close(proc)
-	case <-writer.Done():
-		p.close(proc)
-	default:
 	}
 
 	return writer
