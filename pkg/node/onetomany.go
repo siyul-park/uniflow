@@ -114,6 +114,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				inReader.Receive(errPck)
 			}
 		} else {
+			if len(outPcks) > len(outWriters) {
+				outPcks = outPcks[:len(outWriters)]
+			}
 			outWriters = lo.Filter(outWriters, func(_ *port.Writer, i int) bool {
 				return len(outPcks) > i && outPcks[i] != nil
 			})
@@ -121,7 +124,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				return item != nil
 			})
 
-			if len(outPcks) > 0 && len(outPcks) <= len(outWriters) {
+			if len(outPcks) > 0 {
 				for _, outPck := range outPcks {
 					proc.Stack().Add(inPck, outPck)
 				}

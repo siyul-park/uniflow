@@ -26,30 +26,22 @@ func (p *InPort) AddHandler(h Handler) {
 }
 
 func (p *InPort) Open(proc *process.Process) *Reader {
-	reader, ok := func() (*Reader, bool) {
-		p.mu.Lock()
-		defer p.mu.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-		reader, ok := p.readers[proc]
-		if !ok {
-			reader = newReader(proc.Stack(), 0)
-			p.readers[proc] = reader
-
-			go func() {
-				select {
-				case <-proc.Done():
-					p.closeWithLock(proc)
-				case <-reader.Done():
-					p.closeWithLock(proc)
-				}
-			}()
-		}
-		return reader, ok
-	}()
-
+	reader, ok := p.readers[proc]
 	if !ok {
-		p.mu.RLock()
-		defer p.mu.RUnlock()
+		reader = newReader(proc.Stack(), 0)
+		p.readers[proc] = reader
+
+		go func() {
+			select {
+			case <-proc.Done():
+				p.closeWithLock(proc)
+			case <-reader.Done():
+				p.closeWithLock(proc)
+			}
+		}()
 
 		for _, h := range p.handlers {
 			h := h
