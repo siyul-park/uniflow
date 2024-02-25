@@ -12,7 +12,7 @@ import (
 
 func TestPort_Open(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	in := NewIn()
 	defer in.Close()
@@ -43,7 +43,7 @@ func TestPort_Link(t *testing.T) {
 
 func TestPort_AddHandler(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	in := NewIn()
 	defer in.Close()
@@ -73,4 +73,24 @@ func TestPort_AddHandler(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
+}
+
+func BenchmarkPort_Open(b *testing.B) {
+	in := NewIn()
+	defer in.Close()
+
+	out := NewOut()
+	defer out.Close()
+
+	out.Link(in)
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			proc := process.New()
+			defer proc.Close()
+
+			out.Open(proc)
+			in.Open(proc)
+		}
+	})
 }

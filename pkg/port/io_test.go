@@ -13,7 +13,7 @@ import (
 
 func TestIO_WriteAndRead(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	w := newWriter(proc.Stack(), 0)
 	defer w.Close()
@@ -55,7 +55,7 @@ func TestIO_WriteAndRead(t *testing.T) {
 
 func TestIO_Link(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	w := newWriter(proc.Stack(), 0)
 	defer w.Close()
@@ -72,7 +72,7 @@ func TestIO_Link(t *testing.T) {
 
 func TestIO_Done(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	w := newWriter(proc.Stack(), 0)
 	r := newReader(proc.Stack(), 0)
@@ -98,7 +98,7 @@ func TestIO_Done(t *testing.T) {
 
 func TestIO_Cost(t *testing.T) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	w := newWriter(proc.Stack(), 0)
 	defer w.Close()
@@ -133,7 +133,7 @@ func TestIO_Cost(t *testing.T) {
 
 func BenchmarkIO_WriteAndRead(b *testing.B) {
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 	defer proc.Stack().Close()
 
 	w := newWriter(proc.Stack(), 0)

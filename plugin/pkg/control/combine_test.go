@@ -37,7 +37,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriters := make([]*port.Writer, len(ins))
 		for i, in := range ins {
@@ -93,7 +93,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriters := make([]*port.Writer, len(ins))
 		for i, in := range ins {
@@ -149,7 +149,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriters := make([]*port.Writer, len(ins))
 		for i, in := range ins {
@@ -208,7 +208,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriters := make([]*port.Writer, len(ins))
 		for i, in := range ins {
@@ -267,7 +267,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriters := make([]*port.Writer, len(ins))
 		for i, in := range ins {
@@ -342,7 +342,7 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 	n.Out(node.PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	inWriters := make([]*port.Writer, len(ins))
 	for i, in := range ins {

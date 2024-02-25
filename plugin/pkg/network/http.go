@@ -172,7 +172,7 @@ func (n *HTTPNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		<-proc.Stack().Done(outPck)
 	}
 
-	go proc.Exit(nil)
+	go proc.Close()
 }
 
 // Close closes all ports and stops the HTTP server.
@@ -252,8 +252,9 @@ func (n *HTTPNode) throw(proc *process.Process, errPck *packet.Packet) {
 
 func (n *HTTPNode) receive(proc *process.Process, backPck *packet.Packet) {
 	var res *HTTPPayload
-	if _, ok := packet.AsError(backPck); ok {
+	if err, ok := packet.AsError(backPck); ok {
 		res = NewHTTPPayload(http.StatusInternalServerError)
+		proc.SetErr(err)
 	} else if err := primitive.Unmarshal(backPck.Payload(), &res); err != nil {
 		res.Body = backPck.Payload()
 	}
@@ -284,6 +285,8 @@ func (n *HTTPNode) receive(proc *process.Process, backPck *packet.Packet) {
 
 		if w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			if err := n.write(w, res); err != nil {
+				proc.SetErr(err)
+
 				res = NewHTTPPayload(http.StatusInternalServerError)
 				negotiate(res)
 

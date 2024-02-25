@@ -100,13 +100,14 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 		w.written = w.written[1:]
 	}
 
-	if len(w.written) == 0 || w.stack.Cost(w.written[0], pck) > 0 {
-		return false
+	for i := 0; i < len(w.written); i++ {
+		if w.stack.Cost(w.written[i], pck) == 0 {
+			w.stack.Unwind(pck, w.written[i])
+			w.written = append(w.written[:i], w.written[i+1:]...)
+			return true
+		}
 	}
-
-	w.stack.Unwind(pck, w.written[0])
-	w.written = w.written[1:]
-	return true
+	return false
 }
 
 func newReader(stack *process.Stack, capacity int) *Reader {
@@ -136,10 +137,13 @@ func (r *Reader) Cost(pck *packet.Packet) int {
 
 	r.clean()
 
-	if len(r.read) > 0 {
-		return r.stack.Cost(r.read[0], pck)
+	cost := math.MaxInt
+	for i := 0; i < len(r.read); i++ {
+		if cur := r.stack.Cost(r.read[i], pck); cur < cost {
+			cost = cur
+		}
 	}
-	return math.MaxInt
+	return cost
 }
 
 func (r *Reader) Read() <-chan *packet.Packet {
@@ -152,12 +156,19 @@ func (r *Reader) Receive(pck *packet.Packet) {
 
 	r.clean()
 
-	if len(r.read) == 0 || !r.stack.Unwind(pck, r.read[0]) {
-		return
+	cost := math.MaxInt
+	index := -1
+	for i := 0; i < len(r.read); i++ {
+		if cur := r.stack.Cost(r.read[i], pck); cur < cost {
+			cost = cur
+			index = i
+		}
 	}
 
-	r.read = r.read[1:]
-	r.pipe.Write(pck)
+	if index >= 0 && r.stack.Unwind(pck, r.read[index]) {
+		r.read = append(r.read[:index], r.read[index+1:]...)
+		r.pipe.Write(pck)
+	}
 }
 
 func (r *Reader) Done() <-chan struct{} {

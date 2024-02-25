@@ -213,7 +213,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 		out := outs[tc.expectPort]
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -280,7 +280,7 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)

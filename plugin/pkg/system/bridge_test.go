@@ -84,7 +84,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -116,7 +116,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -148,7 +148,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -178,7 +178,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -210,7 +210,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -245,7 +245,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 		errReader := err.Open(proc)
@@ -286,7 +286,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -318,7 +318,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -350,7 +350,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -382,7 +382,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -414,7 +414,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -446,7 +446,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 

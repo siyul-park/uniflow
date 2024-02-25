@@ -10,21 +10,21 @@ import (
 
 func TestNew(t *testing.T) {
 	proc := New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	assert.NotNil(t, proc)
 }
 
 func TestProcess_Stack(t *testing.T) {
 	proc := New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	assert.NotNil(t, proc.Stack())
 }
 
 func TestProcess_Heap(t *testing.T) {
 	proc := New()
-	defer proc.Exit(nil)
+	defer proc.Close()
 
 	assert.NotNil(t, proc.Heap())
 }
@@ -39,7 +39,7 @@ func TestProcess_Lock(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		proc.Exit(nil)
+		proc.Close()
 		close(done)
 	}()
 
@@ -52,7 +52,7 @@ func TestProcess_Lock(t *testing.T) {
 	}
 }
 
-func TestProcess_Exit(t *testing.T) {
+func TestProcess_Close(t *testing.T) {
 	proc := New()
 
 	select {
@@ -61,7 +61,7 @@ func TestProcess_Exit(t *testing.T) {
 	default:
 	}
 
-	proc.Exit(nil)
+	proc.Close()
 
 	select {
 	case <-proc.Done():
@@ -73,6 +73,6 @@ func TestProcess_Exit(t *testing.T) {
 func BenchmarkNewProcess(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		proc := New()
-		proc.Exit(nil)
+		proc.Close()
 	}
 }

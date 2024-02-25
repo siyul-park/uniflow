@@ -6,12 +6,13 @@ import (
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	stack *Stack
-	heap  *Heap
-	err   error
-	done  chan struct{}
-	wait  sync.WaitGroup
-	mu    sync.RWMutex
+	stack      *Stack
+	heap       *Heap
+	err        error
+	done       chan struct{}
+	wait       sync.WaitGroup
+	dataMutex  sync.RWMutex
+	closeMutex sync.Mutex
 }
 
 // New creates a new Process.
@@ -35,10 +36,18 @@ func (p *Process) Heap() *Heap {
 
 // Err returns the last error encountered by the process.
 func (p *Process) Err() error {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.dataMutex.RLock()
+	defer p.dataMutex.RUnlock()
 
 	return p.err
+}
+
+// SetErr set the last error encountered by the process.
+func (p *Process) SetErr(err error) {
+	p.dataMutex.Lock()
+	defer p.dataMutex.Unlock()
+
+	p.err = err
 }
 
 // Done returns a channel that is closed when the process is closed.
@@ -56,10 +65,10 @@ func (p *Process) Unlock() {
 	p.wait.Done()
 }
 
-// Exit closes the process with an optional error.
-func (p *Process) Exit(err error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+// Close closes the process.
+func (p *Process) Close() {
+	p.closeMutex.Lock()
+	defer p.closeMutex.Unlock()
 
 	select {
 	case <-p.done:
@@ -68,10 +77,9 @@ func (p *Process) Exit(err error) {
 	}
 
 	p.wait.Wait()
-
 	<-p.stack.Done(nil)
-	p.heap.Close()
 
-	p.err = err
+	p.heap.Close()
+	p.stack.Close()
 	close(p.done)
 }

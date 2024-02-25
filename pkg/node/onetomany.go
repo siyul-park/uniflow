@@ -121,7 +121,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				return item != nil
 			})
 
-			if len(outPcks) > 0 {
+			if len(outPcks) > 0 && len(outPcks) <= len(outWriters) {
 				for _, outPck := range outPcks {
 					proc.Stack().Add(inPck, outPck)
 				}

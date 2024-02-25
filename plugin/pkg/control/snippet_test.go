@@ -78,7 +78,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -108,7 +108,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -138,7 +138,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -166,7 +166,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -194,7 +194,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -222,7 +222,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -267,7 +267,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -291,7 +291,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -315,7 +315,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -338,7 +338,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -361,7 +361,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
@@ -384,7 +384,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		io.Link(n.In(node.PortIO))
 
 		proc := process.New()
-		defer proc.Exit(nil)
+		defer proc.Close()
 
 		ioWriter := io.Open(proc)
 
