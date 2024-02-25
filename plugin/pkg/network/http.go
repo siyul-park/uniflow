@@ -53,18 +53,6 @@ const KeyHTTPResponseWriter = "http.ResponseWriter"
 var _ node.Node = (*HTTPNode)(nil)
 var _ http.Handler = (*HTTPNode)(nil)
 
-// NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
-	if len(body) == 0 {
-		body = []primitive.Value{primitive.String(http.StatusText(status))}
-	}
-	return &HTTPPayload{
-		Header: http.Header{},
-		Body:   body[0],
-		Status: status,
-	}
-}
-
 // NewHTTPNode creates a new HTTPNode with the specified address.
 func NewHTTPNode(address string) *HTTPNode {
 	n := &HTTPNode{
@@ -85,6 +73,7 @@ func NewHTTPNode(address string) *HTTPNode {
 	return n
 }
 
+// In returns the input port with the specified name.
 func (n *HTTPNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -98,6 +87,7 @@ func (n *HTTPNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *HTTPNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -285,12 +275,12 @@ func (n *HTTPNode) receive(proc *process.Process, backPck *packet.Packet) {
 
 		if w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			if err := n.write(w, res); err != nil {
-				proc.SetErr(err)
-
 				res = NewHTTPPayload(http.StatusInternalServerError)
 				negotiate(res)
 
 				_ = n.write(w, res)
+
+				proc.SetErr(err)
 			}
 		}
 
@@ -371,6 +361,18 @@ func (n *HTTPNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
+}
+
+// NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
+func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
+	if len(body) == 0 {
+		body = []primitive.Value{primitive.String(http.StatusText(status))}
+	}
+	return &HTTPPayload{
+		Header: http.Header{},
+		Body:   body[0],
+		Status: status,
+	}
 }
 
 // NewHTTPNodeCodec creates a new codec for HTTPNodeSpec.

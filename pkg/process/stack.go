@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
+// Stack represents a data structure used for tracking packet dependencies.
 type Stack struct {
 	stems  nodes
 	leaves nodes
@@ -28,6 +29,7 @@ func newStack() *Stack {
 	}
 }
 
+// Has checks if there is a dependency path from stem to leaf in the stack.
 func (s *Stack) Has(stem, leaf *packet.Packet) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -47,6 +49,7 @@ func (s *Stack) Has(stem, leaf *packet.Packet) bool {
 	return ok
 }
 
+// Add adds a dependency edge from stem to leaf in the stack.
 func (s *Stack) Add(stem, leaf *packet.Packet) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -62,6 +65,7 @@ func (s *Stack) Add(stem, leaf *packet.Packet) {
 	s.touch(leaf)
 }
 
+// Unwind removes the dependency path from leaf to stem in the stack.
 func (s *Stack) Unwind(leaf, stem *packet.Packet) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -77,6 +81,7 @@ func (s *Stack) Unwind(leaf, stem *packet.Packet) bool {
 	return true
 }
 
+// Clear removes all dependencies associated with the leaf packet.
 func (s *Stack) Clear(leaf *packet.Packet) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -92,6 +97,7 @@ func (s *Stack) Clear(leaf *packet.Packet) {
 	}
 }
 
+// Cost calculates the cost (number of dependencies) from stem to leaf in the stack.
 func (s *Stack) Cost(stem, leaf *packet.Packet) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -103,6 +109,7 @@ func (s *Stack) Cost(stem, leaf *packet.Packet) int {
 	return cost
 }
 
+// Done returns a channel indicating when the stem packet is done processing.
 func (s *Stack) Done(stem *packet.Packet) <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -113,11 +120,12 @@ func (s *Stack) Done(stem *packet.Packet) <-chan struct{} {
 		s.dones[stem] = done
 	}
 
-	s.done(stem)
+	s.checkDone(stem)
 
 	return done
 }
 
+// Close closes all done channels and resets the stack.
 func (s *Stack) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -218,8 +226,8 @@ func (s *Stack) remove(node *packet.Packet) {
 	delete(s.stems, node)
 	delete(s.leaves, node)
 
-	s.done(node)
-	s.done(nil)
+	s.checkDone(node)
+	s.checkDone(nil)
 }
 
 func (s *Stack) refreshRoot(node *packet.Packet) {
@@ -233,7 +241,7 @@ func (s *Stack) refreshRoot(node *packet.Packet) {
 	}
 }
 
-func (s *Stack) done(node *packet.Packet) {
+func (s *Stack) checkDone(node *packet.Packet) {
 	if !s.has(node) {
 		if done, ok := s.dones[node]; ok {
 			close(done)

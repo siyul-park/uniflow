@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
 	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
 	recorder *packetRecorder
@@ -31,6 +32,7 @@ type packetQueue struct {
 
 var _ Node = (*ManyToOneNode)(nil)
 
+// NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
 		action: action,
@@ -49,6 +51,7 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 	return n
 }
 
+// In returns the input port with the specified name.
 func (n *ManyToOneNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -73,6 +76,7 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *ManyToOneNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -87,6 +91,7 @@ func (n *ManyToOneNode) Out(name string) *port.OutPort {
 	return nil
 }
 
+// Close closes all ports associated with the node.
 func (n *ManyToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -235,42 +240,42 @@ func (r *packetRecorder) consume(proc *process.Process, fn func([]*packet.Packet
 	}
 }
 
-func (b *packetQueue) provide(index int, pck *packet.Packet) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+func (q *packetQueue) provide(index int, pck *packet.Packet) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
-	for len(b.data) <= index {
-		b.data = append(b.data, nil)
+	for len(q.data) <= index {
+		q.data = append(q.data, nil)
 	}
-	b.data[index] = append(b.data[index], pck)
+	q.data[index] = append(q.data[index], pck)
 
-	if !b.resume {
-		b.resume = len(b.data[index]) == 1
+	if !q.resume {
+		q.resume = len(q.data[index]) == 1
 	}
 }
 
-func (b *packetQueue) consume(fn func([]*packet.Packet) bool) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+func (q *packetQueue) consume(fn func([]*packet.Packet) bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
-	if !b.resume {
+	if !q.resume {
 		return
 	}
 
-	buffer := make([]*packet.Packet, len(b.data))
-	for i, data := range b.data {
+	buffer := make([]*packet.Packet, len(q.data))
+	for i, data := range q.data {
 		if len(data) > 0 {
 			buffer[i] = data[0]
 		}
 	}
 
 	if fn(buffer) {
-		for i := range b.data {
-			if len(b.data[i]) > 0 {
-				b.data[i] = b.data[i][1:]
+		for i := range q.data {
+			if len(q.data[i]) > 0 {
+				q.data[i] = q.data[i][1:]
 			}
 		}
 	} else {
-		b.resume = false
+		q.resume = false
 	}
 }

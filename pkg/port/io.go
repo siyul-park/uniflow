@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// Writer represents a data writer in the pipeline.
 type Writer struct {
 	stack   *process.Stack
 	pipe    *Pipe
@@ -16,6 +17,7 @@ type Writer struct {
 	mu      sync.Mutex
 }
 
+// Reader represents a data reader in the pipeline.
 type Reader struct {
 	stack   *process.Stack
 	pipe    *Pipe
@@ -48,6 +50,7 @@ func newWriter(stack *process.Stack, capacity int) *Writer {
 	return w
 }
 
+// Write writes a packet to the Writer.
 func (w *Writer) Write(pck *packet.Packet) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -68,26 +71,32 @@ func (w *Writer) Write(pck *packet.Packet) {
 	w.pipe.Write(pck)
 }
 
+// Receive returns the channel for receiving packets from the Writer.
 func (w *Writer) Receive() <-chan *packet.Packet {
 	return w.channel
 }
 
+// Links returns the number of links in the Writer's pipe.
 func (w *Writer) Links() int {
 	return w.pipe.Links()
 }
 
+// Link links the Writer to a Reader.
 func (w *Writer) Link(r *Reader) {
 	w.pipe.Link(r.pipe)
 }
 
+// Unlink unlinks the Writer from a Reader.
 func (w *Writer) Unlink(r *Reader) {
 	w.pipe.Unlink(r.pipe)
 }
 
+// Done returns the channel signaling the Writer's pipe closure.
 func (w *Writer) Done() <-chan struct{} {
 	return w.pipe.Done()
 }
 
+// Close closes the Writer's pipe.
 func (w *Writer) Close() {
 	w.pipe.Close()
 }
@@ -131,6 +140,7 @@ func newReader(stack *process.Stack, capacity int) *Reader {
 	return r
 }
 
+// Cost calculates the cost of reading a packet from the Reader.
 func (r *Reader) Cost(pck *packet.Packet) int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -146,10 +156,12 @@ func (r *Reader) Cost(pck *packet.Packet) int {
 	return cost
 }
 
+// Read returns the channel for reading packets from the Reader.
 func (r *Reader) Read() <-chan *packet.Packet {
 	return r.channel
 }
 
+// Receive receives a packet and processes it in the Reader.
 func (r *Reader) Receive(pck *packet.Packet) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -171,10 +183,12 @@ func (r *Reader) Receive(pck *packet.Packet) {
 	}
 }
 
+// Done returns the channel signaling the Reader's pipe closure.
 func (r *Reader) Done() <-chan struct{} {
 	return r.pipe.Done()
 }
 
+// Close closes the Reader's pipe.
 func (r *Reader) Close() {
 	r.pipe.Close()
 }

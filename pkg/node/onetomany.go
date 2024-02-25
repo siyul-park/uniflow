@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// OneToManyNode represents a node with one input and multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
 	inPort   *port.InPort
@@ -19,6 +20,7 @@ type OneToManyNode struct {
 
 var _ Node = (*OneToManyNode)(nil)
 
+// NewOneToManyNode creates a new OneToManyNode instance with the given action function.
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
@@ -35,6 +37,7 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 	return n
 }
 
+// In returns the input port.
 func (n *OneToManyNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -47,6 +50,7 @@ func (n *OneToManyNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *OneToManyNode) Out(name string) *port.OutPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -76,6 +80,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	return nil
 }
 
+// Close closes all ports associated with the node.
 func (n *OneToManyNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

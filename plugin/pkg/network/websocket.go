@@ -107,6 +107,7 @@ func (n *WebSocketNode) WriteBufferSize() int {
 	return n.upgrader.WriteBufferSize
 }
 
+// In returns the input port with the specified name.
 func (n *WebSocketNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -122,6 +123,7 @@ func (n *WebSocketNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *WebSocketNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()

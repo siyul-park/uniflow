@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
+// OneToOneNode represents a node with one input and one output port.
 type OneToOneNode struct {
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
 	ioPort  *port.InPort
@@ -19,6 +20,7 @@ type OneToOneNode struct {
 
 var _ Node = (*OneToOneNode)(nil)
 
+// NewOneToOneNode creates a new OneToOneNode instance with the given action function.
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
@@ -38,6 +40,7 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 	return n
 }
 
+// In returns the input port with the specified name.
 func (n *OneToOneNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -53,6 +56,7 @@ func (n *OneToOneNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *OneToOneNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -68,6 +72,7 @@ func (n *OneToOneNode) Out(name string) *port.OutPort {
 	return nil
 }
 
+// Close closes all ports associated with the node.
 func (n *OneToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

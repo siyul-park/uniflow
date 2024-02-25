@@ -2,6 +2,7 @@ package process
 
 import "sync"
 
+// Heap is a concurrent map-like data structure.
 type Heap struct {
 	data map[string]any
 	mu   sync.RWMutex
@@ -13,6 +14,7 @@ func newHeap() *Heap {
 	}
 }
 
+// Load retrieves the value associated with the given key from the heap.
 func (h *Heap) Load(key string) any {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -20,6 +22,7 @@ func (h *Heap) Load(key string) any {
 	return h.data[key]
 }
 
+// Store stores the given value with the associated key in the heap.
 func (h *Heap) Store(key string, val any) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -31,6 +34,7 @@ func (h *Heap) Store(key string, val any) bool {
 	return true
 }
 
+// Delete removes the value associated with the given key from the heap.
 func (h *Heap) Delete(key string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -42,6 +46,7 @@ func (h *Heap) Delete(key string) bool {
 	return true
 }
 
+// LoadAndDelete retrieves and removes the value associated with the given key from the heap.
 func (h *Heap) LoadAndDelete(key string) any {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -51,6 +56,7 @@ func (h *Heap) LoadAndDelete(key string) any {
 	return val
 }
 
+// Close clears the heap by removing all key-value pairs.
 func (h *Heap) Close() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
