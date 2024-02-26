@@ -283,9 +283,9 @@ func (n *HTTPNode) receive(proc *process.Process, backPck *packet.Packet) {
 				proc.SetErr(err)
 			}
 		}
-
-		proc.Stack().Clear(backPck)
 	}
+
+	proc.Stack().Clear(backPck)
 }
 
 func (n *HTTPNode) read(r *http.Request) (*HTTPPayload, error) {
