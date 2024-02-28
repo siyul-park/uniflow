@@ -21,7 +21,7 @@ func TestIO_WriteAndRead(t *testing.T) {
 	r := newReader(proc.Stack(), 0)
 	defer r.Close()
 
-	w.Link(r)
+	w.link(r)
 
 	pck1 := packet.New(nil)
 	pck2 := packet.New(nil)
@@ -63,11 +63,13 @@ func TestIO_Link(t *testing.T) {
 	r := newReader(proc.Stack(), 0)
 	defer r.Close()
 
-	w.Link(r)
+	w.link(r)
 	assert.Equal(t, 1, w.Links())
+	assert.Equal(t, 1, r.Links())
 
-	w.Unlink(r)
+	w.unlink(r)
 	assert.Equal(t, 0, w.Links())
+	assert.Equal(t, 0, r.Links())
 }
 
 func TestIO_Done(t *testing.T) {
@@ -106,7 +108,7 @@ func TestIO_Cost(t *testing.T) {
 	r := newReader(proc.Stack(), 0)
 	defer r.Close()
 
-	w.Link(r)
+	w.link(r)
 
 	pck := packet.New(nil)
 
@@ -142,7 +144,7 @@ func BenchmarkIO_WriteAndRead(b *testing.B) {
 	r := newReader(proc.Stack(), 0)
 	defer r.Close()
 
-	w.Link(r)
+	w.link(r)
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {

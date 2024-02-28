@@ -160,7 +160,7 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 		for _, in := range p.ins {
 			reader := in.Open(proc)
-			writer.Link(reader)
+			writer.link(reader)
 		}
 
 		for _, h := range p.handlers {

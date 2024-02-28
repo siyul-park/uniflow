@@ -121,9 +121,20 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 
 		n.recorder.provide(proc, index, inPck)
 		n.recorder.consume(proc, func(inPcks []*packet.Packet) bool {
-			for len(inPcks) < len(n.inPorts) {
+			inReaders := make([]*port.Reader, len(n.inPorts))
+			for i, inPort := range n.inPorts {
+				inReaders[i] = inPort.Open(proc)
+			}
+
+			for len(inPcks) < len(inReaders) {
 				inPcks = append(inPcks, nil)
 			}
+			inPcks = lo.Filter(inPcks, func(_ *packet.Packet, i int) bool {
+				return inReaders[i].Links() > 0
+			})
+			inReaders = lo.Filter(inReaders, func(item *port.Reader, _ int) bool {
+				return item.Links() > 0
+			})
 
 			outPck, errPck := n.action(proc, inPcks)
 
@@ -146,7 +157,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 				}
 				outWriter.Write(outPck)
 			} else {
-				if len(inPcks) < len(n.inPorts) {
+				if len(inPcks) < len(inReaders) {
 					return false
 				}
 				for _, inPck := range inPcks {

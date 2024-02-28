@@ -81,16 +81,6 @@ func (w *Writer) Links() int {
 	return w.pipe.Links()
 }
 
-// Link links the Writer to a Reader.
-func (w *Writer) Link(r *Reader) {
-	w.pipe.Link(r.pipe)
-}
-
-// Unlink unlinks the Writer from a Reader.
-func (w *Writer) Unlink(r *Reader) {
-	w.pipe.Unlink(r.pipe)
-}
-
 // Done returns the channel signaling the Writer's pipe closure.
 func (w *Writer) Done() <-chan struct{} {
 	return w.pipe.Done()
@@ -99,6 +89,14 @@ func (w *Writer) Done() <-chan struct{} {
 // Close closes the Writer's pipe.
 func (w *Writer) Close() {
 	w.pipe.Close()
+}
+
+func (w *Writer) link(r *Reader) {
+	w.pipe.Link(r.pipe)
+}
+
+func (w *Writer) unlink(r *Reader) {
+	w.pipe.Unlink(r.pipe)
 }
 
 func (w *Writer) pop(pck *packet.Packet) bool {
@@ -138,6 +136,11 @@ func newReader(stack *process.Stack, capacity int) *Reader {
 	}()
 
 	return r
+}
+
+// Links returns the number of links in the Reader's pipe.
+func (r *Reader) Links() int {
+	return r.pipe.Links()
 }
 
 // Cost calculates the cost of reading a packet from the Reader.
