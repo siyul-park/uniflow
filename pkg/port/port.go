@@ -119,6 +119,18 @@ func (p *OutPort) Link(in *InPort) {
 	p.ins = append(p.ins, in)
 }
 
+// Unlink disconnects two pipthe output port to an input portelines.
+func (p *OutPort) Unlink(in *InPort) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for i, cur := range p.ins {
+		if cur == in {
+			p.ins = append(p.ins[:i], p.ins[i+1:]...)
+		}
+	}
+}
+
 // Open opens the output port for a given process and returns a writer.
 func (p *OutPort) Open(proc *process.Process) *Writer {
 	writer, ok := func() (*Writer, bool) {

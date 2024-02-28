@@ -37,8 +37,10 @@ func TestPort_Link(t *testing.T) {
 	defer out.Close()
 
 	out.Link(in)
-
 	assert.Equal(t, 1, out.Links())
+
+	out.Unlink(in)
+	assert.Equal(t, 0, out.Links())
 }
 
 func TestPort_AddHandler(t *testing.T) {
