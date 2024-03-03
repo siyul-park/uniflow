@@ -15,16 +15,20 @@ import (
 )
 
 func TestNewCombineNode(t *testing.T) {
-	n := NewCombineNode(0, false)
+	n := NewCombineNode()
 	assert.NotNil(t, n)
+	assert.Equal(t, -1, n.Depth())
+	assert.Equal(t, false, n.Inplace())
 
 	assert.NoError(t, n.Close())
 }
 
 func TestCombineNode_SendAndReceive(t *testing.T) {
 	t.Run("depth = 0", func(t *testing.T) {
-		n := NewCombineNode(0, false)
+		n := NewCombineNode()
 		defer n.Close()
+
+		n.SetDepth(0)
 
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
@@ -79,8 +83,10 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = 1", func(t *testing.T) {
-		n := NewCombineNode(1, false)
+		n := NewCombineNode()
 		defer n.Close()
+
+		n.SetDepth(1)
 
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
@@ -135,8 +141,10 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = 2", func(t *testing.T) {
-		n := NewCombineNode(2, false)
+		n := NewCombineNode()
 		defer n.Close()
+
+		n.SetDepth(2)
 
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
@@ -194,8 +202,10 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = -1", func(t *testing.T) {
-		n := NewCombineNode(-1, false)
+		n := NewCombineNode()
 		defer n.Close()
+
+		n.SetDepth(-1)
 
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
@@ -253,8 +263,10 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("inplace = true", func(t *testing.T) {
-		n := NewCombineNode(-1, true)
+		n := NewCombineNode()
 		defer n.Close()
+
+		n.SetInplace(true)
 
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
@@ -328,7 +340,7 @@ func TestCombineNodeCodec_Decode(t *testing.T) {
 }
 
 func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
-	n := NewCombineNode(0, false)
+	n := NewCombineNode()
 	defer n.Close()
 
 	var ins []*port.OutPort

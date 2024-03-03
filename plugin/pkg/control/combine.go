@@ -29,10 +29,42 @@ type CombineNodeSpec struct {
 const KindCombine = "combine"
 
 // NewCombineNode creates a new CombineNode.
-func NewCombineNode(depth int, inplace bool) *CombineNode {
-	n := &CombineNode{depth: depth, inplace: inplace}
+func NewCombineNode() *CombineNode {
+	n := &CombineNode{depth: -1, inplace: false}
 	n.ManyToOneNode = node.NewManyToOneNode(n.action)
 	return n
+}
+
+// Depth returns the depth of the CombineNode.
+func (n *CombineNode) Depth() int {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.depth
+}
+
+// SetDepth sets the depth of the CombineNode.
+func (n *CombineNode) SetDepth(depth int) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.depth = depth
+}
+
+// Inplace returns true if the CombineNode operates inplace.
+func (n *CombineNode) Inplace() bool {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.inplace
+}
+
+// SetInplace sets whether the CombineNode should operate inplace.
+func (n *CombineNode) SetInplace(inplace bool) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.inplace = inplace
 }
 
 func (n *CombineNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -129,6 +161,10 @@ func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
 // NewCombineNodeCodec creates a new codec for CombineNodeSpec.
 func NewCombineNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
-		return NewCombineNode(spec.Depth, spec.Inplace), nil
+		n := NewCombineNode()
+		n.SetDepth(spec.Depth)
+		n.SetInplace(spec.Inplace)
+
+		return n, nil
 	})
 }
