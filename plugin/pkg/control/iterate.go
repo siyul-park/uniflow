@@ -115,6 +115,9 @@ func (n *IterateNode) forward(proc *process.Process) {
 	defer n.mu.RUnlock()
 
 	inReader := n.inPort.Open(proc)
+	outWriter0 := n.outPorts[0].Open(proc)
+	outWriter1 := n.outPorts[1].Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -126,35 +129,60 @@ func (n *IterateNode) forward(proc *process.Process) {
 		outPayloads := n.slice(inPayload)
 
 		var backPcks []*packet.Packet
+		var catch bool
+
+	Loop:
 		for _, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
 			proc.Stack().Add(inPck, outPck)
 
-			backPck, ok := n.loop(proc, outPck)
+			outWriter0.Write(outPck)
 
-			if !ok {
-				for _, backPck := range backPcks {
-					proc.Stack().Clear(backPck)
+			select {
+			case <-proc.Stack().Done(outPck):
+			case backPck, ok := <-outWriter0.Receive():
+				if !ok {
+					return
 				}
-				backPcks = nil
-				break
-			}
 
-			if backPck != nil {
+				if _, ok := packet.AsError(backPck); ok && errWriter.Links() > 0 {
+					errWriter.Write(backPck)
+					backPck, ok = <-errWriter.Receive()
+					if !ok {
+						return
+					}
+				}
+
+				proc.Stack().Unwind(backPck, outPck)
+
+				if _, ok := packet.AsError(backPck); ok {
+					inReader.Receive(backPck)
+					catch = true
+					break Loop
+				}
+
 				backPcks = append(backPcks, backPck)
 			}
 		}
 
-		backPayloads := lo.Map(backPcks, func(backPck *packet.Packet, _ int) primitive.Value {
-			return backPck.Payload()
-		})
+		if catch {
+			for _, backPck := range backPcks {
+				proc.Stack().Clear(backPck)
+			}
+		} else if len(backPcks) > 0 {
+			backPayloads := lo.Map(backPcks, func(backPck *packet.Packet, _ int) primitive.Value {
+				return backPck.Payload()
+			})
 
-		if len(backPayloads) > 0 {
 			outPayload := primitive.NewSlice(backPayloads...)
 			outPck := packet.New(outPayload)
 			proc.Stack().Add(inPck, outPck)
 
-			n.receive(proc, outPck)
+			if outWriter1.Links() > 0 {
+				outWriter1.Write(outPck)
+			} else {
+				inReader.Receive(outPck)
+			}
 		} else {
 			proc.Stack().Clear(inPck)
 		}
@@ -174,61 +202,6 @@ func (n *IterateNode) backward(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
-	}
-}
-
-func (n *IterateNode) loop(proc *process.Process, outPck *packet.Packet) (*packet.Packet, bool) {
-	inReader := n.inPort.Open(proc)
-	outWriter0 := n.outPorts[0].Open(proc)
-
-	outWriter0.Write(outPck)
-
-	select {
-	case <-proc.Stack().Done(outPck):
-		return nil, true
-	case backPck, ok := <-outWriter0.Receive():
-		if !ok {
-			return nil, false
-		}
-
-		if _, ok := packet.AsError(backPck); ok {
-			backPck = n.catch(proc, backPck)
-		}
-
-		proc.Stack().Unwind(backPck, outPck)
-
-		if _, ok := packet.AsError(backPck); ok {
-			inReader.Receive(backPck)
-			return nil, false
-		}
-		return backPck, true
-	}
-}
-
-func (n *IterateNode) catch(proc *process.Process, errPck *packet.Packet) *packet.Packet {
-	errWriter := n.errPort.Open(proc)
-
-	if errWriter.Links() == 0 {
-		return errPck
-	}
-
-	errWriter.Write(errPck)
-
-	backPck, ok := <-errWriter.Receive()
-	if !ok {
-		return errPck
-	}
-	return backPck
-}
-
-func (n *IterateNode) receive(proc *process.Process, backPck *packet.Packet) {
-	inReader := n.inPort.Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-
-	if outWriter1.Links() > 0 {
-		outWriter1.Write(backPck)
-	} else {
 		inReader.Receive(backPck)
 	}
 }

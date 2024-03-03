@@ -134,6 +134,50 @@ func TestIterateNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
+	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
+		n := NewIterateNode()
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		out0 := port.NewIn()
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
+
+		proc := process.New()
+		defer proc.Close()
+
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
+
+		inPayload := primitive.NewSlice()
+		for i := 0; i < 4; i++ {
+			inPayload = inPayload.Append(primitive.NewString(faker.UUIDHyphenated()))
+		}
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-outReader0.Read():
+			backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
+			proc.Stack().Add(outPck, backPck)
+
+			outReader0.Receive(backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case <-inWriter.Receive():
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
 	t.Run("In -> Out0 -> Error -> Out1 -> In", func(t *testing.T) {
 		n := NewIterateNode()
 		defer n.Close()
