@@ -157,7 +157,13 @@ func (n *IterateNode) forward(proc *process.Process) {
 
 				if _, ok := packet.AsError(backPck); ok {
 					inReader.Receive(backPck)
+
+					for _, backPck := range backPcks {
+						proc.Stack().Clear(backPck)
+					}
+					backPcks = nil
 					catch = true
+
 					break Loop
 				}
 
@@ -165,11 +171,7 @@ func (n *IterateNode) forward(proc *process.Process) {
 			}
 		}
 
-		if catch {
-			for _, backPck := range backPcks {
-				proc.Stack().Clear(backPck)
-			}
-		} else if len(backPcks) > 0 {
+		if len(backPcks) > 0 {
 			backPayloads := lo.Map(backPcks, func(backPck *packet.Packet, _ int) primitive.Value {
 				return backPck.Payload()
 			})
@@ -183,7 +185,7 @@ func (n *IterateNode) forward(proc *process.Process) {
 			} else {
 				inReader.Receive(outPck)
 			}
-		} else {
+		} else if !catch {
 			proc.Stack().Clear(inPck)
 		}
 	}
