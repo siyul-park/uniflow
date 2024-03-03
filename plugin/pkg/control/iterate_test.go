@@ -18,6 +18,7 @@ import (
 func TestNewIterateNode(t *testing.T) {
 	n := NewIterateNode()
 	assert.NotNil(t, n)
+	assert.Equal(t, 1, n.Batch())
 
 	assert.NoError(t, n.Close())
 }
@@ -250,4 +251,61 @@ func TestIterateNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
+}
+
+func TestIterateNodeCodec_Decode(t *testing.T) {
+	codec := NewIterateNodeCodec()
+
+	spec := &IterateNodeSpec{
+		Batch: 1,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
+}
+
+func BenchmarkIterateNode_SendAndReceive(b *testing.B) {
+	n := NewIterateNode()
+	defer n.Close()
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out0 := port.NewIn()
+	n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
+
+	out1 := port.NewIn()
+	n.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
+
+	proc := process.New()
+	defer proc.Close()
+
+	inWriter := in.Open(proc)
+	outReader0 := out0.Open(proc)
+	outReader1 := out1.Open(proc)
+
+	inPayload := primitive.NewSlice()
+	for i := 0; i < 4; i++ {
+		inPayload = inPayload.Append(primitive.NewString(faker.UUIDHyphenated()))
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inPck := packet.New(inPayload)
+		inWriter.Write(inPck)
+
+		for i := 0; i < inPayload.Len(); i++ {
+			outPck := <-outReader0.Read()
+			outReader0.Receive(outPck)
+		}
+
+		outPck := <-outReader1.Read()
+		outReader1.Receive(outPck)
+
+		inWriter.Receive()
+	}
 }

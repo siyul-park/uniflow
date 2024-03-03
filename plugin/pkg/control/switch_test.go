@@ -283,8 +283,10 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			inWriter.Write(inPck)
+
 			outPck := <-outReader0.Read()
 			outReader0.Receive(outPck)
+
 			<-inWriter.Receive()
 		}
 	})

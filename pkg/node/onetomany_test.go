@@ -171,8 +171,10 @@ func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
 			inPck := packet.New(inPayload)
 
 			inWriter.Write(inPck)
+
 			outPck := <-outReader0.Read()
 			outReader0.Receive(outPck)
+
 			<-inWriter.Receive()
 		}
 	})

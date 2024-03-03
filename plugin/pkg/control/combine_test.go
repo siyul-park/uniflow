@@ -374,8 +374,10 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 			inPck := packet.New(inPayloads[i])
 			inWriter.Write(inPck)
 		}
+
 		outPck := <-outReader.Read()
 		outReader.Receive(outPck)
+
 		for _, inWriter := range inWriters {
 			<-inWriter.Receive()
 		}

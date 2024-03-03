@@ -9,8 +9,10 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// IterateNode represents a node that iterates over input data in batches.
 type IterateNode struct {
 	batch    int
 	inPort   *port.InPort
@@ -19,8 +21,15 @@ type IterateNode struct {
 	mu       sync.RWMutex
 }
 
-var _ node.Node = (*IterateNode)(nil)
+// IterateNodeSpec holds the specifications for creating a IterateNode.
+type IterateNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Batch           int `map:"batch"`
+}
 
+const KindIterate = "iterate"
+
+// NewIterateNode creates a new IterateNode with default configurations.
 func NewIterateNode() *IterateNode {
 	n := &IterateNode{
 		batch:    1,
@@ -35,20 +44,25 @@ func NewIterateNode() *IterateNode {
 	return n
 }
 
+// Batch returns the batch size of the IterateNode.
 func (n *IterateNode) Batch() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
 	return n.batch
 }
 
+// SetBatch sets the batch size of the IterateNode.
 func (n *IterateNode) SetBatch(batch int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	if batch < 1 {
+		batch = 1
+	}
 	n.batch = batch
 }
 
+// In returns the input port with the specified name.
 func (n *IterateNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -61,6 +75,7 @@ func (n *IterateNode) In(name string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port with the specified name.
 func (n *IterateNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -81,6 +96,7 @@ func (n *IterateNode) Out(name string) *port.OutPort {
 	return nil
 }
 
+// Close closes all ports associated with the node.
 func (n *IterateNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -237,4 +253,14 @@ func (n *IterateNode) slice(val primitive.Value) []primitive.Value {
 	}
 
 	return values
+}
+
+// NewIterateNodeCodec creates a new codec for IterateNodeSpec.
+func NewIterateNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*IterateNodeSpec](func(spec *IterateNodeSpec) (node.Node, error) {
+		n := NewIterateNode()
+		n.SetBatch(spec.Batch)
+
+		return n, nil
+	})
 }
