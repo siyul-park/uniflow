@@ -56,7 +56,7 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	if i, ok := IndexOfMultiPort(PortIn, name); ok {
+	if i, ok := IndexOfPort(PortIn, name); ok {
 		for j := 0; j <= i; j++ {
 			if len(n.inPorts) <= j {
 				inPort := port.NewIn()

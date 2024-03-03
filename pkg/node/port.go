@@ -14,13 +14,13 @@ const (
 	PortErr = "error"
 )
 
-// MultiPort returns the full port name of the given port and index.
-func MultiPort(source string, index int) string {
+// PortWithIndex returns the full port name of the given port and index.
+func PortWithIndex(source string, index int) string {
 	return fmt.Sprintf(source+"[%d]", index)
 }
 
-// IndexOfMultiPort returns the index of the given port.
-func IndexOfMultiPort(source string, target string) (int, bool) {
+// IndexOfPort returns the index of the given port.
+func IndexOfPort(source string, target string) (int, bool) {
 	regex, err := regexp.Compile(source + `\[(\d+)\]`)
 	if err != nil {
 		return 0, false

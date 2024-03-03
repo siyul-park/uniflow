@@ -11,7 +11,7 @@ func TestNewMultiPortAndGetIndex(t *testing.T) {
 	port := faker.UUIDHyphenated()
 	index := 0
 
-	i, ok := IndexOfMultiPort(port, MultiPort(port, index))
+	i, ok := IndexOfPort(port, PortWithIndex(port, index))
 	assert.True(t, ok)
 	assert.Equal(t, index, i)
 }

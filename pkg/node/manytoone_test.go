@@ -24,7 +24,7 @@ func TestManyToOneNode_Port(t *testing.T) {
 	n := NewManyToOneNode(nil)
 	assert.NotNil(t, n)
 
-	assert.NotNil(t, n.In(MultiPort(PortIn, 0)))
+	assert.NotNil(t, n.In(PortWithIndex(PortIn, 0)))
 	assert.NotNil(t, n.Out(PortOut))
 	assert.NotNil(t, n.Out(PortErr))
 }
@@ -37,7 +37,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		in0 := port.NewOut()
-		in0.Link(n.In(MultiPort(PortIn, 0)))
+		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 		proc := process.New()
 		defer proc.Close()
@@ -71,10 +71,10 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		in0 := port.NewOut()
-		in0.Link(n.In(MultiPort(PortIn, 0)))
+		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 		in1 := port.NewOut()
-		in1.Link(n.In(MultiPort(PortIn, 1)))
+		in1.Link(n.In(PortWithIndex(PortIn, 1)))
 
 		out := port.NewIn()
 		n.Out(PortOut).Link(out)
@@ -131,10 +131,10 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		in0 := port.NewOut()
-		in0.Link(n.In(MultiPort(PortIn, 0)))
+		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 		in1 := port.NewOut()
-		in1.Link(n.In(MultiPort(PortIn, 1)))
+		in1.Link(n.In(PortWithIndex(PortIn, 1)))
 
 		err := port.NewIn()
 		n.Out(PortErr).Link(err)
@@ -193,10 +193,10 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		in0 := port.NewOut()
-		in0.Link(n.In(MultiPort(PortIn, 0)))
+		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 		in1 := port.NewOut()
-		in1.Link(n.In(MultiPort(PortIn, 1)))
+		in1.Link(n.In(PortWithIndex(PortIn, 1)))
 
 		out := port.NewIn()
 		n.Out(PortOut).Link(out)
@@ -217,8 +217,10 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 
 			inWriter0.Write(inPck0)
 			inWriter1.Write(inPck1)
+
 			outPck := <-outReader.Read()
 			outReader.Receive(outPck)
+
 			<-inWriter0.Receive()
 			<-inWriter1.Receive()
 		}

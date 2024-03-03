@@ -70,7 +70,7 @@ func (n *RouteNode) Add(method, path, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	_, ok := node.IndexOfMultiPort(node.PortOut, port)
+	_, ok := node.IndexOfPort(node.PortOut, port)
 	if !ok {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
@@ -183,7 +183,7 @@ func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*pack
 	outPayload := inPayload.Set(primitive.NewString("params"), primitive.NewMap(params...))
 	outPck := packet.New(outPayload)
 
-	i, _ := node.IndexOfMultiPort(node.PortOut, port)
+	i, _ := node.IndexOfPort(node.PortOut, port)
 
 	outPcks := make([]*packet.Packet, i+1)
 	outPcks[i] = outPck

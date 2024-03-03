@@ -56,7 +56,7 @@ func (n *SwitchNode) Add(when, port string) error {
 		when = "true"
 	}
 
-	index, ok := node.IndexOfMultiPort(node.PortOut, port)
+	index, ok := node.IndexOfPort(node.PortOut, port)
 	if !ok {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
