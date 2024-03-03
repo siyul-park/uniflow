@@ -13,6 +13,7 @@ import (
 type IterateNode struct {
 	inPort   *port.InPort
 	outPorts []*port.OutPort
+	errPort  *port.OutPort
 	mu       sync.RWMutex
 }
 
@@ -22,6 +23,7 @@ func NewIterateNode() *IterateNode {
 	n := &IterateNode{
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
+		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddHandler(port.HandlerFunc(n.forward))
@@ -49,6 +51,8 @@ func (n *IterateNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
+	case node.PortErr:
+		return n.errPort
 	default:
 		if i, ok := node.IndexOfPort(node.PortOut, name); ok {
 			if len(n.outPorts) > i {
@@ -68,6 +72,7 @@ func (n *IterateNode) Close() error {
 	for _, p := range n.outPorts {
 		p.Close()
 	}
+	n.errPort.Close()
 
 	return nil
 }
@@ -103,8 +108,17 @@ func (n *IterateNode) forward(proc *process.Process) {
 					return
 				}
 
-				backPayloads[i] = backPck.Payload()
+				if _, ok := packet.AsError(backPck); ok {
+					backPck = n.catch(proc, backPck)
+				}
+
 				proc.Stack().Unwind(backPck, outPck)
+
+				if _, ok := packet.AsError(backPck); ok {
+					backPayloads = backPayloads[:i]
+					break
+				}
+				backPayloads[i] = backPck.Payload()
 			}
 		}
 
@@ -135,6 +149,22 @@ func (n *IterateNode) backward(proc *process.Process) {
 
 		inReader.Receive(backPck)
 	}
+}
+
+func (n *IterateNode) catch(proc *process.Process, errPck *packet.Packet) *packet.Packet {
+	errWriter := n.errPort.Open(proc)
+
+	if errWriter.Links() == 0 {
+		return errPck
+	}
+
+	errWriter.Write(errPck)
+
+	backPck, ok := <-errWriter.Receive()
+	if !ok {
+		return errPck
+	}
+	return backPck
 }
 
 func (n *IterateNode) slice(val primitive.Value) []primitive.Value {
