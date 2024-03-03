@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/go-faker/faker/v4 v4.3.0
-	github.com/siyul-park/uniflow v0.1.0
+	github.com/siyul-park/uniflow v0.2.0
 	github.com/siyul-park/uniflow/plugin v0.1.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
