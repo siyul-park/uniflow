@@ -128,14 +128,18 @@ func (n *IterateNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 		outPayloads := n.slice(inPayload)
 
-		var backPcks []*packet.Packet
-		var catch bool
-
-	Loop:
-		for _, outPayload := range outPayloads {
+		outPcks := make([]*packet.Packet, len(outPayloads))
+		for i, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
 			proc.Stack().Add(inPck, outPck)
 
+			outPcks[i] = outPck
+		}
+
+		var backPcks []*packet.Packet
+		var catch bool
+	Loop:
+		for i, outPck := range outPcks {
 			outWriter0.Write(outPck)
 
 			select {
@@ -147,8 +151,7 @@ func (n *IterateNode) forward(proc *process.Process) {
 
 				if _, ok := packet.AsError(backPck); ok && errWriter.Links() > 0 {
 					errWriter.Write(backPck)
-					backPck, ok = <-errWriter.Receive()
-					if !ok {
+					if backPck, ok = <-errWriter.Receive(); !ok {
 						return
 					}
 				}
@@ -158,6 +161,9 @@ func (n *IterateNode) forward(proc *process.Process) {
 				if _, ok := packet.AsError(backPck); ok {
 					inReader.Receive(backPck)
 
+					for j := 0; j < i; j++ {
+						proc.Stack().Clear(outPcks[j])
+					}
 					for _, backPck := range backPcks {
 						proc.Stack().Clear(backPck)
 					}
