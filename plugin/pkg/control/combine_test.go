@@ -33,7 +33,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
 			in := port.NewOut()
-			in.Link(n.In(node.MultiPort(node.PortIn, i)))
+			in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
@@ -91,7 +91,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
 			in := port.NewOut()
-			in.Link(n.In(node.MultiPort(node.PortIn, i)))
+			in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
@@ -149,7 +149,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
 			in := port.NewOut()
-			in.Link(n.In(node.MultiPort(node.PortIn, i)))
+			in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
@@ -210,7 +210,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
 			in := port.NewOut()
-			in.Link(n.In(node.MultiPort(node.PortIn, i)))
+			in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
@@ -271,7 +271,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		var ins []*port.OutPort
 		for i := 0; i < 4; i++ {
 			in := port.NewOut()
-			in.Link(n.In(node.MultiPort(node.PortIn, i)))
+			in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 			ins = append(ins, in)
 		}
 
@@ -346,7 +346,7 @@ func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
 	var ins []*port.OutPort
 	for i := 0; i < 4; i++ {
 		in := port.NewOut()
-		in.Link(n.In(node.MultiPort(node.PortIn, i)))
+		in.Link(n.In(node.PortWithIndex(node.PortIn, i)))
 		ins = append(ins, in)
 	}
 

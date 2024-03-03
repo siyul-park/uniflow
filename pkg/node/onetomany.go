@@ -59,7 +59,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	case PortErr:
 		return n.errPort
 	default:
-		if i, ok := IndexOfMultiPort(PortOut, name); ok {
+		if i, ok := IndexOfPort(PortOut, name); ok {
 			for j := 0; j <= i; j++ {
 				if len(n.outPorts) <= j {
 					outPort := port.NewOut()

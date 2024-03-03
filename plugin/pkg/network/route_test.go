@@ -74,7 +74,7 @@ func TestRouteNode_Add(t *testing.T) {
 			n := NewRouteNode()
 			defer n.Close()
 
-			expectPort := node.MultiPort(node.PortOut, 0)
+			expectPort := node.PortWithIndex(node.PortOut, 0)
 
 			err := n.Add(http.MethodGet, tc.whenPath, expectPort)
 			assert.NoError(t, err)
@@ -97,11 +97,11 @@ func TestRouteNode_Find(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
-	_ = n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
-	_ = n.Add(http.MethodGet, "/a/c/df", node.MultiPort(node.PortOut, 2))
-	_ = n.Add(http.MethodGet, "/:e/c/f", node.MultiPort(node.PortOut, 3))
-	_ = n.Add(http.MethodGet, "/*", node.MultiPort(node.PortOut, 4))
+	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
+	_ = n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
+	_ = n.Add(http.MethodGet, "/a/c/df", node.PortWithIndex(node.PortOut, 2))
+	_ = n.Add(http.MethodGet, "/:e/c/f", node.PortWithIndex(node.PortOut, 3))
+	_ = n.Add(http.MethodGet, "/*", node.PortWithIndex(node.PortOut, 4))
 
 	testCases := []struct {
 		whenMethod   string
@@ -112,29 +112,29 @@ func TestRouteNode_Find(t *testing.T) {
 		{
 			whenMethod:   http.MethodGet,
 			whenPath:     "/a/b/c",
-			expectPort:   node.MultiPort(node.PortOut, 0),
+			expectPort:   node.PortWithIndex(node.PortOut, 0),
 			expectParams: map[string]string{"b": "b"},
 		},
 		{
 			whenMethod: http.MethodGet,
 			whenPath:   "/a/c/d",
-			expectPort: node.MultiPort(node.PortOut, 1),
+			expectPort: node.PortWithIndex(node.PortOut, 1),
 		},
 		{
 			whenMethod: http.MethodGet,
 			whenPath:   "/a/c/df",
-			expectPort: node.MultiPort(node.PortOut, 2),
+			expectPort: node.PortWithIndex(node.PortOut, 2),
 		},
 		{
 			whenMethod:   http.MethodGet,
 			whenPath:     "/e/c/f",
-			expectPort:   node.MultiPort(node.PortOut, 3),
+			expectPort:   node.PortWithIndex(node.PortOut, 3),
 			expectParams: map[string]string{"e": "e"},
 		},
 		{
 			whenMethod:   http.MethodGet,
 			whenPath:     "/g/h/i",
-			expectPort:   node.MultiPort(node.PortOut, 4),
+			expectPort:   node.PortWithIndex(node.PortOut, 4),
 			expectParams: map[string]string{"*": "g/h/i"},
 		},
 	}
@@ -152,9 +152,9 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/:b/c", node.MultiPort(node.PortOut, 0))
-	_ = n.Add(http.MethodGet, "/a/c/d", node.MultiPort(node.PortOut, 1))
-	_ = n.Add(http.MethodGet, "/a/*", node.MultiPort(node.PortOut, 2))
+	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
+	_ = n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
+	_ = n.Add(http.MethodGet, "/a/*", node.PortWithIndex(node.PortOut, 2))
 
 	testCases := []struct {
 		whenMethod   string
@@ -166,18 +166,18 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 		{
 			whenMethod:   http.MethodGet,
 			whenPath:     "/a/b/c",
-			expectPort:   node.MultiPort(node.PortOut, 0),
+			expectPort:   node.PortWithIndex(node.PortOut, 0),
 			expectParams: map[string]string{"b": "b"},
 		},
 		{
 			whenMethod: http.MethodGet,
 			whenPath:   "/a/c/d",
-			expectPort: node.MultiPort(node.PortOut, 1),
+			expectPort: node.PortWithIndex(node.PortOut, 1),
 		},
 		{
 			whenMethod:   http.MethodGet,
 			whenPath:     "/a/d/e",
-			expectPort:   node.MultiPort(node.PortOut, 2),
+			expectPort:   node.PortWithIndex(node.PortOut, 2),
 			expectParams: map[string]string{"*": "d/e"},
 		},
 		{
@@ -255,7 +255,7 @@ func TestRouteNodeCodec_Decode(t *testing.T) {
 			{
 				Method: http.MethodGet,
 				Path:   "/",
-				Port:   node.MultiPort(node.PortOut, 0),
+				Port:   node.PortWithIndex(node.PortOut, 0),
 			},
 		},
 	}
@@ -271,13 +271,13 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/b/c", node.MultiPort(node.PortOut, 0))
+	_ = n.Add(http.MethodGet, "/a/b/c", node.PortWithIndex(node.PortOut, 0))
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
 	out0 := port.NewIn()
-	n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+	n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
 	defer proc.Close()

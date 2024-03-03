@@ -26,7 +26,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
-		err := n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		err := n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -34,7 +34,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
-		err := n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		err := n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -42,7 +42,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		n := NewSwitchNode(language.JSONata)
 		defer n.Close()
 
-		err := n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
+		err := n.Add("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 }
@@ -52,13 +52,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
-		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
@@ -94,13 +94,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
-		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
@@ -136,13 +136,13 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		n := NewSwitchNode(language.JSONata)
 		defer n.Close()
 
-		_ = n.Add("$.foo = \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
@@ -183,7 +183,7 @@ func TestSwitchNodeCodec_Decode(t *testing.T) {
 		Match: []Condition{
 			{
 				When: "$.foo = \"bar\"",
-				Port: node.MultiPort(node.PortOut, 0),
+				Port: node.PortWithIndex(node.PortOut, 0),
 			},
 		},
 	}
@@ -200,13 +200,13 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		n := NewSwitchNode(language.Typescript)
 		defer n.Close()
 
-		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
@@ -231,13 +231,13 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
-		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
@@ -262,13 +262,13 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		n := NewSwitchNode(language.Javascript)
 		defer n.Close()
 
-		_ = n.Add("$.foo === \"bar\"", node.MultiPort(node.PortOut, 0))
+		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
 		out0 := port.NewIn()
-		n.Out(node.MultiPort(node.PortOut, 0)).Link(out0)
+		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
 		defer proc.Close()
