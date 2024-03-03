@@ -205,4 +205,49 @@ func TestIterateNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
+
+	t.Run("batch = 2", func(t *testing.T) {
+		n := NewIterateNode()
+		defer n.Close()
+
+		n.SetBatch(2)
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		proc := process.New()
+		defer proc.Close()
+
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
+
+		inPayload := primitive.NewSlice()
+		for i := 0; i < 4; i++ {
+			inPayload = inPayload.Append(primitive.NewString(faker.UUIDHyphenated()))
+		}
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		for i := 0; i < inPayload.Len()/n.Batch(); i++ {
+			select {
+			case outPck := <-outReader.Read():
+				outReader.Receive(outPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
+		}
+
+		select {
+		case <-inWriter.Receive():
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
 }
