@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow
 
-go 1.22.0
+go 1.22.1
 
 require (
 	github.com/benbjohnson/immutable v0.4.3
