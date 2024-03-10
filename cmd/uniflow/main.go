@@ -86,7 +86,7 @@ func main() {
 		panic(err)
 	}
 
-	table.Store(system.OPGetNodes, system.GetNodes(st))
+	table.Store(system.OPReadNodes, system.ReadNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

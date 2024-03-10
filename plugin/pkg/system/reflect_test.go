@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetNodes(t *testing.T) {
+func TestReadNodes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -34,7 +34,7 @@ func TestGetNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewBridgeNode(GetNodes(st))
+	n, _ := NewBridgeNode(ReadNodes(st))
 	defer n.Close()
 
 	spec := &scheme.SpecMeta{
