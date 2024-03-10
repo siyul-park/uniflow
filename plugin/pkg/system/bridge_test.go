@@ -192,7 +192,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-ioWriter.Receive():
-			assert.Nil(t, outPck.Payload())
+			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

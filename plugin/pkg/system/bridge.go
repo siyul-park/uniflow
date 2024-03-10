@@ -154,6 +154,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	defer n.mu.RUnlock()
 
 	contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
+	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 
 	inPayload := inPck.Payload()
 	input := inPayload.Interface()
@@ -176,6 +177,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	for i := offset; i < len(ins); i++ {
 		in := reflect.New(n.fn.Type().In(i))
+
 		if len(n.arguments) > i-offset {
 			if argument, err := n.arguments[i-offset](input); err != nil {
 				return nil, packet.WithError(err, inPck)
@@ -184,15 +186,24 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
 				return nil, packet.WithError(err, inPck)
 			}
+		} else if i == offset {
+			if argument, err := primitive.MarshalBinary(input); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
+				return nil, packet.WithError(err, inPck)
+			}
 		}
+
 		ins[i] = in.Elem()
 	}
 
 	outs := n.fn.Call(ins)
 
-	if len(outs) > 0 {
-		if err, ok := outs[len(outs)-1].Interface().(error); ok {
-			outs = outs[:len(outs)-1]
+	if n.fn.Type().NumOut() > 0 && n.fn.Type().Out(n.fn.Type().NumOut()-1).Implements(errorInterface) {
+		last := outs[len(outs)-1].Interface()
+		outs = outs[:len(outs)-1]
+
+		if err, ok := last.(error); ok {
 			if err != nil {
 				return nil, packet.WithError(err, inPck)
 			}
