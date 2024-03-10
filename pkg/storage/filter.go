@@ -7,10 +7,10 @@ import (
 
 // Filter is a filter for finding matched document.
 type Filter struct {
-	OP       database.OP // Operator for the filter.
-	Key      string      // Key specifies the field for the filter.
-	Value    any         // Value is the filter value.
-	Children []*Filter   // Children are nested filters for AND and OR operations.
+	OP       database.OP `map:"op"`                 // Operator for the filter.
+	Key      string      `map:"key"`                // Key specifies the field for the filter.
+	Value    any         `map:"value,omitempty"`    // Value is the filter value.
+	Children []*Filter   `map:"children,omitempty"` // Children are nested filters for AND and OR operations.
 }
 
 type filterHelper[T any] struct {

@@ -183,31 +183,31 @@ func newIntDecoder() encoding.Decoder[Value, any] {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {
 				switch t.Elem().Kind() {
 				case reflect.Float32:
-					t.Elem().Set(reflect.ValueOf(float32(s.Int())))
+					t.Elem().Set(reflect.ValueOf(float32(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Float64:
-					t.Elem().Set(reflect.ValueOf(s.Int()))
+					t.Elem().Set(reflect.ValueOf(s.Int()).Convert(t.Elem().Type()))
 				case reflect.Int:
-					t.Elem().Set(reflect.ValueOf(int(s.Int())))
+					t.Elem().Set(reflect.ValueOf(int(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Int8:
-					t.Elem().Set(reflect.ValueOf(int8(s.Int())))
+					t.Elem().Set(reflect.ValueOf(int8(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Int16:
-					t.Elem().Set(reflect.ValueOf(int16(s.Int())))
+					t.Elem().Set(reflect.ValueOf(int16(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Int32:
-					t.Elem().Set(reflect.ValueOf(int32(s.Int())))
+					t.Elem().Set(reflect.ValueOf(int32(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Int64:
-					t.Elem().Set(reflect.ValueOf(s.Int()))
+					t.Elem().Set(reflect.ValueOf(s.Int()).Convert(t.Elem().Type()))
 				case reflect.Uint:
-					t.Elem().Set(reflect.ValueOf(uint(s.Int())))
+					t.Elem().Set(reflect.ValueOf(uint(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Uint8:
-					t.Elem().Set(reflect.ValueOf(uint8(s.Int())))
+					t.Elem().Set(reflect.ValueOf(uint8(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Uint16:
-					t.Elem().Set(reflect.ValueOf(uint16(s.Int())))
+					t.Elem().Set(reflect.ValueOf(uint16(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Uint32:
-					t.Elem().Set(reflect.ValueOf(uint32(s.Int())))
+					t.Elem().Set(reflect.ValueOf(uint32(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Uint64:
-					t.Elem().Set(reflect.ValueOf(uint64(s.Int())))
+					t.Elem().Set(reflect.ValueOf(uint64(s.Int())).Convert(t.Elem().Type()))
 				case reflect.Bool:
-					t.Elem().Set(reflect.ValueOf(s.Int() != 0))
+					t.Elem().Set(reflect.ValueOf(s.Int() != 0).Convert(t.Elem().Type()))
 				default:
 					if t.Type() == typeAny {
 						t.Elem().Set(reflect.ValueOf(s.Interface()))

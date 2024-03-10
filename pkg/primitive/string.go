@@ -82,7 +82,7 @@ func newStringDecoder() encoding2.Decoder[Value, any] {
 				return t.UnmarshalText([]byte(s.String()))
 			} else if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.String {
-					t.Elem().Set(reflect.ValueOf(s.String()))
+					t.Elem().Set(reflect.ValueOf(s.String()).Convert(t.Elem().Type()))
 					return nil
 				} else if t.Elem().Type() == typeAny {
 					t.Elem().Set(reflect.ValueOf(s.Interface()))

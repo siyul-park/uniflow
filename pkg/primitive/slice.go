@@ -174,12 +174,12 @@ func newSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Valu
 						}
 						if t.Elem().Len() < i+1 {
 							if t.Elem().Kind() == reflect.Slice {
-								t.Elem().Set(reflect.Append(t.Elem(), v.Elem()))
+								t.Elem().Set(reflect.Append(t.Elem(), v.Elem()).Convert(t.Elem().Type()))
 							} else {
 								return errors.WithMessage(encoding.ErrUnsupportedValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, t.Elem().Len()))
 							}
 						} else {
-							t.Elem().Index(i).Set(v.Elem())
+							t.Elem().Index(i).Set(v.Elem().Convert(t.Elem().Type()))
 						}
 					}
 					return nil

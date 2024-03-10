@@ -70,7 +70,7 @@ func newBoolDecoder() encoding.Decoder[Value, any] {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {
 				switch {
 				case t.Elem().Kind() == reflect.Bool:
-					t.Elem().Set(reflect.ValueOf(s.Bool()))
+					t.Elem().Set(reflect.ValueOf(s.Bool()).Convert(t.Elem().Type()))
 					return nil
 				case t.Elem().Type() == typeAny:
 					t.Elem().Set(reflect.ValueOf(s.Interface()))
