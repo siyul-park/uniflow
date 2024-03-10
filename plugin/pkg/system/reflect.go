@@ -13,6 +13,7 @@ const (
 	OPCreateNodes = "nodes.create"
 	OPReadNodes   = "nodes.read"
 	OPUpdateNodes = "nodes.update"
+	OPDeleteNodes = "nodes.delete"
 )
 
 func CreateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructured) ([]uuid.UUID, error) {
@@ -34,5 +35,11 @@ func UpdateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructure
 		return s.UpdateMany(ctx, lo.Map(specs, func(spec *scheme.Unstructured, _ int) scheme.Spec {
 			return spec
 		}))
+	}
+}
+
+func DeleteNodes(s *storage.Storage) func(context.Context, *storage.Filter) (int, error) {
+	return func(ctx context.Context, filter *storage.Filter) (int, error) {
+		return s.DeleteMany(ctx, filter)
 	}
 }

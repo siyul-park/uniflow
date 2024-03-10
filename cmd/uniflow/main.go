@@ -89,6 +89,7 @@ func main() {
 	table.Store(system.OPCreateNodes, system.CreateNodes(st))
 	table.Store(system.OPReadNodes, system.ReadNodes(st))
 	table.Store(system.OPUpdateNodes, system.UpdateNodes(st))
+	table.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {
