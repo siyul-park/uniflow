@@ -102,9 +102,12 @@ func newShortcutEncoder() encoding.Encoder[any, Value] {
 
 func newShortcutDecoder() encoding.Decoder[Value, any] {
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
-		if t, ok := target.(*Value); ok {
-			*t = source
-			return nil
+		s := reflect.ValueOf(source)
+		if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer && s.Kind() != reflect.Invalid {
+			if s.Type().ConvertibleTo(t.Elem().Type()) {
+				t.Elem().Set(s.Convert(t.Elem().Type()))
+				return nil
+			}
 		}
 		return errors.WithStack(encoding.ErrUnsupportedValue)
 	})
