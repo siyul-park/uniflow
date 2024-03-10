@@ -205,7 +205,7 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 		return nil, nil
 	}
 
-	return s.scheme.NewSpecWithDoc(doc)
+	return s.docToSpec(doc)
 }
 
 // FindMany returns multiple scheme.Spec instances matched by the filter.
@@ -229,7 +229,7 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 			continue
 		}
 
-		if spec, err := s.scheme.NewSpecWithDoc(doc); err != nil {
+		if spec, err := s.docToSpec(doc); err != nil {
 			return nil, err
 		} else {
 			specs = append(specs, spec)
@@ -237,6 +237,17 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	}
 
 	return specs, nil
+}
+
+func (s *Storage) docToSpec(doc *primitive.Map) (scheme.Spec, error) {
+	unstructured := scheme.NewUnstructured(doc)
+	if spec, ok := s.scheme.NewSpec(unstructured.GetKind()); !ok {
+		return unstructured, nil
+	} else if err := primitive.Unmarshal(doc, spec); err != nil {
+		return nil, err
+	} else {
+		return spec, nil
+	}
 }
 
 func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {

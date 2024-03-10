@@ -5,9 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,24 +43,6 @@ func TestScheme_NewSpec(t *testing.T) {
 	spec, ok := s.NewSpec(kind)
 	assert.True(t, ok)
 	assert.IsType(t, spec, &SpecMeta{})
-}
-
-func TestScheme_NewSpecWithDoc(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &SpecMeta{})
-
-	spec := &SpecMeta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: faker.UUIDHyphenated(),
-	}
-
-	doc, _ := primitive.MarshalBinary(spec)
-
-	r, err := s.NewSpecWithDoc(doc.(*primitive.Map))
-	assert.NoError(t, err)
-	assert.NotNil(t, r, spec)
 }
 
 func TestScheme_Decode(t *testing.T) {

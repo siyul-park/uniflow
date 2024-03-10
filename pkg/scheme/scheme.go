@@ -61,35 +61,6 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	return c, ok
 }
 
-// NewSpec creates a new instance of Spec with the given kind.
-func (s *Scheme) NewSpec(kind string) (Spec, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if t, ok := s.types[kind]; !ok {
-		return nil, false
-	} else {
-		value := reflect.New(t).Elem()
-		if value.Kind() == reflect.Ptr {
-			value.Set(reflect.New(t.Elem()))
-		}
-		v, ok := value.Interface().(Spec)
-		return v, ok
-	}
-}
-
-// NewSpecWithDoc creates a new instance of Spec with the given document.
-func (s *Scheme) NewSpecWithDoc(doc *primitive.Map) (Spec, error) {
-	unstructured := NewUnstructured(doc)
-	if spec, ok := s.NewSpec(unstructured.GetKind()); !ok {
-		return unstructured, nil
-	} else if err := primitive.Unmarshal(doc, spec); err != nil {
-		return nil, err
-	} else {
-		return spec, nil
-	}
-}
-
 // Decode decodes the given Spec into a node.Node.
 func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	s.mu.RLock()
@@ -116,6 +87,23 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 		return codec.Decode(spec)
 	}
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+}
+
+// NewSpec creates a new instance of Spec with the given kind.
+func (s *Scheme) NewSpec(kind string) (Spec, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if t, ok := s.types[kind]; !ok {
+		return nil, false
+	} else {
+		value := reflect.New(t).Elem()
+		if value.Kind() == reflect.Ptr {
+			value.Set(reflect.New(t.Elem()))
+		}
+		v, ok := value.Interface().(Spec)
+		return v, ok
+	}
 }
 
 // Kinds returns the kinds associated with the given Spec.
