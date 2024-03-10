@@ -64,7 +64,6 @@ func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return newStream(stream), nil
 }
 
@@ -88,7 +87,6 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (uuid.UUID, e
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
-
 	return id, nil
 }
 
@@ -99,11 +97,11 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 
 	var docs []*primitive.Map
 	for _, spec := range specs {
-		doc, err := s.specToDoc(spec)
-		if err != nil {
+		if doc, err := s.specToDoc(spec); err != nil {
 			return nil, err
+		} else {
+			docs = append(docs, doc)
 		}
-		docs = append(docs, doc)
 	}
 
 	pks, err := s.nodes.InsertMany(ctx, docs)
@@ -116,7 +114,6 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).In(pks...))
 		return nil, err
 	}
-
 	return ids, nil
 }
 
@@ -125,13 +122,14 @@ func (s *Storage) UpdateOne(ctx context.Context, spec scheme.Spec) (bool, error)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	unstructured, err := s.specToUnstructured(spec)
+	filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()).Encode()
+
+	doc, err := s.specToDoc(spec)
 	if err != nil {
 		return false, err
 	}
 
-	filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
-	return s.nodes.UpdateOne(ctx, filter, unstructured.Doc())
+	return s.nodes.UpdateOne(ctx, filter, doc)
 }
 
 // UpdateMany updates multiple scheme.Spec instances and returns the number of successes.
@@ -139,25 +137,24 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, err
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var unstructureds []*scheme.Unstructured
+	var docs []*primitive.Map
 	for _, spec := range specs {
-		unstructured, err := s.specToUnstructured(spec)
-		if err != nil {
+		if doc, err := s.specToDoc(spec); err != nil {
 			return 0, err
+		} else {
+			docs = append(docs, doc)
 		}
-		unstructureds = append(unstructureds, unstructured)
 	}
 
 	count := 0
-	for _, unstructured := range unstructureds {
-		filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(unstructured.GetID()).Encode()
-		if ok, err := s.nodes.UpdateOne(ctx, filter, unstructured.Doc()); err != nil {
+	for i, doc := range docs {
+		filter, _ := Where[uuid.UUID](scheme.KeyID).EQ(specs[i].GetID()).Encode()
+		if ok, err := s.nodes.UpdateOne(ctx, filter, doc); err != nil {
 			return count, err
 		} else if ok {
 			count++
 		}
 	}
-
 	return count, nil
 }
 
@@ -197,15 +194,13 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 		return nil, err
 	}
 
-	doc, err := s.nodes.FindOne(ctx, f, options...)
-	if err != nil {
+	if doc, err := s.nodes.FindOne(ctx, f, options...); err != nil {
 		return nil, err
-	}
-	if doc == nil {
+	} else if doc == nil {
 		return nil, nil
+	} else {
+		return s.docToSpec(doc)
 	}
-
-	return s.docToSpec(doc)
 }
 
 // FindMany returns multiple scheme.Spec instances matched by the filter.
@@ -228,14 +223,12 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 		if doc == nil {
 			continue
 		}
-
 		if spec, err := s.docToSpec(doc); err != nil {
 			return nil, err
 		} else {
 			specs = append(specs, spec)
 		}
 	}
-
 	return specs, nil
 }
 
@@ -251,17 +244,12 @@ func (s *Storage) docToSpec(doc *primitive.Map) (scheme.Spec, error) {
 }
 
 func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
-	unstructured, err := s.specToUnstructured(spec)
-	if err != nil {
+	if n, err := s.scheme.Decode(spec); err != nil {
+		return nil, err
+	} else if err := n.Close(); err != nil {
 		return nil, err
 	}
-	if unstructured.GetID() == (uuid.UUID{}) {
-		unstructured.SetID(uuid.Must(uuid.NewV7()))
-	}
-	return unstructured.Doc(), nil
-}
 
-func (s *Storage) specToUnstructured(spec scheme.Spec) (*scheme.Unstructured, error) {
 	doc, err := primitive.MarshalBinary(spec)
 	if err != nil {
 		return nil, err
@@ -271,18 +259,10 @@ func (s *Storage) specToUnstructured(spec scheme.Spec) (*scheme.Unstructured, er
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}
-	if err := s.validate(unstructured); err != nil {
-		return nil, err
+	if unstructured.GetID() == (uuid.UUID{}) {
+		unstructured.SetID(uuid.Must(uuid.NewV7()))
 	}
-	return unstructured, nil
-}
-
-func (s *Storage) validate(spec scheme.Spec) error {
-	n, err := s.scheme.Decode(spec)
-	if err != nil {
-		return err
-	}
-	return n.Close()
+	return unstructured.Doc(), nil
 }
 
 func ensureIndexes(ctx context.Context, coll database.Collection, indexes []database.IndexModel) error {
