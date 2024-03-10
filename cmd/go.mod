@@ -1,12 +1,11 @@
 module github.com/siyul-park/uniflow/cmd
 
-go 1.22.0
+go 1.22.1
 
 require (
 	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.4
-	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.2.0
 	github.com/siyul-park/uniflow/plugin v0.2.0
@@ -42,6 +41,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
