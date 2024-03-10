@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
@@ -24,6 +26,8 @@ const (
 )
 
 var _ Spec = (*Unstructured)(nil)
+var _ primitive.Marshaler = (*Unstructured)(nil)
+var _ primitive.Unmarshaler = (*Unstructured)(nil)
 
 // NewUnstructured returns a new Unstructured instance with an optional primitive.Map.
 func NewUnstructured(doc *primitive.Map) *Unstructured {
@@ -185,4 +189,24 @@ func (u *Unstructured) Unmarshal(spec Spec) error {
 		return nil
 	}
 	return primitive.Unmarshal(u.doc, spec)
+}
+
+// MarshalPrimitive convert Unstructured to primitive.Value.
+func (u *Unstructured) MarshalPrimitive() (primitive.Value, error) {
+	u.mu.RLock()
+	defer u.mu.RUnlock()
+
+	return u.doc, nil
+}
+
+// UnmarshalPrimitive convert primitive.Value to Unstructured.
+func (u *Unstructured) UnmarshalPrimitive(value primitive.Value) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	if v, ok := value.(*primitive.Map); ok {
+		u.doc = v
+		return nil
+	}
+	return errors.WithStack(encoding.ErrUnsupportedValue)
 }

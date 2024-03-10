@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -85,6 +86,37 @@ func TestUnstructured_Unmarshal(t *testing.T) {
 	})
 
 	err := u.Unmarshal(spec)
+	assert.NoError(t, err)
+	assert.Equal(t, u.GetID(), spec.GetID())
+	assert.Equal(t, u.GetKind(), spec.GetKind())
+}
+
+func TestUnstructured_MarshalPrimitive(t *testing.T) {
+	spec := &SpecMeta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+	}
+
+	doc1, _ := primitive.MarshalBinary(spec)
+
+	u := NewUnstructured(doc1.(*primitive.Map))
+
+	doc2, err := u.MarshalPrimitive()
+	assert.NoError(t, err)
+	assert.Equal(t, doc1, doc2)
+}
+
+func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
+	spec := &SpecMeta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+	}
+
+	doc, _ := primitive.MarshalBinary(spec)
+
+	u := NewUnstructured(nil)
+
+	err := u.UnmarshalPrimitive(doc)
 	assert.NoError(t, err)
 	assert.Equal(t, u.GetID(), spec.GetID())
 	assert.Equal(t, u.GetKind(), spec.GetKind())

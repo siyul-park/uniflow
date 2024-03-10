@@ -7,6 +7,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
+type Marshaler interface {
+	MarshalPrimitive() (Value, error)
+}
+
+type Unmarshaler interface {
+	UnmarshalPrimitive(Value) error
+}
+
 var (
 	textEncoder   = encoding.NewEncoderGroup[any, Value]()
 	binaryEncoder = encoding.NewEncoderGroup[any, Value]()
@@ -15,6 +23,7 @@ var (
 
 func init() {
 	textEncoder.Add(newShortcutEncoder())
+	textEncoder.Add(newMarshalerEncoder())
 	textEncoder.Add(newBoolEncoder())
 	textEncoder.Add(newFloatEncoder())
 	textEncoder.Add(newIntEncoder())
@@ -26,6 +35,7 @@ func init() {
 	textEncoder.Add(newPointerEncoder(textEncoder))
 
 	binaryEncoder.Add(newShortcutEncoder())
+	binaryEncoder.Add(newMarshalerEncoder())
 	binaryEncoder.Add(newBoolEncoder())
 	binaryEncoder.Add(newFloatEncoder())
 	binaryEncoder.Add(newIntEncoder())
@@ -37,6 +47,7 @@ func init() {
 	binaryEncoder.Add(newPointerEncoder(binaryEncoder))
 
 	decoder.Add(newShortcutDecoder())
+	decoder.Add(newUnmarshalerDecoder())
 	decoder.Add(newBoolDecoder())
 	decoder.Add(newFloatDecoder())
 	decoder.Add(newIntDecoder())
@@ -108,6 +119,24 @@ func newShortcutDecoder() encoding.Decoder[Value, any] {
 				t.Elem().Set(s.Convert(t.Elem().Type()))
 				return nil
 			}
+		}
+		return errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+func newMarshalerEncoder() encoding.Encoder[any, Value] {
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
+		if s, ok := source.(Marshaler); ok {
+			return s.MarshalPrimitive()
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+func newUnmarshalerDecoder() encoding.Decoder[Value, any] {
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
+		if t, ok := target.(Unmarshaler); ok {
+			return t.UnmarshalPrimitive(source)
 		}
 		return errors.WithStack(encoding.ErrUnsupportedValue)
 	})
