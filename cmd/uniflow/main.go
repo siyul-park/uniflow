@@ -12,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
 	"github.com/siyul-park/uniflow/plugin/pkg/system"
@@ -44,9 +45,11 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
+	table := system.NewBridgeTable()
+
 	sb.Register(control.AddToScheme())
 	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(nil))
+	sb.Register(system.AddToScheme(table))
 
 	hb.Register(network.AddToHook())
 
@@ -74,6 +77,16 @@ func main() {
 	} else {
 		db = memdb.New(databaseName)
 	}
+
+	st, err := storage.New(ctx, storage.Config{
+		Scheme:   sc,
+		Database: db,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	table.Store(system.OPGetNodes, system.GetNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

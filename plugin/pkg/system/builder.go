@@ -9,7 +9,6 @@ func AddToScheme(table *BridgeTable) func(*scheme.Scheme) error {
 	if table == nil {
 		table = NewBridgeTable()
 	}
-
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindBridge, &BridgeNodeSpec{})
 		s.AddCodec(KindBridge, NewBridgeNodeCodec(table))
