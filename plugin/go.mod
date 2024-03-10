@@ -7,6 +7,7 @@ require (
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/evanw/esbuild v0.20.1
 	github.com/go-faker/faker/v4 v4.3.0
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/websocket v1.5.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
@@ -22,9 +23,9 @@ require (
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
+	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
