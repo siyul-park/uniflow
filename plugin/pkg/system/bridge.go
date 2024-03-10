@@ -34,8 +34,8 @@ type BridgeNode struct {
 type BridgeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Opcode          string   `map:"opcode"`
-	Lang            string   `map:"lang"`
-	Arguments       []string `map:"arguments"`
+	Lang            string   `map:"lang,omitempty"`
+	Arguments       []string `map:"arguments,omitempty"`
 }
 
 // BridgeTable represents a table of system call operations.

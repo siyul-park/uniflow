@@ -24,7 +24,7 @@ type IterateNode struct {
 // IterateNodeSpec holds the specifications for creating a IterateNode.
 type IterateNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Batch           int `map:"batch"`
+	Batch           int `map:"batch,omitempty"`
 }
 
 const KindIterate = "iterate"
