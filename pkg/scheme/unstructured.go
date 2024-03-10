@@ -161,36 +161,6 @@ func (u *Unstructured) Doc() *primitive.Map {
 	return u.doc
 }
 
-// Marshal sets the spec as a marshal and raw object to use.
-func (u *Unstructured) Marshal(spec Spec) error {
-	u.mu.RLock()
-	defer u.mu.RUnlock()
-
-	if spec, ok := spec.(*Unstructured); ok {
-		u.doc = spec.doc
-		return nil
-	}
-
-	if spec, err := primitive.MarshalBinary(spec); err != nil {
-		return err
-	} else {
-		u.doc = spec.(*primitive.Map)
-	}
-	return nil
-}
-
-// Unmarshal unmarshals the stored raw object and stores it in spec.
-func (u *Unstructured) Unmarshal(spec Spec) error {
-	u.mu.RLock()
-	defer u.mu.RUnlock()
-
-	if spec, ok := spec.(*Unstructured); ok {
-		spec.doc = u.doc
-		return nil
-	}
-	return primitive.Unmarshal(u.doc, spec)
-}
-
 // MarshalPrimitive convert Unstructured to primitive.Value.
 func (u *Unstructured) MarshalPrimitive() (primitive.Value, error) {
 	u.mu.RLock()

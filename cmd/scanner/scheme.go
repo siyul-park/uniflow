@@ -1,8 +1,6 @@
 package scanner
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -59,13 +57,5 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 	if c.scheme == nil {
 		return unstructured, nil
 	}
-
-	spec, ok := c.scheme.NewSpec(unstructured.GetKind())
-	if !ok {
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-	}
-	if err := unstructured.Unmarshal(spec); err != nil {
-		return nil, err
-	}
-	return spec, nil
+	return c.scheme.NewSpecWithDoc(unstructured.Doc())
 }

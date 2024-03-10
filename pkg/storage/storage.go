@@ -251,10 +251,12 @@ func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
 }
 
 func (s *Storage) specToUnstructured(spec scheme.Spec) (*scheme.Unstructured, error) {
-	unstructured := scheme.NewUnstructured(nil)
-	if err := unstructured.Marshal(spec); err != nil {
+	doc, err := primitive.MarshalBinary(spec)
+	if err != nil {
 		return nil, err
 	}
+
+	unstructured := scheme.NewUnstructured(doc.(*primitive.Map))
 	if unstructured.GetNamespace() == "" {
 		unstructured.SetNamespace(scheme.DefaultNamespace)
 	}

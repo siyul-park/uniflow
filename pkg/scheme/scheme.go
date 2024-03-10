@@ -83,7 +83,7 @@ func (s *Scheme) NewSpecWithDoc(doc *primitive.Map) (Spec, error) {
 	unstructured := NewUnstructured(doc)
 	if spec, ok := s.NewSpec(unstructured.GetKind()); !ok {
 		return unstructured, nil
-	} else if err := unstructured.Unmarshal(spec); err != nil {
+	} else if err := primitive.Unmarshal(doc, spec); err != nil {
 		return nil, err
 	} else {
 		return spec, nil
@@ -104,7 +104,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 
 	if unstructured, ok := spec.(*Unstructured); ok {
 		if structured, ok := s.NewSpec(kind); ok {
-			if err := unstructured.Unmarshal(structured); err != nil {
+			if err := primitive.Unmarshal(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
 				spec = structured
