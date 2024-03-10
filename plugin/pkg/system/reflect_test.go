@@ -15,6 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,6 +39,8 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewBridgeNode(CreateNodes(st))
 	defer n.Close()
 
+	_ = n.SetArguments(language.JSONata, "[$]")
+
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
@@ -52,7 +55,7 @@ func TestCreateNodes(t *testing.T) {
 	ioWriter := io.Open(proc)
 
 	inPayload, _ := primitive.MarshalBinary(spec)
-	inPck := packet.New(primitive.NewSlice(inPayload))
+	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
 
