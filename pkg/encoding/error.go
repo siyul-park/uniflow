@@ -5,3 +5,4 @@ import (
 )
 
 var ErrUnsupportedValue = errors.New("unsupported value")
+var ErrInvalidValue = errors.New("invalid value")

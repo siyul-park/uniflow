@@ -178,5 +178,5 @@ func (u *Unstructured) UnmarshalPrimitive(value primitive.Value) error {
 		u.doc = v
 		return nil
 	}
-	return errors.WithStack(encoding.ErrUnsupportedValue)
+	return errors.WithStack(encoding.ErrInvalidValue)
 }

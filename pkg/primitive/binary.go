@@ -86,7 +86,7 @@ func newBinaryDecoder() encoding2.Decoder[Value, any] {
 							if t.Elem().Kind() == reflect.Slice {
 								t.Elem().Set(reflect.Append(t.Elem(), reflect.ValueOf(s.Get(i))).Convert(t.Elem().Type()))
 							} else {
-								return errors.WithMessage(encoding2.ErrUnsupportedValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, t.Elem().Len()))
+								return errors.WithMessage(encoding2.ErrInvalidValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, t.Elem().Len()))
 							}
 						} else {
 							t.Elem().Index(i).Set(reflect.ValueOf(s.Get(i)))

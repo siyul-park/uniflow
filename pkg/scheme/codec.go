@@ -20,7 +20,7 @@ func CodecWithType[T Spec](decode func(spec T) (node.Node, error)) Codec {
 		if converted, ok := spec.(T); ok {
 			return decode(converted)
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidValue)
 	})
 }
 

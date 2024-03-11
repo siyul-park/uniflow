@@ -88,7 +88,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 func unmarshalFilter(data any, filter **database.Filter) error {
 	raw, ok := bsonMA(data)
 	if !ok {
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return errors.WithStack(encoding.ErrInvalidValue)
 	}
 
 	var children []*database.Filter
@@ -96,7 +96,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 		for key, value := range curr {
 			if key == "$and" || key == "$or" {
 				if value, ok := bsonMA(value); !ok {
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidValue)
 				} else {
 					var values []*database.Filter
 					for _, v := range value {
@@ -137,13 +137,13 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 				} else if child.OP == database.NNULL {
 					child.OP = database.NULL
 				} else {
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidValue)
 				}
 				children = append(children, child)
 			} else if value, ok := bsonM(value); ok {
 				for op, v := range value {
 					if !strings.HasPrefix(op, "$") {
-						return errors.WithStack(encoding.ErrUnsupportedValue)
+						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 					child := &database.Filter{
 						Key: key,
@@ -173,7 +173,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 					} else if op == "$nin" {
 						child.OP = database.NIN
 					} else {
-						return errors.WithStack(encoding.ErrUnsupportedValue)
+						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 
 					var value primitive.Value
@@ -184,7 +184,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 					children = append(children, child)
 				}
 			} else {
-				return errors.WithStack(encoding.ErrUnsupportedValue)
+				return errors.WithStack(encoding.ErrInvalidValue)
 			}
 		}
 	}
@@ -215,7 +215,7 @@ func marshalDocument(data primitive.Value) (any, error) {
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
 			if k, ok := k.(primitive.String); !ok {
-				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+				return nil, errors.WithStack(encoding.ErrInvalidValue)
 			} else {
 				if v, err := marshalDocument(v); err != nil {
 					return nil, err
@@ -294,8 +294,7 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 		*v = s
 		return nil
 	}
-
-	return errors.WithStack(encoding.ErrUnsupportedValue)
+	return errors.WithStack(encoding.ErrInvalidValue)
 }
 
 func marshalSorts(sorts []database.Sort) bson.D {

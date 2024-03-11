@@ -243,7 +243,7 @@ func newMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, V
 								pairs = append(pairs, v.GetOr(k, nil))
 							}
 						} else {
-							return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+							return nil, errors.WithStack(encoding.ErrInvalidValue)
 						}
 					} else {
 						pairs = append(pairs, NewString(tag.alias))
@@ -308,7 +308,7 @@ func newMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value,
 						value, ok := s.Get(NewString(tag.alias))
 						if !ok {
 							if !tag.omitempty {
-								return errors.WithMessage(encoding.ErrUnsupportedValue, fmt.Sprintf("key(%v) is zero value", field.Name))
+								return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("key(%v) is zero value", field.Name))
 							}
 						} else if err := decoder.Decode(value, v.Addr().Interface()); err != nil {
 							return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the key(%v) cannot be decoded", value.Interface(), field.Name))

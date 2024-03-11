@@ -97,7 +97,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 
 	mediaType, params, err := mime.ParseMediaType(*contentType)
 	if err != nil {
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidValue)
 	}
 
 	switch mediaType {
@@ -105,7 +105,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 		return json.Marshal(value.Interface())
 	case ApplicationForm:
 		if v, ok := value.(*primitive.Map); !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+			return nil, errors.WithStack(encoding.ErrInvalidValue)
 		} else {
 			urlValues := url.Values{}
 			for _, key := range v.Keys() {
