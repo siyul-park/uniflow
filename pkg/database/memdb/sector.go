@@ -20,7 +20,7 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 
 	sector := s
 	for len(sector.keys) > 0 {
-		sector, _ = sector.Scan(sector.keys[0], nil, nil)
+		sector, _ = sector.scan(nil, nil)
 	}
 
 	for iterator := sector.index.Iterator(); iterator.Next(); {
@@ -42,6 +42,10 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 		return nil, false
 	}
 
+	return s.scan(min, max)
+}
+
+func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
 	if min != nil && max != nil && primitive.Compare(min, max) == 0 {
 		value, ok := s.index.Get(min)
 		if !ok {

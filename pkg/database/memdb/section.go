@@ -160,7 +160,7 @@ func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
 			index: s.indexes[i],
 			mu:    &s.mu,
 		}
-		return sector.Scan(constraint.Keys[0], min, max)
+		return sector.scan(min, max)
 	}
 
 	return nil, false
