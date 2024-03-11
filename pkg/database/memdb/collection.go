@@ -5,11 +5,11 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/tidwall/btree"
 )
 
 type Collection struct {
@@ -266,12 +266,12 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 	}
 
-	scan := treemap.NewWith(comparator)
+	scan := btree.NewBTreeG[node](nodeComparator)
 	appends := func(doc *primitive.Map) bool {
 		if match == nil || match(doc) {
-			scan.Put(doc.GetOr(keyID, nil), doc)
+			scan.Set(node{key: doc.GetOr(keyID, nil), value: doc})
 		}
-		return len(sorts) > 0 || limit < 0 || scan.Size() < limit+skip
+		return len(sorts) > 0 || limit < 0 || scan.Len() < limit+skip
 	}
 
 	if plan != nil {
@@ -295,9 +295,10 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	}
 
 	var docs []*primitive.Map
-	for _, doc := range scan.Values() {
-		docs = append(docs, doc.(*primitive.Map))
-	}
+	scan.Scan(func(n node) bool {
+		docs = append(docs, n.value)
+		return true
+	})
 
 	if skip >= len(docs) {
 		return nil, nil

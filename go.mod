@@ -4,13 +4,13 @@ go 1.22.1
 
 require (
 	github.com/benbjohnson/immutable v0.4.3
-	github.com/emirpasic/gods v1.18.1
 	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
 	github.com/stretchr/testify v1.9.0
+	github.com/tidwall/btree v1.7.0
 	github.com/tryvium-travels/memongo v0.11.0
 	go.mongodb.org/mongo-driver v1.14.0
 )

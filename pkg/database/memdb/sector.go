@@ -3,14 +3,14 @@ package memdb
 import (
 	"sync"
 
-	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/tidwall/btree"
 )
 
 type Sector struct {
 	keys  []string
-	data  *treemap.Map
-	index *treemap.Map
+	data  *btree.BTreeG[node]
+	index *btree.BTreeG[index]
 	mu    *sync.RWMutex
 }
 
@@ -23,15 +23,13 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 		sector, _ = sector.scan(nil, nil)
 	}
 
-	for iterator := sector.index.Iterator(); iterator.Next(); {
-		key := iterator.Key()
-		doc, ok := s.data.Get(key)
-		if ok {
-			if !f(doc.(*primitive.Map)) {
-				break
-			}
+	s.index.Scan(func(i index) bool {
+		if n, ok := s.data.Get(node{key: i.key}); !ok {
+			return true
+		} else {
+			return f(n.value)
 		}
-	}
+	})
 }
 
 func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
@@ -46,64 +44,54 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 }
 
 func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
+	child := btree.NewBTreeG[index](indexComparator)
+
 	if min != nil && max != nil && primitive.Compare(min, max) == 0 {
-		value, ok := s.index.Get(min)
-		if !ok {
-			value = treemap.NewWith(comparator)
+		if i, ok := s.index.Get(index{key: min}); ok {
+			child = i.value
 		}
+	} else {
+		s.index.Ascend(index{key: min}, func(i index) bool {
+			k := i.key
+			v := i.value
 
-		return &Sector{
-			data:  s.data,
-			keys:  s.keys[1:],
-			index: value.(*treemap.Map),
-			mu:    s.mu,
-		}, true
-	}
-
-	index := treemap.NewWith(comparator)
-
-	s.index.Each(func(key, value any) {
-		k := key.(primitive.Value)
-		v := value.(*treemap.Map)
-
-		if (min != nil && primitive.Compare(k, min) < 0) || (max != nil && primitive.Compare(k, max) > 0) {
-			return
-		}
-
-		v.Each(func(key, value any) {
-			if v, ok := value.(*treemap.Map); ok {
-				if old, ok := index.Get(key); ok {
-					value = deepMerge(old.(*treemap.Map), v)
-				}
+			if max != nil && primitive.Compare(k, max) > 0 {
+				return false
 			}
-			index.Put(key, value)
+
+			v.Scan(func(c index) bool {
+				if l, ok := child.Get(c); ok {
+					c.value = deepMerge(c.value, l.value)
+				}
+				child.Set(c)
+				return true
+			})
+			return true
 		})
-	})
+	}
 
 	return &Sector{
 		data:  s.data,
 		keys:  s.keys[1:],
-		index: index,
+		index: child,
 		mu:    s.mu,
 	}, true
 }
 
-func deepMerge(x, y *treemap.Map) *treemap.Map {
-	z := treemap.NewWith(comparator)
+func deepMerge(x, y *btree.BTreeG[index]) *btree.BTreeG[index] {
+	merged := btree.NewBTreeG[index](indexComparator)
 
-	x.Each(func(key, value any) {
-		z.Put(key, value)
+	x.Scan(func(i index) bool {
+		merged.Set(i)
+		return true
 	})
-	y.Each(func(key, value any) {
-		if old, ok := z.Get(key); ok {
-			if old, ok := old.(*treemap.Map); ok {
-				if v, ok := value.(*treemap.Map); ok {
-					value = deepMerge(old, v)
-				}
-			}
+	y.Scan(func(i index) bool {
+		if l, ok := merged.Get(i); ok {
+			i.value = deepMerge(i.value, l.value)
 		}
-		z.Put(key, value)
+		merged.Set(i)
+		return true
 	})
 
-	return z
+	return merged
 }

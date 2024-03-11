@@ -3,15 +3,14 @@ package memdb
 import (
 	"sync"
 
-	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/emirpasic/gods/utils"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/tidwall/btree"
 )
 
 type Section struct {
-	data        *treemap.Map
-	indexes     []*treemap.Map
+	data        *btree.BTreeG[node]
+	indexes     []*btree.BTreeG[index]
 	constraints []Constraint
 	mu          sync.RWMutex
 }
@@ -23,6 +22,16 @@ type Constraint struct {
 	Partial func(*primitive.Map) bool
 }
 
+type node struct {
+	key   primitive.Value
+	value *primitive.Map
+}
+
+type index struct {
+	key   primitive.Value
+	value *btree.BTreeG[index]
+}
+
 var (
 	ErrPKNotFound   = errors.New("primary key is not found")
 	ErrPKDuplicated = errors.New("primary key is duplicated")
@@ -30,12 +39,18 @@ var (
 
 var keyID = primitive.NewString("id")
 
-var comparator = utils.Comparator(func(a, b any) int {
-	return primitive.Compare(a.(primitive.Value), b.(primitive.Value))
-})
+var nodeComparator = func(x, y node) bool {
+	return primitive.Compare(x.key, y.key) < 0
+}
+
+var indexComparator = func(x, y index) bool {
+	return primitive.Compare(x.key, y.key) < 0
+}
 
 func newSection() *Section {
-	s := &Section{data: treemap.NewWith(comparator)}
+	s := &Section{
+		data: btree.NewBTreeG[node](nodeComparator),
+	}
 
 	primary := Constraint{
 		Keys:    []string{"id"},
@@ -45,7 +60,7 @@ func newSection() *Section {
 	}
 
 	s.constraints = append(s.constraints, primary)
-	s.indexes = append(s.indexes, treemap.NewWith(comparator))
+	s.indexes = append(s.indexes, btree.NewBTreeG[index](indexComparator))
 
 	return s
 }
@@ -62,15 +77,16 @@ func (s *Section) AddConstraint(constraint Constraint) error {
 	}
 
 	s.constraints = append(s.constraints, constraint)
-	s.indexes = append(s.indexes, treemap.NewWith(comparator))
+	s.indexes = append(s.indexes, btree.NewBTreeG[index](indexComparator))
 
-	for _, doc := range s.data.Values() {
-		if err := s.index(doc.(*primitive.Map)); err != nil {
-			return err
+	var err error
+	s.data.Scan(func(n node) bool {
+		if err = s.index(n.value); err != nil {
+			return false
 		}
-	}
-
-	return nil
+		return true
+	})
+	return err
 }
 
 func (s *Section) DropConstraint(name string) error {
@@ -103,14 +119,16 @@ func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
 		return nil, errors.WithStack(ErrPKNotFound)
 	}
 
-	if _, ok := s.data.Get(id); ok {
+	n := node{key: id, value: doc}
+
+	if _, ok := s.data.Get(n); ok {
 		return nil, errors.WithStack(ErrPKDuplicated)
 	}
 
 	if err := s.index(doc); err != nil {
 		return nil, err
 	}
-	s.data.Put(id, doc)
+	s.data.Set(n)
 
 	return id, nil
 }
@@ -124,12 +142,14 @@ func (s *Section) Delete(doc *primitive.Map) bool {
 		return false
 	}
 
-	if _, ok := s.data.Get(id); !ok {
+	n := node{key: id}
+
+	if _, ok := s.data.Get(n); !ok {
 		return false
 	}
 
 	s.unindex(doc)
-	s.data.Remove(doc.GetOr(keyID, nil))
+	s.data.Delete(n)
 
 	return true
 }
@@ -138,11 +158,9 @@ func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for iterator := s.data.Iterator(); iterator.Next(); {
-		if !f(iterator.Value().(*primitive.Map)) {
-			break
-		}
-	}
+	s.data.Scan(func(n node) bool {
+		return f(n.value)
+	})
 }
 
 func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
@@ -171,9 +189,10 @@ func (s *Section) Drop() []*primitive.Map {
 	defer s.mu.Unlock()
 
 	var data []*primitive.Map
-	for _, doc := range s.data.Values() {
-		data = append(data, doc.(*primitive.Map))
-	}
+	s.data.Scan(func(n node) bool {
+		data = append(data, n.value)
+		return true
+	})
 
 	s.data.Clear()
 	for _, index := range s.indexes {
@@ -200,19 +219,17 @@ func (s *Section) index(doc *primitive.Map) error {
 		for i, k := range constraint.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
-			c, _ := cur.Get(value)
-			child, ok := c.(*treemap.Map)
+			child, ok := cur.Get(index{key: value})
 			if !ok {
-				child = treemap.NewWith(comparator)
-				cur.Put(value, child)
+				child = index{key: value, value: btree.NewBTreeG[index](indexComparator)}
+				cur.Set(child)
 			}
 
 			if i < len(constraint.Keys)-1 {
-				cur = child
+				cur = child.value
 			} else {
-				child.Put(id, nil)
-
-				if constraint.Unique && child.Size() > 1 {
+				child.value.Set(index{key: id})
+				if constraint.Unique && child.value.Len() > 1 {
 					s.unindex(doc)
 					return errors.WithStack(ErrIndexConflict)
 				}
@@ -232,39 +249,32 @@ func (s *Section) unindex(doc *primitive.Map) {
 	for i, constraint := range s.constraints {
 		cur := s.indexes[i]
 
-		paths := []*treemap.Map{cur}
-		keys := []primitive.Value{nil}
+		paths := []index{{value: cur}}
 
 		for i, k := range constraint.Keys {
 			value, _ := primitive.Pick[primitive.Value](doc, k)
 
-			c, _ := cur.Get(value)
-			child, ok := c.(*treemap.Map)
+			child, ok := cur.Get(index{key: value})
 			if !ok {
 				paths = nil
-				keys = nil
-
 				break
 			}
 
-			paths = append(paths, child)
-			keys = append(keys, value)
-
 			if i < len(constraint.Keys)-1 {
-				cur = child
+				cur = child.value
 			} else {
-				child.Remove(id)
+				child.value.Delete(index{key: id})
 			}
+
+			paths = append(paths, child)
 		}
 
 		for i := len(paths) - 1; i >= 0; i-- {
 			child := paths[i]
 
-			if child.Empty() && i > 0 {
+			if child.value.Len() == 0 && i > 0 {
 				parent := paths[i-1]
-				key := keys[i]
-
-				parent.Remove(key)
+				parent.value.Delete(child)
 			}
 		}
 	}
