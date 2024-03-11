@@ -146,7 +146,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 					child := &database.Filter{
-						Key: key,
+						Key: unmarshalKey(key),
 					}
 					if op == "$eq" {
 						if v == nil {
@@ -335,9 +335,7 @@ func bsonMA(value any) ([]bson.M, bool) {
 	}
 
 	var m []bson.M
-	if v, ok := value.([]bson.M); ok {
-		m = v
-	} else if v, ok := value.([]bson.D); ok {
+	if v, ok := value.(bsonprimitive.A); ok {
 		for _, e := range v {
 			if e, ok := bsonM(e); ok {
 				m = append(m, e)
@@ -345,16 +343,6 @@ func bsonMA(value any) ([]bson.M, bool) {
 				return nil, false
 			}
 		}
-	} else if v, ok := value.([]any); ok {
-		for _, e := range v {
-			if e, ok := bsonM(e); ok {
-				m = append(m, e)
-			} else {
-				return nil, false
-			}
-		}
-	} else {
-		return nil, false
 	}
 
 	return m, true
@@ -362,7 +350,9 @@ func bsonMA(value any) ([]bson.M, bool) {
 
 func bsonM(value any) (bson.M, bool) {
 	var m bson.M
-	if v, ok := value.(bson.M); ok {
+	if v, ok := value.(bsonprimitive.E); ok {
+		m = bson.M{v.Key: v.Value}
+	} else if v, ok := value.(bson.M); ok {
 		m = v
 	} else if v, ok := value.(bson.D); ok {
 		m := make(bson.M, len(v))
