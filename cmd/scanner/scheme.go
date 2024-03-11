@@ -58,7 +58,7 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 		return unstructured, nil
 	}
 
-	if spec, ok := c.scheme.NewSpec(unstructured.GetKind()); !ok {
+	if spec, ok := c.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
 	} else if err := primitive.Unmarshal(doc, spec); err != nil {
 		return nil, err

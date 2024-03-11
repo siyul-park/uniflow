@@ -34,13 +34,13 @@ func TestScheme_Codec(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestScheme_NewSpec(t *testing.T) {
+func TestScheme_Spec(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &SpecMeta{})
 
-	spec, ok := s.NewSpec(kind)
+	spec, ok := s.Spec(kind)
 	assert.True(t, ok)
 	assert.IsType(t, spec, &SpecMeta{})
 }

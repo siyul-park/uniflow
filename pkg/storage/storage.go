@@ -234,7 +234,7 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 
 func (s *Storage) docToSpec(doc *primitive.Map) (scheme.Spec, error) {
 	unstructured := scheme.NewUnstructured(doc)
-	if spec, ok := s.scheme.NewSpec(unstructured.GetKind()); !ok {
+	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
 	} else if err := primitive.Unmarshal(doc, spec); err != nil {
 		return nil, err

@@ -74,7 +74,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	}
 
 	if unstructured, ok := spec.(*Unstructured); ok {
-		if structured, ok := s.NewSpec(kind); ok {
+		if structured, ok := s.Spec(kind); ok {
 			if err := primitive.Unmarshal(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
@@ -89,8 +89,8 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-// NewSpec creates a new instance of Spec with the given kind.
-func (s *Scheme) NewSpec(kind string) (Spec, bool) {
+// Spec creates a new instance of Spec with the given kind.
+func (s *Scheme) Spec(kind string) (Spec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

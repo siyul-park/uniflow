@@ -35,10 +35,9 @@ func WithError(err error, cause *Packet) *Packet {
 func AsError(pck *Packet) (error, bool) {
 	payload := pck.Payload()
 
-	if isError, ok := primitive.Pick[bool](payload, "__error"); !ok && !isError {
+	if ok, _ := primitive.Pick[bool](payload, "__error"); !ok {
 		return nil, false
 	}
-
 	if err, ok := primitive.Pick[string](payload, "error"); !ok {
 		return nil, false
 	} else {
