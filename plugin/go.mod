@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
-	github.com/evanw/esbuild v0.20.1
+	github.com/evanw/esbuild v0.20.2
 	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/websocket v1.5.1
