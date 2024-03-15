@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/go-faker/faker/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/jedib0t/go-pretty/v6 v6.5.4
+	github.com/jedib0t/go-pretty/v6 v6.5.5
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.2.0
 	github.com/siyul-park/uniflow/plugin v0.2.0
