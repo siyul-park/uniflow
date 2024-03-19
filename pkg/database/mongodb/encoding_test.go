@@ -16,51 +16,51 @@ func TestMarshalFilter(t *testing.T) {
 	}{
 		{
 			when:   database.Where("id").Equal(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}},
 		},
 		{
 			when:   database.Where("id").NotEqual(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}},
 		},
 		{
 			when:   database.Where("id").LessThan(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lt": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lt": "id"}}},
 		},
 		{
 			when:   database.Where("id").LessThanOrEqual(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lte": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lte": "id"}}},
 		},
 		{
 			when:   database.Where("id").GreaterThan(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gt": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gt": "id"}}},
 		},
 		{
 			when:   database.Where("id").GreaterThanOrEqual(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gte": "id"}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gte": "id"}}},
 		},
 		{
 			when:   database.Where("id").In(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}},
 		},
 		{
 			when:   database.Where("id").NotIn(primitive.NewString("id")),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}},
 		},
 		{
 			when:   database.Where("id").IsNull(),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}},
 		},
 		{
 			when:   database.Where("id").IsNotNull(),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}},
 		},
 		{
 			when:   database.Where("id").Equal(primitive.NewString("id")).And(database.Where("id").NotEqual(primitive.NewString("id"))),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$and", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "$and", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}},
 		},
 		{
 			when:   database.Where("id").Equal(primitive.NewString("id")).Or(database.Where("id").NotEqual(primitive.NewString("id"))),
-			expect: bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$or", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}}),
+			expect: bsonprimitive.D{bsonprimitive.E{Key: "$or", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}},
 		},
 	}
 
@@ -78,75 +78,75 @@ func TestUnmarshalFilter(t *testing.T) {
 		expect *database.Filter
 	}{
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}},
 			expect: database.Where("id").Equal(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}},
 			expect: database.Where("id").Equal(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}},
 			expect: database.Where("id").NotEqual(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}},
 			expect: database.Where("id").NotEqual(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lt": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lt": "id"}}},
 			expect: database.Where("id").LessThan(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lte": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$lte": "id"}}},
 			expect: database.Where("id").LessThanOrEqual(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gt": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gt": "id"}}},
 			expect: database.Where("id").GreaterThan(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gte": "id"}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$gte": "id"}}},
 			expect: database.Where("id").GreaterThanOrEqual(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}},
 			expect: database.Where("id").In(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}}},
 			expect: database.Where("id").In(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$nin": bsonprimitive.A{"id"}}}},
 			expect: database.Where("id").NotIn(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$in": bsonprimitive.A{"id"}}}}},
 			expect: database.Where("id").NotIn(primitive.NewString("id")),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}},
 			expect: database.Where("id").IsNull(),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}}},
 			expect: database.Where("id").IsNull(),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": nil}}},
 			expect: database.Where("id").IsNotNull(),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$not", Value: bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": nil}}}},
 			expect: database.Where("id").IsNotNull(),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$and", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$and", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}},
 			expect: database.Where("id").Equal(primitive.NewString("id")).And(database.Where("id").NotEqual(primitive.NewString("id"))),
 		},
 		{
-			when:   bsonprimitive.D(bsonprimitive.D{bsonprimitive.E{Key: "$or", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}}),
+			when:   bsonprimitive.D{bsonprimitive.E{Key: "$or", Value: bsonprimitive.A{bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$eq": "id"}}}, bsonprimitive.D{bsonprimitive.E{Key: "_id", Value: bsonprimitive.M{"$ne": "id"}}}}}},
 			expect: database.Where("id").Equal(primitive.NewString("id")).Or(database.Where("id").NotEqual(primitive.NewString("id"))),
 		},
 	}

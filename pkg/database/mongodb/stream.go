@@ -24,7 +24,7 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 
 	go func() {
 		defer func() { _ = s.raw.Close(ctx) }()
-		defer func() { close(s.channel) }()
+		defer close(s.channel)
 
 		ctx, cancel := context.WithCancel(ctx)
 		go func() {

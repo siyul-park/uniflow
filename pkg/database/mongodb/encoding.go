@@ -264,19 +264,7 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 		}
 		*v = primitive.NewSlice(values...)
 		return nil
-	} else if s, ok := data.(bsonprimitive.D); ok {
-		pairs := make([]primitive.Value, len(s)*2)
-		for i, e := range s {
-			var value primitive.Value
-			if err := unmarshalDocument(e.Value, &value); err != nil {
-				return err
-			}
-			pairs[i*2] = primitive.NewString(unmarshalKey(e.Key))
-			pairs[i*2+1] = value
-		}
-		*v = primitive.NewMap(pairs...)
-		return nil
-	} else if s, ok := data.(bsonprimitive.M); ok {
+	} else if s, ok := bsonM(data); ok {
 		pairs := make([]primitive.Value, len(s)*2)
 		i := 0
 		for k, v := range s {
