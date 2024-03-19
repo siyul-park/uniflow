@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -55,11 +56,11 @@ func main() {
 
 	sc, err := sb.Build()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	hk, err := hb.Build()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	var db database.Database
@@ -68,11 +69,11 @@ func main() {
 		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
 		client, err := mongodb.Connect(ctx, opts)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		db, err = client.Database(ctx, databaseName)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	} else {
 		db = memdb.New(databaseName)
@@ -83,7 +84,7 @@ func main() {
 		Database: db,
 	})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	table.Store(system.OPCreateNodes, system.CreateNodes(st))
@@ -93,7 +94,7 @@ func main() {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	fsys := os.DirFS(wd)
 
@@ -104,5 +105,7 @@ func main() {
 		FS:       fsys,
 	})
 
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
