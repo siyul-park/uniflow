@@ -337,20 +337,16 @@ func bsonMA(value any) ([]bson.M, bool) {
 }
 
 func bsonM(value any) (bson.M, bool) {
-	var m bson.M
-	if v, ok := value.(bsonprimitive.E); ok {
-		m = bson.M{v.Key: v.Value}
-	} else if v, ok := value.(bson.M); ok {
-		m = v
+	if v, ok := value.(bson.M); ok {
+		return v, true
 	} else if v, ok := value.(bson.D); ok {
 		m := make(bson.M, len(v))
 		for _, e := range v {
 			m[e.Key] = e.Value
 		}
 		return m, true
-	} else {
-		return nil, false
+	} else if v, ok := value.(bsonprimitive.E); ok {
+		return bson.M{v.Key: v.Value}, true
 	}
-
-	return m, true
+	return nil, false
 }

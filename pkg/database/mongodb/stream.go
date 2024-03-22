@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -13,6 +14,7 @@ type Stream struct {
 	raw     *mongo.ChangeStream
 	channel chan database.Event
 	done    chan struct{}
+	mu      sync.Mutex
 }
 
 func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
@@ -84,6 +86,9 @@ func (s *Stream) Done() <-chan struct{} {
 }
 
 func (s *Stream) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	select {
 	case <-s.done:
 		return nil

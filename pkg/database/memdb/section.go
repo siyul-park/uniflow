@@ -33,23 +33,38 @@ type index struct {
 }
 
 var (
+	nodePool = sync.Pool{
+		New: func() any {
+			return btree.NewBTreeG[node](nodeComparator)
+		},
+	}
+
+	indexPool = sync.Pool{
+		New: func() any {
+			return btree.NewBTreeG[index](indexComparator)
+		},
+	}
+)
+
+var (
 	ErrPKNotFound   = errors.New("primary key is not found")
 	ErrPKDuplicated = errors.New("primary key is duplicated")
 )
 
 var keyID = primitive.NewString("id")
 
-var nodeComparator = func(x, y node) bool {
-	return primitive.Compare(x.key, y.key) < 0
-}
-
-var indexComparator = func(x, y index) bool {
-	return primitive.Compare(x.key, y.key) < 0
-}
+var (
+	nodeComparator = func(x, y node) bool {
+		return primitive.Compare(x.key, y.key) < 0
+	}
+	indexComparator = func(x, y index) bool {
+		return primitive.Compare(x.key, y.key) < 0
+	}
+)
 
 func newSection() *Section {
 	s := &Section{
-		data: btree.NewBTreeG[node](nodeComparator),
+		data: newNodes(),
 	}
 
 	primary := Constraint{
@@ -60,7 +75,7 @@ func newSection() *Section {
 	}
 
 	s.constraints = append(s.constraints, primary)
-	s.indexes = append(s.indexes, btree.NewBTreeG[index](indexComparator))
+	s.indexes = append(s.indexes, newIndexes())
 
 	return s
 }
@@ -77,7 +92,7 @@ func (s *Section) AddConstraint(constraint Constraint) error {
 	}
 
 	s.constraints = append(s.constraints, constraint)
-	s.indexes = append(s.indexes, btree.NewBTreeG[index](indexComparator))
+	s.indexes = append(s.indexes, newIndexes())
 
 	var err error
 	s.data.Scan(func(n node) bool {
@@ -95,8 +110,12 @@ func (s *Section) DropConstraint(name string) error {
 
 	for i, constraint := range s.constraints {
 		if constraint.Name == name {
+			indexes := s.indexes[i]
+
 			s.constraints = append(s.constraints[:i], s.constraints[i+1:]...)
 			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
+
+			deleteIndexes(indexes)
 		}
 	}
 
@@ -195,8 +214,8 @@ func (s *Section) Drop() []*primitive.Map {
 	})
 
 	s.data.Clear()
-	for _, index := range s.indexes {
-		index.Clear()
+	for _, i := range s.indexes {
+		i.Clear()
 	}
 
 	return data
@@ -221,7 +240,7 @@ func (s *Section) index(doc *primitive.Map) error {
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {
-				child = index{key: value, value: btree.NewBTreeG[index](indexComparator)}
+				child = index{key: value, value: newIndexes()}
 				cur.Set(child)
 			}
 
@@ -275,7 +294,27 @@ func (s *Section) unindex(doc *primitive.Map) {
 			if child.value.Len() == 0 && i > 0 {
 				parent := paths[i-1]
 				parent.value.Delete(child)
+
+				deleteIndexes(child.value)
 			}
 		}
 	}
+}
+
+func newNodes() *btree.BTreeG[node] {
+	return nodePool.Get().(*btree.BTreeG[node])
+}
+
+func deleteNodes(v *btree.BTreeG[node]) {
+	v.Clear()
+	nodePool.Put(v)
+}
+
+func newIndexes() *btree.BTreeG[index] {
+	return indexPool.Get().(*btree.BTreeG[index])
+}
+
+func deleteIndexes(v *btree.BTreeG[index]) {
+	v.Clear()
+	indexPool.Put(v)
 }

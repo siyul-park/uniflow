@@ -16,11 +16,7 @@ type IndexView struct {
 
 var _ database.IndexView = (*IndexView)(nil)
 
-var (
-	ErrIndexConflict   = errors.New("index is conflict")
-	ErrIndexNotFound   = errors.New("index is not found")
-	ErrInvalidDocument = errors.New("document is invalid")
-)
+var ErrIndexConflict = errors.New("index is conflict")
 
 func newIndexView(segment *Section) *IndexView {
 	return &IndexView{

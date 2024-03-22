@@ -18,7 +18,6 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	}
 
 	var plan *executionPlan
-
 	switch filter.OP {
 	case database.AND:
 		for _, child := range filter.Children {
@@ -36,29 +35,19 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 	case database.EQ, database.GT, database.GTE, database.LT, database.LTE:
 		var pre *executionPlan
 		for _, key := range keys {
-			var cur *executionPlan
-			if key != filter.Key {
-				cur = &executionPlan{
-					key: key,
-				}
-			} else {
+			cur := &executionPlan{
+				key: key,
+			}
+			if key == filter.Key {
 				value := filter.Value
 
-				var min primitive.Value
-				var max primitive.Value
 				if filter.OP == database.EQ {
-					min = value
-					max = value
+					cur.min = value
+					cur.max = value
 				} else if filter.OP == database.GT || filter.OP == database.GTE {
-					min = value
+					cur.min = value
 				} else if filter.OP == database.LT || filter.OP == database.LTE {
-					max = value
-				}
-
-				cur = &executionPlan{
-					key: key,
-					min: min,
-					max: max,
+					cur.max = value
 				}
 			}
 

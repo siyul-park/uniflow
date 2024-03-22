@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
-	"github.com/tidwall/btree"
 )
 
 type Collection struct {
@@ -254,9 +253,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	}
 
 	match := parseFilter(filter)
-
 	fullScan := true
-
 	var plan *executionPlan
 	for _, constraint := range c.section.Constraints() {
 		if cur := newExecutionPlan(constraint.Keys, filter); cur != nil && (plan == nil || plan.Cost() > cur.Cost()) {
@@ -266,7 +263,9 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		}
 	}
 
-	scan := btree.NewBTreeG[node](nodeComparator)
+	scan := newNodes()
+	defer deleteNodes(scan)
+
 	appends := func(doc *primitive.Map) bool {
 		if match == nil || match(doc) {
 			scan.Set(node{key: doc.GetOr(keyID, nil), value: doc})
@@ -317,21 +316,21 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	return docs, nil
 }
 
-func (coll *Collection) Drop(_ context.Context) error {
-	data := coll.section.Drop()
+func (c *Collection) Drop(_ context.Context) error {
+	data := c.section.Drop()
 	for _, doc := range data {
-		coll.emit(internalEvent{op: database.EventDelete, document: doc})
+		c.emit(internalEvent{op: database.EventDelete, document: doc})
 	}
 
-	coll.mu.Lock()
-	defer coll.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	for _, s := range coll.streams {
+	for _, s := range c.streams {
 		if err := s.Close(); err != nil {
 			return err
 		}
 	}
-	coll.streams = nil
+	c.streams = nil
 
 	return nil
 }

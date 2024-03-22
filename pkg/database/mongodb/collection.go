@@ -18,7 +18,7 @@ type Collection struct {
 	lock sync.RWMutex
 }
 
-var _ database.Collection = &Collection{}
+var _ database.Collection = (*Collection)(nil)
 
 func newCollection(coll *mongo.Collection) *Collection {
 	return &Collection{raw: coll}
@@ -39,8 +39,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	pipeline := mongo.Pipeline{}
-
+	var pipeline mongo.Pipeline
 	if filter != nil {
 		if match, err := marshalFilter(filter); err != nil {
 			return nil, err
@@ -53,7 +52,6 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	if err != nil {
 		return nil, err
 	}
-
 	return newStream(ctx, stream), nil
 }
 
@@ -78,10 +76,10 @@ func (c *Collection) InsertOne(ctx context.Context, doc *primitive.Map) (primiti
 func (c *Collection) InsertMany(ctx context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
 	var raws bson.A
 	for _, doc := range docs {
-		if raw, err := marshalDocument(doc); err == nil {
-			raws = append(raws, raw)
-		} else {
+		if raw, err := marshalDocument(doc); err != nil {
 			return nil, err
+		} else {
+			raws = append(raws, raw)
 		}
 	}
 

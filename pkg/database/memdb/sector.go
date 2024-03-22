@@ -44,7 +44,7 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 }
 
 func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
-	child := btree.NewBTreeG[index](indexComparator)
+	child := newIndexes()
 
 	if min != nil && max != nil && primitive.Compare(min, max) == 0 {
 		if i, ok := s.index.Get(index{key: min}); ok {
@@ -79,7 +79,7 @@ func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
 }
 
 func deepMerge(x, y *btree.BTreeG[index]) *btree.BTreeG[index] {
-	merged := btree.NewBTreeG[index](indexComparator)
+	merged := newIndexes()
 
 	x.Scan(func(i index) bool {
 		merged.Set(i)
