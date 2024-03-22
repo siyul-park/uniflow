@@ -157,7 +157,6 @@ func (m *Map) Compare(v Value) int {
 		return 0
 	}
 
-	// If the types are different, compare based on type kind.
 	if m.Kind() > v.Kind() {
 		return 1
 	}
