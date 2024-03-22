@@ -153,7 +153,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 
 				for _, element := range elements.Values() {
 					contentType := ""
-					bytes, err := MarshalMIME(element, &contentType)
+					b, err := MarshalMIME(element, &contentType)
 					if err != nil {
 						return err
 					}
@@ -166,7 +166,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 
 					if writer, err := mw.CreatePart(h); err != nil {
 						return err
-					} else if _, err := writer.Write(bytes); err != nil {
+					} else if _, err := writer.Write(b); err != nil {
 						return err
 					}
 				}
@@ -228,11 +228,11 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 								}
 							}
 
-							bytes, err := MarshalMIME(data, &contentType)
+							b, err := MarshalMIME(data, &contentType)
 							if err != nil {
 								return err
 							}
-							bytes, err = Compress(bytes, contentEncoding)
+							b, err = Compress(b, contentEncoding)
 							if err != nil {
 								return err
 							}
@@ -246,7 +246,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 
 							if writer, err := mw.CreatePart(h); err != nil {
 								return err
-							} else if _, err := writer.Write(bytes); err != nil {
+							} else if _, err := writer.Write(b); err != nil {
 								return err
 							}
 						}
@@ -261,11 +261,11 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 				value := v.GetOr(key, nil)
 
 				if key == primitive.NewString("value") {
-					writeFields(value)
+					_ = writeFields(value)
 				} else if key == primitive.NewString("file") {
-					writeFiles(value)
+					_ = writeFiles(value)
 				} else {
-					writeField(v, key)
+					_ = writeField(v, key)
 				}
 			}
 		}
@@ -332,7 +332,7 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 				if err != nil {
 					return nil, err
 				}
-				bytes, err := io.ReadAll(file)
+				b, err := io.ReadAll(file)
 				if err != nil {
 					return nil, err
 				}
@@ -340,11 +340,11 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 				contentType := fh.Header.Get(HeaderContentType)
 				contentEncoding := fh.Header.Get(HeaderContentEncoding)
 
-				bytes, err = Decompress(bytes, contentEncoding)
+				b, err = Decompress(b, contentEncoding)
 				if err != nil {
 					return nil, err
 				}
-				data, err := UnmarshalMIME(bytes, &contentType)
+				data, err := UnmarshalMIME(b, &contentType)
 				if err != nil {
 					return nil, err
 				}

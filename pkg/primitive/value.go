@@ -16,6 +16,7 @@ type Value interface {
 const (
 	KindInvalid Kind = iota
 	KindBinary
+	KindBuffer
 	KindBool
 	KindInt
 	KindInt8

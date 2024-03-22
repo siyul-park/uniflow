@@ -17,7 +17,7 @@ var _ Value = (Binary)(nil)
 
 // NewBinary creates a new Binary instance.
 func NewBinary(value []byte) Binary {
-	return Binary(value)
+	return value
 }
 
 // Len returns the length of the binary data.
@@ -35,7 +35,7 @@ func (b Binary) Get(index int) byte {
 
 // Bytes returns the raw byte slice.
 func (b Binary) Bytes() []byte {
-	return []byte(b)
+	return b
 }
 
 // Kind returns the type of the binary data.
