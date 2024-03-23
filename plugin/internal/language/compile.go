@@ -50,7 +50,7 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 			return nil, err
 		}
 
-		if !jsAssertExportFunction(code, "default") {
+		if !js.AssertExportFunction(code, "default") {
 			code = fmt.Sprintf("module.exports = ($) => { return %s }", code)
 		}
 
@@ -95,23 +95,4 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 	default:
 		return nil, errors.WithStack(ErrUnsupportedLanguage)
 	}
-}
-
-func jsAssertExportFunction(code, name string) bool {
-	program, err := goja.Compile("", code, true)
-	if err != nil {
-		return false
-	}
-
-	vm := js.New()
-	if _, err := vm.RunProgram(program); err != nil {
-		return false
-	}
-
-	if defaults := js.Export(vm, name); defaults == nil {
-		return false
-	} else if _, ok := goja.AssertFunction(defaults); !ok {
-		return false
-	}
-	return true
 }

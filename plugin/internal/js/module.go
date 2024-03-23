@@ -39,3 +39,22 @@ func Export(vm *goja.Runtime, name string) goja.Value {
 	}
 	return exports.ToObject(vm).Get(name)
 }
+
+func AssertExportFunction(code, name string) bool {
+	program, err := goja.Compile("", code, true)
+	if err != nil {
+		return false
+	}
+
+	vm := New()
+	if _, err := vm.RunProgram(program); err != nil {
+		return false
+	}
+
+	if defaults := Export(vm, name); defaults == nil {
+		return false
+	} else if _, ok := goja.AssertFunction(defaults); !ok {
+		return false
+	}
+	return true
+}

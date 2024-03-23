@@ -18,3 +18,11 @@ func TestUseModuleAndExport(t *testing.T) {
 	v := Export(vm, "default")
 	assert.NotNil(t, v)
 }
+
+func TestAssertExportFunction(t *testing.T) {
+	ok := AssertExportFunction("$", "default")
+	assert.False(t, ok)
+
+	ok = AssertExportFunction("module.exports = () => {};", "default")
+	assert.True(t, ok)
+}
