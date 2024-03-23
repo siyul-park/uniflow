@@ -21,13 +21,13 @@ func TestNewSwitchNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestSwitchNode_Add(t *testing.T) {
+func TestSwitchNode_AddMatch(t *testing.T) {
 	t.Run(language.Text, func(t *testing.T) {
 		n := NewSwitchNode()
 		defer n.Close()
 
 		n.SetLanguage(language.Text)
-		err := n.Add("Hello World!", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("Hello World!", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -36,7 +36,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.Typescript)
-		err := n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -45,7 +45,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.Javascript)
-		err := n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -54,7 +54,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.JSON)
-		err := n.Add("true", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("true", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -63,7 +63,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.JSONata)
-		err := n.Add("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 
@@ -72,7 +72,7 @@ func TestSwitchNode_Add(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.YAML)
-		err := n.Add("true", node.PortWithIndex(node.PortOut, 0))
+		err := n.AddMatch("true", node.PortWithIndex(node.PortOut, 0))
 		assert.NoError(t, err)
 	})
 }
@@ -82,7 +82,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		n := NewSwitchNode()
 		defer n.Close()
 
-		_ = n.Add("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -125,7 +125,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.Typescript)
-		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -168,7 +168,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.Javascript)
-		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -211,7 +211,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		n.SetLanguage(language.JSONata)
-		_ = n.Add("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -276,7 +276,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		n.SetLanguage(language.Typescript)
-		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -308,7 +308,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		n.SetLanguage(language.Javascript)
-		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -340,7 +340,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		n.SetLanguage(language.JSONata)
-		_ = n.Add("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))

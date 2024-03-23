@@ -58,8 +58,8 @@ func (n *SwitchNode) SetLanguage(lang string) {
 	n.lang = lang
 }
 
-// Add adds a condition to the SwitchNode, associating it with a specific output port.
-func (n *SwitchNode) Add(when, port string) error {
+// AddMatch adds a condition to the SwitchNode, associating it with a specific output port.
+func (n *SwitchNode) AddMatch(when, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -180,7 +180,7 @@ func NewSwitchNodeCodec() scheme.Codec {
 		n := NewSwitchNode()
 		n.SetLanguage(spec.Lang)
 		for _, condition := range spec.Match {
-			if err := n.Add(condition.When, condition.Port); err != nil {
+			if err := n.AddMatch(condition.When, condition.Port); err != nil {
 				_ = n.Close()
 				return nil, err
 			}
