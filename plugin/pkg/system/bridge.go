@@ -62,19 +62,30 @@ func NewBridgeNode(fn any) (*BridgeNode, error) {
 	return n, nil
 }
 
-// SetArguments sets the language and arguments for the BridgeNode.
-// It processes the arguments based on the specified language.
-func (n *BridgeNode) SetArguments(lang string, arguments ...string) error {
+// SetLanguage sets the language for the BridgeNode.
+func (n *BridgeNode) SetLanguage(lang string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.lang = lang
+}
+
+// SetArguments sets arguments, it processes the arguments based on the specified language.
+func (n *BridgeNode) SetArguments(arguments ...string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	n.arguments = nil
 
 	for _, argument := range arguments {
 		argument := argument
 
-		switch n.lang {
+		lang := n.lang
+		if lang == "" {
+			lang = language.Detect(argument)
+		}
+
+		switch lang {
 		case language.Text:
 			n.arguments = append(n.arguments, func(_ any) (any, error) {
 				return argument, nil
@@ -82,9 +93,9 @@ func (n *BridgeNode) SetArguments(lang string, arguments ...string) error {
 		case language.JSON, language.YAML:
 			var data any
 			var err error
-			if n.lang == language.JSON {
+			if lang == language.JSON {
 				err = json.Unmarshal([]byte(argument), &data)
-			} else if n.lang == language.YAML {
+			} else if lang == language.YAML {
 				err = yaml.Unmarshal([]byte(argument), &data)
 			}
 			if err != nil {
@@ -96,7 +107,7 @@ func (n *BridgeNode) SetArguments(lang string, arguments ...string) error {
 			})
 		case language.Javascript, language.Typescript:
 			var err error
-			if n.lang == language.Typescript {
+			if lang == language.Typescript {
 				if argument, err = js.Transform(argument, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 					return err
 				}
@@ -264,11 +275,10 @@ func NewBridgeNodeCodec(table *BridgeTable) scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		if len(spec.Arguments) > 0 {
-			if err := n.SetArguments(spec.Lang, spec.Arguments...); err != nil {
-				_ = n.Close()
-				return nil, err
-			}
+		n.SetLanguage(spec.Lang)
+		if err := n.SetArguments(spec.Arguments...); err != nil {
+			_ = n.Close()
+			return nil, err
 		}
 		return n, nil
 	})

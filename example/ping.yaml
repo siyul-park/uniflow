@@ -19,5 +19,4 @@
 
 - kind: snippet
   name: pong
-  lang: text
   code: pong

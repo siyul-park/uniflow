@@ -16,6 +16,14 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
+	t.Run("Detect", func(t *testing.T) {
+		n, err := NewSnippetNode("", "")
+		assert.NoError(t, err)
+		assert.NotNil(t, n)
+
+		assert.NoError(t, n.Close())
+	})
+
 	t.Run(language.Text, func(t *testing.T) {
 		n, err := NewSnippetNode(language.Text, "")
 		assert.NoError(t, err)

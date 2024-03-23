@@ -30,7 +30,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.Text, "foo")
+		n.SetLanguage(language.Text)
+		err := n.SetArguments("foo")
 		assert.NoError(t, err)
 	})
 
@@ -38,7 +39,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.Typescript, "$")
+		n.SetLanguage(language.Typescript)
+		err := n.SetArguments("$")
 		assert.NoError(t, err)
 	})
 
@@ -46,7 +48,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.Javascript, "$")
+		n.SetLanguage(language.Javascript)
+		err := n.SetArguments("$")
 		assert.NoError(t, err)
 	})
 
@@ -54,7 +57,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.JSON, "\"foo\"")
+		n.SetLanguage(language.JSON)
+		err := n.SetArguments("\"foo\"")
 		assert.NoError(t, err)
 	})
 
@@ -62,7 +66,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.JSONata, "$")
+		n.SetLanguage(language.JSONata)
+		err := n.SetArguments("$")
 		assert.NoError(t, err)
 	})
 
@@ -70,7 +75,8 @@ func TestBridgeNode_SetArguments(t *testing.T) {
 		n, _ := NewBridgeNode(func(arg any) any { return arg })
 		defer n.Close()
 
-		err := n.SetArguments(language.YAML, "\"foo\"")
+		n.SetLanguage(language.YAML)
+		err := n.SetArguments("\"foo\"")
 		assert.NoError(t, err)
 	})
 }
@@ -110,7 +116,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetArguments(language.JSONata, "$")
+		_ = n.SetArguments("$")
 
 		io := port.NewOut()
 		io.Link(n.In(node.PortIO))
@@ -142,7 +148,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetArguments(language.JSONata, "$", "$")
+		_ = n.SetArguments("$", "$")
 
 		io := port.NewOut()
 		io.Link(n.In(node.PortIO))
@@ -204,7 +210,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetArguments(language.JSONata, "$")
+		_ = n.SetArguments("$")
 
 		io := port.NewOut()
 		io.Link(n.In(node.PortIO))
@@ -236,7 +242,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetArguments(language.JSONata, "$")
+		_ = n.SetArguments("$")
 
 		io := port.NewOut()
 		io.Link(n.In(node.PortIO))
@@ -271,198 +277,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
-		}
-	})
-
-	t.Run(language.Text, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.Text, "foo")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.Typescript, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.Typescript, "$")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.Javascript, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.Javascript, "$")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.JSON, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.JSON, "\"foo\"")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.JSONata, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.JSONata, "$")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.YAML, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		_ = n.SetArguments(language.YAML, "\"foo\"")
-
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
-
-		proc := process.New()
-		defer proc.Close()
-
-		ioWriter := io.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		select {
-		case outPck := <-ioWriter.Receive():
-			assert.Equal(t, primitive.NewString("foo"), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

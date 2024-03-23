@@ -29,7 +29,7 @@ type SnippetNode struct {
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Lang            string `map:"lang"`
+	Lang            string `map:"lang,omitempty"`
 	Code            string `map:"code"`
 }
 
@@ -39,6 +39,10 @@ var ErrEntryPointNotUndeclared = errors.New("entry point not defined")
 
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
 func NewSnippetNode(lang, code string) (*SnippetNode, error) {
+	if lang == "" {
+		lang = language.Detect(code)
+	}
+
 	n := &SnippetNode{lang: lang, code: code}
 	if action, err := n.compile(); err != nil {
 		return nil, err
@@ -52,20 +56,13 @@ func (n *SnippetNode) compile() (func(*process.Process, *packet.Packet) (*packet
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	if n.lang == "" {
-		n.lang = language.Text
-	}
-
 	switch n.lang {
-	case language.Text:
-		outPayload := primitive.NewString(n.code)
-		return func(proc *process.Process, _ *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return packet.New(outPayload), nil
-		}, nil
-	case language.JSON, language.YAML:
+	case language.Text, language.JSON, language.YAML:
 		var data any
 		var err error
-		if n.lang == language.JSON {
+		if n.lang == language.Text {
+			data = n.code
+		} else if n.lang == language.JSON {
 			err = json.Unmarshal([]byte(n.code), &data)
 		} else if n.lang == language.YAML {
 			err = yaml.Unmarshal([]byte(n.code), &data)

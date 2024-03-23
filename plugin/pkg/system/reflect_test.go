@@ -15,7 +15,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +38,7 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewBridgeNode(CreateNodes(st))
 	defer n.Close()
 
-	_ = n.SetArguments(language.JSONata, "[$]")
+	_ = n.SetArguments("[$]")
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -137,7 +136,7 @@ func TestUpdateNodes(t *testing.T) {
 	n, _ := NewBridgeNode(UpdateNodes(st))
 	defer n.Close()
 
-	_ = n.SetArguments(language.JSONata, "[$]")
+	_ = n.SetArguments("[$]")
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),

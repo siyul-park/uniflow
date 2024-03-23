@@ -1,7 +1,10 @@
 package control
 
 import (
+	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"reflect"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -28,7 +31,7 @@ type SwitchNode struct {
 // SwitchNodeSpec holds the specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Lang            string      `map:"lang"`
+	Lang            string      `map:"lang,omitempty"`
 	Match           []Condition `map:"match"`
 }
 
@@ -41,10 +44,18 @@ type Condition struct {
 const KindSwitch = "swtich"
 
 // NewSwitchNode creates a new SwitchNode with the specified language.
-func NewSwitchNode(lang string) *SwitchNode {
-	n := &SwitchNode{lang: lang}
+func NewSwitchNode() *SwitchNode {
+	n := &SwitchNode{}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
+}
+
+// SetLanguage sets the language for the SwitchNode.
+func (n *SwitchNode) SetLanguage(lang string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.lang = lang
 }
 
 // Add adds a condition to the SwitchNode, associating it with a specific output port.
@@ -56,15 +67,39 @@ func (n *SwitchNode) Add(when, port string) error {
 		when = "true"
 	}
 
+	lang := n.lang
+	if lang == "" {
+		lang = language.Detect(when)
+	}
+
 	index, ok := node.IndexOfPort(node.PortOut, port)
 	if !ok {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
 
-	switch n.lang {
+	switch lang {
+	case language.Text, language.JSON, language.YAML:
+		var data any
+		var err error
+		if lang == language.Text {
+			data = when
+		} else if lang == language.JSON {
+			err = json.Unmarshal([]byte(when), &data)
+		} else if lang == language.YAML {
+			err = yaml.Unmarshal([]byte(when), &data)
+		}
+		if err != nil {
+			return err
+		}
+
+		ok := !reflect.ValueOf(data).IsZero()
+
+		n.whens = append(n.whens, func(input any) (bool, error) {
+			return ok, nil
+		})
 	case language.Javascript, language.Typescript:
 		var err error
-		if n.lang == language.Typescript {
+		if lang == language.Typescript {
 			if when, err = js.Transform(when, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
 				return err
 			}
@@ -119,7 +154,7 @@ func (n *SwitchNode) Add(when, port string) error {
 	return nil
 }
 
-func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -142,7 +177,8 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
-		n := NewSwitchNode(spec.Lang)
+		n := NewSwitchNode()
+		n.SetLanguage(spec.Lang)
 		for _, condition := range spec.Match {
 			if err := n.Add(condition.When, condition.Port); err != nil {
 				_ = n.Close()
