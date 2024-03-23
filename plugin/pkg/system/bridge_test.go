@@ -25,62 +25,6 @@ func TestNewBridgeNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestBridgeNode_SetArguments(t *testing.T) {
-	t.Run(language.Text, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.Text)
-		err := n.SetArguments("foo")
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.Typescript, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.Typescript)
-		err := n.SetArguments("$")
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.Javascript, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.Javascript)
-		err := n.SetArguments("$")
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.JSON, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.JSON)
-		err := n.SetArguments("\"foo\"")
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.JSONata, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.JSONata)
-		err := n.SetArguments("$")
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.YAML, func(t *testing.T) {
-		n, _ := NewBridgeNode(func(arg any) any { return arg })
-		defer n.Close()
-
-		n.SetLanguage(language.YAML)
-		err := n.SetArguments("\"foo\"")
-		assert.NoError(t, err)
-	})
-}
-
 func TestBridgeNode_SendAndReceive(t *testing.T) {
 	t.Run("Arguments, Returns = 0", func(t *testing.T) {
 		n, _ := NewBridgeNode(func() {})

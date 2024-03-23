@@ -2,23 +2,16 @@ package system
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"sync"
 
-	"github.com/dop251/goja"
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
-	"github.com/xiatechs/jsonata-go"
-	"gopkg.in/yaml.v3"
 )
 
 // BridgeNode represents a node for executing internal calls.
@@ -26,7 +19,7 @@ type BridgeNode struct {
 	*node.OneToOneNode
 	fn        reflect.Value
 	lang      string
-	arguments []func(any) (any, error)
+	arguments []func(primitive.Value) (any, error)
 	mu        sync.RWMutex
 }
 
@@ -78,83 +71,21 @@ func (n *BridgeNode) SetArguments(arguments ...string) error {
 	n.arguments = nil
 
 	for _, argument := range arguments {
-		argument := argument
-
 		lang := n.lang
-		if lang == "" {
-			lang = language.Detect(argument)
+		transform, err := language.CompileTransform(argument, &lang)
+		if err != nil {
+			return err
 		}
 
-		switch lang {
-		case language.Text:
-			n.arguments = append(n.arguments, func(_ any) (any, error) {
-				return argument, nil
-			})
-		case language.JSON, language.YAML:
-			var data any
-			var err error
-			if lang == language.JSON {
-				err = json.Unmarshal([]byte(argument), &data)
-			} else if lang == language.YAML {
-				err = yaml.Unmarshal([]byte(argument), &data)
-			}
-			if err != nil {
-				return err
+		n.arguments = append(n.arguments, func(value primitive.Value) (any, error) {
+			var input any
+			switch lang {
+			case language.Typescript, language.Javascript, language.JSONata:
+				input = primitive.Interface(value)
 			}
 
-			n.arguments = append(n.arguments, func(_ any) (any, error) {
-				return data, nil
-			})
-		case language.Javascript, language.Typescript:
-			var err error
-			if lang == language.Typescript {
-				if argument, err = js.Transform(argument, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
-					return err
-				}
-			}
-
-			code := fmt.Sprintf("module.exports = ($) => { return %s }", argument)
-			program, err := goja.Compile("", code, true)
-			if err != nil {
-				return err
-			}
-
-			vms := &sync.Pool{
-				New: func() any {
-					vm := js.New()
-					_, _ = vm.RunProgram(program)
-					return vm
-				},
-			}
-
-			n.arguments = append(n.arguments, func(input any) (any, error) {
-				vm := vms.Get().(*goja.Runtime)
-				defer vms.Put(vm)
-
-				defaults := js.Export(vm, "default")
-				argument, _ := goja.AssertFunction(defaults)
-
-				if output, err := argument(goja.Undefined(), vm.ToValue(input)); err != nil {
-					return false, err
-				} else {
-					return output.Export(), nil
-				}
-			})
-		case language.JSONata:
-			exp, err := jsonata.Compile(argument)
-			if err != nil {
-				return err
-			}
-			n.arguments = append(n.arguments, func(input any) (any, error) {
-				if output, err := exp.Eval(input); err != nil {
-					return false, err
-				} else {
-					return output, nil
-				}
-			})
-		default:
-			return errors.WithStack(language.ErrUnsupportedLanguage)
-		}
+			return transform(input)
+		})
 	}
 
 	return nil
@@ -168,7 +99,6 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 
 	inPayload := inPck.Payload()
-	input := inPayload.Interface()
 
 	ins := make([]reflect.Value, n.fn.Type().NumIn())
 
@@ -190,7 +120,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		in := reflect.New(n.fn.Type().In(i))
 
 		if len(n.arguments) > i-offset {
-			if argument, err := n.arguments[i-offset](input); err != nil {
+			if argument, err := n.arguments[i-offset](inPayload); err != nil {
 				return nil, packet.WithError(err, inPck)
 			} else if argument, err := primitive.MarshalBinary(argument); err != nil {
 				return nil, packet.WithError(err, inPck)
@@ -198,9 +128,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 				return nil, packet.WithError(err, inPck)
 			}
 		} else if i == offset {
-			if argument, err := primitive.MarshalBinary(input); err != nil {
-				return nil, packet.WithError(err, inPck)
-			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
+			if err := primitive.Unmarshal(inPayload, in.Interface()); err != nil {
 				return nil, packet.WithError(err, inPck)
 			}
 		}

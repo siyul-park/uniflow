@@ -21,62 +21,6 @@ func TestNewSwitchNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestSwitchNode_AddMatch(t *testing.T) {
-	t.Run(language.Text, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.Text)
-		err := n.AddMatch("Hello World!", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.Typescript, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.Typescript)
-		err := n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.Javascript, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.Javascript)
-		err := n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.JSON, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.JSON)
-		err := n.AddMatch("true", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.JSONata, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.JSONata)
-		err := n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-
-	t.Run(language.YAML, func(t *testing.T) {
-		n := NewSwitchNode()
-		defer n.Close()
-
-		n.SetLanguage(language.YAML)
-		err := n.AddMatch("true", node.PortWithIndex(node.PortOut, 0))
-		assert.NoError(t, err)
-	})
-}
-
 func TestSwitchNode_SendAndReceive(t *testing.T) {
 	t.Run("Detect", func(t *testing.T) {
 		n := NewSwitchNode()

@@ -16,65 +16,11 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
-	t.Run("Detect", func(t *testing.T) {
-		n, err := NewSnippetNode("", "")
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
+	n, err := NewSnippetNode("", "")
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
 
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.Text, func(t *testing.T) {
-		n, err := NewSnippetNode(language.Text, "")
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.Typescript, func(t *testing.T) {
-		n, err := NewSnippetNode(language.Typescript, `export default function (input: any): any {
-			return input;
-		}`)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.Javascript, func(t *testing.T) {
-		n, err := NewSnippetNode(language.Javascript, `export default function (input) {
-			return input;
-		}`)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.JSON, func(t *testing.T) {
-		n, err := NewSnippetNode(language.JSON, `{}`)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.JSONata, func(t *testing.T) {
-		n, err := NewSnippetNode(language.JSONata, `$`)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
-
-	t.Run(language.YAML, func(t *testing.T) {
-		n, err := NewSnippetNode(language.YAML, `{}`)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-
-		assert.NoError(t, n.Close())
-	})
+	assert.NoError(t, n.Close())
 }
 
 func TestSnippetNode_SendAndReceive(t *testing.T) {

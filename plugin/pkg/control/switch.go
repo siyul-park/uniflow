@@ -1,29 +1,23 @@
 package control
 
 import (
-	"encoding/json"
-	"fmt"
-	"gopkg.in/yaml.v3"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"reflect"
 	"sync"
 
-	"github.com/dop251/goja"
-	"github.com/evanw/esbuild/pkg/api"
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
-	"github.com/xiatechs/jsonata-go"
 )
 
 // SwitchNode represents a switch node that directs incoming packets based on specified conditions.
 type SwitchNode struct {
 	*node.OneToManyNode
 	lang  string
-	whens []func(any) (bool, error)
+	whens []func(primitive.Value) (bool, error)
 	ports []int
 	mu    sync.RWMutex
 }
@@ -68,8 +62,9 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 	}
 
 	lang := n.lang
-	if lang == "" {
-		lang = language.Detect(when)
+	transform, err := language.CompileTransform(when, &lang)
+	if err != nil {
+		return err
 	}
 
 	index, ok := node.IndexOfPort(node.PortOut, port)
@@ -77,79 +72,19 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
 
-	switch lang {
-	case language.Text, language.JSON, language.YAML:
-		var data any
-		var err error
-		if lang == language.Text {
-			data = when
-		} else if lang == language.JSON {
-			err = json.Unmarshal([]byte(when), &data)
-		} else if lang == language.YAML {
-			err = yaml.Unmarshal([]byte(when), &data)
+	n.whens = append(n.whens, func(value primitive.Value) (bool, error) {
+		var input any
+		switch lang {
+		case language.Typescript, language.Javascript, language.JSONata:
+			input = primitive.Interface(value)
 		}
+
+		out, err := transform(input)
 		if err != nil {
-			return err
+			return false, err
 		}
-
-		ok := !reflect.ValueOf(data).IsZero()
-
-		n.whens = append(n.whens, func(input any) (bool, error) {
-			return ok, nil
-		})
-	case language.Javascript, language.Typescript:
-		var err error
-		if lang == language.Typescript {
-			if when, err = js.Transform(when, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
-				return err
-			}
-		}
-
-		code := fmt.Sprintf("module.exports = ($) => { return %s }", when)
-		program, err := goja.Compile("", code, true)
-		if err != nil {
-			return err
-		}
-
-		vms := &sync.Pool{
-			New: func() any {
-				vm := js.New()
-				_, _ = vm.RunProgram(program)
-				return vm
-			},
-		}
-
-		n.whens = append(n.whens, func(input any) (bool, error) {
-			vm := vms.Get().(*goja.Runtime)
-			defer vms.Put(vm)
-
-			defaults := js.Export(vm, "default")
-			when, _ := goja.AssertFunction(defaults)
-
-			if output, err := when(goja.Undefined(), vm.ToValue(input)); err != nil {
-				return false, err
-			} else {
-				output := output.ToBoolean()
-				return output, nil
-			}
-		})
-	case language.JSONata:
-		exp, err := jsonata.Compile(when)
-		if err != nil {
-			return err
-		}
-		n.whens = append(n.whens, func(input any) (bool, error) {
-			if output, err := exp.Eval(input); err != nil {
-				return false, err
-			} else {
-				output, _ := output.(bool)
-				return output, nil
-			}
-		})
-	default:
-		return errors.WithStack(language.ErrUnsupportedLanguage)
-	}
-
+		return !reflect.ValueOf(out).IsZero(), nil
+	})
 	n.ports = append(n.ports, index)
 	return nil
 }
@@ -159,12 +94,11 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := inPayload.Interface()
 
 	outPcks := make([]*packet.Packet, len(n.whens))
 	for i, when := range n.whens {
 		port := n.ports[i]
-		if ok, err := when(input); err != nil {
+		if ok, err := when(inPayload); err != nil {
 			return nil, packet.WithError(err, inPck)
 		} else if ok {
 			outPcks[port] = inPck

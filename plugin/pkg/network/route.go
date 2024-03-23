@@ -144,7 +144,7 @@ func (n *RouteNode) Find(method, path string) (string, map[string]string) {
 	return port, params
 }
 
-func (n *RouteNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
