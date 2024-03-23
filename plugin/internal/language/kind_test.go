@@ -15,7 +15,7 @@ func TestDetect(t *testing.T) {
 			expect: Text,
 		},
 		{
-			when:   "Hello World!",
+			when:   "Hello",
 			expect: Text,
 		},
 		{

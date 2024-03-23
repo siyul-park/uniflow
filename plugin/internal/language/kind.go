@@ -19,7 +19,8 @@ const (
 )
 
 func Detect(value string) string {
-	if strings.TrimSpace(value) == "" {
+	value = strings.TrimSpace(value)
+	if value == "" {
 		return Text
 	}
 
@@ -28,6 +29,9 @@ func Detect(value string) string {
 		return JSON
 	}
 	if _, err := jsonata.Compile(value); err == nil {
+		if !strings.Contains(value, ".") && !strings.Contains(value, "$") {
+			return Text
+		}
 		return JSONata
 	}
 	if _, err := js.Transform(value, api.TransformOptions{Loader: api.LoaderJS}); err == nil {
