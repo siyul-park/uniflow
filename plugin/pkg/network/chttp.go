@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -24,9 +22,7 @@ type CHTTPNode struct {
 	*node.OneToOneNode
 	lang    string
 	method  func(primitive.Value) (string, error)
-	scheme  func(primitive.Value) (string, error)
-	host    func(primitive.Value) (string, error)
-	path    func(primitive.Value) (string, error)
+	url     func(primitive.Value) (string, error)
 	query   func(primitive.Value) (url.Values, error)
 	header  func(primitive.Value) (http.Header, error)
 	body    func(primitive.Value) (primitive.Value, error)
@@ -38,9 +34,7 @@ type CHTTPNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Lang            string              `map:"lang,omitempty"`
 	Method          string              `map:"method,omitempty"`
-	Scheme          string              `map:"scheme,omitempty"`
-	Host            string              `map:"host,omitempty"`
-	Path            string              `map:"path,omitempty"`
+	URL             string              `map:"url,omitempty"`
 	Query           map[string][]string `map:"query,omitempty"`
 	Header          map[string][]string `map:"header,omitempty"`
 	Body            primitive.Value     `map:"body,omitempty"`
@@ -53,9 +47,7 @@ func NewCHTTPNode() *CHTTPNode {
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	_ = n.SetMethod("")
-	_ = n.SetScheme("")
-	_ = n.SetHost("")
-	_ = n.SetPath("")
+	_ = n.SetURL("")
 	_ = n.SetQuery(nil)
 	_ = n.SetHeader(nil)
 	_ = n.SetBody(nil)
@@ -92,90 +84,44 @@ func (n *CHTTPNode) SetMethod(method string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetScheme(scheme string) error {
+func (n *CHTTPNode) SetURL(value string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if scheme == "" {
-		n.scheme = func(value primitive.Value) (string, error) {
-			if scheme, ok := primitive.Pick[string](value, "scheme"); ok {
-				return scheme, nil
+	if value == "" {
+		n.url = func(value primitive.Value) (string, error) {
+			v := &url.URL{
+				Scheme: "https",
+				Path:   "",
 			}
+
 			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				if v, err := url.Parse(rawURL); err != nil {
+				var err error
+				if v, err = url.Parse(rawURL); err != nil {
 					return "", err
-				} else {
-					return v.Scheme, nil
 				}
 			}
-			return "https", nil
+
+			if s, ok := primitive.Pick[string](value, "scheme"); ok {
+				v.Scheme = s
+			}
+			if h, ok := primitive.Pick[string](value, "host"); ok {
+				v.Host = h
+			}
+			if p, ok := primitive.Pick[string](value, "path"); ok {
+				v.Path = p
+			}
+
+			return v.String(), nil
 		}
 		return nil
 	}
 
-	transform, err := n.compileText(scheme)
+	transform, err := n.compileText(value)
 	if err != nil {
 		return err
 	}
-	n.scheme = transform
-	return nil
-}
-
-func (n *CHTTPNode) SetHost(host string) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	if host == "" {
-		n.host = func(value primitive.Value) (string, error) {
-			if host, ok := primitive.Pick[string](value, "host"); ok {
-				return host, nil
-			}
-			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				if v, err := url.Parse(rawURL); err != nil {
-					return "", err
-				} else {
-					return v.Host, nil
-				}
-			}
-			return "", errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-		return nil
-	}
-
-	transform, err := n.compileText(host)
-	if err != nil {
-		return err
-	}
-	n.host = transform
-	return nil
-}
-
-func (n *CHTTPNode) SetPath(path string) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	if path == "" {
-		n.path = func(value primitive.Value) (string, error) {
-			if path, ok := primitive.Pick[string](value, "path"); ok {
-				return path, nil
-			}
-			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				if v, err := url.Parse(rawURL); err != nil {
-					return "", err
-				} else {
-					return v.Path, nil
-				}
-			}
-			return "", nil
-		}
-		return nil
-	}
-
-	transform, err := n.compileText(path)
-	if err != nil {
-		return err
-	}
-	n.path = transform
+	n.url = transform
 	return nil
 }
 
@@ -376,15 +322,10 @@ func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	scheme, err := n.scheme(raw)
+	rawURL, err := n.url(raw)
 	if err != nil {
 		return nil, err
 	}
-	host, err := n.host(raw)
-	if err != nil {
-		return nil, err
-	}
-	path, err := n.path(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -405,11 +346,16 @@ func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
 		header = make(http.Header)
 	}
 
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
 	return &HTTPPayload{
 		Method: method,
-		Scheme: scheme,
-		Host:   host,
-		Path:   path,
+		Scheme: u.Scheme,
+		Host:   u.Host,
+		Path:   u.Path,
 		Query:  query,
 		Proto:  "",
 		Header: header,
@@ -545,13 +491,7 @@ func NewCHTTPNodeCodec() scheme.Codec {
 		if err := n.SetMethod(spec.Method); err != nil {
 			return nil, err
 		}
-		if err := n.SetScheme(spec.Scheme); err != nil {
-			return nil, err
-		}
-		if err := n.SetHost(spec.Host); err != nil {
-			return nil, err
-		}
-		if err := n.SetPath(spec.Path); err != nil {
+		if err := n.SetURL(spec.URL); err != nil {
 			return nil, err
 		}
 		if err := n.SetQuery(spec.Query); err != nil {

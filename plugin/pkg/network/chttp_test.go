@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 	"time"
 )
@@ -37,18 +36,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		err := n.SetMethod(http.MethodGet)
 		assert.NoError(t, err)
 
-		u, _ := url.Parse(s.URL)
-
-		err = n.SetScheme(u.Scheme)
-		assert.NoError(t, err)
-
-		err = n.SetHost(u.Host)
-		assert.NoError(t, err)
-
-		err = n.SetPath(u.Path)
-		assert.NoError(t, err)
-
-		err = n.SetQuery(u.Query())
+		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
 		io := port.NewOut()
@@ -116,18 +104,10 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 
 		n.SetTimeout(time.Second)
 
-		u, _ := url.Parse(s.URL)
-
 		err := n.SetMethod(http.MethodGet)
 		assert.NoError(t, err)
 
-		err = n.SetScheme(u.Scheme)
-		assert.NoError(t, err)
-
-		err = n.SetHost(u.Host)
-		assert.NoError(t, err)
-
-		err = n.SetPath(u.Path)
+		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
 		err = n.SetQuery(map[string][]string{
@@ -166,18 +146,10 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 
 		n.SetTimeout(time.Second)
 
-		u, _ := url.Parse(s.URL)
-
 		err := n.SetMethod(http.MethodGet)
 		assert.NoError(t, err)
 
-		err = n.SetScheme(u.Scheme)
-		assert.NoError(t, err)
-
-		err = n.SetHost(u.Host)
-		assert.NoError(t, err)
-
-		err = n.SetPath(u.Path)
+		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
 		err = n.SetHeader(map[string][]string{
@@ -216,18 +188,10 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 
 		n.SetTimeout(time.Second)
 
-		u, _ := url.Parse(s.URL)
-
 		err := n.SetMethod(http.MethodPost)
 		assert.NoError(t, err)
 
-		err = n.SetScheme(u.Scheme)
-		assert.NoError(t, err)
-
-		err = n.SetHost(u.Host)
-		assert.NoError(t, err)
-
-		err = n.SetPath(u.Path)
+		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
 		err = n.SetBody(primitive.NewMap(
@@ -266,13 +230,11 @@ func TestCHTTPNodeCodec_Decode(t *testing.T) {
 	}))
 	defer s.Close()
 
-	u, _ := url.Parse(s.URL)
-
 	codec := NewCHTTPNodeCodec()
 
 	spec := &CHTTPNodeSpec{
 		Method: http.MethodGet,
-		Host:   u.Host,
+		URL:    s.URL,
 	}
 
 	n, err := codec.Decode(spec)
