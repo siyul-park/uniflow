@@ -326,9 +326,6 @@ func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	query, err := n.query(raw)
 	if err != nil {
 		return nil, err
