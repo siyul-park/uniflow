@@ -23,6 +23,9 @@ func AddToHook() func(*hook.Hook) error {
 // AddToScheme returns a function that adds node types and codecs to the provided scheme.
 func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
+		s.AddKnownType(KindCHTTP, &CHTTPNodeSpec{})
+		s.AddCodec(KindCHTTP, NewCHTTPNodeCodec())
+
 		s.AddKnownType(KindHTTP, &HTTPNodeSpec{})
 		s.AddCodec(KindHTTP, NewHTTPNodeCodec())
 

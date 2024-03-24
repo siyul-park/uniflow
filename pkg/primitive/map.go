@@ -226,7 +226,7 @@ func newMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, V
 				}
 
 				v := s.FieldByName(field.Name)
-				tag := getMapTag(s.Type(), field)
+				tag := getMapTag(field)
 
 				if tag.ignore || (tag.omitempty && v.IsZero()) {
 					continue
@@ -292,7 +292,7 @@ func newMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value,
 						}
 
 						v := t.Elem().FieldByName(field.Name)
-						tag := getMapTag(t.Type().Elem(), field)
+						tag := getMapTag(field)
 
 						if tag.ignore {
 							continue
@@ -327,7 +327,7 @@ func newMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value,
 	})
 }
 
-func getMapTag(t reflect.Type, f reflect.StructField) mapTag {
+func getMapTag(f reflect.StructField) mapTag {
 	key := strcase.ToSnake(f.Name)
 	rawTag := f.Tag.Get(tagMap)
 
