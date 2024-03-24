@@ -402,43 +402,15 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 	inPayload := inPck.Payload()
 
-	method, err := n.method(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	scheme, err := n.scheme(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	host, err := n.host(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	path, err := n.path(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	query, err := n.query(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	header, err := n.header(inPayload)
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-	body, err := n.body(inPayload)
+	req, err := n.request(inPayload)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 
-	if header == nil {
-		header = make(http.Header)
-	}
+	contentType := req.Header.Get(HeaderContentType)
+	contentEncoding := req.Header.Get(HeaderContentEncoding)
 
-	contentType := header.Get(HeaderContentType)
-	contentEncoding := header.Get(HeaderContentEncoding)
-
-	b, err := MarshalMIME(body, &contentType)
+	b, err := MarshalMIME(req.Body, &contentType)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
@@ -447,56 +419,107 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err, inPck)
 	}
 
-	header.Set(HeaderContentLength, strconv.Itoa(len(b)))
+	req.Header.Set(HeaderContentLength, strconv.Itoa(len(b)))
 	if contentType != "" {
-		header.Set(HeaderContentType, contentType)
+		req.Header.Set(HeaderContentType, contentType)
 	}
 
 	u := &url.URL{
-		Scheme:   scheme,
-		Host:     host,
-		Path:     path,
-		RawQuery: query.Encode(),
+		Scheme:   req.Scheme,
+		Host:     req.Host,
+		Path:     req.Path,
+		RawQuery: req.Query.Encode(),
 	}
 
-	req, err := http.NewRequest(method, u.String(), bytes.NewReader(b))
+	r, err := http.NewRequest(req.Method, u.String(), bytes.NewReader(b))
 	if err != nil {
-		panic(err)
+		return nil, packet.WithError(err, inPck)
 	}
-	req = req.WithContext(ctx)
-	req.Header = header
+	r = r.WithContext(ctx)
 
 	client := &http.Client{}
-	res, err := client.Do(req)
+
+	w, err := client.Do(r)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
-	defer res.Body.Close()
+	defer func() { _ = w.Body.Close() }()
 
-	contentType = res.Header.Get(HeaderContentType)
-	contentEncoding = res.Header.Get(HeaderContentEncoding)
-
-	if b, err := io.ReadAll(res.Body); err != nil {
+	res, err := n.response(w)
+	if err != nil {
 		return nil, packet.WithError(err, inPck)
-	} else if b, err := Decompress(b, contentEncoding); err != nil {
-		return nil, packet.WithError(err, inPck)
-	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
-		return nil, packet.WithError(err, inPck)
-	} else {
-		res.Header.Set(HeaderContentType, contentType)
-		if outPayload, err := primitive.MarshalBinary(HTTPPayload{
-			Method: method,
-			Scheme: scheme,
-			Host:   host,
-			Path:   path,
-			Query:  query,
-			Header: res.Header,
-			Body:   b,
-		}); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else {
-			return packet.New(outPayload), nil
-		}
 	}
-	return nil, nil
+
+	outPayload, err := primitive.MarshalBinary(res)
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
+	return packet.New(outPayload), nil
+}
+
+func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
+	method, err := n.method(raw)
+	if err != nil {
+		return nil, err
+	}
+	scheme, err := n.scheme(raw)
+	if err != nil {
+		return nil, err
+	}
+	host, err := n.host(raw)
+	if err != nil {
+		return nil, err
+	}
+	path, err := n.path(raw)
+	if err != nil {
+		return nil, err
+	}
+	query, err := n.query(raw)
+	if err != nil {
+		return nil, err
+	}
+	header, err := n.header(raw)
+	if err != nil {
+		return nil, err
+	}
+	body, err := n.body(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	if header == nil {
+		header = make(http.Header)
+	}
+
+	return &HTTPPayload{
+		Method: method,
+		Scheme: scheme,
+		Host:   host,
+		Path:   path,
+		Query:  query,
+		Proto:  "",
+		Header: header,
+		Body:   body,
+		Status: 0,
+	}, nil
+}
+
+func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
+	contentType := w.Header.Get(HeaderContentType)
+	contentEncoding := w.Header.Get(HeaderContentEncoding)
+
+	if b, err := io.ReadAll(w.Body); err != nil {
+		return nil, err
+	} else if b, err := Decompress(b, contentEncoding); err != nil {
+		return nil, err
+	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
+		return nil, err
+	} else {
+		w.Header.Set(HeaderContentType, contentType)
+
+		return &HTTPPayload{
+			Header: w.Header,
+			Body:   b,
+		}, nil
+	}
 }
