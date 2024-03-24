@@ -31,6 +31,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		n := NewCHTTPNode()
 		defer n.Close()
 
+		n.SetTimeout(time.Second)
 		n.SetLanguage(language.Text)
 
 		err := n.SetMethod(http.MethodGet)
@@ -79,6 +80,8 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		n := NewCHTTPNode()
 		defer n.Close()
 
+		n.SetTimeout(time.Second)
+
 		io := port.NewOut()
 		io.Link(n.In(node.PortIO))
 
@@ -110,6 +113,8 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	t.Run("With Query", func(t *testing.T) {
 		n := NewCHTTPNode()
 		defer n.Close()
+
+		n.SetTimeout(time.Second)
 
 		u, _ := url.Parse(s.URL)
 
@@ -159,6 +164,8 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		n := NewCHTTPNode()
 		defer n.Close()
 
+		n.SetTimeout(time.Second)
+
 		u, _ := url.Parse(s.URL)
 
 		err := n.SetMethod(http.MethodGet)
@@ -206,6 +213,8 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	t.Run("With Body", func(t *testing.T) {
 		n := NewCHTTPNode()
 		defer n.Close()
+
+		n.SetTimeout(time.Second)
 
 		u, _ := url.Parse(s.URL)
 

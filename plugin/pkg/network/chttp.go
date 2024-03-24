@@ -16,19 +16,21 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type CHTTPNode struct {
 	*node.OneToOneNode
-	lang   string
-	method func(primitive.Value) (string, error)
-	scheme func(primitive.Value) (string, error)
-	host   func(primitive.Value) (string, error)
-	path   func(primitive.Value) (string, error)
-	query  func(primitive.Value) (url.Values, error)
-	header func(primitive.Value) (http.Header, error)
-	body   func(primitive.Value) (primitive.Value, error)
-	mu     sync.RWMutex
+	timeout time.Duration
+	lang    string
+	method  func(primitive.Value) (string, error)
+	scheme  func(primitive.Value) (string, error)
+	host    func(primitive.Value) (string, error)
+	path    func(primitive.Value) (string, error)
+	query   func(primitive.Value) (url.Values, error)
+	header  func(primitive.Value) (http.Header, error)
+	body    func(primitive.Value) (primitive.Value, error)
+	mu      sync.RWMutex
 }
 
 func NewCHTTPNode() *CHTTPNode {
@@ -44,6 +46,13 @@ func NewCHTTPNode() *CHTTPNode {
 	_ = n.SetBody(nil)
 
 	return n
+}
+
+func (n *CHTTPNode) SetTimeout(timeout time.Duration) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.timeout = timeout
 }
 
 func (n *CHTTPNode) SetLanguage(lang string) {
@@ -219,7 +228,7 @@ func (n *CHTTPNode) SetHeader(header map[string][]string) error {
 			if header, ok := primitive.Pick[map[string][]string](value, "header"); ok {
 				return header, nil
 			}
-			return make(http.Header), nil
+			return nil, nil
 		}
 		return nil
 	}
@@ -375,7 +384,17 @@ func (n *CHTTPNode) compile(code string) (func(primitive.Value) (any, error), er
 }
 
 func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if n.timeout != 0 {
+		ctx, cancel = context.WithTimeout(ctx, n.timeout)
+		defer cancel()
+	}
+
 	go func() {
 		<-proc.Done()
 		cancel()
@@ -412,6 +431,10 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err, inPck)
 	}
 
+	if header == nil {
+		header = make(http.Header)
+	}
+
 	contentType := header.Get(HeaderContentType)
 	contentEncoding := header.Get(HeaderContentEncoding)
 
@@ -440,8 +463,8 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	if err != nil {
 		panic(err)
 	}
-	req.Header = header
 	req = req.WithContext(ctx)
+	req.Header = header
 
 	client := &http.Client{}
 	res, err := client.Do(req)
@@ -449,6 +472,9 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err, inPck)
 	}
 	defer res.Body.Close()
+
+	contentType = res.Header.Get(HeaderContentType)
+	contentEncoding = res.Header.Get(HeaderContentEncoding)
 
 	if b, err := io.ReadAll(res.Body); err != nil {
 		return nil, packet.WithError(err, inPck)
