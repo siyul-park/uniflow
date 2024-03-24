@@ -260,3 +260,56 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		}
 	})
 }
+
+func TestCHTTPNodeCodec_Decode(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	}))
+	defer s.Close()
+
+	u, _ := url.Parse(s.URL)
+
+	codec := NewCHTTPNodeCodec()
+
+	spec := &CHTTPNodeSpec{
+		Method: http.MethodGet,
+		Host:   u.Host,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
+}
+
+func BenchmarkCHTTPNode_SendAndReceive(b *testing.B) {
+	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	}))
+	defer s.Close()
+
+	n := NewCHTTPNode()
+	defer n.Close()
+
+	n.SetTimeout(time.Second)
+
+	io := port.NewOut()
+	io.Link(n.In(node.PortIO))
+
+	proc := process.New()
+	defer proc.Close()
+
+	ioWriter := io.Open(proc)
+
+	inPayload := primitive.NewMap(
+		primitive.NewString("method"), primitive.NewString(http.MethodGet),
+		primitive.NewString("url"), primitive.NewString(s.URL),
+	)
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		ioWriter.Write(inPck)
+		<-ioWriter.Receive()
+	}
+}

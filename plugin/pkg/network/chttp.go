@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"io"
 	"net/http"
@@ -21,7 +22,6 @@ import (
 
 type CHTTPNode struct {
 	*node.OneToOneNode
-	timeout time.Duration
 	lang    string
 	method  func(primitive.Value) (string, error)
 	scheme  func(primitive.Value) (string, error)
@@ -30,8 +30,23 @@ type CHTTPNode struct {
 	query   func(primitive.Value) (url.Values, error)
 	header  func(primitive.Value) (http.Header, error)
 	body    func(primitive.Value) (primitive.Value, error)
+	timeout time.Duration
 	mu      sync.RWMutex
 }
+
+type CHTTPNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Lang            string              `map:"lang,omitempty"`
+	Method          string              `map:"method,omitempty"`
+	Scheme          string              `map:"scheme,omitempty"`
+	Host            string              `map:"host,omitempty"`
+	Path            string              `map:"path,omitempty"`
+	Query           map[string][]string `map:"query,omitempty"`
+	Header          map[string][]string `map:"header,omitempty"`
+	Body            primitive.Value     `map:"body,omitempty"`
+}
+
+const KindCHTTP = "chttp"
 
 func NewCHTTPNode() *CHTTPNode {
 	n := &CHTTPNode{}
@@ -46,13 +61,6 @@ func NewCHTTPNode() *CHTTPNode {
 	_ = n.SetBody(nil)
 
 	return n
-}
-
-func (n *CHTTPNode) SetTimeout(timeout time.Duration) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.timeout = timeout
 }
 
 func (n *CHTTPNode) SetLanguage(lang string) {
@@ -282,105 +290,11 @@ func (n *CHTTPNode) SetBody(body primitive.Value) error {
 	return nil
 }
 
-func (n *CHTTPNode) compileValue(value primitive.Value) (func(primitive.Value) (primitive.Value, error), error) {
-	switch v := value.(type) {
-	case *primitive.Map:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, k := range v.Keys() {
-			transform, err := n.compileValue(v.GetOr(k, nil))
-			if err != nil {
-				return nil, err
-			}
-			transforms = append(transforms, transform)
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			pairs := make([]primitive.Value, 0, v.Len()*2)
-			for i, k := range v.Keys() {
-				transform := transforms[i]
+func (n *CHTTPNode) SetTimeout(timeout time.Duration) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-				v, err := transform(value)
-				if err != nil {
-					return nil, err
-				}
-
-				pairs = append(pairs, k)
-				pairs = append(pairs, v)
-			}
-			return primitive.NewMap(pairs...), nil
-		}, nil
-	case *primitive.Slice:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, v := range v.Values() {
-			transform, err := n.compileValue(v)
-			if err != nil {
-				return nil, err
-			}
-			transforms = append(transforms, transform)
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			values := make([]primitive.Value, 0, v.Len()*2)
-			for i, v := range v.Values() {
-				transform := transforms[i]
-
-				v, err := transform(v)
-				if err != nil {
-					return nil, err
-				}
-
-				values = append(values, v)
-			}
-			return primitive.NewSlice(values...), nil
-		}, nil
-	case primitive.String:
-		transform, err := n.compile(v.String())
-		if err != nil {
-			return nil, err
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			if out, err := transform(value); err != nil {
-				return nil, err
-			} else {
-				return primitive.MarshalBinary(out)
-			}
-		}, nil
-	default:
-		return func(value primitive.Value) (primitive.Value, error) {
-			return v, nil
-		}, nil
-	}
-}
-
-func (n *CHTTPNode) compileText(code string) (func(primitive.Value) (string, error), error) {
-	transform, err := n.compile(code)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(value primitive.Value) (string, error) {
-		if out, err := transform(value); err != nil {
-			return "", err
-		} else {
-			return fmt.Sprintf("%v", out), nil
-		}
-	}, nil
-}
-
-func (n *CHTTPNode) compile(code string) (func(primitive.Value) (any, error), error) {
-	lang := n.lang
-	transform, err := language.CompileTransform(code, &lang)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(value primitive.Value) (any, error) {
-		var input any
-		switch lang {
-		case language.Typescript, language.Javascript, language.JSONata:
-			input = primitive.Interface(value)
-		}
-
-		return transform(input)
-	}, nil
+	n.timeout = timeout
 }
 
 func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -522,4 +436,134 @@ func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
 			Body:   b,
 		}, nil
 	}
+}
+
+func (n *CHTTPNode) compileValue(value primitive.Value) (func(primitive.Value) (primitive.Value, error), error) {
+	switch v := value.(type) {
+	case *primitive.Map:
+		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
+		for _, k := range v.Keys() {
+			transform, err := n.compileValue(v.GetOr(k, nil))
+			if err != nil {
+				return nil, err
+			}
+			transforms = append(transforms, transform)
+		}
+		return func(value primitive.Value) (primitive.Value, error) {
+			pairs := make([]primitive.Value, 0, v.Len()*2)
+			for i, k := range v.Keys() {
+				transform := transforms[i]
+
+				v, err := transform(value)
+				if err != nil {
+					return nil, err
+				}
+
+				pairs = append(pairs, k)
+				pairs = append(pairs, v)
+			}
+			return primitive.NewMap(pairs...), nil
+		}, nil
+	case *primitive.Slice:
+		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
+		for _, v := range v.Values() {
+			transform, err := n.compileValue(v)
+			if err != nil {
+				return nil, err
+			}
+			transforms = append(transforms, transform)
+		}
+		return func(value primitive.Value) (primitive.Value, error) {
+			values := make([]primitive.Value, 0, v.Len()*2)
+			for i, v := range v.Values() {
+				transform := transforms[i]
+
+				v, err := transform(v)
+				if err != nil {
+					return nil, err
+				}
+
+				values = append(values, v)
+			}
+			return primitive.NewSlice(values...), nil
+		}, nil
+	case primitive.String:
+		transform, err := n.compile(v.String())
+		if err != nil {
+			return nil, err
+		}
+		return func(value primitive.Value) (primitive.Value, error) {
+			if out, err := transform(value); err != nil {
+				return nil, err
+			} else {
+				return primitive.MarshalBinary(out)
+			}
+		}, nil
+	default:
+		return func(value primitive.Value) (primitive.Value, error) {
+			return v, nil
+		}, nil
+	}
+}
+
+func (n *CHTTPNode) compileText(code string) (func(primitive.Value) (string, error), error) {
+	transform, err := n.compile(code)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(value primitive.Value) (string, error) {
+		if out, err := transform(value); err != nil {
+			return "", err
+		} else {
+			return fmt.Sprintf("%v", out), nil
+		}
+	}, nil
+}
+
+func (n *CHTTPNode) compile(code string) (func(primitive.Value) (any, error), error) {
+	lang := n.lang
+	transform, err := language.CompileTransform(code, &lang)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(value primitive.Value) (any, error) {
+		var input any
+		switch lang {
+		case language.Typescript, language.Javascript, language.JSONata:
+			input = primitive.Interface(value)
+		}
+		return transform(input)
+	}, nil
+}
+
+func NewCHTTPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*CHTTPNodeSpec](func(spec *CHTTPNodeSpec) (node.Node, error) {
+		n := NewCHTTPNode()
+		n.SetLanguage(spec.Lang)
+		if err := n.SetMethod(spec.Method); err != nil {
+			return nil, err
+		}
+		if err := n.SetScheme(spec.Scheme); err != nil {
+			return nil, err
+		}
+		if err := n.SetHost(spec.Host); err != nil {
+			return nil, err
+		}
+		if err := n.SetPath(spec.Path); err != nil {
+			return nil, err
+		}
+		if err := n.SetQuery(spec.Query); err != nil {
+			return nil, err
+		}
+		if err := n.SetHeader(spec.Header); err != nil {
+			return nil, err
+		}
+		if err := n.SetBody(spec.Body); err != nil {
+			return nil, err
+		}
+
+		return n, nil
+	})
 }
