@@ -357,10 +357,8 @@ func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
 		Host:   u.Host,
 		Path:   u.Path,
 		Query:  query,
-		Proto:  "",
 		Header: header,
 		Body:   body,
-		Status: 0,
 	}, nil
 }
 
