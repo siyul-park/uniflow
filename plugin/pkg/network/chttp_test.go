@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -81,6 +82,44 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		inPayload := primitive.NewMap(
 			primitive.NewString("method"), primitive.NewString(http.MethodGet),
 			primitive.NewString("url"), primitive.NewString(s.URL),
+		)
+		inPck := packet.New(inPayload)
+
+		ioWriter.Write(inPck)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		select {
+		case outPck := <-ioWriter.Receive():
+			err, _ := packet.AsError(outPck)
+			assert.NoError(t, err)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("Dynamic Divided URL", func(t *testing.T) {
+		n := NewCHTTPNode()
+		defer n.Close()
+
+		u, _ := url.Parse(s.URL)
+
+		n.SetTimeout(time.Second)
+
+		io := port.NewOut()
+		io.Link(n.In(node.PortIO))
+
+		proc := process.New()
+		defer proc.Close()
+
+		ioWriter := io.Open(proc)
+
+		inPayload := primitive.NewMap(
+			primitive.NewString("method"), primitive.NewString(http.MethodGet),
+			primitive.NewString("scheme"), primitive.NewString(u.Scheme),
+			primitive.NewString("host"), primitive.NewString(u.Host),
+			primitive.NewString("path"), primitive.NewString(u.Path),
 		)
 		inPck := packet.New(inPayload)
 
