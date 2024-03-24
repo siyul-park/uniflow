@@ -18,6 +18,8 @@ const (
 	YAML       = "yaml"
 )
 
+var symbols = []string{"$", ".", "[", "]", "&", "|", "-", "+", "*", "/", "%", "=", ">", "<"}
+
 func Detect(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -29,10 +31,12 @@ func Detect(value string) string {
 		return JSON
 	}
 	if _, err := jsonata.Compile(value); err == nil {
-		if !strings.Contains(value, ".") && !strings.Contains(value, "$") {
-			return Text
+		for _, symbol := range symbols {
+			if strings.Contains(value, symbol) {
+				return JSONata
+			}
 		}
-		return JSONata
+		return Text
 	}
 	if _, err := js.Transform(value, api.TransformOptions{Loader: api.LoaderJS}); err == nil {
 		return Javascript
