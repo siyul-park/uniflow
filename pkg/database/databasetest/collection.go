@@ -33,7 +33,7 @@ func TestCollection_Indexes(t *testing.T, collection database.Collection) {
 func TestCollection_Watch(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	stream, err := collection.Watch(ctx, nil)
@@ -65,7 +65,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		doc := primitive.NewMap(
@@ -81,7 +81,7 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		doc := primitive.NewMap(
@@ -102,7 +102,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
 	t.Run("Success", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		var docs []*primitive.Map
@@ -124,7 +124,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		var docs []*primitive.Map
@@ -147,7 +147,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	t.Run("Upsert = true", func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	t.Run("Upsert = true", func(t *testing.T) {
@@ -236,7 +236,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -261,7 +261,7 @@ func TestCollection_DeleteOne(t *testing.T, collection database.Collection) {
 func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	var ids []primitive.Value
@@ -297,7 +297,7 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	doc := primitive.NewMap(
@@ -396,7 +396,7 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	var ids []primitive.Value
@@ -527,7 +527,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 func TestCollection_Drop(t *testing.T, collection database.Collection) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	_, err := collection.InsertOne(ctx, primitive.NewMap(

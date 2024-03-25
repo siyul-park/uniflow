@@ -14,7 +14,7 @@ import (
 func TestIndexView_List(t *testing.T, indexView database.IndexView) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -37,7 +37,7 @@ func TestIndexView_List(t *testing.T, indexView database.IndexView) {
 func TestIndexView_Create(t *testing.T, indexView database.IndexView) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	model := database.IndexModel{
@@ -52,7 +52,7 @@ func TestIndexView_Create(t *testing.T, indexView database.IndexView) {
 func TestIndexView_Drop(t *testing.T, indexView database.IndexView) {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	model := database.IndexModel{

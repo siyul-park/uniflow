@@ -47,6 +47,9 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 }
 
 func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
 	if outPayload, err := n.program(inPck.Payload()); err != nil {
 		return nil, packet.WithError(err, inPck)
 	} else {
