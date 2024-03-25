@@ -49,23 +49,23 @@
 - kind: bridge
   name: create_nodes
   opcode: nodes.create
-  arguments:
+  operands:
     - "Array.isArray($.body) ? $.body : [$.body]"
 
 - kind: bridge
   name: read_nodes
   opcode: nodes.read
-  arguments:
+  operands:
     - "null"
 
 - kind: bridge
   name: update_nodes
   opcode: nodes.update
-  arguments:
+  operands:
     - "Array.isArray($.body) ? $.body : [$.body]"
 
 - kind: bridge
   name: delete_nodes
   opcode: nodes.delete
-  arguments:
+  operands:
     - '{ "op": "=", "key": "id", "value": $.params.node_id }'

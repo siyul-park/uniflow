@@ -17,18 +17,18 @@ import (
 // BridgeNode represents a node for executing internal calls.
 type BridgeNode struct {
 	*node.OneToOneNode
-	fn        reflect.Value
-	lang      string
-	arguments []func(primitive.Value) (primitive.Value, error)
-	mu        sync.RWMutex
+	fn       reflect.Value
+	lang     string
+	operands []func(primitive.Value) (primitive.Value, error)
+	mu       sync.RWMutex
 }
 
 // BridgeNodeSpec holds the specifications for creating a BridgeNode.
 type BridgeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Opcode          string   `map:"opcode"`
 	Lang            string   `map:"lang,omitempty"`
-	Arguments       []string `map:"arguments,omitempty"`
+	Opcode          string   `map:"opcode"`
+	Operands        []string `map:"operands,omitempty"`
 }
 
 // BridgeTable represents a table of system call operations.
@@ -63,20 +63,20 @@ func (n *BridgeNode) SetLanguage(lang string) {
 	n.lang = lang
 }
 
-// SetArguments sets arguments, it processes the arguments based on the specified language.
-func (n *BridgeNode) SetArguments(arguments ...string) error {
+// SetOperands sets operands, it processes the operands based on the specified language.
+func (n *BridgeNode) SetOperands(operands ...string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.arguments = nil
+	n.operands = nil
 
-	for _, argument := range arguments {
-		transform, err := language.CompileTransformWithPrimitive(argument, n.lang)
+	for _, operand := range operands {
+		transform, err := language.CompileTransformWithPrimitive(operand, n.lang)
 		if err != nil {
 			return err
 		}
 
-		n.arguments = append(n.arguments, transform)
+		n.operands = append(n.operands, transform)
 	}
 
 	return nil
@@ -110,8 +110,8 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	for i := offset; i < len(ins); i++ {
 		in := reflect.New(n.fn.Type().In(i))
 
-		if len(n.arguments) > i-offset {
-			if argument, err := n.arguments[i-offset](inPayload); err != nil {
+		if len(n.operands) > i-offset {
+			if argument, err := n.operands[i-offset](inPayload); err != nil {
 				return nil, packet.WithError(err, inPck)
 			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
 				return nil, packet.WithError(err, inPck)
@@ -193,7 +193,7 @@ func NewBridgeNodeCodec(table *BridgeTable) scheme.Codec {
 			return nil, err
 		}
 		n.SetLanguage(spec.Lang)
-		if err := n.SetArguments(spec.Arguments...); err != nil {
+		if err := n.SetOperands(spec.Operands...); err != nil {
 			_ = n.Close()
 			return nil, err
 		}

@@ -38,7 +38,7 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewBridgeNode(CreateNodes(st))
 	defer n.Close()
 
-	_ = n.SetArguments("[$]")
+	_ = n.SetOperands("[$]")
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -136,7 +136,7 @@ func TestUpdateNodes(t *testing.T) {
 	n, _ := NewBridgeNode(UpdateNodes(st))
 	defer n.Close()
 
-	_ = n.SetArguments("[$]")
+	_ = n.SetOperands("[$]")
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
