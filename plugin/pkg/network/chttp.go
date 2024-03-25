@@ -76,11 +76,18 @@ func (n *CHTTPNode) SetMethod(method string) error {
 		return nil
 	}
 
-	transform, err := n.compileText(method)
+	transform, err := language.CompileTransformWithPrimitive(primitive.NewString(method), n.lang)
 	if err != nil {
 		return err
 	}
-	n.method = transform
+
+	n.method = func(value primitive.Value) (string, error) {
+		if v, err := transform(value); err != nil {
+			return "", err
+		} else {
+			return fmt.Sprintf("%v", v.Interface()), nil
+		}
+	}
 	return nil
 }
 
@@ -117,11 +124,18 @@ func (n *CHTTPNode) SetURL(rawURL string) error {
 		return nil
 	}
 
-	transform, err := n.compileText(rawURL)
+	transform, err := language.CompileTransformWithPrimitive(primitive.NewString(rawURL), n.lang)
 	if err != nil {
 		return err
 	}
-	n.url = transform
+
+	n.url = func(value primitive.Value) (string, error) {
+		if v, err := transform(value); err != nil {
+			return "", err
+		} else {
+			return fmt.Sprintf("%v", v.Interface()), nil
+		}
+	}
 	return nil
 }
 
@@ -146,29 +160,25 @@ func (n *CHTTPNode) SetQuery(query map[string][]string) error {
 		return nil
 	}
 
-	transforms := make(map[string][]func(primitive.Value) (string, error), len(query))
-	for k, values := range query {
-		for _, v := range values {
-			transform, err := n.compileText(v)
-			if err != nil {
-				return err
-			}
-			transforms[k] = append(transforms[k], transform)
-		}
+	template, err := primitive.MarshalBinary(query)
+	if err != nil {
+		return err
+	}
+
+	transform, err := language.CompileTransformWithPrimitive(template, n.lang)
+	if err != nil {
+		return err
 	}
 
 	n.query = func(value primitive.Value) (url.Values, error) {
-		outputs := make(url.Values, len(transforms))
-		for k, transforms := range transforms {
-			for _, transform := range transforms {
-				output, err := transform(value)
-				if err != nil {
-					return nil, err
-				}
-				outputs[k] = append(outputs[k], output)
-			}
+		var encoded url.Values
+		if v, err := transform(value); err != nil {
+			return nil, err
+		} else if err := primitive.Unmarshal(v, &encoded); err != nil {
+			return nil, err
+		} else {
+			return encoded, nil
 		}
-		return outputs, nil
 	}
 	return nil
 }
@@ -187,29 +197,25 @@ func (n *CHTTPNode) SetHeader(header map[string][]string) error {
 		return nil
 	}
 
-	transforms := make(map[string][]func(primitive.Value) (string, error), len(header))
-	for k, values := range header {
-		for _, v := range values {
-			transform, err := n.compileText(v)
-			if err != nil {
-				return err
-			}
-			transforms[k] = append(transforms[k], transform)
-		}
+	template, err := primitive.MarshalBinary(header)
+	if err != nil {
+		return err
+	}
+
+	transform, err := language.CompileTransformWithPrimitive(template, n.lang)
+	if err != nil {
+		return err
 	}
 
 	n.header = func(value primitive.Value) (http.Header, error) {
-		outputs := make(http.Header, len(transforms))
-		for k, transforms := range transforms {
-			for _, transform := range transforms {
-				output, err := transform(value)
-				if err != nil {
-					return nil, err
-				}
-				outputs[k] = append(outputs[k], output)
-			}
+		var encoded http.Header
+		if v, err := transform(value); err != nil {
+			return nil, err
+		} else if err := primitive.Unmarshal(v, &encoded); err != nil {
+			return nil, err
+		} else {
+			return encoded, nil
 		}
-		return outputs, nil
 	}
 	return nil
 }
@@ -228,10 +234,11 @@ func (n *CHTTPNode) SetBody(body primitive.Value) error {
 		return nil
 	}
 
-	transform, err := n.compileValue(body)
+	transform, err := language.CompileTransformWithPrimitive(body, n.lang)
 	if err != nil {
 		return err
 	}
+
 	n.body = transform
 	return nil
 }
@@ -379,109 +386,10 @@ func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
 	}
 }
 
-func (n *CHTTPNode) compileValue(value primitive.Value) (func(primitive.Value) (primitive.Value, error), error) {
-	switch v := value.(type) {
-	case *primitive.Map:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, k := range v.Keys() {
-			transform, err := n.compileValue(v.GetOr(k, nil))
-			if err != nil {
-				return nil, err
-			}
-			transforms = append(transforms, transform)
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			pairs := make([]primitive.Value, 0, v.Len()*2)
-			for i, k := range v.Keys() {
-				transform := transforms[i]
-
-				v, err := transform(value)
-				if err != nil {
-					return nil, err
-				}
-
-				pairs = append(pairs, k)
-				pairs = append(pairs, v)
-			}
-			return primitive.NewMap(pairs...), nil
-		}, nil
-	case *primitive.Slice:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, v := range v.Values() {
-			transform, err := n.compileValue(v)
-			if err != nil {
-				return nil, err
-			}
-			transforms = append(transforms, transform)
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			values := make([]primitive.Value, 0, v.Len()*2)
-			for i, v := range v.Values() {
-				transform := transforms[i]
-
-				v, err := transform(v)
-				if err != nil {
-					return nil, err
-				}
-
-				values = append(values, v)
-			}
-			return primitive.NewSlice(values...), nil
-		}, nil
-	case primitive.String:
-		transform, err := n.compile(v.String())
-		if err != nil {
-			return nil, err
-		}
-		return func(value primitive.Value) (primitive.Value, error) {
-			if out, err := transform(value); err != nil {
-				return nil, err
-			} else {
-				return primitive.MarshalBinary(out)
-			}
-		}, nil
-	default:
-		return func(value primitive.Value) (primitive.Value, error) {
-			return v, nil
-		}, nil
-	}
-}
-
-func (n *CHTTPNode) compileText(code string) (func(primitive.Value) (string, error), error) {
-	transform, err := n.compile(code)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(value primitive.Value) (string, error) {
-		if out, err := transform(value); err != nil {
-			return "", err
-		} else {
-			return fmt.Sprintf("%v", out), nil
-		}
-	}, nil
-}
-
-func (n *CHTTPNode) compile(code string) (func(primitive.Value) (any, error), error) {
-	lang := n.lang
-	transform, err := language.CompileTransform(code, &lang)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(value primitive.Value) (any, error) {
-		var input any
-		switch lang {
-		case language.Typescript, language.Javascript, language.JSONata:
-			input = primitive.Interface(value)
-		}
-		return transform(input)
-	}, nil
-}
-
 func NewCHTTPNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*CHTTPNodeSpec](func(spec *CHTTPNodeSpec) (node.Node, error) {
 		n := NewCHTTPNode()
+
 		n.SetLanguage(spec.Lang)
 		if err := n.SetMethod(spec.Method); err != nil {
 			return nil, err

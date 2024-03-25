@@ -4,11 +4,24 @@ import (
 	"fmt"
 	"github.com/go-faker/faker/v4"
 	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestCCompileTransform(t *testing.T) {
+func TestCompileTransformWithPrimitive(t *testing.T) {
+	fun, err := CompileTransformWithPrimitive(primitive.NewMap(
+		primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("bar")),
+	), "")
+	assert.NoError(t, err)
+
+	in := primitive.NewString(faker.Word())
+	out, err := fun(in)
+	assert.NoError(t, err)
+	assert.Equal(t, primitive.NewMap(primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("bar"))), out)
+}
+
+func TestCompileTransform(t *testing.T) {
 	t.Run("Detect", func(t *testing.T) {
 		fun, err := CompileTransform("$", nil)
 		assert.NoError(t, err)
