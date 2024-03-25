@@ -60,7 +60,7 @@ func TestCreateNodes(t *testing.T) {
 
 	select {
 	case outPck := <-ioWriter.Receive():
-		var outPayload []uuid.UUID
+		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -160,7 +160,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	select {
 	case outPck := <-ioWriter.Receive():
-		var outPayload int
+		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -209,7 +209,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	select {
 	case outPck := <-ioWriter.Receive():
-		var outPayload int
+		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
