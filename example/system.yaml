@@ -1,0 +1,71 @@
+- kind: http
+  name: server
+  address: :8000
+  links:
+    out:
+      - name: route
+        port: in
+    error:
+      - name: error_400
+        port: io
+
+- kind: route
+  name: route
+  routes:
+    - method: POST
+      path: /v1/nodes
+      port: out[0]
+    - method: GET
+      path: /v1/nodes
+      port: out[1]
+    - method: PATCH
+      path: /v1/nodes
+      port: out[2]
+    - method: DELETE
+      path: /v1/nodes/:node_id
+      port: out[3]
+  links:
+    out[0]:
+      - name: create_nodes
+        port: io
+    out[1]:
+      - name: read_nodes
+        port: io
+    out[2]:
+      - name: update_nodes
+        port: io
+    out[3]:
+      - name: delete_nodes
+        port: io
+
+- kind: snippet
+  name: error_400
+  code: >
+    {
+      "body": $.error,
+      "status": 400
+    }
+
+- kind: bridge
+  name: create_nodes
+  opcode: nodes.create
+  arguments:
+    - "Array.isArray($.body) ? $.body : [$.body]"
+
+- kind: bridge
+  name: read_nodes
+  opcode: nodes.read
+  arguments:
+    - "null"
+
+- kind: bridge
+  name: update_nodes
+  opcode: nodes.update
+  arguments:
+    - "Array.isArray($.body) ? $.body : [$.body]"
+
+- kind: bridge
+  name: delete_nodes
+  opcode: nodes.delete
+  arguments:
+    - '{ "op": "=", "key": "id", "value": $.params.node_id }'
