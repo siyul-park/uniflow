@@ -89,6 +89,33 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
+// Unstructured converts the given Spec into an Unstructured representation.
+func (s *Scheme) Unstructured(spec Spec) (*Unstructured, error) {
+	structured, err := s.Structured(spec)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := primitive.MarshalBinary(structured)
+	if err != nil {
+		return nil, err
+	}
+	return NewUnstructured(doc.(*primitive.Map)), nil
+}
+
+// Structured converts the given Spec into a structured representation.
+func (s *Scheme) Structured(spec Spec) (Spec, error) {
+	if structured, ok := s.Spec(spec.GetKind()); ok {
+		if doc, err := primitive.MarshalBinary(spec); err != nil {
+			return nil, err
+		} else if err := primitive.Unmarshal(doc, structured); err != nil {
+			return nil, err
+		} else {
+			return structured, nil
+		}
+	}
+	return spec, nil
+}
+
 // Spec creates a new instance of Spec with the given kind.
 func (s *Scheme) Spec(kind string) (Spec, bool) {
 	s.mu.RLock()

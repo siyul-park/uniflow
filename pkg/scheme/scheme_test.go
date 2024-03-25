@@ -1,6 +1,7 @@
 package scheme
 
 import (
+	"github.com/gofrs/uuid"
 	"reflect"
 	"testing"
 
@@ -32,6 +33,40 @@ func TestScheme_Codec(t *testing.T) {
 
 	_, ok := s.Codec(kind)
 	assert.True(t, ok)
+}
+
+func TestScheme_Unstructured(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &SpecMeta{})
+
+	spec := &SpecMeta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	unstructured, err := s.Unstructured(spec)
+	assert.NoError(t, err)
+	assert.Equal(t, unstructured.GetID(), spec.GetID())
+	assert.IsType(t, unstructured, &Unstructured{})
+}
+
+func TestScheme_Structured(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &SpecMeta{})
+
+	spec := &SpecMeta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	structured, err := s.Structured(spec)
+	assert.NoError(t, err)
+	assert.Equal(t, structured.GetID(), spec.GetID())
+	assert.IsType(t, structured, &SpecMeta{})
 }
 
 func TestScheme_Spec(t *testing.T) {

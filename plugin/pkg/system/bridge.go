@@ -17,8 +17,8 @@ import (
 // BridgeNode represents a node for executing internal calls.
 type BridgeNode struct {
 	*node.OneToOneNode
-	fn       reflect.Value
 	lang     string
+	operator reflect.Value
 	operands []func(primitive.Value) (primitive.Value, error)
 	mu       sync.RWMutex
 }
@@ -43,13 +43,13 @@ var ErrInvalidOperation = errors.New("operation is invalid")
 
 // NewBridgeNode creates a new BridgeNode with the provided function.
 // It returns an error if the provided function is not valid.
-func NewBridgeNode(fn any) (*BridgeNode, error) {
-	rfn := reflect.ValueOf(fn)
-	if rfn.Kind() != reflect.Func {
+func NewBridgeNode(operator any) (*BridgeNode, error) {
+	op := reflect.ValueOf(operator)
+	if op.Kind() != reflect.Func {
 		return nil, errors.WithStack(ErrInvalidOperation)
 	}
 
-	n := &BridgeNode{fn: rfn}
+	n := &BridgeNode{operator: op}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
@@ -91,11 +91,11 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	inPayload := inPck.Payload()
 
-	ins := make([]reflect.Value, n.fn.Type().NumIn())
+	ins := make([]reflect.Value, n.operator.Type().NumIn())
 
 	offset := 0
-	if n.fn.Type().NumIn() > 0 {
-		if n.fn.Type().In(0).Implements(contextInterface) {
+	if n.operator.Type().NumIn() > 0 {
+		if n.operator.Type().In(0).Implements(contextInterface) {
 			ctx, cancel := context.WithCancel(context.Background())
 			go func() {
 				<-proc.Done()
@@ -108,7 +108,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	}
 
 	for i := offset; i < len(ins); i++ {
-		in := reflect.New(n.fn.Type().In(i))
+		in := reflect.New(n.operator.Type().In(i))
 
 		if len(n.operands) > i-offset {
 			if argument, err := n.operands[i-offset](inPayload); err != nil {
@@ -125,9 +125,9 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		ins[i] = in.Elem()
 	}
 
-	outs := n.fn.Call(ins)
+	outs := n.operator.Call(ins)
 
-	if n.fn.Type().NumOut() > 0 && n.fn.Type().Out(n.fn.Type().NumOut()-1).Implements(errorInterface) {
+	if n.operator.Type().NumOut() > 0 && n.operator.Type().Out(n.operator.Type().NumOut()-1).Implements(errorInterface) {
 		last := outs[len(outs)-1].Interface()
 		outs = outs[:len(outs)-1]
 
