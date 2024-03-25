@@ -162,24 +162,30 @@ func newSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any,
 }
 
 func newSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+	setElement := func(source Value, target reflect.Value, i int) error {
+		v := reflect.New(target.Elem().Type().Elem())
+		if err := decoder.Decode(source, v.Interface()); err != nil {
+			return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the index(%v) cannot be decoded", source.Interface(), i))
+		}
+		if target.Elem().Len() < i+1 {
+			if target.Elem().Kind() == reflect.Slice {
+				target.Elem().Set(reflect.Append(target.Elem(), v.Elem()).Convert(target.Elem().Type()))
+			} else {
+				return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, target.Elem().Len()))
+			}
+		} else {
+			target.Elem().Index(i).Set(v.Elem().Convert(target.Elem().Type().Elem()))
+		}
+		return nil
+	}
+
 	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
 		if s, ok := source.(*Slice); ok {
 			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
 				if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {
 					for i := 0; i < s.Len(); i++ {
-						value := s.Get(i)
-						v := reflect.New(t.Elem().Type().Elem())
-						if err := decoder.Decode(value, v.Interface()); err != nil {
-							return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the index(%v) cannot be decoded", value.Interface(), i))
-						}
-						if t.Elem().Len() < i+1 {
-							if t.Elem().Kind() == reflect.Slice {
-								t.Elem().Set(reflect.Append(t.Elem(), v.Elem()).Convert(t.Elem().Type()))
-							} else {
-								return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, t.Elem().Len()))
-							}
-						} else {
-							t.Elem().Index(i).Set(v.Elem().Convert(t.Elem().Type()))
+						if err := setElement(s.Get(i), t, i); err != nil {
+							return err
 						}
 					}
 					return nil
@@ -187,6 +193,10 @@ func newSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Valu
 					t.Elem().Set(reflect.ValueOf(s.Interface()))
 					return nil
 				}
+			}
+		} else if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
+			if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {
+				return setElement(source, t, t.Elem().Len())
 			}
 		}
 		return errors.WithStack(encoding.ErrUnsupportedValue)

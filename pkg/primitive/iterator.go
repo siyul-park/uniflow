@@ -7,13 +7,20 @@ func getCommonType(values []any) reflect.Type {
 		return typeAny
 	}
 
-	commonType := reflect.TypeOf(values[0])
+	commonType := safeTypeOf(values[0])
 	for _, value := range values {
-		typ := reflect.TypeOf(value)
+		typ := safeTypeOf(value)
 		if typ != commonType {
 			return typeAny
 		}
 	}
-
 	return commonType
+}
+
+func safeTypeOf(value any) reflect.Type {
+	typ := reflect.TypeOf(value)
+	if typ == nil {
+		typ = typeAny
+	}
+	return typ
 }

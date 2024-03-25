@@ -14,77 +14,24 @@ import (
 	"sync"
 )
 
-func CompileTransformWithPrimitive(template primitive.Value, lang string) (func(primitive.Value) (primitive.Value, error), error) {
-	switch v := template.(type) {
-	case *primitive.Map:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, k := range v.Keys() {
-			if transform, err := CompileTransformWithPrimitive(v.GetOr(k, nil), lang); err != nil {
-				return nil, err
-			} else {
-				transforms = append(transforms, transform)
-			}
-		}
-
-		return func(value primitive.Value) (primitive.Value, error) {
-			pairs := make([]primitive.Value, 0, v.Len()*2)
-			for i, k := range v.Keys() {
-				transform := transforms[i]
-				if v, err := transform(value); err != nil {
-					return nil, err
-				} else {
-					pairs = append(pairs, k)
-					pairs = append(pairs, v)
-				}
-			}
-			return primitive.NewMap(pairs...), nil
-		}, nil
-	case *primitive.Slice:
-		transforms := make([]func(primitive.Value) (primitive.Value, error), 0, v.Len())
-		for _, v := range v.Values() {
-			if transform, err := CompileTransformWithPrimitive(v, lang); err != nil {
-				return nil, err
-			} else {
-				transforms = append(transforms, transform)
-			}
-		}
-
-		return func(value primitive.Value) (primitive.Value, error) {
-			values := make([]primitive.Value, 0, v.Len()*2)
-			for i, v := range v.Values() {
-				transform := transforms[i]
-				if v, err := transform(v); err != nil {
-					return nil, err
-				} else {
-					values = append(values, v)
-				}
-			}
-			return primitive.NewSlice(values...), nil
-		}, nil
-	case primitive.String:
-		transform, err := CompileTransform(v.String(), &lang)
-		if err != nil {
-			return nil, err
-		}
-
-		return func(value primitive.Value) (primitive.Value, error) {
-			var input any
-			switch lang {
-			case Typescript, Javascript, JSONata:
-				input = primitive.Interface(value)
-			}
-
-			if output, err := transform(input); err != nil {
-				return nil, err
-			} else {
-				return primitive.MarshalBinary(output)
-			}
-		}, nil
-	default:
-		return func(value primitive.Value) (primitive.Value, error) {
-			return v, nil
-		}, nil
+func CompileTransformWithPrimitive(code string, lang string) (func(primitive.Value) (primitive.Value, error), error) {
+	transform, err := CompileTransform(code, &lang)
+	if err != nil {
+		return nil, err
 	}
+
+	return func(value primitive.Value) (primitive.Value, error) {
+		var input any
+		switch lang {
+		case Typescript, Javascript, JSONata:
+			input = primitive.Interface(value)
+		}
+		if output, err := transform(input); err != nil {
+			return nil, err
+		} else {
+			return primitive.MarshalBinary(output)
+		}
+	}, nil
 }
 
 func CompileTransform(code string, lang *string) (func(any) (any, error), error) {

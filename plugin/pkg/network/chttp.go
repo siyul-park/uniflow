@@ -32,12 +32,12 @@ type CHTTPNode struct {
 
 type CHTTPNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Lang            string              `map:"lang,omitempty"`
-	Method          string              `map:"method,omitempty"`
-	URL             string              `map:"url,omitempty"`
-	Query           map[string][]string `map:"query,omitempty"`
-	Header          map[string][]string `map:"header,omitempty"`
-	Body            primitive.Value     `map:"body,omitempty"`
+	Lang            string `map:"lang,omitempty"`
+	Method          string `map:"method,omitempty"`
+	URL             string `map:"url,omitempty"`
+	Query           string `map:"query,omitempty"`
+	Header          string `map:"header,omitempty"`
+	Body            string `map:"body,omitempty"`
 }
 
 const KindCHTTP = "chttp"
@@ -48,9 +48,9 @@ func NewCHTTPNode() *CHTTPNode {
 
 	_ = n.SetMethod("")
 	_ = n.SetURL("")
-	_ = n.SetQuery(nil)
-	_ = n.SetHeader(nil)
-	_ = n.SetBody(nil)
+	_ = n.SetQuery("")
+	_ = n.SetHeader("")
+	_ = n.SetBody("")
 
 	return n
 }
@@ -76,7 +76,7 @@ func (n *CHTTPNode) SetMethod(method string) error {
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(primitive.NewString(method), n.lang)
+	transform, err := language.CompileTransformWithPrimitive(method, n.lang)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (n *CHTTPNode) SetURL(rawURL string) error {
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(primitive.NewString(rawURL), n.lang)
+	transform, err := language.CompileTransformWithPrimitive(rawURL, n.lang)
 	if err != nil {
 		return err
 	}
@@ -139,11 +139,11 @@ func (n *CHTTPNode) SetURL(rawURL string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetQuery(query map[string][]string) error {
+func (n *CHTTPNode) SetQuery(query string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if query == nil {
+	if query == "" {
 		n.query = func(value primitive.Value) (url.Values, error) {
 			if query, ok := primitive.Pick[map[string][]string](value, "query"); ok {
 				return query, nil
@@ -160,12 +160,7 @@ func (n *CHTTPNode) SetQuery(query map[string][]string) error {
 		return nil
 	}
 
-	template, err := primitive.MarshalBinary(query)
-	if err != nil {
-		return err
-	}
-
-	transform, err := language.CompileTransformWithPrimitive(template, n.lang)
+	transform, err := language.CompileTransformWithPrimitive(query, n.lang)
 	if err != nil {
 		return err
 	}
@@ -183,11 +178,11 @@ func (n *CHTTPNode) SetQuery(query map[string][]string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetHeader(header map[string][]string) error {
+func (n *CHTTPNode) SetHeader(header string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if header == nil {
+	if header == "" {
 		n.header = func(value primitive.Value) (http.Header, error) {
 			if header, ok := primitive.Pick[map[string][]string](value, "header"); ok {
 				return header, nil
@@ -197,12 +192,7 @@ func (n *CHTTPNode) SetHeader(header map[string][]string) error {
 		return nil
 	}
 
-	template, err := primitive.MarshalBinary(header)
-	if err != nil {
-		return err
-	}
-
-	transform, err := language.CompileTransformWithPrimitive(template, n.lang)
+	transform, err := language.CompileTransformWithPrimitive(header, n.lang)
 	if err != nil {
 		return err
 	}
@@ -220,11 +210,11 @@ func (n *CHTTPNode) SetHeader(header map[string][]string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetBody(body primitive.Value) error {
+func (n *CHTTPNode) SetBody(body string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if body == nil {
+	if body == "" {
 		n.body = func(value primitive.Value) (primitive.Value, error) {
 			if body, ok := primitive.Pick[primitive.Value](value, "body"); ok {
 				return body, nil

@@ -91,9 +91,8 @@ func TestSlice_Compare(t *testing.T) {
 	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
 }
 
-func TestSlice_EncodeAndDecode(t *testing.T) {
+func TestSlice_Encode(t *testing.T) {
 	encoder := newSliceEncoder(newStringEncoder())
-	decoder := newSliceDecoder(newStringDecoder())
 
 	v1 := NewString(faker.UUIDHyphenated())
 	v2 := NewString(faker.UUIDHyphenated())
@@ -102,10 +101,29 @@ func TestSlice_EncodeAndDecode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, NewSlice(v1, v2), encoded)
 
-	var decoded []any
-	err = decoder.Decode(encoded, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
+}
+
+func TestSlice_Decode(t *testing.T) {
+	decoder := newSliceDecoder(newStringDecoder())
+
+	t.Run("slice -> slice", func(t *testing.T) {
+		v1 := NewString(faker.UUIDHyphenated())
+		v2 := NewString(faker.UUIDHyphenated())
+
+		var decoded []any
+		err := decoder.Decode(NewSlice(v1, v2), &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
+	})
+
+	t.Run("element -> slice", func(t *testing.T) {
+		v1 := NewString(faker.UUIDHyphenated())
+
+		var decoded []any
+		err := decoder.Decode(v1, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{v1.Interface()}, decoded)
+	})
 }
 
 func BenchmarkSlice_Append(b *testing.B) {

@@ -10,15 +10,13 @@ import (
 )
 
 func TestCompileTransformWithPrimitive(t *testing.T) {
-	fun, err := CompileTransformWithPrimitive(primitive.NewMap(
-		primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("bar")),
-	), "")
+	fun, err := CompileTransformWithPrimitive("$", "")
 	assert.NoError(t, err)
 
 	in := primitive.NewString(faker.Word())
 	out, err := fun(in)
 	assert.NoError(t, err)
-	assert.Equal(t, primitive.NewMap(primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("bar"))), out)
+	assert.Equal(t, in, out)
 }
 
 func TestCompileTransform(t *testing.T) {

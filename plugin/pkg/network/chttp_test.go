@@ -149,9 +149,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
-		err = n.SetQuery(map[string][]string{
-			"foo": {"bar"},
-		})
+		err = n.SetQuery(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
 		io := port.NewOut()
@@ -191,9 +189,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
-		err = n.SetHeader(map[string][]string{
-			"foo": {"bar"},
-		})
+		err = n.SetHeader(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
 		io := port.NewOut()
@@ -233,9 +229,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
-		err = n.SetBody(primitive.NewMap(
-			primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("bar")),
-		))
+		err = n.SetBody(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
 		io := port.NewOut()

@@ -104,26 +104,11 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 	case ApplicationJSON:
 		return json.Marshal(value.Interface())
 	case ApplicationForm:
-		if v, ok := value.(*primitive.Map); !ok {
-			return nil, errors.WithStack(encoding.ErrInvalidValue)
-		} else {
-			urlValues := url.Values{}
-			for _, key := range v.Keys() {
-				if k, ok := key.(primitive.String); ok {
-					value := v.GetOr(k, nil)
-					if v, ok := value.(primitive.String); ok {
-						urlValues.Add(k.String(), v.String())
-					} else if v, ok := value.(*primitive.Slice); ok {
-						for i := 0; i < v.Len(); i++ {
-							if e, ok := v.Get(i).(primitive.String); ok {
-								urlValues.Add(k.String(), e.String())
-							}
-						}
-					}
-				}
-			}
-			return []byte(urlValues.Encode()), nil
+		urlValues := url.Values{}
+		if err := primitive.Unmarshal(value, &urlValues); err != nil {
+			return nil, err
 		}
+		return []byte(urlValues.Encode()), nil
 	case TextPlain:
 		return []byte(fmt.Sprintf("%v", value.Interface())), nil
 	case MultipartFormData:
