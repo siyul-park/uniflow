@@ -2,6 +2,7 @@ package js
 
 import (
 	"github.com/dop251/goja"
+	"github.com/evanw/esbuild/pkg/api"
 )
 
 const (
@@ -41,6 +42,13 @@ func Export(vm *goja.Runtime, name string) goja.Value {
 }
 
 func AssertExportFunction(code, name string) bool {
+	if v, err := Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err == nil {
+		code = v
+	}
+	if v, err := Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err == nil {
+		code = v
+	}
+
 	program, err := goja.Compile("", code, true)
 	if err != nil {
 		return false

@@ -41,6 +41,16 @@ func TestCCompileTransform(t *testing.T) {
 			assert.Equal(t, in, out)
 		})
 
+		t.Run("multiline", func(t *testing.T) {
+			fun, err := CompileTransform("{\n foo: \"bar\" \n}", lo.ToPtr(Typescript))
+			assert.NoError(t, err)
+
+			in := faker.Word()
+			out, err := fun(in)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]any{"foo": "bar"}, out)
+		})
+
 		t.Run("details", func(t *testing.T) {
 			fun, err := CompileTransform(`export default function (input: any): any {
 				return input;
@@ -63,6 +73,16 @@ func TestCCompileTransform(t *testing.T) {
 			out, err := fun(in)
 			assert.NoError(t, err)
 			assert.Equal(t, in, out)
+		})
+
+		t.Run("multiline", func(t *testing.T) {
+			fun, err := CompileTransform("{\n foo: \"bar\" \n}", lo.ToPtr(Javascript))
+			assert.NoError(t, err)
+
+			in := faker.Word()
+			out, err := fun(in)
+			assert.NoError(t, err)
+			assert.Equal(t, map[string]any{"foo": "bar"}, out)
 		})
 
 		t.Run("details", func(t *testing.T) {

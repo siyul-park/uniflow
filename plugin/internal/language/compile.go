@@ -40,6 +40,10 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 			return data, nil
 		}, nil
 	case Javascript, Typescript:
+		if !js.AssertExportFunction(code, "default") {
+			code = fmt.Sprintf("module.exports = ($) => { return (%s); }", code)
+		}
+
 		var err error
 		if *lang == Typescript {
 			if code, err = js.Transform(code, api.TransformOptions{Loader: api.LoaderTS}); err != nil {
@@ -48,10 +52,6 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 		}
 		if code, err = js.Transform(code, api.TransformOptions{Format: api.FormatCommonJS}); err != nil {
 			return nil, err
-		}
-
-		if !js.AssertExportFunction(code, "default") {
-			code = fmt.Sprintf("module.exports = ($) => { return %s }", code)
 		}
 
 		program, err := goja.Compile("", code, true)
