@@ -1,6 +1,7 @@
 package control
 
 import (
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -13,7 +14,8 @@ import (
 // SnippetNode represents a node that executes code snippets in various language.
 type SnippetNode struct {
 	*node.OneToOneNode
-	mu sync.RWMutex
+	program func(primitive.Value) (primitive.Value, error)
+	mu      sync.RWMutex
 }
 
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
@@ -31,31 +33,25 @@ func NewSnippetNode(lang, code string) (*SnippetNode, error) {
 		lang = language.Detect(code)
 	}
 
-	n := &SnippetNode{}
-	if action, err := n.compile(code, lang); err != nil {
-		return nil, err
-	} else {
-		n.OneToOneNode = node.NewOneToOneNode(action)
-	}
-	return n, nil
-}
-
-func (n *SnippetNode) compile(code, lang string) (func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet), error) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	transform, err := language.CompileTransformWithPrimitive(code, lang)
 	if err != nil {
 		return nil, err
 	}
 
-	return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-		if outPayload, err := transform(inPck.Payload()); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else {
-			return packet.New(outPayload), nil
-		}
-	}, nil
+	n := &SnippetNode{
+		program: transform,
+	}
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
+
+	return n, nil
+}
+
+func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	if outPayload, err := n.program(inPck.Payload()); err != nil {
+		return nil, packet.WithError(err, inPck)
+	} else {
+		return packet.New(outPayload), nil
+	}
 }
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
