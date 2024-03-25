@@ -3,14 +3,15 @@ package storage
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 // Filter is a filter for finding matched document.
 type Filter struct {
 	OP       database.OP `map:"op"`                 // Operator for the filter.
-	Key      string      `map:"key"`                // Key specifies the field for the filter.
+	Key      string      `map:"key,omitempty"`      // Key specifies the field for the filter.
 	Value    any         `map:"value,omitempty"`    // Value is the filter value.
-	Children []*Filter   `map:"children,omitempty"` // Children are nested filters for AND and OR operations.
+	Children []*Filter   `map:"children,omitempty"` // Children are nested filters for AND OR operations.
 }
 
 type filterHelper[T any] struct {
@@ -153,6 +154,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 	if ft == nil {
 		return nil, nil
 	}
+
 	if ft.OP == database.AND || ft.OP == database.OR {
 		var children []*database.Filter
 		for _, child := range ft.Children {
@@ -164,11 +166,39 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		}
 		return &database.Filter{OP: ft.OP, Children: children}, nil
 	}
+
 	if ft.OP == database.NULL || ft.OP == database.NNULL {
 		return &database.Filter{OP: ft.OP, Key: ft.Key}, nil
 	}
 
-	if v, err := primitive.MarshalBinary(ft.Value); err != nil {
+	value := ft.Value
+	if ft.OP == database.IN || ft.OP == database.NIN {
+		if v, err := primitive.MarshalBinary(ft.Value); err != nil {
+			return nil, err
+		} else if v, ok := v.(*primitive.Slice); ok {
+			elements := make([]any, 0, v.Len())
+			for _, v := range v.Values() {
+				unstructed := scheme.NewUnstructured(nil)
+				if err := unstructed.Set(ft.Key, v); err != nil {
+					return nil, err
+				} else if v, err := unstructed.Get(ft.Key); err != nil {
+					return nil, err
+				} else {
+					elements = append(elements, v)
+				}
+			}
+			value = elements
+		}
+	} else {
+		unstructed := scheme.NewUnstructured(nil)
+		if err := unstructed.Set(ft.Key, ft.Value); err != nil {
+			return nil, err
+		} else if value, err = unstructed.Get(ft.Key); err != nil {
+			return nil, err
+		}
+	}
+
+	if v, err := primitive.MarshalBinary(value); err != nil {
 		return nil, err
 	} else {
 		return &database.Filter{OP: ft.OP, Key: ft.Key, Value: v}, nil

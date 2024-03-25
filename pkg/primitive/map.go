@@ -121,6 +121,12 @@ func (m *Map) Map() map[any]any {
 	return result
 }
 
+// Merge merges the contents of the other Map into the current Map.
+// If there are any overlapping keys, the values from the other Map will overwrite the values in the current Map.
+func (m *Map) Merge(other *Map) *Map {
+	return NewMap(append(m.Pairs(), other.Pairs()...)...)
+}
+
 // Kind returns the kind of the Map.
 func (m *Map) Kind() Kind {
 	return KindMap

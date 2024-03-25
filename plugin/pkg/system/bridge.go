@@ -151,7 +151,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	outPayloads := make([]primitive.Value, len(outs))
 	for i, out := range outs {
-		if outPayload, err := primitive.MarshalBinary(out.Interface()); err != nil {
+		if outPayload, err := primitive.MarshalText(out.Interface()); err != nil {
 			return nil, packet.WithError(err, inPck)
 		} else {
 			outPayloads[i] = outPayload

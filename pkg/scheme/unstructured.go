@@ -40,87 +40,108 @@ func NewUnstructured(doc *primitive.Map) *Unstructured {
 
 // GetID returns the ID of the Unstructured.
 func (u *Unstructured) GetID() uuid.UUID {
-	var val uuid.UUID
-	_ = u.Get(KeyID, &val)
-	return val
+	val, _ := u.Get(KeyID)
+	return val.(uuid.UUID)
 }
 
 // SetID sets the ID of the Unstructured.
 func (u *Unstructured) SetID(val uuid.UUID) {
-	u.Set(KeyID, val)
+	_ = u.Set(KeyID, val)
 }
 
 // GetKind returns the Kind of the Unstructured.
 func (u *Unstructured) GetKind() string {
-	var val string
-	_ = u.Get(KeyKind, &val)
-	return val
+	val, _ := u.Get(KeyKind)
+	return val.(string)
 }
 
 // SetKind sets the Kind of the Unstructured.
 func (u *Unstructured) SetKind(val string) {
-	u.Set(KeyKind, val)
+	_ = u.Set(KeyKind, val)
 }
 
 // GetNamespace returns the Namespace of the Unstructured.
 func (u *Unstructured) GetNamespace() string {
-	var val string
-	_ = u.Get(KeyNamespace, &val)
-	return val
+	val, _ := u.Get(KeyNamespace)
+	return val.(string)
 }
 
 // SetNamespace sets the Namespace of the Unstructured.
 func (u *Unstructured) SetNamespace(val string) {
-	u.Set(KeyNamespace, val)
+	_ = u.Set(KeyNamespace, val)
 }
 
 // GetName returns the Name of the Unstructured.
 func (u *Unstructured) GetName() string {
-	var val string
-	_ = u.Get(KeyName, &val)
-	return val
+	val, _ := u.Get(KeyName)
+	return val.(string)
 }
 
 // SetName sets the Name of the Unstructured.
 func (u *Unstructured) SetName(val string) {
-	u.Set(KeyName, val)
+	_ = u.Set(KeyName, val)
 }
 
 // GetAnnotations returns the annotations of the nodes.
 func (u *Unstructured) GetAnnotations() map[string]string {
-	var val map[string]string
-	_ = u.Get(KeyAnnotations, &val)
-	return val
+	val, _ := u.Get(KeyAnnotations)
+	return val.(map[string]string)
 }
 
 // SetAnnotations sets the annotations of the nodes.
 func (u *Unstructured) SetAnnotations(val map[string]string) {
-	u.Set(KeyAnnotations, val)
+	_ = u.Set(KeyAnnotations, val)
 }
 
 // GetLinks returns the Links of the Unstructured.
 func (u *Unstructured) GetLinks() map[string][]PortLocation {
-	var val map[string][]PortLocation
-	_ = u.Get(KeyLinks, &val)
-	return val
+	val, _ := u.Get(KeyLinks)
+	return val.(map[string][]PortLocation)
 }
 
 // SetLinks sets the Links of the Unstructured.
 func (u *Unstructured) SetLinks(val map[string][]PortLocation) {
-	u.Set(KeyLinks, val)
+	_ = u.Set(KeyLinks, val)
 }
 
 // Get retrieves the value of the given key.
-func (u *Unstructured) Get(key string, val any) error {
+func (u *Unstructured) Get(key string) (any, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	if v, ok := u.doc.Get(primitive.NewString(key)); ok {
-		if err := primitive.Unmarshal(v, val); err != nil {
-			return err
-		}
+	v, _ := u.doc.Get(primitive.NewString(key))
+
+	var value any
+	var err error
+	switch key {
+	case KeyID:
+		var encoded uuid.UUID
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	case KeyKind:
+		var encoded string
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	case KeyNamespace:
+		var encoded string
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	case KeyName:
+		var encoded string
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	case KeyAnnotations:
+		var encoded map[string]string
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	case KeyLinks:
+		var encoded map[string][]PortLocation
+		err = primitive.Unmarshal(v, &encoded)
+		value = encoded
+	default:
+		err = primitive.Unmarshal(v, &value)
 	}
-	return nil
+	return value, err
 }
 
 // Set sets the value of the given key.
