@@ -61,8 +61,7 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 		when = "true"
 	}
 
-	lang := n.lang
-	transform, err := language.CompileTransform(when, &lang)
+	transform, err := language.CompileTransformWithPrimitive(when, n.lang)
 	if err != nil {
 		return err
 	}
@@ -73,17 +72,11 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 	}
 
 	n.whens = append(n.whens, func(value primitive.Value) (bool, error) {
-		var input any
-		switch lang {
-		case language.Typescript, language.Javascript, language.JSONata:
-			input = primitive.Interface(value)
-		}
-
-		out, err := transform(input)
+		output, err := transform(value)
 		if err != nil {
 			return false, err
 		}
-		return !reflect.ValueOf(out).IsZero(), nil
+		return !reflect.ValueOf(output.Interface()).IsZero(), nil
 	})
 	n.ports = append(n.ports, index)
 	return nil

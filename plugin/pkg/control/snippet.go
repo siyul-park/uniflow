@@ -5,7 +5,6 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
@@ -45,22 +44,13 @@ func (n *SnippetNode) compile(code, lang string) (func(*process.Process, *packet
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	transform, err := language.CompileTransform(code, &lang)
+	transform, err := language.CompileTransformWithPrimitive(code, lang)
 	if err != nil {
 		return nil, err
 	}
 
 	return func(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-		var input any
-		switch lang {
-		case language.Typescript, language.Javascript, language.JSONata:
-			inPayload := inPck.Payload()
-			input = primitive.Interface(inPayload)
-		}
-
-		if output, err := transform(input); err != nil {
-			return nil, packet.WithError(err, inPck)
-		} else if outPayload, err := primitive.MarshalBinary(output); err != nil {
+		if outPayload, err := transform(inPck.Payload()); err != nil {
 			return nil, packet.WithError(err, inPck)
 		} else {
 			return packet.New(outPayload), nil

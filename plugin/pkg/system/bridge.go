@@ -19,7 +19,7 @@ type BridgeNode struct {
 	*node.OneToOneNode
 	fn        reflect.Value
 	lang      string
-	arguments []func(primitive.Value) (any, error)
+	arguments []func(primitive.Value) (primitive.Value, error)
 	mu        sync.RWMutex
 }
 
@@ -71,21 +71,12 @@ func (n *BridgeNode) SetArguments(arguments ...string) error {
 	n.arguments = nil
 
 	for _, argument := range arguments {
-		lang := n.lang
-		transform, err := language.CompileTransform(argument, &lang)
+		transform, err := language.CompileTransformWithPrimitive(argument, n.lang)
 		if err != nil {
 			return err
 		}
 
-		n.arguments = append(n.arguments, func(value primitive.Value) (any, error) {
-			var input any
-			switch lang {
-			case language.Typescript, language.Javascript, language.JSONata:
-				input = primitive.Interface(value)
-			}
-
-			return transform(input)
-		})
+		n.arguments = append(n.arguments, transform)
 	}
 
 	return nil
@@ -121,8 +112,6 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		if len(n.arguments) > i-offset {
 			if argument, err := n.arguments[i-offset](inPayload); err != nil {
-				return nil, packet.WithError(err, inPck)
-			} else if argument, err := primitive.MarshalBinary(argument); err != nil {
 				return nil, packet.WithError(err, inPck)
 			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
 				return nil, packet.WithError(err, inPck)
