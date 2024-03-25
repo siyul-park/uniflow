@@ -1,0 +1,11 @@
+- kind: http
+  name: server
+  address: :8000
+  links:
+    out:
+      - name: proxy
+        port: io
+
+- kind: chttp
+  name: proxy
+  url: '"https://www.google.com" & path'

@@ -84,11 +84,11 @@ func (n *CHTTPNode) SetMethod(method string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetURL(value string) error {
+func (n *CHTTPNode) SetURL(rawURL string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if value == "" {
+	if rawURL == "" {
 		n.url = func(value primitive.Value) (string, error) {
 			v := &url.URL{
 				Scheme: "https",
@@ -117,7 +117,7 @@ func (n *CHTTPNode) SetURL(value string) error {
 		return nil
 	}
 
-	transform, err := n.compileText(value)
+	transform, err := n.compileText(rawURL)
 	if err != nil {
 		return err
 	}
