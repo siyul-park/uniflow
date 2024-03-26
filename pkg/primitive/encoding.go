@@ -92,7 +92,7 @@ func newShortcutEncoder() encoding.Compiler[*Value] {
 	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer && typ.Elem() == typeValue {
 			return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
-				t := reflect.NewAt(typ.Elem(), target).Interface().(Value)
+				t := reflect.NewAt(typ.Elem(), target).Elem().Interface().(Value)
 				*source = t
 				return nil
 			}), nil
