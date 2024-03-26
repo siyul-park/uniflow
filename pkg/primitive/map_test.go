@@ -114,15 +114,11 @@ func TestMap_Encode(t *testing.T) {
 	t.Run("struct", func(t *testing.T) {
 		source := struct {
 			Foo string `map:"foo"`
-			Bar string `map:"bar"`
+			Bar string `map:"bar,omitempty"`
 		}{
-			Foo: "foo",
-			Bar: "bar",
+			Foo: "bar",
 		}
-		v := NewMap(
-			NewString("foo"), NewString("foo"),
-			NewString("bar"), NewString("bar"),
-		)
+		v := NewMap(NewString("foo"), NewString("bar"))
 
 		var decoded Value
 		err := enc.Decode(&decoded, &source)

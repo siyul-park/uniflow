@@ -184,6 +184,7 @@ func (m *Map) Interface() any {
 		} else {
 			keys = append(keys, nil)
 		}
+
 		if v != nil {
 			values = append(values, v.Interface())
 		} else {
@@ -266,8 +267,15 @@ func newMapEncoder(encoder *encoding.CompiledDecoder[*Value, any]) encoding.Comp
 						})
 					} else {
 						enc = encoding.DecoderFunc[*[]Value, unsafe.Pointer](func(source *[]Value, target unsafe.Pointer) error {
+							t := unsafe.Pointer(uintptr(target) + offset)
+							if tag.omitempty {
+								if t := reflect.NewAt(field.Type, t).Elem(); t.IsZero() {
+									return nil
+								}
+							}
+
 							var s Value
-							if err := child.Decode(&s, unsafe.Pointer(uintptr(target)+offset)); err != nil {
+							if err := child.Decode(&s, t); err != nil {
 								return err
 							} else {
 								*source = append(*source, alias, s)
