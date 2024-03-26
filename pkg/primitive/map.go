@@ -208,58 +208,95 @@ func (*comparer) Compare(a Value, b Value) int {
 }
 
 func newMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
-	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
-		if s := reflect.ValueOf(source); s.Kind() == reflect.Map {
-			pairs := make([]Value, len(s.MapKeys())*2)
-			for i, k := range s.MapKeys() {
-				if k, err := encoder.Encode(k.Interface()); err != nil {
-					return nil, errors.WithMessage(err, fmt.Sprintf("key(%v) can't encode", k.Interface()))
-				} else {
-					pairs[i*2] = k
-				}
-				if v, err := encoder.Encode(s.MapIndex(k).Interface()); err != nil {
-					return nil, errors.WithMessage(err, fmt.Sprintf("value(%v) can't encode", s.MapIndex(k).Interface()))
-				} else {
-					pairs[i*2+1] = v
-				}
-			}
-			return NewMap(pairs...), nil
-		} else if s := reflect.ValueOf(source); s.Kind() == reflect.Struct {
-			pairs := make([]Value, 0, s.NumField()*2)
-			for i := 0; i < s.NumField(); i++ {
-				field := s.Type().Field(i)
-				if !field.IsExported() {
-					continue
-				}
+	typeToEncoder := sync.Map{} // map[reflect.Type]encoding.Encoder[reflect.Value, *Map]{}
 
-				v := s.FieldByName(field.Name)
-				tag := getMapTag(field)
-
-				if tag.ignore || (tag.omitempty && v.IsZero()) {
-					continue
-				}
-
-				if v, err := encoder.Encode(v.Interface()); err != nil {
-					return nil, errors.WithMessage(err, fmt.Sprintf("field(%s) can't encode", field.Name))
-				} else {
-					if tag.inline {
-						if v, ok := v.(*Map); ok {
-							for _, k := range v.Keys() {
-								pairs = append(pairs, k)
-								pairs = append(pairs, v.GetOr(k, nil))
-							}
-						} else {
-							return nil, errors.WithStack(encoding.ErrInvalidValue)
-						}
+	compile := func(typ reflect.Type) (encoding.Encoder[reflect.Value, *Map], error) {
+		if typ.Kind() == reflect.Map {
+			return encoding.EncoderFunc[reflect.Value, *Map](func(source reflect.Value) (*Map, error) {
+				pairs := make([]Value, 0, len(source.MapKeys())*2)
+				for _, k := range source.MapKeys() {
+					if k, err := encoder.Encode(k.Interface()); err != nil {
+						return nil, errors.WithMessage(err, fmt.Sprintf("key(%v) can't encode", k.Interface()))
 					} else {
-						pairs = append(pairs, NewString(tag.alias))
+						pairs = append(pairs, k)
+					}
+
+					if v, err := encoder.Encode(source.MapIndex(k).Interface()); err != nil {
+						return nil, errors.WithMessage(err, fmt.Sprintf("value(%v) can't encode", source.MapIndex(k).Interface()))
+					} else {
 						pairs = append(pairs, v)
 					}
 				}
+				return NewMap(pairs...), nil
+			}), nil
+		} else if typ.Kind() == reflect.Struct {
+			var encoders []encoding.Encoder[reflect.Value, []Value]
+			for i := 0; i < typ.NumField(); i++ {
+				field := typ.Field(i)
+				tag := getMapTag(field)
+
+				if !field.IsExported() || tag.ignore {
+					continue
+				}
+
+				var enc encoding.Encoder[reflect.Value, []Value]
+				if tag.inline {
+					enc = encoding.EncoderFunc[reflect.Value, []Value](func(source reflect.Value) ([]Value, error) {
+						if target, err := encoder.Encode(source.Field(i).Interface()); err != nil {
+							return nil, err
+						} else if t, ok := target.(*Map); !ok {
+							return nil, errors.WithStack(encoding.ErrInvalidValue)
+						} else {
+							return t.Pairs(), nil
+						}
+					})
+				} else {
+					alias := NewString(tag.alias)
+					enc = encoding.EncoderFunc[reflect.Value, []Value](func(source reflect.Value) ([]Value, error) {
+						if target, err := encoder.Encode(source.Field(i).Interface()); err != nil {
+							return nil, err
+						} else {
+							return []Value{alias, target}, nil
+						}
+					})
+				}
+
+				encoders = append(encoders, enc)
 			}
-			return NewMap(pairs...), nil
+
+			return encoding.EncoderFunc[reflect.Value, *Map](func(source reflect.Value) (*Map, error) {
+				pairs := make([]Value, 0, source.NumField()*2)
+				for _, enc := range encoders {
+					if targets, err := enc.Encode(source); err != nil {
+						return nil, err
+					} else {
+						pairs = append(pairs, targets...)
+					}
+				}
+				return NewMap(pairs...), nil
+			}), nil
 		}
+
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	}
+
+	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
+		s := reflect.ValueOf(source)
+		if !s.IsValid() {
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		}
+
+		if enc, ok := typeToEncoder.Load(s.Type()); ok {
+			return enc.(encoding.Encoder[reflect.Value, *Map]).Encode(s)
+		}
+
+		enc, err := compile(s.Type())
+		if err != nil {
+			return nil, err
+		}
+
+		typeToEncoder.Store(s.Type(), enc)
+		return enc.Encode(s)
 	})
 }
 
