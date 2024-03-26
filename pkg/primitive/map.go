@@ -2,13 +2,14 @@ package primitive
 
 import (
 	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/benbjohnson/immutable"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
+	"reflect"
+	"strings"
+	"sync"
+	"unsafe"
 )
 
 // Map represents a map structure.
@@ -263,71 +264,104 @@ func newMapEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, V
 }
 
 func newMapDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
-	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
-		if s, ok := source.(*Map); ok {
-			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
-				switch t.Elem().Kind() {
-				case reflect.Map:
-					if t.Elem().IsNil() {
-						t.Elem().Set(reflect.MakeMapWithSize(t.Type().Elem(), s.Len()))
+	typeToDecoder := sync.Map{} // map[reflect.Type]encoding.Decoder[*Map, reflect.Value]{}
+
+	compile := func(typ reflect.Type) (encoding.Decoder[*Map, reflect.Value], error) {
+		if typ.Kind() == reflect.Pointer {
+			switch typ.Elem().Kind() {
+			case reflect.Map:
+				keyType := typ.Elem().Key()
+				valueType := typ.Elem().Elem()
+
+				return encoding.DecoderFunc[*Map, reflect.Value](func(source *Map, target reflect.Value) error {
+					if target.Elem().IsNil() {
+						target.Elem().Set(reflect.MakeMapWithSize(target.Type().Elem(), source.Len()))
 					}
 
-					keyType := t.Elem().Type().Key()
-					valueType := t.Elem().Type().Elem()
-
-					for _, key := range s.Keys() {
-						value, _ := s.Get(key)
+					for _, key := range source.Keys() {
+						value, _ := source.Get(key)
 
 						k := reflect.New(keyType)
 						v := reflect.New(valueType)
 
 						if err := decoder.Decode(key, k.Interface()); err != nil {
-							return errors.WithMessage(err, fmt.Sprintf("key(%v) cannot be decoded", key.Interface()))
+							return err
 						} else if err := decoder.Decode(value, v.Interface()); err != nil {
-							return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the key(%v) cannot be decoded", value.Interface(), key.Interface()))
+							return err
+						} else {
+							target.Elem().SetMapIndex(k.Elem(), v.Elem())
 						}
-
-						t.Elem().SetMapIndex(k.Elem(), v.Elem())
 					}
 					return nil
-				case reflect.Struct:
-					for i := 0; i < t.Elem().NumField(); i++ {
-						field := t.Elem().Type().Field(i)
-						if !field.IsExported() {
-							continue
-						}
+				}), nil
+			case reflect.Struct:
+				var decoders []encoding.Decoder[*Map, unsafe.Pointer]
+				for i := 0; i < typ.Elem().NumField(); i++ {
+					field := typ.Elem().Field(i)
+					offset := field.Offset
+					tag := getMapTag(field)
 
-						v := t.Elem().FieldByName(field.Name)
-						tag := getMapTag(field)
-
-						if tag.ignore {
-							continue
-						} else if tag.inline {
-							if err := decoder.Decode(s, v.Addr().Interface()); err != nil {
-								return err
-							} else {
-								continue
-							}
-						}
-
-						value, ok := s.Get(NewString(tag.alias))
-						if !ok {
-							if !tag.omitempty {
-								return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("key(%v) is zero value", field.Name))
-							}
-						} else if err := decoder.Decode(value, v.Addr().Interface()); err != nil {
-							return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the key(%v) cannot be decoded", value.Interface(), field.Name))
-						}
+					if !field.IsExported() || tag.ignore {
+						continue
 					}
-				default:
-					if t.Type() == typeAny {
-						t.Elem().Set(reflect.ValueOf(s.Interface()))
+
+					var dec encoding.Decoder[*Map, unsafe.Pointer]
+					if tag.inline {
+						dec = encoding.DecoderFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
+							return decoder.Decode(source, reflect.NewAt(field.Type, unsafe.Pointer(uintptr(target)+offset)).Interface())
+						})
 					} else {
-						return errors.WithStack(encoding.ErrUnsupportedValue)
+						dec = encoding.DecoderFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
+							value, ok := source.Get(NewString(tag.alias))
+							if !ok {
+								if !tag.omitempty {
+									return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("key(%v) is zero value", field.Name))
+								}
+								return nil
+							}
+							return decoder.Decode(value, reflect.NewAt(field.Type, unsafe.Pointer(uintptr(target)+offset)).Interface())
+						})
 					}
+
+					decoders = append(decoders, dec)
 				}
-				return nil
+
+				return encoding.DecoderFunc[*Map, reflect.Value](func(source *Map, target reflect.Value) error {
+					p := target.UnsafePointer()
+					for _, dec := range decoders {
+						if err := dec.Decode(source, p); err != nil {
+							return err
+						}
+					}
+					return nil
+				}), nil
+			default:
+				if typ.Elem() == typeAny {
+					return encoding.DecoderFunc[*Map, reflect.Value](func(source *Map, target reflect.Value) error {
+						target.Elem().Set(reflect.ValueOf(source.Interface()))
+						return nil
+					}), nil
+				}
 			}
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	}
+
+	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
+		if s, ok := source.(*Map); ok {
+			t := reflect.ValueOf(target)
+
+			if dec, ok := typeToDecoder.Load(t.Type()); ok {
+				return dec.(encoding.Decoder[*Map, reflect.Value]).Decode(s, t)
+			}
+
+			dec, err := compile(t.Type())
+			if err != nil {
+				return err
+			}
+
+			typeToDecoder.Store(t.Type(), dec)
+			return dec.Decode(s, t)
 		}
 		return errors.WithStack(encoding.ErrUnsupportedValue)
 	})
