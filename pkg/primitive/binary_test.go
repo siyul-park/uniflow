@@ -37,32 +37,32 @@ func TestBinary_Encode(t *testing.T) {
 
 	t.Run("encoding.BinaryMarshaler", func(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
-		binary := NewBinary(source.Bytes())
+		v := NewBinary(source.Bytes())
 
 		var decoded Value
 		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, binary, decoded)
+		assert.Equal(t, v, decoded)
 	})
 
 	t.Run("slice", func(t *testing.T) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		var decoded Value
 		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, binary, decoded)
+		assert.Equal(t, v, decoded)
 	})
 
 	t.Run("array", func(t *testing.T) {
 		source := [3]byte{0, 1, 2}
-		binary := NewBinary(source[:])
+		v := NewBinary(source[:])
 
 		var decoded Value
 		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, binary, decoded)
+		assert.Equal(t, v, decoded)
 	})
 }
 

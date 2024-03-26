@@ -248,7 +248,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	for _, tc := range testCase {
-		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%v", tc.expect), func(t *testing.T) {
 			zero := reflect.New(reflect.ValueOf(tc.expect).Type())
 
 			err := Unmarshal(tc.when, zero.Interface())

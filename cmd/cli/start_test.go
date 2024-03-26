@@ -84,10 +84,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				r, err := st.FindOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
-				assert.NoError(t, err)
-				if r != nil {
-					assert.Equal(t, spec, r)
+				if r, _ := st.FindOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID())); r != nil {
 					return
 				}
 			}

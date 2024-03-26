@@ -60,9 +60,8 @@ func newBoolEncoder() encoding.Compiler[*Value] {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
 				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
-					t := reflect.NewAt(typ.Elem(), target).Elem()
-					*source = NewBool(t.Bool())
-
+					t := *(*bool)(target)
+					*source = NewBool(t)
 					return nil
 				}), nil
 			}
@@ -77,19 +76,15 @@ func newBoolDecoder() encoding.Compiler[Value] {
 			if typ.Elem().Kind() == reflect.Bool {
 				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
-						t := reflect.NewAt(typ.Elem(), target).Elem()
-						t.Set(reflect.ValueOf(s.Bool()).Convert(t.Type()))
-
+						*(*bool)(target) = s.Bool()
 						return nil
 					}
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
-			} else if typ.Elem().ConvertibleTo(typeAny) {
+			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
-						ptr := (*any)(target)
-						*ptr = s.Interface()
-
+						*(*any)(target) = s.Interface()
 						return nil
 					}
 					return errors.WithStack(encoding.ErrUnsupportedValue)

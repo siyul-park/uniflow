@@ -9,7 +9,7 @@ import (
 
 type CompiledDecoder[S, T any] struct {
 	compilers []Compiler[S]
-	decoders  map[reflect.Type]Decoder[S, unsafe.Pointer]
+	decoders  sync.Map // map[reflect.Type]Decoder[S, unsafe.Pointer]
 	mu        sync.RWMutex
 }
 
@@ -29,43 +29,64 @@ var _ Compiler[any] = (*CompiledDecoder[any, any])(nil)
 var _ Decoder[any, any] = (*CompiledDecoder[any, any])(nil)
 
 func NewCompiledDecoder[S, T any]() *CompiledDecoder[S, T] {
-	return &CompiledDecoder[S, T]{
-		decoders: map[reflect.Type]Decoder[S, unsafe.Pointer]{},
-	}
+	return &CompiledDecoder[S, T]{}
 }
 
 func (c *CompiledDecoder[S, T]) Add(compiler Compiler[S]) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	c.compilers = append(c.compilers, compiler)
 }
 
 func (c *CompiledDecoder[S, T]) Len() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	return len(c.compilers)
 }
 
 func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
 	typ := reflect.TypeOf(target)
-	val := reflect.ValueOf(target)
+	if typ == nil {
+		return nil
+	}
 
 	dec, err := c.Compile(typ)
 	if err != nil {
 		return err
 	}
 
-	return dec.Decode(source, val.UnsafePointer())
+	val := reflect.ValueOf(target)
+
+	var ptr unsafe.Pointer
+	if typ.Kind() == reflect.Pointer {
+		ptr = val.UnsafePointer()
+	} else {
+		zero := reflect.New(typ)
+		zero.Elem().Set(val)
+		ptr = zero.UnsafePointer()
+	}
+
+	return dec.Decode(source, ptr)
 }
 
 func (c *CompiledDecoder[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	if dec, ok := c.decoders[typ]; ok {
-		return dec, nil
+	if typ == nil {
+		return DecoderFunc[S, unsafe.Pointer](func(source S, target unsafe.Pointer) error {
+			return nil
+		}), nil
+	}
+
+	if typ.Kind() != reflect.Pointer {
+		typ = reflect.PointerTo(typ)
+	}
+
+	if dec, ok := c.decoders.Load(typ); ok {
+		return dec.(Decoder[S, unsafe.Pointer]), nil
 	}
 
 	var decoders []Decoder[S, unsafe.Pointer]
@@ -82,6 +103,6 @@ func (c *CompiledDecoder[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 	for _, d := range decoders {
 		decoder.Add(d)
 	}
-	c.decoders[typ] = decoder
+	c.decoders.Store(typ, decoder)
 	return decoder, nil
 }

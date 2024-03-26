@@ -2,10 +2,10 @@ package primitive
 
 import (
 	"encoding"
-	"reflect"
-
 	"github.com/pkg/errors"
 	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
+	"reflect"
+	"unsafe"
 )
 
 // String is a representation of a string.
@@ -60,36 +60,64 @@ func (o String) Interface() any {
 	return string(o)
 }
 
-func newStringEncoder() encoding2.Encoder[any, Value] {
-	return encoding2.EncoderFunc[any, Value](func(source any) (Value, error) {
-		if s, ok := source.(encoding.TextMarshaler); ok {
-			if text, err := s.MarshalText(); err != nil {
-				return nil, err
-			} else {
-				return NewString(string(text)), nil
+func newStringEncoder() encoding2.Compiler[*Value] {
+	typeTextMarshaler := reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
+
+	return encoding2.CompilerFunc[*Value](func(typ reflect.Type) (encoding2.Decoder[*Value, unsafe.Pointer], error) {
+		if typ.ConvertibleTo(typeTextMarshaler) {
+			return encoding2.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextMarshaler)
+				if s, err := t.MarshalText(); err != nil {
+					return err
+				} else {
+					*source = NewString(string(s))
+				}
+				return nil
+			}), nil
+		} else if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.String {
+				return encoding2.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*string)(target)
+					*source = NewString(t)
+					return nil
+				}), nil
 			}
-		} else if s := reflect.ValueOf(source); s.Kind() == reflect.String {
-			return NewString(s.String()), nil
 		}
 		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
 	})
 }
 
-func newStringDecoder() encoding2.Decoder[Value, any] {
-	return encoding2.DecoderFunc[Value, any](func(source Value, target any) error {
-		if s, ok := source.(String); ok {
-			if t, ok := target.(encoding.TextUnmarshaler); ok {
-				return t.UnmarshalText([]byte(s.String()))
-			} else if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
-				if t.Elem().Kind() == reflect.String {
-					t.Elem().Set(reflect.ValueOf(s.String()).Convert(t.Elem().Type()))
-					return nil
-				} else if t.Elem().Type() == typeAny {
-					t.Elem().Set(reflect.ValueOf(s.Interface()))
-					return nil
+func newStringDecoder() encoding2.Compiler[Value] {
+	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+
+	return encoding2.CompilerFunc[Value](func(typ reflect.Type) (encoding2.Decoder[Value, unsafe.Pointer], error) {
+		if typ.ConvertibleTo(typeTextUnmarshaler) {
+			return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				if s, ok := source.(String); ok {
+					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
+					return t.UnmarshalText([]byte(s.String()))
 				}
+				return errors.WithStack(encoding2.ErrUnsupportedValue)
+			}), nil
+		} else if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.String {
+				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(String); ok {
+						*(*string)(target) = s.String()
+						return nil
+					}
+					return errors.WithStack(encoding2.ErrUnsupportedValue)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Interface {
+				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(String); ok {
+						*(*any)(target) = s.Interface()
+						return nil
+					}
+					return errors.WithStack(encoding2.ErrUnsupportedValue)
+				}), nil
 			}
 		}
-		return errors.WithStack(encoding2.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
 	})
 }
