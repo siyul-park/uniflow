@@ -302,6 +302,7 @@ func newMapEncoder(encoder *encoding.CompiledDecoder[*Value, any]) encoding.Comp
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
+
 func newMapDecoder(decoder *encoding.CompiledDecoder[Value, any]) encoding.Compiler[Value] {
 	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {

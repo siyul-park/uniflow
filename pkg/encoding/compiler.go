@@ -7,38 +7,41 @@ import (
 	"unsafe"
 )
 
+// CompiledDecoder compiles and executes decoders for a specific target type.
 type CompiledDecoder[S, T any] struct {
 	compilers []Compiler[S]
-	decoders  sync.Map // map[reflect.Type]Decoder[S, unsafe.Pointer]
+	decoders  sync.Map
 	mu        sync.RWMutex
 }
 
+// Compiler represents an interface for compiling decoders.
 type Compiler[S any] interface {
 	Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error)
 }
 
+// CompilerFunc is a function type that implements the Compiler interface.
 type CompilerFunc[S any] func(typ reflect.Type) (Decoder[S, unsafe.Pointer], error)
 
-var _ Compiler[any] = CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) { return nil, nil })
+var (
+	_ Compiler[any]     = CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) { return nil, nil })
+	_ Compiler[any]     = (*CompiledDecoder[any, any])(nil)
+	_ Decoder[any, any] = (*CompiledDecoder[any, any])(nil)
+)
 
-func (c CompilerFunc[S]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
-	return c(typ)
-}
-
-var _ Compiler[any] = (*CompiledDecoder[any, any])(nil)
-var _ Decoder[any, any] = (*CompiledDecoder[any, any])(nil)
-
+// NewCompiledDecoder creates a new CompiledDecoder instance.
 func NewCompiledDecoder[S, T any]() *CompiledDecoder[S, T] {
 	return &CompiledDecoder[S, T]{}
 }
 
+// Add adds a compiler to the CompiledDecoder.
 func (c *CompiledDecoder[S, T]) Add(compiler Compiler[S]) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.compilers = append(c.compilers, compiler)
 }
 
+// Len returns the number of compilers in the CompiledDecoder.
 func (c *CompiledDecoder[S, T]) Len() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -46,6 +49,7 @@ func (c *CompiledDecoder[S, T]) Len() int {
 	return len(c.compilers)
 }
 
+// Decode decodes the source into the target.
 func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
 	typ := reflect.TypeOf(target)
 	if typ == nil {
@@ -71,6 +75,7 @@ func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
 	return dec.Decode(source, ptr)
 }
 
+// Compile compiles a decoder for a given type.
 func (c *CompiledDecoder[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -105,4 +110,8 @@ func (c *CompiledDecoder[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 	}
 	c.decoders.Store(typ, decoder)
 	return decoder, nil
+}
+
+func (c CompilerFunc[S]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
+	return c(typ)
 }
