@@ -30,7 +30,7 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newStringEncoder())
 
 	t.Run("encoding.TextMarshaler", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestString_Encode(t *testing.T) {
 		v := NewString(source.String())
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -48,14 +48,14 @@ func TestString_Encode(t *testing.T) {
 		v := NewString(source)
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestString_Decode(t *testing.T) {
-	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec := encoding.NewAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -63,7 +63,7 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source.String())
 
 		var decoded uuid.UUID
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -73,7 +73,7 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source)
 
 		var decoded string
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -83,14 +83,14 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source)
 
 		var decoded any
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
 }
 
 func BenchmarkString_Encode(b *testing.B) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newStringEncoder())
 
 	b.Run("encoding.TextMarshaler", func(b *testing.B) {
@@ -98,7 +98,7 @@ func BenchmarkString_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 
@@ -107,7 +107,7 @@ func BenchmarkString_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }

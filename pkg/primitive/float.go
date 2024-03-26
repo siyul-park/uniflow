@@ -91,17 +91,17 @@ func compareAsFloat(f Float, v Value) int {
 }
 
 func newFloatEncoder() encoding.Compiler[*Value] {
-	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
+	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Encoder[*Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
-				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 					t := *(*float32)(target)
 					*source = NewFloat32(t)
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
-				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 					t := *(*float64)(target)
 					*source = NewFloat64(t)
 
@@ -114,7 +114,7 @@ func newFloatEncoder() encoding.Compiler[*Value] {
 }
 
 func newFloatDecoder() encoding.Compiler[Value] {
-	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Encoder[Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return newFloatDecoderWithType[float32](), nil
@@ -141,7 +141,7 @@ func newFloatDecoder() encoding.Compiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newFloatDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Float); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -154,8 +154,8 @@ func newFloatDecoder() encoding.Compiler[Value] {
 	})
 }
 
-func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
-	return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[Value, unsafe.Pointer] {
+	return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Float); ok {
 			*(*T)(target) = T(s.Float())
 			return nil

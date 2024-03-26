@@ -63,9 +63,9 @@ func (o String) Interface() any {
 func newStringEncoder() encoding2.Compiler[*Value] {
 	typeTextMarshaler := reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[*Value](func(typ reflect.Type) (encoding2.Decoder[*Value, unsafe.Pointer], error) {
+	return encoding2.CompilerFunc[*Value](func(typ reflect.Type) (encoding2.Encoder[*Value, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeTextMarshaler) {
-			return encoding2.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+			return encoding2.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextMarshaler)
 				if s, err := t.MarshalText(); err != nil {
 					return err
@@ -76,7 +76,7 @@ func newStringEncoder() encoding2.Compiler[*Value] {
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
-				return encoding2.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding2.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 					t := *(*string)(target)
 					*source = NewString(t)
 					return nil
@@ -90,9 +90,9 @@ func newStringEncoder() encoding2.Compiler[*Value] {
 func newStringDecoder() encoding2.Compiler[Value] {
 	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[Value](func(typ reflect.Type) (encoding2.Decoder[Value, unsafe.Pointer], error) {
+	return encoding2.CompilerFunc[Value](func(typ reflect.Type) (encoding2.Encoder[Value, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeTextUnmarshaler) {
-			return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+			return encoding2.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText([]byte(s.String()))
@@ -101,7 +101,7 @@ func newStringDecoder() encoding2.Compiler[Value] {
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
-				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding2.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						*(*string)(target) = s.String()
 						return nil
@@ -109,7 +109,7 @@ func newStringDecoder() encoding2.Compiler[Value] {
 					return errors.WithStack(encoding2.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding2.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						*(*any)(target) = s.Interface()
 						return nil

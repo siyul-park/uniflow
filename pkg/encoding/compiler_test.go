@@ -9,36 +9,36 @@ import (
 	"unsafe"
 )
 
-func TestCompiledDecoder_Add(t *testing.T) {
-	c := NewCompiledDecoder[any, any]()
-	c.Add(CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) {
+func TestAssembler_Add(t *testing.T) {
+	a := NewAssembler[any, any]()
+	a.Add(CompilerFunc[any](func(typ reflect.Type) (Encoder[any, unsafe.Pointer], error) {
 		return nil, nil
 	}))
 
-	assert.Equal(t, 1, c.Len())
+	assert.Equal(t, 1, a.Len())
 }
 
-func TestCompiledDecoder_Compile(t *testing.T) {
-	c := NewCompiledDecoder[any, any]()
-	c.Add(CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) {
+func TestAssembler_Compile(t *testing.T) {
+	a := NewAssembler[any, any]()
+	a.Add(CompilerFunc[any](func(typ reflect.Type) (Encoder[any, unsafe.Pointer], error) {
 		if typ.Elem().Kind() == reflect.String {
-			return DecoderFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
+			return EncodeFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
 				return nil
 			}), nil
 		}
 		return nil, errors.WithStack(ErrUnsupportedValue)
 	}))
 
-	d, err := c.Compile(reflect.TypeOf(""))
+	d, err := a.Compile(reflect.TypeOf(""))
 	assert.NoError(t, err)
 	assert.NotNil(t, d)
 }
 
-func TestCompiledDecoder_Decode(t *testing.T) {
-	c := NewCompiledDecoder[any, any]()
-	c.Add(CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) {
+func TestAssembler_Decode(t *testing.T) {
+	a := NewAssembler[any, any]()
+	a.Add(CompilerFunc[any](func(typ reflect.Type) (Encoder[any, unsafe.Pointer], error) {
 		if typ.Elem().Kind() == reflect.String {
-			return DecoderFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
+			return EncodeFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
 				if s, ok := source.(string); ok {
 					*(*string)(target) = s
 					return nil
@@ -52,7 +52,7 @@ func TestCompiledDecoder_Decode(t *testing.T) {
 	source := faker.UUIDHyphenated()
 	target := ""
 
-	err := c.Decode(source, &target)
+	err := a.Encode(source, &target)
 	assert.NoError(t, err)
 	assert.Equal(t, source, target)
 }

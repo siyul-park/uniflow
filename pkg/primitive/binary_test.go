@@ -32,7 +32,7 @@ func TestBinary_Compare(t *testing.T) {
 }
 
 func TestBinary_Encode(t *testing.T) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newBinaryEncoder())
 
 	t.Run("encoding.BinaryMarshaler", func(t *testing.T) {
@@ -40,7 +40,7 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source.Bytes())
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -50,7 +50,7 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source)
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -60,14 +60,14 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source[:])
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestBinary_Decode(t *testing.T) {
-	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec := encoding.NewAssembler[Value, any]()
 	dec.Add(newBinaryDecoder())
 
 	t.Run("encoding.BinaryUnmarshaler", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestBinary_Decode(t *testing.T) {
 		v := NewBinary(source.Bytes())
 
 		var decoded uuid.UUID
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -85,7 +85,7 @@ func TestBinary_Decode(t *testing.T) {
 		v := NewBinary(source)
 
 		var decoded []byte
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -95,7 +95,7 @@ func TestBinary_Decode(t *testing.T) {
 		v := NewBinary(source)
 
 		var decoded [3]byte
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -105,14 +105,14 @@ func TestBinary_Decode(t *testing.T) {
 		v := NewBinary(source)
 
 		var decoded any
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
 }
 
 func BenchmarkBinary_Encode(b *testing.B) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newBinaryEncoder())
 
 	b.Run("encoding.BinaryMarshaler", func(b *testing.B) {
@@ -120,7 +120,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 
@@ -129,7 +129,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 
@@ -138,13 +138,13 @@ func BenchmarkBinary_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }
 
 func BenchmarkBinary_Decode(b *testing.B) {
-	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec := encoding.NewAssembler[Value, any]()
 	dec.Add(newBinaryDecoder())
 
 	b.Run("encoding.BinaryUnmarshaler", func(b *testing.B) {
@@ -153,7 +153,7 @@ func BenchmarkBinary_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded uuid.UUID
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 
@@ -163,7 +163,7 @@ func BenchmarkBinary_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded []byte
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 
@@ -173,7 +173,7 @@ func BenchmarkBinary_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded [3]byte
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 
@@ -183,7 +183,7 @@ func BenchmarkBinary_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded any
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 }

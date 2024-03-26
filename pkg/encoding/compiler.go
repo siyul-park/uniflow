@@ -7,56 +7,56 @@ import (
 	"unsafe"
 )
 
-// CompiledDecoder compiles and executes decoders for a specific target type.
-type CompiledDecoder[S, T any] struct {
+// Assembler compiles and executes encoders for a specific target type.
+type Assembler[S, T any] struct {
 	compilers []Compiler[S]
-	decoders  sync.Map
+	encoders  sync.Map
 	mu        sync.RWMutex
 }
 
-// Compiler represents an interface for compiling decoders.
+// Compiler represents an interface for compiling encoders.
 type Compiler[S any] interface {
-	Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error)
+	Compile(typ reflect.Type) (Encoder[S, unsafe.Pointer], error)
 }
 
 // CompilerFunc is a function type that implements the Compiler interface.
-type CompilerFunc[S any] func(typ reflect.Type) (Decoder[S, unsafe.Pointer], error)
+type CompilerFunc[S any] func(typ reflect.Type) (Encoder[S, unsafe.Pointer], error)
 
 var (
-	_ Compiler[any]     = CompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) { return nil, nil })
-	_ Compiler[any]     = (*CompiledDecoder[any, any])(nil)
-	_ Decoder[any, any] = (*CompiledDecoder[any, any])(nil)
+	_ Compiler[any]     = (*Assembler[any, any])(nil)
+	_ Encoder[any, any] = (*Assembler[any, any])(nil)
+	_ Compiler[any]     = CompilerFunc[any](func(typ reflect.Type) (Encoder[any, unsafe.Pointer], error) { return nil, nil })
 )
 
-// NewCompiledDecoder creates a new CompiledDecoder instance.
-func NewCompiledDecoder[S, T any]() *CompiledDecoder[S, T] {
-	return &CompiledDecoder[S, T]{}
+// NewAssembler creates a new Assembler instance.
+func NewAssembler[S, T any]() *Assembler[S, T] {
+	return &Assembler[S, T]{}
 }
 
-// Add adds a compiler to the CompiledDecoder.
-func (c *CompiledDecoder[S, T]) Add(compiler Compiler[S]) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Add adds a compiler to the Assembler.
+func (a *Assembler[S, T]) Add(compiler Compiler[S]) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
-	c.compilers = append(c.compilers, compiler)
+	a.compilers = append(a.compilers, compiler)
 }
 
-// Len returns the number of compilers in the CompiledDecoder.
-func (c *CompiledDecoder[S, T]) Len() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// Len returns the number of compilers in the Assembler.
+func (a *Assembler[S, T]) Len() int {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 
-	return len(c.compilers)
+	return len(a.compilers)
 }
 
-// Decode decodes the source into the target.
-func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
+// Encode encodes the source into the target.
+func (a *Assembler[S, T]) Encode(source S, target T) error {
 	typ := reflect.TypeOf(target)
 	if typ == nil {
 		return nil
 	}
 
-	dec, err := c.Compile(typ)
+	enc, err := a.Compile(typ)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
 	val := reflect.ValueOf(target)
 
 	var ptr unsafe.Pointer
-	if typ.Kind() == reflect.Pointer {
+	if typ.Kind() == reflect.Ptr {
 		ptr = val.UnsafePointer()
 	} else {
 		zero := reflect.New(typ)
@@ -72,46 +72,47 @@ func (c *CompiledDecoder[S, T]) Decode(source S, target T) error {
 		ptr = zero.UnsafePointer()
 	}
 
-	return dec.Decode(source, ptr)
+	return enc.Encode(source, ptr)
 }
 
-// Compile compiles a decoder for a given type.
-func (c *CompiledDecoder[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// Compile compiles an encoder for a given type.
+func (a *Assembler[S, T]) Compile(typ reflect.Type) (Encoder[S, unsafe.Pointer], error) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 
 	if typ == nil {
-		return DecoderFunc[S, unsafe.Pointer](func(source S, target unsafe.Pointer) error {
+		return EncodeFunc[S, unsafe.Pointer](func(source S, target unsafe.Pointer) error {
 			return nil
 		}), nil
 	}
 
-	if typ.Kind() != reflect.Pointer {
-		typ = reflect.PointerTo(typ)
+	if typ.Kind() != reflect.Ptr {
+		typ = reflect.PtrTo(typ)
 	}
 
-	if dec, ok := c.decoders.Load(typ); ok {
-		return dec.(Decoder[S, unsafe.Pointer]), nil
+	if enc, ok := a.encoders.Load(typ); ok {
+		return enc.(Encoder[S, unsafe.Pointer]), nil
 	}
 
-	var decoders []Decoder[S, unsafe.Pointer]
-	for _, compiler := range c.compilers {
-		if dec, err := compiler.Compile(typ); err == nil {
-			decoders = append(decoders, dec)
+	var encoders []Encoder[S, unsafe.Pointer]
+	for _, compiler := range a.compilers {
+		if enc, err := compiler.Compile(typ); err == nil {
+			encoders = append(encoders, enc)
 		}
 	}
-	if len(decoders) == 0 {
+	if len(encoders) == 0 {
 		return nil, errors.WithStack(ErrUnsupportedValue)
 	}
 
-	decoder := NewDecoderGroup[S, unsafe.Pointer]()
-	for _, d := range decoders {
-		decoder.Add(d)
+	encoder := NewEncoderGroup[S, unsafe.Pointer]()
+	for _, enc := range encoders {
+		encoder.Add(enc)
 	}
-	c.decoders.Store(typ, decoder)
-	return decoder, nil
+
+	a.encoders.Store(typ, encoder)
+	return encoder, nil
 }
 
-func (c CompilerFunc[S]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
+func (c CompilerFunc[S]) Compile(typ reflect.Type) (Encoder[S, unsafe.Pointer], error) {
 	return c(typ)
 }

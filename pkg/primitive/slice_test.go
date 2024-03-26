@@ -93,7 +93,7 @@ func TestSlice_Compare(t *testing.T) {
 }
 
 func TestSlice_Encode(t *testing.T) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -102,7 +102,7 @@ func TestSlice_Encode(t *testing.T) {
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -112,14 +112,14 @@ func TestSlice_Encode(t *testing.T) {
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
 		var decoded Value
-		err := enc.Decode(&decoded, &source)
+		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestSlice_Decode(t *testing.T) {
-	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec := encoding.NewAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
@@ -128,7 +128,7 @@ func TestSlice_Decode(t *testing.T) {
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
 		var decoded []string
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -138,7 +138,7 @@ func TestSlice_Decode(t *testing.T) {
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
 		var decoded [2]string
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -148,7 +148,7 @@ func TestSlice_Decode(t *testing.T) {
 		v := NewString("foo")
 
 		var decoded []string
-		err := dec.Decode(v, &decoded)
+		err := dec.Encode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -198,7 +198,7 @@ func BenchmarkSlice_Interface(b *testing.B) {
 }
 
 func BenchmarkSlice_Encode(b *testing.B) {
-	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc := encoding.NewAssembler[*Value, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -207,7 +207,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 
@@ -216,13 +216,13 @@ func BenchmarkSlice_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded Value
-			_ = enc.Decode(&decoded, &source)
+			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }
 
 func BenchmarkSlice_Decode(b *testing.B) {
-	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec := encoding.NewAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
@@ -231,7 +231,7 @@ func BenchmarkSlice_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded []string
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 
@@ -240,7 +240,7 @@ func BenchmarkSlice_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded [2]string
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 
@@ -249,7 +249,7 @@ func BenchmarkSlice_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded []string
-			_ = dec.Decode(v, &decoded)
+			_ = dec.Encode(v, &decoded)
 		}
 	})
 }

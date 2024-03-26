@@ -56,10 +56,10 @@ func (b Bool) Interface() any {
 }
 
 func newBoolEncoder() encoding.Compiler[*Value] {
-	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
+	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Encoder[*Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 					t := *(*bool)(target)
 					*source = NewBool(t)
 					return nil
@@ -71,10 +71,10 @@ func newBoolEncoder() encoding.Compiler[*Value] {
 }
 
 func newBoolDecoder() encoding.Compiler[Value] {
-	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Encoder[Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
@@ -82,7 +82,7 @@ func newBoolDecoder() encoding.Compiler[Value] {
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
 						*(*any)(target) = s.Interface()
 						return nil
