@@ -21,8 +21,6 @@ var (
 	decoder       = encoding.NewCompiledDecoder[Value, any]()
 )
 
-var typeAny = reflect.TypeOf((*any)(nil)).Elem()
-
 func init() {
 	textEncoder.Add(newShortcutEncoder())
 	textEncoder.Add(newExpandedEncoder())
@@ -90,7 +88,7 @@ func newShortcutEncoder() encoding.Compiler[*Value] {
 	typeValue := reflect.TypeOf((*Value)(nil)).Elem()
 
 	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem() == typeValue {
+		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
 			return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Elem().Interface().(Value)
 				*source = t
@@ -105,7 +103,7 @@ func newShortcutDecoder() encoding.Compiler[Value] {
 	typeValue := reflect.TypeOf((*Value)(nil)).Elem()
 
 	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem() == typeValue {
+		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
 			return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				*(*Value)(target) = source
 				return nil

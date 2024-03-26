@@ -2,6 +2,8 @@ package primitive
 
 import (
 	"fmt"
+	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"testing"
 
@@ -256,4 +258,54 @@ func TestUnmarshal(t *testing.T) {
 			assert.Equal(t, tc.expect, zero.Elem().Interface())
 		})
 	}
+}
+
+func TestShortcut_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newShortcutEncoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := enc.Decode(&decoded, &source)
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
+}
+
+func TestShortcut_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newShortcutDecoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := dec.Decode(source, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
+}
+
+func TestPointer_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newPointerEncoder(enc))
+	enc.Add(newShortcutEncoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := enc.Decode(&decoded, lo.ToPtr(&source))
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
+}
+
+func TestPointer_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newPointerDecoder(dec))
+	dec.Add(newShortcutDecoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := dec.Decode(source, lo.ToPtr(&decoded))
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
 }
