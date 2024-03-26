@@ -65,7 +65,7 @@ func TestMarshalFilter(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		v, err := marshalFilter(tc.when)
+		v, err := filterToBson(tc.when)
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expect, v)
 
@@ -153,7 +153,7 @@ func TestUnmarshalFilter(t *testing.T) {
 
 	for _, tc := range testCases {
 		var actual *database.Filter
-		err := unmarshalFilter(tc.when, &actual)
+		err := bsonToFilter(tc.when, &actual)
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expect, actual)
 	}

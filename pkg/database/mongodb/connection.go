@@ -10,7 +10,7 @@ import (
 )
 
 type Connection struct {
-	raw       *mongo.Client
+	internal  *mongo.Client
 	databases map[string]*Database
 	lock      sync.RWMutex
 }
@@ -25,7 +25,7 @@ func Connect(ctx context.Context, opts ...*options.ClientOptions) (*Connection, 
 
 func NewConnection(client *mongo.Client) *Connection {
 	return &Connection{
-		raw:       client,
+		internal:  client,
 		databases: map[string]*Database{},
 	}
 }
@@ -38,7 +38,7 @@ func (c *Connection) Database(_ context.Context, name string) (database.Database
 		return db, nil
 	}
 
-	db := newDatabase(c.raw.Database(name))
+	db := newDatabase(c.internal.Database(name))
 	c.databases[name] = db
 
 	return db, nil
@@ -50,5 +50,5 @@ func (c *Connection) Disconnect(ctx context.Context) error {
 
 	c.databases = map[string]*Database{}
 
-	return c.raw.Disconnect(ctx)
+	return c.internal.Disconnect(ctx)
 }

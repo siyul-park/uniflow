@@ -9,7 +9,7 @@ import (
 )
 
 type Database struct {
-	raw         *mongo.Database
+	internal    *mongo.Database
 	collections map[string]*Collection
 	lock        sync.RWMutex
 }
@@ -18,13 +18,13 @@ var _ database.Database = &Database{}
 
 func newDatabase(db *mongo.Database) *Database {
 	return &Database{
-		raw:         db,
+		internal:    db,
 		collections: map[string]*Collection{},
 	}
 }
 
 func (d *Database) Name() string {
-	return d.raw.Name()
+	return d.internal.Name()
 }
 
 func (d *Database) Collection(_ context.Context, name string) (database.Collection, error) {
@@ -35,7 +35,7 @@ func (d *Database) Collection(_ context.Context, name string) (database.Collecti
 		return coll, nil
 	}
 
-	coll := newCollection(d.raw.Collection(name))
+	coll := newCollection(d.internal.Collection(name))
 	d.collections[name] = coll
 
 	return coll, nil
@@ -53,5 +53,5 @@ func (d *Database) Drop(ctx context.Context) error {
 
 	d.collections = map[string]*Collection{}
 
-	return d.raw.Drop(ctx)
+	return d.internal.Drop(ctx)
 }

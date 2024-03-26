@@ -17,17 +17,7 @@ var (
 	toSnake      = changeCase(strcase.ToSnake)
 )
 
-func changeCase(convert func(string) string) func(string) string {
-	return func(str string) string {
-		var tokens []string
-		for _, curr := range strings.Split(str, ".") {
-			tokens = append(tokens, convert(curr))
-		}
-		return strings.Join(tokens, ".")
-	}
-}
-
-func marshalFilter(filter *database.Filter) (any, error) {
+func filterToBson(filter *database.Filter) (any, error) {
 	if filter == nil {
 		return bson.D{}, nil
 	}
@@ -36,7 +26,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 	case database.AND, database.OR:
 		var values bson.A
 		for _, e := range filter.Children {
-			if value, err := marshalFilter(e); err != nil {
+			if value, err := filterToBson(e); err != nil {
 				return nil, err
 			} else {
 				values = append(values, value)
@@ -49,7 +39,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 			return bson.D{{Key: "$or", Value: values}}, nil
 		}
 	case database.NULL, database.NNULL:
-		k := marshalKey(filter.Key)
+		k := internalKey(filter.Key)
 
 		if filter.OP == database.NULL {
 			return bson.D{{Key: k, Value: bson.M{"$eq": nil}}}, nil
@@ -57,8 +47,8 @@ func marshalFilter(filter *database.Filter) (any, error) {
 			return bson.D{{Key: k, Value: bson.M{"$ne": nil}}}, nil
 		}
 	default:
-		k := marshalKey(filter.Key)
-		v, err := marshalDocument(filter.Value)
+		k := internalKey(filter.Key)
+		v, err := primitiveToBson(filter.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +75,7 @@ func marshalFilter(filter *database.Filter) (any, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-func unmarshalFilter(data any, filter **database.Filter) error {
+func bsonToFilter(data any, filter **database.Filter) error {
 	raw, ok := bsonMA(data)
 	if !ok {
 		return errors.WithStack(encoding.ErrInvalidValue)
@@ -101,7 +91,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 					var values []*database.Filter
 					for _, v := range value {
 						var value *database.Filter
-						if err := unmarshalFilter(v, &value); err != nil {
+						if err := bsonToFilter(v, &value); err != nil {
 							return err
 						}
 						values = append(values, value)
@@ -121,7 +111,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 				}
 			} else if key == "$not" {
 				var child *database.Filter
-				if err := unmarshalFilter(value, &child); err != nil {
+				if err := bsonToFilter(value, &child); err != nil {
 					return err
 				}
 				if child.OP == database.EQ {
@@ -146,7 +136,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 					child := &database.Filter{
-						Key: unmarshalKey(key),
+						Key: externalKey(key),
 					}
 					if op == "$eq" {
 						if v == nil {
@@ -177,7 +167,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 					}
 
 					var value primitive.Value
-					if err := unmarshalDocument(v, &value); err != nil {
+					if err := bsonToPrimitive(v, &value); err != nil {
 						return err
 					}
 					child.Value = value
@@ -203,7 +193,7 @@ func unmarshalFilter(data any, filter **database.Filter) error {
 	return nil
 }
 
-func marshalDocument(data primitive.Value) (any, error) {
+func primitiveToBson(data primitive.Value) (any, error) {
 	if data == nil {
 		return bsonprimitive.Null{}, nil
 	}
@@ -215,10 +205,10 @@ func marshalDocument(data primitive.Value) (any, error) {
 			if k, ok := k.(primitive.String); !ok {
 				return nil, errors.WithStack(encoding.ErrInvalidValue)
 			} else {
-				if v, err := marshalDocument(v); err != nil {
+				if v, err := primitiveToBson(v); err != nil {
 					return nil, err
 				} else {
-					t[marshalKey(k.String())] = v
+					t[internalKey(k.String())] = v
 				}
 			}
 		}
@@ -226,7 +216,7 @@ func marshalDocument(data primitive.Value) (any, error) {
 	} else if s, ok := data.(*primitive.Slice); ok {
 		t := make(bsonprimitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
-			if v, err := marshalDocument(s.Get(i)); err != nil {
+			if v, err := primitiveToBson(s.Get(i)); err != nil {
 				return nil, err
 			} else {
 				t[i] = v
@@ -238,7 +228,7 @@ func marshalDocument(data primitive.Value) (any, error) {
 	}
 }
 
-func unmarshalDocument(data any, v *primitive.Value) error {
+func bsonToPrimitive(data any, v *primitive.Value) error {
 	if data == nil {
 		*v = nil
 		return nil
@@ -255,7 +245,7 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 		values := make([]primitive.Value, len(s))
 		for i, e := range s {
 			var value primitive.Value
-			if err := unmarshalDocument(e, &value); err != nil {
+			if err := bsonToPrimitive(e, &value); err != nil {
 				return err
 			}
 			values[i] = value
@@ -267,10 +257,10 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 		i := 0
 		for k, v := range s {
 			var value primitive.Value
-			if err := unmarshalDocument(v, &value); err != nil {
+			if err := bsonToPrimitive(v, &value); err != nil {
 				return err
 			}
-			pairs[i*2] = primitive.NewString(unmarshalKey(k))
+			pairs[i*2] = primitive.NewString(externalKey(k))
 			pairs[i*2+1] = value
 			i += 1
 		}
@@ -283,32 +273,32 @@ func unmarshalDocument(data any, v *primitive.Value) error {
 	return errors.WithStack(encoding.ErrInvalidValue)
 }
 
-func marshalSorts(sorts []database.Sort) bson.D {
+func sortToBson(sorts []database.Sort) bson.D {
 	sort := bson.D{}
 	for _, s := range sorts {
 		sort = append(sort, bson.E{
-			Key:   marshalKey(s.Key),
-			Value: marshalOrder(s.Order),
+			Key:   internalKey(s.Key),
+			Value: orderToInt(s.Order),
 		})
 	}
 	return sort
 }
 
-func marshalOrder(order database.Order) int {
+func orderToInt(order database.Order) int {
 	if order == database.OrderASC {
 		return 1
 	}
 	return -1
 }
 
-func marshalKey(key string) string {
+func internalKey(key string) string {
 	if key == "id" {
 		return "_id"
 	}
 	return toLowerCamel(key)
 }
 
-func unmarshalKey(key string) string {
+func externalKey(key string) string {
 	if key == "_id" {
 		return "id"
 	}
@@ -347,4 +337,14 @@ func bsonM(value any) (bson.M, bool) {
 		return bson.M{v.Key: v.Value}, true
 	}
 	return nil, false
+}
+
+func changeCase(convert func(string) string) func(string) string {
+	return func(str string) string {
+		var tokens []string
+		for _, curr := range strings.Split(str, ".") {
+			tokens = append(tokens, convert(curr))
+		}
+		return strings.Join(tokens, ".")
+	}
 }

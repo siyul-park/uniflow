@@ -11,17 +11,17 @@ import (
 )
 
 type IndexView struct {
-	raw mongo.IndexView
+	internal mongo.IndexView
 }
 
 var _ database.IndexView = &IndexView{}
 
 func newIndexView(v mongo.IndexView) *IndexView {
-	return &IndexView{raw: v}
+	return &IndexView{internal: v}
 }
 
 func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
-	cursor, err := v.raw.List(ctx)
+	cursor, err := v.internal.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +40,10 @@ func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 
 		var keys []string
 		for k := range key {
-			keys = append(keys, unmarshalKey(k))
+			keys = append(keys, externalKey(k))
 		}
 		var partial *database.Filter
-		if err := unmarshalFilter(partialFilterExpression, &partial); err != nil {
+		if err := bsonToFilter(partialFilterExpression, &partial); err != nil {
 			return nil, err
 		}
 
@@ -61,15 +61,15 @@ func (v *IndexView) List(ctx context.Context) ([]database.IndexModel, error) {
 func (v *IndexView) Create(ctx context.Context, index database.IndexModel) error {
 	keys := bson.D{}
 	for _, k := range index.Keys {
-		keys = append(keys, bson.E{Key: marshalKey(k), Value: 1})
+		keys = append(keys, bson.E{Key: internalKey(k), Value: 1})
 	}
 
-	partialFilterExpression, err := marshalFilter(index.Partial)
+	partialFilterExpression, err := filterToBson(index.Partial)
 	if err != nil {
 		return err
 	}
 
-	_, err = v.raw.CreateOne(ctx, mongo.IndexModel{
+	_, err = v.internal.CreateOne(ctx, mongo.IndexModel{
 		Keys: keys,
 		Options: &options.IndexOptions{
 			Name:                    lo.ToPtr(index.Name),
@@ -82,6 +82,6 @@ func (v *IndexView) Create(ctx context.Context, index database.IndexModel) error
 }
 
 func (v *IndexView) Drop(ctx context.Context, name string) error {
-	_, err := v.raw.DropOne(ctx, name)
+	_, err := v.internal.DropOne(ctx, name)
 	return err
 }

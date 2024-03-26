@@ -11,21 +11,21 @@ import (
 )
 
 type Stream struct {
-	raw     *mongo.ChangeStream
-	channel chan database.Event
-	done    chan struct{}
-	mu      sync.Mutex
+	internal *mongo.ChangeStream
+	channel  chan database.Event
+	done     chan struct{}
+	mu       sync.Mutex
 }
 
 func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	s := &Stream{
-		raw:     stream,
-		channel: make(chan database.Event),
-		done:    make(chan struct{}),
+		internal: stream,
+		channel:  make(chan database.Event),
+		done:     make(chan struct{}),
 	}
 
 	go func() {
-		defer func() { _ = s.raw.Close(ctx) }()
+		defer func() { _ = s.internal.Close(ctx) }()
 		defer close(s.channel)
 
 		ctx, cancel := context.WithCancel(ctx)
@@ -35,7 +35,7 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 		}()
 
 		for {
-			if !s.raw.Next(ctx) {
+			if !s.internal.Next(ctx) {
 				return
 			}
 			var data bson.M
@@ -46,7 +46,7 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 			var id primitive.Value
 			if documentKey, ok := data["documentKey"]; ok {
 				if documentKey, ok := documentKey.(bson.M); ok {
-					if err := unmarshalDocument(documentKey["_id"], &id); err != nil {
+					if err := bsonToPrimitive(documentKey["_id"], &id); err != nil {
 						continue
 					}
 				} else {
