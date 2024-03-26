@@ -338,7 +338,6 @@ func newMapDecoder(decoder *encoding.CompiledDecoder[Value, any]) encoding.Compi
 				var decoders []encoding.Decoder[*Map, unsafe.Pointer]
 				for i := 0; i < typ.Elem().NumField(); i++ {
 					field := typ.Elem().Field(i)
-					offset := field.Offset
 					tag := getMapTag(field)
 
 					if !field.IsExported() || tag.ignore {
@@ -350,6 +349,9 @@ func newMapDecoder(decoder *encoding.CompiledDecoder[Value, any]) encoding.Compi
 						return nil, err
 					}
 
+					offset := field.Offset
+					alias := NewString(tag.alias)
+
 					var dec encoding.Decoder[*Map, unsafe.Pointer]
 					if tag.inline {
 						dec = encoding.DecoderFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
@@ -357,7 +359,7 @@ func newMapDecoder(decoder *encoding.CompiledDecoder[Value, any]) encoding.Compi
 						})
 					} else {
 						dec = encoding.DecoderFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
-							value, ok := source.Get(NewString(tag.alias))
+							value, ok := source.Get(alias)
 							if !ok {
 								if !tag.omitempty {
 									return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("key(%v) is zero value", field.Name))
