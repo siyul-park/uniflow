@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -27,36 +29,51 @@ func NewCommand(config Config) *cobra.Command {
 	db := config.Database
 	fsys := config.FS
 
+	var cpuprof *os.File
+
 	cmd := &cobra.Command{
 		Use:  "uniflow",
 		Long: "Low-Code Engine for Backend Workflows",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cpuprofile, err := cmd.Flags().GetString(flagCPUProfile)
 			if err != nil {
 				return err
 			}
 
 			if cpuprofile != "" {
-				f, err := os.Create(cpuprofile)
+				fmt.Printf("Using cpu profile: %s\n", cpuprofile)
+
+				cpuprof, err = os.Create(cpuprofile)
 				if err != nil {
 					return err
 				}
-				defer f.Close()
 
-				if err := pprof.StartCPUProfile(f); err != nil {
+				if err := pprof.StartCPUProfile(cpuprof); err != nil {
 					return err
 				}
-				defer pprof.StopCPUProfile()
 			}
 			return nil
 		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 			memprofile, err := cmd.Flags().GetString(flagMemProfile)
 			if err != nil {
 				return err
 			}
 
+			if cpuprof != nil {
+				defer func() {
+					cpuprof = nil
+				}()
+
+				pprof.StopCPUProfile()
+				if err := cpuprof.Close(); err != nil {
+					return err
+				}
+			}
+
 			if memprofile != "" {
+				log.Printf("Using mem profile: %s\n", memprofile)
+
 				f, err := os.Create(memprofile)
 				if err != nil {
 					return err
