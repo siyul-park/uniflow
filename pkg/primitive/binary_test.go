@@ -72,40 +72,40 @@ func TestBinary_Decode(t *testing.T) {
 
 	t.Run("encoding.BinaryUnmarshaler", func(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
-		binary := NewBinary(source.Bytes())
+		v := NewBinary(source.Bytes())
 
 		var decoded uuid.UUID
-		err := dec.Decode(binary, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
 
 	t.Run("slice", func(t *testing.T) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		var decoded []byte
-		err := dec.Decode(binary, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
 
 	t.Run("array", func(t *testing.T) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		var decoded [3]byte
-		err := dec.Decode(binary, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
 
 	t.Run("any", func(t *testing.T) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		var decoded any
-		err := dec.Decode(binary, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -149,41 +149,41 @@ func BenchmarkBinary_Decode(b *testing.B) {
 
 	b.Run("encoding.BinaryUnmarshaler", func(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
-		binary := NewBinary(source.Bytes())
+		v := NewBinary(source.Bytes())
 
 		for i := 0; i < b.N; i++ {
 			var decoded uuid.UUID
-			_ = dec.Decode(binary, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 
 	b.Run("slice", func(b *testing.B) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		for i := 0; i < b.N; i++ {
 			var decoded []byte
-			_ = dec.Decode(binary, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 
 	b.Run("array", func(b *testing.B) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		for i := 0; i < b.N; i++ {
 			var decoded [3]byte
-			_ = dec.Decode(binary, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 
 	b.Run("any", func(b *testing.B) {
 		source := []byte{0, 1, 2}
-		binary := NewBinary(source)
+		v := NewBinary(source)
 
 		for i := 0; i < b.N; i++ {
 			var decoded any
-			_ = dec.Decode(binary, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 }

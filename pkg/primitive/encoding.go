@@ -23,8 +23,13 @@ var typeAny = reflect.TypeOf((*any)(nil)).Elem()
 
 func init() {
 	textEncoder.Add(newBinaryEncoder())
+	textEncoder.Add(newBoolEncoder())
+
 	binaryEncoder.Add(newBinaryEncoder())
+	binaryEncoder.Add(newBoolEncoder())
+
 	decoder.Add(newBinaryDecoder())
+	decoder.Add(newBoolDecoder())
 }
 
 // MarshalText returns the Object of v.

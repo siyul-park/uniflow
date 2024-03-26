@@ -106,7 +106,7 @@ func newBinaryDecoder() encoding2.Compiler[Value] {
 				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
-						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes())))
+						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes()).Convert(t.Type())))
 
 						return nil
 					}
@@ -116,7 +116,7 @@ func newBinaryDecoder() encoding2.Compiler[Value] {
 				return encoding2.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
-						reflect.Copy(t, reflect.ValueOf(s.Bytes()))
+						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
 
 						return nil
 					}

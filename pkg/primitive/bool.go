@@ -1,10 +1,10 @@
 package primitive
 
 import (
-	"reflect"
-
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
+	"reflect"
+	"unsafe"
 )
 
 // Bool is a representation of a bool.
@@ -55,29 +55,47 @@ func (b Bool) Interface() any {
 	return bool(b)
 }
 
-func newBoolEncoder() encoding.Encoder[any, Value] {
-	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
-		if s := reflect.ValueOf(source); s.Kind() == reflect.Bool {
-			return NewBool(s.Bool()), nil
+func newBoolEncoder() encoding.Compiler[*Value] {
+	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Bool {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := reflect.NewAt(typ.Elem(), target).Elem()
+					*source = NewBool(t.Bool())
+
+					return nil
+				}), nil
+			}
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
-func newBoolDecoder() encoding.Decoder[Value, any] {
-	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
-		if s, ok := source.(Bool); ok {
-			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {
-				switch {
-				case t.Elem().Kind() == reflect.Bool:
-					t.Elem().Set(reflect.ValueOf(s.Bool()).Convert(t.Elem().Type()))
-					return nil
-				case t.Elem().Type() == typeAny:
-					t.Elem().Set(reflect.ValueOf(s.Interface()))
-					return nil
-				}
+func newBoolDecoder() encoding.Compiler[Value] {
+	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Bool {
+				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Bool); ok {
+						t := reflect.NewAt(typ.Elem(), target).Elem()
+						t.Set(reflect.ValueOf(s.Bool()).Convert(t.Type()))
+
+						return nil
+					}
+					return errors.WithStack(encoding.ErrUnsupportedValue)
+				}), nil
+			} else if typ.Elem().ConvertibleTo(typeAny) {
+				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Bool); ok {
+						ptr := (*any)(target)
+						*ptr = s.Interface()
+
+						return nil
+					}
+					return errors.WithStack(encoding.ErrUnsupportedValue)
+				}), nil
 			}
 		}
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
