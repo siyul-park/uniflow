@@ -1,10 +1,11 @@
 package primitive
 
 import (
-	"reflect"
-
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
+	"golang.org/x/exp/constraints"
+	"reflect"
+	"unsafe"
 )
 
 // Integer is an interface representing an integer.
@@ -159,69 +160,6 @@ func (i Int64) Interface() any {
 	return int64(i)
 }
 
-func newIntEncoder() encoding.Encoder[any, Value] {
-	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
-		switch s := reflect.ValueOf(source); s.Kind() {
-		case reflect.Int:
-			return NewInt(int(s.Int())), nil
-		case reflect.Int8:
-			return NewInt8(int8(s.Int())), nil
-		case reflect.Int16:
-			return NewInt16(int16(s.Int())), nil
-		case reflect.Int32:
-			return NewInt32(int32(s.Int())), nil
-		case reflect.Int64:
-			return NewInt64(int64(s.Int())), nil
-		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-	})
-}
-
-func newIntDecoder() encoding.Decoder[Value, any] {
-	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
-		if s, ok := source.(Integer); ok {
-			if t := reflect.ValueOf(target); t.Kind() == reflect.Ptr {
-				switch t.Elem().Kind() {
-				case reflect.Float32:
-					t.Elem().Set(reflect.ValueOf(float32(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Float64:
-					t.Elem().Set(reflect.ValueOf(s.Int()).Convert(t.Elem().Type()))
-				case reflect.Int:
-					t.Elem().Set(reflect.ValueOf(int(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Int8:
-					t.Elem().Set(reflect.ValueOf(int8(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Int16:
-					t.Elem().Set(reflect.ValueOf(int16(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Int32:
-					t.Elem().Set(reflect.ValueOf(int32(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Int64:
-					t.Elem().Set(reflect.ValueOf(s.Int()).Convert(t.Elem().Type()))
-				case reflect.Uint:
-					t.Elem().Set(reflect.ValueOf(uint(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Uint8:
-					t.Elem().Set(reflect.ValueOf(uint8(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Uint16:
-					t.Elem().Set(reflect.ValueOf(uint16(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Uint32:
-					t.Elem().Set(reflect.ValueOf(uint32(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Uint64:
-					t.Elem().Set(reflect.ValueOf(uint64(s.Int())).Convert(t.Elem().Type()))
-				case reflect.Bool:
-					t.Elem().Set(reflect.ValueOf(s.Int() != 0).Convert(t.Elem().Type()))
-				default:
-					if t.Type() == typeAny {
-						t.Elem().Set(reflect.ValueOf(s.Interface()))
-					} else {
-						return errors.WithStack(encoding.ErrUnsupportedValue)
-					}
-				}
-				return nil
-			}
-		}
-		return errors.WithStack(encoding.ErrUnsupportedValue)
-	})
-}
-
 func compareAsInteger(i Integer, v Value) int {
 	if r, ok := v.(Integer); ok {
 		return compare[int64](i.Int(), r.Int())
@@ -236,4 +174,99 @@ func compareAsInteger(i Integer, v Value) int {
 		return 1
 	}
 	return -1
+}
+
+func newIntegerEncoder() encoding.Compiler[*Value] {
+	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Int {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*int)(target)
+					*source = NewInt(t)
+
+					return nil
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Int8 {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*int8)(target)
+					*source = NewInt8(t)
+
+					return nil
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Int16 {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*int16)(target)
+					*source = NewInt16(t)
+
+					return nil
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Int32 {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*int32)(target)
+					*source = NewInt32(t)
+
+					return nil
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Int64 {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := *(*int64)(target)
+					*source = NewInt64(t)
+
+					return nil
+				}), nil
+			}
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+func newIntegerDecoder() encoding.Compiler[Value] {
+	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Float32 {
+				return newIntegerDecoderWithType[float32](), nil
+			} else if typ.Elem().Kind() == reflect.Float64 {
+				return newIntegerDecoderWithType[float64](), nil
+			} else if typ.Elem().Kind() == reflect.Int {
+				return newIntegerDecoderWithType[int](), nil
+			} else if typ.Elem().Kind() == reflect.Int8 {
+				return newIntegerDecoderWithType[int8](), nil
+			} else if typ.Elem().Kind() == reflect.Int16 {
+				return newIntegerDecoderWithType[int16](), nil
+			} else if typ.Elem().Kind() == reflect.Int32 {
+				return newIntegerDecoderWithType[int32](), nil
+			} else if typ.Elem().Kind() == reflect.Int64 {
+				return newIntegerDecoderWithType[int64](), nil
+			} else if typ.Elem().Kind() == reflect.Uint {
+				return newIntegerDecoderWithType[uint](), nil
+			} else if typ.Elem().Kind() == reflect.Uint8 {
+				return newIntegerDecoderWithType[uint8](), nil
+			} else if typ.Elem().Kind() == reflect.Uint16 {
+				return newIntegerDecoderWithType[uint16](), nil
+			} else if typ.Elem().Kind() == reflect.Uint32 {
+				return newIntegerDecoderWithType[uint32](), nil
+			} else if typ.Elem().Kind() == reflect.Uint64 {
+				return newIntegerDecoderWithType[uint64](), nil
+			} else if typ.Elem().Kind() == reflect.Interface {
+				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Integer); ok {
+						*(*any)(target) = s.Interface()
+						return nil
+					}
+					return errors.WithStack(encoding.ErrUnsupportedValue)
+				}), nil
+			}
+		}
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+func newIntegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
+	return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+		if s, ok := source.(Integer); ok {
+			*(*T)(target) = T(s.Int())
+			return nil
+		}
+		return errors.WithStack(encoding.ErrUnsupportedValue)
+	})
 }

@@ -2,6 +2,8 @@ package primitive
 
 import "reflect"
 
+var typeAny = reflect.TypeOf((*any)(nil)).Elem()
+
 func getCommonType(values []any) reflect.Type {
 	if len(values) == 0 {
 		return typeAny

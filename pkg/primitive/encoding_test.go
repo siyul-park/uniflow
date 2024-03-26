@@ -2,10 +2,11 @@ package primitive
 
 import (
 	"fmt"
+	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -249,7 +250,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	for _, tc := range testCase {
-		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%v", tc.expect), func(t *testing.T) {
 			zero := reflect.New(reflect.ValueOf(tc.expect).Type())
 
 			err := Unmarshal(tc.when, zero.Interface())
@@ -259,24 +260,52 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestPointer_Encode(t *testing.T) {
-	e := newPointerEncoder(newStringEncoder())
+func TestShortcut_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newShortcutEncoder())
 
-	r1 := faker.UUIDHyphenated()
-	v1 := NewString(r1)
+	source := TRUE
 
-	v, err := e.Encode(&r1)
+	var decoded Value
+	err := enc.Decode(&decoded, &source)
 	assert.NoError(t, err)
-	assert.Equal(t, v1, v)
+	assert.Equal(t, source, decoded)
+}
+
+func TestShortcut_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newShortcutDecoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := dec.Decode(source, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
+}
+
+func TestPointer_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newPointerEncoder(enc))
+	enc.Add(newShortcutEncoder())
+
+	source := TRUE
+
+	var decoded Value
+	err := enc.Decode(&decoded, lo.ToPtr(&source))
+	assert.NoError(t, err)
+	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Decode(t *testing.T) {
-	d := newPointerDecoder(newStringDecoder())
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newPointerDecoder(dec))
+	dec.Add(newShortcutDecoder())
 
-	v1 := NewString(faker.UUIDHyphenated())
+	source := TRUE
 
-	var v *string
-	err := d.Decode(v1, &v)
+	var decoded Value
+	err := dec.Decode(source, lo.ToPtr(&decoded))
 	assert.NoError(t, err)
-	assert.Equal(t, v1.String(), *v)
+	assert.Equal(t, source, decoded)
 }

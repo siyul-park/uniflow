@@ -1,6 +1,8 @@
 package primitive
 
 import (
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -28,18 +30,84 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	e := newStringEncoder()
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
 
-	v, err := e.Encode("A")
-	assert.NoError(t, err)
-	assert.Equal(t, NewString("A"), v)
+	t.Run("encoding.TextMarshaler", func(t *testing.T) {
+		source := uuid.Must(uuid.NewV7())
+		v := NewString(source.String())
+
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
+		assert.NoError(t, err)
+		assert.Equal(t, v, decoded)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		source := faker.Word()
+		v := NewString(source)
+
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
+		assert.NoError(t, err)
+		assert.Equal(t, v, decoded)
+	})
 }
 
 func TestString_Decode(t *testing.T) {
-	d := newStringDecoder()
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newStringDecoder())
 
-	var v string
-	err := d.Decode(NewString("A"), &v)
-	assert.NoError(t, err)
-	assert.Equal(t, "A", v)
+	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
+		source := uuid.Must(uuid.NewV7())
+		v := NewString(source.String())
+
+		var decoded uuid.UUID
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		source := faker.Word()
+		v := NewString(source)
+
+		var decoded string
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
+
+	t.Run("any", func(t *testing.T) {
+		source := faker.Word()
+		v := NewString(source)
+
+		var decoded any
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
+}
+
+func BenchmarkString_Encode(b *testing.B) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
+
+	b.Run("encoding.TextMarshaler", func(b *testing.B) {
+		source := uuid.Must(uuid.NewV7())
+
+		for i := 0; i < b.N; i++ {
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
+		}
+	})
+
+	b.Run("string", func(b *testing.B) {
+		source := faker.Word()
+
+		for i := 0; i < b.N; i++ {
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
+		}
+	})
 }

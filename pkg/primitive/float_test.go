@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,60 +41,162 @@ func TestFloat_Compare(t *testing.T) {
 	})
 }
 
-func TestFloat_EncodeAndDecode(t *testing.T) {
-	e := newFloatEncoder()
-	d := newFloatDecoder()
+func TestFloat_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newFloatEncoder())
 
-	t.Run("Float32", func(t *testing.T) {
+	t.Run("float32", func(t *testing.T) {
 		source := float32(1)
+		v := NewFloat32(source)
 
-		encoded, err := e.Encode(source)
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, Float32(1), encoded)
-
-		var decoded float32
-		err = d.Decode(encoded, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		assert.Equal(t, v, decoded)
 	})
 
-	t.Run("Float64", func(t *testing.T) {
+	t.Run("float64", func(t *testing.T) {
 		source := float64(1)
+		v := NewFloat64(source)
 
-		encoded, err := e.Encode(source)
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, Float64(1), encoded)
-
-		var decoded float64
-		err = d.Decode(encoded, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		assert.Equal(t, v, decoded)
 	})
 }
 
-func BenchmarkFloat_EncodeAndDecode(b *testing.B) {
-	e := newBoolEncoder()
-	d := newBoolDecoder()
+func TestFloat_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newFloatDecoder())
 
-	b.Run("Float32", func(b *testing.B) {
+	t.Run("float32", func(t *testing.T) {
 		source := float32(1)
+		v := NewFloat32(source)
 
-		for i := 0; i < b.N; i++ {
-			encoded, _ := e.Encode(source)
-
-			var decoded float32
-			_ = d.Decode(encoded, &decoded)
-		}
+		var decoded float32
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
 	})
 
-	b.Run("Float64", func(b *testing.B) {
+	t.Run("float64", func(t *testing.T) {
 		source := float64(1)
+		v := NewFloat64(source)
 
-		for i := 0; i < b.N; i++ {
-			encoded, _ := e.Encode(source)
+		var decoded float64
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
 
-			var decoded float64
-			_ = d.Decode(encoded, &decoded)
-		}
+	t.Run("int", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded int
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("int8", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded int8
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("int16", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded int16
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("int32", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded int32
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("int64", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded int64
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("uint", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded uint
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("uint8", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded uint8
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("uint16", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded uint16
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("uint32", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded uint32
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("uint64", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded uint64
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("any", func(t *testing.T) {
+		source := float64(1)
+		v := NewFloat64(source)
+
+		var decoded any
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
 	})
 }

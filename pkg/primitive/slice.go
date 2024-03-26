@@ -1,12 +1,12 @@
 package primitive
 
 import (
-	"fmt"
-	"reflect"
-
-	"github.com/benbjohnson/immutable"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
+	"reflect"
+	"unsafe"
+
+	"github.com/benbjohnson/immutable"
 )
 
 // Slice is a representation of a slice.
@@ -144,61 +144,73 @@ func (s *Slice) Interface() any {
 	return sliceValue.Interface()
 }
 
-func newSliceEncoder(encoder encoding.Encoder[any, Value]) encoding.Encoder[any, Value] {
-	return encoding.EncoderFunc[any, Value](func(source any) (Value, error) {
-		if s := reflect.ValueOf(source); s.Kind() == reflect.Slice || s.Kind() == reflect.Array {
-			values := make([]Value, s.Len())
-			for i := 0; i < s.Len(); i++ {
-				if v, err := encoder.Encode(s.Index(i).Interface()); err != nil {
-					return nil, err
-				} else {
-					values[i] = v
-				}
+func newSliceEncoder(encoder *encoding.CompiledDecoder[*Value, any]) encoding.Compiler[*Value] {
+	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Decoder[*Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
+				return encoding.DecoderFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+					t := reflect.NewAt(typ.Elem(), target).Elem()
+
+					values := make([]Value, t.Len())
+					for i := 0; i < t.Len(); i++ {
+						if err := encoder.Decode(&values[i], t.Index(i).Interface()); err != nil {
+							return err
+						}
+					}
+
+					*source = NewSlice(values...)
+					return nil
+				}), nil
 			}
-			return NewSlice(values...), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
-func newSliceDecoder(decoder encoding.Decoder[Value, any]) encoding.Decoder[Value, any] {
+func newSliceDecoder(decoder *encoding.CompiledDecoder[Value, any]) encoding.Compiler[Value] {
 	setElement := func(source Value, target reflect.Value, i int) error {
-		v := reflect.New(target.Elem().Type().Elem())
+		v := reflect.New(target.Type().Elem())
 		if err := decoder.Decode(source, v.Interface()); err != nil {
-			return errors.WithMessage(err, fmt.Sprintf("value(%v) corresponding to the index(%v) cannot be decoded", source.Interface(), i))
+			return err
 		}
-		if target.Elem().Len() < i+1 {
-			if target.Elem().Kind() == reflect.Slice {
-				target.Elem().Set(reflect.Append(target.Elem(), v.Elem()).Convert(target.Elem().Type()))
+
+		if target.Len() < i+1 {
+			if target.Kind() == reflect.Slice {
+				target.Set(reflect.Append(target, v.Elem()).Convert(target.Type()))
 			} else {
-				return errors.WithMessage(encoding.ErrInvalidValue, fmt.Sprintf("index(%d) is exceeded len(%d)", i, target.Elem().Len()))
+				return errors.WithStack(encoding.ErrInvalidValue)
 			}
 		} else {
-			target.Elem().Index(i).Set(v.Elem().Convert(target.Elem().Type().Elem()))
+			target.Index(i).Set(v.Elem().Convert(target.Type().Elem()))
 		}
 		return nil
 	}
 
-	return encoding.DecoderFunc[Value, any](func(source Value, target any) error {
-		if s, ok := source.(*Slice); ok {
-			if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
-				if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {
-					for i := 0; i < s.Len(); i++ {
-						if err := setElement(s.Get(i), t, i); err != nil {
-							return err
+	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ.Kind() == reflect.Pointer {
+			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
+				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					t := reflect.NewAt(typ.Elem(), target).Elem()
+					if s, ok := source.(*Slice); ok {
+						for i := 0; i < s.Len(); i++ {
+							if err := setElement(s.Get(i), t, i); err != nil {
+								return err
+							}
 						}
+						return nil
 					}
-					return nil
-				} else if t.Elem().Type() == typeAny {
-					t.Elem().Set(reflect.ValueOf(s.Interface()))
-					return nil
-				}
-			}
-		} else if t := reflect.ValueOf(target); t.Kind() == reflect.Pointer {
-			if t.Elem().Kind() == reflect.Slice || t.Elem().Kind() == reflect.Array {
-				return setElement(source, t, t.Elem().Len())
+					return setElement(source, t, 0)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Interface {
+				return encoding.DecoderFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(*Slice); ok {
+						*(*any)(target) = s.Interface()
+						return nil
+					}
+					return errors.WithStack(encoding.ErrUnsupportedValue)
+				}), nil
 			}
 		}
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }

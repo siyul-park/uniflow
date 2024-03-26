@@ -186,7 +186,7 @@ func TestMarshalMIME(t *testing.T) {
 		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenContentType), func(t *testing.T) {
 			encode, err := MarshalMIME(tc.whenValue, &tc.whenContentType)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expect, encode)
+			assert.Equal(t, string(tc.expect), string(encode))
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -95,39 +96,72 @@ func TestMap_Merge(t *testing.T) {
 	assert.Equal(t, NewMap(k1, v1, k2, v2), o3)
 }
 
-func TestMap_EncodeAndDecode(t *testing.T) {
-	encoder := newMapEncoder(newStringEncoder())
-	decoder := newMapDecoder(newStringDecoder())
+func TestMap_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
+	enc.Add(newMapEncoder(enc))
 
-	t.Run("Map", func(t *testing.T) {
-		k1 := NewString(faker.UUIDHyphenated())
-		v1 := NewString(faker.UUIDHyphenated())
+	t.Run("map", func(t *testing.T) {
+		source := map[string]string{"foo": "bar"}
+		v := NewMap(NewString("foo"), NewString("bar"))
 
-		encoded, err := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, NewMap(k1, v1), encoded)
-
-		var decoded map[any]any
-		err = decoder.Decode(encoded, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, decoded)
+		assert.Equal(t, v, decoded)
 	})
 
-	t.Run("Struct", func(t *testing.T) {
-		v1 := NewString(faker.UUIDHyphenated())
-
-		encoded, err := encoder.Encode(struct {
-			K1 string
+	t.Run("struct", func(t *testing.T) {
+		source := struct {
+			Foo string `map:"foo"`
+			Bar string `map:"bar,omitempty"`
 		}{
-			K1: v1.String(),
-		})
-		assert.NoError(t, err)
-		assert.True(t, NewMap(NewString("k_1"), v1).Compare(encoded) == 0)
+			Foo: "bar",
+		}
+		v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded struct{ K1 string }
-		err = decoder.Decode(encoded, &decoded)
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
 		assert.NoError(t, err)
-		assert.Equal(t, v1.String(), decoded.K1)
+		assert.Equal(t, v, decoded)
+	})
+}
+
+func TestMap_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newStringDecoder())
+	dec.Add(newMapDecoder(dec))
+
+	t.Run("map", func(t *testing.T) {
+		source := map[string]string{"foo": "bar"}
+		v := NewMap(NewString("foo"), NewString("bar"))
+
+		var decoded map[string]string
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
+
+	t.Run("struct", func(t *testing.T) {
+		source := struct {
+			Foo string `map:"foo"`
+			Bar string `map:"bar"`
+		}{
+			Foo: "foo",
+			Bar: "bar",
+		}
+		v := NewMap(
+			NewString("foo"), NewString("foo"),
+			NewString("bar"), NewString("bar"),
+		)
+
+		var decoded struct {
+			Foo string `map:"foo"`
+			Bar string `map:"bar"`
+		}
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.EqualValues(t, source, decoded)
 	})
 }
 
@@ -160,34 +194,62 @@ func BenchmarkMap_Interface(b *testing.B) {
 	}
 }
 
-func BenchmarkMap_EncodeAndDecode(b *testing.B) {
-	encoder := newMapEncoder(newStringEncoder())
-	decoder := newMapDecoder(newStringDecoder())
+func BenchmarkMap_Encode(b *testing.B) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
+	enc.Add(newMapEncoder(enc))
 
-	b.Run("Map", func(b *testing.B) {
-		k1 := NewString(faker.UUIDHyphenated())
-		v1 := NewString(faker.UUIDHyphenated())
+	b.Run("map", func(b *testing.B) {
+		source := map[string]string{"foo": "bar"}
 
 		for i := 0; i < b.N; i++ {
-			encoded, _ := encoder.Encode(map[any]any{k1.Interface(): v1.Interface()})
-
-			var decoded map[any]any
-			_ = decoder.Decode(encoded, &decoded)
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
 		}
 	})
 
-	b.Run("Struct", func(b *testing.B) {
-		v1 := NewString(faker.UUIDHyphenated())
+	b.Run("struct", func(b *testing.B) {
+		source := struct {
+			Foo string `map:"foo"`
+			Bar string `map:"bar"`
+		}{
+			Foo: "foo",
+			Bar: "bar",
+		}
 
 		for i := 0; i < b.N; i++ {
-			encoded, _ := encoder.Encode(struct {
-				K1 string
-			}{
-				K1: v1.String(),
-			})
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
+		}
+	})
+}
 
-			var decoded struct{ K1 string }
-			_ = decoder.Decode(encoded, &decoded)
+func BenchmarkMap_Decode(b *testing.B) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newStringDecoder())
+	dec.Add(newMapDecoder(dec))
+
+	b.Run("map", func(b *testing.B) {
+		v := NewMap(NewString("foo"), NewString("bar"))
+
+		for i := 0; i < b.N; i++ {
+			var decoded map[string]string
+			_ = dec.Decode(v, &decoded)
+		}
+	})
+
+	b.Run("struct", func(b *testing.B) {
+		v := NewMap(
+			NewString("foo"), NewString("foo"),
+			NewString("bar"), NewString("bar"),
+		)
+
+		for i := 0; i < b.N; i++ {
+			var decoded struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar"`
+			}
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 }

@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,32 +24,38 @@ func TestBool_Compare(t *testing.T) {
 	assert.Equal(t, -1, FALSE.Compare(TRUE))
 }
 
-func TestBool_EncodeAndDecode(t *testing.T) {
-	e := newBoolEncoder()
-	d := newBoolDecoder()
+func TestBool_Encode(t *testing.T) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newBoolEncoder())
 
 	source := true
+	v := NewBool(source)
 
-	encoded, err := e.Encode(source)
+	var decoded Value
+	err := enc.Decode(&decoded, &source)
 	assert.NoError(t, err)
-	assert.Equal(t, TRUE, encoded)
-
-	var decoded bool
-	err = d.Decode(encoded, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, source, decoded)
+	assert.Equal(t, v, decoded)
 }
 
-func BenchmarkBool_EncodeAndDecode(b *testing.B) {
-	e := newBoolEncoder()
-	d := newBoolDecoder()
+func TestBool_Decode(t *testing.T) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newBoolDecoder())
 
-	source := true
+	t.Run("bool", func(t *testing.T) {
+		v := NewBool(true)
 
-	for i := 0; i < b.N; i++ {
-		encoded, _ := e.Encode(source)
+		var decoded bool
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, true, decoded)
+	})
 
-		var decoded []byte
-		_ = d.Decode(encoded, &decoded)
-	}
+	t.Run("any", func(t *testing.T) {
+		v := NewBool(true)
+
+		var decoded any
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, true, decoded)
+	})
 }

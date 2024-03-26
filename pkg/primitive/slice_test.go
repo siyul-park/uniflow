@@ -2,6 +2,7 @@ package primitive
 
 import (
 	"fmt"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -92,37 +93,64 @@ func TestSlice_Compare(t *testing.T) {
 }
 
 func TestSlice_Encode(t *testing.T) {
-	encoder := newSliceEncoder(newStringEncoder())
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
+	enc.Add(newSliceEncoder(enc))
 
-	v1 := NewString(faker.UUIDHyphenated())
-	v2 := NewString(faker.UUIDHyphenated())
+	t.Run("slice", func(t *testing.T) {
+		source := []string{"foo", "bar"}
+		v := NewSlice(NewString("foo"), NewString("bar"))
 
-	encoded, err := encoder.Encode([]any{v1.Interface(), v2.Interface()})
-	assert.NoError(t, err)
-	assert.Equal(t, NewSlice(v1, v2), encoded)
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
+		assert.NoError(t, err)
+		assert.Equal(t, v, decoded)
+	})
 
+	t.Run("array", func(t *testing.T) {
+		source := [2]string{"foo", "bar"}
+		v := NewSlice(NewString("foo"), NewString("bar"))
+
+		var decoded Value
+		err := enc.Decode(&decoded, &source)
+		assert.NoError(t, err)
+		assert.Equal(t, v, decoded)
+	})
 }
 
 func TestSlice_Decode(t *testing.T) {
-	decoder := newSliceDecoder(newStringDecoder())
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newStringDecoder())
+	dec.Add(newSliceDecoder(dec))
 
-	t.Run("slice -> slice", func(t *testing.T) {
-		v1 := NewString(faker.UUIDHyphenated())
-		v2 := NewString(faker.UUIDHyphenated())
+	t.Run("slice", func(t *testing.T) {
+		source := []string{"foo", "bar"}
+		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded []any
-		err := decoder.Decode(NewSlice(v1, v2), &decoded)
+		var decoded []string
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
-		assert.Equal(t, []any{v1.Interface(), v2.Interface()}, decoded)
+		assert.Equal(t, source, decoded)
 	})
 
-	t.Run("element -> slice", func(t *testing.T) {
-		v1 := NewString(faker.UUIDHyphenated())
+	t.Run("array", func(t *testing.T) {
+		source := []string{"foo", "bar"}
+		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded []any
-		err := decoder.Decode(v1, &decoded)
+		var decoded [2]string
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
-		assert.Equal(t, []any{v1.Interface()}, decoded)
+		assert.EqualValues(t, source, decoded)
+	})
+
+	t.Run("element", func(t *testing.T) {
+		source := []string{"foo"}
+		v := NewString("foo")
+
+		var decoded []string
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
 	})
 }
 
@@ -169,17 +197,59 @@ func BenchmarkSlice_Interface(b *testing.B) {
 	}
 }
 
-func BenchmarkSlice_EncodeAndDecode(b *testing.B) {
-	encoder := newSliceEncoder(newStringEncoder())
-	decoder := newSliceDecoder(newStringDecoder())
+func BenchmarkSlice_Encode(b *testing.B) {
+	enc := encoding.NewCompiledDecoder[*Value, any]()
+	enc.Add(newStringEncoder())
+	enc.Add(newSliceEncoder(enc))
 
-	v1 := NewString(faker.UUIDHyphenated())
-	v2 := NewString(faker.UUIDHyphenated())
+	b.Run("map", func(b *testing.B) {
+		source := []string{"foo", "bar"}
 
-	for i := 0; i < b.N; i++ {
-		encoded, _ := encoder.Encode([]any{v1.Interface(), v2.Interface()})
+		for i := 0; i < b.N; i++ {
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
+		}
+	})
 
-		var decoded []any
-		_ = decoder.Decode(encoded, &decoded)
-	}
+	b.Run("struct", func(b *testing.B) {
+		source := [2]string{"foo", "bar"}
+
+		for i := 0; i < b.N; i++ {
+			var decoded Value
+			_ = enc.Decode(&decoded, &source)
+		}
+	})
+}
+
+func BenchmarkSlice_Decode(b *testing.B) {
+	dec := encoding.NewCompiledDecoder[Value, any]()
+	dec.Add(newStringDecoder())
+	dec.Add(newSliceDecoder(dec))
+
+	b.Run("slice", func(b *testing.B) {
+		v := NewSlice(NewString("foo"), NewString("bar"))
+
+		for i := 0; i < b.N; i++ {
+			var decoded []string
+			_ = dec.Decode(v, &decoded)
+		}
+	})
+
+	b.Run("array", func(b *testing.B) {
+		v := NewSlice(NewString("foo"), NewString("bar"))
+
+		for i := 0; i < b.N; i++ {
+			var decoded [2]string
+			_ = dec.Decode(v, &decoded)
+		}
+	})
+
+	b.Run("element", func(b *testing.B) {
+		v := NewString("foo")
+
+		for i := 0; i < b.N; i++ {
+			var decoded []string
+			_ = dec.Decode(v, &decoded)
+		}
+	})
 }
