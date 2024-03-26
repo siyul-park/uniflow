@@ -208,11 +208,7 @@ func marshalDocument(data primitive.Value) (any, error) {
 		return bsonprimitive.Null{}, nil
 	}
 
-	if s, ok := data.(primitive.Binary); ok {
-		return bsonprimitive.Binary{Data: s}, nil
-	} else if s, ok := data.(*primitive.Buffer); ok {
-		return bsonprimitive.Binary{Data: s.Bytes()}, nil
-	} else if s, ok := data.(*primitive.Map); ok {
+	if s, ok := data.(*primitive.Map); ok {
 		t := make(bsonprimitive.M, s.Len())
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)

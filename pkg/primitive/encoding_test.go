@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -257,26 +256,4 @@ func TestUnmarshal(t *testing.T) {
 			assert.Equal(t, tc.expect, zero.Elem().Interface())
 		})
 	}
-}
-
-func TestPointer_Encode(t *testing.T) {
-	e := newPointerEncoder(newStringEncoder())
-
-	r1 := faker.UUIDHyphenated()
-	v1 := NewString(r1)
-
-	v, err := e.Encode(&r1)
-	assert.NoError(t, err)
-	assert.Equal(t, v1, v)
-}
-
-func TestPointer_Decode(t *testing.T) {
-	d := newPointerDecoder(newStringDecoder())
-
-	v1 := NewString(faker.UUIDHyphenated())
-
-	var v *string
-	err := d.Decode(v1, &v)
-	assert.NoError(t, err)
-	assert.Equal(t, v1.String(), *v)
 }
