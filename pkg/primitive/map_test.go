@@ -191,3 +191,57 @@ func BenchmarkMap_EncodeAndDecode(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkMap_Encode(b *testing.B) {
+	enc := newMapEncoder(newStringEncoder())
+
+	b.Run("map", func(b *testing.B) {
+		source := map[string]string{"foo": "bar"}
+
+		for i := 0; i < b.N; i++ {
+			_, _ = enc.Encode(source)
+		}
+	})
+
+	b.Run("struct", func(b *testing.B) {
+		source := struct {
+			Foo string `map:"foo"`
+			Bar string `map:"bar"`
+		}{
+			Foo: "foo",
+			Bar: "bar",
+		}
+
+		for i := 0; i < b.N; i++ {
+			_, _ = enc.Encode(source)
+		}
+	})
+}
+
+func BenchmarkMap_Decode(b *testing.B) {
+	dec := newMapDecoder(newStringDecoder())
+
+	b.Run("map", func(b *testing.B) {
+		v := NewMap(NewString("foo"), NewString("bar"))
+
+		for i := 0; i < b.N; i++ {
+			var decoded map[string]string
+			_ = dec.Decode(v, &decoded)
+		}
+	})
+
+	b.Run("struct", func(b *testing.B) {
+		v := NewMap(
+			NewString("foo"), NewString("foo"),
+			NewString("bar"), NewString("bar"),
+		)
+
+		for i := 0; i < b.N; i++ {
+			var decoded struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar"`
+			}
+			_ = dec.Decode(v, &decoded)
+		}
+	})
+}
