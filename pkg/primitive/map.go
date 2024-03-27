@@ -211,24 +211,47 @@ func newMapEncoder(encoder *encoding.Assembler[*Value, any]) encoding.Compiler[*
 	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Encoder[*Value, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Map {
+				keyType := typ.Elem().Key()
+				valueType := typ.Elem().Elem()
+
+				keyEncoder, _ := encoder.Compile(keyType)
+				valueEncoder, _ := encoder.Compile(valueType)
+
 				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
 					t := reflect.NewAt(typ.Elem(), target).Elem()
 
-					pairs := make([]Value, 0, len(t.MapKeys())*2)
+					pairs := make([]Value, 0, t.Len()*2)
 					for _, k := range t.MapKeys() {
+						v := t.MapIndex(k)
+
+						k = reflect.ValueOf(k.Interface())
+						v = reflect.ValueOf(v.Interface())
+
 						var key Value
-						if err := encoder.Encode(&key, k.Interface()); err != nil {
+						if keyEncoder != nil && k.Type() == keyType {
+							kPtr := reflect.New(k.Type())
+							kPtr.Elem().Set(k)
+
+							if err := keyEncoder.Encode(&key, kPtr.UnsafePointer()); err != nil {
+								return err
+							}
+						} else if err := encoder.Encode(&key, k.Interface()); err != nil {
 							return err
-						} else {
-							pairs = append(pairs, key)
 						}
+						pairs = append(pairs, key)
 
 						var val Value
-						if err := encoder.Encode(&val, t.MapIndex(k).Interface()); err != nil {
+						if valueEncoder != nil && k.Type() == keyType {
+							vPtr := reflect.New(v.Type())
+							vPtr.Elem().Set(v)
+
+							if err := valueEncoder.Encode(&val, vPtr.UnsafePointer()); err != nil {
+								return err
+							}
+						} else if err := encoder.Encode(&val, v.Interface()); err != nil {
 							return err
-						} else {
-							pairs = append(pairs, val)
 						}
+						pairs = append(pairs, val)
 					}
 					*source = NewMap(pairs...)
 					return nil
@@ -310,6 +333,15 @@ func newMapDecoder(decoder *encoding.Assembler[Value, any]) encoding.Compiler[Va
 				keyType := typ.Elem().Key()
 				valueType := typ.Elem().Elem()
 
+				keyDecoder, err := decoder.Compile(keyType)
+				if err != nil {
+					return nil, err
+				}
+				valueDecoder, err := decoder.Compile(valueType)
+				if err != nil {
+					return nil, err
+				}
+
 				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(*Map); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
@@ -323,9 +355,9 @@ func newMapDecoder(decoder *encoding.Assembler[Value, any]) encoding.Compiler[Va
 							k := reflect.New(keyType)
 							v := reflect.New(valueType)
 
-							if err := decoder.Encode(key, k.Interface()); err != nil {
+							if err := keyDecoder.Encode(key, k.UnsafePointer()); err != nil {
 								return err
-							} else if err := decoder.Encode(value, v.Interface()); err != nil {
+							} else if err := valueDecoder.Encode(value, v.UnsafePointer()); err != nil {
 								return err
 							} else {
 								t.SetMapIndex(k.Elem(), v.Elem())

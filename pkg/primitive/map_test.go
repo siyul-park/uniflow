@@ -102,7 +102,7 @@ func TestMap_Encode(t *testing.T) {
 	enc.Add(newMapEncoder(enc))
 
 	t.Run("map", func(t *testing.T) {
-		source := map[string]string{"foo": "bar"}
+		source := map[string]any{"foo": "bar"}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
 		var decoded Value
