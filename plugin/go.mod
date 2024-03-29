@@ -13,7 +13,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.39.0
-	github.com/siyul-park/uniflow v0.2.0
+	github.com/siyul-park/uniflow v0.3.0
 	github.com/stretchr/testify v1.9.0
 	github.com/xiatechs/jsonata-go v1.8.5
 	gopkg.in/yaml.v3 v3.0.1
