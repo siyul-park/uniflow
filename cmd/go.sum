@@ -22,8 +22,8 @@ github.com/dop251/goja v0.0.0-20240220182346-e401ed450204 h1:O7I1iuzEA7SG+dK8ocO
 github.com/dop251/goja v0.0.0-20240220182346-e401ed450204/go.mod h1:QMWlm50DNe14hD7t24KEqZuUdC9sOTy8W6XbCU1mlw4=
 github.com/dop251/goja_nodejs v0.0.0-20210225215109-d91c329300e7/go.mod h1:hn7BA7c8pLvoGndExHudxTDKZ84Pyvv+90pbBjbTz0Y=
 github.com/dop251/goja_nodejs v0.0.0-20211022123610-8dd9abb0616d/go.mod h1:DngW8aVqWbuLRMHItjPUyqdj+HWPvnQe8V8y1nDpIbM=
-github.com/evanw/esbuild v0.20.1 h1:ueyMIL19umCcJTSxiBH/QmPipgGt8hEDM24pdfowgEc=
-github.com/evanw/esbuild v0.20.1/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
+github.com/evanw/esbuild v0.20.2 h1:E4Y0iJsothpUCq7y0D+ERfqpJmPWrZpNybJA3x3I4p8=
+github.com/evanw/esbuild v0.20.2/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
@@ -101,8 +101,8 @@ github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5g
 github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/siyul-park/uniflow v0.3.0 h1:dhv5aSit3z1g9lQ3RtszqthtnPG5PugfksL3FdK5ZKA=
 github.com/siyul-park/uniflow v0.3.0/go.mod h1:Kl7Smz5B86DFqeYD4y0S6+q3a703hravbz8iPd3Dm24=
-github.com/siyul-park/uniflow/plugin v0.3.0 h1:oWc5dFt3HZLWNiVS5XroOc+/q7N6bN852e39PrxpKzI=
-github.com/siyul-park/uniflow/plugin v0.3.0/go.mod h1:zt8DS055ggfrZ/BirUzTj73SCkGvDKb+ufYSzAmhx5E=
+github.com/siyul-park/uniflow/plugin v0.3.0 h1:iTrFVZGkGr3oddpcxzjK4XK1zE3xRvZTuGmwNfi/S+o=
+github.com/siyul-park/uniflow/plugin v0.3.0/go.mod h1:pzHZr6A7UAuy83Rj9U0qNjUDweroSZ+0r8jT86/roYE=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=
