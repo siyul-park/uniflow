@@ -13,7 +13,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindCombine, KindIterate, KindJump, KindSnippet, KindSwitch}
+	testCase := []string{KindCombine, KindIterate, KindGoto, KindSnippet, KindSwitch}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

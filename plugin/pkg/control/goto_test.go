@@ -15,46 +15,47 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewJumpNode(t *testing.T) {
-	n := NewJumpNode()
+func TestNewGotoNode(t *testing.T) {
+	n := NewGotoNode()
 	assert.NotNil(t, n)
 
 	assert.NoError(t, n.Close())
 }
 
-func TestJumpNode_Port(t *testing.T) {
-	n := NewJumpNode()
+func TestGotoNode_Port(t *testing.T) {
+	n := NewGotoNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortIO))
 	assert.NotNil(t, n.Out(node.PortErr))
+	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
+	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
-func TestJumpNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> IO -> Out", func(t *testing.T) {
+func TestGotoNode_SendAndReceive(t *testing.T) {
+	t.Run("In -> Out0 -> Out1", func(t *testing.T) {
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
 		defer n1.Close()
 
-		n2 := NewJumpNode()
+		n2 := NewGotoNode()
 		defer n2.Close()
 
-		n2.Out(node.PortIO).Link(n1.In(node.PortIO))
+		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
 
 		in := port.NewOut()
 		in.Link(n2.In(node.PortIn))
 
-		out := port.NewIn()
-		n2.Out(node.PortOut).Link(out)
+		out1 := port.NewIn()
+		n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 		proc := process.New()
 		defer proc.Close()
 
 		inWriter := in.Open(proc)
-		outReader := out.Open(proc)
+		outReader1 := out1.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
@@ -65,9 +66,9 @@ func TestJumpNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		select {
-		case outPck := <-outReader.Read():
+		case outPck := <-outReader1.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
-			outReader.Receive(outPck)
+			outReader1.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
@@ -80,16 +81,16 @@ func TestJumpNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> IO -> Error -> In", func(t *testing.T) {
+	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, packet.WithError(errors.New(faker.Sentence()), inPck)
 		})
 		defer n1.Close()
 
-		n2 := NewJumpNode()
+		n2 := NewGotoNode()
 		defer n2.Close()
 
-		n2.Out(node.PortIO).Link(n1.In(node.PortIO))
+		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
 
 		in := port.NewOut()
 		in.Link(n2.In(node.PortIn))
@@ -128,10 +129,10 @@ func TestJumpNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestJumpNodeCodec_Decode(t *testing.T) {
-	codec := NewJumpNodeCodec()
+func TestGotoNodeCodec_Decode(t *testing.T) {
+	codec := NewGotoNodeCodec()
 
-	spec := &JumpNodeSpec{}
+	spec := &GotoNodeSpec{}
 
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
@@ -140,28 +141,28 @@ func TestJumpNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkJumpNode_SendAndReceive(b *testing.B) {
+func BenchmarkGotoNode_SendAndReceive(b *testing.B) {
 	n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 		return inPck, nil
 	})
 	defer n1.Close()
 
-	n2 := NewJumpNode()
+	n2 := NewGotoNode()
 	defer n2.Close()
 
-	n2.Out(node.PortIO).Link(n1.In(node.PortIO))
+	n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
 
 	in := port.NewOut()
 	in.Link(n2.In(node.PortIn))
 
-	out := port.NewIn()
-	n2.Out(node.PortOut).Link(out)
+	out1 := port.NewIn()
+	n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 	proc := process.New()
 	defer proc.Close()
 
 	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+	outReader1 := out1.Open(proc)
 
 	b.ResetTimer()
 
@@ -171,8 +172,8 @@ func BenchmarkJumpNode_SendAndReceive(b *testing.B) {
 
 		inWriter.Write(inPck)
 
-		outPck := <-outReader.Read()
-		outReader.Receive(outPck)
+		outPck := <-outReader1.Read()
+		outReader1.Receive(outPck)
 
 		<-inWriter.Receive()
 	}
