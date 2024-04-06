@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/cmd
 
-go 1.22.1
+go 1.22.2
 
 require (
 	github.com/go-faker/faker/v4 v4.4.0
