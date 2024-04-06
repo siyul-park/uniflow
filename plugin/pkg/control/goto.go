@@ -25,7 +25,7 @@ type GotoNodeSpec struct {
 
 var _ node.Node = (*GotoNode)(nil)
 
-const KindGoto = "Goto"
+const KindGoto = "goto"
 
 // NewGotoNode creates a new GotoNode.
 func NewGotoNode() *GotoNode {
@@ -113,6 +113,7 @@ func (n *GotoNode) redirect(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
 
@@ -124,8 +125,10 @@ func (n *GotoNode) redirect(proc *process.Process) {
 
 		if _, ok := packet.AsError(backPck); ok {
 			n.throw(proc, backPck)
-		} else {
+		} else if outWriter1.Links() > 0 {
 			outWriter1.Write(backPck)
+		} else {
+			inReader.Receive(backPck)
 		}
 	}
 }

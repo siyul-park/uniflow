@@ -12,8 +12,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// IterateNode represents a node that iterates over input data in batches.
-type IterateNode struct {
+// ForeachNode represents a node that Foreachs over input data in batches.
+type ForeachNode struct {
 	batch    int
 	inPort   *port.InPort
 	outPorts []*port.OutPort
@@ -21,17 +21,17 @@ type IterateNode struct {
 	mu       sync.RWMutex
 }
 
-// IterateNodeSpec holds the specifications for creating a IterateNode.
-type IterateNodeSpec struct {
+// ForeachNodeSpec holds the specifications for creating a ForeachNode.
+type ForeachNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Batch           int `map:"batch,omitempty"`
 }
 
-const KindIterate = "iterate"
+const KindForeach = "foreach"
 
-// NewIterateNode creates a new IterateNode with default configurations.
-func NewIterateNode() *IterateNode {
-	n := &IterateNode{
+// NewForeachNode creates a new ForeachNode with default configurations.
+func NewForeachNode() *ForeachNode {
+	n := &ForeachNode{
 		batch:    1,
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -44,15 +44,15 @@ func NewIterateNode() *IterateNode {
 	return n
 }
 
-// Batch returns the batch size of the IterateNode.
-func (n *IterateNode) Batch() int {
+// Batch returns the batch size of the ForeachNode.
+func (n *ForeachNode) Batch() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	return n.batch
 }
 
-// SetBatch sets the batch size of the IterateNode.
-func (n *IterateNode) SetBatch(batch int) {
+// SetBatch sets the batch size of the ForeachNode.
+func (n *ForeachNode) SetBatch(batch int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (n *IterateNode) SetBatch(batch int) {
 }
 
 // In returns the input port with the specified name.
-func (n *IterateNode) In(name string) *port.InPort {
+func (n *ForeachNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -76,7 +76,7 @@ func (n *IterateNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *IterateNode) Out(name string) *port.OutPort {
+func (n *ForeachNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -97,7 +97,7 @@ func (n *IterateNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *IterateNode) Close() error {
+func (n *ForeachNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -110,7 +110,7 @@ func (n *IterateNode) Close() error {
 	return nil
 }
 
-func (n *IterateNode) forward(proc *process.Process) {
+func (n *ForeachNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -197,7 +197,7 @@ func (n *IterateNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *IterateNode) backward(proc *process.Process) {
+func (n *ForeachNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -214,7 +214,7 @@ func (n *IterateNode) backward(proc *process.Process) {
 	}
 }
 
-func (n *IterateNode) slice(val primitive.Value) []primitive.Value {
+func (n *ForeachNode) slice(val primitive.Value) []primitive.Value {
 	var values []primitive.Value
 
 	switch v := val.(type) {
@@ -236,10 +236,10 @@ func (n *IterateNode) slice(val primitive.Value) []primitive.Value {
 	return values
 }
 
-// NewIterateNodeCodec creates a new codec for IterateNodeSpec.
-func NewIterateNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*IterateNodeSpec](func(spec *IterateNodeSpec) (node.Node, error) {
-		n := NewIterateNode()
+// NewForeachNodeCodec creates a new codec for ForeachNodeSpec.
+func NewForeachNodeCodec() scheme.Codec {
+	return scheme.CodecWithType[*ForeachNodeSpec](func(spec *ForeachNodeSpec) (node.Node, error) {
+		n := NewForeachNode()
 		n.SetBatch(spec.Batch)
 
 		return n, nil
