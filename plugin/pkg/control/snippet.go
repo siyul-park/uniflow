@@ -1,8 +1,9 @@
 package control
 
 import (
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"sync"
+
+	"github.com/siyul-park/uniflow/pkg/primitive"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -28,7 +29,7 @@ type SnippetNodeSpec struct {
 const KindSnippet = "snippet"
 
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
-func NewSnippetNode(lang, code string) (*SnippetNode, error) {
+func NewSnippetNode(code, lang string) (*SnippetNode, error) {
 	if lang == "" {
 		lang = language.Detect(code)
 	}
@@ -60,6 +61,6 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
 	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
-		return NewSnippetNode(spec.Lang, spec.Code)
+		return NewSnippetNode(spec.Code, spec.Lang)
 	})
 }
