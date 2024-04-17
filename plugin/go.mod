@@ -15,7 +15,7 @@ require (
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.3.0
 	github.com/stretchr/testify v1.9.0
-	github.com/xiatechs/jsonata-go v1.8.5
+	github.com/xiatechs/jsonata-go v1.8.6
 	gopkg.in/yaml.v3 v3.0.1
 )
 
