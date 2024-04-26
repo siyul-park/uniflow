@@ -11,7 +11,7 @@ import (
 func AddToHook() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
-			if n, ok := n.(*HTTPNode); ok {
+			if n, ok := n.(*HTTPServerNode); ok {
 				return n.Listen()
 			}
 			return nil
@@ -23,17 +23,17 @@ func AddToHook() func(*hook.Hook) error {
 // AddToScheme returns a function that adds node types and codecs to the provided scheme.
 func AddToScheme() func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
-		s.AddKnownType(KindCHTTP, &CHTTPNodeSpec{})
-		s.AddCodec(KindCHTTP, NewCHTTPNodeCodec())
+		s.AddKnownType(KindHTTPClient, &HTTPClientNodeSpec{})
+		s.AddCodec(KindHTTPClient, NewHTTPClientNodeCodec())
 
-		s.AddKnownType(KindHTTP, &HTTPNodeSpec{})
-		s.AddCodec(KindHTTP, NewHTTPNodeCodec())
+		s.AddKnownType(KindHTTPServer, &HTTPServerNodeSpec{})
+		s.AddCodec(KindHTTPServer, NewHTTPServerNodeCodec())
 
 		s.AddKnownType(KindRoute, &RouteNodeSpec{})
 		s.AddCodec(KindRoute, NewRouteNodeCodec())
 
-		s.AddKnownType(KindWebsocket, &WebsocketNodeSpec{})
-		s.AddCodec(KindWebsocket, NewWebsocketNodeCodec())
+		s.AddKnownType(KindWebSocketUpgrade, &WebSocketUpgradeNodeSpec{})
+		s.AddCodec(KindWebSocketUpgrade, NewWebSocketUpgradeNodeCodec())
 
 		return nil
 	}

@@ -19,7 +19,7 @@ func TestAddToHook(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPNode(fmt.Sprintf(":%d", port))
+	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	err = h.Load(n)
@@ -32,7 +32,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindCHTTP, KindHTTP, KindRoute, KindWebsocket}
+	testCase := []string{KindHTTPClient, KindHTTPServer, KindRoute, KindWebSocketUpgrade}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

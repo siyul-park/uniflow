@@ -19,7 +19,7 @@ import (
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
-type CHTTPNode struct {
+type HTTPClientNode struct {
 	*node.OneToOneNode
 	lang    string
 	method  func(primitive.Value) (string, error)
@@ -31,7 +31,7 @@ type CHTTPNode struct {
 	mu      sync.RWMutex
 }
 
-type CHTTPNodeSpec struct {
+type HTTPClientNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Lang            string `map:"lang,omitempty"`
 	Method          string `map:"method,omitempty"`
@@ -41,10 +41,10 @@ type CHTTPNodeSpec struct {
 	Body            string `map:"body,omitempty"`
 }
 
-const KindCHTTP = "chttp"
+const KindHTTPClient = "http/client"
 
-func NewCHTTPNode() *CHTTPNode {
-	n := &CHTTPNode{}
+func NewHTTPClientNode() *HTTPClientNode {
+	n := &HTTPClientNode{}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	_ = n.SetMethod("")
@@ -56,14 +56,14 @@ func NewCHTTPNode() *CHTTPNode {
 	return n
 }
 
-func (n *CHTTPNode) SetLanguage(lang string) {
+func (n *HTTPClientNode) SetLanguage(lang string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.lang = lang
 }
 
-func (n *CHTTPNode) SetMethod(method string) error {
+func (n *HTTPClientNode) SetMethod(method string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -92,7 +92,7 @@ func (n *CHTTPNode) SetMethod(method string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetURL(rawURL string) error {
+func (n *HTTPClientNode) SetURL(rawURL string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -140,7 +140,7 @@ func (n *CHTTPNode) SetURL(rawURL string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetQuery(query string) error {
+func (n *HTTPClientNode) SetQuery(query string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -179,7 +179,7 @@ func (n *CHTTPNode) SetQuery(query string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetHeader(header string) error {
+func (n *HTTPClientNode) SetHeader(header string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -211,7 +211,7 @@ func (n *CHTTPNode) SetHeader(header string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetBody(body string) error {
+func (n *HTTPClientNode) SetBody(body string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -234,14 +234,14 @@ func (n *CHTTPNode) SetBody(body string) error {
 	return nil
 }
 
-func (n *CHTTPNode) SetTimeout(timeout time.Duration) {
+func (n *HTTPClientNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.timeout = timeout
 }
 
-func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -315,7 +315,7 @@ func (n *CHTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	return packet.New(outPayload), nil
 }
 
-func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
+func (n *HTTPClientNode) request(raw primitive.Value) (*HTTPPayload, error) {
 	method, err := n.method(raw)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func (n *CHTTPNode) request(raw primitive.Value) (*HTTPPayload, error) {
 	}, nil
 }
 
-func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
+func (n *HTTPClientNode) response(w *http.Response) (*HTTPPayload, error) {
 	contentType := w.Header.Get(HeaderContentType)
 	contentEncoding := w.Header.Get(HeaderContentEncoding)
 
@@ -377,9 +377,9 @@ func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
 	}
 }
 
-func NewCHTTPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *CHTTPNodeSpec) (node.Node, error) {
-		n := NewCHTTPNode()
+func NewHTTPClientNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *HTTPClientNodeSpec) (node.Node, error) {
+		n := NewHTTPClientNode()
 
 		n.SetLanguage(spec.Lang)
 		if err := n.SetMethod(spec.Method); err != nil {

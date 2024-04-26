@@ -1,4 +1,4 @@
-- kind: http
+- kind: http/server
   name: server
   address: :8000
   links:

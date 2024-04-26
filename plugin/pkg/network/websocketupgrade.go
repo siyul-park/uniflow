@@ -26,26 +26,26 @@ type WebSocketNode struct {
 	mu       sync.RWMutex
 }
 
-// WebsocketNodeSpec holds the specifications for creating a WebsocketNode.
-type WebsocketNodeSpec struct {
+// WebSocketUpgradeNodeSpec holds the specifications for creating a WebSocketUpgradeNode.
+type WebSocketUpgradeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Timeout         time.Duration `map:"timeout"`
 	Read            int           `map:"read"`
 	Write           int           `map:"write"`
 }
 
-// WebsocketPayload represents the payload structure for WebSocket communication.
-type WebsocketPayload struct {
+// WebSocketPayload represents the payload structure for WebSocket communication.
+type WebSocketPayload struct {
 	Type int             `map:"type"`
 	Data primitive.Value `map:"data,omitempty"`
 }
 
-const KindWebsocket = "websocket"
+const KindWebSocketUpgrade = "websocket/upgrade"
 
 var _ node.Node = (*WebSocketNode)(nil)
 
-// NewWebsocketNode creates a new WebSocketNode instance.
-func NewWebsocketNode() *WebSocketNode {
+// NewWebSocketUpgradeNode creates a new WebSocketNode instance.
+func NewWebSocketUpgradeNode() *WebSocketNode {
 	n := &WebSocketNode{
 		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),
@@ -223,7 +223,7 @@ func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
 
 		proc.Stack().Clear(inPck)
 
-		var inPayload *WebsocketPayload
+		var inPayload *WebSocketPayload
 		if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()
 			if _, ok := inPayload.Data.(primitive.Binary); !ok {
@@ -256,7 +256,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 			data = primitive.NewString(err.Error())
 		}
 
-		outPayload, _ := primitive.MarshalBinary(&WebsocketPayload{
+		outPayload, _ := primitive.MarshalBinary(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})
@@ -283,10 +283,10 @@ func (n *WebSocketNode) catch(proc *process.Process) {
 	}
 }
 
-// NewWebsocketNodeCodec creates a new codec for WebsocketNodeSpec.
-func NewWebsocketNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WebsocketNodeSpec) (node.Node, error) {
-		n := NewWebsocketNode()
+// NewWebSocketUpgradeNodeCodec creates a new codec for WebSocketUpgradeNodeSpec.
+func NewWebSocketUpgradeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketUpgradeNodeSpec) (node.Node, error) {
+		n := NewWebSocketUpgradeNode()
 		n.SetTimeout(spec.Timeout)
 		n.SetReadBufferSize(spec.Read)
 		n.SetWriteBufferSize(spec.Write)

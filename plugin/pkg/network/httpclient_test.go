@@ -2,6 +2,12 @@ package network
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+	"time"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -9,26 +15,21 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"testing"
-	"time"
 )
 
-func TestNewCHTTPNode(t *testing.T) {
-	n := NewCHTTPNode()
+func TestNewHTTPClientNode(t *testing.T) {
+	n := NewHTTPClientNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestCHTTP_SendAndReceive(t *testing.T) {
+func TestHTTPClient_SendAndReceive(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
 	t.Run("Static URL", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
@@ -66,7 +67,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Dynamic URL", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
@@ -100,7 +101,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Dynamic Divided URL", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		u, _ := url.Parse(s.URL)
@@ -138,7 +139,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Query", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
@@ -178,7 +179,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Header", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
@@ -218,7 +219,7 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Body", func(t *testing.T) {
-		n := NewCHTTPNode()
+		n := NewHTTPClientNode()
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
@@ -258,14 +259,14 @@ func TestCHTTP_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestCHTTPNodeCodec_Decode(t *testing.T) {
+func TestHTTPClientNodeCodec_Decode(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
-	codec := NewCHTTPNodeCodec()
+	codec := NewHTTPClientNodeCodec()
 
-	spec := &CHTTPNodeSpec{
+	spec := &HTTPClientNodeSpec{
 		Method: http.MethodGet,
 		URL:    s.URL,
 	}
@@ -277,12 +278,12 @@ func TestCHTTPNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkCHTTPNode_SendAndReceive(b *testing.B) {
+func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
-	n := NewCHTTPNode()
+	n := NewHTTPClientNode()
 	defer n.Close()
 
 	n.SetTimeout(time.Second)
