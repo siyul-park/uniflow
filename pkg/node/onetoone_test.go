@@ -32,6 +32,9 @@ func TestOneToOneNode_Port(t *testing.T) {
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	t.Run("IO -> IO", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
@@ -50,9 +53,6 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -62,6 +62,9 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("IO -> Error -> IO", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
 		})
@@ -84,9 +87,6 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-errReader.Read():
 			assert.NotNil(t, outPck)
@@ -104,6 +104,9 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> None", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, nil
 		})
@@ -122,9 +125,6 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case <-proc.Stack().Done(inPck):
 		case <-ctx.Done():
@@ -133,6 +133,9 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
@@ -155,9 +158,6 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -175,6 +175,9 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Error -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
 		})
@@ -196,9 +199,6 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-errReader.Read():

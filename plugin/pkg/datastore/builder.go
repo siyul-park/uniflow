@@ -10,6 +10,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindRDB, &RDBNodeSpec{})
 		s.AddCodec(KindRDB, NewRDBNodeCodec())
 
+		s.AddKnownType(KindSQL, &SQLNodeSpec{})
+		s.AddCodec(KindSQL, NewSQLNodeCodec())
+
 		return nil
 	}
 }

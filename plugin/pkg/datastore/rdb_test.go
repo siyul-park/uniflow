@@ -23,7 +23,6 @@ func TestNewRDBNode(t *testing.T) {
 
 	n := NewRDBNode(db)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
@@ -170,7 +169,6 @@ func TestRDBNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

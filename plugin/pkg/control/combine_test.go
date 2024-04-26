@@ -19,12 +19,14 @@ func TestNewCombineNode(t *testing.T) {
 	assert.NotNil(t, n)
 	assert.Equal(t, -1, n.Depth())
 	assert.Equal(t, false, n.Inplace())
-
 	assert.NoError(t, n.Close())
 }
 
 func TestCombineNode_SendAndReceive(t *testing.T) {
 	t.Run("depth = 0", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewCombineNode()
 		defer n.Close()
 
@@ -61,9 +63,6 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inWriter.Write(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
@@ -83,6 +82,9 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = 1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewCombineNode()
 		defer n.Close()
 
@@ -119,9 +121,6 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inWriter.Write(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
@@ -141,6 +140,9 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = 2", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewCombineNode()
 		defer n.Close()
 
@@ -180,9 +182,6 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inWriter.Write(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
@@ -202,6 +201,9 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("depth = -1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewCombineNode()
 		defer n.Close()
 
@@ -241,9 +243,6 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inWriter.Write(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
@@ -263,6 +262,9 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("inplace = true", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewCombineNode()
 		defer n.Close()
 
@@ -302,9 +304,6 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inWriter.Write(inPck)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.Equal(t, combined, outPck.Payload().Interface())
@@ -335,7 +334,6 @@ func TestCombineNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

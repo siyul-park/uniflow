@@ -13,7 +13,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindRDB}
+	testCase := []string{KindRDB, KindSQL}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

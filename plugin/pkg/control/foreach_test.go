@@ -19,7 +19,6 @@ func TestNewForEachNode(t *testing.T) {
 	n := NewForEachNode()
 	assert.NotNil(t, n)
 	assert.Equal(t, 1, n.Batch())
-
 	assert.NoError(t, n.Close())
 }
 
@@ -36,6 +35,9 @@ func TestForEachNode_Port(t *testing.T) {
 
 func TestForEachNode_SendAndReceive(t *testing.T) {
 	t.Run("In -> Out -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewForEachNode()
 		defer n.Close()
 
@@ -59,9 +61,6 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader.Read():
@@ -80,6 +79,9 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Out1 -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewForEachNode()
 		defer n.Close()
 
@@ -107,9 +109,6 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader0.Read():
@@ -135,6 +134,9 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewForEachNode()
 		defer n.Close()
 
@@ -158,9 +160,6 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader0.Read():
 			backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
@@ -179,6 +178,9 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Error -> Out1 -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewForEachNode()
 		defer n.Close()
 
@@ -209,9 +211,6 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
@@ -252,6 +251,9 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("batch = 2", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewForEachNode()
 		defer n.Close()
 
@@ -276,9 +278,6 @@ func TestForEachNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		for i := 0; i < inPayload.Len()/n.Batch(); i++ {
 			select {
@@ -307,7 +306,6 @@ func TestForEachNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

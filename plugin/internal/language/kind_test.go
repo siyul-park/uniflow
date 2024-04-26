@@ -1,8 +1,9 @@
 package language
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDetect(t *testing.T) {
@@ -37,6 +38,10 @@ func TestDetect(t *testing.T) {
 		{
 			when:   "propA: lorem ipsum",
 			expect: YAML,
+		},
+		{
+			when:   "SELECT * FROM Foo",
+			expect: Text,
 		},
 	}
 

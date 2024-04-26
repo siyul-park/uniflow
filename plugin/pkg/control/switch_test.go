@@ -17,12 +17,14 @@ import (
 func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode()
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
 func TestSwitchNode_SendAndReceive(t *testing.T) {
 	t.Run("Detect", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewSwitchNode()
 		defer n.Close()
 
@@ -45,9 +47,6 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -65,6 +64,9 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Typescript, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewSwitchNode()
 		defer n.Close()
 
@@ -88,9 +90,6 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -108,6 +107,9 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Javascript, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewSwitchNode()
 		defer n.Close()
 
@@ -131,9 +133,6 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader0.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -151,6 +150,9 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSONata, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewSwitchNode()
 		defer n.Close()
 
@@ -173,9 +175,6 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-outReader0.Read():
@@ -210,7 +209,6 @@ func TestSwitchNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

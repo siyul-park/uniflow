@@ -2,11 +2,12 @@ package language
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCompileTransformWithPrimitive(t *testing.T) {

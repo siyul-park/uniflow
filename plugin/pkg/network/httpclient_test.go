@@ -29,6 +29,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	defer s.Close()
 
 	t.Run("Static URL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -54,9 +57,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -67,6 +67,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Dynamic URL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -88,9 +91,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -101,6 +101,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Dynamic Divided URL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -126,9 +129,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -139,6 +139,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Query", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -166,9 +169,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -179,6 +179,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Header", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -206,9 +209,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -219,6 +219,9 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("With Body", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewHTTPClientNode()
 		defer n.Close()
 
@@ -246,9 +249,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			err, _ := packet.AsError(outPck)
@@ -274,7 +274,6 @@ func TestHTTPClientNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

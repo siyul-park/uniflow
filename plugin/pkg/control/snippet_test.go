@@ -19,12 +19,14 @@ func TestNewSnippetNode(t *testing.T) {
 	n, err := NewSnippetNode("", "")
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
 func TestSnippetNode_SendAndReceive(t *testing.T) {
 	t.Run(language.Text, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode("", language.Text)
 		defer n.Close()
 
@@ -41,9 +43,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, primitive.NewString(""), outPck.Payload())
@@ -53,6 +52,9 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Typescript, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode(`export default function (input: any): any {
 			return input;
 		}`, language.Typescript)
@@ -71,9 +73,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -83,6 +82,9 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.Javascript, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode(`export default function (input) {
 			return input;
 		}`, language.Javascript)
@@ -101,9 +103,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -113,6 +112,9 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSON, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode(`{}`, language.JSON)
 		defer n.Close()
 
@@ -129,9 +131,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, primitive.NewMap(), outPck.Payload())
@@ -141,6 +140,9 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.JSONata, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode(`$`, language.JSONata)
 		defer n.Close()
 
@@ -157,9 +159,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -169,6 +168,9 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run(language.YAML, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewSnippetNode(`{}`, language.YAML)
 		defer n.Close()
 
@@ -184,9 +186,6 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-ioWriter.Receive():
@@ -208,7 +207,6 @@ func TestSnippetNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

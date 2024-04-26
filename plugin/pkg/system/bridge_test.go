@@ -18,15 +18,16 @@ import (
 
 func TestNewBridgeNode(t *testing.T) {
 	n, err := NewBridgeNode(func() {})
-
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
 func TestBridgeNode_SendAndReceive(t *testing.T) {
 	t.Run("Operands, Returns = 0", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func() {})
 		defer n.Close()
 
@@ -43,9 +44,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Nil(t, outPck.Payload())
@@ -55,6 +53,9 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Operands = 1, Returns == 1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func(arg any) any {
 			return arg
 		})
@@ -75,9 +76,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -87,6 +85,9 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Operands > 1, Returns == 1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func(arg1, arg2 any) any {
 			return arg2
 		})
@@ -107,9 +108,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -119,6 +117,9 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Operands == Context, Returns == 1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func(ctx context.Context, arg any) any {
 			return arg
 		})
@@ -137,9 +138,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -149,6 +147,9 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Operands == 1, Returns > 2", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func(arg any) (any, any) {
 			return arg, arg
 		})
@@ -169,9 +170,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		ioWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-ioWriter.Receive():
 			assert.Equal(t, primitive.NewSlice(inPayload, inPayload), outPck.Payload())
@@ -181,6 +179,9 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("Operands == 1, Returns == error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n, _ := NewBridgeNode(func(arg any) error {
 			return fmt.Errorf("%v", arg)
 		})
@@ -204,9 +205,6 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		ioWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-errReader.Read():
@@ -241,9 +239,9 @@ func TestBridgeNodeCodec_Decode(t *testing.T) {
 		Lang:     language.Text,
 		Operands: []string{"foo"},
 	}
+
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }

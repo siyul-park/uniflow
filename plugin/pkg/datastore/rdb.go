@@ -13,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
+// RDBNode represents a node for interacting with a relational database.
 type RDBNode struct {
 	*node.OneToOneNode
 	db        *sqlx.DB

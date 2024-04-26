@@ -18,7 +18,6 @@ import (
 func TestNewGoToNode(t *testing.T) {
 	n := NewGoToNode()
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
@@ -35,6 +34,9 @@ func TestGoToNode_Port(t *testing.T) {
 
 func TestGoToNode_SendAndReceive(t *testing.T) {
 	t.Run("In -> Out0 -> Out1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil
 		})
@@ -62,9 +64,6 @@ func TestGoToNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader1.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
@@ -82,6 +81,9 @@ func TestGoToNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, packet.WithError(errors.New(faker.Sentence()), inPck)
 		})
@@ -109,9 +111,6 @@ func TestGoToNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-errReader.Read():
 			assert.NotNil(t, outPck)
@@ -137,7 +136,6 @@ func TestGoToNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

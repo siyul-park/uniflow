@@ -31,6 +31,9 @@ func TestManyToOneNode_Port(t *testing.T) {
 
 func TestManyToOneNode_SendAndReceive(t *testing.T) {
 	t.Run("In0 -> None", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 			return nil, nil
 		})
@@ -49,9 +52,6 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter0.Write(inPck)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case <-proc.Stack().Done(inPck):
 		case <-ctx.Done():
@@ -60,6 +60,9 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In0, In1 -> Out -> In0, In1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 			for _, inPck := range inPcks {
 				if inPck == nil {
@@ -93,9 +96,6 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		inWriter0.Write(inPck0)
 		inWriter1.Write(inPck1)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
 		select {
 		case outPck := <-outReader.Read():
 			assert.NotNil(t, outPck)
@@ -120,6 +120,9 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In0, In1 -> Error -> In0, In1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 			for _, inPck := range inPcks {
 				if inPck == nil {
@@ -152,9 +155,6 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter0.Write(inPck0)
 		inWriter1.Write(inPck1)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-errReader.Read():

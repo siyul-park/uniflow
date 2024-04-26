@@ -211,6 +211,9 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
 		out := outs[tc.expectPort]
 
 		proc := process.New()
@@ -226,9 +229,6 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
-
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
 
 		select {
 		case outPck := <-outReader.Read():
@@ -264,7 +264,6 @@ func TestRouteNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
