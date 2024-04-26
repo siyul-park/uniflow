@@ -85,8 +85,6 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	if !ok {
 		query, ok = primitive.Pick[string](inPck.Payload(), "0")
 	}
-	args, _ := primitive.Pick[[]any](inPck.Payload(), "1")
-
 	if !ok {
 		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
@@ -114,10 +112,29 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	tx := val.(*sqlx.Tx)
 
-	rows, err := tx.QueryxContext(ctx, query, args...)
+	stmt, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
+
+	var rows *sqlx.Rows
+	if len(stmt.Params) == 0 {
+		args, _ := primitive.Pick[[]any](inPck.Payload(), "1")
+		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
+			return nil, packet.WithError(err, inPck)
+		}
+	} else {
+		var args any
+		var ok bool
+		args, ok = primitive.Pick[map[string]any](inPck.Payload(), "1")
+		if !ok {
+			args, _ = primitive.Pick[[]map[string]any](inPck.Payload(), "1")
+		}
+		if rows, err = stmt.QueryxContext(ctx, args); err != nil {
+			return nil, packet.WithError(err, inPck)
+		}
+	}
+
 	defer rows.Close()
 
 	var results []map[string]any

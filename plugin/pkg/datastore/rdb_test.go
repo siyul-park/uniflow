@@ -41,60 +41,122 @@ func TestRDBNode_Isolation(t *testing.T) {
 }
 
 func TestRDBNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+	t.Run("Raw SQL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
-	defer db.Close()
+		db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
+		defer db.Close()
 
-	n := NewRDBNode(db)
-	defer n.Close()
+		n := NewRDBNode(db)
+		defer n.Close()
 
-	_, err := db.ExecContext(ctx,
-		"CREATE TABLE Foo ("+
-			"id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"+
-			"name VARCHAR(255) NOT NULL"+
-			")",
-	)
-	assert.NoError(t, err)
+		_, err := db.ExecContext(ctx,
+			"CREATE TABLE Foo ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"+
+				"name VARCHAR(255) NOT NULL"+
+				")",
+		)
+		assert.NoError(t, err)
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+		io := port.NewOut()
+		io.Link(n.In(node.PortIO))
 
-	proc := process.New()
-	defer proc.Close()
+		proc := process.New()
+		defer proc.Close()
 
-	ioWriter := io.Open(proc)
+		ioWriter := io.Open(proc)
 
-	var inPayload primitive.Value
-	inPayload = primitive.NewSlice(
-		primitive.NewString("INSERT INTO Foo(name) VALUES (?)"),
-		primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated())),
-	)
-	inPck := packet.New(inPayload)
+		var inPayload primitive.Value
+		inPayload = primitive.NewSlice(
+			primitive.NewString("INSERT INTO Foo(name) VALUES (?)"),
+			primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated())),
+		)
+		inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+		ioWriter.Write(inPck)
 
-	select {
-	case outPck := <-ioWriter.Receive():
-		assert.Equal(t, primitive.NewSlice(), outPck.Payload())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		select {
+		case outPck := <-ioWriter.Receive():
+			assert.Equal(t, primitive.NewSlice(), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
 
-	inPayload = primitive.NewString("SELECT * FROM Foo")
-	inPck = packet.New(inPayload)
+		inPayload = primitive.NewString("SELECT * FROM Foo")
+		inPck = packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+		ioWriter.Write(inPck)
 
-	select {
-	case outPck := <-ioWriter.Receive():
-		outPayload, ok := outPck.Payload().(*primitive.Slice)
-		assert.True(t, ok)
-		assert.Equal(t, 1, outPayload.Len())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		select {
+		case outPck := <-ioWriter.Receive():
+			outPayload, ok := outPck.Payload().(*primitive.Slice)
+			assert.True(t, ok)
+			assert.Equal(t, 1, outPayload.Len())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("Named SQL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
+		defer db.Close()
+
+		n := NewRDBNode(db)
+		defer n.Close()
+
+		_, err := db.ExecContext(ctx,
+			"CREATE TABLE Foo ("+
+				"id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"+
+				"name VARCHAR(255) NOT NULL"+
+				")",
+		)
+		assert.NoError(t, err)
+
+		io := port.NewOut()
+		io.Link(n.In(node.PortIO))
+
+		proc := process.New()
+		defer proc.Close()
+
+		ioWriter := io.Open(proc)
+
+		var inPayload primitive.Value
+		inPayload = primitive.NewSlice(
+			primitive.NewString("INSERT INTO Foo(name) VALUES (:name)"),
+			primitive.NewMap(
+				primitive.NewString("name"),
+				primitive.NewString(faker.UUIDHyphenated()),
+			),
+		)
+		inPck := packet.New(inPayload)
+
+		ioWriter.Write(inPck)
+
+		select {
+		case outPck := <-ioWriter.Receive():
+			assert.Equal(t, primitive.NewSlice(), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+
+		inPayload = primitive.NewString("SELECT * FROM Foo")
+		inPck = packet.New(inPayload)
+
+		ioWriter.Write(inPck)
+
+		select {
+		case outPck := <-ioWriter.Receive():
+			outPayload, ok := outPck.Payload().(*primitive.Slice)
+			assert.True(t, ok)
+			assert.Equal(t, 1, outPayload.Len())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
 
 func TestRDBNodeCodec_Decode(t *testing.T) {
