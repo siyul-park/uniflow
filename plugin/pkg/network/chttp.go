@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
-	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
 type CHTTPNode struct {
@@ -377,7 +378,7 @@ func (n *CHTTPNode) response(w *http.Response) (*HTTPPayload, error) {
 }
 
 func NewCHTTPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*CHTTPNodeSpec](func(spec *CHTTPNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *CHTTPNodeSpec) (node.Node, error) {
 		n := NewCHTTPNode()
 
 		n.SetLanguage(spec.Lang)

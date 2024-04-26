@@ -60,7 +60,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*SnippetNodeSpec](func(spec *SnippetNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
 		return NewSnippetNode(spec.Code, spec.Lang)
 	})
 }

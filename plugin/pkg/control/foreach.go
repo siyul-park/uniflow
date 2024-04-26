@@ -238,7 +238,7 @@ func (n *ForeachNode) slice(val primitive.Value) []primitive.Value {
 
 // NewForeachNodeCodec creates a new codec for ForeachNodeSpec.
 func NewForeachNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*ForeachNodeSpec](func(spec *ForeachNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *ForeachNodeSpec) (node.Node, error) {
 		n := NewForeachNode()
 		n.SetBatch(spec.Batch)
 

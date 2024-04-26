@@ -170,9 +170,10 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			expectParams: map[string]string{"b": "b"},
 		},
 		{
-			whenMethod: http.MethodGet,
-			whenPath:   "/a/c/d",
-			expectPort: node.PortWithIndex(node.PortOut, 1),
+			whenMethod:   http.MethodGet,
+			whenPath:     "/a/c/d",
+			expectPort:   node.PortWithIndex(node.PortOut, 1),
+			expectParams: map[string]string{},
 		},
 		{
 			whenMethod:   http.MethodGet,
