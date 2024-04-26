@@ -15,6 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
+	"github.com/siyul-park/uniflow/plugin/pkg/datastore"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
 	"github.com/siyul-park/uniflow/plugin/pkg/system"
 	"github.com/spf13/viper"
@@ -49,6 +50,7 @@ func main() {
 	table := system.NewBridgeTable()
 
 	sb.Register(control.AddToScheme())
+	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
 	sb.Register(system.AddToScheme(table))
 

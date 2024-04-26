@@ -1,7 +1,8 @@
-package database
+package datastore
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -24,6 +25,19 @@ func TestNewRDBNode(t *testing.T) {
 	assert.NotNil(t, n)
 
 	assert.NoError(t, n.Close())
+}
+
+func TestRDBNode_Isolation(t *testing.T) {
+	db, _ := sqlx.Connect("sqlite3", ":memory:")
+	defer db.Close()
+
+	n := NewRDBNode(db)
+	defer n.Close()
+
+	v := sql.LevelReadCommitted
+
+	n.SetIsolation(v)
+	assert.Equal(t, v, n.Isolation())
 }
 
 func TestRDBNode_SendAndReceive(t *testing.T) {
@@ -81,4 +95,19 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
+}
+
+func TestRDBNodeCodec_Decode(t *testing.T) {
+	codec := NewRDBNodeCodec()
+
+	spec := &RDBNodeSpec{
+		Driver: "sqlite3",
+		Source: ":memory:",
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+
+	assert.NoError(t, n.Close())
 }

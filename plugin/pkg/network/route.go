@@ -506,7 +506,7 @@ func (r *route) label() byte {
 
 // NewRouteNodeCodec creates a new codec for RouteNodeSpec.
 func NewRouteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*RouteNodeSpec](func(spec *RouteNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
 		n := NewRouteNode()
 		for _, route := range spec.Routes {
 			if err := n.Add(route.Method, route.Path, route.Port); err != nil {

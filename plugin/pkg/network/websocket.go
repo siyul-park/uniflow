@@ -285,7 +285,7 @@ func (n *WebSocketNode) catch(proc *process.Process) {
 
 // NewWebsocketNodeCodec creates a new codec for WebsocketNodeSpec.
 func NewWebsocketNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*WebsocketNodeSpec](func(spec *WebsocketNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *WebsocketNodeSpec) (node.Node, error) {
 		n := NewWebsocketNode()
 		n.SetTimeout(spec.Timeout)
 		n.SetReadBufferSize(spec.Read)

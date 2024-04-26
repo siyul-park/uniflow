@@ -160,7 +160,7 @@ func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
 
 // NewCombineNodeCodec creates a new codec for CombineNodeSpec.
 func NewCombineNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*CombineNodeSpec](func(spec *CombineNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *CombineNodeSpec) (node.Node, error) {
 		n := NewCombineNode()
 		n.SetDepth(spec.Depth)
 		n.SetInplace(spec.Inplace)

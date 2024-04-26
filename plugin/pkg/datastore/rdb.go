@@ -1,4 +1,4 @@
-package database
+package datastore
 
 import (
 	"context"
@@ -10,14 +10,26 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 type RDBNode struct {
 	*node.OneToOneNode
-	db  *sqlx.DB
-	txs *process.Local
-	mu  sync.RWMutex
+	db        *sqlx.DB
+	txs       *process.Local
+	isolation sql.IsolationLevel
+	mu        sync.RWMutex
 }
+
+// RDBNodeSpec holds the specifications for creating a RDBNode.
+type RDBNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Driver          string             `map:"driver"`
+	Source          string             `map:"source"`
+	Isolation       sql.IsolationLevel `map:"isolation"`
+}
+
+const KindRDB = "rdb"
 
 func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n := &RDBNode{
@@ -27,6 +39,32 @@ func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
+}
+
+func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.isolation = isolation
+}
+
+func (n *RDBNode) Isolation() sql.IsolationLevel {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.isolation
+}
+
+func (n *RDBNode) Close() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if err := n.OneToOneNode.Close(); err != nil {
+		return err
+	}
+
+	n.txs.Close()
+	return n.db.Close()
 }
 
 func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -50,7 +88,9 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	}
 
 	val, err := n.txs.LoadOrStore(proc, func() (any, error) {
-		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{})
+		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{
+			Isolation: n.isolation,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -96,13 +136,16 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	return packet.New(outPayload), nil
 }
 
-func (n *RDBNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+// NewRDBNodeCodec creates a new codec for RDBNodeSpec.
+func NewRDBNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
+		db, err := sqlx.Connect(spec.Driver, spec.Source)
+		if err != nil {
+			return nil, err
+		}
 
-	if err := n.OneToOneNode.Close(); err != nil {
-		return err
-	}
-	n.txs.Close()
-	return nil
+		n := NewRDBNode(db)
+		n.SetIsolation(spec.Isolation)
+		return n, nil
+	})
 }

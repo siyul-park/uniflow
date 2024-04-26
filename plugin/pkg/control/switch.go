@@ -1,10 +1,11 @@
 package control
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"reflect"
 	"sync"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -103,7 +104,7 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*SwitchNodeSpec](func(spec *SwitchNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
 		n := NewSwitchNode()
 		n.SetLanguage(spec.Lang)
 		for _, condition := range spec.Match {

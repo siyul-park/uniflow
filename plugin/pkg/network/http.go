@@ -377,7 +377,7 @@ func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
 
 // NewHTTPNodeCodec creates a new codec for HTTPNodeSpec.
 func NewHTTPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*HTTPNodeSpec](func(spec *HTTPNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *HTTPNodeSpec) (node.Node, error) {
 		return NewHTTPNode(spec.Address), nil
 	})
 }

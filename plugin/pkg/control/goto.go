@@ -180,7 +180,7 @@ func (n *GotoNode) throw(proc *process.Process, errPck *packet.Packet) {
 
 // NewGotoNodeCodec creates a new codec for GotoNodeSpec.
 func NewGotoNodeCodec() scheme.Codec {
-	return scheme.CodecWithType[*GotoNodeSpec](func(spec *GotoNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(spec *GotoNodeSpec) (node.Node, error) {
 		return NewGotoNode(), nil
 	})
 }
