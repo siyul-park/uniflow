@@ -28,10 +28,14 @@ func TestHeap_Store(t *testing.T) {
 	defer h.Close()
 
 	k := faker.UUIDHyphenated()
-	v := faker.UUIDHyphenated()
+	v1 := faker.UUIDHyphenated()
+	v2 := faker.UUIDHyphenated()
 
-	assert.True(t, h.Store(k, v))
-	assert.False(t, h.Store(k, v))
+	h.Store(k, v1)
+	h.Store(k, v2)
+
+	r := h.Load(k)
+	assert.Equal(t, v2, r)
 }
 
 func TestHeap_Delete(t *testing.T) {

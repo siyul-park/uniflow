@@ -23,15 +23,11 @@ func (h *Heap) Load(key string) any {
 }
 
 // Store stores the given value with the associated key in the heap.
-func (h *Heap) Store(key string, val any) bool {
+func (h *Heap) Store(key string, val any) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if _, ok := h.data[key]; ok {
-		return false
-	}
 	h.data[key] = val
-	return true
 }
 
 // Delete removes the value associated with the given key from the heap.
