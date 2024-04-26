@@ -99,15 +99,12 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, err
 		}
 
-		go func() {
-			<-proc.Done()
-
-			if proc.Err() == nil {
-				_ = tx.Commit()
-			} else {
-				_ = tx.Rollback()
+		proc.AddCloseHook(process.CloseHookFunc(func() error {
+			if proc.Err() != nil {
+				return tx.Rollback()
 			}
-		}()
+			return tx.Commit()
+		}))
 
 		return tx, nil
 	})
