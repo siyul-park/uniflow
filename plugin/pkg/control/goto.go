@@ -10,26 +10,26 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// GotoNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
-type GotoNode struct {
+// GoToNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
+type GoToNode struct {
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
 	mu       sync.RWMutex
 }
 
-// GotoNodeSpec holds the specifications for creating a GotoNode.
-type GotoNodeSpec struct {
+// GoToNodeSpec holds the specifications for creating a GoToNode.
+type GoToNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 }
 
-var _ node.Node = (*GotoNode)(nil)
+var _ node.Node = (*GoToNode)(nil)
 
-const KindGoto = "goto"
+const KindGoTo = "goto"
 
-// NewGotoNode creates a new GotoNode.
-func NewGotoNode() *GotoNode {
-	n := &GotoNode{
+// NewGoToNode creates a new GoToNode.
+func NewGoToNode() *GoToNode {
+	n := &GoToNode{
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -44,7 +44,7 @@ func NewGotoNode() *GotoNode {
 }
 
 // In returns the input port with the specified name.
-func (n *GotoNode) In(name string) *port.InPort {
+func (n *GoToNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -58,7 +58,7 @@ func (n *GotoNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *GotoNode) Out(name string) *port.OutPort {
+func (n *GoToNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -79,7 +79,7 @@ func (n *GotoNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *GotoNode) Close() error {
+func (n *GoToNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -92,7 +92,7 @@ func (n *GotoNode) Close() error {
 	return nil
 }
 
-func (n *GotoNode) forward(proc *process.Process) {
+func (n *GoToNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -109,7 +109,7 @@ func (n *GotoNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *GotoNode) redirect(proc *process.Process) {
+func (n *GoToNode) redirect(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -133,7 +133,7 @@ func (n *GotoNode) redirect(proc *process.Process) {
 	}
 }
 
-func (n *GotoNode) backward(proc *process.Process) {
+func (n *GoToNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -150,7 +150,7 @@ func (n *GotoNode) backward(proc *process.Process) {
 	}
 }
 
-func (n *GotoNode) catch(proc *process.Process) {
+func (n *GoToNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -167,7 +167,7 @@ func (n *GotoNode) catch(proc *process.Process) {
 	}
 }
 
-func (n *GotoNode) throw(proc *process.Process, errPck *packet.Packet) {
+func (n *GoToNode) throw(proc *process.Process, errPck *packet.Packet) {
 	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
@@ -178,9 +178,9 @@ func (n *GotoNode) throw(proc *process.Process, errPck *packet.Packet) {
 	}
 }
 
-// NewGotoNodeCodec creates a new codec for GotoNodeSpec.
-func NewGotoNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *GotoNodeSpec) (node.Node, error) {
-		return NewGotoNode(), nil
+// NewGoToNodeCodec creates a new codec for GoToNodeSpec.
+func NewGoToNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *GoToNodeSpec) (node.Node, error) {
+		return NewGoToNode(), nil
 	})
 }

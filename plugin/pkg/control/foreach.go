@@ -12,8 +12,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// ForeachNode represents a node that Foreachs over input data in batches.
-type ForeachNode struct {
+// ForEachNode represents a node that ForEachs over input data in batches.
+type ForEachNode struct {
 	batch    int
 	inPort   *port.InPort
 	outPorts []*port.OutPort
@@ -21,17 +21,17 @@ type ForeachNode struct {
 	mu       sync.RWMutex
 }
 
-// ForeachNodeSpec holds the specifications for creating a ForeachNode.
-type ForeachNodeSpec struct {
+// ForEachNodeSpec holds the specifications for creating a ForEachNode.
+type ForEachNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Batch           int `map:"batch,omitempty"`
 }
 
-const KindForeach = "foreach"
+const KindForEach = "foreach"
 
-// NewForeachNode creates a new ForeachNode with default configurations.
-func NewForeachNode() *ForeachNode {
-	n := &ForeachNode{
+// NewForEachNode creates a new ForEachNode with default configurations.
+func NewForEachNode() *ForEachNode {
+	n := &ForEachNode{
 		batch:    1,
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -44,15 +44,15 @@ func NewForeachNode() *ForeachNode {
 	return n
 }
 
-// Batch returns the batch size of the ForeachNode.
-func (n *ForeachNode) Batch() int {
+// Batch returns the batch size of the ForEachNode.
+func (n *ForEachNode) Batch() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	return n.batch
 }
 
-// SetBatch sets the batch size of the ForeachNode.
-func (n *ForeachNode) SetBatch(batch int) {
+// SetBatch sets the batch size of the ForEachNode.
+func (n *ForEachNode) SetBatch(batch int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (n *ForeachNode) SetBatch(batch int) {
 }
 
 // In returns the input port with the specified name.
-func (n *ForeachNode) In(name string) *port.InPort {
+func (n *ForEachNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -76,7 +76,7 @@ func (n *ForeachNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *ForeachNode) Out(name string) *port.OutPort {
+func (n *ForEachNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -97,7 +97,7 @@ func (n *ForeachNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *ForeachNode) Close() error {
+func (n *ForEachNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -110,7 +110,7 @@ func (n *ForeachNode) Close() error {
 	return nil
 }
 
-func (n *ForeachNode) forward(proc *process.Process) {
+func (n *ForEachNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -197,7 +197,7 @@ func (n *ForeachNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *ForeachNode) backward(proc *process.Process) {
+func (n *ForEachNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -214,7 +214,7 @@ func (n *ForeachNode) backward(proc *process.Process) {
 	}
 }
 
-func (n *ForeachNode) slice(val primitive.Value) []primitive.Value {
+func (n *ForEachNode) slice(val primitive.Value) []primitive.Value {
 	var values []primitive.Value
 
 	switch v := val.(type) {
@@ -236,10 +236,10 @@ func (n *ForeachNode) slice(val primitive.Value) []primitive.Value {
 	return values
 }
 
-// NewForeachNodeCodec creates a new codec for ForeachNodeSpec.
-func NewForeachNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *ForeachNodeSpec) (node.Node, error) {
-		n := NewForeachNode()
+// NewForEachNodeCodec creates a new codec for ForEachNodeSpec.
+func NewForEachNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *ForEachNodeSpec) (node.Node, error) {
+		n := NewForEachNode()
 		n.SetBatch(spec.Batch)
 
 		return n, nil

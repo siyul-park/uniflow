@@ -15,16 +15,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewForeachNode(t *testing.T) {
-	n := NewForeachNode()
+func TestNewForEachNode(t *testing.T) {
+	n := NewForEachNode()
 	assert.NotNil(t, n)
 	assert.Equal(t, 1, n.Batch())
 
 	assert.NoError(t, n.Close())
 }
 
-func TestForeachNode_Port(t *testing.T) {
-	n := NewForeachNode()
+func TestForEachNode_Port(t *testing.T) {
+	n := NewForEachNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -34,9 +34,9 @@ func TestForeachNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
-func TestForeachNode_SendAndReceive(t *testing.T) {
+func TestForEachNode_SendAndReceive(t *testing.T) {
 	t.Run("In -> Out -> In", func(t *testing.T) {
-		n := NewForeachNode()
+		n := NewForEachNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -80,7 +80,7 @@ func TestForeachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Out1 -> In", func(t *testing.T) {
-		n := NewForeachNode()
+		n := NewForEachNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -135,7 +135,7 @@ func TestForeachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
-		n := NewForeachNode()
+		n := NewForEachNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -179,7 +179,7 @@ func TestForeachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("In -> Out0 -> Error -> Out1 -> In", func(t *testing.T) {
-		n := NewForeachNode()
+		n := NewForEachNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -252,7 +252,7 @@ func TestForeachNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("batch = 2", func(t *testing.T) {
-		n := NewForeachNode()
+		n := NewForEachNode()
 		defer n.Close()
 
 		n.SetBatch(2)
@@ -297,10 +297,10 @@ func TestForeachNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestForeachNodeCodec_Decode(t *testing.T) {
-	codec := NewForeachNodeCodec()
+func TestForEachNodeCodec_Decode(t *testing.T) {
+	codec := NewForEachNodeCodec()
 
-	spec := &ForeachNodeSpec{
+	spec := &ForEachNodeSpec{
 		Batch: 1,
 	}
 
@@ -311,8 +311,8 @@ func TestForeachNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkForeachNode_SendAndReceive(b *testing.B) {
-	n := NewForeachNode()
+func BenchmarkForEachNode_SendAndReceive(b *testing.B) {
+	n := NewForEachNode()
 	defer n.Close()
 
 	in := port.NewOut()
