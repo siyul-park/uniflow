@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -13,12 +14,12 @@ import (
 
 type RDBNode struct {
 	*node.OneToOneNode
-	db  *sql.DB
+	db  *sqlx.DB
 	txs *process.Local
 	mu  sync.RWMutex
 }
 
-func NewRDBNode(db *sql.DB) *RDBNode {
+func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n := &RDBNode{
 		db:  db,
 		txs: process.NewLocal(),
@@ -49,7 +50,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	}
 
 	val, err := n.txs.LoadOrStore(proc, func() (any, error) {
-		tx, err := n.db.BeginTx(ctx, &sql.TxOptions{})
+		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -70,28 +71,19 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return nil, packet.WithError(err, inPck)
 	}
 
-	tx := val.(*sql.Tx)
+	tx := val.(*sqlx.Tx)
 
-	rows, err := tx.Query(query, args...)
+	rows, err := tx.QueryxContext(ctx, query, args...)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
+	defer rows.Close()
 
 	var results []map[string]any
 	for rows.Next() {
-		columns, err := rows.Columns()
-		if err != nil {
+		result := make(map[string]any)
+		if err := rows.MapScan(result); err != nil {
 			return nil, packet.WithError(err, inPck)
-		}
-		values := make([]any, len(columns))
-
-		if err := rows.Scan(values...); err != nil {
-			return nil, packet.WithError(err, inPck)
-		}
-
-		result := make(map[string]any, len(columns))
-		for i, column := range columns {
-			result[column] = values[i]
 		}
 		results = append(results, result)
 	}
