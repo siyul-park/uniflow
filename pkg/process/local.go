@@ -4,9 +4,9 @@ import "sync"
 
 // Local represents a local cache for storing data associated with processes.
 type Local struct {
-	data map[*Process]any 
-	done chan struct{}    
-	mu   sync.RWMutex     
+	data map[*Process]any
+	done chan struct{}
+	mu   sync.RWMutex
 }
 
 // NewLocal creates and initializes a new Local cache.

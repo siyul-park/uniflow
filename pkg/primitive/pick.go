@@ -31,8 +31,8 @@ func Pick[T any](v Value, paths ...string) (T, bool) {
 		return v, true
 	} else if cur == nil {
 		return zero, false
-	} else if v, ok := cur.Interface().(T); ok {
-		return v, true
+	} else if err := Unmarshal(cur, &zero); err == nil {
+		return zero, true
 	} else {
 		return zero, false
 	}
