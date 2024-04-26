@@ -104,8 +104,8 @@ func TestSQLNodeCodec_Decode(t *testing.T) {
 	codec := NewSQLNodeCodec()
 
 	spec := &SQLNodeSpec{
-		Query: "SELECT * FROM Foo",
-		Args:  "null",
+		Query:     "SELECT * FROM Foo",
+		Arguments: "null",
 	}
 
 	n, err := codec.Decode(spec)

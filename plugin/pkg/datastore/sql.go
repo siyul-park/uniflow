@@ -26,7 +26,7 @@ type SQLNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Lang            string `map:"lang,omitempty"`
 	Query           string `map:"query"`
-	Args            string `map:"args,omitempty"`
+	Arguments       string `map:"arguments,omitempty"`
 }
 
 const KindSQL = "sql"
@@ -105,7 +105,7 @@ func NewSQLNodeCodec() scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		if err := n.SetArguments(spec.Args); err != nil {
+		if err := n.SetArguments(spec.Arguments); err != nil {
 			_ = n.Close()
 			return nil, err
 		}
