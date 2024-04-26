@@ -31,6 +31,7 @@ type SQLNodeSpec struct {
 
 const KindSQL = "sql"
 
+// NewSQLNode creates a new SQLNode instance.
 func NewSQLNode(query, lang string) (*SQLNode, error) {
 	transform, err := language.CompileTransformWithPrimitive(query, lang)
 	if err != nil {
@@ -54,6 +55,7 @@ func NewSQLNode(query, lang string) (*SQLNode, error) {
 	return n, nil
 }
 
+// SetArguments sets the arguments for the SQL query.
 func (n *SQLNode) SetArguments(args string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
