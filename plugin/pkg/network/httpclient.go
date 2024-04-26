@@ -245,18 +245,12 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+	ctx := proc.Context()
 	if n.timeout != 0 {
+		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, n.timeout)
 		defer cancel()
 	}
-
-	go func() {
-		<-proc.Done()
-		cancel()
-	}()
 
 	inPayload := inPck.Payload()
 

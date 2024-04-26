@@ -96,13 +96,7 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	offset := 0
 	if n.operator.Type().NumIn() > 0 {
 		if n.operator.Type().In(0).Implements(contextInterface) {
-			ctx, cancel := context.WithCancel(context.Background())
-			go func() {
-				<-proc.Done()
-				cancel()
-			}()
-
-			ins[0] = reflect.ValueOf(ctx)
+			ins[0] = reflect.ValueOf(proc.Context())
 			offset++
 		}
 	}

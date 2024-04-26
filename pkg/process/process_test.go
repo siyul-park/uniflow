@@ -29,6 +29,13 @@ func TestProcess_Heap(t *testing.T) {
 	assert.NotNil(t, proc.Heap())
 }
 
+func TestProcess_Context(t *testing.T) {
+	proc := New()
+	defer proc.Close()
+
+	assert.NotNil(t, proc.Context())
+}
+
 func TestProcess_Lock(t *testing.T) {
 	proc := New()
 

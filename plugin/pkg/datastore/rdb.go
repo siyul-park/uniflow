@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 
@@ -76,11 +75,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		<-proc.Done()
-		cancel()
-	}()
+	ctx := proc.Context()
 
 	query, ok := primitive.Pick[string](inPck.Payload())
 	if !ok {
@@ -91,7 +86,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	}
 
 	val, err := n.txs.LoadOrStore(proc, func() (any, error) {
-		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{
+		tx, err := n.db.BeginTxx(proc.Context(), &sql.TxOptions{
 			Isolation: n.isolation,
 		})
 		if err != nil {

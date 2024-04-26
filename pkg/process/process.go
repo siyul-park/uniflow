@@ -1,6 +1,7 @@
 package process
 
 import (
+	"context"
 	"sync"
 )
 
@@ -9,6 +10,7 @@ type Process struct {
 	stack      *Stack
 	heap       *Heap
 	err        error
+	ctx        context.Context
 	done       chan struct{}
 	wait       sync.WaitGroup
 	closeHooks []CloseHook
@@ -18,11 +20,21 @@ type Process struct {
 
 // New creates a new Process.
 func New() *Process {
-	return &Process{
+	p := &Process{
 		stack: newStack(),
 		heap:  newHeap(),
 		done:  make(chan struct{}),
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	p.ctx = ctx
+
+	go func() {
+		<-p.Done()
+		cancel()
+	}()
+
+	return p
 }
 
 // Stack returns a process's stack.
@@ -33,6 +45,11 @@ func (p *Process) Stack() *Stack {
 // Heap returns a process's heap.
 func (p *Process) Heap() *Heap {
 	return p.heap
+}
+
+// Context returns a process's context.
+func (p *Process) Context() context.Context {
+	return p.ctx
 }
 
 // Err returns the last error encountered by the process.
