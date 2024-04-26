@@ -31,6 +31,7 @@ type RDBNodeSpec struct {
 
 const KindRDB = "rdb"
 
+// NewRDBNode creates a new RDBNode.
 func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n := &RDBNode{
 		db:  db,
@@ -41,6 +42,7 @@ func NewRDBNode(db *sqlx.DB) *RDBNode {
 	return n
 }
 
+// SetIsolation sets the isolation level.
 func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -48,6 +50,7 @@ func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
 	n.isolation = isolation
 }
 
+// Isolation returns the isolation level.
 func (n *RDBNode) Isolation() sql.IsolationLevel {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -55,6 +58,7 @@ func (n *RDBNode) Isolation() sql.IsolationLevel {
 	return n.isolation
 }
 
+// Close closes resource associated with the node.
 func (n *RDBNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
