@@ -111,3 +111,39 @@ func TestRDBNodeCodec_Decode(t *testing.T) {
 
 	assert.NoError(t, n.Close())
 }
+
+func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
+	db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
+	defer db.Close()
+
+	_, _ = db.Exec(
+		"CREATE TABLE Foo (" +
+			"id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+			"name VARCHAR(255) NOT NULL" +
+			")",
+	)
+
+	n := NewRDBNode(db)
+	defer n.Close()
+
+	io := port.NewOut()
+	io.Link(n.In(node.PortIO))
+
+	proc := process.New()
+	defer proc.Close()
+
+	ioWriter := io.Open(proc)
+
+	inPayload := primitive.NewSlice(
+		primitive.NewString("INSERT INTO Foo(name) VALUES (?)"),
+		primitive.NewSlice(primitive.NewString(faker.UUIDHyphenated())),
+	)
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		ioWriter.Write(inPck)
+		<-ioWriter.Receive()
+	}
+}
