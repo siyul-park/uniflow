@@ -3,27 +3,27 @@ package event
 import "sync"
 
 type Event struct {
-	name string
-	data map[string]any
-	mu   sync.RWMutex
+	topic string
+	data  map[string]any
+	mu    sync.RWMutex
 }
 
-func New(name string, data map[string]any) *Event {
+func New(topic string, data map[string]any) *Event {
 	if data == nil {
 		data = make(map[string]any)
 	}
 
 	return &Event{
-		name: name,
-		data: data,
+		topic: topic,
+		data:  data,
 	}
 }
 
-func (e *Event) Name() string {
+func (e *Event) Topic() string {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	return e.name
+	return e.topic
 }
 
 func (e *Event) Get(key string) (any, bool) {

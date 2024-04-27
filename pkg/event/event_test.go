@@ -8,10 +8,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	name := faker.UUIDHyphenated()
+	topic := faker.UUIDHyphenated()
 
-	e := New(name, nil)
-	assert.Equal(t, name, e.Name())
+	e := New(topic, nil)
+	assert.Equal(t, topic, e.Topic())
 }
 
 func TestEvent_Get(t *testing.T) {
