@@ -43,6 +43,10 @@ func TestDetect(t *testing.T) {
 			when:   "SELECT * FROM Foo",
 			expect: Text,
 		},
+		{
+			when:   "ws://localhost:8080",
+			expect: Text,
+		},
 	}
 
 	for _, tc := range testCases {

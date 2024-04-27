@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
@@ -14,95 +15,118 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
-// WebSocketUpgradeNode is a node for WebSocket communication.
-type WebSocketUpgradeNode struct {
-	upgrader websocket.Upgrader
-	ioPort   *port.InPort
-	inPort   *port.InPort
-	outPort  *port.OutPort
-	errPort  *port.OutPort
-	mu       sync.RWMutex
+// WebSocketClientNode represents a node for establishing WebSocket client connections.
+type WebSocketClientNode struct {
+	dialer  *websocket.Dialer
+	lang    string
+	url     func(primitive.Value) (string, error)
+	ioPort  *port.InPort
+	inPort  *port.InPort
+	outPort *port.OutPort
+	errPort *port.OutPort
+	mu      sync.RWMutex
 }
 
-// WebSocketUpgradeNodeSpec holds the specifications for creating a WebSocketUpgradeNode.
-type WebSocketUpgradeNodeSpec struct {
+// WebSocketClientNodeSpec holds the specifications for creating a WebSocketClientNode.
+type WebSocketClientNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
+	Lang            string        `map:"lang,omitempty"`
+	URL             string        `map:"url,omitempty"`
 	Timeout         time.Duration `map:"timeout"`
-	Read            int           `map:"read"`
-	Write           int           `map:"write"`
 }
 
-const KindWebSocketUpgrade = "websocket/upgrade"
+const KindWebSocketClient = "websocket/client"
 
-var _ node.Node = (*WebSocketUpgradeNode)(nil)
+var _ node.Node = (*WebSocketClientNode)(nil)
 
-// NewWebSocketUpgradeNode creates a new WebSocketUpgradeNode.
-func NewWebSocketUpgradeNode() *WebSocketUpgradeNode {
-	n := &WebSocketUpgradeNode{
+// NewWebSocketClientNode creates a new WebSocketClientNode.
+func NewWebSocketClientNode() *WebSocketClientNode {
+	n := &WebSocketClientNode{
+		dialer: &websocket.Dialer{
+			Proxy:            http.ProxyFromEnvironment,
+			HandshakeTimeout: 45 * time.Second,
+		},
 		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
 
-	n.ioPort.AddHandler(port.HandlerFunc(n.upgrade))
+	n.ioPort.AddHandler(port.HandlerFunc(n.connect))
 	n.errPort.AddHandler(port.HandlerFunc(n.catch))
+
+	_ = n.SetURL("")
 
 	return n
 }
 
-// Timeout returns the timeout duration.
-func (n *WebSocketUpgradeNode) Timeout() time.Duration {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.upgrader.HandshakeTimeout
-}
-
-// SetTimeout sets the timeout duration.
-func (n *WebSocketUpgradeNode) SetTimeout(timeout time.Duration) {
+// SetLanguage sets the language used for transformation.
+func (n *WebSocketClientNode) SetLanguage(lang string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.upgrader.HandshakeTimeout = timeout
+	n.lang = lang
 }
 
-// ReadBufferSize returns the read buffer size.
-func (n *WebSocketUpgradeNode) ReadBufferSize() int {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.upgrader.ReadBufferSize
-}
-
-// SetReadBufferSize sets the read buffer size.
-func (n *WebSocketUpgradeNode) SetReadBufferSize(size int) {
+// SetURL sets the WebSocket URL.
+func (n *WebSocketClientNode) SetURL(rawURL string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.upgrader.ReadBufferSize = size
+	if rawURL == "" {
+		n.url = func(value primitive.Value) (string, error) {
+			v := &url.URL{Scheme: "wss"}
+
+			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
+				var err error
+				if v, err = url.Parse(rawURL); err != nil {
+					return "", err
+				}
+			}
+
+			if s, ok := primitive.Pick[string](value, "scheme"); ok {
+				v.Scheme = s
+			}
+			if h, ok := primitive.Pick[string](value, "host"); ok {
+				v.Host = h
+			}
+			if p, ok := primitive.Pick[string](value, "path"); ok {
+				v.Path = p
+			}
+
+			return v.String(), nil
+		}
+		return nil
+	}
+
+	transform, err := language.CompileTransformWithPrimitive(rawURL, n.lang)
+	if err != nil {
+		return err
+	}
+
+	n.url = func(value primitive.Value) (string, error) {
+		if v, err := transform(value); err != nil {
+			return "", err
+		} else {
+			return fmt.Sprintf("%v", v.Interface()), nil
+		}
+	}
+	return nil
 }
 
-// SetWriteBufferSize sets the write buffer size.
-func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
+// SetTimeout sets the handshake timeout for WebSocket connections.
+func (n *WebSocketClientNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.upgrader.WriteBufferSize = size
-}
-
-// WriteBufferSize returns the write buffer size.
-func (n *WebSocketUpgradeNode) WriteBufferSize() int {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.upgrader.WriteBufferSize
+	n.dialer.HandshakeTimeout = timeout
 }
 
 // In returns the input port with the specified name.
-func (n *WebSocketUpgradeNode) In(name string) *port.InPort {
+func (n *WebSocketClientNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -118,7 +142,7 @@ func (n *WebSocketUpgradeNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *WebSocketUpgradeNode) Out(name string) *port.OutPort {
+func (n *WebSocketClientNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -134,7 +158,7 @@ func (n *WebSocketUpgradeNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports of the WebSocketNode.
-func (n *WebSocketUpgradeNode) Close() error {
+func (n *WebSocketClientNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -146,9 +170,11 @@ func (n *WebSocketUpgradeNode) Close() error {
 	return nil
 }
 
-func (n *WebSocketUpgradeNode) upgrade(proc *process.Process) {
+func (n *WebSocketClientNode) connect(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	ctx := proc.Context()
 
 	ioReader := n.ioPort.Open(proc)
 
@@ -158,32 +184,15 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process) {
 			return
 		}
 
-		conn, err := func() (*websocket.Conn, error) {
-			var inPayload *HTTPPayload
-			if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
-				return nil, err
-			}
+		inPayload := inPck.Payload()
 
-			w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter)
-			if !ok {
-				return nil, packet.ErrInvalidPacket
-			}
-			r := &http.Request{
-				Method: inPayload.Method,
-				URL: &url.URL{
-					Scheme:   inPayload.Scheme,
-					Host:     inPayload.Host,
-					Path:     inPayload.Path,
-					RawQuery: inPayload.Query.Encode(),
-				},
-				Proto:  inPayload.Proto,
-				Header: inPayload.Header,
-			}
-
-			return n.upgrader.Upgrade(w, r, nil)
-		}()
-
+		rawURL, err := n.url(inPayload)
 		if err != nil {
+			n.throw(proc, err, inPck)
+			return
+		}
+
+		if conn, _, err := n.dialer.DialContext(ctx, rawURL, nil); err != nil {
 			n.throw(proc, err, inPck)
 		} else {
 			proc.Lock()
@@ -195,7 +204,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketUpgradeNode) write(proc *process.Process, conn *websocket.Conn) {
+func (n *WebSocketClientNode) write(proc *process.Process, conn *websocket.Conn) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -228,7 +237,7 @@ func (n *WebSocketUpgradeNode) write(proc *process.Process, conn *websocket.Conn
 	}
 }
 
-func (n *WebSocketUpgradeNode) read(proc *process.Process, conn *websocket.Conn) {
+func (n *WebSocketClientNode) read(proc *process.Process, conn *websocket.Conn) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -269,7 +278,7 @@ func (n *WebSocketUpgradeNode) read(proc *process.Process, conn *websocket.Conn)
 	}
 }
 
-func (n *WebSocketUpgradeNode) catch(proc *process.Process) {
+func (n *WebSocketClientNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -294,7 +303,7 @@ func (n *WebSocketUpgradeNode) catch(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketUpgradeNode) throw(proc *process.Process, err error, cause *packet.Packet) {
+func (n *WebSocketClientNode) throw(proc *process.Process, err error, cause *packet.Packet) {
 	errWriter := n.errPort.Open(proc)
 	ioReader := n.ioPort.Open(proc)
 
@@ -308,13 +317,13 @@ func (n *WebSocketUpgradeNode) throw(proc *process.Process, err error, cause *pa
 	}
 }
 
-// NewWebSocketClientNodeCodec creates a new codec for WebSocketClientNodeSpec.
-func NewWebSocketClientNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WebSocketClientNodeSpec) (node.Node, error) {
-		n := NewWebSocketClientNode()
-		n.SetLanguage(spec.Lang)
-		n.SetURL(spec.URL)
+// NewWebSocketUpgradeNodeCodec creates a new codec for WebSocketUpgradeNodeSpec.
+func NewWebSocketUpgradeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketUpgradeNodeSpec) (node.Node, error) {
+		n := NewWebSocketUpgradeNode()
 		n.SetTimeout(spec.Timeout)
+		n.SetReadBufferSize(spec.Read)
+		n.SetWriteBufferSize(spec.Write)
 		return n, nil
 	})
 }

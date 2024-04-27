@@ -19,6 +19,7 @@ import (
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
+// HTTPClientNode represents a node for making HTTP client requests.
 type HTTPClientNode struct {
 	*node.OneToOneNode
 	lang    string
@@ -31,6 +32,7 @@ type HTTPClientNode struct {
 	mu      sync.RWMutex
 }
 
+// HTTPClientNodeSpec holds the specifications for creating an HTTPClientNode.
 type HTTPClientNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Lang            string `map:"lang,omitempty"`
@@ -43,6 +45,7 @@ type HTTPClientNodeSpec struct {
 
 const KindHTTPClient = "http/client"
 
+// NewHTTPClientNode creates a new HTTPClientNode instance.
 func NewHTTPClientNode() *HTTPClientNode {
 	n := &HTTPClientNode{}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
@@ -56,6 +59,7 @@ func NewHTTPClientNode() *HTTPClientNode {
 	return n
 }
 
+// SetLanguage sets the language for transformation.
 func (n *HTTPClientNode) SetLanguage(lang string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -63,6 +67,7 @@ func (n *HTTPClientNode) SetLanguage(lang string) {
 	n.lang = lang
 }
 
+// SetMethod sets the HTTP request method.
 func (n *HTTPClientNode) SetMethod(method string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -92,16 +97,14 @@ func (n *HTTPClientNode) SetMethod(method string) error {
 	return nil
 }
 
+// SetURL sets the target URL for the HTTP request.
 func (n *HTTPClientNode) SetURL(rawURL string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	if rawURL == "" {
 		n.url = func(value primitive.Value) (string, error) {
-			v := &url.URL{
-				Scheme: "https",
-				Path:   "",
-			}
+			v := &url.URL{Scheme: "https"}
 
 			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
 				var err error
@@ -140,6 +143,7 @@ func (n *HTTPClientNode) SetURL(rawURL string) error {
 	return nil
 }
 
+// SetQuery sets the query parameters for the HTTP request.
 func (n *HTTPClientNode) SetQuery(query string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -179,6 +183,7 @@ func (n *HTTPClientNode) SetQuery(query string) error {
 	return nil
 }
 
+// SetBody sets the body of the HTTP request.
 func (n *HTTPClientNode) SetHeader(header string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -211,6 +216,7 @@ func (n *HTTPClientNode) SetHeader(header string) error {
 	return nil
 }
 
+// SetTimeout sets the timeout duration for the HTTP request.
 func (n *HTTPClientNode) SetBody(body string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -234,6 +240,7 @@ func (n *HTTPClientNode) SetBody(body string) error {
 	return nil
 }
 
+// SetTimeout sets the timeout duration for the HTTP request.
 func (n *HTTPClientNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -295,7 +302,7 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
-	defer func() { _ = w.Body.Close() }()
+	defer w.Body.Close()
 
 	res, err := n.response(w)
 	if err != nil {

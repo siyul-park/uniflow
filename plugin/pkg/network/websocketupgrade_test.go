@@ -149,7 +149,6 @@ func TestWebSocketUpgradeNodeCodec_Decode(t *testing.T) {
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 

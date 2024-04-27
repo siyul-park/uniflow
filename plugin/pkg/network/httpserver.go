@@ -4,7 +4,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 
@@ -32,23 +31,7 @@ type HTTPServerNodeSpec struct {
 	Address         string `map:"address"`
 }
 
-// HTTPPayload is the payload structure for HTTP requests and responses.
-type HTTPPayload struct {
-	Method string          `map:"method,omitempty"`
-	Scheme string          `map:"scheme,omitempty"`
-	Host   string          `map:"host,omitempty"`
-	Path   string          `map:"path,omitempty"`
-	Query  url.Values      `map:"query,omitempty"`
-	Proto  string          `map:"proto,omitempty"`
-	Header http.Header     `map:"header,omitempty"`
-	Body   primitive.Value `map:"body,omitempty"`
-	Status int             `map:"status"`
-}
-
 const KindHTTPServer = "http/server"
-
-const KeyHTTPRequest = "http.Request"
-const KeyHTTPResponseWriter = "http.ResponseWriter"
 
 var _ node.Node = (*HTTPServerNode)(nil)
 var _ http.Handler = (*HTTPServerNode)(nil)
@@ -361,18 +344,6 @@ func (n *HTTPServerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 		f.Flush()
 	}
 	return nil
-}
-
-// NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...primitive.Value) *HTTPPayload {
-	if len(body) == 0 {
-		body = []primitive.Value{primitive.String(http.StatusText(status))}
-	}
-	return &HTTPPayload{
-		Header: http.Header{},
-		Body:   body[0],
-		Status: status,
-	}
 }
 
 // NewHTTPServerNodeCodec creates a new codec for HTTPServerNodeSpec.
