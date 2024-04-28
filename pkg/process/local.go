@@ -3,22 +3,22 @@ package process
 import "sync"
 
 // Local represents a local cache for storing data associated with processes.
-type Local struct {
-	data map[*Process]any
+type Local[T any] struct {
+	data map[*Process]T
 	done chan struct{}
 	mu   sync.RWMutex
 }
 
 // NewLocal creates and initializes a new Local cache.
-func NewLocal() *Local {
-	return &Local{
-		data: make(map[*Process]any),
+func NewLocal[T any]() *Local[T] {
+	return &Local[T]{
+		data: make(map[*Process]T),
 		done: make(chan struct{}),
 	}
 }
 
 // Load retrieves the value associated with a given process.
-func (l *Local) Load(proc *Process) (any, bool) {
+func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
@@ -27,7 +27,7 @@ func (l *Local) Load(proc *Process) (any, bool) {
 }
 
 // Store stores a value associated with a process in the cache.
-func (l *Local) Store(proc *Process, val any) {
+func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (l *Local) Store(proc *Process, val any) {
 }
 
 // Delete removes the association of a process and its value from the cache.
-func (l *Local) Delete(proc *Process) bool {
+func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -60,7 +60,7 @@ func (l *Local) Delete(proc *Process) bool {
 }
 
 // LoadOrStore retrieves the value associated with a process, or stores a new value if the process is not present.
-func (l *Local) LoadOrStore(proc *Process, val func() (any, error)) (any, error) {
+func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (l *Local) LoadOrStore(proc *Process, val func() (any, error)) (any, error)
 
 	v, err := val()
 	if err != nil {
-		return nil, err
+		return v, err
 	}
 
 	l.data[proc] = v
@@ -88,7 +88,7 @@ func (l *Local) LoadOrStore(proc *Process, val func() (any, error)) (any, error)
 }
 
 // Close closes the Local cache, releasing associated resources.
-func (l *Local) Close() {
+func (l *Local[T]) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -98,6 +98,6 @@ func (l *Local) Close() {
 	default:
 	}
 
-	l.data = make(map[*Process]any)
+	l.data = make(map[*Process]T)
 	close(l.done)
 }

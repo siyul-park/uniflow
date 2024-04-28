@@ -8,7 +8,7 @@ import (
 )
 
 func TestLocal_Load(t *testing.T) {
-	l := NewLocal()
+	l := NewLocal[string]()
 	defer l.Close()
 
 	proc := New()
@@ -27,7 +27,7 @@ func TestLocal_Load(t *testing.T) {
 }
 
 func TestLocal_Store(t *testing.T) {
-	l := NewLocal()
+	l := NewLocal[string]()
 	defer l.Close()
 
 	proc := New()
@@ -45,7 +45,7 @@ func TestLocal_Store(t *testing.T) {
 }
 
 func TestLocal_Delete(t *testing.T) {
-	l := NewLocal()
+	l := NewLocal[string]()
 	defer l.Close()
 
 	proc := New()
@@ -63,7 +63,7 @@ func TestLocal_Delete(t *testing.T) {
 }
 
 func TestLocal_LoadOrStore(t *testing.T) {
-	l := NewLocal()
+	l := NewLocal[string]()
 	defer l.Close()
 
 	proc := New()
@@ -71,7 +71,7 @@ func TestLocal_LoadOrStore(t *testing.T) {
 
 	v := faker.UUIDHyphenated()
 
-	r, err := l.LoadOrStore(proc, func() (any, error) {
+	r, err := l.LoadOrStore(proc, func() (string, error) {
 		return v, nil
 	})
 	assert.NoError(t, err)

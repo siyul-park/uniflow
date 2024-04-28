@@ -16,7 +16,7 @@ import (
 type RDBNode struct {
 	*node.OneToOneNode
 	db        *sqlx.DB
-	txs       *process.Local
+	txs       *process.Local[*sqlx.Tx]
 	isolation sql.IsolationLevel
 	mu        sync.RWMutex
 }
@@ -35,7 +35,7 @@ const KindRDB = "rdb"
 func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n := &RDBNode{
 		db:  db,
-		txs: process.NewLocal(),
+		txs: process.NewLocal[*sqlx.Tx](),
 	}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
@@ -85,7 +85,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 
-	val, err := n.txs.LoadOrStore(proc, func() (any, error) {
+	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
 		tx, err := n.db.BeginTxx(proc.Context(), &sql.TxOptions{
 			Isolation: n.isolation,
 		})
@@ -106,8 +106,6 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
-
-	tx := val.(*sqlx.Tx)
 
 	stmt, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
