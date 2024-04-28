@@ -26,6 +26,13 @@ type Reader struct {
 	mu      sync.Mutex
 }
 
+func Discard(w *Writer) {
+	go func() {
+		for range w.Receive() {
+		}
+	}()
+}
+
 func newWriter(stack *process.Stack, capacity int) *Writer {
 	w := &Writer{
 		stack:   stack,

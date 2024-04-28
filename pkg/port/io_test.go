@@ -133,6 +133,35 @@ func TestIO_Cost(t *testing.T) {
 	}
 }
 
+func TestDiscard(t *testing.T) {
+	proc := process.New()
+	defer proc.Close()
+
+	w := newWriter(proc.Stack(), 0)
+	defer w.Close()
+
+	r := newReader(proc.Stack(), 0)
+	defer r.Close()
+
+	w.link(r)
+
+	Discard(w)
+
+	pck := packet.New(nil)
+
+	w.Write(pck)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case pck := <-r.Read():
+		r.Receive(pck)
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+}
+
 func BenchmarkIO_WriteAndRead(b *testing.B) {
 	proc := process.New()
 	defer proc.Close()
