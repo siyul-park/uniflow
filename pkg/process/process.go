@@ -13,7 +13,6 @@ type Process struct {
 	ctx        context.Context
 	done       chan struct{}
 	wait       sync.WaitGroup
-	closeHooks []CloseHook
 	dataMutex  sync.RWMutex
 	closeMutex sync.Mutex
 }
@@ -68,14 +67,6 @@ func (p *Process) SetErr(err error) {
 	p.err = err
 }
 
-// AddCloseHook add a close hook to the process.
-func (p *Process) AddCloseHook(hook CloseHook) {
-	p.closeMutex.Lock()
-	defer p.closeMutex.Unlock()
-
-	p.closeHooks = append(p.closeHooks, hook)
-}
-
 // Done returns a channel that is closed when the process is closed.
 func (p *Process) Done() <-chan struct{} {
 	return p.done
@@ -105,13 +96,6 @@ func (p *Process) Close() {
 	p.wait.Wait()
 	<-p.stack.Done(nil)
 
-	for _, h := range p.closeHooks {
-		if err := h.Close(); err != nil {
-			p.SetErr(err)
-		}
-	}
-
-	p.closeHooks = nil
 	p.heap.Close()
 	p.stack.Close()
 	close(p.done)

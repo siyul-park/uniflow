@@ -62,12 +62,6 @@ func TestProcess_Lock(t *testing.T) {
 func TestProcess_Close(t *testing.T) {
 	proc := New()
 
-	count := 0
-	proc.AddCloseHook(CloseHookFunc(func() error {
-		count += 1
-		return nil
-	}))
-
 	select {
 	case <-proc.Done():
 		assert.Fail(t, "proc.Done() is not empty.")
@@ -78,7 +72,6 @@ func TestProcess_Close(t *testing.T) {
 
 	select {
 	case <-proc.Done():
-		assert.Equal(t, 1, count)
 	default:
 		assert.Fail(t, "proc.Done() is empty.")
 	}
