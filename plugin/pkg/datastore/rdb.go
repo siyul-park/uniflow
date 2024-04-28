@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"database/sql"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -15,47 +14,25 @@ import (
 // RDBNode represents a node for interacting with a relational database.
 type RDBNode struct {
 	*node.OneToOneNode
-	db        *sqlx.DB
-	txs       *process.Local[*sqlx.Tx]
-	isolation sql.IsolationLevel
-	mu        sync.RWMutex
+	db *sqlx.DB
+	mu sync.RWMutex
 }
 
 // RDBNodeSpec holds the specifications for creating a RDBNode.
 type RDBNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Driver          string             `map:"driver"`
-	Source          string             `map:"source"`
-	Isolation       sql.IsolationLevel `map:"isolation"`
+	Driver          string `map:"driver"`
+	Source          string `map:"source"`
 }
 
 const KindRDB = "rdb"
 
 // NewRDBNode creates a new RDBNode.
 func NewRDBNode(db *sqlx.DB) *RDBNode {
-	n := &RDBNode{
-		db:  db,
-		txs: process.NewLocal[*sqlx.Tx](),
-	}
+	n := &RDBNode{db: db}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
-}
-
-// SetIsolation sets the isolation level.
-func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.isolation = isolation
-}
-
-// Isolation returns the isolation level.
-func (n *RDBNode) Isolation() sql.IsolationLevel {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.isolation
 }
 
 // Close closes resource associated with the node.
@@ -66,8 +43,6 @@ func (n *RDBNode) Close() error {
 	if err := n.OneToOneNode.Close(); err != nil {
 		return err
 	}
-
-	n.txs.Close()
 	return n.db.Close()
 }
 
@@ -85,29 +60,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 
-	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
-		tx, err := n.db.BeginTxx(proc.Context(), &sql.TxOptions{
-			Isolation: n.isolation,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		go func() {
-			<-proc.Done()
-			defer tx.Rollback()
-			if proc.Err() == nil {
-				tx.Commit()
-			}
-		}()
-
-		return tx, nil
-	})
-	if err != nil {
-		return nil, packet.WithError(err, inPck)
-	}
-
-	stmt, err := tx.PrepareNamedContext(ctx, query)
+	stmt, err := n.db.PrepareNamedContext(ctx, query)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
@@ -115,7 +68,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
 		args, _ := primitive.Pick[[]any](inPck.Payload(), "1")
-		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
+		if rows, err = n.db.QueryxContext(ctx, query, args...); err != nil {
 			return nil, packet.WithError(err, inPck)
 		}
 	} else {
@@ -156,9 +109,6 @@ func NewRDBNodeCodec() scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-
-		n := NewRDBNode(db)
-		n.SetIsolation(spec.Isolation)
-		return n, nil
+		return NewRDBNode(db), nil
 	})
 }
