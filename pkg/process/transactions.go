@@ -49,22 +49,25 @@ func (t *Transactions) Set(pck *packet.Packet, tx *transaction.Transaction) {
 
 	parent := t.lookup(pck)
 	parent.AddCommitHook(transaction.CommitHookFunc(func() error {
-		t.Delete(pck)
+		defer func() {
+			t.mu.Lock()
+			defer t.mu.Unlock()
+			t.remove(pck)
+		}()
+
 		return tx.Commit()
 	}))
 	parent.AddRollbackHook(transaction.RollbackHookFunc(func() error {
-		t.Delete(pck)
+		defer func() {
+			t.mu.Lock()
+			defer t.mu.Unlock()
+			t.remove(pck)
+		}()
+
 		return tx.Rollback()
 	}))
 
 	t.transactions[pck] = tx
-}
-
-func (t *Transactions) Delete(pck *packet.Packet) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	delete(t.transactions, pck)
 }
 
 func (t *Transactions) lookup(pck *packet.Packet) *transaction.Transaction {
@@ -79,4 +82,8 @@ func (t *Transactions) lookup(pck *packet.Packet) *transaction.Transaction {
 	}
 
 	return tx
+}
+
+func (t *Transactions) remove(pck *packet.Packet) {
+	delete(t.transactions, pck)
 }
