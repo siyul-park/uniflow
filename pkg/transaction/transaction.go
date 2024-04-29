@@ -8,6 +8,9 @@ type Transaction struct {
 	mu            sync.RWMutex
 }
 
+var _ CommitHook = (*Transaction)(nil)
+var _ RollbackHook = (*Transaction)(nil)
+
 func New() *Transaction {
 	return &Transaction{}
 }

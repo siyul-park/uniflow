@@ -13,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // HTTPServerNode represents a Node for handling HTTP requests.
@@ -140,6 +141,8 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else if outWriter.Links() > 0 {
 		outPck := packet.New(outPayload)
 		proc.Stack().Add(nil, outPck)
+		proc.SetTransaction(outPck, transaction.New())
+
 		outWriter.Write(outPck)
 
 		<-proc.Stack().Done(outPck)
@@ -225,9 +228,8 @@ func (n *HTTPServerNode) throw(proc *process.Process, errPck *packet.Packet) {
 
 func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) {
 	var res *HTTPPayload
-	if err, ok := packet.AsError(backPck); ok {
+	if _, ok := packet.AsError(backPck); ok {
 		res = NewHTTPPayload(http.StatusInternalServerError)
-		proc.SetErr(err)
 	} else if err := primitive.Unmarshal(backPck.Payload(), &res); err != nil {
 		res.Body = backPck.Payload()
 	}
@@ -262,10 +264,15 @@ func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) 
 				negotiate(res)
 
 				_ = n.write(w, res)
-
-				proc.SetErr(err)
 			}
 		}
+	}
+
+	tx := proc.Transaction(backPck)
+	if res.Status < 400 {
+		tx.Commit()
+	} else {
+		tx.Rollback()
 	}
 
 	proc.Stack().Clear(backPck)
