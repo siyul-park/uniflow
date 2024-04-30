@@ -140,12 +140,15 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		n.throw(proc, packet.WithError(err, nil))
 	} else if outWriter.Links() > 0 {
 		outPck := packet.New(outPayload)
+		tx := transaction.New()
+
 		proc.Stack().Add(nil, outPck)
-		proc.SetTransaction(outPck, transaction.New())
+		proc.SetTransaction(outPck, tx)
 
 		outWriter.Write(outPck)
 
 		<-proc.Stack().Done(outPck)
+		_ = tx.Commit()
 	}
 
 	go proc.Close()

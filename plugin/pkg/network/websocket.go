@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // WebSocketNode represents a node for establishing WebSocket client connections.
@@ -152,40 +153,66 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 	defer n.mu.RUnlock()
 
 	outWriter := n.outPort.Open(proc)
-	port.Discard(outWriter)
+
+	go func() {
+		for {
+			backPck, ok := <-outWriter.Receive()
+			if !ok {
+				return
+			}
+
+			tx := proc.Transaction(backPck)
+
+			if _, ok := packet.AsError(backPck); !ok {
+				_ = tx.Commit()
+			} else {
+				_ = tx.Rollback()
+			}
+		}
+	}()
 
 	for {
 		typ, p, err := conn.ReadMessage()
-		if err != nil {
-			defer proc.Unlock()
+		close := err != nil
 
+		var outPayload primitive.Value
+		if close {
 			var data primitive.Value
 			if err, ok := err.(*websocket.CloseError); ok {
 				data = primitive.NewBinary(websocket.FormatCloseMessage(err.Code, err.Text))
 			}
-			outPayload, _ := primitive.MarshalBinary(&WebSocketPayload{
+			outPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
 				Type: websocket.CloseMessage,
 				Data: data,
 			})
-
-			outPck := packet.New(outPayload)
-			outWriter.Write(outPck)
-
-			return
+		} else {
+			var data primitive.Value
+			if data, err = UnmarshalMIME(p, lo.ToPtr("")); err != nil {
+				data = primitive.NewString(err.Error())
+			}
+			outPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
+				Type: typ,
+				Data: data,
+			})
 		}
-
-		var data primitive.Value
-		if data, err = UnmarshalMIME(p, lo.ToPtr("")); err != nil {
-			data = primitive.NewString(err.Error())
-		}
-
-		outPayload, _ := primitive.MarshalBinary(&WebSocketPayload{
-			Type: typ,
-			Data: data,
-		})
 
 		outPck := packet.New(outPayload)
+		tx := transaction.New()
+
+		proc.Stack().Add(nil, outPck)
+		proc.SetTransaction(outPck, tx)
+
 		outWriter.Write(outPck)
+
+		go func() {
+			<-proc.Stack().Done(outPck)
+			_ = tx.Commit()
+		}()
+
+		if close {
+			proc.Unlock()
+			return
+		}
 	}
 }
 
