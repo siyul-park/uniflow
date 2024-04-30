@@ -43,7 +43,7 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 
 	reader, ok := p.readers[proc]
 	if !ok {
-		reader = newReader(proc.Stack(), 2)
+		reader = newReader(proc, 2)
 		p.readers[proc] = reader
 
 		go func() {
@@ -139,7 +139,7 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 		writer, ok := p.writers[proc]
 		if !ok {
-			writer = newWriter(proc.Stack(), 2)
+			writer = newWriter(proc, 2)
 			p.writers[proc] = writer
 
 			go func() {

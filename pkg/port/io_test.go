@@ -15,10 +15,10 @@ func TestIO_WriteAndRead(t *testing.T) {
 	proc := process.New()
 	defer proc.Close()
 
-	w := newWriter(proc.Stack(), 0)
+	w := newWriter(proc, 0)
 	defer w.Close()
 
-	r := newReader(proc.Stack(), 0)
+	r := newReader(proc, 0)
 	defer r.Close()
 
 	w.link(r)
@@ -57,10 +57,10 @@ func TestIO_Link(t *testing.T) {
 	proc := process.New()
 	defer proc.Close()
 
-	w := newWriter(proc.Stack(), 0)
+	w := newWriter(proc, 0)
 	defer w.Close()
 
-	r := newReader(proc.Stack(), 0)
+	r := newReader(proc, 0)
 	defer r.Close()
 
 	w.link(r)
@@ -76,8 +76,8 @@ func TestIO_Done(t *testing.T) {
 	proc := process.New()
 	defer proc.Close()
 
-	w := newWriter(proc.Stack(), 0)
-	r := newReader(proc.Stack(), 0)
+	w := newWriter(proc, 0)
+	r := newReader(proc, 0)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
@@ -102,10 +102,10 @@ func TestIO_Cost(t *testing.T) {
 	proc := process.New()
 	defer proc.Close()
 
-	w := newWriter(proc.Stack(), 0)
+	w := newWriter(proc, 0)
 	defer w.Close()
 
-	r := newReader(proc.Stack(), 0)
+	r := newReader(proc, 0)
 	defer r.Close()
 
 	w.link(r)
@@ -137,10 +137,10 @@ func TestDiscard(t *testing.T) {
 	proc := process.New()
 	defer proc.Close()
 
-	w := newWriter(proc.Stack(), 0)
+	w := newWriter(proc, 0)
 	defer w.Close()
 
-	r := newReader(proc.Stack(), 0)
+	r := newReader(proc, 0)
 	defer r.Close()
 
 	w.link(r)
@@ -167,10 +167,10 @@ func BenchmarkIO_WriteAndRead(b *testing.B) {
 	defer proc.Close()
 	defer proc.Stack().Close()
 
-	w := newWriter(proc.Stack(), 0)
+	w := newWriter(proc, 0)
 	defer w.Close()
 
-	r := newReader(proc.Stack(), 0)
+	r := newReader(proc, 0)
 	defer r.Close()
 
 	w.link(r)

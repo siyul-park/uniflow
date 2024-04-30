@@ -10,7 +10,7 @@ import (
 
 // Writer represents a data writer in the pipeline.
 type Writer struct {
-	stack   *process.Stack
+	proc    *process.Process
 	pipe    *Pipe
 	channel chan *packet.Packet
 	written []*packet.Packet
@@ -19,7 +19,7 @@ type Writer struct {
 
 // Reader represents a data reader in the pipeline.
 type Reader struct {
-	stack   *process.Stack
+	proc    *process.Process
 	pipe    *Pipe
 	channel chan *packet.Packet
 	read    []*packet.Packet
@@ -33,9 +33,9 @@ func Discard(w *Writer) {
 	}()
 }
 
-func newWriter(stack *process.Stack, capacity int) *Writer {
+func newWriter(proc *process.Process, capacity int) *Writer {
 	w := &Writer{
-		stack:   stack,
+		proc:    proc,
 		pipe:    newPipe(capacity),
 		channel: make(chan *packet.Packet),
 	}
@@ -63,18 +63,18 @@ func (w *Writer) Write(pck *packet.Packet) {
 	defer w.mu.Unlock()
 
 	if w.pipe.Links() == 0 {
-		w.stack.Clear(pck)
+		w.proc.Stack().Clear(pck)
 		return
 	}
 
 	var stem *packet.Packet
-	if w.stack.Has(nil, pck) {
+	if w.proc.Stack().Has(nil, pck) {
 		stem = pck
 		pck = packet.New(stem.Payload())
 	}
 
 	w.written = append(w.written, pck)
-	w.stack.Add(stem, pck)
+	w.proc.Stack().Add(stem, pck)
 	w.pipe.Write(pck)
 }
 
@@ -110,13 +110,13 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	for len(w.written) > 0 && !w.stack.Has(nil, w.written[0]) {
+	for len(w.written) > 0 && !w.proc.Stack().Has(nil, w.written[0]) {
 		w.written = w.written[1:]
 	}
 
 	for i := 0; i < len(w.written); i++ {
-		if w.stack.Cost(w.written[i], pck) == 0 {
-			w.stack.Unwind(pck, w.written[i])
+		if w.proc.Stack().Cost(w.written[i], pck) == 0 {
+			w.proc.Stack().Unwind(pck, w.written[i])
 			w.written = append(w.written[:i], w.written[i+1:]...)
 			return true
 		}
@@ -124,9 +124,9 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	return false
 }
 
-func newReader(stack *process.Stack, capacity int) *Reader {
+func newReader(proc *process.Process, capacity int) *Reader {
 	r := &Reader{
-		stack:   stack,
+		proc:    proc,
 		pipe:    newPipe(capacity),
 		channel: make(chan *packet.Packet),
 	}
@@ -159,7 +159,7 @@ func (r *Reader) Cost(pck *packet.Packet) int {
 
 	cost := math.MaxInt
 	for i := 0; i < len(r.read); i++ {
-		if cur := r.stack.Cost(r.read[i], pck); cur < cost {
+		if cur := r.proc.Stack().Cost(r.read[i], pck); cur < cost {
 			cost = cur
 		}
 	}
@@ -181,13 +181,13 @@ func (r *Reader) Receive(pck *packet.Packet) {
 	cost := math.MaxInt
 	index := -1
 	for i := 0; i < len(r.read); i++ {
-		if cur := r.stack.Cost(r.read[i], pck); cur < cost {
+		if cur := r.proc.Stack().Cost(r.read[i], pck); cur < cost {
 			cost = cur
 			index = i
 		}
 	}
 
-	if index >= 0 && r.stack.Unwind(pck, r.read[index]) {
+	if index >= 0 && r.proc.Stack().Unwind(pck, r.read[index]) {
 		r.read = append(r.read[:index], r.read[index+1:]...)
 		r.pipe.Write(pck)
 	}
@@ -209,14 +209,14 @@ func (r *Reader) push(pck *packet.Packet) *packet.Packet {
 
 	leaf := packet.New(pck.Payload())
 
-	r.stack.Add(pck, leaf)
+	r.proc.Stack().Add(pck, leaf)
 	r.read = append(r.read, leaf)
 
 	return leaf
 }
 
 func (r *Reader) clean() {
-	for len(r.read) > 0 && !r.stack.Has(nil, r.read[0]) {
+	for len(r.read) > 0 && !r.proc.Stack().Has(nil, r.read[0]) {
 		r.read = r.read[1:]
 	}
 }

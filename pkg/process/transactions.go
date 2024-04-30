@@ -71,6 +71,10 @@ func (t *Transactions) Set(pck *packet.Packet, tx *transaction.Transaction) {
 }
 
 func (t *Transactions) lookup(pck *packet.Packet) *transaction.Transaction {
+	if tx, ok := t.transactions[pck]; ok {
+		return tx
+	}
+
 	cost := math.MaxInt
 	tx := t.transactions[nil]
 
