@@ -133,7 +133,7 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 				}
 			}
 
-			w.proc.Stack().Unwind(pck, w.written[i])
+			w.proc.Stack().Unwind(pck, written)
 			w.written = append(w.written[:i], w.written[i+1:]...)
 			return true
 		}
