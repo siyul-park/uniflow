@@ -6,6 +6,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // Writer represents a data writer in the pipeline.
@@ -75,6 +76,12 @@ func (w *Writer) Write(pck *packet.Packet) {
 
 	w.written = append(w.written, pck)
 	w.proc.Stack().Add(stem, pck)
+
+	if stem == nil {
+		tx := transaction.New()
+		w.proc.SetTransaction(pck, tx)
+	}
+
 	w.pipe.Write(pck)
 }
 
@@ -115,7 +122,17 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	}
 
 	for i := 0; i < len(w.written); i++ {
-		if w.proc.Stack().Cost(w.written[i], pck) == 0 {
+		written := w.written[i]
+		if w.proc.Stack().Cost(written, pck) == 0 {
+			if w.proc.Stack().Cost(nil, written) == 1 {
+				tx := w.proc.Transaction(written)
+				if _, ok := packet.AsError(pck); !ok {
+					_ = tx.Commit()
+				} else {
+					_ = tx.Rollback()
+				}
+			}
+
 			w.proc.Stack().Unwind(pck, w.written[i])
 			w.written = append(w.written[:i], w.written[i+1:]...)
 			return true

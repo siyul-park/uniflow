@@ -10,7 +10,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // WebSocketNode represents a node for establishing WebSocket client connections.
@@ -153,23 +152,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 	defer n.mu.RUnlock()
 
 	outWriter := n.outPort.Open(proc)
-
-	go func() {
-		for {
-			backPck, ok := <-outWriter.Receive()
-			if !ok {
-				return
-			}
-
-			tx := proc.Transaction(backPck)
-
-			if _, ok := packet.AsError(backPck); !ok {
-				_ = tx.Commit()
-			} else {
-				_ = tx.Rollback()
-			}
-		}
-	}()
+	port.Discard(outWriter)
 
 	for {
 		typ, p, err := conn.ReadMessage()
@@ -197,17 +180,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 		}
 
 		outPck := packet.New(outPayload)
-		tx := transaction.New()
-
-		proc.Stack().Add(nil, outPck)
-		proc.SetTransaction(outPck, tx)
-
 		outWriter.Write(outPck)
-
-		go func() {
-			<-proc.Stack().Done(outPck)
-			_ = tx.Commit()
-		}()
 
 		if close {
 			proc.Unlock()

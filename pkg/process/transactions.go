@@ -68,6 +68,13 @@ func (t *Transactions) Set(pck *packet.Packet, tx *transaction.Transaction) {
 	}))
 
 	t.transactions[pck] = tx
+
+	if t.stack.Has(nil, pck) {
+		go func() {
+			<-t.stack.Done(pck)
+			_ = tx.Commit()
+		}()
+	}
 }
 
 func (t *Transactions) lookup(pck *packet.Packet) *transaction.Transaction {
