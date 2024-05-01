@@ -13,7 +13,6 @@ type Process struct {
 	stack        *Stack
 	heap         *Heap
 	transactions *Transactions
-	err          error
 	ctx          context.Context
 	done         chan struct{}
 	wait         sync.WaitGroup

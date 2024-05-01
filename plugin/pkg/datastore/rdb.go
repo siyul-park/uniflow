@@ -78,6 +78,9 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 		return tx, nil
 	})
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
 
 	stmt, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
