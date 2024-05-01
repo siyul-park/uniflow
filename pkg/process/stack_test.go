@@ -101,6 +101,9 @@ func TestStack_Cost(t *testing.T) {
 	cost = s.Cost(pck2, pck2)
 	assert.Equal(t, 0, cost)
 
+	cost = s.Cost(nil, pck1)
+	assert.Equal(t, 1, cost)
+
 	cost = s.Cost(pck1, pck2)
 	assert.Equal(t, 1, cost)
 

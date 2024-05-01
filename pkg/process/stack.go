@@ -264,6 +264,10 @@ func (s *Stack) upwards(leaf *packet.Packet, loop func(*packet.Packet, []*packet
 		visits[head] = struct{}{}
 
 		stems := s.stems[head]
+		if len(stems) == 0 && head != nil {
+			stems = append(stems, nil)
+		}
+
 		for _, stem := range stems {
 			parents[stem] = head
 		}
