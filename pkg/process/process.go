@@ -3,26 +3,33 @@ package process
 import (
 	"context"
 	"sync"
+
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	stack      *Stack
-	heap       *Heap
-	err        error
-	ctx        context.Context
-	done       chan struct{}
-	wait       sync.WaitGroup
-	dataMutex  sync.RWMutex
-	closeMutex sync.Mutex
+	stack        *Stack
+	heap         *Heap
+	transactions *Transactions
+	ctx          context.Context
+	done         chan struct{}
+	wait         sync.WaitGroup
+	mu           sync.Mutex
 }
 
 // New creates a new Process.
 func New() *Process {
+	s := newStack()
+	h := newHeap()
+	t := newTransactions(s)
+
 	p := &Process{
-		stack: newStack(),
-		heap:  newHeap(),
-		done:  make(chan struct{}),
+		stack:        s,
+		heap:         h,
+		transactions: t,
+		done:         make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -46,25 +53,17 @@ func (p *Process) Heap() *Heap {
 	return p.heap
 }
 
+func (p *Process) Transaction(pck *packet.Packet) *transaction.Transaction {
+	return p.transactions.Get(pck)
+}
+
+func (p *Process) SetTransaction(pck *packet.Packet, tx *transaction.Transaction) {
+	p.transactions.Set(pck, tx)
+}
+
 // Context returns a process's context.
 func (p *Process) Context() context.Context {
 	return p.ctx
-}
-
-// Err returns the last error encountered by the process.
-func (p *Process) Err() error {
-	p.dataMutex.RLock()
-	defer p.dataMutex.RUnlock()
-
-	return p.err
-}
-
-// SetErr set the last error encountered by the process.
-func (p *Process) SetErr(err error) {
-	p.dataMutex.Lock()
-	defer p.dataMutex.Unlock()
-
-	p.err = err
 }
 
 // Done returns a channel that is closed when the process is closed.
@@ -84,8 +83,8 @@ func (p *Process) Unlock() {
 
 // Close closes the process.
 func (p *Process) Close() {
-	p.closeMutex.Lock()
-	defer p.closeMutex.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	select {
 	case <-p.done:
@@ -95,6 +94,8 @@ func (p *Process) Close() {
 
 	p.wait.Wait()
 	<-p.stack.Done(nil)
+
+	_ = p.transactions.Commit()
 
 	p.heap.Close()
 	p.stack.Close()
