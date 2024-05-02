@@ -105,7 +105,7 @@ func (n *WebSocketNode) connect(proc *process.Process) {
 		if conn, err := n.action(proc, inPck); err != nil {
 			n.throw(proc, err, inPck)
 		} else {
-			proc.Lock()
+			proc.Ref(1)
 			proc.Stack().Clear(inPck)
 
 			go n.write(proc, conn)
@@ -183,7 +183,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 		outWriter.Write(outPck)
 
 		if close {
-			proc.Unlock()
+			proc.Ref(-1)
 			return
 		}
 	}

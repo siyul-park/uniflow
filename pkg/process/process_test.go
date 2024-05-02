@@ -49,10 +49,10 @@ func TestProcess_Transaction(t *testing.T) {
 	assert.Equal(t, tx, proc.Transaction(pck))
 }
 
-func TestProcess_Lock(t *testing.T) {
+func TestProcess_Ref(t *testing.T) {
 	proc := New()
 
-	proc.Lock()
+	proc.Ref(1)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
@@ -63,7 +63,7 @@ func TestProcess_Lock(t *testing.T) {
 		close(done)
 	}()
 
-	proc.Unlock()
+	proc.Ref(-1)
 
 	select {
 	case <-done:

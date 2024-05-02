@@ -71,14 +71,9 @@ func (p *Process) Done() <-chan struct{} {
 	return p.done
 }
 
-// Lock acquires a read lock on the process.
-func (p *Process) Lock() {
-	p.wait.Add(1)
-}
-
-// Unlock releases the read lock on the process.
-func (p *Process) Unlock() {
-	p.wait.Done()
+// Ref acquires a lock on the process.
+func (p *Process) Ref(count int) {
+	p.wait.Add(count)
 }
 
 // Close closes the process.
