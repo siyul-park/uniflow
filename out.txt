@@ -1,0 +1,154 @@
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/database	0.034s
+?   	github.com/siyul-park/uniflow/pkg/database/databasetest	[no test files]
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/database/memdb
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkCollection_InsertOne-4    	   90044	     13398 ns/op	    4416 B/op	      94 allocs/op
+BenchmarkCollection_InsertMany-4   	      92	  14823224 ns/op	 4450963 B/op	   94148 allocs/op
+BenchmarkCollection_UpdateOne-4    	    1827	    665844 ns/op	   85968 B/op	    6114 allocs/op
+BenchmarkCollection_UpdateMany-4   	     201	   6265153 ns/op	  733706 B/op	   25349 allocs/op
+BenchmarkCollection_DeleteOne-4    	  131992	      9106 ns/op	     648 B/op	      23 allocs/op
+BenchmarkCollection_DeleteMany-4   	     334	   3476455 ns/op	  298476 B/op	   12104 allocs/op
+BenchmarkCollection_FindOne/With_Index-4         	  529002	      2872 ns/op	     528 B/op	      18 allocs/op
+BenchmarkCollection_FindOne/Without_Index-4      	    1737	    644415 ns/op	   81401 B/op	    6015 allocs/op
+BenchmarkCollection_FindMany/With_Index-4        	  425469	      2748 ns/op	     520 B/op	      17 allocs/op
+BenchmarkCollection_FindMany/Without_Index-4     	    1815	    668494 ns/op	   81327 B/op	    6014 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/database/memdb	20.710s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/database/mongodb
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkCollection_InsertOne-4    	     560	   1943007 ns/op	   11195 B/op	     179 allocs/op
+BenchmarkCollection_InsertMany-4   	      30	  37297460 ns/op	 6302167 B/op	  119084 allocs/op
+BenchmarkCollection_UpdateOne-4    	     360	   2850108 ns/op	   12949 B/op	     200 allocs/op
+BenchmarkCollection_UpdateMany-4   	      37	  30061625 ns/op	   15911 B/op	     234 allocs/op
+BenchmarkCollection_DeleteOne-4    	     654	   1851634 ns/op	    6569 B/op	      78 allocs/op
+BenchmarkCollection_DeleteMany-4   	      37	  30445676 ns/op	   10285 B/op	     124 allocs/op
+BenchmarkCollection_FindOne/With_Index-4         	    3568	    333152 ns/op	    8735 B/op	     115 allocs/op
+BenchmarkCollection_FindOne/Without_Index-4      	    1340	   1047731 ns/op	    8783 B/op	     118 allocs/op
+BenchmarkCollection_FindMany/With_Index-4        	    3195	    342794 ns/op	    8409 B/op	     110 allocs/op
+BenchmarkCollection_FindMany/Without_Index-4     	    1218	   1017174 ns/op	    8470 B/op	     113 allocs/op
+BenchmarkServerAndRelease-4                      	       2	1024441357 ns/op	  420880 B/op	    3321 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/database/mongodb	66.033s
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/encoding	0.016s
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/hook	0.010s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/loader
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkLoader_LoadOne-4   	   64770	     18002 ns/op	    2560 B/op	      76 allocs/op
+BenchmarkLoader_LoadAll-4   	  108207	     12018 ns/op	    1352 B/op	      32 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/loader	11.171s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/node
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkManyToOneNode_SendAndReceive/In0,_In1_->_Out_->_In0,_In1-4         	    5485	   6696349 ns/op	  537143 B/op	   55174 allocs/op
+BenchmarkOneToManyNode_SendAndReceive/In_->_Out_->_In-4                     	   10000	   3017719 ns/op	  244932 B/op	   25141 allocs/op
+BenchmarkOneToOneNode_SendAndReceive-4                                      	   10000	   3025447 ns/op	  244904 B/op	   25138 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/node	97.255s
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/packet	0.013s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/port
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkIO_WriteAndRead-4     	   10000	   3689273 ns/op	  242040 B/op	   25019 allocs/op
+BenchmarkPipe_WriteAndRead-4   	 1202353	       958.1 ns/op	      24 B/op	       1 allocs/op
+BenchmarkPort_Open-4           	   26533	     49730 ns/op	    5898 B/op	      69 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/port	42.090s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/primitive
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkBinary_Encode/encoding.BinaryMarshaler-4         	 3930314	       280.9 ns/op	      56 B/op	       3 allocs/op
+BenchmarkBinary_Encode/slice-4                            	 4920897	       241.0 ns/op	      40 B/op	       2 allocs/op
+BenchmarkBinary_Encode/array-4                            	 5081859	       248.3 ns/op	      40 B/op	       2 allocs/op
+BenchmarkBinary_Decode/encoding.BinaryUnmarshaler-4       	 5113498	       234.4 ns/op	      40 B/op	       2 allocs/op
+BenchmarkBinary_Decode/slice-4                            	 1818334	       617.6 ns/op	     128 B/op	       6 allocs/op
+BenchmarkBinary_Decode/array-4                            	 2989412	       414.1 ns/op	      54 B/op	       4 allocs/op
+BenchmarkBinary_Decode/any-4                              	 4018446	       256.1 ns/op	      64 B/op	       3 allocs/op
+BenchmarkMap_Set-4                                        	   59276	     29528 ns/op	   10199 B/op	     160 allocs/op
+BenchmarkMap_Get-4                                        	  147105	      9983 ns/op	    3792 B/op	      75 allocs/op
+BenchmarkMap_Interface-4                                  	 1354219	       772.4 ns/op	     400 B/op	       6 allocs/op
+BenchmarkMap_Encode/map-4                                 	  656734	      1562 ns/op	     312 B/op	      15 allocs/op
+BenchmarkMap_Encode/struct-4                              	 1000000	      1259 ns/op	     377 B/op	      15 allocs/op
+BenchmarkMap_Decode/map-4                                 	  811894	      1318 ns/op	     392 B/op	       6 allocs/op
+BenchmarkMap_Decode/struct-4                              	 1871664	       618.0 ns/op	      64 B/op	       3 allocs/op
+BenchmarkSlice_Append-4                                   	  112580	     11466 ns/op	    6558 B/op	      81 allocs/op
+BenchmarkSlice_Sub-4                                      	 1000000	      1003 ns/op	    1184 B/op	       3 allocs/op
+BenchmarkSlice_Get-4                                      	1000000000	         1.180 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSlice_Interface-4                                	 1000000	      1010 ns/op	     968 B/op	       5 allocs/op
+BenchmarkSlice_Encode/map-4                               	  529494	      2024 ns/op	    1336 B/op	      12 allocs/op
+BenchmarkSlice_Encode/struct-4                            	  578419	      2204 ns/op	    1336 B/op	      12 allocs/op
+BenchmarkSlice_Decode/slice-4                             	 1000000	      1150 ns/op	     152 B/op	       7 allocs/op
+BenchmarkSlice_Decode/array-4                             	 1000000	      1011 ns/op	      96 B/op	       5 allocs/op
+BenchmarkSlice_Decode/element-4                           	 1797702	       696.8 ns/op	      96 B/op	       5 allocs/op
+BenchmarkString_Encode/encoding.TextMarshaler-4           	 2644490	       391.3 ns/op	     128 B/op	       4 allocs/op
+BenchmarkString_Encode/string-4                           	 6434222	       189.1 ns/op	      32 B/op	       2 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/primitive	37.416s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/process
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkNewProcess-4   	  352396	      3890 ns/op	    1432 B/op	      23 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/process	1.442s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/runtime
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkNewRuntime-4   	  660793	      1897 ns/op	     704 B/op	      13 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/runtime	3.213s
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/scheme	0.017s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/storage
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkStorage_InsertOne-4    	   64190	     17786 ns/op	    2938 B/op	      85 allocs/op
+BenchmarkStorage_InsertMany-4   	     620	   1973369 ns/op	  312776 B/op	    8647 allocs/op
+BenchmarkStorage_UpdateOne-4    	   38852	     32608 ns/op	    8381 B/op	     234 allocs/op
+BenchmarkStorage_UpdateMany-4   	     466	   2548298 ns/op	  436771 B/op	   15121 allocs/op
+BenchmarkStorage_DeleteOne-4    	  116539	     11079 ns/op	    1233 B/op	      47 allocs/op
+BenchmarkStorage_DeleteMany-4   	    1287	   1010078 ns/op	  161466 B/op	    4567 allocs/op
+BenchmarkStorage_FindOne-4      	  155569	      8295 ns/op	    1360 B/op	      53 allocs/op
+BenchmarkStorage_FindMany-4     	    1617	    783012 ns/op	  155441 B/op	    4768 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/storage	23.223s
+goos: linux
+goarch: amd64
+pkg: github.com/siyul-park/uniflow/pkg/symbol
+cpu: AMD EPYC 7282 16-Core Processor                
+BenchmarkTable_Insert-4   	   10000	    156383 ns/op	     785 B/op	      12 allocs/op
+BenchmarkTable_Free-4     	 1586952	       758.2 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/symbol	128.726s
+PASS
+ok  	github.com/siyul-park/uniflow/pkg/transaction	0.017s
+PASS
+ok  	github.com/siyul-park/uniflow/cmd/cli	0.014s
+PASS
+ok  	github.com/siyul-park/uniflow/cmd/printer	0.018s
+PASS
+ok  	github.com/siyul-park/uniflow/cmd/scanner	0.071s
+?   	github.com/siyul-park/uniflow/cmd/uniflow	[no test files]
+FAIL	github.com/siyul-park/uniflow/plugin/internal/js [build failed]
+PASS
+ok  	github.com/siyul-park/uniflow/plugin/internal/language	0.012s
+FAIL	github.com/siyul-park/uniflow/plugin/pkg/control [build failed]
+FAIL	github.com/siyul-park/uniflow/plugin/pkg/datastore [build failed]
+FAIL	github.com/siyul-park/uniflow/plugin/pkg/network [build failed]
+FAIL	github.com/siyul-park/uniflow/plugin/pkg/system [build failed]
+FAIL

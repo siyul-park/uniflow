@@ -53,26 +53,19 @@ func (t *Transactions) Set(pck *packet.Packet, tx *transaction.Transaction) {
 	defer t.mu.Unlock()
 
 	parent := t.lookup(pck)
-	parent.AddCommitHook(transaction.CommitHookFunc(func() error {
-		defer func() {
-			t.mu.Lock()
-			defer t.mu.Unlock()
-			t.remove(pck)
-		}()
-
-		return tx.Commit()
-	}))
-	parent.AddRollbackHook(transaction.RollbackHookFunc(func() error {
-		defer func() {
-			t.mu.Lock()
-			defer t.mu.Unlock()
-			t.remove(pck)
-		}()
-
-		return tx.Rollback()
-	}))
-
 	t.transactions[pck] = tx
+
+	tx.AddCommitHook(transaction.CommitHookFunc(func() error {
+		t.delete(pck, tx)
+		return nil
+	}))
+	tx.AddRollbackHook(transaction.RollbackHookFunc(func() error {
+		t.delete(pck, tx)
+		return nil
+	}))
+
+	parent.AddCommitHook(tx)
+	parent.AddRollbackHook(tx)
 
 	if t.stack.Has(nil, pck) {
 		go func() {
@@ -100,6 +93,11 @@ func (t *Transactions) lookup(pck *packet.Packet) *transaction.Transaction {
 	return tx
 }
 
-func (t *Transactions) remove(pck *packet.Packet) {
-	delete(t.transactions, pck)
+func (t *Transactions) delete(pck *packet.Packet, tx *transaction.Transaction) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if cur := t.transactions[pck]; cur == tx {
+		delete(t.transactions, pck)
+	}
 }

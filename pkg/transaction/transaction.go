@@ -1,6 +1,8 @@
 package transaction
 
-import "sync"
+import (
+	"sync"
+)
 
 // Transaction represents a transaction with commit and rollback functionality.
 type Transaction struct {
@@ -35,48 +37,44 @@ func (t *Transaction) AddRollbackHook(hook RollbackHook) {
 
 // Commit commits the transaction by executing all commit hooks.
 func (t *Transaction) Commit() error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	commitHooks, rollbackHooks := t.hooks()
 
-	return t.commit()
+	for _, hook := range commitHooks {
+		if err := hook.Commit(); err != nil {
+			for i := len(rollbackHooks) - 1; i >= 0; i-- {
+				hook := rollbackHooks[i]
+				_ = hook.Rollback()
+			}
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Rollback rolls back the transaction by executing all rollback hooks.
 func (t *Transaction) Rollback() error {
+	_, rollbackHooks := t.hooks()
+
+	var err error
+	for i := len(rollbackHooks) - 1; i >= 0; i-- {
+		hook := rollbackHooks[i]
+		if e := hook.Rollback(); e != nil {
+			err = e
+		}
+	}
+
+	return err
+}
+
+func (t *Transaction) hooks() ([]CommitHook, []RollbackHook) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	return t.rollback()
-}
-
-// commit executes all commit hooks of the transaction.
-func (t *Transaction) commit() error {
 	defer func() {
 		t.commitHooks = nil
 		t.rollbackHooks = nil
 	}()
 
-	for _, hook := range t.commitHooks {
-		if err := hook.Commit(); err != nil {
-			_ = t.rollback()
-			return err
-		}
-	}
-	return nil
-}
-
-// rollback executes all rollback hooks of the transaction.
-func (t *Transaction) rollback() error {
-	defer func() {
-		t.commitHooks = nil
-		t.rollbackHooks = nil
-	}()
-
-	for i := len(t.rollbackHooks) - 1; i >= 0; i-- {
-		hook := t.rollbackHooks[i]
-		if err := hook.Rollback(); err != nil {
-			return err
-		}
-	}
-	return nil
+	return t.commitHooks, t.rollbackHooks
 }

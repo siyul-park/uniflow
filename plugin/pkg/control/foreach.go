@@ -126,7 +126,7 @@ func (n *ForEachNode) forward(proc *process.Process) {
 		}
 
 		inPayload := inPck.Payload()
-		outPayloads := n.slice(inPayload)
+		outPayloads := n.chunk(inPayload)
 
 		outPcks := make([]*packet.Packet, len(outPayloads))
 		for i, outPayload := range outPayloads {
@@ -142,6 +142,7 @@ func (n *ForEachNode) forward(proc *process.Process) {
 		for i, outPck := range outPcks {
 			if !outWriter0.Write(outPck) {
 				proc.Stack().Clear(outPck)
+				continue
 			}
 
 			select {
@@ -151,26 +152,29 @@ func (n *ForEachNode) forward(proc *process.Process) {
 					return
 				}
 
-				if _, ok := packet.AsError(backPck); ok && errWriter.Links() > 0 {
-					if !errWriter.Write(backPck) {
-						proc.Stack().Clear(backPck)
-					}
-					if backPck, ok = <-errWriter.Receive(); !ok {
-						return
-					}
-				}
-
 				proc.Stack().Unwind(backPck, outPck)
 
 				if _, ok := packet.AsError(backPck); ok {
-					inReader.Receive(backPck)
-
-					for j := 0; j < i; j++ {
-						proc.Stack().Clear(outPcks[j])
+					if errWriter.Write(backPck) {
+						if backPck, ok = <-errWriter.Receive(); !ok {
+							return
+						}
 					}
+				}
+
+				if _, ok := packet.AsError(backPck); ok {
+					if !inReader.Receive(backPck) {
+						proc.Stack().Clear(backPck)
+					}
+
 					for _, backPck := range backPcks {
 						proc.Stack().Clear(backPck)
 					}
+					for j := i + 1; j < len(outPcks); j++ {
+						outPck := outPcks[j]
+						proc.Stack().Clear(outPck)
+					}
+
 					backPcks = nil
 					catch = true
 
@@ -220,7 +224,7 @@ func (n *ForEachNode) backward(proc *process.Process) {
 	}
 }
 
-func (n *ForEachNode) slice(val primitive.Value) []primitive.Value {
+func (n *ForEachNode) chunk(val primitive.Value) []primitive.Value {
 	var values []primitive.Value
 
 	switch v := val.(type) {

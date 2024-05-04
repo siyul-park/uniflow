@@ -146,36 +146,34 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkOneToManyNode_SendAndReceive(b *testing.B) {
-	b.Run("In -> Out -> In", func(b *testing.B) {
-		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
-			return []*packet.Packet{inPck}, nil
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(PortIn))
-
-		out0 := port.NewIn()
-		n.Out(PortWithIndex(PortOut, 0)).Link(out0)
-
-		proc := process.New()
-		defer proc.Close()
-
-		inWriter := in.Open(proc)
-		outReader0 := out0.Open(proc)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck := packet.New(inPayload)
-
-			inWriter.Write(inPck)
-
-			outPck := <-outReader0.Read()
-			outReader0.Receive(outPck)
-
-			<-inWriter.Receive()
-		}
+	n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+		return []*packet.Packet{inPck}, nil
 	})
+	defer n.Close()
+
+	in := port.NewOut()
+	in.Link(n.In(PortIn))
+
+	out0 := port.NewIn()
+	n.Out(PortWithIndex(PortOut, 0)).Link(out0)
+
+	proc := process.New()
+	defer proc.Close()
+
+	inWriter := in.Open(proc)
+	outReader0 := out0.Open(proc)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		outPck := <-outReader0.Read()
+		outReader0.Receive(outPck)
+
+		<-inWriter.Receive()
+	}
 }

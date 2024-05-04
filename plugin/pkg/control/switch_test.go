@@ -239,8 +239,10 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			inWriter.Write(inPck)
+
 			outPck := <-outReader0.Read()
 			outReader0.Receive(outPck)
+
 			<-inWriter.Receive()
 		}
 	})
@@ -250,7 +252,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		n.SetLanguage(language.Javascript)
-		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -271,8 +273,10 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			inWriter.Write(inPck)
+
 			outPck := <-outReader0.Read()
 			outReader0.Receive(outPck)
+
 			<-inWriter.Receive()
 		}
 	})
@@ -282,7 +286,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 		defer n.Close()
 
 		n.SetLanguage(language.JSONata)
-		_ = n.AddMatch("$.foo === \"bar\"", node.PortWithIndex(node.PortOut, 0))
+		_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))

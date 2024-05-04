@@ -201,6 +201,9 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 		if cur := r.proc.Stack().Cost(r.read[i], pck); cur < cost {
 			cost = cur
 			index = i
+			if cost == 0 {
+				break
+			}
 		}
 	}
 

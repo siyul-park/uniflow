@@ -348,6 +348,6 @@ func BenchmarkForEachNode_SendAndReceive(b *testing.B) {
 		outPck := <-outReader1.Read()
 		outReader1.Receive(outPck)
 
-		inWriter.Receive()
+		<-inWriter.Receive()
 	}
 }

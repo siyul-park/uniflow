@@ -119,7 +119,7 @@ func (p *OutPort) Link(in *InPort) {
 	p.ins = append(p.ins, in)
 }
 
-// Unlink disconnects two pipthe output port to an input portelines.
+// Unlink disconnects two pip the output port to an input port.
 func (p *OutPort) Unlink(in *InPort) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -192,7 +192,7 @@ func (p *OutPort) closeWithLock(proc *process.Process) {
 
 func (p *OutPort) close(proc *process.Process) {
 	if writer, ok := p.writers[proc]; ok {
-		writer.Close()
 		delete(p.writers, proc)
+		writer.Close()
 	}
 }

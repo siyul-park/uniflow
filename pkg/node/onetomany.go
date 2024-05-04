@@ -135,7 +135,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				}
 				for i, outPck := range outPcks {
 					if !outWriters[i].Write(outPck) {
-						proc.Stack().Clear(outPck)
+						if !inReader.Receive(outPck) {
+							proc.Stack().Clear(outPck)
+						}
 					}
 				}
 			} else {

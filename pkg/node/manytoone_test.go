@@ -181,48 +181,46 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
-	b.Run("In0, In1 -> Out -> In0, In1", func(b *testing.B) {
-		n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-			for _, inPck := range inPcks {
-				if inPck == nil {
-					return nil, nil
-				}
+	n := NewManyToOneNode(func(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+		for _, inPck := range inPcks {
+			if inPck == nil {
+				return nil, nil
 			}
-			return packet.New(primitive.NewString(faker.UUIDHyphenated())), nil
-		})
-		defer n.Close()
-
-		in0 := port.NewOut()
-		in0.Link(n.In(PortWithIndex(PortIn, 0)))
-
-		in1 := port.NewOut()
-		in1.Link(n.In(PortWithIndex(PortIn, 1)))
-
-		out := port.NewIn()
-		n.Out(PortOut).Link(out)
-
-		proc := process.New()
-		defer proc.Close()
-
-		inWriter0 := in0.Open(proc)
-		inWriter1 := in1.Open(proc)
-		outReader := out.Open(proc)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inPayload := primitive.NewString(faker.UUIDHyphenated())
-			inPck0 := packet.New(inPayload)
-			inPck1 := packet.New(inPayload)
-
-			inWriter0.Write(inPck0)
-			inWriter1.Write(inPck1)
-
-			outPck := <-outReader.Read()
-			outReader.Receive(outPck)
-
-			<-inWriter0.Receive()
-			<-inWriter1.Receive()
 		}
+		return packet.New(primitive.NewString(faker.UUIDHyphenated())), nil
 	})
+	defer n.Close()
+
+	in0 := port.NewOut()
+	in0.Link(n.In(PortWithIndex(PortIn, 0)))
+
+	in1 := port.NewOut()
+	in1.Link(n.In(PortWithIndex(PortIn, 1)))
+
+	out := port.NewIn()
+	n.Out(PortOut).Link(out)
+
+	proc := process.New()
+	defer proc.Close()
+
+	inWriter0 := in0.Open(proc)
+	inWriter1 := in1.Open(proc)
+	outReader := out.Open(proc)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck0 := packet.New(inPayload)
+		inPck1 := packet.New(inPayload)
+
+		inWriter0.Write(inPck0)
+		inWriter1.Write(inPck1)
+
+		outPck := <-outReader.Read()
+		outReader.Receive(outPck)
+
+		<-inWriter0.Receive()
+		<-inWriter1.Receive()
+	}
 }

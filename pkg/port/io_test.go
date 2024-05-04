@@ -177,8 +177,13 @@ func BenchmarkIO_WriteAndRead(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
-			w.Write(packet.New(nil))
-			<-r.Read()
+			outPck := packet.New(nil)
+			w.Write(outPck)
+
+			backPck := <-r.Read()
+			r.Receive(backPck)
+
+			<-w.Receive()
 		}
 	})
 }
