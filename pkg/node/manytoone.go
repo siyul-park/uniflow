@@ -215,7 +215,9 @@ func (n *ManyToOneNode) receive(proc *process.Process, backPck *packet.Packet) {
 	min := lo.Min(costs)
 	for i, cost := range costs {
 		if cost == min {
-			inReaders[i].Receive(backPck)
+			if !inReaders[i].Receive(backPck) {
+				proc.Stack().Clear(backPck)
+			}
 		}
 	}
 }

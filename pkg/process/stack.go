@@ -102,12 +102,6 @@ func (s *Stack) Cost(stem, leaf *packet.Packet) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if stem == nil {
-		if _, ok := s.stems[leaf]; !ok {
-			return 1
-		}
-	}
-
 	cost := len(s.path(stem, leaf)) - 1
 	if cost < 0 {
 		return math.MaxInt

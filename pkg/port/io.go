@@ -204,12 +204,13 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 		}
 	}
 
-	if index >= 0 && r.proc.Stack().Unwind(pck, r.read[index]) {
-		r.read = append(r.read[:index], r.read[index+1:]...)
-		r.pipe.Write(pck)
-		return true
+	if index < 0 || !r.proc.Stack().Unwind(pck, r.read[index]) {
+		return false
 	}
-	return false
+
+	r.read = append(r.read[:index], r.read[index+1:]...)
+	r.pipe.Write(pck)
+	return true
 }
 
 // Done returns the channel signaling the Reader's pipe closure.

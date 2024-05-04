@@ -214,7 +214,9 @@ func (n *ForEachNode) backward(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		if !inReader.Receive(backPck) {
+			proc.Stack().Clear(backPck)
+		}
 	}
 }
 

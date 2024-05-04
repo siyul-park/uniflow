@@ -167,7 +167,9 @@ func (n *GoToNode) catch(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		if !inReader.Receive(backPck) {
+			proc.Stack().Clear(backPck)
+		}
 	}
 }
 
@@ -179,7 +181,7 @@ func (n *GoToNode) throw(proc *process.Process, errPck *packet.Packet) {
 		if !inReader.Receive(errPck) {
 			proc.Stack().Clear(errPck)
 		}
-	} 
+	}
 }
 
 // NewGoToNodeCodec creates a new codec for GoToNodeSpec.

@@ -209,9 +209,12 @@ func (n *WebSocketNode) catch(proc *process.Process) {
 		inCost := inReader.Cost(backPck)
 
 		if ioCost < inCost {
-			ioReader.Receive(backPck)
+			ok = ioReader.Receive(backPck)
 		} else {
-			inReader.Receive(backPck)
+			ok = inReader.Receive(backPck)
+		}
+		if !ok {
+			proc.Stack().Clear(backPck)
 		}
 	}
 }

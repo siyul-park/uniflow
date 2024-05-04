@@ -121,7 +121,9 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		if !inReader.Receive(backPck) {
+			proc.Stack().Clear(backPck)
+		}
 	}
 }
 
@@ -138,7 +140,9 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		if !inReader.Receive(backPck) {
+			proc.Stack().Clear(backPck)
+		}
 	}
 }
 
