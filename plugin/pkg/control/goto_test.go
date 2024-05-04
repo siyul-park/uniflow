@@ -45,7 +45,7 @@ func TestGoToNode_SendAndReceive(t *testing.T) {
 		n2 := NewGoToNode()
 		defer n2.Close()
 
-		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
+		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
 
 		in := port.NewOut()
 		in.Link(n2.In(node.PortIn))
@@ -92,7 +92,7 @@ func TestGoToNode_SendAndReceive(t *testing.T) {
 		n2 := NewGoToNode()
 		defer n2.Close()
 
-		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
+		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
 
 		in := port.NewOut()
 		in.Link(n2.In(node.PortIn))
@@ -148,7 +148,7 @@ func BenchmarkGoToNode_SendAndReceive(b *testing.B) {
 	n2 := NewGoToNode()
 	defer n2.Close()
 
-	n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIO))
+	n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
 
 	in := port.NewOut()
 	in.Link(n2.In(node.PortIn))

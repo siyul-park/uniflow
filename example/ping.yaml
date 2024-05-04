@@ -15,7 +15,7 @@
   links:
     out[0]:
       - name: pong
-        port: io
+        port: in
 
 - kind: snippet
   name: pong

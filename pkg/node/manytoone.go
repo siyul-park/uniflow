@@ -146,16 +146,16 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 				for _, inPck := range inPcks {
 					proc.Stack().Add(inPck, errPck)
 				}
-				if errWriter.Links() > 0 {
-					errWriter.Write(errPck)
-				} else {
+				if !errWriter.Write(errPck) {
 					n.receive(proc, errPck)
 				}
 			} else if outPck != nil {
 				for _, inPck := range inPcks {
 					proc.Stack().Add(inPck, outPck)
 				}
-				outWriter.Write(outPck)
+				if !outWriter.Write(outPck) {
+					proc.Stack().Clear(outPck)
+				}
 			} else {
 				if len(inPcks) < len(inReaders) {
 					return false

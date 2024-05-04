@@ -30,21 +30,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		n, _ := NewSnippetNode("", language.Text)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewString(""), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -60,21 +60,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}`, language.Typescript)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -90,21 +90,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		}`, language.Javascript)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -118,21 +118,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		n, _ := NewSnippetNode(`{}`, language.JSON)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewMap(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -146,21 +146,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		n, _ := NewSnippetNode(`$`, language.JSONata)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -174,21 +174,21 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 		n, _ := NewSnippetNode(`{}`, language.YAML)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewMap(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -215,13 +215,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		n, _ := NewSnippetNode("", language.Text)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
@@ -229,8 +229,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 
@@ -239,13 +239,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 			return input;
 		}`, language.Typescript)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
@@ -253,8 +253,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 
@@ -263,13 +263,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 			return input;
 		}`, language.Javascript)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
@@ -277,8 +277,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 
@@ -286,13 +286,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		n, _ := NewSnippetNode("{}", language.JSON)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
@@ -300,8 +300,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 
@@ -309,13 +309,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		n, _ := NewSnippetNode("$", language.JSONata)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.Word())
 		inPck := packet.New(inPayload)
@@ -323,8 +323,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 
@@ -332,13 +332,13 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		n, _ := NewSnippetNode("{}", language.YAML)
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
@@ -346,8 +346,8 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			ioWriter.Write(inPck)
-			<-ioWriter.Receive()
+			inWriter.Write(inPck)
+			<-inWriter.Receive()
 		}
 	})
 }

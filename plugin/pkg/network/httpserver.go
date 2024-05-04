@@ -145,7 +145,9 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		proc.Stack().Add(nil, outPck)
 		proc.SetTransaction(outPck, tx)
 
-		outWriter.Write(outPck)
+		if !outWriter.Write(outPck) {
+			proc.Stack().Clear(outPck)
+		}
 
 		<-proc.Stack().Done(outPck)
 		_ = tx.Commit()
@@ -222,9 +224,7 @@ func (n *HTTPServerNode) catch(proc *process.Process) {
 func (n *HTTPServerNode) throw(proc *process.Process, errPck *packet.Packet) {
 	errWriter := n.errPort.Open(proc)
 
-	if errWriter.Links() > 0 {
-		errWriter.Write(errPck)
-	} else {
+	if !errWriter.Write(errPck) {
 		n.receive(proc, errPck)
 	}
 }

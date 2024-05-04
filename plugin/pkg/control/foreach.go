@@ -140,7 +140,9 @@ func (n *ForEachNode) forward(proc *process.Process) {
 		var catch bool
 	Loop:
 		for i, outPck := range outPcks {
-			outWriter0.Write(outPck)
+			if !outWriter0.Write(outPck) {
+				proc.Stack().Clear(outPck)
+			}
 
 			select {
 			case <-proc.Stack().Done(outPck):
@@ -150,7 +152,9 @@ func (n *ForEachNode) forward(proc *process.Process) {
 				}
 
 				if _, ok := packet.AsError(backPck); ok && errWriter.Links() > 0 {
-					errWriter.Write(backPck)
+					if !errWriter.Write(backPck) {
+						proc.Stack().Clear(backPck)
+					}
 					if backPck, ok = <-errWriter.Receive(); !ok {
 						return
 					}
@@ -186,10 +190,10 @@ func (n *ForEachNode) forward(proc *process.Process) {
 			outPck := packet.New(outPayload)
 			proc.Stack().Add(inPck, outPck)
 
-			if outWriter1.Links() > 0 {
-				outWriter1.Write(outPck)
-			} else {
-				inReader.Receive(outPck)
+			if !outWriter1.Write(outPck) {
+				if !inReader.Receive(outPck) {
+					proc.Stack().Clear(outPck)
+				}
 			}
 		} else if !catch {
 			proc.Stack().Clear(inPck)

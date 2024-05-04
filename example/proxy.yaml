@@ -4,7 +4,7 @@
   links:
     out:
       - name: proxy
-        port: io
+        port: in
 
 - kind: http/client
   name: proxy

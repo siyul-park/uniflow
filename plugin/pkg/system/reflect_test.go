@@ -45,21 +45,21 @@ func TestCreateNodes(t *testing.T) {
 		Kind: kind,
 	}
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalBinary(spec)
 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-ioWriter.Receive():
+	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
@@ -94,21 +94,21 @@ func TestReadNodes(t *testing.T) {
 
 	id, _ := st.InsertOne(ctx, spec)
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalBinary(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-ioWriter.Receive():
+	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
@@ -145,21 +145,21 @@ func TestUpdateNodes(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, spec)
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalBinary(spec)
 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-ioWriter.Receive():
+	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
@@ -194,21 +194,21 @@ func TestDeleteNodes(t *testing.T) {
 
 	id, _ := st.InsertOne(ctx, spec)
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalBinary(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-ioWriter.Receive():
+	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
 		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():

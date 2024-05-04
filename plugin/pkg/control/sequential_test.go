@@ -53,52 +53,50 @@ func TestSequentialNode_Port(t *testing.T) {
 }
 
 func TestSequentialNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out -> In", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-		c1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		})
-		c2 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		})
-
-		n := NewSequentialNode(c1, c2)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		out := port.NewIn()
-		n.Out(node.PortOut).Link(out)
-
-		proc := process.New()
-		defer proc.Close()
-
-		inWriter := in.Open(proc)
-		outReader := out.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-outReader.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
-			outReader.Receive(outPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-
-		select {
-		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
+	c1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		return inPck, nil
 	})
+	c2 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		return inPck, nil
+	})
+
+	n := NewSequentialNode(c1, c2)
+	defer n.Close()
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	proc := process.New()
+	defer proc.Close()
+
+	inWriter := in.Open(proc)
+	outReader := out.Open(proc)
+
+	inPayload := primitive.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-outReader.Read():
+		assert.Equal(t, inPayload, outPck.Payload())
+		outReader.Receive(outPck)
+	case <-ctx.Done():
+		assert.Fail(t, "timeout")
+	}
+
+	select {
+	case backPck := <-inWriter.Receive():
+		assert.NotNil(t, backPck)
+	case <-ctx.Done():
+		assert.Fail(t, "timeout")
+	}
 }
 
 func TestSequentialNodeCodec_Decode(t *testing.T) {

@@ -11,7 +11,6 @@ import (
 // OneToOneNode represents a node with one input and one output port.
 type OneToOneNode struct {
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-	ioPort  *port.InPort
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
@@ -24,14 +23,12 @@ var _ Node = (*OneToOneNode)(nil)
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
-		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
 
 	if n.action != nil {
-		n.ioPort.AddHandler(port.HandlerFunc(n.turn))
 		n.inPort.AddHandler(port.HandlerFunc(n.forward))
 		n.outPort.AddHandler(port.HandlerFunc(n.backward))
 		n.errPort.AddHandler(port.HandlerFunc(n.catch))
@@ -46,8 +43,6 @@ func (n *OneToOneNode) In(name string) *port.InPort {
 	defer n.mu.RUnlock()
 
 	switch name {
-	case PortIO:
-		return n.ioPort
 	case PortIn:
 		return n.inPort
 	default:
@@ -77,36 +72,11 @@ func (n *OneToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.ioPort.Close()
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
 
 	return nil
-}
-
-func (n *OneToOneNode) turn(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	ioReader := n.ioPort.Open(proc)
-
-	for {
-		inPck, ok := <-ioReader.Read()
-		if !ok {
-			return
-		}
-
-		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Stack().Add(inPck, errPck)
-			n.throw(proc, errPck)
-		} else if outPck != nil {
-			proc.Stack().Add(inPck, outPck)
-			ioReader.Receive(outPck)
-		} else {
-			proc.Stack().Clear(inPck)
-		}
-	}
 }
 
 func (n *OneToOneNode) forward(proc *process.Process) {
@@ -127,7 +97,11 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 			n.throw(proc, errPck)
 		} else if outPck != nil {
 			proc.Stack().Add(inPck, outPck)
-			outWriter.Write(outPck)
+			if !outWriter.Write(outPck) {
+				if !inReader.Receive(outPck) {
+					proc.Stack().Clear(outPck)
+				}
+			}
 		} else {
 			proc.Stack().Clear(inPck)
 		}
@@ -155,6 +129,7 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
 	for {
@@ -163,30 +138,17 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		n.receive(proc, backPck)
+		inReader.Receive(backPck)
 	}
 }
 
 func (n *OneToOneNode) throw(proc *process.Process, errPck *packet.Packet) {
+	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	if errWriter.Links() > 0 {
-		errWriter.Write(errPck)
-	} else {
-		n.receive(proc, errPck)
-	}
-}
-
-func (n *OneToOneNode) receive(proc *process.Process, backPck *packet.Packet) {
-	ioReader := n.ioPort.Open(proc)
-	inReader := n.inPort.Open(proc)
-
-	ioCost := ioReader.Cost(backPck)
-	inCost := inReader.Cost(backPck)
-
-	if ioCost < inCost {
-		ioReader.Receive(backPck)
-	} else {
-		inReader.Receive(backPck)
+	if !errWriter.Write(errPck) {
+		if !inReader.Receive(errPck) {
+			proc.Stack().Clear(errPck)
+		}
 	}
 }

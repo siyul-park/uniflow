@@ -59,13 +59,12 @@ func newWriter(proc *process.Process, capacity int) *Writer {
 }
 
 // Write writes a packet to the Writer.
-func (w *Writer) Write(pck *packet.Packet) {
+func (w *Writer) Write(pck *packet.Packet) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if w.pipe.Links() == 0 {
-		w.proc.Stack().Clear(pck)
-		return
+		return false
 	}
 
 	var stem *packet.Packet
@@ -83,6 +82,7 @@ func (w *Writer) Write(pck *packet.Packet) {
 	}
 
 	w.pipe.Write(pck)
+	return true
 }
 
 // Receive returns the channel for receiving packets from the Writer.
@@ -189,7 +189,7 @@ func (r *Reader) Read() <-chan *packet.Packet {
 }
 
 // Receive receives a packet and processes it in the Reader.
-func (r *Reader) Receive(pck *packet.Packet) {
+func (r *Reader) Receive(pck *packet.Packet) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -207,7 +207,9 @@ func (r *Reader) Receive(pck *packet.Packet) {
 	if index >= 0 && r.proc.Stack().Unwind(pck, r.read[index]) {
 		r.read = append(r.read[:index], r.read[index+1:]...)
 		r.pipe.Write(pck)
+		return true
 	}
+	return false
 }
 
 // Done returns the channel signaling the Reader's pipe closure.

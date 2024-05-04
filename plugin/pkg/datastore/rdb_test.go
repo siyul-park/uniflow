@@ -44,13 +44,13 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPayload = primitive.NewSlice(
@@ -59,10 +59,10 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -71,10 +71,10 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		inPayload = primitive.NewString("SELECT * FROM Foo")
 		inPck = packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			outPayload, ok := outPck.Payload().(*primitive.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
@@ -101,13 +101,13 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPayload = primitive.NewSlice(
@@ -119,10 +119,10 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -131,10 +131,10 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		inPayload = primitive.NewString("SELECT * FROM Foo")
 		inPck = packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			outPayload, ok := outPck.Payload().(*primitive.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
@@ -172,13 +172,13 @@ func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 	n := NewRDBNode(db)
 	defer n.Close()
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload := primitive.NewSlice(
 		primitive.NewString("INSERT INTO Foo(name) VALUES (?)"),
@@ -189,7 +189,7 @@ func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ioWriter.Write(inPck)
-		<-ioWriter.Receive()
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
 }

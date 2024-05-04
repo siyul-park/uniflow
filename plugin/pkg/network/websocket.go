@@ -180,7 +180,9 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 		}
 
 		outPck := packet.New(outPayload)
-		outWriter.Write(outPck)
+		if !outWriter.Write(outPck) {
+			proc.Stack().Clear(outPck)
+		}
 
 		if close {
 			proc.Ref(-1)
@@ -221,9 +223,9 @@ func (n *WebSocketNode) throw(proc *process.Process, err error, cause *packet.Pa
 	errPck := packet.WithError(err, cause)
 	proc.Stack().Add(cause, errPck)
 
-	if errWriter.Links() > 0 {
-		errWriter.Write(errPck)
-	} else {
-		ioReader.Receive(errPck)
+	if !errWriter.Write(errPck) {
+		if !ioReader.Receive(errPck) {
+			proc.Stack().Clear(errPck)
+		}
 	}
 }

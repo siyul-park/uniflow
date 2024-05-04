@@ -46,7 +46,7 @@
   links:
     out:
       - name: response_nodes
-        port: io
+        port: in
 
 - kind: bridge
   name: read_nodes
@@ -56,7 +56,7 @@
   links:
     out:
       - name: response_nodes
-        port: io
+        port: in
 
 - kind: bridge
   name: update_nodes
@@ -67,7 +67,7 @@
   links:
     out:
       - name: response_node
-        port: io
+        port: in
 
 - kind: bridge
   name: delete_nodes
@@ -77,7 +77,7 @@
   links:
     out:
       - name: response_node
-        port: io
+        port: in
 
 - kind: snippet
   name: response_node

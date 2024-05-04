@@ -37,13 +37,13 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		n, _ := NewSQLNode("SELECT * FROM Foo", "")
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewMap(
 			primitive.NewString("name"),
@@ -51,10 +51,10 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewString("SELECT * FROM Foo"), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -71,13 +71,13 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		err := n.SetArguments("$")
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewMap(
 			primitive.NewString("name"),
@@ -85,10 +85,10 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			expect := primitive.NewSlice(
 				primitive.NewString("SELECT * FROM Foo WHERE id = :name"),
 				inPayload,
@@ -120,13 +120,13 @@ func BenchmarkSQLNode_SendAndReceive(b *testing.B) {
 
 	_ = n.SetArguments("$")
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload := primitive.NewMap(
 		primitive.NewString("name"),
@@ -137,7 +137,7 @@ func BenchmarkSQLNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ioWriter.Write(inPck)
-		<-ioWriter.Receive()
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
 }

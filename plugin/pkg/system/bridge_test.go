@@ -31,21 +31,21 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		n, _ := NewBridgeNode(func() {})
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Nil(t, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -63,21 +63,21 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		_ = n.SetOperands("$")
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -95,21 +95,21 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		_ = n.SetOperands("$", "$")
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -125,21 +125,21 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, inPayload, outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -157,21 +157,21 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		_ = n.SetOperands("$")
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			assert.Equal(t, primitive.NewSlice(inPayload, inPayload), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -189,8 +189,8 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 
 		_ = n.SetOperands("$")
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		err := port.NewIn()
 		n.Out(node.PortErr).Link(err)
@@ -198,13 +198,13 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
 		inPayload := primitive.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-errReader.Read():
@@ -215,7 +215,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		}
 
 		select {
-		case backPck := <-ioWriter.Receive():
+		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")

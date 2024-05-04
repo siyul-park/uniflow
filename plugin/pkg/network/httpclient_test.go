@@ -44,21 +44,21 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		err = n.SetURL(s.URL)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -75,13 +75,13 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		n.SetTimeout(time.Second)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewMap(
 			primitive.NewString("method"), primitive.NewString(http.MethodGet),
@@ -89,10 +89,10 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -111,13 +111,13 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 		n.SetTimeout(time.Second)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		inPayload := primitive.NewMap(
 			primitive.NewString("method"), primitive.NewString(http.MethodGet),
@@ -127,10 +127,10 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		)
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -156,21 +156,21 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		err = n.SetQuery(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -196,21 +196,21 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		err = n.SetHeader(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -236,21 +236,21 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		err = n.SetBody(`{"foo": "bar"}`)
 		assert.NoError(t, err)
 
-		io := port.NewOut()
-		io.Link(n.In(node.PortIO))
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
 		defer proc.Close()
 
-		ioWriter := io.Open(proc)
+		inWriter := in.Open(proc)
 
 		var inPayload primitive.Value
 		inPck := packet.New(inPayload)
 
-		ioWriter.Write(inPck)
+		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-ioWriter.Receive():
+		case outPck := <-inWriter.Receive():
 			err, _ := packet.AsError(outPck)
 			assert.NoError(t, err)
 		case <-ctx.Done():
@@ -287,13 +287,13 @@ func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 
 	n.SetTimeout(time.Second)
 
-	io := port.NewOut()
-	io.Link(n.In(node.PortIO))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
 	defer proc.Close()
 
-	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
 
 	inPayload := primitive.NewMap(
 		primitive.NewString("method"), primitive.NewString(http.MethodGet),
@@ -304,7 +304,7 @@ func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ioWriter.Write(inPck)
-		<-ioWriter.Receive()
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
 }

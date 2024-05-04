@@ -105,7 +105,11 @@ func (n *GoToNode) forward(proc *process.Process) {
 			return
 		}
 
-		outWriter0.Write(inPck)
+		if !outWriter0.Write(inPck) {
+			if !inReader.Receive(inPck) {
+				proc.Stack().Clear(inPck)
+			}
+		}
 	}
 }
 
@@ -125,10 +129,10 @@ func (n *GoToNode) redirect(proc *process.Process) {
 
 		if _, ok := packet.AsError(backPck); ok {
 			n.throw(proc, backPck)
-		} else if outWriter1.Links() > 0 {
-			outWriter1.Write(backPck)
-		} else {
-			inReader.Receive(backPck)
+		} else if !outWriter1.Write(backPck) {
+			if !inReader.Receive(backPck) {
+				proc.Stack().Clear(backPck)
+			}
 		}
 	}
 }
@@ -171,11 +175,11 @@ func (n *GoToNode) throw(proc *process.Process, errPck *packet.Packet) {
 	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	if errWriter.Links() > 0 {
-		errWriter.Write(errPck)
-	} else {
-		inReader.Receive(errPck)
-	}
+	if !errWriter.Write(errPck) {
+		if !inReader.Receive(errPck) {
+			proc.Stack().Clear(errPck)
+		}
+	} 
 }
 
 // NewGoToNodeCodec creates a new codec for GoToNodeSpec.

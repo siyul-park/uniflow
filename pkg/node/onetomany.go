@@ -113,10 +113,10 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
 			proc.Stack().Add(inPck, errPck)
-			if errWriter.Links() > 0 {
-				errWriter.Write(errPck)
-			} else {
-				inReader.Receive(errPck)
+			if !errWriter.Write(errPck) {
+				if !inReader.Receive(errPck) {
+					proc.Stack().Clear(errPck)
+				}
 			}
 		} else {
 			if len(outPcks) > len(outWriters) {
@@ -134,7 +134,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 					proc.Stack().Add(inPck, outPck)
 				}
 				for i, outPck := range outPcks {
-					outWriters[i].Write(outPck)
+					if !outWriters[i].Write(outPck) {
+						proc.Stack().Clear(outPck)
+					}
 				}
 			} else {
 				proc.Stack().Clear(inPck)
