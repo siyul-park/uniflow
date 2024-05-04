@@ -14,6 +14,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindGoTo, &GoToNodeSpec{})
 		s.AddCodec(KindGoTo, NewGoToNodeCodec())
 
+		s.AddKnownType(KindSequential, &SequentialNodeSpec{})
+		s.AddCodec(KindSequential, NewSequentialNodeCodec(s))
+
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
 		s.AddCodec(KindSnippet, NewSnippetNodeCodec())
 
