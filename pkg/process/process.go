@@ -53,10 +53,12 @@ func (p *Process) Heap() *Heap {
 	return p.heap
 }
 
+// Transaction returns the transaction associated with the packet.
 func (p *Process) Transaction(pck *packet.Packet) *transaction.Transaction {
 	return p.transactions.Get(pck)
 }
 
+// SetTransaction associates the transaction with the packet.
 func (p *Process) SetTransaction(pck *packet.Packet, tx *transaction.Transaction) {
 	p.transactions.Set(pck, tx)
 }

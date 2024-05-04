@@ -2,12 +2,14 @@ package transaction
 
 import "sync"
 
+// Local represents a local storage associated with transactions.
 type Local[T any] struct {
 	data map[*Transaction]T
 	done chan struct{}
 	mu   sync.RWMutex
 }
 
+// NewLocal creates a new instance of Local storage.
 func NewLocal[T any]() *Local[T] {
 	return &Local[T]{
 		data: make(map[*Transaction]T),
@@ -15,6 +17,7 @@ func NewLocal[T any]() *Local[T] {
 	}
 }
 
+// Load retrieves the value associated with a transaction.
 func (l *Local[T]) Load(tx *Transaction) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -23,6 +26,7 @@ func (l *Local[T]) Load(tx *Transaction) (T, bool) {
 	return val, ok
 }
 
+// Store associates a value with a transaction.
 func (l *Local[T]) Store(tx *Transaction, val T) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -43,6 +47,7 @@ func (l *Local[T]) Store(tx *Transaction, val T) {
 	}
 }
 
+// Delete removes the association between a transaction and its value.
 func (l *Local[T]) Delete(tx *Transaction) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -54,7 +59,7 @@ func (l *Local[T]) Delete(tx *Transaction) bool {
 	return true
 }
 
-// LoadOrStore retrieves the value associated with a process, or stores a new value if the process is not present.
+// LoadOrStore retrieves the value associated with a transaction, or stores a new value if the transaction is not present.
 func (l *Local[T]) LoadOrStore(tx *Transaction, val func() (T, error)) (T, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -82,6 +87,7 @@ func (l *Local[T]) LoadOrStore(tx *Transaction, val func() (T, error)) (T, error
 	return v, nil
 }
 
+// Close closes the local storage.
 func (l *Local[T]) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()

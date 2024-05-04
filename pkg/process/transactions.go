@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
+// Transactions manages transactions associated with packet packets.
 type Transactions struct {
 	stack        *Stack
 	transactions map[*packet.Packet]*transaction.Transaction
@@ -26,16 +27,19 @@ func newTransactions(stack *Stack) *Transactions {
 	}
 }
 
+// Commit commits the transaction.
 func (t *Transactions) Commit() error {
 	tx := t.Get(nil)
 	return tx.Commit()
 }
 
+// Rollback rolls back the transaction.
 func (t *Transactions) Rollback() error {
 	tx := t.Get(nil)
 	return tx.Rollback()
 }
 
+// Get returns the transaction associated with the packet.
 func (t *Transactions) Get(pck *packet.Packet) *transaction.Transaction {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -43,6 +47,7 @@ func (t *Transactions) Get(pck *packet.Packet) *transaction.Transaction {
 	return t.lookup(pck)
 }
 
+// Set associates the transaction with the packet.
 func (t *Transactions) Set(pck *packet.Packet, tx *transaction.Transaction) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
