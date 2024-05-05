@@ -94,11 +94,6 @@ func (p *WritePipe) Link(pipe *ReadPipe) {
 	}
 
 	p.reads = append(p.reads, pipe)
-
-	go func() {
-		<-pipe.Done()
-		p.Unlink(pipe)
-	}()
 }
 
 // Unlink disconnects the WritePipe from a ReadPipe.

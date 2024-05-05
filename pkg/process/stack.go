@@ -65,6 +65,18 @@ func (s *Stack) Add(stem, leaf *packet.Packet) {
 	s.touch(leaf)
 }
 
+// Stems returns the stems of the specified leaf packet in the stack.
+func (s *Stack) Stems(leaf *packet.Packet) []*packet.Packet {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var stems []*packet.Packet
+	for _, head := range s.heads[leaf] {
+		stems = append(stems, s.stems[head]...)
+	}
+	return stems
+}
+
 // Unwind removes the dependency path from leaf to stem in the stack.
 func (s *Stack) Unwind(leaf, stem *packet.Packet) bool {
 	s.mu.Lock()

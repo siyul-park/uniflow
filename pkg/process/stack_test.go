@@ -44,6 +44,19 @@ func TestStack_Add(t *testing.T) {
 	assert.True(t, s.Has(pck1, pck2))
 }
 
+func TestStack_Stems(t *testing.T) {
+	s := newStack()
+	defer s.Close()
+
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+
+	s.Add(pck1, pck2)
+
+	assert.Len(t, s.Stems(pck2), 1)
+	assert.Len(t, s.Stems(pck1), 0)
+}
+
 func TestStack_Unwind(t *testing.T) {
 	s := newStack()
 	defer s.Close()

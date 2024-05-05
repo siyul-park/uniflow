@@ -124,7 +124,7 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	for i := 0; i < len(w.written); i++ {
 		written := w.written[i]
 		if w.proc.Stack().Cost(written, pck) == 0 {
-			if w.proc.Stack().Cost(nil, written) == 1 {
+			if len(w.proc.Stack().Stems(written)) == 0 {
 				tx := w.proc.Transaction(written)
 				if _, ok := packet.AsError(pck); !ok {
 					_ = tx.Commit()
