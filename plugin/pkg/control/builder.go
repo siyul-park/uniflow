@@ -8,8 +8,8 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindCall, &CallNodeSpec{})
 		s.AddCodec(KindCall, NewCallNodeCodec())
 
-		s.AddKnownType(KindForEach, &ForEachNodeSpec{})
-		s.AddCodec(KindForEach, NewForEachNodeCodec())
+		s.AddKnownType(KindLoop, &LoopNodeSpec{})
+		s.AddCodec(KindLoop, NewLoopNodeCodec())
 
 		s.AddKnownType(KindMerge, &MergeNodeSpec{})
 		s.AddCodec(KindMerge, NewMergeNodeCodec())

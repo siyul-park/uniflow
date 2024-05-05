@@ -12,8 +12,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// ForEachNode represents a node that ForEachs over input data in batches.
-type ForEachNode struct {
+// LoopNode represents a node that Loops over input data in batches.
+type LoopNode struct {
 	batch    int
 	inPort   *port.InPort
 	outPorts []*port.OutPort
@@ -21,17 +21,17 @@ type ForEachNode struct {
 	mu       sync.RWMutex
 }
 
-// ForEachNodeSpec holds the specifications for creating a ForEachNode.
-type ForEachNodeSpec struct {
+// LoopNodeSpec holds the specifications for creating a LoopNode.
+type LoopNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Batch           int `map:"batch,omitempty"`
 }
 
-const KindForEach = "foreach"
+const KindLoop = "loop"
 
-// NewForEachNode creates a new ForEachNode with default configurations.
-func NewForEachNode() *ForEachNode {
-	n := &ForEachNode{
+// NewLoopNode creates a new LoopNode with default configurations.
+func NewLoopNode() *LoopNode {
+	n := &LoopNode{
 		batch:    1,
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -44,15 +44,15 @@ func NewForEachNode() *ForEachNode {
 	return n
 }
 
-// Batch returns the batch size of the ForEachNode.
-func (n *ForEachNode) Batch() int {
+// Batch returns the batch size of the LoopNode.
+func (n *LoopNode) Batch() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	return n.batch
 }
 
-// SetBatch sets the batch size of the ForEachNode.
-func (n *ForEachNode) SetBatch(batch int) {
+// SetBatch sets the batch size of the LoopNode.
+func (n *LoopNode) SetBatch(batch int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (n *ForEachNode) SetBatch(batch int) {
 }
 
 // In returns the input port with the specified name.
-func (n *ForEachNode) In(name string) *port.InPort {
+func (n *LoopNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -76,7 +76,7 @@ func (n *ForEachNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *ForEachNode) Out(name string) *port.OutPort {
+func (n *LoopNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -97,7 +97,7 @@ func (n *ForEachNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *ForEachNode) Close() error {
+func (n *LoopNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -110,7 +110,7 @@ func (n *ForEachNode) Close() error {
 	return nil
 }
 
-func (n *ForEachNode) forward(proc *process.Process) {
+func (n *LoopNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -205,7 +205,7 @@ func (n *ForEachNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *ForEachNode) backward(proc *process.Process) {
+func (n *LoopNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -224,7 +224,7 @@ func (n *ForEachNode) backward(proc *process.Process) {
 	}
 }
 
-func (n *ForEachNode) chunk(val primitive.Value) []primitive.Value {
+func (n *LoopNode) chunk(val primitive.Value) []primitive.Value {
 	var values []primitive.Value
 
 	switch v := val.(type) {
@@ -246,10 +246,10 @@ func (n *ForEachNode) chunk(val primitive.Value) []primitive.Value {
 	return values
 }
 
-// NewForEachNodeCodec creates a new codec for ForEachNodeSpec.
-func NewForEachNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *ForEachNodeSpec) (node.Node, error) {
-		n := NewForEachNode()
+// NewLoopNodeCodec creates a new codec for LoopNodeSpec.
+func NewLoopNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
+		n := NewLoopNode()
 		n.SetBatch(spec.Batch)
 
 		return n, nil
