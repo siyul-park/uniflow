@@ -7,7 +7,7 @@
         port: in
     error:
       - name: error_400
-        port: io
+        port: in
 
 - kind: route
   name: route
