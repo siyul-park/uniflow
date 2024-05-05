@@ -31,7 +31,7 @@ const KindMerge = "merge"
 // NewMergeNode creates a new MergeNode.
 func NewMergeNode() *MergeNode {
 	n := &MergeNode{
-		depth:   -1,
+		depth:   0,
 		inplace: false,
 	}
 
@@ -69,6 +69,9 @@ func (n *MergeNode) SetInplace(inplace bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
+	if inplace && n.depth == 0 {
+		n.depth = -1
+	}
 	n.inplace = inplace
 }
 
@@ -106,15 +109,15 @@ func (n *MergeNode) isFull(pcks []*packet.Packet) bool {
 }
 
 func (n *MergeNode) merge(x, y primitive.Value, depth int) primitive.Value {
+	if depth == 0 {
+		return y
+	}
+
 	if x == nil {
 		return y
 	}
 	if y == nil {
 		return x
-	}
-
-	if depth == 0 {
-		return y
 	}
 
 	switch x := x.(type) {
@@ -142,10 +145,17 @@ func (n *MergeNode) merge(x, y primitive.Value, depth int) primitive.Value {
 		if y, ok := y.(*primitive.Map); ok {
 			var pairs []primitive.Value
 			for _, key := range x.Keys() {
-				value1, _ := x.Get(key)
-				value2, _ := y.Get(key)
+				value1, ok1 := x.Get(key)
+				value2, ok2 := y.Get(key)
 
-				pairs = append(pairs, key, n.merge(value1, value2, depth-1))
+				pairs = append(pairs, key)
+				if !ok1 {
+					pairs = append(pairs, value2)
+				} else if !ok2 {
+					pairs = append(pairs, value1)
+				} else {
+					pairs = append(pairs, n.merge(value1, value2, depth-1))
+				}
 			}
 			for _, key := range y.Keys() {
 				_, ok := x.Get(key)

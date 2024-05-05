@@ -17,7 +17,7 @@ import (
 func TestNewMergeNode(t *testing.T) {
 	n := NewMergeNode()
 	assert.NotNil(t, n)
-	assert.Equal(t, -1, n.Depth())
+	assert.Equal(t, 0, n.Depth())
 	assert.Equal(t, false, n.Inplace())
 	assert.NoError(t, n.Close())
 }
