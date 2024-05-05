@@ -135,7 +135,7 @@ func newReadPipe(capacity int) *ReadPipe {
 			if !ok {
 				return
 			}
-			
+
 			select {
 			case p.out <- data:
 				continue

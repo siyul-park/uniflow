@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // InPort represents an input port for receiving data.
@@ -45,17 +44,24 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 	reader, ok := p.readers[proc]
 	if !ok {
 		reader = newReader(proc, 2)
+
+		select {
+		case <-proc.Done():
+			reader.Close()
+			return reader
+		default:
+		}
+
 		p.readers[proc] = reader
 
-		tx := proc.Transaction(nil)
-		tx.AddCommitHook(transaction.CommitHookFunc(func() error {
-			p.closeWithLock(proc)
-			return nil
-		}))
-		tx.AddRollbackHook(transaction.RollbackHookFunc(func() error {
-			p.closeWithLock(proc)
-			return nil
-		}))
+		go func() {
+			select {
+			case <-proc.Done():
+				p.closeWithLock(proc)
+			case <-reader.Done():
+				p.closeWithLock(proc)
+			}
+		}()
 
 		for _, h := range p.handlers {
 			h := h
@@ -85,8 +91,8 @@ func (p *InPort) closeWithLock(proc *process.Process) {
 
 func (p *InPort) close(proc *process.Process) {
 	if reader, ok := p.readers[proc]; ok {
-		reader.Close()
 		delete(p.readers, proc)
+		reader.Close()
 	}
 }
 
@@ -142,17 +148,24 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 		writer, ok := p.writers[proc]
 		if !ok {
 			writer = newWriter(proc, 2)
+
+			select {
+			case <-proc.Done():
+				writer.Close()
+				return writer, true
+			default:
+			}
+
 			p.writers[proc] = writer
 
-			tx := proc.Transaction(nil)
-			tx.AddCommitHook(transaction.CommitHookFunc(func() error {
-				p.closeWithLock(proc)
-				return nil
-			}))
-			tx.AddRollbackHook(transaction.RollbackHookFunc(func() error {
-				p.closeWithLock(proc)
-				return nil
-			}))
+			go func() {
+				select {
+				case <-proc.Done():
+					p.closeWithLock(proc)
+				case <-writer.Done():
+					p.closeWithLock(proc)
+				}
+			}()
 		}
 		return writer, ok
 	}()

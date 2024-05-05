@@ -51,7 +51,12 @@ func newWriter(proc *process.Process, capacity int) *Writer {
 			if !w.pop(backPck) {
 				continue
 			}
-			w.channel <- backPck
+
+			select {
+			case <-w.pipe.Done():
+				return
+			case w.channel <- backPck:
+			}
 		}
 	}()
 
@@ -155,7 +160,12 @@ func newReader(proc *process.Process, capacity int) *Reader {
 			if !ok {
 				return
 			}
-			r.channel <- r.push(backPck)
+
+			select {
+			case <-r.pipe.Done():
+				return
+			case r.channel <- r.push(backPck):
+			}
 		}
 	}()
 
