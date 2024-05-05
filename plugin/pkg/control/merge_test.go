@@ -14,20 +14,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewCombineNode(t *testing.T) {
-	n := NewCombineNode()
+func TestNewMergeNode(t *testing.T) {
+	n := NewMergeNode()
 	assert.NotNil(t, n)
 	assert.Equal(t, -1, n.Depth())
 	assert.Equal(t, false, n.Inplace())
 	assert.NoError(t, n.Close())
 }
 
-func TestCombineNode_SendAndReceive(t *testing.T) {
+func TestMergeNode_SendAndReceive(t *testing.T) {
 	t.Run("depth = 0", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewCombineNode()
+		n := NewMergeNode()
 		defer n.Close()
 
 		n.SetDepth(0)
@@ -56,7 +56,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
-		combined := primitive.NewSlice(inPayloads...).Interface()
+		merged := primitive.NewSlice(inPayloads...).Interface()
 
 		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
@@ -65,7 +65,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, combined, outPck.Payload().Interface())
+			assert.Equal(t, merged, outPck.Payload().Interface())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -85,7 +85,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewCombineNode()
+		n := NewMergeNode()
 		defer n.Close()
 
 		n.SetDepth(1)
@@ -114,7 +114,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 			inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
 		}
 
-		combined := inPayloads[len(inPayloads)-1].Interface()
+		merged := inPayloads[len(inPayloads)-1].Interface()
 
 		for i, inWriter := range inWriters {
 			inPck := packet.New(inPayloads[i])
@@ -123,7 +123,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, combined, outPck.Payload().Interface())
+			assert.Equal(t, merged, outPck.Payload().Interface())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -143,7 +143,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewCombineNode()
+		n := NewMergeNode()
 		defer n.Close()
 
 		n.SetDepth(2)
@@ -168,13 +168,13 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
-		combined := map[string]string{}
+		merged := map[string]string{}
 		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
 			inPayloads = append(inPayloads, primitive.NewMap(primitive.NewString(key), primitive.NewString(value)))
-			combined[key] = value
+			merged[key] = value
 		}
 
 		for i, inWriter := range inWriters {
@@ -184,7 +184,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, combined, outPck.Payload().Interface())
+			assert.Equal(t, merged, outPck.Payload().Interface())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -204,7 +204,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewCombineNode()
+		n := NewMergeNode()
 		defer n.Close()
 
 		n.SetDepth(-1)
@@ -229,13 +229,13 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
-		var combined []map[string]string
+		var merged []map[string]string
 		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
 			inPayloads = append(inPayloads, primitive.NewSlice(primitive.NewMap(primitive.NewString(key), primitive.NewString(value))))
-			combined = append(combined, map[string]string{key: value})
+			merged = append(merged, map[string]string{key: value})
 		}
 
 		for i, inWriter := range inWriters {
@@ -245,7 +245,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, combined, outPck.Payload().Interface())
+			assert.Equal(t, merged, outPck.Payload().Interface())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -265,7 +265,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewCombineNode()
+		n := NewMergeNode()
 		defer n.Close()
 
 		n.SetInplace(true)
@@ -290,13 +290,13 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 		outReader := out.Open(proc)
 
 		var inPayloads []primitive.Value
-		combined := []map[string]string{{}}
+		merged := []map[string]string{{}}
 		for range inWriters {
 			key := faker.UUIDHyphenated()
 			value := faker.UUIDHyphenated()
 
 			inPayloads = append(inPayloads, primitive.NewSlice(primitive.NewMap(primitive.NewString(key), primitive.NewString(value))))
-			combined[0][key] = value
+			merged[0][key] = value
 		}
 
 		for i, inWriter := range inWriters {
@@ -306,7 +306,7 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, combined, outPck.Payload().Interface())
+			assert.Equal(t, merged, outPck.Payload().Interface())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -323,10 +323,10 @@ func TestCombineNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestCombineNodeCodec_Decode(t *testing.T) {
-	codec := NewCombineNodeCodec()
+func TestMergeNodeCodec_Decode(t *testing.T) {
+	codec := NewMergeNodeCodec()
 
-	spec := &CombineNodeSpec{
+	spec := &MergeNodeSpec{
 		Depth:   0,
 		Inplace: false,
 	}
@@ -337,8 +337,8 @@ func TestCombineNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkCombineNode_SendAndReceive(b *testing.B) {
-	n := NewCombineNode()
+func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
+	n := NewMergeNode()
 	defer n.Close()
 
 	var ins []*port.OutPort

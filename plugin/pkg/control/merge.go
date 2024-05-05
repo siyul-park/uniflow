@@ -11,63 +11,68 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// CombineNode represents a node that Combines multiple input packets into a single output packet.
-type CombineNode struct {
+// MergeNode represents a node that Merges multiple input packets into a single output packet.
+type MergeNode struct {
 	*node.ManyToOneNode
 	depth   int
 	inplace bool
 	mu      sync.RWMutex
 }
 
-// CombineNodeSpec holds the specifications for creating a CombineNode.
-type CombineNodeSpec struct {
+// MergeNodeSpec holds the specifications for creating a MergeNode.
+type MergeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Depth           int  `map:"depth,omitempty"`
 	Inplace         bool `map:"inplace,omitempty"`
 }
 
-const KindCombine = "combine"
+const KindMerge = "merge"
 
-// NewCombineNode creates a new CombineNode.
-func NewCombineNode() *CombineNode {
-	n := &CombineNode{depth: -1, inplace: false}
+// NewMergeNode creates a new MergeNode.
+func NewMergeNode() *MergeNode {
+	n := &MergeNode{
+		depth:   -1,
+		inplace: false,
+	}
+
 	n.ManyToOneNode = node.NewManyToOneNode(n.action)
+
 	return n
 }
 
-// Depth returns the depth of the CombineNode.
-func (n *CombineNode) Depth() int {
+// Depth returns the depth of the MergeNode.
+func (n *MergeNode) Depth() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.depth
 }
 
-// SetDepth sets the depth of the CombineNode.
-func (n *CombineNode) SetDepth(depth int) {
+// SetDepth sets the depth of the MergeNode.
+func (n *MergeNode) SetDepth(depth int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.depth = depth
 }
 
-// Inplace returns true if the CombineNode operates inplace.
-func (n *CombineNode) Inplace() bool {
+// Inplace returns true if the MergeNode operates inplace.
+func (n *MergeNode) Inplace() bool {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.inplace
 }
 
-// SetInplace sets whether the CombineNode should operate inplace.
-func (n *CombineNode) SetInplace(inplace bool) {
+// SetInplace sets whether the MergeNode should operate inplace.
+func (n *MergeNode) SetInplace(inplace bool) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	n.inplace = inplace
 }
 
-func (n *CombineNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -91,7 +96,7 @@ func (n *CombineNode) action(proc *process.Process, inPcks []*packet.Packet) (*p
 	return packet.New(outPayload), nil
 }
 
-func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
+func (n *MergeNode) isFull(pcks []*packet.Packet) bool {
 	for _, inPck := range pcks {
 		if inPck == nil {
 			return false
@@ -100,7 +105,7 @@ func (n *CombineNode) isFull(pcks []*packet.Packet) bool {
 	return true
 }
 
-func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
+func (n *MergeNode) merge(x, y primitive.Value, depth int) primitive.Value {
 	if x == nil {
 		return y
 	}
@@ -158,10 +163,10 @@ func (n *CombineNode) merge(x, y primitive.Value, depth int) primitive.Value {
 	return y
 }
 
-// NewCombineNodeCodec creates a new codec for CombineNodeSpec.
-func NewCombineNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *CombineNodeSpec) (node.Node, error) {
-		n := NewCombineNode()
+// NewMergeNodeCodec creates a new codec for MergeNodeSpec.
+func NewMergeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *MergeNodeSpec) (node.Node, error) {
+		n := NewMergeNode()
 		n.SetDepth(spec.Depth)
 		n.SetInplace(spec.Inplace)
 
