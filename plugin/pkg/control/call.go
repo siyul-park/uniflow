@@ -12,6 +12,7 @@ import (
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
+	async    bool
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -21,6 +22,7 @@ type CallNode struct {
 // CallNodeSpec holds the specifications for creating a CallNode.
 type CallNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
+	Async           bool `map:"async"`
 }
 
 var _ node.Node = (*CallNode)(nil)
@@ -41,6 +43,20 @@ func NewCallNode() *CallNode {
 	n.errPort.AddHandler(port.HandlerFunc(n.catch))
 
 	return n
+}
+
+func (n *CallNode) Async() bool {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.async
+}
+
+func (n *CallNode) SetAsync(async bool) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.async = async
 }
 
 // In returns the input port with the specified name.
@@ -105,10 +121,19 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 
-		if !outWriter0.Write(inPck) {
-			if !inReader.Receive(inPck) {
-				proc.Stack().Clear(inPck)
+		outPck := inPck
+		if n.async {
+			outPck = packet.New(inPck.Payload())
+		}
+
+		if !outWriter0.Write(outPck) {
+			if !inReader.Receive(outPck) {
+				proc.Stack().Clear(outPck)
 			}
+		}
+
+		if n.async {
+			proc.Stack().Clear(inPck)
 		}
 	}
 }
@@ -150,7 +175,9 @@ func (n *CallNode) backward(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		if !inReader.Receive(backPck) {
+			proc.Stack().Clear(backPck)
+		}
 	}
 }
 
@@ -187,6 +214,9 @@ func (n *CallNode) throw(proc *process.Process, errPck *packet.Packet) {
 // NewCallNodeCodec creates a new codec for CallNodeSpec.
 func NewCallNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
-		return NewCallNode(), nil
+		n := NewCallNode()
+		n.SetAsync(spec.Async)
+
+		return n, nil
 	})
 }
