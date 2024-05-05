@@ -135,6 +135,7 @@ func newReadPipe(capacity int) *ReadPipe {
 			if !ok {
 				return
 			}
+			
 			select {
 			case p.out <- data:
 				continue
@@ -145,11 +146,11 @@ func newReadPipe(capacity int) *ReadPipe {
 
 			for len(buffer) > 0 {
 				select {
-				case packet, ok := <-p.in:
+				case data, ok := <-p.in:
 					if !ok {
 						return
 					}
-					buffer = append(buffer, packet)
+					buffer = append(buffer, data)
 				case p.out <- buffer[0]:
 					buffer = buffer[1:]
 				}
