@@ -96,6 +96,6 @@ func (p *Process) Close() {
 
 	p.heap.Close()
 	p.stack.Close()
-	
+
 	close(p.done)
 }
