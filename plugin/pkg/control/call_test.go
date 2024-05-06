@@ -33,7 +33,7 @@ func TestCallNode_Port(t *testing.T) {
 }
 
 func TestCallNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out0 -> Out1", func(t *testing.T) {
+	t.Run("In -> Out0 -> Out1 -> In", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

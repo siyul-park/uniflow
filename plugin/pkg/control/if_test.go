@@ -33,7 +33,7 @@ func TestIfNode_Port(t *testing.T) {
 }
 
 func TestIfNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out0", func(t *testing.T) {
+	t.Run("In -> Out0 -> In", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -73,7 +73,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out1", func(t *testing.T) {
+	t.Run("In -> Out1 -> In", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -101,6 +101,45 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader1.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
 			outReader1.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("In -> Error -> In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		n, _ := NewIfNode("$ - 1", "")
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		err := port.NewIn()
+		n.Out(node.PortErr).Link(err)
+
+		proc := process.New()
+		defer proc.Close()
+
+		inWriter := in.Open(proc)
+		errReader := err.Open(proc)
+
+		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-errReader.Read():
+			errReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
