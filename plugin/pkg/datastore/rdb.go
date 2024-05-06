@@ -16,16 +16,18 @@ import (
 // RDBNode represents a node for interacting with a relational database.
 type RDBNode struct {
 	*node.OneToOneNode
-	db  *sqlx.DB
-	txs *transaction.Local[*sqlx.Tx]
-	mu  sync.RWMutex
+	db        *sqlx.DB
+	txs       *transaction.Local[*sqlx.Tx]
+	isolation sql.IsolationLevel
+	mu        sync.RWMutex
 }
 
 // RDBNodeSpec holds the specifications for creating a RDBNode.
 type RDBNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Driver          string `map:"driver"`
-	Source          string `map:"source"`
+	Driver          string             `map:"driver"`
+	Source          string             `map:"source"`
+	Isolation       sql.IsolationLevel `map:"isolation"`
 }
 
 const KindRDB = "rdb"
@@ -39,6 +41,22 @@ func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
+}
+
+// Isolation returns the isolation level of the RDBNode.
+func (n *RDBNode) Isolation() sql.IsolationLevel {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.isolation
+}
+
+// SetIsolation sets the isolation level of the RDBNode.
+func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.isolation = isolation
 }
 
 // Close closes resource associated with the node.
@@ -68,7 +86,9 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	parent := proc.Transaction(inPck)
 	tx, err := n.txs.LoadOrStore(parent, func() (*sqlx.Tx, error) {
-		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{})
+		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{
+			Isolation: n.isolation,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -131,6 +151,10 @@ func NewRDBNodeCodec() scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		return NewRDBNode(db), nil
+
+		n := NewRDBNode(db)
+		n.SetIsolation(spec.Isolation)
+
+		return n, nil
 	})
 }
