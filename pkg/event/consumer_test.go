@@ -14,7 +14,7 @@ func TestConsumer_Consume(t *testing.T) {
 	c := NewConsumer(q)
 	defer c.Close()
 
-	e := New()
+	e := New(nil)
 
 	q.Push(e)
 

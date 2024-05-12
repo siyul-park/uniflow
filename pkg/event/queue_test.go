@@ -12,8 +12,8 @@ func TestQueue_PushAndPop(t *testing.T) {
 	q := NewQueue(0)
 	defer q.Close()
 
-	e1 := New()
-	e2 := New()
+	e1 := New(nil)
+	e2 := New(nil)
 
 	q.Push(e1)
 	q.Push(e2)

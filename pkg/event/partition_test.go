@@ -20,7 +20,7 @@ func TestPartition_WriteAndRead(t *testing.T) {
 	c2 := p.Consumer()
 	defer c2.Close()
 
-	e := New()
+	e := New(nil)
 
 	p1.Produce(e)
 

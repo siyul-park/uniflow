@@ -14,7 +14,7 @@ func TestProducer_Produce(t *testing.T) {
 
 	p := NewProducer(q)
 
-	e := New()
+	e := New(nil)
 
 	p.Produce(e)
 
