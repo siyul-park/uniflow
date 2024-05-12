@@ -31,9 +31,9 @@ func NewPartition() *Partition {
 				defer p.mu.RUnlock()
 
 				defer e.Wait(-1)
-				e.Wait(len(p.queues))
 
 				for _, v := range p.queues {
+					e.Wait(1)
 					v.Push(e)
 				}
 			}()
@@ -70,8 +70,12 @@ func (p *Partition) Consumer() *Consumer {
 
 		for i, v := range p.consumers {
 			if v == c {
+				q := p.queues[i]
+				defer q.Close()
+
 				p.consumers = append(p.consumers[:i], p.consumers[i+1:]...)
 				p.queues = append(p.queues[:i], p.queues[i+1:]...)
+
 				break
 			}
 		}
