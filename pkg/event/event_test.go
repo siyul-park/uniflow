@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, d, e.Data())
 }
 
-func TestEvent_Ref(t *testing.T) {
+func TestEvent_Wait(t *testing.T) {
 	e := New(nil)
 	e.Wait(1)
 
