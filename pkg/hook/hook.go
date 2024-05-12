@@ -29,6 +29,8 @@ func (h *Hook) Subscribe(broker *event.Broker) {
 	unload := broker.Consumer(symbol.TopicUnload)
 
 	go func() {
+		defer load.Close()
+
 		for e := range load.Consume() {
 			if n, ok := e.Data().(node.Node); ok {
 				_ = h.Load(n)
@@ -38,6 +40,8 @@ func (h *Hook) Subscribe(broker *event.Broker) {
 	}()
 
 	go func() {
+		defer unload.Close()
+
 		for e := range unload.Consume() {
 			if n, ok := e.Data().(node.Node); ok {
 				_ = h.Unload(n)

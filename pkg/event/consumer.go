@@ -11,10 +11,17 @@ type Consumer struct {
 
 // NewConsumer creates a new Consumer instance with the given queue.
 func NewConsumer(queue *Queue) *Consumer {
-	return &Consumer{
+	c := &Consumer{
 		queue: queue,
 		done:  make(chan struct{}),
 	}
+
+	go func() {
+		<-queue.Done()
+		c.Close()
+	}()
+
+	return c
 }
 
 // Consume returns a channel to receive events from the consumer's queue.
