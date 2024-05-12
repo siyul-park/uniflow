@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugin
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/andybalholm/brotli v1.1.0
