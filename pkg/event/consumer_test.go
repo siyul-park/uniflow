@@ -9,22 +9,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProducer_Send(t *testing.T) {
+func TestConsumer_Read(t *testing.T) {
 	topic := faker.Word()
 
 	q := NewQueue(0)
 	defer q.Close()
-	p := NewProducer(q)
+	c := NewConsumer(q)
 
 	e := New(topic)
 
-	p.Send(e)
+	q.Push(e)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	select {
-	case r := <-q.Pop():
+	case r := <-c.Read():
 		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
