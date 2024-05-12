@@ -6,42 +6,43 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 // TableOptions holds options for configuring a Table.
 
 type TableOptions struct {
-	LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
-	UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
+	Broker *event.Broker
 }
 
 // Table manages the storage and operations for Symbols.
 type Table struct {
-	scheme      *scheme.Scheme
-	symbols     map[uuid.UUID]*Symbol
-	index       map[string]map[string]uuid.UUID
-	loadHooks   []LoadHook
-	unloadHooks []UnloadHook
-	mu          sync.RWMutex
+	scheme  *scheme.Scheme
+	broker  *event.Broker
+	symbols map[uuid.UUID]*Symbol
+	index   map[string]map[string]uuid.UUID
+	mu      sync.RWMutex
 }
+
+const TopicLoad = "load"
+const TopicUnload = "unload"
 
 // NewTable returns a new SymbolTable with the specified options.
 func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
-	var loadHooks []LoadHook
-	var unloadHooks []UnloadHook
+	var broker *event.Broker
 
 	for _, opt := range opts {
-		loadHooks = append(loadHooks, opt.LoadHooks...)
-		unloadHooks = append(unloadHooks, opt.UnloadHooks...)
+		if opt.Broker != nil {
+			broker = opt.Broker
+		}
 	}
 
 	return &Table{
-		scheme:      sh,
-		symbols:     make(map[uuid.UUID]*Symbol),
-		index:       make(map[string]map[string]uuid.UUID),
-		loadHooks:   loadHooks,
-		unloadHooks: unloadHooks,
+		scheme:  sh,
+		broker:  broker,
+		symbols: make(map[uuid.UUID]*Symbol),
+		index:   make(map[string]map[string]uuid.UUID),
 	}
 }
 
@@ -134,17 +135,17 @@ func (t *Table) Clear() error {
 }
 
 func (t *Table) insert(sym *Symbol) error {
+	if _, err := t.free(sym.ID()); err != nil {
+		return err
+	}
+
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
 		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
 	}
 
-	if err := t.links(sym); err != nil {
-		return err
-	}
-	if err := t.relinks(sym); err != nil {
-		return err
-	}
+	t.links(sym)
+	t.relinks(sym)
 
 	return nil
 }
@@ -168,14 +169,12 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 	}
 	delete(t.symbols, id)
 
-	if err := t.unlinks(sym); err != nil {
-		return nil, err
-	}
+	t.unlinks(sym)
 
 	return sym, nil
 }
 
-func (t *Table) links(sym *Symbol) error {
+func (t *Table) links(sym *Symbol) {
 	for name, locations := range sym.links {
 		out := sym.Out(name)
 		if out == nil {
@@ -211,13 +210,11 @@ func (t *Table) links(sym *Symbol) error {
 		}
 	}
 
-	return t.load(sym)
+	t.load(sym)
 }
 
-func (t *Table) unlinks(sym *Symbol) error {
-	if err := t.unload(sym); err != nil {
-		return err
-	}
+func (t *Table) unlinks(sym *Symbol) {
+	t.unload(sym)
 
 	for name, locations := range sym.links {
 		for _, location := range locations {
@@ -254,9 +251,7 @@ func (t *Table) unlinks(sym *Symbol) error {
 
 	for name, locations := range sym.linked {
 		for i, location := range locations {
-			if err := t.unload(t.symbols[location.ID]); err != nil {
-				return err
-			}
+			t.unload(t.symbols[location.ID])
 
 			ref := t.symbols[location.ID]
 
@@ -277,11 +272,9 @@ func (t *Table) unlinks(sym *Symbol) error {
 			ref.unlinks[location.Port] = append(ref.unlinks[location.Port], unlink)
 		}
 	}
-
-	return nil
 }
 
-func (t *Table) relinks(sym *Symbol) error {
+func (t *Table) relinks(sym *Symbol) {
 	for _, ref := range t.symbols {
 		if !t.shouldSkipLoad(ref) || ref.Namespace() != sym.Namespace() {
 			continue
@@ -311,36 +304,34 @@ func (t *Table) relinks(sym *Symbol) error {
 			}
 		}
 
-		if err := t.load(ref); err != nil {
-			return err
-		}
+		t.load(ref)
 	}
-
-	return nil
 }
 
-func (t *Table) load(sym *Symbol) error {
-	if t.shouldSkipLoad(sym) {
-		return nil
+func (t *Table) load(sym *Symbol) {
+	if t.broker == nil || t.shouldSkipLoad(sym) {
+		return
 	}
-	for _, hook := range t.loadHooks {
-		if err := hook.Load(sym.node); err != nil {
-			return err
-		}
-	}
-	return nil
+
+	p := t.broker.Producer(TopicLoad)
+	e := event.New(sym.node)
+
+	p.Produce(e)
+
+	<-e.Done()
 }
 
-func (t *Table) unload(sym *Symbol) error {
-	if t.shouldSkipLoad(sym) {
-		return nil
+func (t *Table) unload(sym *Symbol) {
+	if t.broker == nil || t.shouldSkipLoad(sym) {
+		return
 	}
-	for _, hook := range t.unloadHooks {
-		if err := hook.Unload(sym.node); err != nil {
-			return err
-		}
-	}
-	return nil
+
+	p := t.broker.Producer(TopicUnload)
+	e := event.New(sym.node)
+
+	p.Produce(e)
+
+	<-e.Done()
 }
 
 func (t *Table) shouldSkipLoad(sym *Symbol) bool {

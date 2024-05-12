@@ -4,13 +4,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // AddToHook returns a function that adds hook to the provided hook.
 func AddToHook() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
+		h.AddLoadHook(hook.LoadHookFunc(func(n node.Node) error {
 			if n, ok := n.(*HTTPServerNode); ok {
 				return n.Listen()
 			}

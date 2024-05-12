@@ -12,7 +12,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -24,7 +24,10 @@ func TestStartCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	h := hook.New()
+	
+	br := event.NewBroker()
+	defer br.Close()
+
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
@@ -64,7 +67,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd := NewStartCommand(StartConfig{
 			Scheme:   s,
-			Hook:     h,
+			Broker:   br,
 			FS:       fsys,
 			Database: db,
 		})

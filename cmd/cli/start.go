@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -19,7 +19,7 @@ import (
 // StartConfig holds the configuration for the uniflow command.
 type StartConfig struct {
 	Scheme   *scheme.Scheme
-	Hook     *hook.Hook
+	Broker   *event.Broker
 	Database database.Database
 	FS       fs.FS
 }
@@ -87,7 +87,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		r, err := runtime.New(ctx, runtime.Config{
 			Namespace: namespace,
 			Scheme:    config.Scheme,
-			Hook:      config.Hook,
+			Broker:    config.Broker,
 			Database:  config.Database,
 		})
 		if err != nil {

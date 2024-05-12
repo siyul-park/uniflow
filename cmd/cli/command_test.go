@@ -8,14 +8,17 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCommend_Execute(t *testing.T) {
 	s := scheme.New()
-	h := hook.New()
+
+	br := event.NewBroker()
+	defer br.Close()
+
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
@@ -26,7 +29,7 @@ func TestCommend_Execute(t *testing.T) {
 
 	cmd := NewCommand(Config{
 		Scheme:   s,
-		Hook:     h,
+		Broker:   br,
 		FS:       fsys,
 		Database: db,
 	})

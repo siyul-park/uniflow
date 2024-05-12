@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -49,17 +50,18 @@ func main() {
 
 	table := system.NewBridgeTable()
 
+	hb.Register(network.AddToHook())
+
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
 	sb.Register(system.AddToScheme(table))
 
-	hb.Register(network.AddToHook())
-
 	sc, err := sb.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	hk, err := hb.Build()
 	if err != nil {
 		log.Fatal(err)
@@ -94,6 +96,9 @@ func main() {
 	table.Store(system.OPUpdateNodes, system.UpdateNodes(st))
 	table.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
+	br := event.NewBroker()
+	hk.Subscribe(br)
+
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -102,7 +107,7 @@ func main() {
 
 	cmd := cli.NewCommand(cli.Config{
 		Scheme:   sc,
-		Hook:     hk,
+		Broker:   br,
 		Database: db,
 		FS:       fsys,
 	})

@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/loader"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -16,8 +16,8 @@ import (
 // Config holds the configuration options for the Runtime.
 type Config struct {
 	Namespace string
-	Hook      *hook.Hook
 	Scheme    *scheme.Scheme
+	Broker    *event.Broker
 	Database  database.Database
 }
 
@@ -31,9 +31,6 @@ type Runtime struct {
 
 // New creates a new Runtime instance with the specified configuration.
 func New(ctx context.Context, config Config) (*Runtime, error) {
-	if config.Hook == nil {
-		config.Hook = hook.New()
-	}
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
 	}
@@ -50,8 +47,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}
 
 	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
-		LoadHooks:   []symbol.LoadHook{config.Hook},
-		UnloadHooks: []symbol.UnloadHook{config.Hook},
+		Broker: config.Broker,
 	})
 
 	ld := loader.New(loader.Config{

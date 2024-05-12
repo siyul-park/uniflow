@@ -1,4 +1,4 @@
-package symbol
+package hook
 
 import "github.com/siyul-park/uniflow/pkg/node"
 

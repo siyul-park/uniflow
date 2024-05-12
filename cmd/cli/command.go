@@ -9,7 +9,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +17,7 @@ import (
 // Config holds the configuration parameters for the root command.
 type Config struct {
 	Scheme   *scheme.Scheme
-	Hook     *hook.Hook
+	Broker   *event.Broker
 	Database database.Database
 	FS       fs.FS
 }
@@ -25,7 +25,7 @@ type Config struct {
 // NewCommand creates the root cobra command for the 'uniflow' CLI.
 func NewCommand(config Config) *cobra.Command {
 	sc := config.Scheme
-	hk := config.Hook
+	br := config.Broker
 	db := config.Database
 	fsys := config.FS
 
@@ -108,7 +108,7 @@ func NewCommand(config Config) *cobra.Command {
 	}))
 	cmd.AddCommand(NewStartCommand(StartConfig{
 		Scheme:   sc,
-		Hook:     hk,
+		Broker:   br,
 		Database: db,
 		FS:       fsys,
 	}))
