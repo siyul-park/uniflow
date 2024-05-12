@@ -1,10 +1,11 @@
 package primitive
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"unsafe"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 type Marshaler interface {
