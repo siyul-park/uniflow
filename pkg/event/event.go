@@ -14,6 +14,7 @@ type Event struct {
 const KeyTopic = "topic"
 
 var _ primitive.Marshaler = (*Event)(nil)
+var _ primitive.Unmarshaler = (*Event)(nil)
 
 func New(topic string) *Event {
 	return &Event{

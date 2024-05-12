@@ -9,32 +9,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestQueue_PushAndPop(t *testing.T) {
-	q := NewQueue(0)
-	defer q.Close()
-
+func TestProducer_Send(t *testing.T) {
 	topic := faker.Word()
 
-	e1 := New(topic)
-	e2 := New(topic)
+	q := NewQueue(0)
+	defer q.Close()
+	p := NewProducer(q)
 
-	q.Push(e1)
-	q.Push(e2)
+	e := New(topic)
+
+	p.Send(e)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	select {
-	case r1 := <-q.Pop():
-		assert.Equal(t, e1, r1)
+	case r := <-q.Pop():
+		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
 
-	select {
-	case r2 := <-q.Pop():
-		assert.Equal(t, e2, r2)
-	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
-	}
 }
