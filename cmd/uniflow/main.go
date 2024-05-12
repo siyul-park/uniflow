@@ -50,12 +50,12 @@ func main() {
 
 	table := system.NewBridgeTable()
 
-	hb.Register(network.AddToHook())
-
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
 	sb.Register(system.AddToScheme(table))
+
+	hb.Register(network.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {

@@ -24,7 +24,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	
+
 	br := event.NewBroker()
 	defer br.Close()
 
