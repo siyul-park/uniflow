@@ -97,6 +97,8 @@ func main() {
 	table.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	br := event.NewBroker()
+	defer br.Close()
+
 	hk.Subscribe(br)
 
 	wd, err := os.Getwd()
