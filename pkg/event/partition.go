@@ -30,6 +30,9 @@ func NewPartition() *Partition {
 				p.mu.RLock()
 				defer p.mu.RUnlock()
 
+				defer e.Wait(-1)
+				e.Wait(len(p.queues))
+
 				for _, v := range p.queues {
 					v.Push(e)
 				}

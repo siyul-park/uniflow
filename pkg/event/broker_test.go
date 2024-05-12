@@ -32,6 +32,7 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 
 	select {
 	case r := <-c1.Consume():
+		r.Wait(-1)
 		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
@@ -39,7 +40,14 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 
 	select {
 	case r := <-c2.Consume():
+		r.Wait(-1)
 		assert.Equal(t, e, r)
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+
+	select {
+	case <-e.Done():
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}

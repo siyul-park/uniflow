@@ -23,6 +23,7 @@ func TestProducer_Produce(t *testing.T) {
 
 	select {
 	case r := <-q.Pop():
+		r.Wait(-1)
 		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())

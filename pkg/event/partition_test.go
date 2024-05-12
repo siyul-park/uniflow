@@ -29,6 +29,7 @@ func TestPartition_WriteAndRead(t *testing.T) {
 
 	select {
 	case r := <-c1.Consume():
+		r.Wait(-1)
 		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
@@ -36,7 +37,14 @@ func TestPartition_WriteAndRead(t *testing.T) {
 
 	select {
 	case r := <-c2.Consume():
+		r.Wait(-1)
 		assert.Equal(t, e, r)
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+
+	select {
+	case <-e.Done():
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
