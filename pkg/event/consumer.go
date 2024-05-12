@@ -15,7 +15,7 @@ func NewConsumer(queue *Queue) *Consumer {
 	}
 }
 
-func (c *Consumer) Read() <-chan *Event {
+func (c *Consumer) Consume() <-chan *Event {
 	return c.queue.Pop()
 }
 

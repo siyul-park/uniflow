@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConsumer_Read(t *testing.T) {
+func TestConsumer_Consume(t *testing.T) {
 	topic := faker.Word()
 
 	q := NewQueue(0)
@@ -25,7 +25,7 @@ func TestConsumer_Read(t *testing.T) {
 	defer cancel()
 
 	select {
-	case r := <-c.Read():
+	case r := <-c.Consume():
 		assert.Equal(t, e, r)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())

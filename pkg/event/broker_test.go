@@ -10,24 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPartition_WriteAndRead(t *testing.T) {
+func TestBroker_ProduceAndConsume(t *testing.T) {
 	topic := faker.Word()
 
-	p := NewPartition()
-	defer p.Close()
+	b := NewBroker()
+	defer b.Close()
 
 	id1 := uuid.Must(uuid.NewV7())
 	id2 := uuid.Must(uuid.NewV7())
 
-	c1 := p.Consumer(id1)
+	p := b.Producer()
+
+	c1 := b.Consumer(topic, id1)
 	defer c1.Close()
 
-	c2 := p.Consumer(id2)
+	c2 := b.Consumer(topic, id2)
 	defer c2.Close()
 
 	e := New(topic)
 
-	p.Write(e)
+	p.Produce(e)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
