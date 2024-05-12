@@ -21,12 +21,16 @@ func NewQueue(capacity int) *Queue {
 	}
 
 	go func() {
+		defer close(q.in)
 		defer close(q.out)
+
 		buffer := make([]*Event, 0, capacity)
 
 		for {
-			data, ok := <-q.in
-			if !ok {
+			var data *Event
+			select {
+			case data = <-q.in:
+			case <-q.done:
 				return
 			}
 
@@ -40,10 +44,7 @@ func NewQueue(capacity int) *Queue {
 
 			for len(buffer) > 0 {
 				select {
-				case data, ok := <-q.in:
-					if !ok {
-						return
-					}
+				case data := <-q.in:
 					buffer = append(buffer, data)
 				case q.out <- buffer[0]:
 					buffer = buffer[1:]
@@ -89,5 +90,4 @@ func (q *Queue) Close() {
 	}
 
 	close(q.done)
-	close(q.in)
 }
