@@ -15,5 +15,7 @@ func NewProducer(queue *Queue) *Producer {
 // Produce produces the event to the producer's queue.
 func (p *Producer) Produce(e *Event) {
 	e.Wait(1)
-	p.queue.Push(e)
+	if !p.queue.Push(e) {
+		e.Wait(-1)
+	}
 }

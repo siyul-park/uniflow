@@ -57,15 +57,18 @@ func NewQueue(capacity int) *Queue {
 }
 
 // Push adds an event to the queue.
-func (q *Queue) Push(e *Event) {
+func (q *Queue) Push(e *Event) bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	select {
 	case <-q.done:
+		return false
 	default:
-		q.in <- e
 	}
+
+	q.in <- e
+	return true
 }
 
 // Pop returns a channel to receive events from the queue.

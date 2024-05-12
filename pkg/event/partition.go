@@ -34,7 +34,9 @@ func NewPartition() *Partition {
 
 				for _, v := range p.queues {
 					e.Wait(1)
-					v.Push(e)
+					if !v.Push(e) {
+						e.Wait(-1)
+					}
 				}
 			}()
 		}
