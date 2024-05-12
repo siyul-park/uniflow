@@ -8,31 +8,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	topic := faker.Word()
-	e := New(topic)
-	assert.Equal(t, topic, e.Topic())
-}
-
 func TestEvent_SetAndGet(t *testing.T) {
-	topic := faker.Word()
-	e := New(topic)
+	e := New()
 
 	key := faker.UUIDHyphenated()
 	val := primitive.NewString(faker.UUIDHyphenated())
 
 	e.Set(key, val)
 
-	res, ok := e.Get(key)
-	assert.True(t, ok)
+	res := e.Get(key)
 	assert.Equal(t, val, res)
 }
 
 func TestEvent_MarshalPrimitive(t *testing.T) {
-	topic := faker.Word()
+	key := faker.UUIDHyphenated()
+	val := primitive.NewString(faker.UUIDHyphenated())
 
-	e := New(topic)
-	doc := primitive.NewMap(primitive.NewString(KeyTopic), primitive.NewString(topic))
+	e := New()
+	e.Set(key, val)
+
+	doc := primitive.NewMap(primitive.NewString(key), val)
 
 	res, err := e.MarshalPrimitive()
 	assert.NoError(t, err)
@@ -40,13 +35,14 @@ func TestEvent_MarshalPrimitive(t *testing.T) {
 }
 
 func TestEvent_UnmarshalPrimitive(t *testing.T) {
-	topic := faker.Word()
+	key := faker.UUIDHyphenated()
+	val := primitive.NewString(faker.UUIDHyphenated())
 
-	doc := primitive.NewMap(primitive.NewString(KeyTopic), primitive.NewString(topic))
+	doc := primitive.NewMap(primitive.NewString(key), val)
 
 	e := &Event{}
 
 	err := e.UnmarshalPrimitive(doc)
 	assert.NoError(t, err)
-	assert.Equal(t, topic, e.Topic())
+	assert.Equal(t, val, e.Get(key))
 }

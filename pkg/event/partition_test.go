@@ -5,15 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPartition_WriteAndRead(t *testing.T) {
-	topic := faker.Word()
-
 	p := NewPartition()
 	defer p.Close()
+
+	p1 := p.Producer()
 
 	c1 := p.Consumer()
 	defer c1.Close()
@@ -21,9 +20,9 @@ func TestPartition_WriteAndRead(t *testing.T) {
 	c2 := p.Consumer()
 	defer c2.Close()
 
-	e := New(topic)
+	e := New()
 
-	p.Write(e)
+	p1.Produce(e)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

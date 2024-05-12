@@ -5,19 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConsumer_Consume(t *testing.T) {
-	topic := faker.Word()
-
 	q := NewQueue(0)
 	defer q.Close()
 	c := NewConsumer(q)
 	defer c.Close()
 
-	e := New(topic)
+	e := New()
 
 	q.Push(e)
 

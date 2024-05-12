@@ -15,7 +15,7 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 	b := NewBroker()
 	defer b.Close()
 
-	p := b.Producer()
+	p := b.Producer(topic)
 
 	c1 := b.Consumer(topic)
 	defer c1.Close()
@@ -23,7 +23,7 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 	c2 := b.Consumer(topic)
 	defer c2.Close()
 
-	e := New(topic)
+	e := New()
 
 	p.Produce(e)
 

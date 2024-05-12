@@ -12,28 +12,14 @@ type Event struct {
 	mu   sync.RWMutex
 }
 
-const KeyTopic = "topic"
-
 var _ primitive.Marshaler = (*Event)(nil)
 var _ primitive.Unmarshaler = (*Event)(nil)
 
 // New creates a new Event instance with the specified topic.
-func New(topic string) *Event {
+func New() *Event {
 	return &Event{
-		data: map[string]primitive.Value{
-			KeyTopic: primitive.NewString(topic),
-		},
+		data: make(map[string]primitive.Value),
 	}
-}
-
-// Topic returns the topic of the event.
-func (e *Event) Topic() string {
-	if v, ok := e.Get(KeyTopic); ok {
-		if v, ok := v.(primitive.String); ok {
-			return v.String()
-		}
-	}
-	return ""
 }
 
 // Set sets the value associated with the specified key in the event data.
@@ -45,12 +31,12 @@ func (e *Event) Set(key string, val primitive.Value) {
 }
 
 // Get retrieves the value associated with the specified key from the event data.
-func (e *Event) Get(key string) (primitive.Value, bool) {
+func (e *Event) Get(key string) primitive.Value {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	val, ok := e.data[key]
-	return val, ok
+	val := e.data[key]
+	return val
 }
 
 // MarshalPrimitive marshals the event data to a primitive value.

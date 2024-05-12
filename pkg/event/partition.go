@@ -6,6 +6,9 @@ import (
 
 // Partition represents a partition responsible for distributing events to consumers.
 type Partition struct {
+	queue    *Queue
+	producer *Producer
+
 	queues    []*Queue
 	consumers []*Consumer
 	mu        sync.RWMutex
@@ -13,17 +16,36 @@ type Partition struct {
 
 // NewPartition creates a new Partition instance.
 func NewPartition() *Partition {
-	return &Partition{}
+	queue := NewQueue(0)
+	producer := NewProducer(queue)
+
+	p := &Partition{
+		queue:    queue,
+		producer: producer,
+	}
+
+	go func() {
+		for e := range p.queue.Pop() {
+			func() {
+				p.mu.RLock()
+				defer p.mu.RUnlock()
+
+				for _, v := range p.queues {
+					v.Push(e)
+				}
+			}()
+		}
+	}()
+
+	return p
 }
 
 // Write writes the event to all queues in the partition.
-func (p *Partition) Write(e *Event) {
+func (p *Partition) Producer() *Producer {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	for _, v := range p.queues {
-		v.Push(e)
-	}
+	return p.producer
 }
 
 // Consumer creates a new consumer for the partition.
@@ -59,6 +81,8 @@ func (p *Partition) Consumer() *Consumer {
 func (p *Partition) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	p.queue.Close()
 
 	for _, c := range p.consumers {
 		c.Close()

@@ -5,18 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProducer_Produce(t *testing.T) {
-	topic := faker.Word()
-
 	q := NewQueue(0)
 	defer q.Close()
+
 	p := NewProducer(q)
 
-	e := New(topic)
+	e := New()
 
 	p.Produce(e)
 

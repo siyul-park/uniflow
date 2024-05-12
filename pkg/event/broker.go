@@ -6,39 +6,21 @@ import (
 
 // Broker represents a message broker responsible for managing partitions and queuing messages.
 type Broker struct {
-	queue      *Queue
 	partitions map[string]*Partition
 	mu         sync.RWMutex
 }
 
 // NewBroker creates a new Broker instance and initializes its internal queue and partitions.
 func NewBroker() *Broker {
-	b := &Broker{
-		queue:      NewQueue(0),
+	return &Broker{
 		partitions: make(map[string]*Partition),
 	}
-
-	go func() {
-		for {
-			e, ok := <-b.queue.Pop()
-			if !ok {
-				break
-			}
-
-			p := b.partition(e.Topic())
-			p.Write(e)
-		}
-	}()
-
-	return b
 }
 
 // Producer returns a new Producer instance associated with the Broker.
-func (b *Broker) Producer() *Producer {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	return NewProducer(b.queue)
+func (b *Broker) Producer(topic string) *Producer {
+	p := b.partition(topic)
+	return p.Producer()
 }
 
 // Consumer returns a new Consumer instance for the specified topic associated with the Broker.
@@ -56,8 +38,6 @@ func (b *Broker) Close() {
 		p.Close()
 	}
 	b.partitions = make(map[string]*Partition)
-
-	b.queue.Close()
 }
 
 // partition retrieves or creates a partition for the specified topic.

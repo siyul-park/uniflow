@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,10 +12,8 @@ func TestQueue_PushAndPop(t *testing.T) {
 	q := NewQueue(0)
 	defer q.Close()
 
-	topic := faker.Word()
-
-	e1 := New(topic)
-	e2 := New(topic)
+	e1 := New()
+	e2 := New()
 
 	q.Push(e1)
 	q.Push(e2)
