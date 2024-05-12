@@ -6,6 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
+// Event represents a structured event with associated data.
 type Event struct {
 	data map[string]primitive.Value
 	mu   sync.RWMutex
@@ -16,6 +17,7 @@ const KeyTopic = "topic"
 var _ primitive.Marshaler = (*Event)(nil)
 var _ primitive.Unmarshaler = (*Event)(nil)
 
+// New creates a new Event instance with the specified topic.
 func New(topic string) *Event {
 	return &Event{
 		data: map[string]primitive.Value{
@@ -24,6 +26,7 @@ func New(topic string) *Event {
 	}
 }
 
+// Topic returns the topic of the event.
 func (e *Event) Topic() string {
 	if v, ok := e.Get(KeyTopic); ok {
 		if v, ok := v.(primitive.String); ok {
@@ -33,6 +36,7 @@ func (e *Event) Topic() string {
 	return ""
 }
 
+// Set sets the value associated with the specified key in the event data.
 func (e *Event) Set(key string, val primitive.Value) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -40,6 +44,7 @@ func (e *Event) Set(key string, val primitive.Value) {
 	e.data[key] = val
 }
 
+// Get retrieves the value associated with the specified key from the event data.
 func (e *Event) Get(key string) (primitive.Value, bool) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -48,6 +53,7 @@ func (e *Event) Get(key string) (primitive.Value, bool) {
 	return val, ok
 }
 
+// MarshalPrimitive marshals the event data to a primitive value.
 func (e *Event) MarshalPrimitive() (primitive.Value, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -55,6 +61,7 @@ func (e *Event) MarshalPrimitive() (primitive.Value, error) {
 	return primitive.MarshalBinary(e.data)
 }
 
+// UnmarshalPrimitive unmarshals the primitive value to populate the event data.
 func (e *Event) UnmarshalPrimitive(value primitive.Value) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

@@ -14,7 +14,7 @@ func TestPartition_WriteAndRead(t *testing.T) {
 
 	p := NewPartition()
 	defer p.Close()
-	
+
 	c1 := p.Consumer()
 	defer c1.Close()
 
