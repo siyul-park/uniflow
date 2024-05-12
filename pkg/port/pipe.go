@@ -34,8 +34,8 @@ func newPipe(capacity int) *Pipe {
 }
 
 // Write writes data to the pipeline.
-func (p *Pipe) Write(data *packet.Packet) {
-	p.write.Write(data)
+func (p *Pipe) Write(data *packet.Packet) int {
+	return p.write.Write(data)
 }
 
 // Read returns the channel for reading data from the pipeline.
@@ -110,13 +110,21 @@ func (p *WritePipe) Unlink(pipe *ReadPipe) {
 }
 
 // Write writes data to the WritePipe.
-func (p *WritePipe) Write(data *packet.Packet) {
+func (p *WritePipe) Write(data *packet.Packet) int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for _, read := range p.reads {
-		read.write(data)
+	count := 0
+	for i := 0; i < len(p.reads); i++ {
+		read := p.reads[i]
+		if !read.write(data) {
+			p.reads = append(p.reads[:i], p.reads[i+1:]...)
+			i -= 1
+		} else {
+			count += 1
+		}
 	}
+	return count
 }
 
 func newReadPipe(capacity int) *ReadPipe {
@@ -127,12 +135,16 @@ func newReadPipe(capacity int) *ReadPipe {
 	}
 
 	go func() {
+		defer close(p.in)
 		defer close(p.out)
+
 		buffer := make([]*packet.Packet, 0, capacity)
 
 		for {
-			data, ok := <-p.in
-			if !ok {
+			var data *packet.Packet
+			select {
+			case data = <-p.in:
+			case <-p.done:
 				return
 			}
 
@@ -146,10 +158,7 @@ func newReadPipe(capacity int) *ReadPipe {
 
 			for len(buffer) > 0 {
 				select {
-				case data, ok := <-p.in:
-					if !ok {
-						return
-					}
+				case data = <-p.in:
 					buffer = append(buffer, data)
 				case p.out <- buffer[0]:
 					buffer = buffer[1:]
@@ -183,16 +192,18 @@ func (p *ReadPipe) Close() {
 	}
 
 	close(p.done)
-	close(p.in)
 }
 
-func (p *ReadPipe) write(data *packet.Packet) {
+func (p *ReadPipe) write(data *packet.Packet) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	select {
 	case <-p.done:
+		return false
 	default:
-		p.in <- data
 	}
+
+	p.in <- data
+	return true
 }
