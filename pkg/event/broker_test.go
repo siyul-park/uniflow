@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,15 +15,12 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 	b := NewBroker()
 	defer b.Close()
 
-	id1 := uuid.Must(uuid.NewV7())
-	id2 := uuid.Must(uuid.NewV7())
-
 	p := b.Producer()
 
-	c1 := b.Consumer(topic, id1)
+	c1 := b.Consumer(topic)
 	defer c1.Close()
 
-	c2 := b.Consumer(topic, id2)
+	c2 := b.Consumer(topic)
 	defer c2.Close()
 
 	e := New(topic)

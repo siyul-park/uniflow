@@ -2,8 +2,6 @@ package event
 
 import (
 	"sync"
-
-	"github.com/gofrs/uuid"
 )
 
 type Broker struct {
@@ -40,9 +38,9 @@ func (b *Broker) Producer() *Producer {
 	return NewProducer(b.queue)
 }
 
-func (b *Broker) Consumer(topic string, id uuid.UUID) *Consumer {
+func (b *Broker) Consumer(topic string) *Consumer {
 	p := b.partition(topic)
-	return p.Consumer(id)
+	return p.Consumer()
 }
 
 func (b *Broker) Close() {

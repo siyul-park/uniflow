@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,14 +14,11 @@ func TestPartition_WriteAndRead(t *testing.T) {
 
 	p := NewPartition()
 	defer p.Close()
-
-	id1 := uuid.Must(uuid.NewV7())
-	id2 := uuid.Must(uuid.NewV7())
-
-	c1 := p.Consumer(id1)
+	
+	c1 := p.Consumer()
 	defer c1.Close()
 
-	c2 := p.Consumer(id2)
+	c2 := p.Consumer()
 	defer c2.Close()
 
 	e := New(topic)

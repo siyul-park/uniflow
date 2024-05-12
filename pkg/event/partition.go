@@ -2,21 +2,16 @@ package event
 
 import (
 	"sync"
-
-	"github.com/gofrs/uuid"
 )
 
 type Partition struct {
-	queues    map[uuid.UUID]*Queue
-	consumers map[uuid.UUID][]*Consumer
+	queues    []*Queue
+	consumers []*Consumer
 	mu        sync.RWMutex
 }
 
 func NewPartition() *Partition {
-	return &Partition{
-		queues:    make(map[uuid.UUID]*Queue),
-		consumers: make(map[uuid.UUID][]*Consumer),
-	}
+	return &Partition{}
 }
 
 func (p *Partition) Write(e *Event) {
@@ -28,18 +23,15 @@ func (p *Partition) Write(e *Event) {
 	}
 }
 
-func (p *Partition) Consumer(id uuid.UUID) *Consumer {
+func (p *Partition) Consumer() *Consumer {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	q, ok := p.queues[id]
-	if !ok {
-		q = NewQueue(0)
-		p.queues[id] = q
-	}
+	q := NewQueue(0)
+	p.queues = append(p.queues, q)
 
 	c := NewConsumer(q)
-	p.consumers[id] = append(p.consumers[id], c)
+	p.consumers = append(p.consumers, c)
 
 	go func() {
 		<-c.Done()
@@ -47,16 +39,10 @@ func (p *Partition) Consumer(id uuid.UUID) *Consumer {
 		p.mu.Lock()
 		defer p.mu.Unlock()
 
-		for i, v := range p.consumers[id] {
+		for i, v := range p.consumers {
 			if v == c {
-				p.consumers[id] = append(p.consumers[id][:i], p.consumers[id][i+1:]...)
-				if len(p.consumers[id]) == 0 {
-					q := p.queues[id]
-					defer q.Close()
-
-					delete(p.consumers, id)
-					delete(p.queues, id)
-				}
+				p.consumers = append(p.consumers[:i], p.consumers[i+1:]...)
+				p.queues = append(p.queues[:i], p.queues[i+1:]...)
 				break
 			}
 		}
@@ -69,15 +55,13 @@ func (p *Partition) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for _, consumers := range p.consumers {
-		for _, v := range consumers {
-			v.Close()
-		}
+	for _, c := range p.consumers {
+		c.Close()
 	}
-	for _, v := range p.queues {
-		v.Close()
+	for _, q := range p.queues {
+		q.Close()
 	}
 
-	p.consumers = make(map[uuid.UUID][]*Consumer)
-	p.queues = make(map[uuid.UUID]*Queue)
+	p.consumers = nil
+	p.queues = nil
 }
