@@ -2,10 +2,11 @@ package primitive
 
 import (
 	"fmt"
-	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"testing"
+
+	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -167,6 +168,10 @@ func TestMarshalBinary(t *testing.T) {
 			when:   map[string]string{"a": "a", "b": "b", "c": "c"},
 			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 		},
+		{
+			when:   map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
+			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
+		},
 	}
 
 	for _, tc := range testCase {
@@ -246,6 +251,10 @@ func TestUnmarshal(t *testing.T) {
 		{
 			when:   NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 			expect: map[string]string{"a": "a", "b": "b", "c": "c"},
+		},
+		{
+			when:   NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
+			expect: map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
 		},
 	}
 

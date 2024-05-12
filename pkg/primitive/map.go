@@ -229,7 +229,7 @@ func newMapEncoder(encoder *encoding.Assembler[*Value, any]) encoding.Compiler[*
 
 						var key Value
 						if keyEncoder != nil && k.Type() == keyType {
-							kPtr := reflect.New(k.Type())
+							kPtr := reflect.New(keyType)
 							kPtr.Elem().Set(k)
 
 							if err := keyEncoder.Encode(&key, kPtr.UnsafePointer()); err != nil {
@@ -242,7 +242,7 @@ func newMapEncoder(encoder *encoding.Assembler[*Value, any]) encoding.Compiler[*
 
 						var val Value
 						if valueEncoder != nil && k.Type() == keyType {
-							vPtr := reflect.New(v.Type())
+							vPtr := reflect.New(valueType)
 							vPtr.Elem().Set(v)
 
 							if err := valueEncoder.Encode(&val, vPtr.UnsafePointer()); err != nil {
