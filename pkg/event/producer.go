@@ -10,6 +10,6 @@ func NewProducer(queue *Queue) *Producer {
 	}
 }
 
-func (p *Producer) Send(e *Event) {
+func (p *Producer) Produce(e *Event) {
 	p.queue.Push(e)
 }

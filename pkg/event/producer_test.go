@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProducer_Send(t *testing.T) {
+func TestProducer_Produce(t *testing.T) {
 	topic := faker.Word()
 
 	q := NewQueue(0)
@@ -18,7 +18,7 @@ func TestProducer_Send(t *testing.T) {
 
 	e := New(topic)
 
-	p.Send(e)
+	p.Produce(e)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

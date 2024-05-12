@@ -15,6 +15,7 @@ func TestConsumer_Read(t *testing.T) {
 	q := NewQueue(0)
 	defer q.Close()
 	c := NewConsumer(q)
+	defer c.Close()
 
 	e := New(topic)
 
