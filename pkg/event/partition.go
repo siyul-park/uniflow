@@ -6,9 +6,8 @@ import (
 
 // Partition represents a partition responsible for distributing events to consumers.
 type Partition struct {
-	queue    *Queue
-	producer *Producer
-
+	queue     *Queue
+	producer  *Producer
 	queues    []*Queue
 	consumers []*Consumer
 	mu        sync.RWMutex
