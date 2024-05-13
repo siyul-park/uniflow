@@ -122,10 +122,10 @@ func (n *HTTPServerNode) Listen() error {
 	return nil
 }
 
-// Stop shuts down the HTTPServerNode by closing the server and its associated listener.
+// Shutdown shuts down the HTTPServerNode by closing the server and its associated listener.
 // It locks the mutex to ensure safe concurrent access to the server and listener.
 // If an error occurs during the shutdown process, it returns the error.
-func (n *HTTPServerNode) Stop() error {
+func (n *HTTPServerNode) Shutdown() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 

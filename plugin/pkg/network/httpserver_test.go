@@ -39,7 +39,7 @@ func TestHTTPServerNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortErr))
 }
 
-func TestHTTPServerNode_ListenAndStop(t *testing.T) {
+func TestHTTPServerNode_ListenAndShutdown(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
@@ -52,7 +52,7 @@ func TestHTTPServerNode_ListenAndStop(t *testing.T) {
 	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
 	assert.NoError(t, err)
 
-	assert.NoError(t, n.Stop())
+	assert.NoError(t, n.Shutdown())
 
 	err = n.Listen()
 	assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestHTTPServerNode_ListenAndStop(t *testing.T) {
 	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
 	assert.NoError(t, err)
 
-	assert.NoError(t, n.Stop())
+	assert.NoError(t, n.Shutdown())
 }
 
 func TestHTTPServerNode_ServeHTTP(t *testing.T) {

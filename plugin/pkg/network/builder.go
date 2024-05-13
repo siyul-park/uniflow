@@ -19,7 +19,7 @@ func AddToHook() func(*hook.Hook) error {
 		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*HTTPServerNode); ok {
-				return n.Stop()
+				return n.Shutdown()
 			}
 			return nil
 		}))
