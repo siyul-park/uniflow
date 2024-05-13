@@ -122,6 +122,30 @@ func (n *HTTPServerNode) Listen() error {
 	return nil
 }
 
+// Stop shuts down the HTTPServerNode by closing the server and its associated listener.
+// It locks the mutex to ensure safe concurrent access to the server and listener.
+// If an error occurs during the shutdown process, it returns the error.
+func (n *HTTPServerNode) Stop() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.listener != nil {
+		return nil
+	}
+
+	if err := n.server.Close(); err != nil {
+		return err
+	}
+	s := new(http.Server)
+	s.Addr = n.server.Addr
+	n.server = s
+
+	_ = n.listener.Close()
+	n.listener = nil
+
+	return nil
+}
+
 // ServeHTTP handles HTTP requests.
 func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.RLock()

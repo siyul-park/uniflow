@@ -24,6 +24,9 @@ func TestAddToHook(t *testing.T) {
 
 	err = h.Load(n)
 	assert.NoError(t, err)
+
+	err = h.Unload(n)
+	assert.NoError(t, err)
 }
 
 func TestAddToScheme(t *testing.T) {

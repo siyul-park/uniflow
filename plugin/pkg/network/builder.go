@@ -16,6 +16,12 @@ func AddToHook() func(*hook.Hook) error {
 			}
 			return nil
 		}))
+		h.AddUnloadHook(symbol.UnloadHookFunc(func(n node.Node) error {
+			if n, ok := n.(*HTTPServerNode); ok {
+				return n.Stop()
+			}
+			return nil
+		}))
 		return nil
 	}
 }

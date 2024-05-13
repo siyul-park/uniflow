@@ -458,6 +458,107 @@ func TestTable_Keys(t *testing.T) {
 	assert.Contains(t, ids, sym.ID())
 }
 
+func TestTable_Hook(t *testing.T) {
+	s := scheme.New()
+
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	loaded := 0
+	unloaded := 0
+
+	tb := NewTable(s, TableOptions{
+		LoadHooks: []LoadHook{
+			LoadHookFunc(func(_ node.Node) error {
+				loaded += 1
+				return nil
+			}),
+		},
+		UnloadHooks: []UnloadHook{
+			UnloadHookFunc(func(_ node.Node) error {
+				unloaded += 1
+				return nil
+			}),
+		},
+	})
+	defer tb.Clear()
+
+	spec1 := &scheme.SpecMeta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+	spec2 := &scheme.SpecMeta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+	spec3 := &scheme.SpecMeta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: scheme.DefaultNamespace,
+	}
+
+	spec1.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec2.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
+	spec2.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec3.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
+	spec3.Links = map[string][]scheme.PortLocation{
+		node.PortOut: {
+			{
+				ID:   spec1.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
+
+	sym1, err := tb.Insert(spec1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, loaded)
+	assert.Equal(t, 0, unloaded)
+
+	sym2, err := tb.Insert(spec2)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, loaded)
+	assert.Equal(t, 0, unloaded)
+
+	sym3, err := tb.Insert(spec3)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, loaded)
+	assert.Equal(t, 0, unloaded)
+
+	_, err = tb.Free(sym1.ID())
+	assert.NoError(t, err)
+	assert.Equal(t, 3, loaded)
+	assert.Equal(t, 3, unloaded)
+
+	_, err = tb.Free(sym2.ID())
+	assert.NoError(t, err)
+	assert.Equal(t, 3, loaded)
+	assert.Equal(t, 3, unloaded)
+
+	_, err = tb.Free(sym3.ID())
+	assert.NoError(t, err)
+	assert.Equal(t, 3, loaded)
+	assert.Equal(t, 3, unloaded)
+}
+
 func BenchmarkTable_Insert(b *testing.B) {
 	s := scheme.New()
 

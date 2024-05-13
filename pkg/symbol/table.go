@@ -20,6 +20,7 @@ type TableOptions struct {
 type Table struct {
 	scheme      *scheme.Scheme
 	symbols     map[uuid.UUID]*Symbol
+	loads       map[uuid.UUID]struct{}
 	index       map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
 	unloadHooks []UnloadHook
@@ -39,6 +40,7 @@ func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 	return &Table{
 		scheme:      sh,
 		symbols:     make(map[uuid.UUID]*Symbol),
+		loads:       make(map[uuid.UUID]struct{}),
 		index:       make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
@@ -60,14 +62,9 @@ func (t *Table) Insert(spec scheme.Spec) (*Symbol, error) {
 	}
 
 	sym := New(spec, n)
-
-	if _, err := t.free(sym.ID()); err != nil {
-		return nil, err
-	}
 	if err := t.insert(sym); err != nil {
 		return nil, err
 	}
-
 	return sym, nil
 }
 
@@ -134,15 +131,16 @@ func (t *Table) Clear() error {
 }
 
 func (t *Table) insert(sym *Symbol) error {
+	if _, err := t.free(sym.ID()); err != nil {
+		return err
+	}
+
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
 		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
 	}
 
 	if err := t.links(sym); err != nil {
-		return err
-	}
-	if err := t.relinks(sym); err != nil {
 		return err
 	}
 
@@ -155,9 +153,13 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 		return nil, nil
 	}
 
+	if err := t.unlinks(sym); err != nil {
+		return nil, err
+	}
 	if err := sym.Close(); err != nil {
 		return nil, err
 	}
+
 	if sym.Name() != "" {
 		if namespace, ok := t.index[sym.Namespace()]; ok {
 			delete(namespace, sym.Name())
@@ -167,10 +169,6 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 		}
 	}
 	delete(t.symbols, id)
-
-	if err := t.unlinks(sym); err != nil {
-		return nil, err
-	}
 
 	return sym, nil
 }
@@ -211,7 +209,45 @@ func (t *Table) links(sym *Symbol) error {
 		}
 	}
 
-	return t.load(sym)
+	if err := t.load(sym); err != nil {
+		return err
+	}
+
+	for _, ref := range t.symbols {
+		if ref.Namespace() != sym.Namespace() {
+			continue
+		}
+
+		for name, locations := range ref.unlinks {
+			out := ref.Out(name)
+			if out == nil {
+				continue
+			}
+
+			for i, location := range locations {
+				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
+					if in := sym.In(location.Port); in != nil {
+						out.Link(in)
+						sym.linked[location.Port] = append(sym.linked[location.Port], scheme.PortLocation{
+							ID:   ref.ID(),
+							Name: location.Name,
+							Port: name,
+						})
+						ref.unlinks[name] = append(locations[:i], locations[i+1:]...)
+						if len(ref.unlinks[name]) == 0 {
+							delete(ref.unlinks, name)
+						}
+					}
+				}
+			}
+		}
+
+		if err := t.load(ref); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (t *Table) unlinks(sym *Symbol) error {
@@ -254,10 +290,6 @@ func (t *Table) unlinks(sym *Symbol) error {
 
 	for name, locations := range sym.linked {
 		for i, location := range locations {
-			if err := t.unload(t.symbols[location.ID]); err != nil {
-				return err
-			}
-
 			ref := t.symbols[location.ID]
 
 			var unlink scheme.PortLocation
@@ -281,68 +313,116 @@ func (t *Table) unlinks(sym *Symbol) error {
 	return nil
 }
 
-func (t *Table) relinks(sym *Symbol) error {
-	for _, ref := range t.symbols {
-		if !t.shouldSkipLoad(ref) || ref.Namespace() != sym.Namespace() {
+func (t *Table) load(sym *Symbol) error {
+	next := []uuid.UUID{sym.ID()}
+	visits := map[uuid.UUID]struct{}{}
+	for len(next) > 0 {
+		id := next[0]
+		next = next[1:]
+
+		if _, ok := visits[id]; ok {
+			continue
+		}
+		visits[id] = struct{}{}
+
+		if _, ok := t.loads[id]; ok {
 			continue
 		}
 
-		for name, locations := range ref.unlinks {
-			out := ref.Out(name)
-			if out == nil {
-				continue
-			}
+		sym, ok := t.symbols[id]
+		if !ok {
+			continue
+		}
 
-			for i, location := range locations {
-				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					if in := sym.In(location.Port); in != nil {
-						out.Link(in)
-						sym.linked[location.Port] = append(sym.linked[location.Port], scheme.PortLocation{
-							ID:   ref.ID(),
-							Name: location.Name,
-							Port: name,
-						})
-						ref.unlinks[name] = append(locations[:i], locations[i+1:]...)
-						if len(ref.unlinks[name]) == 0 {
-							delete(ref.unlinks, name)
-						}
-					}
-				}
+		for _, locations := range sym.linked {
+			for _, location := range locations {
+				next = append(next, location.ID)
 			}
 		}
 
-		if err := t.load(ref); err != nil {
-			return err
+		if t.shouldSkipLoad(sym) {
+			continue
 		}
-	}
 
-	return nil
-}
-
-func (t *Table) load(sym *Symbol) error {
-	if t.shouldSkipLoad(sym) {
-		return nil
-	}
-	for _, hook := range t.loadHooks {
-		if err := hook.Load(sym.node); err != nil {
-			return err
+		for _, hook := range t.loadHooks {
+			if err := hook.Load(sym.node); err != nil {
+				return err
+			}
 		}
+		t.loads[sym.ID()] = struct{}{}
 	}
 	return nil
 }
 
 func (t *Table) unload(sym *Symbol) error {
-	if t.shouldSkipLoad(sym) {
-		return nil
-	}
-	for _, hook := range t.unloadHooks {
-		if err := hook.Unload(sym.node); err != nil {
-			return err
+	next := []uuid.UUID{sym.ID()}
+	visits := map[uuid.UUID]struct{}{}
+	for len(next) > 0 {
+		id := next[0]
+		next = next[1:]
+
+		if _, ok := visits[id]; ok {
+			continue
 		}
+		visits[id] = struct{}{}
+
+		if _, ok := t.loads[id]; !ok {
+			continue
+		}
+
+		sym, ok := t.symbols[id]
+		if !ok {
+			continue
+		}
+
+		for _, locations := range sym.linked {
+			for _, location := range locations {
+				next = append(next, location.ID)
+			}
+		}
+
+		for _, hook := range t.unloadHooks {
+			if err := hook.Unload(sym.node); err != nil {
+				return err
+			}
+		}
+		delete(t.loads, sym.ID())
 	}
 	return nil
 }
 
 func (t *Table) shouldSkipLoad(sym *Symbol) bool {
-	return len(sym.unlinks) > 0
+	next := []uuid.UUID{sym.ID()}
+	visits := map[uuid.UUID]struct{}{}
+	for len(next) > 0 {
+		id := next[0]
+		next = next[1:]
+
+		if _, ok := visits[id]; ok {
+			continue
+		}
+		visits[id] = struct{}{}
+
+		sym, ok := t.symbols[id]
+		if !ok {
+			continue
+		}
+
+		if len(sym.unlinks) > 0 {
+			return true
+		}
+
+		for _, locations := range sym.links {
+			for _, location := range locations {
+				id := location.ID
+				if location.Name != "" {
+					if namespace, ok := t.index[sym.Namespace()]; ok {
+						id = namespace[location.Name]
+					}
+				}
+				next = append(next, id)
+			}
+		}
+	}
+	return false
 }
