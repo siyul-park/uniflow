@@ -9,13 +9,20 @@ import (
 
 // Symbol represents an object that binds a Node and a Spec.
 type Symbol struct {
-	spec scheme.Spec
-	node node.Node
-
+	spec    scheme.Spec
+	node    node.Node
+	status  Status
 	links   map[string][]scheme.PortLocation
 	unlinks map[string][]scheme.PortLocation
 	linked  map[string][]scheme.PortLocation
 }
+
+type Status int
+
+const (
+	StatusNotReady Status = iota
+	StatusReady
+)
 
 var _ node.Node = (*Symbol)(nil)
 
@@ -53,6 +60,16 @@ func (s *Symbol) Name() string {
 // Annotations returns the annotations.
 func (s *Symbol) Annotations() map[string]string {
 	return s.spec.GetAnnotations()
+}
+
+// Status returns the current status.
+func (s *Symbol) Status() Status {
+	return s.status
+}
+
+// Unwrap returns the node wrapped.
+func (s *Symbol) Unwrap() node.Node {
+	return s.node
 }
 
 // In returns the specified InPort.

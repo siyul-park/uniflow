@@ -20,7 +20,6 @@ type TableOptions struct {
 type Table struct {
 	scheme      *scheme.Scheme
 	symbols     map[uuid.UUID]*Symbol
-	loads       map[uuid.UUID]struct{}
 	index       map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
 	unloadHooks []UnloadHook
@@ -40,7 +39,6 @@ func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 	return &Table{
 		scheme:      sh,
 		symbols:     make(map[uuid.UUID]*Symbol),
-		loads:       make(map[uuid.UUID]struct{}),
 		index:       make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
@@ -325,12 +323,11 @@ func (t *Table) load(sym *Symbol) error {
 		}
 		visits[id] = struct{}{}
 
-		if _, ok := t.loads[id]; ok {
-			continue
-		}
-
 		sym, ok := t.symbols[id]
 		if !ok {
+			continue
+		}
+		if sym.Status() == StatusReady {
 			continue
 		}
 
@@ -345,11 +342,12 @@ func (t *Table) load(sym *Symbol) error {
 		}
 
 		for _, hook := range t.loadHooks {
-			if err := hook.Load(sym.node); err != nil {
+			if err := hook.Load(sym); err != nil {
 				return err
 			}
 		}
-		t.loads[sym.ID()] = struct{}{}
+
+		sym.status = StatusReady
 	}
 	return nil
 }
@@ -366,12 +364,11 @@ func (t *Table) unload(sym *Symbol) error {
 		}
 		visits[id] = struct{}{}
 
-		if _, ok := t.loads[id]; !ok {
-			continue
-		}
-
 		sym, ok := t.symbols[id]
 		if !ok {
+			continue
+		}
+		if sym.Status() == StatusNotReady {
 			continue
 		}
 
@@ -382,11 +379,12 @@ func (t *Table) unload(sym *Symbol) error {
 		}
 
 		for _, hook := range t.unloadHooks {
-			if err := hook.Unload(sym.node); err != nil {
+			if err := hook.Unload(sym); err != nil {
 				return err
 			}
 		}
-		delete(t.loads, sym.ID())
+
+		sym.status = StatusNotReady
 	}
 	return nil
 }

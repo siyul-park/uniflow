@@ -7,6 +7,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,10 +23,12 @@ func TestAddToHook(t *testing.T) {
 	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
-	err = h.Load(n)
+	sym := symbol.New(&scheme.SpecMeta{}, n)
+
+	err = h.Load(sym)
 	assert.NoError(t, err)
 
-	err = h.Unload(n)
+	err = h.Unload(sym)
 	assert.NoError(t, err)
 }
 

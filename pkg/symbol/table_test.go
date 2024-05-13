@@ -473,13 +473,13 @@ func TestTable_Hook(t *testing.T) {
 
 	tb := NewTable(s, TableOptions{
 		LoadHooks: []LoadHook{
-			LoadHookFunc(func(_ node.Node) error {
+			LoadHookFunc(func(_ *Symbol) error {
 				loaded += 1
 				return nil
 			}),
 		},
 		UnloadHooks: []UnloadHook{
-			UnloadHookFunc(func(_ node.Node) error {
+			UnloadHookFunc(func(_ *Symbol) error {
 				unloaded += 1
 				return nil
 			}),

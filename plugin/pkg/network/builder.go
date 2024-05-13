@@ -2,7 +2,6 @@ package network
 
 import (
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
@@ -10,13 +9,15 @@ import (
 // AddToHook returns a function that adds hook to the provided hook.
 func AddToHook() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadHookFunc(func(n node.Node) error {
+		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
+			n := sym.Unwrap()
 			if n, ok := n.(*HTTPServerNode); ok {
 				return n.Listen()
 			}
 			return nil
 		}))
-		h.AddUnloadHook(symbol.UnloadHookFunc(func(n node.Node) error {
+		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
+			n := sym.Unwrap()
 			if n, ok := n.(*HTTPServerNode); ok {
 				return n.Stop()
 			}

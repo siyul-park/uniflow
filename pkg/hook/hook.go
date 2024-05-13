@@ -3,7 +3,6 @@ package hook
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -39,12 +38,12 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 }
 
 // Load executes LoadHooks on the provided node.
-func (h *Hook) Load(n node.Node) error {
+func (h *Hook) Load(sym *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, hook := range h.loadHooks {
-		if err := hook.Load(n); err != nil {
+		if err := hook.Load(sym); err != nil {
 			return err
 		}
 	}
@@ -52,12 +51,12 @@ func (h *Hook) Load(n node.Node) error {
 }
 
 // Unload executes UnloadHooks on the provided node.
-func (h *Hook) Unload(n node.Node) error {
+func (h *Hook) Unload(sym *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, hook := range h.unloadHooks {
-		if err := hook.Unload(n); err != nil {
+		if err := hook.Unload(sym); err != nil {
 			return err
 		}
 	}
