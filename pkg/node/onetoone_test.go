@@ -16,7 +16,6 @@ import (
 func TestNewOneToOneNode(t *testing.T) {
 	n := NewOneToOneNode(nil)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
