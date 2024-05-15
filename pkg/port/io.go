@@ -146,6 +146,7 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	}
 
 	if index < 0 {
+		w.proc.Stack().Clear(pck)
 		return false
 	}
 
