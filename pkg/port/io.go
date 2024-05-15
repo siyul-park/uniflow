@@ -72,25 +72,20 @@ func (w *Writer) Write(pck *packet.Packet) bool {
 		return false
 	}
 
-	var stem *packet.Packet
+	stem := pck
 	if w.proc.Stack().Has(nil, pck) {
-		stem = pck
 		pck = packet.New(stem.Payload())
+	} else {
+		tx := transaction.New()
+		w.proc.SetTransaction(pck, tx)
 	}
 
 	w.written = append(w.written, pck)
 	w.proc.Stack().Add(stem, pck)
 
-	if stem == nil {
-		tx := transaction.New()
-		w.proc.SetTransaction(pck, tx)
-	}
-
 	if w.pipe.Write(pck) == 0 {
-		if stem != nil {
-			w.written = w.written[:len(w.written)-1]
-			w.proc.Stack().Unwind(pck, pck)
-		}
+		w.written = w.written[:len(w.written)-1]
+		w.proc.Stack().Unwind(pck, stem)
 		return false
 	}
 	return true
