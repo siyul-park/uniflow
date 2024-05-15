@@ -39,23 +39,11 @@ func AddToHook(config Config) func(*hook.Hook) error {
 			h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
 				e := event.New(sym.Spec())
 				load.Produce(e)
-
-				n := sym.Unwrap()
-				if _, ok := n.(*TriggerNode); ok {
-					<-e.Done()
-				}
-
 				return nil
 			}))
 			h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
 				e := event.New(sym.Spec())
 				unload.Produce(e)
-
-				n := sym.Unwrap()
-				if _, ok := n.(*TriggerNode); ok {
-					<-e.Done()
-				}
-
 				return nil
 			}))
 		}
