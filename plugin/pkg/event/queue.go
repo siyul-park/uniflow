@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// Queue represents a queue for storing events.
 type Queue struct {
 	in   chan *Event
 	out  chan *Event
@@ -11,6 +12,7 @@ type Queue struct {
 	mu   sync.RWMutex
 }
 
+// NewQueue creates a new instance of Queue with the given capacity.
 func NewQueue(capacity int) *Queue {
 	q := &Queue{
 		in:   make(chan *Event, capacity),
@@ -54,6 +56,8 @@ func NewQueue(capacity int) *Queue {
 	return q
 }
 
+// Push pushes the given event into the queue.
+// It returns true if the event is successfully pushed, otherwise false if the queue is closed.
 func (q *Queue) Push(e *Event) bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -68,14 +72,17 @@ func (q *Queue) Push(e *Event) bool {
 	return true
 }
 
+// Pop returns a channel to receive events from the queue.
 func (q *Queue) Pop() <-chan *Event {
 	return q.out
 }
 
+// Done returns a channel to receive a signal when the queue is done processing.
 func (q *Queue) Done() <-chan struct{} {
 	return q.done
 }
 
+// Close closes the queue and signals that it is done processing.
 func (q *Queue) Close() {
 	q.mu.Lock()
 	defer q.mu.Unlock()

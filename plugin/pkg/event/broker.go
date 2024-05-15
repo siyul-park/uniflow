@@ -2,12 +2,14 @@ package event
 
 import "sync"
 
+// Broker manages producers and consumers for different topics.
 type Broker struct {
 	producers map[string][]*Producer
 	consumers map[string][]*Consumer
 	mu        sync.RWMutex
 }
 
+// NewBroker creates a new instance of Broker.
 func NewBroker() *Broker {
 	return &Broker{
 		producers: make(map[string][]*Producer),
@@ -15,23 +17,24 @@ func NewBroker() *Broker {
 	}
 }
 
+// Producer creates a new producer for the given topic and returns it.
 func (b *Broker) Producer(topic string) *Producer {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	q := NewQueue(0)
-	p := NewProducer(q)
+	queue := NewQueue(0)
+	producer := NewProducer(queue)
 
-	b.producers[topic] = append(b.producers[topic], p)
+	b.producers[topic] = append(b.producers[topic], producer)
 
 	go func() {
-		<-q.Done()
+		<-queue.Done()
 
 		b.mu.Lock()
 		defer b.mu.Unlock()
 
-		for i, producer := range b.producers[topic] {
-			if producer == p {
+		for i, p := range b.producers[topic] {
+			if p == producer {
 				b.producers[topic] = append(b.producers[topic][:i], b.producers[topic][i+1:]...)
 				return
 			}
@@ -39,19 +42,18 @@ func (b *Broker) Producer(topic string) *Producer {
 	}()
 
 	go func() {
-		for e := range q.Pop() {
+		for event := range queue.Pop() {
 			func() {
 				b.mu.RLock()
 				defer b.mu.RUnlock()
 
-				wg := sync.WaitGroup{}
+				var wg sync.WaitGroup
 				for _, consumer := range b.consumers[topic] {
-					child := New(e.Data())
-
+					child := New(event.Data())
 					wg.Add(1)
 					go func() {
 						<-child.Done()
-						wg.Add(-1)
+						wg.Done()
 					}()
 
 					if !consumer.queue.Push(child) {
@@ -61,41 +63,43 @@ func (b *Broker) Producer(topic string) *Producer {
 
 				go func() {
 					wg.Wait()
-					e.Close()
+					event.Close()
 				}()
 			}()
 		}
 	}()
 
-	return p
+	return producer
 }
 
+// Consumer creates a new consumer for the given topic and returns it.
 func (b *Broker) Consumer(topic string) *Consumer {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	q := NewQueue(0)
-	c := NewConsumer(q)
+	queue := NewQueue(0)
+	consumer := NewConsumer(queue)
 
-	b.consumers[topic] = append(b.consumers[topic], c)
+	b.consumers[topic] = append(b.consumers[topic], consumer)
 
 	go func() {
-		<-q.Done()
+		<-queue.Done()
 
 		b.mu.Lock()
 		defer b.mu.Unlock()
 
-		for i, consumer := range b.consumers[topic] {
-			if consumer == c {
+		for i, c := range b.consumers[topic] {
+			if c == consumer {
 				b.consumers[topic] = append(b.consumers[topic][:i], b.consumers[topic][i+1:]...)
 				return
 			}
 		}
 	}()
 
-	return c
+	return consumer
 }
 
+// Close closes all producers and consumers managed by the broker.
 func (b *Broker) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
