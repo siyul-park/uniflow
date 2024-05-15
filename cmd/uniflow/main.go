@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
+	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -48,15 +49,22 @@ func main() {
 	hb := hook.NewBuilder()
 
 	module := system.NewNativeModule()
+	broker := event.NewBroker()
+	defer broker.Close()
 
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
 	sb.Register(system.AddToScheme(system.Config{
 		Module: module,
+		Broker: broker,
 	}))
 
 	hb.Register(network.AddToHook())
+	hb.Register(system.AddToHook(system.Config{
+		Module: module,
+		Broker: broker,
+	}))
 
 	sc, err := sb.Build()
 	if err != nil {

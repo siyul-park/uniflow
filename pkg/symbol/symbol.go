@@ -67,6 +67,11 @@ func (s *Symbol) Status() Status {
 	return s.status
 }
 
+// Spec returns the spec.
+func (s *Symbol) Spec() scheme.Spec {
+	return s.spec
+}
+
 // Unwrap returns the node wrapped.
 func (s *Symbol) Unwrap() node.Node {
 	return s.node
