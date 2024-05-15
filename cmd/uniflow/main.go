@@ -47,12 +47,12 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	table := system.NewNativeTable()
+	module := system.NewNativeModule()
 
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(table))
+	sb.Register(system.AddToScheme(module))
 
 	hb.Register(network.AddToHook())
 
@@ -89,10 +89,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	table.Store(system.OPCreateNodes, system.CreateNodes(st))
-	table.Store(system.OPReadNodes, system.ReadNodes(st))
-	table.Store(system.OPUpdateNodes, system.UpdateNodes(st))
-	table.Store(system.OPDeleteNodes, system.DeleteNodes(st))
+	module.Store(system.OPCreateNodes, system.CreateNodes(st))
+	module.Store(system.OPReadNodes, system.ReadNodes(st))
+	module.Store(system.OPUpdateNodes, system.UpdateNodes(st))
+	module.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

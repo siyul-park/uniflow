@@ -5,13 +5,13 @@ import (
 )
 
 // AddToScheme returns a function that adds node types and codecs to the provided scheme.
-func AddToScheme(table *NativeTable) func(*scheme.Scheme) error {
-	if table == nil {
-		table = NewNativeTable()
+func AddToScheme(module *NativeModule) func(*scheme.Scheme) error {
+	if module == nil {
+		module = NewNativeModule()
 	}
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindNative, &NativeNodeSpec{})
-		s.AddCodec(KindNative, NewNativeNodeCodec(table))
+		s.AddCodec(KindNative, NewNativeNodeCodec(module))
 
 		return nil
 	}

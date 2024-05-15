@@ -31,8 +31,8 @@ type NativeNodeSpec struct {
 	Operands        []string `map:"operands,omitempty"`
 }
 
-// NativeTable represents a table of system call operations.
-type NativeTable struct {
+// NativeModule represents a table of system call operations.
+type NativeModule struct {
 	data map[string]any
 	mu   sync.RWMutex
 }
@@ -150,15 +150,15 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
 }
 
-// NewNativeTable creates a new NativeTable instance.
-func NewNativeTable() *NativeTable {
-	return &NativeTable{
+// NewNativeModule creates a new NativeModule instance.
+func NewNativeModule() *NativeModule {
+	return &NativeModule{
 		data: make(map[string]any),
 	}
 }
 
 // Store adds or updates a system call opcode in the table.
-func (t *NativeTable) Store(opcode string, fn any) {
+func (t *NativeModule) Store(opcode string, fn any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -167,7 +167,7 @@ func (t *NativeTable) Store(opcode string, fn any) {
 
 // Load retrieves a system call opcode from the table.
 // It returns the opcode function and a boolean indicating if the opcode exists.
-func (t *NativeTable) Load(opcode string) (any, bool) {
+func (t *NativeModule) Load(opcode string) (any, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -176,9 +176,9 @@ func (t *NativeTable) Load(opcode string) (any, bool) {
 }
 
 // NewNativeNodeCodec creates a new codec for NativeNodeSpec.
-func NewNativeNodeCodec(table *NativeTable) scheme.Codec {
-	return scheme.CodecWithType[*NativeNodeSpec](func(spec *NativeNodeSpec) (node.Node, error) {
-		fn, ok := table.Load(spec.Opcode)
+func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
+	return scheme.CodecWithType(func(spec *NativeNodeSpec) (node.Node, error) {
+		fn, ok := module.Load(spec.Opcode)
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)
 		}

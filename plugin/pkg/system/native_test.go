@@ -224,7 +224,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 }
 
 func TestNativeNodeCodec_Decode(t *testing.T) {
-	table := NewNativeTable()
+	table := NewNativeModule()
 
 	operation := faker.UUIDHyphenated()
 
