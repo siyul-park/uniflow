@@ -149,7 +149,7 @@ func TestStack_Done(t *testing.T) {
 		assert.NoError(t, ctx.Err())
 	}
 
-	s.Unwind(pck2, pck1)
+	s.Unwind(pck2, pck2)
 
 	select {
 	case <-s.Done(nil):

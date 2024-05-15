@@ -101,6 +101,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-outReader.Read():
+		proc.Stack().Clear(outPck)
 		err, _ := packet.AsError(outPck)
 		assert.NoError(t, err)
 	case <-ctx.Done():
@@ -113,6 +114,12 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	inPck = packet.New(inPayload)
 
 	inWriter.Write(inPck)
+
+	select {
+	case <-proc.Stack().Done(inPck):
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
 }
 
 func TestWebSocketClientNodeCodec_Decode(t *testing.T) {
@@ -177,7 +184,8 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		inWriter.Write(inPck)
-		<-outReader.Read()
+		outPck := <-outReader.Read()
+		proc.Stack().Clear(outPck)
 	}
 
 	inPayload, _ = primitive.MarshalBinary(&WebSocketPayload{

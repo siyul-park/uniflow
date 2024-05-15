@@ -156,38 +156,23 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 
 	for {
 		typ, p, err := conn.ReadMessage()
-		close := err != nil
-
-		var outPayload primitive.Value
-		if close {
-			var data primitive.Value
-			if err, ok := err.(*websocket.CloseError); ok {
-				data = primitive.NewBinary(websocket.FormatCloseMessage(err.Code, err.Text))
-			}
-			outPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
-				Type: websocket.CloseMessage,
-				Data: data,
-			})
-		} else {
-			var data primitive.Value
-			if data, err = UnmarshalMIME(p, lo.ToPtr("")); err != nil {
-				data = primitive.NewString(err.Error())
-			}
-			outPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
-				Type: typ,
-				Data: data,
-			})
-		}
-
-		outPck := packet.New(outPayload)
-		if !outWriter.Write(outPck) {
-			proc.Stack().Clear(outPck)
-		}
-
-		if close {
+		if err != nil {
 			proc.Ref(-1)
 			return
 		}
+
+		data, err := UnmarshalMIME(p, lo.ToPtr(""))
+		if err != nil {
+			data = primitive.NewString(err.Error())
+		}
+
+		outPayload, _ := primitive.MarshalBinary(&WebSocketPayload{
+			Type: typ,
+			Data: data,
+		})
+
+		outPck := packet.New(outPayload)
+		outWriter.Write(outPck)
 	}
 }
 

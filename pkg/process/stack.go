@@ -203,7 +203,7 @@ func (s *Stack) touch(node *packet.Packet) {
 
 func (s *Stack) has(node *packet.Packet) bool {
 	if node == nil {
-		return len(s.stems[node]) > 0
+		return len(s.stems) > 0
 	}
 	_, ok := s.stems[node]
 	return ok

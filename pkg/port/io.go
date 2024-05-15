@@ -89,7 +89,7 @@ func (w *Writer) Write(pck *packet.Packet) bool {
 	if w.pipe.Write(pck) == 0 {
 		if stem != nil {
 			w.written = w.written[:len(w.written)-1]
-			w.proc.Stack().Unwind(pck, stem)
+			w.proc.Stack().Unwind(pck, pck)
 		}
 		return false
 	}
