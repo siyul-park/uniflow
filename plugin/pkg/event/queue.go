@@ -72,6 +72,10 @@ func (q *Queue) Pop() <-chan *Event {
 	return q.out
 }
 
+func (q *Queue) Done() <-chan struct{} {
+	return q.done
+}
+
 func (q *Queue) Close() {
 	q.mu.Lock()
 	defer q.mu.Unlock()

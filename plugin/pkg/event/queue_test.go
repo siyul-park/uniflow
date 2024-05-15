@@ -34,5 +34,18 @@ func TestQueue_PushAndPop(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
+}
 
+func TestQueue_CloseAndDone(t *testing.T) {
+	q := NewQueue(0)
+	q.Close()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-q.Done():
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
 }
