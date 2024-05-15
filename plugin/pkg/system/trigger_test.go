@@ -44,6 +44,8 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 	n := NewTriggerNode(c)
 	defer n.Close()
 
+	n.Listen()
+
 	out := port.NewIn()
 	n.Out(node.PortOut).Link(out)
 
@@ -63,11 +65,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 	}))
 
 	e := event.New(nil)
-	defer e.Close()
-
 	q.Push(e)
-
-	n.Listen()
 
 	select {
 	case <-e.Done():
@@ -92,4 +90,37 @@ func TestTriggerNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
+}
+
+func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
+	q := event.NewQueue(0)
+	c := event.NewConsumer(q)
+
+	n := NewTriggerNode(c)
+	defer n.Close()
+
+	n.Listen()
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			outPck, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+			proc.Stack().Clear(outPck)
+		}
+	}))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		e := event.New(nil)
+		q.Push(e)
+		<-e.Done()
+	}
 }
