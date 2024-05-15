@@ -47,7 +47,7 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	table := system.NewBridgeTable()
+	table := system.NewNativeTable()
 
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())

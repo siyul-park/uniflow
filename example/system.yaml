@@ -38,7 +38,7 @@
       - name: delete_nodes
         port: in
 
-- kind: bridge
+- kind: native
   name: create_nodes
   opcode: nodes.create
   operands:
@@ -48,7 +48,7 @@
       - name: response_nodes
         port: in
 
-- kind: bridge
+- kind: native
   name: read_nodes
   opcode: nodes.read
   operands:
@@ -58,7 +58,7 @@
       - name: response_nodes
         port: in
 
-- kind: bridge
+- kind: native
   name: update_nodes
   lang: javascript
   opcode: nodes.update
@@ -69,7 +69,7 @@
       - name: response_node
         port: in
 
-- kind: bridge
+- kind: native
   name: delete_nodes
   opcode: nodes.delete
   operands:

@@ -35,7 +35,7 @@ func TestCreateNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewBridgeNode(CreateNodes(st))
+	n, _ := NewNativeNode(CreateNodes(st))
 	defer n.Close()
 
 	_ = n.SetOperands("[$]")
@@ -84,7 +84,7 @@ func TestReadNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewBridgeNode(ReadNodes(st))
+	n, _ := NewNativeNode(ReadNodes(st))
 	defer n.Close()
 
 	spec := &scheme.SpecMeta{
@@ -133,7 +133,7 @@ func TestUpdateNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewBridgeNode(UpdateNodes(st))
+	n, _ := NewNativeNode(UpdateNodes(st))
 	defer n.Close()
 
 	_ = n.SetOperands("[$]")
@@ -184,7 +184,7 @@ func TestDeleteNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewBridgeNode(DeleteNodes(st))
+	n, _ := NewNativeNode(DeleteNodes(st))
 	defer n.Close()
 
 	spec := &scheme.SpecMeta{

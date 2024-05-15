@@ -14,8 +14,8 @@ import (
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
-// BridgeNode represents a node for executing internal calls.
-type BridgeNode struct {
+// NativeNode represents a node for executing internal calls.
+type NativeNode struct {
 	*node.OneToOneNode
 	lang     string
 	operator reflect.Value
@@ -23,40 +23,40 @@ type BridgeNode struct {
 	mu       sync.RWMutex
 }
 
-// BridgeNodeSpec holds the specifications for creating a BridgeNode.
-type BridgeNodeSpec struct {
+// NativeNodeSpec holds the specifications for creating a NativeNode.
+type NativeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	Lang            string   `map:"lang,omitempty"`
 	Opcode          string   `map:"opcode"`
 	Operands        []string `map:"operands,omitempty"`
 }
 
-// BridgeTable represents a table of system call operations.
-type BridgeTable struct {
+// NativeTable represents a table of system call operations.
+type NativeTable struct {
 	data map[string]any
 	mu   sync.RWMutex
 }
 
-const KindBridge = "bridge"
+const KindNative = "native"
 
 var ErrInvalidOperation = errors.New("operation is invalid")
 
-// NewBridgeNode creates a new BridgeNode with the provided function.
+// NewNativeNode creates a new NativeNode with the provided function.
 // It returns an error if the provided function is not valid.
-func NewBridgeNode(operator any) (*BridgeNode, error) {
+func NewNativeNode(operator any) (*NativeNode, error) {
 	op := reflect.ValueOf(operator)
 	if op.Kind() != reflect.Func {
 		return nil, errors.WithStack(ErrInvalidOperation)
 	}
 
-	n := &BridgeNode{operator: op}
+	n := &NativeNode{operator: op}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
 }
 
-// SetLanguage sets the language for the BridgeNode.
-func (n *BridgeNode) SetLanguage(lang string) {
+// SetLanguage sets the language for the NativeNode.
+func (n *NativeNode) SetLanguage(lang string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -64,7 +64,7 @@ func (n *BridgeNode) SetLanguage(lang string) {
 }
 
 // SetOperands sets operands, it processes the operands based on the specified language.
-func (n *BridgeNode) SetOperands(operands ...string) error {
+func (n *NativeNode) SetOperands(operands ...string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -82,7 +82,7 @@ func (n *BridgeNode) SetOperands(operands ...string) error {
 	return nil
 }
 
-func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -150,15 +150,15 @@ func (n *BridgeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	return packet.New(primitive.NewSlice(outPayloads...)), nil
 }
 
-// NewBridgeTable creates a new BridgeTable instance.
-func NewBridgeTable() *BridgeTable {
-	return &BridgeTable{
+// NewNativeTable creates a new NativeTable instance.
+func NewNativeTable() *NativeTable {
+	return &NativeTable{
 		data: make(map[string]any),
 	}
 }
 
 // Store adds or updates a system call opcode in the table.
-func (t *BridgeTable) Store(opcode string, fn any) {
+func (t *NativeTable) Store(opcode string, fn any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -167,7 +167,7 @@ func (t *BridgeTable) Store(opcode string, fn any) {
 
 // Load retrieves a system call opcode from the table.
 // It returns the opcode function and a boolean indicating if the opcode exists.
-func (t *BridgeTable) Load(opcode string) (any, bool) {
+func (t *NativeTable) Load(opcode string) (any, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -175,14 +175,14 @@ func (t *BridgeTable) Load(opcode string) (any, bool) {
 	return fn, ok
 }
 
-// NewBridgeNodeCodec creates a new codec for BridgeNodeSpec.
-func NewBridgeNodeCodec(table *BridgeTable) scheme.Codec {
-	return scheme.CodecWithType[*BridgeNodeSpec](func(spec *BridgeNodeSpec) (node.Node, error) {
+// NewNativeNodeCodec creates a new codec for NativeNodeSpec.
+func NewNativeNodeCodec(table *NativeTable) scheme.Codec {
+	return scheme.CodecWithType[*NativeNodeSpec](func(spec *NativeNodeSpec) (node.Node, error) {
 		fn, ok := table.Load(spec.Opcode)
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)
 		}
-		n, err := NewBridgeNode(fn)
+		n, err := NewNativeNode(fn)
 		if err != nil {
 			return nil, err
 		}

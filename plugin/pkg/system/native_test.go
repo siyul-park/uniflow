@@ -16,19 +16,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBridgeNode(t *testing.T) {
-	n, err := NewBridgeNode(func() {})
+func TestNewNativeNode(t *testing.T) {
+	n, err := NewNativeNode(func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestBridgeNode_SendAndReceive(t *testing.T) {
+func TestNativeNode_SendAndReceive(t *testing.T) {
 	t.Run("Operands, Returns = 0", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func() {})
+		n, _ := NewNativeNode(func() {})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -56,7 +56,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func(arg any) any {
+		n, _ := NewNativeNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -88,7 +88,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func(arg1, arg2 any) any {
+		n, _ := NewNativeNode(func(arg1, arg2 any) any {
 			return arg2
 		})
 		defer n.Close()
@@ -120,7 +120,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func(ctx context.Context, arg any) any {
+		n, _ := NewNativeNode(func(ctx context.Context, arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -150,7 +150,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func(arg any) (any, any) {
+		n, _ := NewNativeNode(func(arg any) (any, any) {
 			return arg, arg
 		})
 		defer n.Close()
@@ -182,7 +182,7 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewBridgeNode(func(arg any) error {
+		n, _ := NewNativeNode(func(arg any) error {
 			return fmt.Errorf("%v", arg)
 		})
 		defer n.Close()
@@ -223,8 +223,8 @@ func TestBridgeNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestBridgeNodeCodec_Decode(t *testing.T) {
-	table := NewBridgeTable()
+func TestNativeNodeCodec_Decode(t *testing.T) {
+	table := NewNativeTable()
 
 	operation := faker.UUIDHyphenated()
 
@@ -232,9 +232,9 @@ func TestBridgeNodeCodec_Decode(t *testing.T) {
 		return arg
 	})
 
-	codec := NewBridgeNodeCodec(table)
+	codec := NewNativeNodeCodec(table)
 
-	spec := &BridgeNodeSpec{
+	spec := &NativeNodeSpec{
 		Opcode:   operation,
 		Lang:     language.Text,
 		Operands: []string{"foo"},
