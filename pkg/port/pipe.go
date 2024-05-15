@@ -9,7 +9,6 @@ import (
 
 // Pipe represents a pipeline for transmitting data.
 type Pipe struct {
-	proc  *process.Process
 	write *WritePipe
 	read  *ReadPipe
 }

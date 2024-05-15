@@ -35,7 +35,7 @@ func AddToHook(config Config) func(*hook.Hook) error {
 		if broker != nil {
 			load := broker.Producer(TopicLoad)
 			unload := broker.Producer(TopicUnload)
-	
+
 			h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
 				e := event.New(sym.Spec())
 				load.Produce(e)
