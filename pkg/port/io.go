@@ -37,7 +37,7 @@ func Discard(w *Writer) {
 func newWriter(proc *process.Process, capacity int) *Writer {
 	w := &Writer{
 		proc:    proc,
-		pipe:    newPipe(capacity),
+		pipe:    newPipe(proc, capacity),
 		channel: make(chan *packet.Packet),
 	}
 
@@ -132,30 +132,44 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 		w.written = w.written[1:]
 	}
 
+	cost := math.MaxInt
+	index := -1
 	for i := 0; i < len(w.written); i++ {
 		written := w.written[i]
-		if w.proc.Stack().Cost(written, pck) == 0 {
-			if len(w.proc.Stack().Stems(written)) == 0 {
-				tx := w.proc.Transaction(written)
-				if _, ok := packet.AsError(pck); !ok {
-					_ = tx.Commit()
-				} else {
-					_ = tx.Rollback()
-				}
+		if cur := w.proc.Stack().Cost(written, pck); cur < cost {
+			cost = cur
+			index = i
+			if cost == 0 {
+				break
 			}
-
-			w.proc.Stack().Unwind(pck, written)
-			w.written = append(w.written[:i], w.written[i+1:]...)
-			return true
 		}
 	}
-	return false
+
+	if index < 0 {
+		return false
+	}
+
+	written := w.written[index]
+
+	if len(w.proc.Stack().Stems(written)) == 0 {
+		tx := w.proc.Transaction(written)
+		if _, ok := packet.AsError(pck); !ok {
+			_ = tx.Commit()
+		} else {
+			_ = tx.Rollback()
+		}
+	}
+
+	w.proc.Stack().Unwind(pck, written)
+	w.written = append(w.written[:index], w.written[index+1:]...)
+
+	return true
 }
 
 func newReader(proc *process.Process, capacity int) *Reader {
 	r := &Reader{
 		proc:    proc,
-		pipe:    newPipe(capacity),
+		pipe:    newPipe(proc, capacity),
 		channel: make(chan *packet.Packet),
 	}
 
@@ -223,12 +237,14 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 		}
 	}
 
-	if index < 0 || !r.proc.Stack().Unwind(pck, r.read[index]) {
+	if index < 0 {
 		return false
 	}
 
+	r.proc.Stack().Unwind(pck, r.read[index])
 	r.read = append(r.read[:index], r.read[index+1:]...)
 	r.pipe.Write(pck)
+
 	return true
 }
 

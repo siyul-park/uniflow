@@ -6,14 +6,18 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPipe_WriteAndRead(t *testing.T) {
-	p1 := newPipe(0)
+	proc := process.New()
+	defer proc.Close()
+
+	p1 := newPipe(proc, 0)
 	defer p1.Close()
 
-	p2 := newPipe(0)
+	p2 := newPipe(proc, 0)
 	defer p2.Close()
 
 	p1.Link(p2)
@@ -42,23 +46,28 @@ func TestPipe_WriteAndRead(t *testing.T) {
 	}
 
 	select {
-	case <-p1.Read():
+	case pck := <-p1.Read():
+		proc.Stack().Clear(pck)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
 
 	select {
-	case <-p1.Read():
+	case pck := <-p1.Read():
+		proc.Stack().Clear(pck)
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
 }
 
 func TestPipe_Link(t *testing.T) {
-	p1 := newPipe(0)
+	proc := process.New()
+	defer proc.Close()
+
+	p1 := newPipe(proc, 0)
 	defer p1.Close()
 
-	p2 := newPipe(0)
+	p2 := newPipe(proc, 0)
 	defer p2.Close()
 
 	p1.Link(p2)
@@ -71,7 +80,10 @@ func TestPipe_Link(t *testing.T) {
 }
 
 func TestPipe_Done(t *testing.T) {
-	p := newPipe(0)
+	proc := process.New()
+	defer proc.Close()
+
+	p := newPipe(proc, 0)
 
 	p.Close()
 
@@ -86,10 +98,13 @@ func TestPipe_Done(t *testing.T) {
 }
 
 func BenchmarkPipe_WriteAndRead(b *testing.B) {
-	p1 := newPipe(0)
+	proc := process.New()
+	defer proc.Close()
+
+	p1 := newPipe(proc, 0)
 	defer p1.Close()
 
-	p2 := newPipe(0)
+	p2 := newPipe(proc, 0)
 	defer p2.Close()
 
 	p1.Link(p2)
@@ -97,7 +112,8 @@ func BenchmarkPipe_WriteAndRead(b *testing.B) {
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
 			p1.Write(packet.New(nil))
-			<-p2.Read()
+			pck := <-p2.Read()
+			proc.Stack().Clear(pck)
 		}
 	})
 }

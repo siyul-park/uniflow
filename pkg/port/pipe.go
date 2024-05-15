@@ -4,16 +4,19 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // Pipe represents a pipeline for transmitting data.
 type Pipe struct {
+	proc  *process.Process
 	write *WritePipe
 	read  *ReadPipe
 }
 
 // WritePipe is responsible for writing data to the pipeline.
 type WritePipe struct {
+	proc  *process.Process
 	reads []*ReadPipe
 	mu    sync.RWMutex
 }
@@ -26,9 +29,9 @@ type ReadPipe struct {
 	mu   sync.RWMutex
 }
 
-func newPipe(capacity int) *Pipe {
+func newPipe(proc *process.Process, capacity int) *Pipe {
 	return &Pipe{
-		write: newWritePipe(),
+		write: newWritePipe(proc),
 		read:  newReadPipe(capacity),
 	}
 }
@@ -70,8 +73,10 @@ func (p *Pipe) Close() {
 	p.read.Close()
 }
 
-func newWritePipe() *WritePipe {
-	return &WritePipe{}
+func newWritePipe(proc *process.Process) *WritePipe {
+	return &WritePipe{
+		proc: proc,
+	}
 }
 
 // Links returns the number of ReadPipes connected to the WritePipe.
@@ -114,10 +119,22 @@ func (p *WritePipe) Write(data *packet.Packet) int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	children := make([]*packet.Packet, len(p.reads))
+	for i := 0; i < len(p.reads); i++ {
+		child := data
+		if len(p.reads) > 1 {
+			child = packet.New(data.Payload())
+			p.proc.Stack().Add(data, child)
+		}
+		children[i] = child
+	}
+
 	count := 0
 	for i := 0; i < len(p.reads); i++ {
 		read := p.reads[i]
-		if !read.write(data) {
+		child := children[i]
+
+		if !read.write(child) {
 			p.reads = append(p.reads[:i], p.reads[i+1:]...)
 			i -= 1
 		} else {
