@@ -29,7 +29,8 @@ type Reader struct {
 
 func Discard(w *Writer) {
 	go func() {
-		for range w.Receive() {
+		for pck := range w.Receive() {
+			w.proc.Stack().Clear(pck)
 		}
 	}()
 }

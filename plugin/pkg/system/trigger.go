@@ -42,12 +42,10 @@ func NewTriggerNode(consumer *event.Consumer) *TriggerNode {
 		done:     make(chan struct{}),
 		inPort:   port.NewIn(),
 		outPort:  port.NewOut(),
-		errPort:  port.NewOut(),
+		errPort:   port.NewOut(),
 	}
 
 	n.inPort.AddHandler(port.HandlerFunc(n.forward))
-	n.outPort.AddHandler(port.HandlerFunc(n.backward))
-	n.errPort.AddHandler(port.HandlerFunc(n.catch))
 
 	return n
 }
@@ -111,6 +109,9 @@ func (n *TriggerNode) Listen() {
 			outWriter := n.outPort.Open(proc)
 			errWriter := n.errPort.Open(proc)
 
+			port.Discard(outWriter)
+			port.Discard(errWriter)
+
 			if outPayload, err := primitive.MarshalText(e.Data()); err != nil {
 				errPck := packet.WithError(err, nil)
 				errWriter.Write(errPck)
@@ -158,7 +159,6 @@ func (n *TriggerNode) Close() error {
 	return nil
 }
 
-// forward forwards packets from the input port to the processing stack.
 func (n *TriggerNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -172,40 +172,6 @@ func (n *TriggerNode) forward(proc *process.Process) {
 		}
 
 		proc.Stack().Clear(inPck)
-	}
-}
-
-// backward sends packets from the output port back to the processing stack.
-func (n *TriggerNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	outWriter := n.outPort.Open(proc)
-
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
-		proc.Stack().Clear(backPck)
-	}
-}
-
-// catch handles error packets from the error port.
-func (n *TriggerNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	errWriter := n.errPort.Open(proc)
-
-	for {
-		errPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		proc.Stack().Clear(errPck)
 	}
 }
 
