@@ -16,7 +16,6 @@ import (
 func TestNewOneToManyNode(t *testing.T) {
 	n := NewOneToManyNode(nil)
 	assert.NotNil(t, n)
-
 	assert.NoError(t, n.Close())
 }
 
