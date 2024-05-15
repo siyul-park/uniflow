@@ -41,12 +41,18 @@ func AddToHook(config Config) func(*hook.Hook) error {
 // AddToScheme returns a function that adds node types and codecs to the provided scheme.
 func AddToScheme(config Config) func(*scheme.Scheme) error {
 	module := config.Module
+	broker := config.Broker
+
 	if module == nil {
 		module = NewNativeModule()
 	}
+
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindNative, &NativeNodeSpec{})
 		s.AddCodec(KindNative, NewNativeNodeCodec(module))
+
+		s.AddKnownType(KindTrigger, &TriggerNodeSpec{})
+		s.AddCodec(KindTrigger, NewTriggerNodeCodec(broker))
 
 		return nil
 	}

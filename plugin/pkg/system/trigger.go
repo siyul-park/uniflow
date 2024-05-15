@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
 // TriggerNode represents a node that triggers events.
@@ -20,6 +21,14 @@ type TriggerNode struct {
 	errPort  *port.OutPort
 	mu       sync.RWMutex
 }
+
+// TriggerNodeSpec holds the specifications for creating a TriggerNode.
+type TriggerNodeSpec struct {
+	scheme.SpecMeta `map:",inline"`
+	Topic           string `map:"topic"`
+}
+
+const KindTrigger = "trigger"
 
 const (
 	TopicLoad   = "load"
@@ -198,4 +207,13 @@ func (n *TriggerNode) catch(proc *process.Process) {
 
 		proc.Stack().Clear(errPck)
 	}
+}
+
+// NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
+func NewTriggerNodeCodec(broker *event.Broker) scheme.Codec {
+	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
+		c := broker.Consumer(spec.Topic)
+		n := NewTriggerNode(c)
+		return n, nil
+	})
 }

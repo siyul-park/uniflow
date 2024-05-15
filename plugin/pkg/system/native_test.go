@@ -224,15 +224,15 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 }
 
 func TestNativeNodeCodec_Decode(t *testing.T) {
-	table := NewNativeModule()
+	module := NewNativeModule()
 
 	operation := faker.UUIDHyphenated()
 
-	table.Store(operation, func(arg any) any {
+	module.Store(operation, func(arg any) any {
 		return arg
 	})
 
-	codec := NewNativeNodeCodec(table)
+	codec := NewNativeNodeCodec(module)
 
 	spec := &NativeNodeSpec{
 		Opcode:   operation,

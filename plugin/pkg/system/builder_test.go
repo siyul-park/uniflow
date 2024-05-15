@@ -40,7 +40,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme(Config{})(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindNative}
+	testCase := []string{KindNative, KindTrigger}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

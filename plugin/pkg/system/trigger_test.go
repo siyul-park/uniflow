@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -74,4 +75,21 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
+}
+
+func TestTriggerNodeCodec_Decode(t *testing.T) {
+	broker := event.NewBroker()
+
+	topic := faker.UUIDHyphenated()
+
+	codec := NewTriggerNodeCodec(broker)
+
+	spec := &TriggerNodeSpec{
+		Topic: topic,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
 }
