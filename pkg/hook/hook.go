@@ -55,7 +55,8 @@ func (h *Hook) Unload(sym *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, hook := range h.unloadHooks {
+	for i := len(h.unloadHooks); i >= 0; i-- {
+		hook := h.unloadHooks[i]
 		if err := hook.Unload(sym); err != nil {
 			return err
 		}
