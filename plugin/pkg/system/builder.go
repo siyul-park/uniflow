@@ -17,25 +17,25 @@ func AddToHook(config Config) func(*hook.Hook) error {
 	broker := config.Broker
 
 	return func(h *hook.Hook) error {
+		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
+			n := sym.Unwrap()
+			if n, ok := n.(*TriggerNode); ok {
+				n.Listen()
+			}
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
+			n := sym.Unwrap()
+			if n, ok := n.(*TriggerNode); ok {
+				n.Shutdown()
+			}
+			return nil
+		}))
+
 		if broker != nil {
 			load := broker.Producer(TopicLoad)
 			unload := broker.Producer(TopicUnload)
-
-			h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
-				n := sym.Unwrap()
-				if n, ok := n.(*TriggerNode); ok {
-					n.Listen()
-				}
-				return nil
-			}))
-			h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
-				n := sym.Unwrap()
-				if n, ok := n.(*TriggerNode); ok {
-					n.Shutdown()
-				}
-				return nil
-			}))
-
+	
 			h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
 				e := event.New(sym.Spec())
 				load.Produce(e)
