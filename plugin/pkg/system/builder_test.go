@@ -10,7 +10,7 @@ import (
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme(nil)(s)
+	err := AddToScheme(Config{})(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindNative}

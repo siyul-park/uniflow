@@ -52,7 +52,9 @@ func main() {
 	sb.Register(control.AddToScheme())
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(module))
+	sb.Register(system.AddToScheme(system.Config{
+		Module: module,
+	}))
 
 	hb.Register(network.AddToHook())
 
