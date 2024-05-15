@@ -31,6 +31,7 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 
 	select {
 	case r := <-c.Consume():
+		r.Close()
 		assert.Equal(t, e.Data(), r.Data())
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
