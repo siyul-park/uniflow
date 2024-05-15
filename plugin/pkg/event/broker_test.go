@@ -36,4 +36,10 @@ func TestBroker_ProduceAndConsume(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
+
+	select {
+	case <-e.Done():
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
 }
