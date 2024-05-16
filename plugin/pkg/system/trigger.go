@@ -42,7 +42,7 @@ func NewTriggerNode(consumer *event.Consumer) *TriggerNode {
 		done:     make(chan struct{}),
 		inPort:   port.NewIn(),
 		outPort:  port.NewOut(),
-		errPort:   port.NewOut(),
+		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddHandler(port.HandlerFunc(n.forward))
@@ -155,6 +155,10 @@ func (n *TriggerNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
+
+	for e := range n.consumer.Consume() {
+		e.Close()
+	}
 
 	return nil
 }
