@@ -151,16 +151,13 @@ func newReadPipe(capacity int) *ReadPipe {
 	}
 
 	go func() {
-		defer close(p.in)
 		defer close(p.out)
 
 		buffer := make([]*packet.Packet, 0, capacity)
 
 		for {
-			var data *packet.Packet
-			select {
-			case data = <-p.in:
-			case <-p.done:
+			data, ok := <-p.in
+			if !ok {
 				return
 			}
 
@@ -208,6 +205,7 @@ func (p *ReadPipe) Close() {
 	}
 
 	close(p.done)
+	close(p.in)
 }
 
 func (p *ReadPipe) write(data *packet.Packet) bool {
