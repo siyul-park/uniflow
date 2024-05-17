@@ -1,7 +1,6 @@
 package port
 
 import (
-	"math"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -44,6 +43,7 @@ func newWriter(proc *process.Process, capacity int) *Writer {
 
 	go func() {
 		defer close(w.channel)
+
 		for {
 			backPck, ok := <-w.pipe.Read()
 			if !ok {
@@ -124,29 +124,13 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	for len(w.written) > 0 && !w.proc.Stack().Has(nil, w.written[0]) {
-		w.written = w.written[1:]
-	}
+	w.clean()
 
-	cost := math.MaxInt
-	index := -1
-	for i := 0; i < len(w.written); i++ {
-		written := w.written[i]
-		if cur := w.proc.Stack().Cost(written, pck); cur < cost {
-			cost = cur
-			index = i
-			if cost == 0 {
-				break
-			}
-		}
-	}
-
-	if index < 0 {
+	written, _ := w.proc.Stack().Near(pck, w.written)
+	if written == nil {
 		w.proc.Stack().Clear(pck)
 		return false
 	}
-
-	written := w.written[index]
 
 	if len(w.proc.Stack().Stems(written)) == 0 {
 		tx := w.proc.Transaction(written)
@@ -158,9 +142,20 @@ func (w *Writer) pop(pck *packet.Packet) bool {
 	}
 
 	w.proc.Stack().Unwind(pck, written)
-	w.written = append(w.written[:index], w.written[index+1:]...)
+	for i := 0; i < len(w.written); i++ {
+		if w.written[i] == written {
+			w.written = append(w.written[:i], w.written[i+1:]...)
+			break
+		}
+	}
 
 	return true
+}
+
+func (w *Writer) clean() {
+	for len(w.written) > 0 && !w.proc.Stack().Has(nil, w.written[0]) {
+		w.written = w.written[1:]
+	}
 }
 
 func newReader(proc *process.Process, capacity int) *Reader {
@@ -201,12 +196,7 @@ func (r *Reader) Cost(pck *packet.Packet) int {
 
 	r.clean()
 
-	cost := math.MaxInt
-	for i := 0; i < len(r.read); i++ {
-		if cur := r.proc.Stack().Cost(r.read[i], pck); cur < cost {
-			cost = cur
-		}
-	}
+	_, cost := r.proc.Stack().Near(pck, r.read)
 	return cost
 }
 
@@ -222,24 +212,18 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 
 	r.clean()
 
-	cost := math.MaxInt
-	index := -1
-	for i := 0; i < len(r.read); i++ {
-		if cur := r.proc.Stack().Cost(r.read[i], pck); cur < cost {
-			cost = cur
-			index = i
-			if cost == 0 {
-				break
-			}
-		}
-	}
-
-	if index < 0 {
+	read, _ := r.proc.Stack().Near(pck, r.read)
+	if read == nil {
 		return false
 	}
 
-	r.proc.Stack().Unwind(pck, r.read[index])
-	r.read = append(r.read[:index], r.read[index+1:]...)
+	r.proc.Stack().Unwind(pck, read)
+	for i := 0; i < len(r.read); i++ {
+		if r.read[i] == read {
+			r.read = append(r.read[:i], r.read[i+1:]...)
+			break
+		}
+	}
 	r.pipe.Write(pck)
 
 	return true

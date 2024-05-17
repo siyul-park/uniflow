@@ -127,6 +127,22 @@ func TestStack_Cost(t *testing.T) {
 	assert.Equal(t, math.MaxInt, cost)
 }
 
+func TestStack_Near(t *testing.T) {
+	s := newStack()
+	defer s.Close()
+
+	pck1 := packet.New(nil)
+	pck2 := packet.New(nil)
+	pck3 := packet.New(nil)
+
+	s.Add(pck1, pck2)
+	s.Add(pck1, pck3)
+
+	near, cost := s.Near(pck3, []*packet.Packet{nil, pck1, pck2})
+	assert.Equal(t, pck1, near)
+	assert.Equal(t, 1, cost)
+}
+
 func TestStack_Done(t *testing.T) {
 	s := newStack()
 	defer s.Close()

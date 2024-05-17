@@ -121,6 +121,31 @@ func (s *Stack) Cost(stem, leaf *packet.Packet) int {
 	return cost
 }
 
+// Near returns the closest stem to the leaf.
+func (s *Stack) Near(leaf *packet.Packet, stems []*packet.Packet) (*packet.Packet, int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	keys := make(map[*packet.Packet]struct{}, len(stems))
+	for _, stem := range stems {
+		keys[stem] = struct{}{}
+	}
+
+	var pck *packet.Packet
+	cost := math.MaxInt
+	for _, head := range s.heads[leaf] {
+		s.upwards(head, func(node *packet.Packet, cur []*packet.Packet) bool {
+			if _, ok := keys[node]; ok {
+				pck = node
+				cost = len(cur) - 1
+			}
+			return pck == nil
+		})
+	}
+
+	return pck, cost
+}
+
 // Done returns a channel indicating when the stem packet is done processing.
 func (s *Stack) Done(stem *packet.Packet) <-chan struct{} {
 	s.mu.Lock()
