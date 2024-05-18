@@ -14,6 +14,7 @@ import (
 
 // TriggerNode represents a node that triggers events.
 type TriggerNode struct {
+	producer *event.Producer
 	consumer *event.Consumer
 	done     chan struct{}
 	inPort   *port.InPort
@@ -36,8 +37,9 @@ const (
 )
 
 // NewTriggerNode creates a new TriggerNode instance.
-func NewTriggerNode(consumer *event.Consumer) *TriggerNode {
+func NewTriggerNode(producer *event.Producer, consumer *event.Consumer) *TriggerNode {
 	n := &TriggerNode{
+		producer: producer,
 		consumer: consumer,
 		done:     make(chan struct{}),
 		inPort:   port.NewIn(),
@@ -175,6 +177,11 @@ func (n *TriggerNode) forward(proc *process.Process) {
 			return
 		}
 
+		inPayload := inPck.Payload()
+
+		e := event.New(primitive.Interface(inPayload))
+		n.producer.Produce(e)
+
 		proc.Stack().Clear(inPck)
 	}
 }
@@ -182,8 +189,9 @@ func (n *TriggerNode) forward(proc *process.Process) {
 // NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
 func NewTriggerNodeCodec(broker *event.Broker) scheme.Codec {
 	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
+		p := broker.Producer(spec.Topic)
 		c := broker.Consumer(spec.Topic)
-		n := NewTriggerNode(c)
-		return n, nil
+
+		return NewTriggerNode(p, c), nil
 	})
 }

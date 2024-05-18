@@ -8,7 +8,9 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +18,9 @@ import (
 func TestNewTriggerNode(t *testing.T) {
 	q := event.NewQueue(0)
 	c := event.NewConsumer(q)
+	p := event.NewProducer(q)
 
-	n := NewTriggerNode(c)
+	n := NewTriggerNode(p, c)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
@@ -25,8 +28,9 @@ func TestNewTriggerNode(t *testing.T) {
 func TestTriggerNode_Port(t *testing.T) {
 	q := event.NewQueue(0)
 	c := event.NewConsumer(q)
+	p := event.NewProducer(q)
 
-	n := NewTriggerNode(c)
+	n := NewTriggerNode(p, c)
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -35,44 +39,85 @@ func TestTriggerNode_Port(t *testing.T) {
 }
 
 func TestTriggerNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+	t.Run("Out", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	q := event.NewQueue(0)
-	c := event.NewConsumer(q)
+		q := event.NewQueue(0)
+		c := event.NewConsumer(q)
+		p := event.NewProducer(q)
 
-	n := NewTriggerNode(c)
-	defer n.Close()
+		n := NewTriggerNode(p, c)
+		defer n.Close()
 
-	n.Listen()
+		n.Listen()
 
-	out := port.NewIn()
-	n.Out(node.PortOut).Link(out)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
-	count := 0
+		count := 0
 
-	out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
-		outReader := out.Open(proc)
+		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
 
-		for {
-			outPck, ok := <-outReader.Read()
-			if !ok {
-				return
+			for {
+				outPck, ok := <-outReader.Read()
+				if !ok {
+					return
+				}
+				count += 1
+				proc.Stack().Clear(outPck)
 			}
-			count += 1
-			proc.Stack().Clear(outPck)
+		}))
+
+		e := event.New(nil)
+		q.Push(e)
+
+		select {
+		case <-e.Done():
+			assert.Equal(t, 1, count)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
 		}
-	}))
+	})
 
-	e := event.New(nil)
-	q.Push(e)
+	t.Run("In", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	select {
-	case <-e.Done():
-		assert.Equal(t, 1, count)
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		q := event.NewQueue(0)
+		c := event.NewConsumer(q)
+		p := event.NewProducer(q)
+
+		n := NewTriggerNode(p, c)
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		proc := process.New()
+		defer proc.Close()
+
+		inWriter := in.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case <-proc.Stack().Done(inPck):
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case e := <-c.Consume():
+			assert.Equal(t, inPayload.Interface(), e.Data())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
 
 func TestTriggerNodeCodec_Decode(t *testing.T) {
@@ -95,8 +140,9 @@ func TestTriggerNodeCodec_Decode(t *testing.T) {
 func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
 	q := event.NewQueue(0)
 	c := event.NewConsumer(q)
+	p := event.NewProducer(q)
 
-	n := NewTriggerNode(c)
+	n := NewTriggerNode(p, c)
 	defer n.Close()
 
 	n.Listen()
