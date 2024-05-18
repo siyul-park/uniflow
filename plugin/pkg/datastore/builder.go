@@ -13,6 +13,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindSQL, &SQLNodeSpec{})
 		s.AddCodec(KindSQL, NewSQLNodeCodec())
 
+		s.AddKnownType(KindWrite, &WriteNodeSpec{})
+		s.AddCodec(KindWrite, NewWriteNodeCodec())
+
 		return nil
 	}
 }

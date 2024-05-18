@@ -43,10 +43,10 @@ func NewSQLNode(query, lang string) (*SQLNode, error) {
 	n.query = func(value primitive.Value) (primitive.String, error) {
 		output, err := transform(value)
 		if err != nil {
-			return primitive.String(""), err
+			return primitive.NewString(""), err
 		}
 		if output, ok := output.(primitive.String); !ok {
-			return primitive.String(""), errors.WithStack(packet.ErrInvalidPacket)
+			return primitive.NewString(""), errors.WithStack(packet.ErrInvalidPacket)
 		} else {
 			return output, nil
 		}
