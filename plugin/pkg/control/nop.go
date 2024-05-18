@@ -9,24 +9,24 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
-// NoOpNode represents a node that performs no operation and simply forwards incoming packets.
-type NoOpNode struct {
+// NOPNode represents a node that performs no operation and simply forwards incoming packets.
+type NOPNode struct {
 	inPort *port.InPort
 	mu     sync.RWMutex
 }
 
-// NoOpNodeSpec defines the specification for creating a NoOpNode.
-type NoOpNodeSpec struct {
+// NOPNodeSpec defines the specification for creating a NOPNode.
+type NOPNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 }
 
-var _ node.Node = (*NoOpNode)(nil)
+var _ node.Node = (*NOPNode)(nil)
 
-const KindNoOp = "noop"
+const KindNOP = "nop"
 
-// NewNoOpNode creates a new instance of NoOpNode.
-func NewNoOpNode() *NoOpNode {
-	n := &NoOpNode{
+// NewNOPNode creates a new instance of NOPNode.
+func NewNOPNode() *NOPNode {
+	n := &NOPNode{
 		inPort: port.NewIn(),
 	}
 
@@ -36,7 +36,7 @@ func NewNoOpNode() *NoOpNode {
 }
 
 // In returns the input port with the specified name.
-func (n *NoOpNode) In(name string) *port.InPort {
+func (n *NOPNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -49,13 +49,13 @@ func (n *NoOpNode) In(name string) *port.InPort {
 	return nil
 }
 
-// Out returns nil as NoOpNode does not have any output port.
-func (n *NoOpNode) Out(name string) *port.OutPort {
+// Out returns nil as NOPNode does not have any output port.
+func (n *NOPNode) Out(name string) *port.OutPort {
 	return nil
 }
 
 // Close closes all ports associated with the node.
-func (n *NoOpNode) Close() error {
+func (n *NOPNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -65,7 +65,7 @@ func (n *NoOpNode) Close() error {
 }
 
 // forward forwards incoming packets.
-func (n *NoOpNode) forward(proc *process.Process) {
+func (n *NOPNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -81,9 +81,9 @@ func (n *NoOpNode) forward(proc *process.Process) {
 	}
 }
 
-// NewNoOpNodeCodec creates a codec for decoding NoOpNodeSpec.
-func NewNoOpNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *NoOpNodeSpec) (node.Node, error) {
-		return NewNoOpNode(), nil
+// NewNOPNodeCodec creates a codec for decoding NOPNodeSpec.
+func NewNOPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
+		return NewNOPNode(), nil
 	})
 }

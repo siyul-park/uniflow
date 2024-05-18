@@ -14,24 +14,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNoOpNode(t *testing.T) {
-	n := NewNoOpNode()
+func TestNewNOPNode(t *testing.T) {
+	n := NewNOPNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestNoOpNode_Port(t *testing.T) {
-	n := NewNoOpNode()
+func TestNOPNode_Port(t *testing.T) {
+	n := NewNOPNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
 }
 
-func TestNoOpNode_SendAndReceive(t *testing.T) {
+func TestNOPNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewNoOpNode()
+	n := NewNOPNode()
 	defer n.Close()
 
 	in := port.NewOut()
@@ -54,10 +54,10 @@ func TestNoOpNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestNoOpNodeCodec_Decode(t *testing.T) {
-	codec := NewNoOpNodeCodec()
+func TestNOPNodeCodec_Decode(t *testing.T) {
+	codec := NewNOPNodeCodec()
 
-	spec := &NoOpNodeSpec{}
+	spec := &NOPNodeSpec{}
 
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)

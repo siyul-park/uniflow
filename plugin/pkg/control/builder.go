@@ -17,8 +17,8 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindMerge, &MergeNodeSpec{})
 		s.AddCodec(KindMerge, NewMergeNodeCodec())
 
-		s.AddKnownType(KindNoOp, &NoOpNodeSpec{})
-		s.AddCodec(KindNoOp, NewNoOpNodeCodec())
+		s.AddKnownType(KindNOP, &NOPNodeSpec{})
+		s.AddCodec(KindNOP, NewNOPNodeCodec())
 
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
 		s.AddCodec(KindSnippet, NewSnippetNodeCodec())
