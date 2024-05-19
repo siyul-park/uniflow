@@ -17,7 +17,7 @@ import (
 type WriteNode struct {
 	*node.OneToOneNode
 	writer io.WriteCloser
-	format func(primitive.Value) (primitive.Binary, error)
+	format func(any) ([]byte, error)
 	mu     sync.RWMutex
 }
 
@@ -49,32 +49,31 @@ func (n *WriteNode) SetFormat(format, lang string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	var transform func(primitive.Value) (primitive.Value, error)
+	var transform func(any) (any, error)
 	if format == "" {
-		transform = func(v primitive.Value) (primitive.Value, error) {
+		transform = func(v any) (any, error) {
 			return v, nil
 		}
 	} else {
 		var err error
-		transform, err = language.CompileTransformWithPrimitive(format, lang)
+		transform, err = language.CompileTransform(format, &lang)
 		if err != nil {
 			return err
 		}
 	}
 
-	n.format = func(v primitive.Value) (primitive.Binary, error) {
-		v, err := transform(v)
+	n.format = func(input any) ([]byte, error) {
+		output, err := transform(input)
 		if err != nil {
 			return nil, err
 		}
 
-		if v, ok := v.(primitive.Binary); ok {
+		if v, ok := output.([]byte); ok {
 			return v, nil
+		} else if v, ok := output.(string); ok {
+			return []byte(v), nil
 		}
-		if v, ok := v.(primitive.String); ok {
-			return primitive.NewBinary([]byte(v.String())), nil
-		}
-		return primitive.NewBinary(nil), errors.WithStack(packet.ErrInvalidPacket)
+		return nil, errors.WithStack(packet.ErrInvalidPacket)
 	}
 
 	return nil
@@ -94,12 +93,15 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	format, err := n.format(inPck.Payload())
+	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
+
+	format, err := n.format(input)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 
-	len, err := n.writer.Write(format.Bytes())
+	len, err := n.writer.Write(format)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}

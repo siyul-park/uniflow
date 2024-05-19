@@ -3,6 +3,8 @@ package language
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/dop251/goja"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
@@ -11,7 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
-	"sync"
 )
 
 func CompileTransformWithPrimitive(code string, lang string) (func(primitive.Value) (primitive.Value, error), error) {
@@ -29,7 +30,7 @@ func CompileTransformWithPrimitive(code string, lang string) (func(primitive.Val
 		if output, err := transform(input); err != nil {
 			return nil, err
 		} else {
-			return primitive.MarshalBinary(output)
+			return primitive.MarshalText(output)
 		}
 	}, nil
 }

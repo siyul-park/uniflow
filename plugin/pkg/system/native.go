@@ -19,7 +19,7 @@ type NativeNode struct {
 	*node.OneToOneNode
 	lang     string
 	operator reflect.Value
-	operands []func(primitive.Value) (primitive.Value, error)
+	operands []func(any) (any, error)
 	mu       sync.RWMutex
 }
 
@@ -71,7 +71,8 @@ func (n *NativeNode) SetOperands(operands ...string) error {
 	n.operands = nil
 
 	for _, operand := range operands {
-		transform, err := language.CompileTransformWithPrimitive(operand, n.lang)
+		lang := n.lang
+		transform, err := language.CompileTransform(operand, &lang)
 		if err != nil {
 			return err
 		}
@@ -90,6 +91,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 
 	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
 
 	ins := make([]reflect.Value, n.operator.Type().NumIn())
 
@@ -105,7 +107,9 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		in := reflect.New(n.operator.Type().In(i))
 
 		if len(n.operands) > i-offset {
-			if argument, err := n.operands[i-offset](inPayload); err != nil {
+			if operand, err := n.operands[i-offset](input); err != nil {
+				return nil, packet.WithError(err, inPck)
+			} else if argument, err := primitive.MarshalText(operand); err != nil {
 				return nil, packet.WithError(err, inPck)
 			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
 				return nil, packet.WithError(err, inPck)

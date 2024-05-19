@@ -91,7 +91,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
+	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: primitive.NewString(faker.UUIDHyphenated()),
 	})
@@ -108,7 +108,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
+	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)
@@ -174,7 +174,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 
 	ioWriter.Write(inPck)
 
-	inPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
+	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: primitive.NewString(faker.UUIDHyphenated()),
 	})
@@ -188,7 +188,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 		proc.Stack().Clear(outPck)
 	}
 
-	inPayload, _ = primitive.MarshalBinary(&WebSocketPayload{
+	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)

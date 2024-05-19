@@ -16,8 +16,8 @@ import (
 type SQLNode struct {
 	*node.OneToOneNode
 	lang  string
-	query func(primitive.Value) (primitive.String, error)
-	args  func(primitive.Value) (primitive.Value, error)
+	query func(any) (string, error)
+	args  func(any) (any, error)
 	mu    sync.RWMutex
 }
 
@@ -33,20 +33,21 @@ const KindSQL = "sql"
 
 // NewSQLNode creates a new SQLNode instance.
 func NewSQLNode(query, lang string) (*SQLNode, error) {
-	transform, err := language.CompileTransformWithPrimitive(query, lang)
+	l := lang
+	transform, err := language.CompileTransform(query, &l)
 	if err != nil {
 		return nil, err
 	}
 
 	n := &SQLNode{lang: lang}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-	n.query = func(value primitive.Value) (primitive.String, error) {
-		output, err := transform(value)
+	n.query = func(input any) (string, error) {
+		output, err := transform(input)
 		if err != nil {
-			return primitive.NewString(""), err
+			return "", err
 		}
-		if output, ok := output.(primitive.String); !ok {
-			return primitive.NewString(""), errors.WithStack(packet.ErrInvalidPacket)
+		if output, ok := output.(string); !ok {
+			return "", errors.WithStack(packet.ErrInvalidPacket)
 		} else {
 			return output, nil
 		}
@@ -65,11 +66,13 @@ func (n *SQLNode) SetArguments(args string) error {
 		return nil
 	}
 
-	arguments, err := language.CompileTransformWithPrimitive(args, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(args, &lang)
 	if err != nil {
 		return err
 	}
-	n.args = arguments
+
+	n.args = transform
 
 	return nil
 }
@@ -79,22 +82,30 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
 
-	query, err := n.query(inPayload)
+	query, err := n.query(input)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 
 	if n.args == nil {
-		return packet.New(query), nil
+		outPayload, err := primitive.MarshalText(query)
+		if err != nil {
+			return nil, packet.WithError(err, inPck)
+		}
+		return packet.New(outPayload), nil
 	}
 
-	args, err := n.args(inPayload)
+	args, err := n.args(input)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 
-	outPayload := primitive.NewSlice(query, args)
+	outPayload, err := primitive.MarshalText([]any{query, args})
+	if err != nil {
+		return nil, packet.WithError(err, inPck)
+	}
 	return packet.New(outPayload), nil
 }
 

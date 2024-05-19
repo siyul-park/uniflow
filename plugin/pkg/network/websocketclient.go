@@ -1,12 +1,13 @@
 package network
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -20,7 +21,7 @@ type WebSocketClientNode struct {
 	*WebSocketNode
 	dialer *websocket.Dialer
 	lang   string
-	url    func(primitive.Value) (string, error)
+	url    func(any) (string, error)
 }
 
 // WebSocketClientNodeSpec holds the specifications for creating a WebSocketClientNode.
@@ -64,24 +65,35 @@ func (n *WebSocketClientNode) SetURL(rawURL string) error {
 	defer n.mu.Unlock()
 
 	if rawURL == "" {
-		n.url = func(value primitive.Value) (string, error) {
-			v := &url.URL{Scheme: "wss"}
+		n.url = func(input any) (string, error) {
+			v := &url.URL{Scheme: "https"}
 
-			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				var err error
-				if v, err = url.Parse(rawURL); err != nil {
-					return "", err
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("url")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						var err error
+						if v, err = url.Parse(e); err != nil {
+							return "", err
+						}
+					}
 				}
-			}
 
-			if s, ok := primitive.Pick[string](value, "scheme"); ok {
-				v.Scheme = s
-			}
-			if h, ok := primitive.Pick[string](value, "host"); ok {
-				v.Host = h
-			}
-			if p, ok := primitive.Pick[string](value, "path"); ok {
-				v.Path = p
+				if e := value.MapIndex(reflect.ValueOf("scheme")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Scheme = e
+					}
+				}
+				if e := value.MapIndex(reflect.ValueOf("host")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Host = e
+					}
+				}
+				if e := value.MapIndex(reflect.ValueOf("path")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Path = e
+					}
+				}
 			}
 
 			return v.String(), nil
@@ -89,17 +101,19 @@ func (n *WebSocketClientNode) SetURL(rawURL string) error {
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(rawURL, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(rawURL, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.url = func(value primitive.Value) (string, error) {
-		if v, err := transform(value); err != nil {
+	n.url = func(input any) (string, error) {
+		if output, err := transform(input); err != nil {
 			return "", err
-		} else {
-			return fmt.Sprintf("%v", v.Interface()), nil
+		} else if v, ok := output.(string); ok {
+			return v, nil
 		}
+		return "", errors.WithStack(packet.ErrInvalidPacket)
 	}
 	return nil
 }
@@ -114,9 +128,11 @@ func (n *WebSocketClientNode) SetTimeout(timeout time.Duration) {
 
 func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	ctx := proc.Context()
-	inPayload := inPck.Payload()
 
-	rawURL, err := n.url(inPayload)
+	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
+
+	rawURL, err := n.url(input)
 	if err != nil {
 		return nil, err
 	}

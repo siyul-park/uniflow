@@ -158,7 +158,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 
 	route, paramValues := n.find(method, path)
 	if route == nil {
-		outPayload, _ := primitive.MarshalBinary(NewHTTPPayload(http.StatusNotFound))
+		outPayload, _ := primitive.MarshalText(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
 	}
 
@@ -171,7 +171,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 			res = NewHTTPPayload(http.StatusMethodNotAllowed)
 		}
 		res.Header.Set(HeaderAllow, route.allowHeader())
-		outPayload, _ := primitive.MarshalBinary(res)
+		outPayload, _ := primitive.MarshalText(res)
 		return nil, packet.New(outPayload)
 	}
 

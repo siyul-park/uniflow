@@ -166,7 +166,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 			data = primitive.NewString(err.Error())
 		}
 
-		outPayload, _ := primitive.MarshalBinary(&WebSocketPayload{
+		outPayload, _ := primitive.MarshalText(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})

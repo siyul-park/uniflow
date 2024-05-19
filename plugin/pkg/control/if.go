@@ -15,8 +15,7 @@ import (
 
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
 type IfNode struct {
-	lang     string
-	when     func(primitive.Value) (bool, error)
+	when     func(any) (bool, error)
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -36,23 +35,19 @@ const KindIf = "if"
 
 // NewIfNode creates a new IfNode.
 func NewIfNode(code, lang string) (*IfNode, error) {
-	if lang == "" {
-		lang = language.Detect(code)
-	}
-
-	transform, err := language.CompileTransformWithPrimitive(code, lang)
+	l := lang
+	transform, err := language.CompileTransform(code, &l)
 	if err != nil {
 		return nil, err
 	}
 
 	n := &IfNode{
-		lang: lang,
-		when: func(value primitive.Value) (bool, error) {
-			output, err := transform(value)
+		when: func(input any) (bool, error) {
+			output, err := transform(input)
 			if err != nil {
 				return false, err
 			}
-			return !reflect.ValueOf(output.Interface()).IsZero(), nil
+			return !reflect.ValueOf(output).IsZero(), nil
 		},
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -134,7 +129,10 @@ func (n *IfNode) forward(proc *process.Process) {
 			return
 		}
 
-		if ok, err := n.when(inPck.Payload()); err != nil {
+		inPayload := inPck.Payload()
+		input := primitive.Interface(inPayload)
+
+		if ok, err := n.when(input); err != nil {
 			errPck := packet.WithError(err, inPck)
 			proc.Stack().Add(inPck, errPck)
 			n.throw(proc, errPck)

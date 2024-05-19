@@ -3,14 +3,15 @@ package network
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
@@ -23,11 +24,11 @@ import (
 type HTTPClientNode struct {
 	*node.OneToOneNode
 	lang    string
-	method  func(primitive.Value) (string, error)
-	url     func(primitive.Value) (string, error)
-	query   func(primitive.Value) (url.Values, error)
-	header  func(primitive.Value) (http.Header, error)
-	body    func(primitive.Value) (primitive.Value, error)
+	method  func(any) (string, error)
+	url     func(any) (string, error)
+	query   func(any) (url.Values, error)
+	header  func(any) (http.Header, error)
+	body    func(any) (primitive.Value, error)
 	timeout time.Duration
 	mu      sync.RWMutex
 }
@@ -73,26 +74,33 @@ func (n *HTTPClientNode) SetMethod(method string) error {
 	defer n.mu.Unlock()
 
 	if method == "" {
-		n.method = func(value primitive.Value) (string, error) {
-			if method, ok := primitive.Pick[string](value, "method"); ok {
-				return method, nil
+		n.method = func(input any) (string, error) {
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("method")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						return e, nil
+					}
+				}
 			}
 			return http.MethodGet, nil
 		}
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(method, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(method, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.method = func(value primitive.Value) (string, error) {
-		if v, err := transform(value); err != nil {
+	n.method = func(input any) (string, error) {
+		if output, err := transform(input); err != nil {
 			return "", err
-		} else {
-			return fmt.Sprintf("%v", v.Interface()), nil
+		} else if v, ok := output.(string); ok {
+			return v, nil
 		}
+		return "", errors.WithStack(packet.ErrInvalidPacket)
 	}
 	return nil
 }
@@ -103,24 +111,35 @@ func (n *HTTPClientNode) SetURL(rawURL string) error {
 	defer n.mu.Unlock()
 
 	if rawURL == "" {
-		n.url = func(value primitive.Value) (string, error) {
+		n.url = func(input any) (string, error) {
 			v := &url.URL{Scheme: "https"}
 
-			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				var err error
-				if v, err = url.Parse(rawURL); err != nil {
-					return "", err
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("url")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						var err error
+						if v, err = url.Parse(e); err != nil {
+							return "", err
+						}
+					}
 				}
-			}
 
-			if s, ok := primitive.Pick[string](value, "scheme"); ok {
-				v.Scheme = s
-			}
-			if h, ok := primitive.Pick[string](value, "host"); ok {
-				v.Host = h
-			}
-			if p, ok := primitive.Pick[string](value, "path"); ok {
-				v.Path = p
+				if e := value.MapIndex(reflect.ValueOf("scheme")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Scheme = e
+					}
+				}
+				if e := value.MapIndex(reflect.ValueOf("host")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Host = e
+					}
+				}
+				if e := value.MapIndex(reflect.ValueOf("path")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						v.Path = e
+					}
+				}
 			}
 
 			return v.String(), nil
@@ -128,17 +147,19 @@ func (n *HTTPClientNode) SetURL(rawURL string) error {
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(rawURL, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(rawURL, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.url = func(value primitive.Value) (string, error) {
-		if v, err := transform(value); err != nil {
+	n.url = func(input any) (string, error) {
+		if output, err := transform(input); err != nil {
 			return "", err
-		} else {
-			return fmt.Sprintf("%v", v.Interface()), nil
+		} else if v, ok := output.(string); ok {
+			return v, nil
 		}
+		return "", errors.WithStack(packet.ErrInvalidPacket)
 	}
 	return nil
 }
@@ -149,15 +170,27 @@ func (n *HTTPClientNode) SetQuery(query string) error {
 	defer n.mu.Unlock()
 
 	if query == "" {
-		n.query = func(value primitive.Value) (url.Values, error) {
-			if query, ok := primitive.Pick[map[string][]string](value, "query"); ok {
-				return query, nil
-			}
-			if rawURL, ok := primitive.Pick[string](value, "url"); ok {
-				if v, err := url.Parse(rawURL); err != nil {
-					return nil, err
-				} else {
-					return v.Query(), nil
+		n.query = func(input any) (url.Values, error) {
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("query")); e.IsValid() {
+					var v url.Values
+					if e, err := primitive.MarshalText(e.Interface()); err != nil {
+						return nil, err
+					} else if err := primitive.Unmarshal(e, &v); err != nil {
+						return nil, err
+					}
+					return v, nil
+				}
+
+				if e := value.MapIndex(reflect.ValueOf("url")); e.IsValid() {
+					if e, ok := e.Interface().(string); ok {
+						if v, err := url.Parse(e); err != nil {
+							return nil, err
+						} else {
+							return v.Query(), nil
+						}
+					}
 				}
 			}
 			return nil, nil
@@ -165,20 +198,25 @@ func (n *HTTPClientNode) SetQuery(query string) error {
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(query, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(query, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.query = func(value primitive.Value) (url.Values, error) {
-		var encoded url.Values
-		if v, err := transform(value); err != nil {
+	n.query = func(input any) (url.Values, error) {
+		output, err := transform(input)
+		if err != nil {
 			return nil, err
-		} else if err := primitive.Unmarshal(v, &encoded); err != nil {
-			return nil, err
-		} else {
-			return encoded, nil
 		}
+
+		var v url.Values
+		if e, err := primitive.MarshalText(output); err != nil {
+			return nil, err
+		} else if err := primitive.Unmarshal(e, &v); err != nil {
+			return nil, err
+		}
+		return v, nil
 	}
 	return nil
 }
@@ -189,29 +227,43 @@ func (n *HTTPClientNode) SetHeader(header string) error {
 	defer n.mu.Unlock()
 
 	if header == "" {
-		n.header = func(value primitive.Value) (http.Header, error) {
-			if header, ok := primitive.Pick[map[string][]string](value, "header"); ok {
-				return header, nil
+		n.header = func(input any) (http.Header, error) {
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("header")); e.IsValid() {
+					var v http.Header
+					if e, err := primitive.MarshalText(e); err != nil {
+						return nil, err
+					} else if err := primitive.Unmarshal(e, &v); err != nil {
+						return nil, err
+					}
+					return v, nil
+				}
 			}
 			return nil, nil
 		}
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(header, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(header, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.header = func(value primitive.Value) (http.Header, error) {
-		var encoded http.Header
-		if v, err := transform(value); err != nil {
+	n.header = func(input any) (http.Header, error) {
+		output, err := transform(input)
+		if err != nil {
 			return nil, err
-		} else if err := primitive.Unmarshal(v, &encoded); err != nil {
-			return nil, err
-		} else {
-			return encoded, nil
 		}
+
+		var v http.Header
+		if e, err := primitive.MarshalText(output); err != nil {
+			return nil, err
+		} else if err := primitive.Unmarshal(e, &v); err != nil {
+			return nil, err
+		}
+		return v, nil
 	}
 	return nil
 }
@@ -222,21 +274,31 @@ func (n *HTTPClientNode) SetBody(body string) error {
 	defer n.mu.Unlock()
 
 	if body == "" {
-		n.body = func(value primitive.Value) (primitive.Value, error) {
-			if body, ok := primitive.Pick[primitive.Value](value, "body"); ok {
-				return body, nil
+		n.body = func(input any) (primitive.Value, error) {
+			value := reflect.ValueOf(input)
+			if value.Kind() == reflect.Map {
+				if e := value.MapIndex(reflect.ValueOf("body")); e.IsValid() {
+					return primitive.MarshalText(e)
+				}
 			}
 			return nil, nil
 		}
 		return nil
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(body, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(body, &lang)
 	if err != nil {
 		return err
 	}
 
-	n.body = transform
+	n.body = func(input any) (primitive.Value, error) {
+		output, err := transform(input)
+		if err != nil {
+			return nil, err
+		}
+		return primitive.MarshalText(output)
+	}
 	return nil
 }
 
@@ -260,8 +322,9 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 	}
 
 	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
 
-	req, err := n.request(inPayload)
+	req, err := n.request(input)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
@@ -309,31 +372,31 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 		return nil, packet.WithError(err, inPck)
 	}
 
-	outPayload, err := primitive.MarshalBinary(res)
+	outPayload, err := primitive.MarshalText(res)
 	if err != nil {
 		return nil, packet.WithError(err, inPck)
 	}
 	return packet.New(outPayload), nil
 }
 
-func (n *HTTPClientNode) request(raw primitive.Value) (*HTTPPayload, error) {
-	method, err := n.method(raw)
+func (n *HTTPClientNode) request(input any) (*HTTPPayload, error) {
+	method, err := n.method(input)
 	if err != nil {
 		return nil, err
 	}
-	rawURL, err := n.url(raw)
+	rawURL, err := n.url(input)
 	if err != nil {
 		return nil, err
 	}
-	query, err := n.query(raw)
+	query, err := n.query(input)
 	if err != nil {
 		return nil, err
 	}
-	header, err := n.header(raw)
+	header, err := n.header(input)
 	if err != nil {
 		return nil, err
 	}
-	body, err := n.body(raw)
+	body, err := n.body(input)
 	if err != nil {
 		return nil, err
 	}

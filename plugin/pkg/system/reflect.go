@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+
 	"github.com/siyul-park/uniflow/pkg/primitive"
 
 	"github.com/gofrs/uuid"
@@ -52,7 +53,7 @@ func UpdateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructure
 			if patch, ok := lo.Find(specs, func(item *scheme.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
-				if doc, err := primitive.MarshalBinary(exist); err != nil {
+				if doc, err := primitive.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
 					patches = append(patches, scheme.NewUnstructured(doc.(*primitive.Map).Merge(patch.Doc())))

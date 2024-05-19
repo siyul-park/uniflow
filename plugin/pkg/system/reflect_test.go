@@ -53,7 +53,7 @@ func TestCreateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalBinary(spec)
+	inPayload, _ := primitive.MarshalText(spec)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -102,7 +102,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalBinary(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := primitive.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -153,7 +153,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalBinary(spec)
+	inPayload, _ := primitive.MarshalText(spec)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -202,7 +202,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalBinary(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := primitive.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

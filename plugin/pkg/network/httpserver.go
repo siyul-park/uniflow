@@ -160,7 +160,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if req, err := n.read(r); err != nil {
 		n.throw(proc, packet.WithError(err, nil))
-	} else if outPayload, err := primitive.MarshalBinary(req); err != nil {
+	} else if outPayload, err := primitive.MarshalText(req); err != nil {
 		n.throw(proc, packet.WithError(err, nil))
 	} else if outWriter.Links() > 0 {
 		outPck := packet.New(outPayload)

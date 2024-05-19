@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
@@ -18,7 +18,7 @@ import (
 type SwitchNode struct {
 	*node.OneToManyNode
 	lang  string
-	whens []func(primitive.Value) (bool, error)
+	whens []func(any) (bool, error)
 	ports []int
 	mu    sync.RWMutex
 }
@@ -62,7 +62,8 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 		when = "true"
 	}
 
-	transform, err := language.CompileTransformWithPrimitive(when, n.lang)
+	lang := n.lang
+	transform, err := language.CompileTransform(when, &lang)
 	if err != nil {
 		return err
 	}
@@ -72,12 +73,12 @@ func (n *SwitchNode) AddMatch(when, port string) error {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
 
-	n.whens = append(n.whens, func(value primitive.Value) (bool, error) {
-		output, err := transform(value)
+	n.whens = append(n.whens, func(input any) (bool, error) {
+		output, err := transform(input)
 		if err != nil {
 			return false, err
 		}
-		return !reflect.ValueOf(output.Interface()).IsZero(), nil
+		return !reflect.ValueOf(output).IsZero(), nil
 	})
 	n.ports = append(n.ports, index)
 	return nil
@@ -88,17 +89,19 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
+	input := primitive.Interface(inPayload)
 
 	outPcks := make([]*packet.Packet, len(n.whens))
 	for i, when := range n.whens {
 		port := n.ports[i]
-		if ok, err := when(inPayload); err != nil {
+		if ok, err := when(input); err != nil {
 			return nil, packet.WithError(err, inPck)
 		} else if ok {
 			outPcks[port] = inPck
 			break
 		}
 	}
+
 	return outPcks, nil
 }
 
