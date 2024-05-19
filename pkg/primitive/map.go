@@ -2,13 +2,14 @@ package primitive
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+	"unsafe"
+
 	"github.com/benbjohnson/immutable"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"reflect"
-	"strings"
-	"unsafe"
 )
 
 // Map represents a map structure.
@@ -108,8 +109,8 @@ func (m *Map) Len() int {
 // Map converts the Map to a raw Go map.
 func (m *Map) Map() map[any]any {
 	result := make(map[any]any, m.value.Len())
-	itr := m.value.Iterator()
 
+	itr := m.value.Iterator()
 	for !itr.Done() {
 		k, v, _ := itr.Next()
 
@@ -171,24 +172,18 @@ func (m *Map) Compare(v Value) int {
 
 // Interface converts the Map to an interface{}.
 func (m *Map) Interface() any {
-	var keys []any
-	var values []any
+	keys := make([]any, m.value.Len())
+	values := make([]any, m.value.Len())
 
 	itr := m.value.Iterator()
-
-	for !itr.Done() {
+	for i := 0; !itr.Done(); i++ {
 		k, v, _ := itr.Next()
 
 		if k != nil {
-			keys = append(keys, k.Interface())
-		} else {
-			keys = append(keys, nil)
+			keys[i] = k.Interface()
 		}
-
 		if v != nil {
-			values = append(values, v.Interface())
-		} else {
-			values = append(values, nil)
+			values[i] = v.Interface()
 		}
 	}
 
@@ -200,6 +195,7 @@ func (m *Map) Interface() any {
 		value := values[i]
 		t.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 	}
+
 	return t.Interface()
 }
 

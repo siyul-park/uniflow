@@ -1,10 +1,11 @@
 package primitive
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"unsafe"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -119,29 +120,27 @@ func (s *Slice) Compare(v Value) int {
 }
 
 func (s *Slice) Interface() any {
-	var values []any
+	values := make([]any, s.value.Len())
 
 	itr := s.value.Iterator()
 	for i := 0; !itr.Done(); i++ {
 		_, v := itr.Next()
 
 		if v != nil {
-			values = append(values, v.Interface())
-		} else {
-			values = append(values, nil)
+			values[i] = v.Interface()
 		}
 	}
 
 	elementType := getCommonType(values)
 
-	sliceValue := reflect.MakeSlice(reflect.SliceOf(elementType), s.value.Len(), s.value.Len())
+	t := reflect.MakeSlice(reflect.SliceOf(elementType), s.value.Len(), s.value.Len())
 	for i, value := range values {
 		if value != nil {
-			sliceValue.Index(i).Set(reflect.ValueOf(value))
+			t.Index(i).Set(reflect.ValueOf(value))
 		}
 	}
 
-	return sliceValue.Interface()
+	return t.Interface()
 }
 
 func newSliceEncoder(encoder *encoding.Assembler[*Value, any]) encoding.Compiler[*Value] {
