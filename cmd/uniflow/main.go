@@ -52,19 +52,13 @@ func main() {
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(control.AddToScheme())
+	sb.Register(control.AddToScheme(broker))
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(system.Config{
-		Module: module,
-		Broker: broker,
-	}))
+	sb.Register(system.AddToScheme(module))
 
+	hb.Register(control.AddToHook(broker))
 	hb.Register(network.AddToHook())
-	hb.Register(system.AddToHook(system.Config{
-		Module: module,
-		Broker: broker,
-	}))
 
 	sc, err := sb.Build()
 	if err != nil {
