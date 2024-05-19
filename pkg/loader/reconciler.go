@@ -80,9 +80,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	exists := make(map[uuid.UUID]struct{})
-	var priority []uuid.UUID
-
+	var next []uuid.UUID
 	for {
 		select {
 		case <-ctx.Done():
@@ -92,16 +90,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			if _, ok := exists[event.NodeID]; !ok {
-				exists[event.NodeID] = struct{}{}
-				priority = append(priority, event.NodeID)
-			}
+			next = append(next, event.NodeID)
 
-			for i := len(priority) - 1; i >= 0; i-- {
-				id := priority[i]
+			for i := len(next) - 1; i >= 0; i-- {
+				id := next[i]
 				if _, err := r.loader.LoadOne(ctx, id); err == nil {
-					delete(exists, id)
-					priority = append(priority[:i], priority[i+1:]...)
+					next = append(next[:i], next[i+1:]...)
 				}
 			}
 		}

@@ -26,6 +26,10 @@ type Storage struct {
 
 var indexes = []database.IndexModel{
 	{
+		Name: "kind",
+		Keys: []string{scheme.KeyKind},
+	},
+	{
 		Name:    "namespace_name",
 		Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
 		Unique:  true,
@@ -43,8 +47,26 @@ func New(ctx context.Context, config Config) (*Storage, error) {
 		return nil, err
 	}
 
-	if err := ensureIndexes(ctx, nodes, indexes); err != nil {
+	origins, err := nodes.Indexes().List(ctx)
+	if err != nil {
 		return nil, err
+	}
+
+	for _, index := range indexes {
+		var exists bool
+		for _, origin := range origins {
+			if origin.Name == index.Name {
+				if !reflect.DeepEqual(origin, index) {
+					nodes.Indexes().Drop(ctx, origin.Name)
+				} else {
+					exists = true
+				}
+				break
+			}
+		}
+		if !exists {
+			nodes.Indexes().Create(ctx, index)
+		}
 	}
 
 	return &Storage{
@@ -262,30 +284,4 @@ func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
 		unstructured.SetID(uuid.Must(uuid.NewV7()))
 	}
 	return unstructured.Doc(), nil
-}
-
-func ensureIndexes(ctx context.Context, coll database.Collection, indexes []database.IndexModel) error {
-	origins, err := coll.Indexes().List(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, index := range indexes {
-		var exists bool
-		for _, origin := range origins {
-			if origin.Name == index.Name {
-				if !reflect.DeepEqual(origin, index) {
-					coll.Indexes().Drop(ctx, origin.Name)
-				} else {
-					exists = true
-				}
-				break
-			}
-		}
-		if !exists {
-			coll.Indexes().Create(ctx, index)
-		}
-	}
-
-	return nil
 }
