@@ -45,7 +45,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewString(""), outPck.Payload())
+			assert.Equal(t, "", outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -75,7 +75,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -105,7 +105,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -133,7 +133,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewMap(), outPck.Payload())
+			assert.Equal(t, map[any]any{}, outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -161,7 +161,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -189,7 +189,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewMap(), outPck.Payload())
+			assert.Equal(t, primitive.NewMap().Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

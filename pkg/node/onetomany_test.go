@@ -87,7 +87,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader0.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 			outReader0.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")

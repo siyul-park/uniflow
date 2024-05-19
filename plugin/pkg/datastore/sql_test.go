@@ -55,7 +55,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewString("SELECT * FROM Foo"), outPck.Payload())
+			assert.Equal(t, "SELECT * FROM Foo", outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -93,7 +93,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 				primitive.NewString("SELECT * FROM Foo WHERE id = :name"),
 				inPayload,
 			)
-			assert.Equal(t, expect, outPck.Payload())
+			assert.Equal(t, expect.Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

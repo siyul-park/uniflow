@@ -66,7 +66,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader1.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -169,7 +169,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		var outPck *packet.Packet
 		select {
 		case outPck = <-outReader1.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
