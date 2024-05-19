@@ -60,6 +60,10 @@ func (t *Table) Insert(spec scheme.Spec) (*Symbol, error) {
 	}
 
 	sym := New(spec, n)
+
+	if _, err := t.free(sym.ID()); err != nil {
+		return nil, err
+	}
 	if err := t.insert(sym); err != nil {
 		return nil, err
 	}
@@ -129,10 +133,6 @@ func (t *Table) Clear() error {
 }
 
 func (t *Table) insert(sym *Symbol) error {
-	if _, err := t.free(sym.ID()); err != nil {
-		return err
-	}
-
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
 		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
