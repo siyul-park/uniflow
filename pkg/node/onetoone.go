@@ -93,17 +93,13 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Stack().Add(inPck, errPck)
 			n.throw(proc, errPck)
 		} else if outPck != nil {
-			proc.Stack().Add(inPck, outPck)
-			if !outWriter.Write(outPck) {
-				if !inReader.Receive(outPck) {
-					proc.Stack().Clear(outPck)
-				}
+			if outWriter.Write(outPck) == 0 {
+				inReader.Receive(outPck)
 			}
 		} else {
-			proc.Stack().Clear(inPck)
+			inReader.Receive(packet.EOF)
 		}
 	}
 }
@@ -121,9 +117,7 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }
 
@@ -140,9 +134,7 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }
 
@@ -150,9 +142,7 @@ func (n *OneToOneNode) throw(proc *process.Process, errPck *packet.Packet) {
 	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	if !errWriter.Write(errPck) {
-		if !inReader.Receive(errPck) {
-			proc.Stack().Clear(errPck)
-		}
+	if errWriter.Write(errPck) == 0{
+		inReader.Receive(errPck)
 	}
 }

@@ -112,11 +112,8 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Stack().Add(inPck, errPck)
-			if !errWriter.Write(errPck) {
-				if !inReader.Receive(errPck) {
-					proc.Stack().Clear(errPck)
-				}
+			if errWriter.Write(errPck) == 0 {
+				inReader.Receive(errPck)
 			}
 		} else {
 			if len(outPcks) > len(outWriters) {
@@ -130,18 +127,13 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			})
 
 			if len(outPcks) > 0 {
-				for _, outPck := range outPcks {
-					proc.Stack().Add(inPck, outPck)
-				}
 				for i, outPck := range outPcks {
-					if !outWriters[i].Write(outPck) {
-						if !inReader.Receive(outPck) {
-							proc.Stack().Clear(outPck)
-						}
+					if outWriters[i].Write(outPck) == 0 {
+						inReader.Receive(outPck)
 					}
 				}
 			} else {
-				proc.Stack().Clear(inPck)
+				inReader.Receive(packet.EOF)
 			}
 		}
 	}
@@ -160,9 +152,7 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }
 
@@ -179,8 +169,6 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }

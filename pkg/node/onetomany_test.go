@@ -52,7 +52,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		inWriter.Write(inPck)
 
 		select {
-		case <-proc.Stack().Done(inPck):
+		case <-inWriter.Receive():
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
@@ -75,7 +75,6 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 
 		proc := process.New()
 		defer proc.Close()
-		defer proc.Stack().Close()
 
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
