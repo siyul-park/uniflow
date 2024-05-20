@@ -85,6 +85,7 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -93,7 +94,9 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			n.throw(proc, errPck)
+			if errWriter.Write(errPck) == 0{
+				inReader.Receive(errPck)
+			}
 		} else if outPck != nil {
 			if outWriter.Write(outPck) == 0 {
 				inReader.Receive(outPck)
@@ -138,11 +141,3 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 	}
 }
 
-func (n *OneToOneNode) throw(proc *process.Process, errPck *packet.Packet) {
-	inReader := n.inPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
-
-	if errWriter.Write(errPck) == 0{
-		inReader.Receive(errPck)
-	}
-}
