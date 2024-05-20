@@ -9,6 +9,8 @@ type Packet struct {
 	payload primitive.Value
 }
 
+var EOF = New(nil)
+
 // New creates a new Packet with the given payload.
 // It generates a new unique ID for the Packet.
 func New(payload primitive.Value) *Packet {
