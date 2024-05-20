@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
 type Writer struct {
@@ -146,27 +145,17 @@ func (w *Writer) receive(pck *packet.Packet, reader *Reader) bool {
 		return false
 	}
 
-	w.receives[head][index] = pck
+	receives := w.receives[head]
+	receives[index] = pck
 
-	payloads := make([]primitive.Value, 0, len(w.receives[head]))
-	for _, pck := range w.receives[head] {
+	for _, pck := range receives {
 		if pck == nil {
 			return true
-		}
-		if pck != packet.EOF {
-			payloads = append(payloads, pck.Payload())
 		}
 	}
 
 	w.receives = append(w.receives[:head], w.receives[head+1:]...)
-
-	if len(payloads) == 0 {
-		w.in <- packet.EOF
-	} else if len(payloads) == 1 {
-		w.in <- packet.New(payloads[0])
-	} else {
-		w.in <- packet.New(primitive.NewSlice(payloads...))
-	}
+	w.in <- packet.Merge(receives)
 
 	return true
 }

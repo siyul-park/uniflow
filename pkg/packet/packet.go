@@ -11,6 +11,23 @@ type Packet struct {
 
 var EOF = New(nil)
 
+func Merge(pcks []*Packet) *Packet {
+	payloads := make([]primitive.Value, 0, len(pcks))
+	for _, pck := range pcks {
+		if pck != EOF {
+			payloads = append(payloads, pck.Payload())
+		}
+	}
+
+	if len(payloads) == 0 {
+		return EOF
+	} else if len(payloads) == 1 {
+		return New(payloads[0])
+	} else {
+		return New(primitive.NewSlice(payloads...))
+	}
+}
+
 // New creates a new Packet with the given payload.
 // It generates a new unique ID for the Packet.
 func New(payload primitive.Value) *Packet {

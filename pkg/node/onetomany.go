@@ -12,6 +12,7 @@ import (
 // OneToManyNode represents a node with one input and multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
+	recorder *packet.Recorder[*port.Writer]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -24,6 +25,7 @@ var _ Node = (*OneToManyNode)(nil)
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
+		recorder: packet.NewRecorder[*port.Writer](),
 		inPort:   port.NewIn(),
 		outPorts: nil,
 		errPort:  port.NewOut(),
@@ -90,6 +92,7 @@ func (n *OneToManyNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.recorder.Close()
 
 	return nil
 }
@@ -119,6 +122,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			if len(outPcks) > len(outWriters) {
 				outPcks = outPcks[:len(outWriters)]
 			}
+
 			outWriters = lo.Filter(outWriters, func(_ *port.Writer, i int) bool {
 				return len(outPcks) > i && outPcks[i] != nil
 			})
@@ -127,6 +131,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			})
 
 			if len(outPcks) > 0 {
+				n.recorder.Record(outWriters)
 				for i, outPck := range outPcks {
 					if outWriters[i].Write(outPck) == 0 {
 						inReader.Receive(outPck)
@@ -152,7 +157,10 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		backPcks := n.recorder.Store(outWriter, backPck)
+		if len(backPcks) > 0 {
+			inReader.Receive(packet.Merge(backPcks))
+		}
 	}
 }
 

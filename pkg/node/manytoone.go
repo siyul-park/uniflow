@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -12,22 +11,11 @@ import (
 // ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
 	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	recorder *packetRecorder
+	recorder *packet.Recorder[*port.Reader]
 	inPorts  []*port.InPort
 	outPort  *port.OutPort
 	errPort  *port.OutPort
 	mu       sync.RWMutex
-}
-
-type packetRecorder struct {
-	queues map[*process.Process]*packetQueue
-	mu     sync.RWMutex
-}
-
-type packetQueue struct {
-	data   [][]*packet.Packet
-	resume bool
-	mu     sync.RWMutex
 }
 
 var _ Node = (*ManyToOneNode)(nil)
@@ -35,10 +23,8 @@ var _ Node = (*ManyToOneNode)(nil)
 // NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
-		action: action,
-		recorder: &packetRecorder{
-			queues: make(map[*process.Process]*packetQueue),
-		},
+		action:  action,
+		recorder: packet.NewRecorder[*port.Reader](),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
@@ -101,6 +87,7 @@ func (n *ManyToOneNode) Close() error {
 	}
 	n.outPort.Close()
 	n.errPort.Close()
+	n.recorder.Close()
 
 	return nil
 }
@@ -119,53 +106,9 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 			return
 		}
 
-		n.recorder.provide(proc, index, inPck)
-		n.recorder.consume(proc, func(inPcks []*packet.Packet) bool {
-			inReaders := make([]*port.Reader, len(n.inPorts))
-			for i, inPort := range n.inPorts {
-				inReaders[i] = inPort.Open(proc)
-			}
-
-			for len(inPcks) < len(inReaders) {
-				inPcks = append(inPcks, nil)
-			}
-			inPcks = lo.Filter(inPcks, func(_ *packet.Packet, i int) bool {
-				return inReaders[i].Links() > 0
-			})
-			inReaders = lo.Filter(inReaders, func(item *port.Reader, _ int) bool {
-				return item.Links() > 0
-			})
-
-			outPck, errPck := n.action(proc, inPcks)
-
-			inPcks = lo.Filter(inPcks, func(item *packet.Packet, _ int) bool {
-				return item != nil
-			})
-
-			if errPck != nil {
-				for _, inPck := range inPcks {
-					proc.Stack().Add(inPck, errPck)
-				}
-				if !errWriter.Write(errPck) {
-					n.receive(proc, errPck)
-				}
-			} else if outPck != nil {
-				for _, inPck := range inPcks {
-					proc.Stack().Add(inPck, outPck)
-				}
-				if !outWriter.Write(outPck) {
-					proc.Stack().Clear(outPck)
-				}
-			} else {
-				if len(inPcks) < len(inReaders) {
-					return false
-				}
-				for _, inPck := range inPcks {
-					proc.Stack().Clear(inPck)
-				}
-			}
-			return true
-		})
+		inPcks := n.recorder.Store(inReader, inPck)
+		if len(inPcks) == 0 {
+		}
 	}
 }
 
@@ -198,97 +141,5 @@ func (n *ManyToOneNode) catch(proc *process.Process) {
 		}
 
 		n.receive(proc, backPck)
-	}
-}
-
-func (n *ManyToOneNode) receive(proc *process.Process, backPck *packet.Packet) {
-	inReaders := make([]*port.Reader, len(n.inPorts))
-	for i, inPort := range n.inPorts {
-		inReaders[i] = inPort.Open(proc)
-	}
-
-	costs := make([]int, len(inReaders))
-	for i, inReader := range inReaders {
-		costs[i] = inReader.Cost(backPck)
-	}
-
-	min := lo.Min(costs)
-	for i, cost := range costs {
-		if cost == min {
-			if !inReaders[i].Receive(backPck) {
-				proc.Stack().Clear(backPck)
-			}
-		}
-	}
-}
-
-func (r *packetRecorder) provide(proc *process.Process, index int, pck *packet.Packet) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	queue, ok := r.queues[proc]
-	if !ok {
-		queue = &packetQueue{}
-		r.queues[proc] = queue
-
-		go func() {
-			<-proc.Done()
-
-			r.mu.Lock()
-			defer r.mu.Unlock()
-
-			delete(r.queues, proc)
-		}()
-	}
-
-	queue.provide(index, pck)
-}
-
-func (r *packetRecorder) consume(proc *process.Process, fn func([]*packet.Packet) bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	if queue, ok := r.queues[proc]; ok {
-		queue.consume(fn)
-	}
-}
-
-func (q *packetQueue) provide(index int, pck *packet.Packet) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	for len(q.data) <= index {
-		q.data = append(q.data, nil)
-	}
-	q.data[index] = append(q.data[index], pck)
-
-	if !q.resume {
-		q.resume = len(q.data[index]) == 1
-	}
-}
-
-func (q *packetQueue) consume(fn func([]*packet.Packet) bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	if !q.resume {
-		return
-	}
-
-	buffer := make([]*packet.Packet, len(q.data))
-	for i, data := range q.data {
-		if len(data) > 0 {
-			buffer[i] = data[0]
-		}
-	}
-
-	if fn(buffer) {
-		for i := range q.data {
-			if len(q.data[i]) > 0 {
-				q.data[i] = q.data[i][1:]
-			}
-		}
-	} else {
-		q.resume = false
 	}
 }
