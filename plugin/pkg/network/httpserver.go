@@ -153,8 +153,8 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proc := process.New()
 
-	proc.Heap().Store(KeyHTTPResponseWriter, w)
-	proc.Heap().Store(KeyHTTPRequest, r)
+	proc.Scope().Store(KeyHTTPResponseWriter, w)
+	proc.Scope().Store(KeyHTTPRequest, r)
 
 	outWriter := n.outPort.Open(proc)
 
@@ -261,7 +261,7 @@ func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) 
 		res.Body = backPck.Payload()
 	}
 
-	if r, ok := proc.Heap().Load(KeyHTTPRequest).(*http.Request); ok {
+	if r, ok := proc.Scope().Load(KeyHTTPRequest).(*http.Request); ok {
 		acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
 		accept := r.Header.Get(HeaderAccept)
 
@@ -285,7 +285,7 @@ func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) 
 
 		negotiate(res)
 
-		if w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
+		if w, ok := proc.Scope().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			if err := n.write(w, res); err != nil {
 				res = NewHTTPPayload(http.StatusInternalServerError)
 				negotiate(res)

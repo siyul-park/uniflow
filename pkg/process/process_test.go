@@ -15,11 +15,11 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, proc)
 }
 
-func TestProcess_Heap(t *testing.T) {
+func TestProcess_Scope(t *testing.T) {
 	proc := New()
 	defer proc.Close()
 
-	assert.NotNil(t, proc.Heap())
+	assert.NotNil(t, proc.Scope())
 }
 
 func TestProcess_Context(t *testing.T) {

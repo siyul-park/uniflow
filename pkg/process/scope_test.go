@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeap_Load(t *testing.T) {
-	h := newHeap()
+func TestScope_Load(t *testing.T) {
+	h := newScope()
 	defer h.Close()
 
 	k := faker.UUIDHyphenated()
@@ -23,8 +23,8 @@ func TestHeap_Load(t *testing.T) {
 	assert.Equal(t, v, r)
 }
 
-func TestHeap_Store(t *testing.T) {
-	h := newHeap()
+func TestScope_Store(t *testing.T) {
+	h := newScope()
 	defer h.Close()
 
 	k := faker.UUIDHyphenated()
@@ -38,8 +38,8 @@ func TestHeap_Store(t *testing.T) {
 	assert.Equal(t, v2, r)
 }
 
-func TestHeap_Delete(t *testing.T) {
-	h := newHeap()
+func TestScope_Delete(t *testing.T) {
+	h := newScope()
 	defer h.Close()
 
 	k := faker.UUIDHyphenated()
