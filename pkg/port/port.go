@@ -43,7 +43,7 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 
 	reader, ok := p.readers[proc]
 	if !ok {
-		reader = newReader(proc, 2)
+		reader = newReader()
 
 		select {
 		case <-proc.Done():
@@ -55,12 +55,8 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 		p.readers[proc] = reader
 
 		go func() {
-			select {
-			case <-proc.Done():
-				p.closeWithLock(proc)
-			case <-reader.Done():
-				p.closeWithLock(proc)
-			}
+			<-proc.Done()
+			p.closeWithLock(proc)
 		}()
 
 		for _, h := range p.handlers {
@@ -147,7 +143,7 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 		writer, ok := p.writers[proc]
 		if !ok {
-			writer = newWriter(proc, 2)
+			writer = newWriter()
 
 			select {
 			case <-proc.Done():
@@ -159,12 +155,8 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 			p.writers[proc] = writer
 
 			go func() {
-				select {
-				case <-proc.Done():
-					p.closeWithLock(proc)
-				case <-writer.Done():
-					p.closeWithLock(proc)
-				}
+				<-proc.Done()
+				p.closeWithLock(proc)
 			}()
 		}
 		return writer, ok
