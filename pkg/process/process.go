@@ -3,33 +3,24 @@ package process
 import (
 	"context"
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	stack        *Stack
-	heap         *Heap
-	transactions *Transactions
-	ctx          context.Context
-	done         chan struct{}
-	wait         sync.WaitGroup
-	mu           sync.Mutex
+	heap *Heap
+	ctx  context.Context
+	done chan struct{}
+	wait sync.WaitGroup
+	mu   sync.Mutex
 }
 
 // New creates a new Process.
 func New() *Process {
-	s := newStack()
 	h := newHeap()
-	t := newTransactions(s)
 
 	p := &Process{
-		stack:        s,
-		heap:         h,
-		transactions: t,
-		done:         make(chan struct{}),
+		heap: h,
+		done: make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -43,24 +34,9 @@ func New() *Process {
 	return p
 }
 
-// Stack returns a process's stack.
-func (p *Process) Stack() *Stack {
-	return p.stack
-}
-
 // Heap returns a process's heap.
 func (p *Process) Heap() *Heap {
 	return p.heap
-}
-
-// Transaction returns the transaction associated with the packet.
-func (p *Process) Transaction(pck *packet.Packet) *transaction.Transaction {
-	return p.transactions.Get(pck)
-}
-
-// SetTransaction associates the transaction with the packet.
-func (p *Process) SetTransaction(pck *packet.Packet, tx *transaction.Transaction) {
-	p.transactions.Set(pck, tx)
 }
 
 // Context returns a process's context.
@@ -90,12 +66,7 @@ func (p *Process) Close() {
 	}
 
 	p.wait.Wait()
-	<-p.stack.Done(nil)
-
-	_ = p.transactions.Commit()
-
 	p.heap.Close()
-	p.stack.Close()
 
 	close(p.done)
 }

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,13 +13,6 @@ func TestNew(t *testing.T) {
 	defer proc.Close()
 
 	assert.NotNil(t, proc)
-}
-
-func TestProcess_Stack(t *testing.T) {
-	proc := New()
-	defer proc.Close()
-
-	assert.NotNil(t, proc.Stack())
 }
 
 func TestProcess_Heap(t *testing.T) {
@@ -36,17 +27,6 @@ func TestProcess_Context(t *testing.T) {
 	defer proc.Close()
 
 	assert.NotNil(t, proc.Context())
-}
-
-func TestProcess_Transaction(t *testing.T) {
-	proc := New()
-	defer proc.Close()
-
-	pck := packet.New(nil)
-	tx := transaction.New()
-
-	proc.SetTransaction(pck, tx)
-	assert.Equal(t, tx, proc.Transaction(pck))
 }
 
 func TestProcess_Ref(t *testing.T) {
