@@ -119,13 +119,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 
 			outPck, errPck := n.action(proc, pcks)
 			if outPck == nil && errPck == nil {
-				ok := len(pcks) == len(inReaders)
-				if ok {
-					for _, inReader := range inReaders {
-						inReader.Receive(packet.None)
-					}
-				}
-				return ok
+				return false
 			}
 
 			if errPck != nil {
