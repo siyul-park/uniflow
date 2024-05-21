@@ -21,10 +21,10 @@ type ForwardHookFunc func(pcks []*packet.Packet) bool
 
 var _ ForwardHook = (ForwardHookFunc)(nil)
 
-func NewGateway(readers []*Reader, interceptor ForwardHook) *Gateway {
+func NewGateway(readers []*Reader, forward ForwardHook) *Gateway {
 	return &Gateway{
 		readers: readers,
-		forward: interceptor,
+		forward: forward,
 	}
 }
 
