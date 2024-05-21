@@ -11,6 +11,7 @@ import (
 // OneToOneNode represents a node with one input and one output port.
 type OneToOneNode struct {
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
+	bridges *process.Local[*port.Bridge]
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
@@ -23,6 +24,7 @@ var _ Node = (*OneToOneNode)(nil)
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
+		bridges: process.NewLocal[*port.Bridge](),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
@@ -75,6 +77,7 @@ func (n *OneToOneNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -82,6 +85,10 @@ func (n *OneToOneNode) Close() error {
 func (n *OneToOneNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
 
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
@@ -94,15 +101,9 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			if errWriter.Write(errPck) == 0 {
-				inReader.Receive(errPck)
-			}
-		} else if outPck != nil {
-			if outWriter.Write(outPck) == 0 {
-				inReader.Receive(outPck)
-			}
+			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
 		} else {
-			inReader.Receive(packet.None)
+			bridge.Write([]*packet.Packet{outPck}, []*port.Reader{inReader}, []*port.Writer{outWriter})
 		}
 	}
 }
@@ -111,7 +112,10 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	outWriter := n.outPort.Open(proc)
 
 	for {
@@ -120,7 +124,7 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		bridge.Receive(backPck, outWriter)
 	}
 }
 
@@ -128,7 +132,10 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	errWriter := n.errPort.Open(proc)
 
 	for {
@@ -137,6 +144,6 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		bridge.Receive(backPck, errWriter)
 	}
 }

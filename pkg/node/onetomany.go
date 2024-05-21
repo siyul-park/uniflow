@@ -118,9 +118,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			if errWriter.Write(errPck) == 0 {
-				inReader.Receive(errPck)
-			}
+			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
 		} else {
 			bridge.Write(outPcks, []*port.Reader{inReader}, outWriters)
 		}
@@ -151,7 +149,10 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	errWriter := n.errPort.Open(proc)
 
 	for {
@@ -160,6 +161,6 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 			return
 		}
 
-		inReader.Receive(backPck)
+		bridge.Receive(backPck, errWriter)
 	}
 }
