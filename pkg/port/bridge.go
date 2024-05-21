@@ -60,7 +60,6 @@ func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
 			break
 		}
 	}
-
 	if index < 0 {
 		return false
 	}
