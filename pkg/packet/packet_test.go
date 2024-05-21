@@ -13,13 +13,13 @@ func TestNew(t *testing.T) {
 
 func TestMerge(t *testing.T) {
 	t.Run("EOF", func(t *testing.T) {
-		res := Merge([]*Packet{EOF, EOF})
-		assert.Equal(t, EOF, res)
+		res := Merge([]*Packet{None, None})
+		assert.Equal(t, None, res)
 	})
 
 	t.Run("Zero", func(t *testing.T) {
 		res := Merge([]*Packet{})
-		assert.Equal(t, EOF, res)
+		assert.Equal(t, None, res)
 	})
 
 	t.Run("One", func(t *testing.T) {

@@ -68,7 +68,7 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 func (r *Reader) Close() {
 	writers := r.close()
 	for _, w := range writers {
-		w.receive(packet.EOF, r)
+		w.receive(packet.None, r)
 	}
 }
 

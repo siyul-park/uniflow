@@ -9,18 +9,18 @@ type Packet struct {
 	payload primitive.Value
 }
 
-var EOF = New(nil)
+var None = New(nil)
 
 func Merge(pcks []*Packet) *Packet {
 	payloads := make([]primitive.Value, 0, len(pcks))
 	for _, pck := range pcks {
-		if pck != EOF {
+		if pck != None {
 			payloads = append(payloads, pck.Payload())
 		}
 	}
 
 	if len(payloads) == 0 {
-		return EOF
+		return None
 	} else if len(payloads) == 1 {
 		return New(payloads[0])
 	} else {

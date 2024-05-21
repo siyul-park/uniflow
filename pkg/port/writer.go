@@ -68,12 +68,13 @@ func (w *Writer) Write(pck *packet.Packet) int {
 	receives := make([]*packet.Packet, len(w.readers))
 	for i, r := range w.readers {
 		if r.write(pck, w) {
-			count += 1
+			count++
 		} else if len(w.receives) == 0 {
 			w.readers = append(w.readers[:i], w.readers[i+1:]...)
 			receives = append(receives[:i], receives[i+1:]...)
+			i--
 		} else {
-			receives[i] = packet.EOF
+			receives[i] = packet.None
 		}
 	}
 

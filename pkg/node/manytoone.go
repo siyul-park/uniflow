@@ -1,145 +1,151 @@
 package node
 
-import (
-	"sync"
+// // ManyToOneNode represents a node with multiple input ports and one output port.
+// type ManyToOneNode struct {
+// 	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
+// 	recorder *packet.Recorder[*port.Reader]
+// 	inPorts  []*port.InPort
+// 	outPort  *port.OutPort
+// 	errPort  *port.OutPort
+// 	mu       sync.RWMutex
+// }
 
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/process"
-)
+// var _ Node = (*ManyToOneNode)(nil)
 
-// ManyToOneNode represents a node with multiple input ports and one output port.
-type ManyToOneNode struct {
-	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	recorder *packet.Recorder[*port.Reader]
-	inPorts  []*port.InPort
-	outPort  *port.OutPort
-	errPort  *port.OutPort
-	mu       sync.RWMutex
-}
+// // NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
+// func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
+// 	n := &ManyToOneNode{
+// 		action:   action,
+// 		recorder: packet.NewRecorder[*port.Reader](),
+// 		outPort:  port.NewOut(),
+// 		errPort:  port.NewOut(),
+// 	}
 
-var _ Node = (*ManyToOneNode)(nil)
+// 	if n.action != nil {
+// 		n.outPort.AddHandler(port.HandlerFunc(n.backward))
+// 		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+// 	}
 
-// NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
-func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
-	n := &ManyToOneNode{
-		action:  action,
-		recorder: packet.NewRecorder[*port.Reader](),
-		outPort: port.NewOut(),
-		errPort: port.NewOut(),
-	}
+// 	return n
+// }
 
-	if n.action != nil {
-		n.outPort.AddHandler(port.HandlerFunc(n.backward))
-		n.errPort.AddHandler(port.HandlerFunc(n.catch))
-	}
+// // In returns the input port with the specified name.
+// func (n *ManyToOneNode) In(name string) *port.InPort {
+// 	n.mu.RLock()
+// 	defer n.mu.RUnlock()
 
-	return n
-}
+// 	if i, ok := IndexOfPort(PortIn, name); ok {
+// 		for j := 0; j <= i; j++ {
+// 			if len(n.inPorts) <= j {
+// 				inPort := port.NewIn()
+// 				n.inPorts = append(n.inPorts, inPort)
 
-// In returns the input port with the specified name.
-func (n *ManyToOneNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// 				if n.action != nil {
+// 					inPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+// 						n.forward(proc, j)
+// 					}))
+// 				}
+// 			}
+// 		}
 
-	if i, ok := IndexOfPort(PortIn, name); ok {
-		for j := 0; j <= i; j++ {
-			if len(n.inPorts) <= j {
-				inPort := port.NewIn()
-				n.inPorts = append(n.inPorts, inPort)
+// 		return n.inPorts[i]
+// 	}
 
-				if n.action != nil {
-					inPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
-						n.forward(proc, j)
-					}))
-				}
-			}
-		}
+// 	return nil
+// }
 
-		return n.inPorts[i]
-	}
+// // Out returns the output port with the specified name.
+// func (n *ManyToOneNode) Out(name string) *port.OutPort {
+// 	n.mu.RLock()
+// 	defer n.mu.RUnlock()
 
-	return nil
-}
+// 	switch name {
+// 	case PortOut:
+// 		return n.outPort
+// 	case PortErr:
+// 		return n.errPort
+// 	}
 
-// Out returns the output port with the specified name.
-func (n *ManyToOneNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// 	return nil
+// }
 
-	switch name {
-	case PortOut:
-		return n.outPort
-	case PortErr:
-		return n.errPort
-	}
+// // Close closes all ports associated with the node.
+// func (n *ManyToOneNode) Close() error {
+// 	n.mu.Lock()
+// 	defer n.mu.Unlock()
 
-	return nil
-}
+// 	for _, p := range n.inPorts {
+// 		p.Close()
+// 	}
+// 	n.outPort.Close()
+// 	n.errPort.Close()
+// 	n.recorder.Close()
 
-// Close closes all ports associated with the node.
-func (n *ManyToOneNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+// 	return nil
+// }
 
-	for _, p := range n.inPorts {
-		p.Close()
-	}
-	n.outPort.Close()
-	n.errPort.Close()
-	n.recorder.Close()
+// func (n *ManyToOneNode) forward(proc *process.Process, index int) {
+// 	n.mu.RLock()
+// 	defer n.mu.RUnlock()
 
-	return nil
-}
+// 	inReader := n.inPorts[index].Open(proc)
+// 	outWriter := n.outPort.Open(proc)
+// 	errWriter := n.errPort.Open(proc)
 
-func (n *ManyToOneNode) forward(proc *process.Process, index int) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// 	for {
+// 		inPck, ok := <-inReader.Read()
+// 		if !ok {
+// 			return
+// 		}
 
-	inReader := n.inPorts[index].Open(proc)
-	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
+// 		inPcks := n.recorder.Store(inReader, inPck)
+// 		if len(inPcks) == 0 {
+// 			n.recorder.Record(inReaders...)
+// 			inPcks = n.recorder.Store(inReader, inPck)
+// 		}
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
+// 		if outPck, errPck := n.action(proc, inPcks); errPck != nil {
+// 			if errWriter.Write(errPck) == 0 {
+// 				inReader.Receive(errPck)
+// 			}
+// 		} else if outPck != nil {
+// 			if outWriter.Write(outPck) == 0 {
+// 				inReader.Receive(outPck)
+// 			}
+// 		} else {
+// 			inReader.Receive(packet.None)
+// 		}
+// 	}
+// }
 
-		inPcks := n.recorder.Store(inReader, inPck)
-		if len(inPcks) == 0 {
-		}
-	}
-}
+// func (n *ManyToOneNode) backward(proc *process.Process) {
+// 	n.mu.RLock()
+// 	defer n.mu.RUnlock()
 
-func (n *ManyToOneNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// 	outWriter := n.outPort.Open(proc)
 
-	outWriter := n.outPort.Open(proc)
+// 	for {
+// 		backPck, ok := <-outWriter.Receive()
+// 		if !ok {
+// 			return
+// 		}
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
+// 		n.receive(proc, backPck)
+// 	}
+// }
 
-		n.receive(proc, backPck)
-	}
-}
+// func (n *ManyToOneNode) catch(proc *process.Process) {
+// 	n.mu.RLock()
+// 	defer n.mu.RUnlock()
 
-func (n *ManyToOneNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// 	errWriter := n.errPort.Open(proc)
 
-	errWriter := n.errPort.Open(proc)
+// 	for {
+// 		backPck, ok := <-errWriter.Receive()
+// 		if !ok {
+// 			return
+// 		}
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		n.receive(proc, backPck)
-	}
-}
+// 		n.receive(proc, backPck)
+// 	}
+// }

@@ -102,7 +102,7 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 				inReader.Receive(outPck)
 			}
 		} else {
-			inReader.Receive(packet.EOF)
+			inReader.Receive(packet.None)
 		}
 	}
 }
