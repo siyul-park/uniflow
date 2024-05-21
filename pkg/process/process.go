@@ -31,7 +31,8 @@ func (p *Process) Exit(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for _, h := range p.exitHooks {
+	for i := len(p.exitHooks) - 1; i >= 0; i-- {
+		h := p.exitHooks[i]
 		h.Exit(err)
 	}
 	p.exitHooks = nil
