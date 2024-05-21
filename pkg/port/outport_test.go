@@ -11,7 +11,7 @@ import (
 
 func TestOutPort_Open(t *testing.T) {
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	out := NewOut()
 	defer out.Close()
@@ -24,7 +24,7 @@ func TestOutPort_Open(t *testing.T) {
 
 func TestOutPort_Link(t *testing.T) {
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	in := NewIn()
 	defer in.Close()
@@ -38,7 +38,7 @@ func TestOutPort_Link(t *testing.T) {
 
 func TestOutPort_AddInitHook(t *testing.T) {
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	out := NewOut()
 	defer out.Close()
@@ -68,7 +68,7 @@ func BenchmarkOutPort_Open(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		for p.Next() {
 			out.Open(proc)

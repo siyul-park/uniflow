@@ -74,7 +74,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	client.Out(node.PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
@@ -163,7 +163,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 	client.Out(node.PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)

@@ -1,70 +1,38 @@
 package process
 
-import (
-	"context"
-	"sync"
-)
+import "sync"
 
-// Process is a processing unit that isolates data processing from others.
 type Process struct {
-	data *Data
-	ctx  context.Context
-	done chan struct{}
-	wait sync.WaitGroup
-	mu   sync.Mutex
+	data      *Data
+	exitHooks []ExitHook
+	mu        sync.Mutex
 }
 
-// New creates a new Process.
+var _ ExitHook = (*Process)(nil)
+
 func New() *Process {
-	p := &Process{
+	return &Process{
 		data: newData(),
-		done: make(chan struct{}),
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	p.ctx = ctx
-
-	go func() {
-		<-p.Done()
-		cancel()
-	}()
-
-	return p
 }
 
-// Data returns a process's heap.
 func (p *Process) Data() *Data {
 	return p.data
 }
 
-// Context returns a process's context.
-func (p *Process) Context() context.Context {
-	return p.ctx
-}
-
-// Done returns a channel that is closed when the process is closed.
-func (p *Process) Done() <-chan struct{} {
-	return p.done
-}
-
-// Ref acquires a lock on the process.
-func (p *Process) Ref(count int) {
-	p.wait.Add(count)
-}
-
-// Close closes the process.
-func (p *Process) Close() {
+func (p *Process) AddExitHook(h ExitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	select {
-	case <-p.done:
-		return
-	default:
+	p.exitHooks = append(p.exitHooks, h)
+}
+
+func (p *Process) Exit(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, h := range p.exitHooks {
+		h.Exit(err)
 	}
-
-	p.wait.Wait()
-	p.data.Close()
-
-	close(p.done)
+	p.exitHooks = nil
 }

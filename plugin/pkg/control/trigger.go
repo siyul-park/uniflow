@@ -123,7 +123,7 @@ func (n *TriggerNode) Listen() {
 			}
 
 			go func() {
-				proc.Close()
+				proc.Exit(nil)
 				e.Close()
 			}()
 		}

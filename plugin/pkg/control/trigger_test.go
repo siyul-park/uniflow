@@ -96,7 +96,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 

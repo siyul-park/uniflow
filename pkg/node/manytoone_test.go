@@ -29,7 +29,7 @@ package node
 // 		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 // 		proc := process.New()
-// 		defer proc.Close()
+// 		defer proc.Exit(nil)
 
 // 		inWriter0 := in0.Open(proc)
 
@@ -69,7 +69,7 @@ package node
 // 		n.Out(PortOut).Link(out)
 
 // 		proc := process.New()
-// 		defer proc.Close()
+// 		defer proc.Exit(nil)
 
 // 		inWriter0 := in0.Open(proc)
 // 		inWriter1 := in1.Open(proc)
@@ -129,7 +129,7 @@ package node
 // 		n.Out(PortErr).Link(err)
 
 // 		proc := process.New()
-// 		defer proc.Close()
+// 		defer proc.Exit(nil)
 
 // 		inWriter0 := in0.Open(proc)
 // 		inWriter1 := in1.Open(proc)
@@ -187,7 +187,7 @@ package node
 // 	n.Out(PortOut).Link(out)
 
 // 	proc := process.New()
-// 	defer proc.Close()
+// 	defer proc.Exit(nil)
 
 // 	inWriter0 := in0.Open(proc)
 // 	inWriter1 := in1.Open(proc)

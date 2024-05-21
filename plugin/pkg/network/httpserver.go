@@ -177,7 +177,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = tx.Commit()
 	}
 
-	go proc.Close()
+	go proc.Exit(nil)
 }
 
 // Close closes all ports and stops the HTTP server.

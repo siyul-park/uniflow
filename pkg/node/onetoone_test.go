@@ -45,7 +45,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -87,7 +87,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
@@ -127,7 +127,7 @@ func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 	n.Out(PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader := out.Open(proc)

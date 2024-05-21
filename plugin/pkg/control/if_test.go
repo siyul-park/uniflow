@@ -47,7 +47,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
@@ -87,7 +87,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader1 := out1.Open(proc)
@@ -127,7 +127,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
@@ -178,7 +178,7 @@ func BenchmarkIfNode_SendAndReceive(b *testing.B) {
 	n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)

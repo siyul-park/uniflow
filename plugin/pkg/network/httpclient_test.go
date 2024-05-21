@@ -48,7 +48,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -79,7 +79,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -115,7 +115,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -160,7 +160,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -200,7 +200,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -240,7 +240,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -291,7 +291,7 @@ func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 

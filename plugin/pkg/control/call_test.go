@@ -54,7 +54,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader1 := out1.Open(proc)
@@ -101,7 +101,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		n2.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
@@ -150,7 +150,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader1 := out1.Open(proc)
@@ -212,7 +212,7 @@ func BenchmarkCallNode_SendAndReceive(b *testing.B) {
 	n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader1 := out1.Open(proc)
