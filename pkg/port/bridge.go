@@ -93,3 +93,11 @@ func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
 	}
 	return true
 }
+
+func (b *Bridge) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.readers = nil
+	b.receives = nil
+}
