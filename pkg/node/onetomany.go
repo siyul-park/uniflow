@@ -100,16 +100,16 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	inReader := n.inPort.Open(proc)
 	outWriters := make([]*port.Writer, len(n.outPorts))
 	for i, outPort := range n.outPorts {
 		outWriters[i] = outPort.Open(proc)
 	}
 	errWriter := n.errPort.Open(proc)
-
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
-	})
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -131,10 +131,11 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	outWriter := n.outPorts[index].Open(proc)
 	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
 		return port.NewBridge(), nil
 	})
+
+	outWriter := n.outPorts[index].Open(proc)
 
 	for {
 		backPck, ok := <-outWriter.Receive()
