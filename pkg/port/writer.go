@@ -15,7 +15,7 @@ type Writer struct {
 	mu       sync.Mutex
 }
 
-func newWriter() *Writer {
+func NewWriter() *Writer {
 	w := &Writer{
 		in:   make(chan *packet.Packet),
 		out:  make(chan *packet.Packet),
@@ -52,6 +52,13 @@ func newWriter() *Writer {
 	}()
 
 	return w
+}
+
+func (w *Writer) Link(reader *Reader) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.readers = append(w.readers, reader)
 }
 
 func (w *Writer) Write(pck *packet.Packet) int {
@@ -102,13 +109,6 @@ func (w *Writer) Close() {
 
 	close(w.done)
 	close(w.in)
-}
-
-func (w *Writer) link(reader *Reader) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.readers = append(w.readers, reader)
 }
 
 func (w *Writer) receive(pck *packet.Packet, reader *Reader) bool {

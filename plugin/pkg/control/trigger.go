@@ -47,7 +47,7 @@ func NewTriggerNode(producer *event.Producer, consumer *event.Consumer) *Trigger
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	return n
 }

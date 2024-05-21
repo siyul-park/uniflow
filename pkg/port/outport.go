@@ -6,90 +6,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// InPort represents an input port for receiving data.
-type InPort struct {
-	readers  map[*process.Process]*Reader
-	handlers []Handler
-	mu       sync.RWMutex
-}
-
 // OutPort represents an output port for sending data.
 type OutPort struct {
-	ins      []*InPort
-	writers  map[*process.Process]*Writer
-	handlers []Handler
-	mu       sync.RWMutex
-}
-
-// NewIn creates a new InPort instance.
-func NewIn() *InPort {
-	return &InPort{
-		readers: make(map[*process.Process]*Reader),
-	}
-}
-
-// AddHandler adds a handler for processing incoming data.
-func (p *InPort) AddHandler(h Handler) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.handlers = append(p.handlers, h)
-}
-
-// Open opens the input port for a given process and returns a reader.
-func (p *InPort) Open(proc *process.Process) *Reader {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	reader, ok := p.readers[proc]
-	if !ok {
-		reader = newReader()
-
-		select {
-		case <-proc.Done():
-			reader.Close()
-			return reader
-		default:
-		}
-
-		p.readers[proc] = reader
-
-		go func() {
-			<-proc.Done()
-			p.closeWithLock(proc)
-		}()
-
-		for _, h := range p.handlers {
-			h := h
-			go h.Serve(proc)
-		}
-	}
-
-	return reader
-}
-
-// Close closes all readers associated with the input port.
-func (p *InPort) Close() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	for proc := range p.readers {
-		p.close(proc)
-	}
-}
-
-func (p *InPort) closeWithLock(proc *process.Process) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.close(proc)
-}
-
-func (p *InPort) close(proc *process.Process) {
-	if reader, ok := p.readers[proc]; ok {
-		delete(p.readers, proc)
-		reader.Close()
-	}
+	ins       []*InPort
+	writers   map[*process.Process]*Writer
+	initHooks []InitHook
+	mu        sync.RWMutex
 }
 
 // NewOut creates a new OutPort instance.
@@ -99,12 +21,12 @@ func NewOut() *OutPort {
 	}
 }
 
-// AddHandler adds a handler for processing outgoing data.
-func (p *OutPort) AddHandler(h Handler) {
+// AddInitHook adds a handler for processing outgoing data.
+func (p *OutPort) AddInitHook(h InitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.handlers = append(p.handlers, h)
+	p.initHooks = append(p.initHooks, h)
 }
 
 // Links returns the number of input ports this port is connected to.
@@ -143,7 +65,7 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 		writer, ok := p.writers[proc]
 		if !ok {
-			writer = newWriter()
+			writer = NewWriter()
 
 			select {
 			case <-proc.Done():
@@ -168,12 +90,12 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 		for _, in := range p.ins {
 			reader := in.Open(proc)
-			writer.link(reader)
+			writer.Link(reader)
 		}
 
-		for _, h := range p.handlers {
+		for _, h := range p.initHooks {
 			h := h
-			go h.Serve(proc)
+			go h.Init(proc)
 		}
 	}
 

@@ -45,9 +45,9 @@ func NewHTTPServerNode(address string) *HTTPServerNode {
 		errPort: port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
-	n.outPort.AddHandler(port.HandlerFunc(n.backward))
-	n.outPort.AddHandler(port.HandlerFunc(n.catch))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.outPort.AddInitHook(port.InitHookFunc(n.backward))
+	n.outPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	s := new(http.Server)
 	s.Addr = address
@@ -153,8 +153,8 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proc := process.New()
 
-	proc.Scope().Store(KeyHTTPResponseWriter, w)
-	proc.Scope().Store(KeyHTTPRequest, r)
+	proc.Data().Store(KeyHTTPResponseWriter, w)
+	proc.Data().Store(KeyHTTPRequest, r)
 
 	outWriter := n.outPort.Open(proc)
 
@@ -261,7 +261,7 @@ func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) 
 		res.Body = backPck.Payload()
 	}
 
-	if r, ok := proc.Scope().Load(KeyHTTPRequest).(*http.Request); ok {
+	if r, ok := proc.Data().Load(KeyHTTPRequest).(*http.Request); ok {
 		acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
 		accept := r.Header.Get(HeaderAccept)
 
@@ -285,7 +285,7 @@ func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) 
 
 		negotiate(res)
 
-		if w, ok := proc.Scope().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
+		if w, ok := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			if err := n.write(w, res); err != nil {
 				res = NewHTTPPayload(http.StatusInternalServerError)
 				negotiate(res)

@@ -32,8 +32,8 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 	}
 
 	if n.action != nil {
-		n.inPort.AddHandler(port.HandlerFunc(n.forward))
-		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+		n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 	}
 
 	return n
@@ -68,7 +68,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 					n.outPorts = append(n.outPorts, outPort)
 
 					if n.action != nil {
-						outPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+						outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 							n.backward(proc, j)
 						}))
 					}
@@ -107,6 +107,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		outWriters[i] = outPort.Open(proc)
 	}
 	errWriter := n.errPort.Open(proc)
+
 	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
 		return port.NewBridge(), nil
 	})

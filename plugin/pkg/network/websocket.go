@@ -39,8 +39,8 @@ func newWebSocketNode(action func(*process.Process, *packet.Packet) (*websocket.
 		errPort: port.NewOut(),
 	}
 
-	n.ioPort.AddHandler(port.HandlerFunc(n.connect))
-	n.errPort.AddHandler(port.HandlerFunc(n.catch))
+	n.ioPort.AddInitHook(port.InitHookFunc(n.connect))
+	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n
 }

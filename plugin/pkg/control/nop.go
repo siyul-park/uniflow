@@ -30,7 +30,7 @@ func NewNOPNode() *NOPNode {
 		inPort: port.NewIn(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	return n
 }

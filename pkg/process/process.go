@@ -7,7 +7,7 @@ import (
 
 // Process is a processing unit that isolates data processing from others.
 type Process struct {
-	heap *Scope
+	data *Data
 	ctx  context.Context
 	done chan struct{}
 	wait sync.WaitGroup
@@ -16,10 +16,8 @@ type Process struct {
 
 // New creates a new Process.
 func New() *Process {
-	h := newScope()
-
 	p := &Process{
-		heap: h,
+		data: newData(),
 		done: make(chan struct{}),
 	}
 
@@ -34,9 +32,9 @@ func New() *Process {
 	return p
 }
 
-// Scope returns a process's heap.
-func (p *Process) Scope() *Scope {
-	return p.heap
+// Data returns a process's heap.
+func (p *Process) Data() *Data {
+	return p.data
 }
 
 // Context returns a process's context.
@@ -66,7 +64,7 @@ func (p *Process) Close() {
 	}
 
 	p.wait.Wait()
-	p.heap.Close()
+	p.data.Close()
 
 	close(p.done)
 }

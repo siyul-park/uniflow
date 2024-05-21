@@ -57,7 +57,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 
 		count := 0
 
-		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
@@ -150,7 +150,7 @@ func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
 	out := port.NewIn()
 	n.Out(node.PortOut).Link(out)
 
-	out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		for {

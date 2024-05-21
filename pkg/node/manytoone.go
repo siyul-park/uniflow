@@ -22,8 +22,8 @@ package node
 // 	}
 
 // 	if n.action != nil {
-// 		n.outPort.AddHandler(port.HandlerFunc(n.backward))
-// 		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+// 		n.outPort.AddInitHook(port.HandlerFunc(n.backward))
+// 		n.errPort.AddInitHook(port.HandlerFunc(n.catch))
 // 	}
 
 // 	return n
@@ -41,7 +41,7 @@ package node
 // 				n.inPorts = append(n.inPorts, inPort)
 
 // 				if n.action != nil {
-// 					inPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+// 					inPort.AddInitHook(port.HandlerFunc(func(proc *process.Process) {
 // 						n.forward(proc, j)
 // 					}))
 // 				}

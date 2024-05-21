@@ -14,7 +14,7 @@ type Reader struct {
 	mu      sync.Mutex
 }
 
-func newReader() *Reader {
+func NewReader() *Reader {
 	r := &Reader{
 		in:   make(chan *packet.Packet),
 		out:  make(chan *packet.Packet),
@@ -66,7 +66,25 @@ func (r *Reader) Receive(pck *packet.Packet) bool {
 }
 
 func (r *Reader) Close() {
-	writers := r.close()
+	writers := func() []*Writer {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		select {
+		case <-r.done:
+			return nil
+		default:
+		}
+
+		writers := r.writers
+		r.writers = nil
+
+		close(r.done)
+		close(r.in)
+
+		return writers
+	}()
+
 	for _, w := range writers {
 		w.receive(packet.None, r)
 	}
@@ -100,23 +118,4 @@ func (r *Reader) writer() *Writer {
 	r.writers = r.writers[1:]
 
 	return writer
-}
-
-func (r *Reader) close() []*Writer {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	select {
-	case <-r.done:
-		return nil
-	default:
-	}
-
-	writers := r.writers
-	r.writers = nil
-
-	close(r.done)
-	close(r.in)
-
-	return writers
 }

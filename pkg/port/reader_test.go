@@ -8,13 +8,13 @@ import (
 )
 
 func TestReader_Receive(t *testing.T) {
-	w := newWriter()
+	w := NewWriter()
 	defer w.Close()
 
-	r := newReader()
+	r := NewReader()
 	defer r.Close()
 
-	w.link(r)
+	w.Link(r)
 
 	out1 := packet.New(nil)
 	out2 := packet.New(nil)
@@ -41,13 +41,13 @@ func TestReader_Receive(t *testing.T) {
 }
 
 func BenchmarkReader_Receive(b *testing.B) {
-	w := newWriter()
+	w := NewWriter()
 	defer w.Close()
 
-	r := newReader()
+	r := NewReader()
 	defer r.Close()
 
-	w.link(r)
+	w.Link(r)
 
 	out := packet.New(nil)
 	for i := 0; i < b.N; i++ {

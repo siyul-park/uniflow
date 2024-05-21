@@ -2,20 +2,20 @@ package process
 
 import "sync"
 
-// Scope is a concurrent map-like data structure.
-type Scope struct {
+// Data is a concurrent map-like data structure.
+type Data struct {
 	data map[string]any
 	mu   sync.RWMutex
 }
 
-func newScope() *Scope {
-	return &Scope{
+func newData() *Data {
+	return &Data{
 		data: make(map[string]any),
 	}
 }
 
 // Load retrieves the value associated with the given key from the heap.
-func (h *Scope) Load(key string) any {
+func (h *Data) Load(key string) any {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -23,7 +23,7 @@ func (h *Scope) Load(key string) any {
 }
 
 // Store stores the given value with the associated key in the heap.
-func (h *Scope) Store(key string, val any) {
+func (h *Data) Store(key string, val any) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -31,7 +31,7 @@ func (h *Scope) Store(key string, val any) {
 }
 
 // Delete removes the value associated with the given key from the heap.
-func (h *Scope) Delete(key string) bool {
+func (h *Data) Delete(key string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -43,7 +43,7 @@ func (h *Scope) Delete(key string) bool {
 }
 
 // LoadAndDelete retrieves and removes the value associated with the given key from the heap.
-func (h *Scope) LoadAndDelete(key string) any {
+func (h *Data) LoadAndDelete(key string) any {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -53,7 +53,7 @@ func (h *Scope) LoadAndDelete(key string) any {
 }
 
 // Close clears the heap by removing all key-value pairs.
-func (h *Scope) Close() {
+func (h *Data) Close() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

@@ -29,9 +29,9 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 	}
 
 	if n.action != nil {
-		n.inPort.AddHandler(port.HandlerFunc(n.forward))
-		n.outPort.AddHandler(port.HandlerFunc(n.backward))
-		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+		n.outPort.AddInitHook(port.InitHookFunc(n.backward))
+		n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 	}
 
 	return n
@@ -94,7 +94,7 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			if errWriter.Write(errPck) == 0{
+			if errWriter.Write(errPck) == 0 {
 				inReader.Receive(errPck)
 			}
 		} else if outPck != nil {
@@ -140,4 +140,3 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 		inReader.Receive(backPck)
 	}
 }
-

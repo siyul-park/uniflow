@@ -38,8 +38,8 @@ func NewLoopNode() *LoopNode {
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
-	n.outPorts[0].AddHandler(port.HandlerFunc(n.backward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.outPorts[0].AddInitHook(port.InitHookFunc(n.backward))
 
 	return n
 }
