@@ -21,7 +21,8 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 	defer b.mu.Unlock()
 
 	for i := 0; i < len(writers); i++ {
-		if writers[i].Write(pcks[i]) == 0 {
+		if pcks[i] == nil || writers[i].Write(pcks[i]) == 0 {
+			pcks = append(pcks[:i], pcks[i+1:]...)
 			writers = append(writers[:i], writers[i+1:]...)
 			i--
 		}

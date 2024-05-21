@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -123,17 +122,6 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 				inReader.Receive(errPck)
 			}
 		} else {
-			if len(outPcks) > len(outWriters) {
-				outPcks = outPcks[:len(outWriters)]
-			}
-
-			outWriters = lo.Filter(outWriters, func(_ *port.Writer, i int) bool {
-				return len(outPcks) > i && outPcks[i] != nil
-			})
-			outPcks = lo.Filter(outPcks, func(item *packet.Packet, _ int) bool {
-				return item != nil
-			})
-
 			bridge.Write(outPcks, []*port.Reader{inReader}, outWriters)
 		}
 	}
