@@ -11,6 +11,16 @@ func TestProcess_Data(t *testing.T) {
 	defer proc.Exit(nil)
 
 	assert.NotNil(t, proc.Data())
+	assert.Equal(t, nil, proc.Error())
+	assert.Equal(t, StatusRunning, proc.Status())
+}
+
+func TestProcess_Exit(t *testing.T) {
+	proc := New()
+
+	proc.Exit(nil)
+	assert.Equal(t, nil, proc.Error())
+	assert.Equal(t, StatusTerminated, proc.Status())
 }
 
 func TestProcess_AddExitHook(t *testing.T) {

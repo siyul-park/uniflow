@@ -3,9 +3,9 @@ package process
 import "sync"
 
 type Process struct {
+	data      *Data
 	status    Status
 	err       error
-	data      *Data
 	exitHooks []ExitHook
 	mu        sync.RWMutex
 }
@@ -25,6 +25,10 @@ func New() *Process {
 	}
 }
 
+func (p *Process) Data() *Data {
+	return p.data
+}
+
 func (p *Process) Status() Status {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -37,10 +41,6 @@ func (p *Process) Error() error {
 	defer p.mu.RUnlock()
 
 	return p.err
-}
-
-func (p *Process) Data() *Data {
-	return p.data
 }
 
 func (p *Process) AddExitHook(h ExitHook) {
