@@ -66,20 +66,15 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 		writer, ok := p.writers[proc]
 		if !ok {
 			writer = NewWriter()
-
-			select {
-			case <-proc.Done():
+			if proc.Status() == process.StatusTerminated {
 				writer.Close()
 				return writer, true
-			default:
 			}
 
 			p.writers[proc] = writer
-
-			go func() {
-				<-proc.Done()
+			proc.AddExitHook(process.ExitHookFunc(func(_ error) {
 				p.closeWithLock(proc)
-			}()
+			}))
 		}
 		return writer, ok
 	}()

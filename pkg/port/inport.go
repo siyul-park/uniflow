@@ -36,20 +36,15 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 	reader, ok := p.readers[proc]
 	if !ok {
 		reader = NewReader()
-
-		select {
-		case <-proc.Done():
+		if proc.Status() == process.StatusTerminated {
 			reader.Close()
 			return reader
-		default:
 		}
 
 		p.readers[proc] = reader
-
-		go func() {
-			<-proc.Done()
+		proc.AddExitHook(process.ExitHookFunc(func(_ error) {
 			p.closeWithLock(proc)
-		}()
+		}))
 
 		for _, h := range p.initHooks {
 			h := h
