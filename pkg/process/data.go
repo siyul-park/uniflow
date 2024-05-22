@@ -4,8 +4,9 @@ import "sync"
 
 // Data is a concurrent map-like data structure.
 type Data struct {
-	data map[string]any
-	mu   sync.RWMutex
+	data  map[string]any
+	outer *Data
+	mu    sync.RWMutex
 }
 
 func newData() *Data {
@@ -14,48 +15,68 @@ func newData() *Data {
 	}
 }
 
-// Load retrieves the value associated with the given key from the heap.
-func (h *Data) Load(key string) any {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+func (d *Data) Load(key string) any {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 
-	return h.data[key]
+	if val, ok := d.data[key]; ok {
+		return val
+	}
+
+	if d.outer == nil {
+		return nil
+	}
+	return d.outer.Load(key)
 }
 
-// Store stores the given value with the associated key in the heap.
-func (h *Data) Store(key string, val any) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (d *Data) Store(key string, val any) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	h.data[key] = val
+	d.data[key] = val
 }
 
-// Delete removes the value associated with the given key from the heap.
-func (h *Data) Delete(key string) bool {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (d *Data) Delete(key string) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	if _, ok := h.data[key]; !ok {
+	if _, ok := d.data[key]; ok {
+		delete(d.data, key)
+		return true
+	}
+
+	if d.outer == nil {
 		return false
 	}
-	delete(h.data, key)
-	return true
+	return d.outer.Delete(key)
 }
 
-// LoadAndDelete retrieves and removes the value associated with the given key from the heap.
-func (h *Data) LoadAndDelete(key string) any {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (d *Data) LoadAndDelete(key string) any {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	val := h.data[key]
-	delete(h.data, key)
-	return val
+	if val, ok := d.data[key]; ok {
+		delete(d.data, key)
+		return val
+	}
+
+	if d.outer == nil {
+		return false
+	}
+	return d.outer.LoadAndDelete(key)
 }
 
-// Close clears the heap by removing all key-value pairs.
-func (h *Data) Close() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (d *Data) Fork() *Data {
+	return &Data{
+		data:  make(map[string]any),
+		outer: d,
+	}
+}
 
-	h.data = make(map[string]any)
+func (d *Data) Close() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.data = make(map[string]any)
+	d.outer = nil
 }

@@ -8,48 +8,78 @@ import (
 )
 
 func TestData_Load(t *testing.T) {
-	h := newData()
-	defer h.Close()
+	d := newData()
+	defer d.Close()
 
 	k := faker.UUIDHyphenated()
 	v := faker.UUIDHyphenated()
 
-	r := h.Load(k)
+	r := d.Load(k)
 	assert.Equal(t, nil, r)
 
-	h.Store(k, v)
+	d.Store(k, v)
 
-	r = h.Load(k)
+	r = d.Load(k)
 	assert.Equal(t, v, r)
 }
 
 func TestData_Store(t *testing.T) {
-	h := newData()
-	defer h.Close()
+	d := newData()
+	defer d.Close()
 
 	k := faker.UUIDHyphenated()
 	v1 := faker.UUIDHyphenated()
 	v2 := faker.UUIDHyphenated()
 
-	h.Store(k, v1)
-	h.Store(k, v2)
+	d.Store(k, v1)
+	d.Store(k, v2)
 
-	r := h.Load(k)
+	r := d.Load(k)
 	assert.Equal(t, v2, r)
 }
 
 func TestData_Delete(t *testing.T) {
-	h := newData()
-	defer h.Close()
+	d := newData()
+	defer d.Close()
 
 	k := faker.UUIDHyphenated()
 	v := faker.UUIDHyphenated()
 
-	ok := h.Delete(k)
+	ok := d.Delete(k)
 	assert.False(t, ok)
 
-	h.Store(k, v)
+	d.Store(k, v)
 
-	ok = h.Delete(k)
+	ok = d.Delete(k)
+	assert.True(t, ok)
+}
+
+func TestData_Fork(t *testing.T) {
+	d := newData()
+	defer d.Close()
+
+	c := d.Fork()
+
+	k := faker.UUIDHyphenated()
+	v1 := faker.UUIDHyphenated()
+	v2 := faker.UUIDHyphenated()
+
+	d.Store(k, v1)
+
+	r := c.Load(k)
+	assert.Equal(t, v1, r)
+
+	c.Store(k, v2)
+
+	r = c.Load(k)
+	assert.Equal(t, v2, r)
+
+	ok := c.Delete(k)
+	assert.True(t, ok)
+
+	r = c.Load(k)
+	assert.Equal(t, v1, r)
+
+	ok = c.Delete(k)
 	assert.True(t, ok)
 }

@@ -6,6 +6,8 @@ type Process struct {
 	data      *Data
 	status    Status
 	err       error
+	parent    *Process
+	wait      sync.WaitGroup
 	exitHooks []ExitHook
 	mu        sync.RWMutex
 }
@@ -36,11 +38,31 @@ func (p *Process) Status() Status {
 	return p.status
 }
 
-func (p *Process) Error() error {
+func (p *Process) Err() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	return p.err
+}
+
+func (p *Process) Parent() *Process {
+	return p.parent
+}
+
+func (p *Process) Wait() {
+	p.wait.Wait()
+}
+
+func (p *Process) Fork() *Process {
+	p.wait.Add(1)
+	
+	return &Process{
+		data: p.data.Fork(),
+		exitHooks: []ExitHook{ExitHookFunc(func(err error) {
+			p.wait.Done()
+		})},
+		parent: p,
+	}
 }
 
 func (p *Process) AddExitHook(h ExitHook) {
