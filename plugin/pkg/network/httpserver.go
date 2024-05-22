@@ -157,13 +157,6 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	call := func(writer *port.Writer, pck *packet.Packet) *packet.Packet {
-		if writer.Write(pck) == 0 {
-			return packet.None
-		}
-		return <-writer.Receive()
-	}
-
 	var outPck *packet.Packet
 	var errPck *packet.Packet
 	req, err := n.read(r)
@@ -177,12 +170,12 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var backPck *packet.Packet
 	if errPck != nil {
-		backPck = call(errWriter, errPck)
+		backPck = port.Call(errWriter, errPck)
 	} else {
-		backPck = call(outWriter, outPck)
+		backPck = port.Call(outWriter, outPck)
 		if _, ok := packet.AsError(backPck); ok {
-			if pck := call(errWriter, backPck); pck != packet.None {
-				backPck = pck
+			if errWriter.Write(backPck) > 0 {
+				backPck = <-errWriter.Receive()
 			}
 		}
 	}

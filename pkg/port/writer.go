@@ -15,6 +15,13 @@ type Writer struct {
 	mu       sync.Mutex
 }
 
+func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
+	if writer.Write(pck) == 0 {
+		return packet.None
+	}
+	return <-writer.Receive()
+}
+
 func NewWriter() *Writer {
 	w := &Writer{
 		in:   make(chan *packet.Packet),
