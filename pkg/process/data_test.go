@@ -77,9 +77,6 @@ func TestData_Fork(t *testing.T) {
 	ok := c.Delete(k)
 	assert.True(t, ok)
 
-	r = c.Load(k)
-	assert.Equal(t, v1, r)
-
-	ok = c.Delete(k)
+	ok = d.Delete(k)
 	assert.True(t, ok)
 }

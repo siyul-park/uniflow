@@ -44,26 +44,7 @@ func (d *Data) Delete(key string) bool {
 		delete(d.data, key)
 		return true
 	}
-
-	if d.outer == nil {
-		return false
-	}
-	return d.outer.Delete(key)
-}
-
-func (d *Data) LoadAndDelete(key string) any {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if val, ok := d.data[key]; ok {
-		delete(d.data, key)
-		return val
-	}
-
-	if d.outer == nil {
-		return false
-	}
-	return d.outer.LoadAndDelete(key)
+	return false
 }
 
 func (d *Data) Fork() *Data {
