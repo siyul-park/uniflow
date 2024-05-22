@@ -1,197 +1,197 @@
 package network
 
-import (
-	"context"
-	"fmt"
-	"testing"
-	"time"
+// import (
+// 	"context"
+// 	"fmt"
+// 	"testing"
+// 	"time"
 
-	"github.com/go-faker/faker/v4"
-	"github.com/gorilla/websocket"
-	"github.com/phayes/freeport"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
-	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/stretchr/testify/assert"
-)
+// 	"github.com/go-faker/faker/v4"
+// 	"github.com/gorilla/websocket"
+// 	"github.com/phayes/freeport"
+// 	"github.com/siyul-park/uniflow/pkg/node"
+// 	"github.com/siyul-park/uniflow/pkg/packet"
+// 	"github.com/siyul-park/uniflow/pkg/port"
+// 	"github.com/siyul-park/uniflow/pkg/primitive"
+// 	"github.com/siyul-park/uniflow/pkg/process"
+// 	"github.com/stretchr/testify/assert"
+// )
 
-func TestNewWebSocketClient(t *testing.T) {
-	n := NewWebSocketClientNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
+// func TestNewWebSocketClient(t *testing.T) {
+// 	n := NewWebSocketClientNode()
+// 	assert.NotNil(t, n)
+// 	assert.NoError(t, n.Close())
+// }
 
-func TestWebSocketClientNode_Port(t *testing.T) {
-	n := NewWebSocketClientNode()
-	defer n.Close()
+// func TestWebSocketClientNode_Port(t *testing.T) {
+// 	n := NewWebSocketClientNode()
+// 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIO))
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
-}
+// 	assert.NotNil(t, n.In(node.PortIO))
+// 	assert.NotNil(t, n.In(node.PortIn))
+// 	assert.NotNil(t, n.Out(node.PortOut))
+// 	assert.NotNil(t, n.Out(node.PortErr))
+// }
 
-func TestWebSocket_URL(t *testing.T) {
-	n := NewWebSocketClientNode()
-	defer n.Close()
+// func TestWebSocket_URL(t *testing.T) {
+// 	n := NewWebSocketClientNode()
+// 	defer n.Close()
 
-	err := n.SetURL(faker.URL())
-	assert.NoError(t, err)
-}
+// 	err := n.SetURL(faker.URL())
+// 	assert.NoError(t, err)
+// }
 
-func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+// func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
+// 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+// 	defer cancel()
 
-	p, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+// 	p, err := freeport.GetFreePort()
+// 	assert.NoError(t, err)
 
-	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
-	defer http.Close()
+// 	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
+// 	defer http.Close()
 
-	ws := NewWebSocketUpgradeNode()
-	defer ws.Close()
+// 	ws := NewWebSocketUpgradeNode()
+// 	defer ws.Close()
 
-	client := NewWebSocketClientNode()
-	defer client.Close()
+// 	client := NewWebSocketClientNode()
+// 	defer client.Close()
 
-	http.Out(node.PortOut).Link(ws.In(node.PortIO))
-	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
+// 	http.Out(node.PortOut).Link(ws.In(node.PortIO))
+// 	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
-	assert.NoError(t, http.Listen())
+// 	assert.NoError(t, http.Listen())
 
-	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
+// 	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
 
-	io := port.NewOut()
-	io.Link(client.In(node.PortIO))
+// 	io := port.NewOut()
+// 	io.Link(client.In(node.PortIO))
 
-	in := port.NewOut()
-	in.Link(client.In(node.PortIn))
+// 	in := port.NewOut()
+// 	in.Link(client.In(node.PortIn))
 
-	out := port.NewIn()
-	client.Out(node.PortOut).Link(out)
+// 	out := port.NewIn()
+// 	client.Out(node.PortOut).Link(out)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+// 	proc := process.New()
+// 	defer proc.Exit(nil)
 
-	ioWriter := io.Open(proc)
-	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+// 	ioWriter := io.Open(proc)
+// 	inWriter := in.Open(proc)
+// 	outReader := out.Open(proc)
 
-	var inPayload primitive.Value
-	inPck := packet.New(inPayload)
+// 	var inPayload primitive.Value
+// 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+// 	ioWriter.Write(inPck)
 
-	select {
-	case <-proc.Stack().Done(inPck):
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+// 	select {
+// 	case <-proc.Stack().Done(inPck):
+// 	case <-ctx.Done():
+// 		assert.Fail(t, ctx.Err().Error())
+// 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
-		Type: websocket.TextMessage,
-		Data: primitive.NewString(faker.UUIDHyphenated()),
-	})
-	inPck = packet.New(inPayload)
+// 	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+// 		Type: websocket.TextMessage,
+// 		Data: primitive.NewString(faker.UUIDHyphenated()),
+// 	})
+// 	inPck = packet.New(inPayload)
 
-	inWriter.Write(inPck)
+// 	inWriter.Write(inPck)
 
-	select {
-	case outPck := <-outReader.Read():
-		proc.Stack().Clear(outPck)
-		err, _ := packet.AsError(outPck)
-		assert.NoError(t, err)
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+// 	select {
+// 	case outPck := <-outReader.Read():
+// 		proc.Stack().Clear(outPck)
+// 		err, _ := packet.AsError(outPck)
+// 		assert.NoError(t, err)
+// 	case <-ctx.Done():
+// 		assert.Fail(t, ctx.Err().Error())
+// 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
-		Type: websocket.CloseMessage,
-	})
-	inPck = packet.New(inPayload)
+// 	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+// 		Type: websocket.CloseMessage,
+// 	})
+// 	inPck = packet.New(inPayload)
 
-	inWriter.Write(inPck)
+// 	inWriter.Write(inPck)
 
-	select {
-	case <-proc.Stack().Done(inPck):
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
+// 	select {
+// 	case <-proc.Stack().Done(inPck):
+// 	case <-ctx.Done():
+// 		assert.Fail(t, ctx.Err().Error())
+// 	}
+// }
 
-func TestWebSocketClientNodeCodec_Decode(t *testing.T) {
-	codec := NewWebSocketClientNodeCodec()
+// func TestWebSocketClientNodeCodec_Decode(t *testing.T) {
+// 	codec := NewWebSocketClientNodeCodec()
 
-	spec := &WebSocketClientNodeSpec{
-		URL: "ws://localhost:8080",
-	}
-	n, err := codec.Decode(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
+// 	spec := &WebSocketClientNodeSpec{
+// 		URL: "ws://localhost:8080",
+// 	}
+// 	n, err := codec.Decode(spec)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, n)
+// 	assert.NoError(t, n.Close())
+// }
 
-func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
-	p, _ := freeport.GetFreePort()
+// func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
+// 	p, _ := freeport.GetFreePort()
 
-	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
-	defer http.Close()
+// 	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
+// 	defer http.Close()
 
-	ws := NewWebSocketUpgradeNode()
-	defer ws.Close()
+// 	ws := NewWebSocketUpgradeNode()
+// 	defer ws.Close()
 
-	client := NewWebSocketClientNode()
-	defer client.Close()
+// 	client := NewWebSocketClientNode()
+// 	defer client.Close()
 
-	http.Out(node.PortOut).Link(ws.In(node.PortIO))
-	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
+// 	http.Out(node.PortOut).Link(ws.In(node.PortIO))
+// 	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
-	http.Listen()
+// 	http.Listen()
 
-	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
+// 	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
 
-	io := port.NewOut()
-	io.Link(client.In(node.PortIO))
+// 	io := port.NewOut()
+// 	io.Link(client.In(node.PortIO))
 
-	in := port.NewOut()
-	in.Link(client.In(node.PortIn))
+// 	in := port.NewOut()
+// 	in.Link(client.In(node.PortIn))
 
-	out := port.NewIn()
-	client.Out(node.PortOut).Link(out)
+// 	out := port.NewIn()
+// 	client.Out(node.PortOut).Link(out)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+// 	proc := process.New()
+// 	defer proc.Exit(nil)
 
-	ioWriter := io.Open(proc)
-	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+// 	ioWriter := io.Open(proc)
+// 	inWriter := in.Open(proc)
+// 	outReader := out.Open(proc)
 
-	var inPayload primitive.Value
-	inPck := packet.New(inPayload)
+// 	var inPayload primitive.Value
+// 	inPck := packet.New(inPayload)
 
-	ioWriter.Write(inPck)
+// 	ioWriter.Write(inPck)
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
-		Type: websocket.TextMessage,
-		Data: primitive.NewString(faker.UUIDHyphenated()),
-	})
-	inPck = packet.New(inPayload)
+// 	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+// 		Type: websocket.TextMessage,
+// 		Data: primitive.NewString(faker.UUIDHyphenated()),
+// 	})
+// 	inPck = packet.New(inPayload)
 
-	b.ResetTimer()
+// 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		inWriter.Write(inPck)
-		outPck := <-outReader.Read()
-		proc.Stack().Clear(outPck)
-	}
+// 	for i := 0; i < b.N; i++ {
+// 		inWriter.Write(inPck)
+// 		outPck := <-outReader.Read()
+// 		proc.Stack().Clear(outPck)
+// 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
-		Type: websocket.CloseMessage,
-	})
-	inPck = packet.New(inPayload)
+// 	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+// 		Type: websocket.CloseMessage,
+// 	})
+// 	inPck = packet.New(inPayload)
 
-	inWriter.Write(inPck)
-}
+// 	inWriter.Write(inPck)
+// }

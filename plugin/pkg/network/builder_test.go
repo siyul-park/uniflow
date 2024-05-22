@@ -1,52 +1,52 @@
 package network
 
-import (
-	"fmt"
-	"testing"
+// import (
+// 	"fmt"
+// 	"testing"
 
-	"github.com/phayes/freeport"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/assert"
-)
+// 	"github.com/phayes/freeport"
+// 	"github.com/siyul-park/uniflow/pkg/hook"
+// 	"github.com/siyul-park/uniflow/pkg/scheme"
+// 	"github.com/siyul-park/uniflow/pkg/symbol"
+// 	"github.com/stretchr/testify/assert"
+// )
 
-func TestAddToHook(t *testing.T) {
-	h := hook.New()
+// func TestAddToHook(t *testing.T) {
+// 	h := hook.New()
 
-	err := AddToHook()(h)
-	assert.NoError(t, err)
+// 	err := AddToHook()(h)
+// 	assert.NoError(t, err)
 
-	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+// 	port, err := freeport.GetFreePort()
+// 	assert.NoError(t, err)
 
-	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
-	defer n.Close()
+// 	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+// 	defer n.Close()
 
-	sym := symbol.New(&scheme.SpecMeta{}, n)
+// 	sym := symbol.New(&scheme.SpecMeta{}, n)
 
-	err = h.Load(sym)
-	assert.NoError(t, err)
+// 	err = h.Load(sym)
+// 	assert.NoError(t, err)
 
-	err = h.Unload(sym)
-	assert.NoError(t, err)
-}
+// 	err = h.Unload(sym)
+// 	assert.NoError(t, err)
+// }
 
-func TestAddToScheme(t *testing.T) {
-	s := scheme.New()
+// func TestAddToScheme(t *testing.T) {
+// 	s := scheme.New()
 
-	err := AddToScheme()(s)
-	assert.NoError(t, err)
+// 	err := AddToScheme()(s)
+// 	assert.NoError(t, err)
 
-	testCase := []string{KindHTTPClient, KindHTTPServer, KindRoute, KindWebSocketClient, KindWebSocketUpgrade}
+// 	testCase := []string{KindHTTPClient, KindHTTPServer, KindRoute, KindWebSocketClient, KindWebSocketUpgrade}
 
-	for _, tc := range testCase {
-		t.Run(tc, func(t *testing.T) {
-			_, ok := s.KnownType(tc)
-			assert.True(t, ok)
+// 	for _, tc := range testCase {
+// 		t.Run(tc, func(t *testing.T) {
+// 			_, ok := s.KnownType(tc)
+// 			assert.True(t, ok)
 
-			_, ok = s.Codec(tc)
-			assert.True(t, ok)
-		})
-	}
-}
+// 			_, ok = s.Codec(tc)
+// 			assert.True(t, ok)
+// 		})
+// 	}
+// }

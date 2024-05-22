@@ -66,7 +66,7 @@ func TestHTTPServerNode_ListenAndShutdown(t *testing.T) {
 }
 
 func TestHTTPServerNode_ServeHTTP(t *testing.T) {
-	t.Run("Not Linked", func(t *testing.T) {
+	t.Run("NoResponseGiven", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
@@ -79,7 +79,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "", w.Body.String())
 	})
 
-	t.Run("Explicit Response", func(t *testing.T) {
+	t.Run("HTTPPayloadResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
@@ -114,7 +114,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, body, w.Body.String())
 	})
 
-	t.Run("Implicit Response", func(t *testing.T) {
+	t.Run("BodyResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
@@ -133,13 +133,12 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 					return
 				}
 
-				var req HTTPPayload
 				inPayload := inPck.Payload()
+
+				var req *HTTPPayload
 				_ = primitive.Unmarshal(inPayload, &req)
 
 				outPck := packet.New(req.Body)
-
-				proc.Stack().Add(inPck, outPck)
 				outReader.Receive(outPck)
 			}
 		}))
@@ -156,7 +155,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, body, w.Body.String())
 	})
 
-	t.Run("Error Response", func(t *testing.T) {
+	t.Run("ErrorResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
@@ -178,7 +177,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 				err := errors.New(faker.Sentence())
 
 				errPck := packet.WithError(err, inPck)
-				proc.Stack().Add(inPck, errPck)
 				outReader.Receive(errPck)
 			}
 		}))
@@ -193,7 +191,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		assert.Equal(t, "Internal Server Error", w.Body.String())
 	})
 
-	t.Run("Handel Error Response", func(t *testing.T) {
+	t.Run("HandleErrorResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
@@ -218,7 +216,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 				err := errors.New(faker.Sentence())
 
 				errPck := packet.WithError(err, inPck)
-				proc.Stack().Add(inPck, errPck)
 				outReader.Receive(errPck)
 			}
 		}))
@@ -234,7 +231,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 				err, _ := packet.AsError(inPck)
 
 				outPck := packet.New(primitive.NewString(err.Error()))
-				proc.Stack().Add(inPck, outPck)
 				errReader.Receive(outPck)
 			}
 		}))
@@ -287,11 +283,7 @@ func BenchmarkHTTPServerNode_ServeHTTP(b *testing.B) {
 				return
 			}
 
-			err := errors.New(faker.Sentence())
-
-			errPck := packet.WithError(err, inPck)
-			proc.Stack().Add(inPck, errPck)
-			outReader.Receive(errPck)
+			outReader.Receive(inPck)
 		}
 	}))
 

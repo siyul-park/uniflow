@@ -29,7 +29,7 @@ func TestOneToOneNode_Port(t *testing.T) {
 }
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out -> In", func(t *testing.T) {
+	t.Run("ForwardPacket", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -71,7 +71,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Error -> In", func(t *testing.T) {
+	t.Run("HandleErrorPacket", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

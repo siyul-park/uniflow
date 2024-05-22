@@ -28,7 +28,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	}))
 	defer s.Close()
 
-	t.Run("Static URL", func(t *testing.T) {
+	t.Run("StaticURL", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -66,7 +66,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("Dynamic URL", func(t *testing.T) {
+	t.Run("DynamicURL", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -100,7 +100,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("Dynamic Divided URL", func(t *testing.T) {
+	t.Run("DynamicURLElement", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -138,7 +138,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("With Query", func(t *testing.T) {
+	t.Run("StaticQuery", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -178,7 +178,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("With Header", func(t *testing.T) {
+	t.Run("StaticHeader", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -218,7 +218,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("With Body", func(t *testing.T) {
+	t.Run("StaticBody", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
