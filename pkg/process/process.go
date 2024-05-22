@@ -55,14 +55,19 @@ func (p *Process) Wait() {
 
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
-	
-	return &Process{
+
+	child := &Process{
 		data: p.data.Fork(),
 		exitHooks: []ExitHook{ExitHookFunc(func(err error) {
 			p.wait.Done()
 		})},
 		parent: p,
 	}
+	p.AddExitHook(ExitHookFunc(func(err error) {
+		child.Exit(err)
+	}))
+
+	return child
 }
 
 func (p *Process) AddExitHook(h ExitHook) {
