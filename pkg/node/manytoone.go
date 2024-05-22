@@ -119,6 +119,10 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 
 			outPck, errPck := n.action(proc, pcks)
 			if outPck == nil && errPck == nil {
+				if len(pcks) == len(inReaders) {
+					bridge.Write(nil, inReaders, nil)
+					return true
+				}
 				return false
 			}
 
