@@ -83,9 +83,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
 
@@ -117,9 +114,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	t.Run("BodyResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
 
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
@@ -159,9 +153,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
 
@@ -194,9 +185,6 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	t.Run("HandleErrorResponse", func(t *testing.T) {
 		n := NewHTTPServerNode("")
 		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
 
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
