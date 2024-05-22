@@ -32,8 +32,10 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 	}
 
 	if len(writers) == 0 {
-		for _, r := range readers {
-			r.Receive(packet.None)
+		b.readers = append(b.readers, readers)
+		b.receives = append(b.receives, make(map[*Writer]*packet.Packet, 0))
+		if len(b.readers) == 1 {
+			b.consume()
 		}
 		return 0
 	}
@@ -67,17 +69,28 @@ func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
 	receives := b.receives[index]
 	receives[writer] = pck
 
-	if index > 0 {
-		return true
+	if index == 0 {
+		b.consume()
 	}
+	return true
+}
 
+func (b *Bridge) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.readers = nil
+	b.receives = nil
+}
+
+func (b *Bridge) consume() {
 	for len(b.readers) > 0 {
 		readers := b.readers[0]
 		receives := b.receives[0]
 
 		for _, pck := range receives {
 			if pck == nil {
-				return true
+				return
 			}
 		}
 
@@ -94,13 +107,4 @@ func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
 			r.Receive(pck)
 		}
 	}
-	return true
-}
-
-func (b *Bridge) Close() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	b.readers = nil
-	b.receives = nil
 }

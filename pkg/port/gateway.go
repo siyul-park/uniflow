@@ -61,22 +61,16 @@ func (g *Gateway) Write(pck *packet.Packet, reader *Reader) int {
 	reads := g.reads[head]
 	reads[index] = pck
 
+	if head == 0 {
+		g.consume()
+	}
+
 	count := 0
 	for _, pck := range reads {
 		if pck != nil {
 			count++
 		}
 	}
-
-	if g.forward.Forward(reads) {
-		g.reads = append(g.reads[:head], g.reads[head+1:]...)
-	} else if count == len(reads) {
-		g.reads = append(g.reads[:head], g.reads[head+1:]...)
-		for _, r := range g.readers {
-			r.Receive(packet.None)
-		}
-	}
-
 	return count
 }
 
@@ -86,6 +80,30 @@ func (g *Gateway) Close() {
 
 	g.readers = nil
 	g.reads = nil
+}
+
+func (g *Gateway) consume() {
+	for len(g.reads) > 0 {
+		reads := g.reads[0]
+
+		count := 0
+		for _, pck := range reads {
+			if pck != nil {
+				count++
+			}
+		}
+
+		if g.forward.Forward(reads) {
+			g.reads = g.reads[1:]
+		} else if count == len(reads) {
+			g.reads = g.reads[1:]
+			for _, r := range g.readers {
+				r.Receive(packet.None)
+			}
+		} else {
+			break
+		}
+	}
 }
 
 func (h ForwardHookFunc) Forward(pcks []*packet.Packet) bool {
