@@ -1,6 +1,8 @@
 package packet
 
 import (
+	"errors"
+
 	"github.com/siyul-park/uniflow/pkg/primitive"
 )
 
@@ -12,6 +14,16 @@ type Packet struct {
 var None = New(nil)
 
 func Merge(pcks []*Packet) *Packet {
+	var errs []error
+	for _, pck := range pcks {
+		if err, ok := AsError(pck); ok {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return WithError(errors.Join(errs...), nil)
+	}
+
 	payloads := make([]primitive.Value, 0, len(pcks))
 	for _, pck := range pcks {
 		if pck != None {
