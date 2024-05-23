@@ -22,6 +22,7 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 
 	for i := 0; i < len(writers); i++ {
 		if len(pcks) < i {
+			writers = writers[:i]
 			break
 		}
 		if pcks[i] == nil || writers[i].Write(pcks[i]) == 0 {
