@@ -182,7 +182,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 		e := event.New(primitive.Interface(inPayload))
 		n.producer.Produce(e)
 
-		proc.Stack().Clear(inPck)
+		inReader.Receive(packet.None)
 	}
 }
 

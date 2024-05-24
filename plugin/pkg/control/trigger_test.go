@@ -61,12 +61,12 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 			outReader := out.Open(proc)
 
 			for {
-				outPck, ok := <-outReader.Read()
+				_, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 				count += 1
-				proc.Stack().Clear(outPck)
+				outReader.Receive(packet.None)
 			}
 		}))
 
@@ -106,7 +106,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		inWriter.Write(inPck)
 
 		select {
-		case <-proc.Stack().Done(inPck):
+		case <-inWriter.Receive():
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -154,11 +154,11 @@ func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
 		outReader := out.Open(proc)
 
 		for {
-			outPck, ok := <-outReader.Read()
+			_, ok := <-outReader.Read()
 			if !ok {
 				return
 			}
-			proc.Stack().Clear(outPck)
+			outReader.Receive(packet.None)
 		}
 	}))
 

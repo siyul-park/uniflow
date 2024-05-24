@@ -126,61 +126,6 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
-
-	t.Run("In -> In, Out0 -> Out1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		})
-		defer n1.Close()
-
-		n2 := NewCallNode()
-		defer n2.Close()
-
-		n2.SetAsync(true)
-
-		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
-
-		in := port.NewOut()
-		in.Link(n2.In(node.PortIn))
-
-		out1 := port.NewIn()
-		n2.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-		outReader1 := out1.Open(proc)
-
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case <-proc.Stack().Done(inPck):
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-
-		var outPck *packet.Packet
-		select {
-		case outPck = <-outReader1.Read():
-			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
-			outReader1.Receive(outPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-
-		select {
-		case <-proc.Stack().Done(outPck):
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-	})
 }
 
 func TestCallNodeCodec_Decode(t *testing.T) {

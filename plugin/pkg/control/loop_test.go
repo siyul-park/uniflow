@@ -163,8 +163,6 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outReader0.Read():
 			backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
-			proc.Stack().Add(outPck, backPck)
-
 			outReader0.Receive(backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -218,18 +216,14 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 
 				backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
-				proc.Stack().Add(outPck, backPck)
-
 				outReader0.Receive(backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
 			}
 
 			select {
-			case outPck := <-errReader.Read():
+			case <-errReader.Read():
 				backPck := packet.New(primitive.NewString(faker.UUIDHyphenated()))
-				proc.Stack().Add(outPck, backPck)
-
 				errReader.Receive(backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")

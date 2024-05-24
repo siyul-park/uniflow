@@ -12,8 +12,6 @@ import (
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
-	async    bool
-	bridges  *process.Local[*port.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -23,7 +21,6 @@ type CallNode struct {
 // CallNodeSpec holds the specifications for creating a CallNode.
 type CallNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Async           bool `map:"async"`
 }
 
 var _ node.Node = (*CallNode)(nil)
@@ -33,32 +30,14 @@ const KindCall = "call"
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {
 	n := &CallNode{
-		bridges:  process.NewLocal[*port.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-	n.outPorts[0].AddInitHook(port.InitHookFunc(n.redirect))
-	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward))
-	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n
-}
-
-func (n *CallNode) Async() bool {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.async
-}
-
-func (n *CallNode) SetAsync(async bool) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.async = async
 }
 
 // In returns the input port with the specified name.
@@ -106,7 +85,6 @@ func (n *CallNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.bridges.Close()
 
 	return nil
 }
@@ -117,6 +95,8 @@ func (n *CallNode) forward(proc *process.Process) {
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
+	outWriter1 := n.outPorts[0].Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -124,79 +104,20 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 
-		outWriter0.Write(inPck)
-	}
-}
-
-func (n *CallNode) redirect(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	inReader := n.inPort.Open(proc)
-	outWriter0 := n.outPorts[0].Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-
-	for {
-		backPck, ok := <-outWriter0.Receive()
-		if !ok {
-			return
+		backPck := port.Call(outWriter0, inPck)
+		if backPck == packet.None {
+			inReader.Receive(backPck)
+			continue
 		}
 
 		if _, ok := packet.AsError(backPck); ok {
-			n.throw(proc, backPck)
-		} else if !outWriter1.Write(backPck) {
-			if !inReader.Receive(backPck) {
-				proc.Stack().Clear(backPck)
-			}
-		}
-	}
-}
-
-func (n *CallNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	inReader := n.inPort.Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-
-	for {
-		backPck, ok := <-outWriter1.Receive()
-		if !ok {
-			return
+			backPck = port.Call(errWriter, backPck)
+		} else {
+			backPck = port.Call(outWriter1, backPck)
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
-	}
-}
-
-func (n *CallNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	inReader := n.inPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
-
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
-	}
-}
-
-func (n *CallNode) throw(proc *process.Process, errPck *packet.Packet) {
-	inReader := n.inPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
-
-	if !errWriter.Write(errPck) {
-		if !inReader.Receive(errPck) {
-			proc.Stack().Clear(errPck)
+		if backPck == packet.None {
+			inReader.Receive(backPck)
 		}
 	}
 }
@@ -205,7 +126,6 @@ func (n *CallNode) throw(proc *process.Process, errPck *packet.Packet) {
 func NewCallNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
 		n := NewCallNode()
-		n.SetAsync(spec.Async)
 
 		return n, nil
 	})

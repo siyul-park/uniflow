@@ -22,6 +22,13 @@ func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
 	return <-writer.Receive()
 }
 
+func Discard(writer *Writer) {
+	go func() {
+		for range writer.Receive() {
+		}
+	}()
+}
+
 func NewWriter() *Writer {
 	w := &Writer{
 		in:   make(chan *packet.Packet),
