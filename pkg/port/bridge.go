@@ -22,12 +22,16 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 
 	receives := make(map[*Writer]*packet.Packet, len(writers))
 	for i := 0; i < len(writers); i++ {
-		if len(pcks) < i || pcks[i] == nil {
+		if len(pcks) < i {
 			break
 		}
 
 		writer := writers[i]
 		pck := pcks[i]
+
+		if pck == nil {
+			continue
+		}
 
 		if writer.Write(pck) > 0 {
 			receives[writer] = nil
