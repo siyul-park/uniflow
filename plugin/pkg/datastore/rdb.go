@@ -74,8 +74,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
 	query, ok := primitive.Pick[string](inPck.Payload())
 	if !ok {
