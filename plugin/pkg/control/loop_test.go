@@ -214,7 +214,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 			select {
 			case outPck := <-outReader0.Read():
 				assert.Equal(t, inPayload.Get(i), outPck.Payload())
-				
+
 				backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
 				outReader0.Receive(backPck)
 			case <-ctx.Done():

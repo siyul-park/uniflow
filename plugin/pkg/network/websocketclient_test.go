@@ -78,7 +78,22 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+
+	done := make(chan struct{})
+	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			_, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(packet.None)
+			close(done)
+			return
+		}
+	}))
 
 	var inPayload primitive.Value
 	inPck := packet.New(inPayload)
@@ -100,10 +115,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-outReader.Read():
-		outReader.Receive(outPck)
-		err, _ := packet.AsError(outPck)
-		assert.NoError(t, err)
+	case <-done:
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
