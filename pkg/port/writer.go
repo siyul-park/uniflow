@@ -19,7 +19,11 @@ func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
 	if writer.Write(pck) == 0 {
 		return packet.None
 	}
-	return <-writer.Receive()
+	pck, ok := <-writer.Receive()
+	if !ok {
+		return packet.None
+	}
+	return pck
 }
 
 func Discard(writer *Writer) {

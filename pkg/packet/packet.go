@@ -26,7 +26,7 @@ func Merge(pcks []*Packet) *Packet {
 
 	payloads := make([]primitive.Value, 0, len(pcks))
 	for _, pck := range pcks {
-		if pck != None {
+		if pck != nil && pck != None {
 			payloads = append(payloads, pck.Payload())
 		}
 	}

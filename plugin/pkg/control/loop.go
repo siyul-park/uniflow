@@ -136,22 +136,24 @@ func (n *LoopNode) forward(proc *process.Process) {
 			outPcks[i] = outPck
 		}
 
-		backPcks := make([]*packet.Packet, len(outPcks))
-		for i, outPck := range outPcks {
-			backPcks[i] = port.Call(outWriter0, outPck)
-		}
-
-		backPck := packet.Merge(backPcks)
-		if _, ok := packet.AsError(backPck); ok {
-			if errWriter.Write(backPck) > 0 {
-				backPck = <-errWriter.Receive()
+		backPcks := make([]*packet.Packet, 0, len(outPcks))
+		for _, outPck := range outPcks {
+			backPck := port.Call(outWriter0, outPck)
+			if _, ok := packet.AsError(backPck); ok {
+				if errWriter.Write(backPck) > 0 {
+					backPck = <-errWriter.Receive()
+				}
+			}
+			backPcks = append(backPcks, backPck)
+			if _, ok := packet.AsError(backPck); ok {
+				break
 			}
 		}
 
+		backPck := packet.Merge(backPcks)
 		if _, ok := packet.AsError(backPck); !ok {
 			backPck = port.Call(outWriter1, backPck)
 		}
-
 		inReader.Receive(backPck)
 	}
 }

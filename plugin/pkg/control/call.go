@@ -116,9 +116,7 @@ func (n *CallNode) forward(proc *process.Process) {
 			backPck = port.Call(outWriter1, backPck)
 		}
 
-		if backPck == packet.None {
-			inReader.Receive(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }
 
