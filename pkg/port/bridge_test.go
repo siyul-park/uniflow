@@ -46,3 +46,47 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 	pck3 := <-w1.Receive()
 	assert.Equal(t, pck1, pck3)
 }
+
+func BenchmarkBridge_WriteAndReceive(b *testing.B) {
+	br := NewBridge()
+	defer br.Close()
+
+	w1 := NewWriter()
+	defer w1.Close()
+
+	w2 := NewWriter()
+	defer w2.Close()
+
+	r1 := NewReader()
+	defer r1.Close()
+
+	r2 := NewReader()
+	defer r2.Close()
+
+	w1.Link(r1)
+	w2.Link(r2)
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			pck1 := packet.New(nil)
+
+			w1.Write(pck1)
+			<-r1.Read()
+
+			count := br.Write([]*packet.Packet{pck1}, []*Reader{r1}, []*Writer{w2})
+			assert.Equal(b, 1, count)
+
+			pck2 := <-r2.Read()
+			assert.Equal(b, pck1, pck2)
+
+			r2.Receive(pck2)
+			<-w2.Receive()
+
+			ok := br.Receive(pck2, w2)
+			assert.True(b, ok)
+
+			pck3 := <-w1.Receive()
+			assert.Equal(b, pck1, pck3)
+		}
+	})
+}
