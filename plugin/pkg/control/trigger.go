@@ -47,7 +47,7 @@ func NewTriggerNode(producer *event.Producer, consumer *event.Consumer) *Trigger
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	return n
 }
@@ -111,21 +111,17 @@ func (n *TriggerNode) Listen() {
 			outWriter := n.outPort.Open(proc)
 			errWriter := n.errPort.Open(proc)
 
-			port.Discard(outWriter)
-			port.Discard(errWriter)
-
 			if outPayload, err := primitive.MarshalText(e.Data()); err != nil {
 				errPck := packet.WithError(err, nil)
-				errWriter.Write(errPck)
+				port.Call(errWriter, errPck)
 			} else {
 				outPck := packet.New(outPayload)
-				outWriter.Write(outPck)
+				port.Call(outWriter, outPck)
 			}
 
-			go func() {
-				proc.Close()
-				e.Close()
-			}()
+			proc.Wait()
+			proc.Exit(nil)
+			e.Close()
 		}
 	}()
 }
@@ -182,7 +178,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 		e := event.New(primitive.Interface(inPayload))
 		n.producer.Produce(e)
 
-		proc.Stack().Clear(inPck)
+		inReader.Receive(packet.None)
 	}
 }
 

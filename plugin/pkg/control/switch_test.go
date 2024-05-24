@@ -36,7 +36,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)
@@ -94,7 +94,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 	n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)

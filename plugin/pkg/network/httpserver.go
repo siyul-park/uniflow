@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // HTTPServerNode represents a Node for handling HTTP requests.
@@ -45,9 +45,7 @@ func NewHTTPServerNode(address string) *HTTPServerNode {
 		errPort: port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
-	n.outPort.AddHandler(port.HandlerFunc(n.backward))
-	n.outPort.AddHandler(port.HandlerFunc(n.catch))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	s := new(http.Server)
 	s.Addr = address
@@ -153,31 +151,56 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proc := process.New()
 
-	proc.Heap().Store(KeyHTTPResponseWriter, w)
-	proc.Heap().Store(KeyHTTPRequest, r)
+	proc.Data().Store(KeyHTTPResponseWriter, w)
+	proc.Data().Store(KeyHTTPRequest, r)
 
 	outWriter := n.outPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
 
-	if req, err := n.read(r); err != nil {
-		n.throw(proc, packet.WithError(err, nil))
+	var outPck *packet.Packet
+	var errPck *packet.Packet
+	req, err := n.read(r)
+	if err != nil {
+		errPck = packet.WithError(err, nil)
 	} else if outPayload, err := primitive.MarshalText(req); err != nil {
-		n.throw(proc, packet.WithError(err, nil))
-	} else if outWriter.Links() > 0 {
-		outPck := packet.New(outPayload)
-		tx := transaction.New()
-
-		proc.Stack().Add(nil, outPck)
-		proc.SetTransaction(outPck, tx)
-
-		if !outWriter.Write(outPck) {
-			proc.Stack().Clear(outPck)
-		}
-
-		<-proc.Stack().Done(outPck)
-		_ = tx.Commit()
+		errPck = packet.WithError(err, nil)
+	} else {
+		outPck = packet.New(outPayload)
 	}
 
-	go proc.Close()
+	var backPck *packet.Packet
+	if errPck != nil {
+		backPck = port.Call(errWriter, errPck)
+	} else {
+		backPck = port.Call(outWriter, outPck)
+		if _, ok := packet.AsError(backPck); ok {
+			if errWriter.Write(backPck) > 0 {
+				backPck = <-errWriter.Receive()
+			}
+		}
+	}
+
+	err = nil
+	if backPck != packet.None {
+		var res *HTTPPayload
+		if _, ok := packet.AsError(backPck); ok {
+			res = NewHTTPPayload(http.StatusInternalServerError)
+		} else if err := primitive.Unmarshal(backPck.Payload(), &res); err != nil {
+			res.Body = backPck.Payload()
+		}
+
+		n.negotiate(req, res)
+		_ = n.write(w, res)
+
+		if res.Status >= 400 && res.Status < 600 {
+			err = errors.New(http.StatusText(res.Status))
+		}
+	}
+
+	go func() {
+		proc.Wait()
+		proc.Exit(err)
+	}()
 }
 
 // Close closes all ports and stops the HTTP server.
@@ -204,105 +227,41 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 			return
 		}
 
-		proc.Stack().Clear(inPck)
-		n.receive(proc, inPck)
-	}
-}
-
-func (n *HTTPServerNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	outWriter := n.outPort.Open(proc)
-
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
-		if _, ok := packet.AsError(backPck); ok {
-			n.throw(proc, backPck)
-		} else {
-			n.receive(proc, backPck)
-		}
-	}
-}
-
-func (n *HTTPServerNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	errWriter := n.errPort.Open(proc)
-
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		n.receive(proc, backPck)
-	}
-}
-
-func (n *HTTPServerNode) throw(proc *process.Process, errPck *packet.Packet) {
-	errWriter := n.errPort.Open(proc)
-
-	if !errWriter.Write(errPck) {
-		n.receive(proc, errPck)
-	}
-}
-
-func (n *HTTPServerNode) receive(proc *process.Process, backPck *packet.Packet) {
-	var res *HTTPPayload
-	if _, ok := packet.AsError(backPck); ok {
-		res = NewHTTPPayload(http.StatusInternalServerError)
-	} else if err := primitive.Unmarshal(backPck.Payload(), &res); err != nil {
-		res.Body = backPck.Payload()
-	}
-
-	if r, ok := proc.Heap().Load(KeyHTTPRequest).(*http.Request); ok {
-		acceptEncoding := r.Header.Get(HeaderAcceptEncoding)
-		accept := r.Header.Get(HeaderAccept)
-
-		contentEncoding := Negotiate(acceptEncoding, []string{EncodingIdentity, EncodingGzip, EncodingDeflate, EncodingBr})
-		contentType := Negotiate(accept, []string{ApplicationJSON, ApplicationForm, ApplicationOctetStream, TextPlain, MultipartFormData})
-
-		negotiate := func(payload *HTTPPayload) {
-			if payload == nil {
-				return
+		w, ok1 := proc.Data().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
+		r, ok2 := proc.Data().Load(KeyHTTPRequest).(*http.Request)
+		if ok1 && ok2 {
+			req, err := n.read(r)
+			if err != nil {
+				inPck = packet.WithError(err, nil)
 			}
-			if payload.Header == nil {
-				payload.Header = http.Header{}
-			}
-			if payload.Header.Get(HeaderContentEncoding) == "" {
-				payload.Header.Set(HeaderContentEncoding, contentEncoding)
-			}
-			if payload.Header.Get(HeaderContentType) == "" {
-				payload.Header.Set(HeaderContentType, contentType)
-			}
-		}
 
-		negotiate(res)
-
-		if w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
-			if err := n.write(w, res); err != nil {
+			var res *HTTPPayload
+			if _, ok := packet.AsError(inPck); ok {
 				res = NewHTTPPayload(http.StatusInternalServerError)
-				negotiate(res)
-
-				_ = n.write(w, res)
+			} else if err := primitive.Unmarshal(inPck.Payload(), &res); err != nil {
+				res.Body = inPck.Payload()
 			}
+
+			n.negotiate(req, res)
+			_ = n.write(w, res)
 		}
-	}
 
-	tx := proc.Transaction(backPck)
-	if res.Status < 400 {
-		tx.Commit()
-	} else {
-		tx.Rollback()
+		inReader.Receive(packet.None)
 	}
+}
 
-	proc.Stack().Clear(backPck)
+func (n *HTTPServerNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
+	if res.Header == nil {
+		res.Header = http.Header{}
+	}
+	if res.Header.Get(HeaderContentEncoding) == "" {
+		acceptEncoding := req.Header.Get(HeaderAcceptEncoding)
+		res.Header.Set(HeaderContentEncoding, Negotiate(acceptEncoding, []string{EncodingIdentity, EncodingGzip, EncodingDeflate, EncodingBr}))
+	}
+	if res.Header.Get(HeaderContentType) == "" {
+		accept := req.Header.Get(HeaderAccept)
+		res.Header.Set(HeaderContentType, Negotiate(accept, []string{ApplicationJSON, ApplicationForm, ApplicationOctetStream, TextPlain, MultipartFormData}))
+	}
 }
 
 func (n *HTTPServerNode) read(r *http.Request) (*HTTPPayload, error) {

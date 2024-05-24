@@ -1,101 +1,102 @@
 package process
 
-import (
-	"context"
-	"sync"
+import "sync"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/transaction"
+type Process struct {
+	data      *Data
+	status    Status
+	err       error
+	parent    *Process
+	wait      sync.WaitGroup
+	exitHooks []ExitHook
+	mu        sync.RWMutex
+}
+
+type Status int
+
+const (
+	StatusRunning Status = iota
+	StatusTerminated
 )
 
-// Process is a processing unit that isolates data processing from others.
-type Process struct {
-	stack        *Stack
-	heap         *Heap
-	transactions *Transactions
-	ctx          context.Context
-	done         chan struct{}
-	wait         sync.WaitGroup
-	mu           sync.Mutex
-}
+var _ ExitHook = (*Process)(nil)
 
-// New creates a new Process.
 func New() *Process {
-	s := newStack()
-	h := newHeap()
-	t := newTransactions(s)
-
-	p := &Process{
-		stack:        s,
-		heap:         h,
-		transactions: t,
-		done:         make(chan struct{}),
+	return &Process{
+		data: newData(),
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	p.ctx = ctx
-
-	go func() {
-		<-p.Done()
-		cancel()
-	}()
-
-	return p
 }
 
-// Stack returns a process's stack.
-func (p *Process) Stack() *Stack {
-	return p.stack
+func (p *Process) Data() *Data {
+	return p.data
 }
 
-// Heap returns a process's heap.
-func (p *Process) Heap() *Heap {
-	return p.heap
+func (p *Process) Status() Status {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.status
 }
 
-// Transaction returns the transaction associated with the packet.
-func (p *Process) Transaction(pck *packet.Packet) *transaction.Transaction {
-	return p.transactions.Get(pck)
+func (p *Process) Err() error {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.err
 }
 
-// SetTransaction associates the transaction with the packet.
-func (p *Process) SetTransaction(pck *packet.Packet, tx *transaction.Transaction) {
-	p.transactions.Set(pck, tx)
+func (p *Process) Parent() *Process {
+	return p.parent
 }
 
-// Context returns a process's context.
-func (p *Process) Context() context.Context {
-	return p.ctx
+func (p *Process) Wait() {
+	p.wait.Wait()
 }
 
-// Done returns a channel that is closed when the process is closed.
-func (p *Process) Done() <-chan struct{} {
-	return p.done
+func (p *Process) Fork() *Process {
+	p.wait.Add(1)
+
+	child := &Process{
+		data: p.data.Fork(),
+		exitHooks: []ExitHook{ExitHookFunc(func(err error) {
+			p.wait.Done()
+		})},
+		parent: p,
+	}
+	p.AddExitHook(ExitHookFunc(func(err error) {
+		child.Exit(err)
+	}))
+
+	return child
 }
 
-// Ref acquires a lock on the process.
-func (p *Process) Ref(count int) {
-	p.wait.Add(count)
-}
-
-// Close closes the process.
-func (p *Process) Close() {
+func (p *Process) AddExitHook(h ExitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	select {
-	case <-p.done:
+	if p.status == StatusTerminated {
 		return
-	default:
 	}
 
-	p.wait.Wait()
-	<-p.stack.Done(nil)
+	p.exitHooks = append(p.exitHooks, h)
+}
 
-	_ = p.transactions.Commit()
+func (p *Process) Exit(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	p.heap.Close()
-	p.stack.Close()
+	if p.status == StatusTerminated {
+		return
+	}
 
-	close(p.done)
+	for i := len(p.exitHooks) - 1; i >= 0; i-- {
+		h := p.exitHooks[i]
+		h.Exit(err)
+	}
+
+	p.data.Close()
+
+	p.status = StatusTerminated
+	p.err = err
+	p.exitHooks = nil
 }

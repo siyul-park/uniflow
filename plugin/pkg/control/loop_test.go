@@ -48,7 +48,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -95,7 +95,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
@@ -147,7 +147,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
@@ -163,8 +163,6 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-outReader0.Read():
 			backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
-			proc.Stack().Add(outPck, backPck)
-
 			outReader0.Receive(backPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
@@ -197,7 +195,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
@@ -218,18 +216,14 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 
 				backPck := packet.WithError(errors.New(faker.Sentence()), outPck)
-				proc.Stack().Add(outPck, backPck)
-
 				outReader0.Receive(backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
 			}
 
 			select {
-			case outPck := <-errReader.Read():
+			case <-errReader.Read():
 				backPck := packet.New(primitive.NewString(faker.UUIDHyphenated()))
-				proc.Stack().Add(outPck, backPck)
-
 				errReader.Receive(backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -266,7 +260,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -323,7 +317,7 @@ func BenchmarkLoopNode_SendAndReceive(b *testing.B) {
 	n.Out(node.PortWithIndex(node.PortOut, 1)).Link(out1)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)

@@ -314,7 +314,7 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx := proc.Context()
+	ctx := context.Background()
 	if n.timeout != 0 {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, n.timeout)

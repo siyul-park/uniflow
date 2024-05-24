@@ -12,22 +12,12 @@ import (
 // ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
 	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	recorder *packetRecorder
+	gateways *process.Local[*port.Gateway]
+	bridges  *process.Local[*port.Bridge]
 	inPorts  []*port.InPort
 	outPort  *port.OutPort
 	errPort  *port.OutPort
 	mu       sync.RWMutex
-}
-
-type packetRecorder struct {
-	queues map[*process.Process]*packetQueue
-	mu     sync.RWMutex
-}
-
-type packetQueue struct {
-	data   [][]*packet.Packet
-	resume bool
-	mu     sync.RWMutex
 }
 
 var _ Node = (*ManyToOneNode)(nil)
@@ -35,17 +25,16 @@ var _ Node = (*ManyToOneNode)(nil)
 // NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
-		action: action,
-		recorder: &packetRecorder{
-			queues: make(map[*process.Process]*packetQueue),
-		},
-		outPort: port.NewOut(),
-		errPort: port.NewOut(),
+		action:   action,
+		gateways: process.NewLocal[*port.Gateway](),
+		bridges:  process.NewLocal[*port.Bridge](),
+		outPort:  port.NewOut(),
+		errPort:  port.NewOut(),
 	}
 
 	if n.action != nil {
-		n.outPort.AddHandler(port.HandlerFunc(n.backward))
-		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+		n.outPort.AddInitHook(port.InitHookFunc(n.backward))
+		n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 	}
 
 	return n
@@ -63,7 +52,7 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 				n.inPorts = append(n.inPorts, inPort)
 
 				if n.action != nil {
-					inPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+					inPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 						n.forward(proc, j)
 					}))
 				}
@@ -101,6 +90,8 @@ func (n *ManyToOneNode) Close() error {
 	}
 	n.outPort.Close()
 	n.errPort.Close()
+	n.gateways.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -109,9 +100,42 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	gateway, _ := n.gateways.LoadOrStore(proc, func() (*port.Gateway, error) {
+		bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+			return port.NewBridge(), nil
+		})
+
+		inReaders := make([]*port.Reader, len(n.inPorts))
+		for i, inPort := range n.inPorts {
+			inReaders[i] = inPort.Open(proc)
+		}
+		outWriter := n.outPort.Open(proc)
+		errWriter := n.errPort.Open(proc)
+
+		return port.NewGateway(inReaders, port.ForwardHookFunc(func(pcks []*packet.Packet) bool {
+			inReaders := lo.Filter(inReaders, func(_ *port.Reader, i int) bool {
+				return pcks[i] != nil
+			})
+
+			outPck, errPck := n.action(proc, pcks)
+			if outPck == nil && errPck == nil {
+				if len(pcks) == len(inReaders) {
+					bridge.Write(nil, inReaders, nil)
+					return true
+				}
+				return false
+			}
+
+			if errPck != nil {
+				bridge.Write([]*packet.Packet{errPck}, inReaders, []*port.Writer{errWriter})
+			} else {
+				bridge.Write([]*packet.Packet{outPck}, inReaders, []*port.Writer{outWriter})
+			}
+			return true
+		})), nil
+	})
+
 	inReader := n.inPorts[index].Open(proc)
-	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -119,59 +143,17 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 			return
 		}
 
-		n.recorder.provide(proc, index, inPck)
-		n.recorder.consume(proc, func(inPcks []*packet.Packet) bool {
-			inReaders := make([]*port.Reader, len(n.inPorts))
-			for i, inPort := range n.inPorts {
-				inReaders[i] = inPort.Open(proc)
-			}
-
-			for len(inPcks) < len(inReaders) {
-				inPcks = append(inPcks, nil)
-			}
-			inPcks = lo.Filter(inPcks, func(_ *packet.Packet, i int) bool {
-				return inReaders[i].Links() > 0
-			})
-			inReaders = lo.Filter(inReaders, func(item *port.Reader, _ int) bool {
-				return item.Links() > 0
-			})
-
-			outPck, errPck := n.action(proc, inPcks)
-
-			inPcks = lo.Filter(inPcks, func(item *packet.Packet, _ int) bool {
-				return item != nil
-			})
-
-			if errPck != nil {
-				for _, inPck := range inPcks {
-					proc.Stack().Add(inPck, errPck)
-				}
-				if !errWriter.Write(errPck) {
-					n.receive(proc, errPck)
-				}
-			} else if outPck != nil {
-				for _, inPck := range inPcks {
-					proc.Stack().Add(inPck, outPck)
-				}
-				if !outWriter.Write(outPck) {
-					proc.Stack().Clear(outPck)
-				}
-			} else {
-				if len(inPcks) < len(inReaders) {
-					return false
-				}
-				for _, inPck := range inPcks {
-					proc.Stack().Clear(inPck)
-				}
-			}
-			return true
-		})
+		gateway.Write(inPck, inReader)
 	}
 }
 
 func (n *ManyToOneNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
 
 	outWriter := n.outPort.Open(proc)
 
@@ -181,13 +163,17 @@ func (n *ManyToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		n.receive(proc, backPck)
+		bridge.Receive(backPck, outWriter)
 	}
 }
 
 func (n *ManyToOneNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
 
 	errWriter := n.errPort.Open(proc)
 
@@ -197,98 +183,6 @@ func (n *ManyToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		n.receive(proc, backPck)
-	}
-}
-
-func (n *ManyToOneNode) receive(proc *process.Process, backPck *packet.Packet) {
-	inReaders := make([]*port.Reader, len(n.inPorts))
-	for i, inPort := range n.inPorts {
-		inReaders[i] = inPort.Open(proc)
-	}
-
-	costs := make([]int, len(inReaders))
-	for i, inReader := range inReaders {
-		costs[i] = inReader.Cost(backPck)
-	}
-
-	min := lo.Min(costs)
-	for i, cost := range costs {
-		if cost == min {
-			if !inReaders[i].Receive(backPck) {
-				proc.Stack().Clear(backPck)
-			}
-		}
-	}
-}
-
-func (r *packetRecorder) provide(proc *process.Process, index int, pck *packet.Packet) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	queue, ok := r.queues[proc]
-	if !ok {
-		queue = &packetQueue{}
-		r.queues[proc] = queue
-
-		go func() {
-			<-proc.Done()
-
-			r.mu.Lock()
-			defer r.mu.Unlock()
-
-			delete(r.queues, proc)
-		}()
-	}
-
-	queue.provide(index, pck)
-}
-
-func (r *packetRecorder) consume(proc *process.Process, fn func([]*packet.Packet) bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	if queue, ok := r.queues[proc]; ok {
-		queue.consume(fn)
-	}
-}
-
-func (q *packetQueue) provide(index int, pck *packet.Packet) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	for len(q.data) <= index {
-		q.data = append(q.data, nil)
-	}
-	q.data[index] = append(q.data[index], pck)
-
-	if !q.resume {
-		q.resume = len(q.data[index]) == 1
-	}
-}
-
-func (q *packetQueue) consume(fn func([]*packet.Packet) bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	if !q.resume {
-		return
-	}
-
-	buffer := make([]*packet.Packet, len(q.data))
-	for i, data := range q.data {
-		if len(data) > 0 {
-			buffer[i] = data[0]
-		}
-	}
-
-	if fn(buffer) {
-		for i := range q.data {
-			if len(q.data[i]) > 0 {
-				q.data[i] = q.data[i][1:]
-			}
-		}
-	} else {
-		q.resume = false
+		bridge.Receive(backPck, errWriter)
 	}
 }

@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 
@@ -10,14 +11,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 )
 
 // RDBNode represents a node for interacting with a relational database.
 type RDBNode struct {
 	*node.OneToOneNode
 	db        *sqlx.DB
-	txs       *transaction.Local[*sqlx.Tx]
+	txs       *process.Local[*sqlx.Tx]
 	isolation sql.IsolationLevel
 	mu        sync.RWMutex
 }
@@ -36,7 +36,7 @@ const KindRDB = "rdb"
 func NewRDBNode(db *sqlx.DB) *RDBNode {
 	n := &RDBNode{
 		db:  db,
-		txs: transaction.NewLocal[*sqlx.Tx](),
+		txs: process.NewLocal[*sqlx.Tx](),
 	}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
@@ -74,7 +74,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx := proc.Context()
+	ctx := context.Background()
 
 	query, ok := primitive.Pick[string](inPck.Payload())
 	if !ok {
@@ -84,8 +84,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return nil, packet.WithError(packet.ErrInvalidPacket, inPck)
 	}
 
-	parent := proc.Transaction(inPck)
-	tx, err := n.txs.LoadOrStore(parent, func() (*sqlx.Tx, error) {
+	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
 		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{
 			Isolation: n.isolation,
 		})
@@ -93,8 +92,13 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, err
 		}
 
-		parent.AddCommitHook(tx)
-		parent.AddRollbackHook(tx)
+		proc.AddExitHook(process.ExitHookFunc(func(err error) {
+			if err != nil {
+				tx.Rollback()
+			} else {
+				tx.Commit()
+			}
+		}))
 
 		return tx, nil
 	})

@@ -5,65 +5,78 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/transaction"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestProcess_Data(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
-	assert.NotNil(t, proc)
+	assert.NotNil(t, proc.Data())
+	assert.Equal(t, nil, proc.Err())
+	assert.Equal(t, StatusRunning, proc.Status())
 }
 
-func TestProcess_Stack(t *testing.T) {
+func TestProcess_Exit(t *testing.T) {
 	proc := New()
-	defer proc.Close()
 
-	assert.NotNil(t, proc.Stack())
+	proc.Exit(nil)
+	assert.Equal(t, nil, proc.Err())
+	assert.Equal(t, StatusTerminated, proc.Status())
 }
 
-func TestProcess_Heap(t *testing.T) {
+func TestProcess_AddExitHook(t *testing.T) {
 	proc := New()
-	defer proc.Close()
 
-	assert.NotNil(t, proc.Heap())
+	count := 0
+	h := ExitHookFunc(func(err error) {
+		count++
+	})
+	proc.AddExitHook(h)
+
+	proc.Exit(nil)
+	assert.Equal(t, 1, count)
 }
 
-func TestProcess_Context(t *testing.T) {
+func TestProcess_Fork(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
-	assert.NotNil(t, proc.Context())
+	child := proc.Fork()
+	defer child.Exit(nil)
+
+	assert.Equal(t, proc, child.Parent())
 }
 
-func TestProcess_Transaction(t *testing.T) {
+func TestProcess_Wait(t *testing.T) {
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
-	pck := packet.New(nil)
-	tx := transaction.New()
+	child := proc.Fork()
+	defer child.Exit(nil)
 
-	proc.SetTransaction(pck, tx)
-	assert.Equal(t, tx, proc.Transaction(pck))
-}
-
-func TestProcess_Ref(t *testing.T) {
-	proc := New()
-
-	proc.Ref(1)
-
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	done := make(chan struct{})
 	go func() {
-		proc.Close()
+		child.Wait()
 		close(done)
 	}()
 
-	proc.Ref(-1)
+	select {
+	case <-done:
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+
+	done = make(chan struct{})
+	go func() {
+		proc.Wait()
+		close(done)
+	}()
+
+	child.Exit(nil)
 
 	select {
 	case <-done:
@@ -72,27 +85,9 @@ func TestProcess_Ref(t *testing.T) {
 	}
 }
 
-func TestProcess_Close(t *testing.T) {
-	proc := New()
-
-	select {
-	case <-proc.Done():
-		assert.Fail(t, "proc.Done() is not empty.")
-	default:
-	}
-
-	proc.Close()
-
-	select {
-	case <-proc.Done():
-	default:
-		assert.Fail(t, "proc.Done() is empty.")
-	}
-}
-
 func BenchmarkNewProcess(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		proc := New()
-		proc.Close()
+		proc.Exit(nil)
 	}
 }

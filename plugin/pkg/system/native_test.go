@@ -35,7 +35,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -67,7 +67,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -99,7 +99,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -129,7 +129,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -161,7 +161,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -196,7 +196,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)

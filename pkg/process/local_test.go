@@ -12,7 +12,7 @@ func TestLocal_Load(t *testing.T) {
 	defer l.Close()
 
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	v := faker.UUIDHyphenated()
 
@@ -31,7 +31,7 @@ func TestLocal_Store(t *testing.T) {
 	defer l.Close()
 
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	v1 := faker.UUIDHyphenated()
 	v2 := faker.UUIDHyphenated()
@@ -49,7 +49,7 @@ func TestLocal_Delete(t *testing.T) {
 	defer l.Close()
 
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	v := faker.UUIDHyphenated()
 
@@ -67,7 +67,7 @@ func TestLocal_LoadOrStore(t *testing.T) {
 	defer l.Close()
 
 	proc := New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	v := faker.UUIDHyphenated()
 

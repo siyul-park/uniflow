@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -12,6 +11,7 @@ import (
 // OneToManyNode represents a node with one input and multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
+	bridges  *process.Local[*port.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -24,14 +24,15 @@ var _ Node = (*OneToManyNode)(nil)
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
+		bridges:  process.NewLocal[*port.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: nil,
 		errPort:  port.NewOut(),
 	}
 
 	if n.action != nil {
-		n.inPort.AddHandler(port.HandlerFunc(n.forward))
-		n.errPort.AddHandler(port.HandlerFunc(n.catch))
+		n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+		n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 	}
 
 	return n
@@ -66,7 +67,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 					n.outPorts = append(n.outPorts, outPort)
 
 					if n.action != nil {
-						outPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+						outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 							n.backward(proc, j)
 						}))
 					}
@@ -90,6 +91,7 @@ func (n *OneToManyNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -97,6 +99,10 @@ func (n *OneToManyNode) Close() error {
 func (n *OneToManyNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
 
 	inReader := n.inPort.Open(proc)
 	outWriters := make([]*port.Writer, len(n.outPorts))
@@ -112,37 +118,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			proc.Stack().Add(inPck, errPck)
-			if !errWriter.Write(errPck) {
-				if !inReader.Receive(errPck) {
-					proc.Stack().Clear(errPck)
-				}
-			}
+			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
 		} else {
-			if len(outPcks) > len(outWriters) {
-				outPcks = outPcks[:len(outWriters)]
-			}
-			outWriters = lo.Filter(outWriters, func(_ *port.Writer, i int) bool {
-				return len(outPcks) > i && outPcks[i] != nil
-			})
-			outPcks = lo.Filter(outPcks, func(item *packet.Packet, _ int) bool {
-				return item != nil
-			})
-
-			if len(outPcks) > 0 {
-				for _, outPck := range outPcks {
-					proc.Stack().Add(inPck, outPck)
-				}
-				for i, outPck := range outPcks {
-					if !outWriters[i].Write(outPck) {
-						if !inReader.Receive(outPck) {
-							proc.Stack().Clear(outPck)
-						}
-					}
-				}
-			} else {
-				proc.Stack().Clear(inPck)
-			}
+			bridge.Write(outPcks, []*port.Reader{inReader}, outWriters)
 		}
 	}
 }
@@ -151,7 +129,10 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	outWriter := n.outPorts[index].Open(proc)
 
 	for {
@@ -160,9 +141,7 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		bridge.Receive(backPck, outWriter)
 	}
 }
 
@@ -170,7 +149,10 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	errWriter := n.errPort.Open(proc)
 
 	for {
@@ -179,8 +161,6 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		bridge.Receive(backPck, errWriter)
 	}
 }

@@ -29,7 +29,7 @@ func TestOneToOneNode_Port(t *testing.T) {
 }
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out -> In", func(t *testing.T) {
+	t.Run("ForwardPacket", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -45,7 +45,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -71,7 +71,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Error -> In", func(t *testing.T) {
+	t.Run("HandleErrorPacket", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -87,7 +87,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
@@ -127,7 +127,7 @@ func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 	n.Out(PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 	outReader := out.Open(proc)

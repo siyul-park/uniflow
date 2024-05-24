@@ -15,6 +15,7 @@ import (
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
 	batch    int
+	bridges  *process.Local[*port.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -33,13 +34,13 @@ const KindLoop = "loop"
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{
 		batch:    1,
+		bridges:  process.NewLocal[*port.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
-	n.outPorts[0].AddHandler(port.HandlerFunc(n.backward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	return n
 }
@@ -106,6 +107,7 @@ func (n *LoopNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -131,96 +133,28 @@ func (n *LoopNode) forward(proc *process.Process) {
 		outPcks := make([]*packet.Packet, len(outPayloads))
 		for i, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
-			proc.Stack().Add(inPck, outPck)
-
 			outPcks[i] = outPck
 		}
 
-		var backPcks []*packet.Packet
-		var catch bool
-	Loop:
-		for i, outPck := range outPcks {
-			if !outWriter0.Write(outPck) {
-				proc.Stack().Clear(outPck)
-				continue
+		backPcks := make([]*packet.Packet, 0, len(outPcks))
+		for _, outPck := range outPcks {
+			backPck := port.Call(outWriter0, outPck)
+			if _, ok := packet.AsError(backPck); ok {
+				if errWriter.Write(backPck) > 0 {
+					backPck = <-errWriter.Receive()
+				}
 			}
-
-			select {
-			case <-proc.Stack().Done(outPck):
-			case backPck, ok := <-outWriter0.Receive():
-				if !ok {
-					return
-				}
-
-				proc.Stack().Unwind(backPck, outPck)
-
-				if _, ok := packet.AsError(backPck); ok {
-					if errWriter.Write(backPck) {
-						if backPck, ok = <-errWriter.Receive(); !ok {
-							return
-						}
-					}
-				}
-
-				if _, ok := packet.AsError(backPck); ok {
-					if !inReader.Receive(backPck) {
-						proc.Stack().Clear(backPck)
-					}
-
-					for _, backPck := range backPcks {
-						proc.Stack().Clear(backPck)
-					}
-					for j := i + 1; j < len(outPcks); j++ {
-						outPck := outPcks[j]
-						proc.Stack().Clear(outPck)
-					}
-
-					backPcks = nil
-					catch = true
-
-					break Loop
-				}
-
-				backPcks = append(backPcks, backPck)
+			backPcks = append(backPcks, backPck)
+			if _, ok := packet.AsError(backPck); ok {
+				break
 			}
 		}
 
-		if len(backPcks) > 0 {
-			backPayloads := lo.Map(backPcks, func(backPck *packet.Packet, _ int) primitive.Value {
-				return backPck.Payload()
-			})
-
-			outPayload := primitive.NewSlice(backPayloads...)
-			outPck := packet.New(outPayload)
-			proc.Stack().Add(inPck, outPck)
-
-			if !outWriter1.Write(outPck) {
-				if !inReader.Receive(outPck) {
-					proc.Stack().Clear(outPck)
-				}
-			}
-		} else if !catch {
-			proc.Stack().Clear(inPck)
+		backPck := packet.Merge(backPcks)
+		if _, ok := packet.AsError(backPck); !ok {
+			backPck = port.Call(outWriter1, backPck)
 		}
-	}
-}
-
-func (n *LoopNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	inReader := n.inPort.Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-
-	for {
-		backPck, ok := <-outWriter1.Receive()
-		if !ok {
-			return
-		}
-
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		inReader.Receive(backPck)
 	}
 }
 

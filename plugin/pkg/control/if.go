@@ -16,6 +16,7 @@ import (
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
 type IfNode struct {
 	when     func(any) (bool, error)
+	bridges  *process.Local[*port.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -49,19 +50,20 @@ func NewIfNode(code, lang string) (*IfNode, error) {
 			}
 			return !reflect.ValueOf(output).IsZero(), nil
 		},
+		bridges:  process.NewLocal[*port.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddHandler(port.HandlerFunc(n.forward))
+	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 	for i, outPort := range n.outPorts {
 		i := i
-		outPort.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+		outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 			n.backward(proc, i)
 		}))
 	}
-	n.errPort.AddHandler(port.HandlerFunc(n.catch))
+	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n, nil
 }
@@ -111,6 +113,7 @@ func (n *IfNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -119,9 +122,14 @@ func (n *IfNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -134,20 +142,11 @@ func (n *IfNode) forward(proc *process.Process) {
 
 		if ok, err := n.when(input); err != nil {
 			errPck := packet.WithError(err, inPck)
-			proc.Stack().Add(inPck, errPck)
-			n.throw(proc, errPck)
+			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
 		} else if ok {
-			if !outWriter0.Write(inPck) {
-				if !inReader.Receive(inPck) {
-					proc.Stack().Clear(inPck)
-				}
-			}
+			bridge.Write([]*packet.Packet{inPck}, []*port.Reader{inReader}, []*port.Writer{outWriter0})
 		} else {
-			if !outWriter1.Write(inPck) {
-				if !inReader.Receive(inPck) {
-					proc.Stack().Clear(inPck)
-				}
-			}
+			bridge.Write([]*packet.Packet{inPck}, []*port.Reader{inReader}, []*port.Writer{outWriter1})
 		}
 	}
 }
@@ -156,7 +155,10 @@ func (n *IfNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	outWriter := n.outPorts[index].Open(proc)
 
 	for {
@@ -165,9 +167,7 @@ func (n *IfNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
+		bridge.Receive(backPck, outWriter)
 	}
 }
 
@@ -175,7 +175,10 @@ func (n *IfNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inReader := n.inPort.Open(proc)
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
+		return port.NewBridge(), nil
+	})
+
 	errWriter := n.errPort.Open(proc)
 
 	for {
@@ -184,20 +187,7 @@ func (n *IfNode) catch(proc *process.Process) {
 			return
 		}
 
-		if !inReader.Receive(backPck) {
-			proc.Stack().Clear(backPck)
-		}
-	}
-}
-
-func (n *IfNode) throw(proc *process.Process, errPck *packet.Packet) {
-	inReader := n.inPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
-
-	if !errWriter.Write(errPck) {
-		if !inReader.Receive(errPck) {
-			proc.Stack().Clear(errPck)
-		}
+		bridge.Receive(backPck, errWriter)
 	}
 }
 

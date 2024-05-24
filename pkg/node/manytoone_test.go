@@ -42,7 +42,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		in0.Link(n.In(PortWithIndex(PortIn, 0)))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter0 := in0.Open(proc)
 
@@ -52,7 +52,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		inWriter0.Write(inPck)
 
 		select {
-		case <-proc.Stack().Done(inPck):
+		case <-inWriter0.Receive():
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}
@@ -82,7 +82,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortOut).Link(out)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter0 := in0.Open(proc)
 		inWriter1 := in1.Open(proc)
@@ -142,7 +142,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		n.Out(PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter0 := in0.Open(proc)
 		inWriter1 := in1.Open(proc)
@@ -200,7 +200,7 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 	n.Out(PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter0 := in0.Open(proc)
 	inWriter1 := in1.Open(proc)

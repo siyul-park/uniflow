@@ -49,7 +49,7 @@ func TestCreateNodes(t *testing.T) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 
@@ -98,7 +98,7 @@ func TestReadNodes(t *testing.T) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 
@@ -149,7 +149,7 @@ func TestUpdateNodes(t *testing.T) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 
@@ -198,7 +198,7 @@ func TestDeleteNodes(t *testing.T) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 

@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -127,7 +128,8 @@ func (n *WebSocketClientNode) SetTimeout(timeout time.Duration) {
 }
 
 func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
-	ctx := proc.Context()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	inPayload := inPck.Payload()
 	input := primitive.Interface(inPayload)

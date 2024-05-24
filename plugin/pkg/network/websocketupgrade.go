@@ -93,7 +93,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 		return nil, err
 	}
 
-	w, ok := proc.Heap().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter)
+	w, ok := proc.Data().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
 	if !ok {
 		return nil, packet.ErrInvalidPacket
 	}

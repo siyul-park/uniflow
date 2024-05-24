@@ -107,8 +107,7 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		n.Out(node.PortErr).Link(err)
 
 		proc := process.New()
-		defer proc.Close()
-		defer proc.Stack().Close()
+		defer proc.Exit(nil)
 
 		ioWriter := io.Open(proc)
 		errReader := err.Open(proc)

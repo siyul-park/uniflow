@@ -41,7 +41,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -75,7 +75,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -124,7 +124,7 @@ func BenchmarkSQLNode_SendAndReceive(b *testing.B) {
 	in.Link(n.In(node.PortIn))
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
 

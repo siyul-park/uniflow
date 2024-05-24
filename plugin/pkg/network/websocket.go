@@ -2,6 +2,7 @@ package network
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/samber/lo"
@@ -15,6 +16,7 @@ import (
 // WebSocketNode represents a node for establishing WebSocket client connections.
 type WebSocketNode struct {
 	action  func(*process.Process, *packet.Packet) (*websocket.Conn, error)
+	conns   *process.Local[*websocket.Conn]
 	ioPort  *port.InPort
 	inPort  *port.InPort
 	outPort *port.OutPort
@@ -33,14 +35,15 @@ var _ node.Node = (*WebSocketNode)(nil)
 func newWebSocketNode(action func(*process.Process, *packet.Packet) (*websocket.Conn, error)) *WebSocketNode {
 	n := &WebSocketNode{
 		action:  action,
+		conns:   process.NewLocal[*websocket.Conn](),
 		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
 
-	n.ioPort.AddHandler(port.HandlerFunc(n.connect))
-	n.errPort.AddHandler(port.HandlerFunc(n.catch))
+	n.ioPort.AddInitHook(port.InitHookFunc(n.connect))
+	n.inPort.AddInitHook(port.InitHookFunc(n.consume))
 
 	return n
 }
@@ -86,6 +89,7 @@ func (n *WebSocketNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
+	n.conns.Close()
 
 	return nil
 }
@@ -95,6 +99,7 @@ func (n *WebSocketNode) connect(proc *process.Process) {
 	defer n.mu.RUnlock()
 
 	ioReader := n.ioPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-ioReader.Read()
@@ -103,22 +108,43 @@ func (n *WebSocketNode) connect(proc *process.Process) {
 		}
 
 		if conn, err := n.action(proc, inPck); err != nil {
-			n.throw(proc, err, inPck)
+			errPck := packet.WithError(err, inPck)
+			backPck := packet.None
+			if errWriter.Write(errPck) > 0 {
+				backPck = <-errWriter.Receive()
+			}
+			ioReader.Receive(backPck)
 		} else {
-			proc.Ref(1)
-			proc.Stack().Clear(inPck)
+			n.conns.Store(proc, conn)
 
-			go n.write(proc, conn)
-			go n.read(proc, conn)
+			child := proc.Fork()
+			go n.produce(child)
+
+			ioReader.Receive(packet.None)
 		}
 	}
 }
 
-func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
+func (n *WebSocketNode) consume(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	inReader := n.inPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
+
+	conn, ok := n.conn(proc)
+	if !ok {
+		ticker := time.NewTicker(time.Millisecond)
+		proc.AddExitHook(process.ExitHookFunc(func(err error) {
+			ticker.Stop()
+		}))
+		for range ticker.C {
+			if conn, ok = n.conn(proc); ok {
+				ticker.Stop()
+				break
+			}
+		}
+	}
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -138,28 +164,41 @@ func (n *WebSocketNode) write(proc *process.Process, conn *websocket.Conn) {
 		}
 
 		if data, err := MarshalMIME(inPayload.Data, lo.ToPtr("")); err != nil {
-			n.throw(proc, err, inPck)
+			errPck := packet.WithError(err, inPck)
+			if errWriter.Write(errPck) > 0 {
+				<-errWriter.Receive()
+			}
 		} else if err := conn.WriteMessage(inPayload.Type, data); err != nil {
-			n.throw(proc, err, inPck)
-		} else {
-			proc.Stack().Clear(inPck)
+			errPck := packet.WithError(err, inPck)
+			if errWriter.Write(errPck) > 0 {
+				<-errWriter.Receive()
+			}
 		}
+
+		inReader.Receive(packet.None)
 	}
 }
 
-func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
+func (n *WebSocketNode) produce(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	outWriter := n.outPort.Open(proc)
-	port.Discard(outWriter)
+	conn, ok := n.conn(proc)
+	if !ok {
+		return
+	}
 
 	for {
 		typ, p, err := conn.ReadMessage()
 		if err != nil {
-			proc.Ref(-1)
+			proc.Wait()
+			proc.Exit(nil)
 			return
 		}
+
+		child := proc.Fork()
+
+		outWriter := n.outPort.Open(proc)
 
 		data, err := UnmarshalMIME(p, lo.ToPtr(""))
 		if err != nil {
@@ -172,48 +211,18 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 		})
 
 		outPck := packet.New(outPayload)
-		outWriter.Write(outPck)
+		port.Call(outWriter, outPck)
+
+		child.Wait()
+		child.Exit(nil)
 	}
 }
 
-func (n *WebSocketNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	ioReader := n.ioPort.Open(proc)
-	inReader := n.inPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
-
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		ioCost := ioReader.Cost(backPck)
-		inCost := inReader.Cost(backPck)
-
-		if ioCost < inCost {
-			ok = ioReader.Receive(backPck)
-		} else {
-			ok = inReader.Receive(backPck)
-		}
-		if !ok {
-			proc.Stack().Clear(backPck)
+func (n *WebSocketNode) conn(proc *process.Process) (*websocket.Conn, bool) {
+	for ; proc != nil; proc = proc.Parent() {
+		if conn, ok := n.conns.Load(proc); ok {
+			return conn, true
 		}
 	}
-}
-
-func (n *WebSocketNode) throw(proc *process.Process, err error, cause *packet.Packet) {
-	errWriter := n.errPort.Open(proc)
-	ioReader := n.ioPort.Open(proc)
-
-	errPck := packet.WithError(err, cause)
-	proc.Stack().Add(cause, errPck)
-
-	if !errWriter.Write(errPck) {
-		if !ioReader.Receive(errPck) {
-			proc.Stack().Clear(errPck)
-		}
-	}
+	return nil, false
 }

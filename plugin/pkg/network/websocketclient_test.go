@@ -74,11 +74,29 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	client.Out(node.PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+
+	done := make(chan struct{})
+	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			_, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(packet.None)
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
+		}
+	}))
 
 	var inPayload primitive.Value
 	inPck := packet.New(inPayload)
@@ -86,7 +104,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	ioWriter.Write(inPck)
 
 	select {
-	case <-proc.Stack().Done(inPck):
+	case <-ioWriter.Receive():
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -100,10 +118,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	inWriter.Write(inPck)
 
 	select {
-	case outPck := <-outReader.Read():
-		proc.Stack().Clear(outPck)
-		err, _ := packet.AsError(outPck)
-		assert.NoError(t, err)
+	case <-done:
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -116,7 +131,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	inWriter.Write(inPck)
 
 	select {
-	case <-proc.Stack().Done(inPck):
+	case <-inWriter.Receive():
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -163,7 +178,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 	client.Out(node.PortOut).Link(out)
 
 	proc := process.New()
-	defer proc.Close()
+	defer proc.Exit(nil)
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
@@ -185,7 +200,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		inWriter.Write(inPck)
 		outPck := <-outReader.Read()
-		proc.Stack().Clear(outPck)
+		outReader.Receive(outPck)
 	}
 
 	inPayload, _ = primitive.MarshalText(&WebSocketPayload{

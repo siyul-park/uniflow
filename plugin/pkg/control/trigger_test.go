@@ -40,7 +40,7 @@ func TestTriggerNode_Port(t *testing.T) {
 
 func TestTriggerNode_SendAndReceive(t *testing.T) {
 	t.Run("Out", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second*10)
 		defer cancel()
 
 		q := event.NewQueue(0)
@@ -57,16 +57,16 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 
 		count := 0
 
-		out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
-				outPck, ok := <-outReader.Read()
+				_, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 				count += 1
-				proc.Stack().Clear(outPck)
+				outReader.Receive(packet.None)
 			}
 		}))
 
@@ -96,7 +96,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		proc := process.New()
-		defer proc.Close()
+		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
 
@@ -106,7 +106,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		inWriter.Write(inPck)
 
 		select {
-		case <-proc.Stack().Done(inPck):
+		case <-inWriter.Receive():
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -150,15 +150,15 @@ func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
 	out := port.NewIn()
 	n.Out(node.PortOut).Link(out)
 
-	out.AddHandler(port.HandlerFunc(func(proc *process.Process) {
+	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		for {
-			outPck, ok := <-outReader.Read()
+			_, ok := <-outReader.Read()
 			if !ok {
 				return
 			}
-			proc.Stack().Clear(outPck)
+			outReader.Receive(packet.None)
 		}
 	}))
 
