@@ -52,7 +52,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	defer n.mu.RUnlock()
 
 	if outPayload, err := n.program(inPck.Payload()); err != nil {
-		return nil, packet.WithError(err, inPck)
+		return nil, packet.NewError(err)
 	} else {
 		return packet.New(outPayload), nil
 	}
