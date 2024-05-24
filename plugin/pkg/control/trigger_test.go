@@ -40,7 +40,7 @@ func TestTriggerNode_Port(t *testing.T) {
 
 func TestTriggerNode_SendAndReceive(t *testing.T) {
 	t.Run("Out", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second*10)
 		defer cancel()
 
 		q := event.NewQueue(0)

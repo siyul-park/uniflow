@@ -170,6 +170,7 @@ func (n *WebSocketNode) read(proc *process.Process, conn *websocket.Conn) {
 	for {
 		typ, p, err := conn.ReadMessage()
 		if err != nil {
+			proc.Wait()
 			proc.Exit(nil)
 			return
 		}

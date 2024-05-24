@@ -116,10 +116,10 @@ func (n *TriggerNode) Listen() {
 
 			if outPayload, err := primitive.MarshalText(e.Data()); err != nil {
 				errPck := packet.WithError(err, nil)
-				port.Call(errWriter, errPck)
+				errWriter.Write(errPck)
 			} else {
 				outPck := packet.New(outPayload)
-				port.Call(outWriter, outPck)
+				outWriter.Write(outPck)
 			}
 
 			go func() {
