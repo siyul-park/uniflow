@@ -98,6 +98,8 @@ github.com/siyul-park/uniflow v0.5.0 h1:uiR+0aHbCqxPTT4CpI4Td24VZkqXlKEmKwTM0SXs
 github.com/siyul-park/uniflow v0.5.0/go.mod h1:qZRej7pTkB/QUPDfmF6r1y3ShIYoKF+vKbQCLGtlIlg=
 github.com/siyul-park/uniflow/plugin v0.4.0 h1:bBuWQHGdkaqQqIXPF4nhR72wGSM4+WlQ/giEMzreXsQ=
 github.com/siyul-park/uniflow/plugin v0.4.0/go.mod h1:lWqixPs5ZZvTSQ0TeN4KNNyWyWNoGxMHKiUgLxDCRZQ=
+github.com/siyul-park/uniflow/plugin v0.5.0 h1:WBKkkMltYZ3zs2hKlKKSi61AyUFnL3lju3ZKNk57j3Q=
+github.com/siyul-park/uniflow/plugin v0.5.0/go.mod h1:oHHdc80HTVsJ2wsoppJs+KsXg4p87jEWBDAWg3x5m70=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=

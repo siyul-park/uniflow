@@ -8,7 +8,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.5.0
-	github.com/siyul-park/uniflow/plugin v0.4.0
+	github.com/siyul-park/uniflow/plugin v0.5.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
