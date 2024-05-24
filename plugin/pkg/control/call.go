@@ -95,7 +95,7 @@ func (n *CallNode) forward(proc *process.Process) {
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
-	outWriter1 := n.outPorts[0].Open(proc)
+	outWriter1 := n.outPorts[1].Open(proc)
 	errWriter := n.errPort.Open(proc)
 
 	for {
