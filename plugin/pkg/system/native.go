@@ -90,6 +90,9 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
 	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	inPayload := inPck.Payload()
 	input := primitive.Interface(inPayload)
 
@@ -98,7 +101,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	offset := 0
 	if n.operator.Type().NumIn() > 0 {
 		if n.operator.Type().In(0).Implements(contextInterface) {
-			ins[0] = reflect.ValueOf(proc.Context())
+			ins[0] = reflect.ValueOf(ctx)
 			offset++
 		}
 	}

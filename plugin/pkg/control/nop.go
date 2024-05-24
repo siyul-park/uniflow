@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -72,12 +73,12 @@ func (n *NOPNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 
 	for {
-		inPck, ok := <-inReader.Read()
+		_, ok := <-inReader.Read()
 		if !ok {
 			return
 		}
 
-		proc.Stack().Clear(inPck)
+		inReader.Receive(packet.None)
 	}
 }
 

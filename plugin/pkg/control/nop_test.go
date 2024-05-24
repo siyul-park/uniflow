@@ -48,7 +48,8 @@ func TestNOPNode_SendAndReceive(t *testing.T) {
 	inWriter.Write(inPck)
 
 	select {
-	case <-proc.Stack().Done(inPck):
+	case backPck := <-inWriter.Receive():
+		assert.Equal(t, packet.None, backPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}

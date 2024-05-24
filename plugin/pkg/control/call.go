@@ -13,6 +13,7 @@ import (
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
 	async    bool
+	bridges  *process.Local[*port.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -32,6 +33,7 @@ const KindCall = "call"
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {
 	n := &CallNode{
+		bridges:  process.NewLocal[*port.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -104,6 +106,7 @@ func (n *CallNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -121,20 +124,7 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 
-		outPck := inPck
-		if n.async {
-			outPck = packet.New(inPck.Payload())
-		}
-
-		if !outWriter0.Write(outPck) {
-			if !inReader.Receive(outPck) {
-				proc.Stack().Clear(outPck)
-			}
-		}
-
-		if n.async {
-			proc.Stack().Clear(inPck)
-		}
+		outWriter0.Write(inPck)
 	}
 }
 
