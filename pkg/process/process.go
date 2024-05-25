@@ -83,20 +83,24 @@ func (p *Process) AddExitHook(h ExitHook) {
 
 func (p *Process) Exit(err error) {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	if p.status == StatusTerminated {
+		p.mu.Unlock()
 		return
 	}
 
-	for i := len(p.exitHooks) - 1; i >= 0; i-- {
-		h := p.exitHooks[i]
-		h.Exit(err)
-	}
+	exitHooks := p.exitHooks
 
 	p.data.Close()
 
 	p.status = StatusTerminated
 	p.err = err
 	p.exitHooks = nil
+
+	p.mu.Unlock()
+
+	for i := len(exitHooks) - 1; i >= 0; i-- {
+		h := exitHooks[i]
+		h.Exit(err)
+	}
 }

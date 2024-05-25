@@ -62,6 +62,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	default:
 		if i, ok := IndexOfPort(PortOut, name); ok {
 			for j := 0; j <= i; j++ {
+				j := j
 				if len(n.outPorts) <= j {
 					outPort := port.NewOut()
 					n.outPorts = append(n.outPorts, outPort)

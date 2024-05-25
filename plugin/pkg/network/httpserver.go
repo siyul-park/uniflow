@@ -150,6 +150,12 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
+	ctx := r.Context()
+
+	go func() {
+		<-ctx.Done()
+		proc.Exit(ctx.Err())
+	}()
 
 	proc.Data().Store(KeyHTTPResponseWriter, w)
 	proc.Data().Store(KeyHTTPRequest, r)
@@ -175,7 +181,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		backPck = port.Call(outWriter, outPck)
 		if _, ok := packet.AsError(backPck); ok {
 			if errWriter.Write(backPck) > 0 {
-				backPck = <-errWriter.Receive()
+				backPck, ok = <-errWriter.Receive()
 			}
 		}
 	}
