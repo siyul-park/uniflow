@@ -49,24 +49,27 @@ func BenchmarkReader_Receive(b *testing.B) {
 
 	w.Link(r)
 
-	out := packet.New(nil)
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
+	b.RunParallel(func(p *testing.PB) {
+		out := packet.New(nil)
 
-		count := w.Write(out)
-		assert.Equal(b, 1, count)
+		for p.Next() {
+			b.StopTimer()
 
-		in, ok := <-r.Read()
-		assert.True(b, ok)
-		assert.Equal(b, out, in)
+			count := w.Write(out)
+			assert.Equal(b, 1, count)
 
-		b.StartTimer()
+			in, ok := <-r.Read()
+			assert.True(b, ok)
+			assert.Equal(b, out, in)
 
-		ok = r.Receive(in)
-		assert.True(b, ok)
+			b.StartTimer()
 
-		back, ok := <-w.Receive()
-		assert.True(b, ok)
-		assert.Equal(b, in, back)
-	}
+			ok = r.Receive(in)
+			assert.True(b, ok)
+
+			back, ok := <-w.Receive()
+			assert.True(b, ok)
+			assert.Equal(b, in, back)
+		}
+	})
 }

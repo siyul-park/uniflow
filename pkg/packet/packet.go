@@ -21,7 +21,7 @@ func Merge(pcks []*Packet) *Packet {
 		}
 	}
 	if len(errs) > 0 {
-		return WithError(errors.Join(errs...), nil)
+		return NewError(errors.Join(errs...))
 	}
 
 	payloads := make([]primitive.Value, 0, len(pcks))

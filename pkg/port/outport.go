@@ -73,7 +73,11 @@ func (p *OutPort) Open(proc *process.Process) *Writer {
 
 			p.writers[proc] = writer
 			proc.AddExitHook(process.ExitHookFunc(func(_ error) {
-				p.closeWithLock(proc)
+				p.mu.Lock()
+				defer p.mu.Unlock()
+
+				delete(p.writers, proc)
+				writer.Close()
 			}))
 		}
 		return writer, ok
@@ -102,22 +106,9 @@ func (p *OutPort) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for proc := range p.writers {
-		p.close(proc)
-	}
-	p.ins = nil
-}
-
-func (p *OutPort) closeWithLock(proc *process.Process) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.close(proc)
-}
-
-func (p *OutPort) close(proc *process.Process) {
-	if writer, ok := p.writers[proc]; ok {
-		delete(p.writers, proc)
+	for _, writer := range p.writers {
 		writer.Close()
 	}
+	p.writers = make(map[*process.Process]*Writer)
+	p.ins = nil
 }

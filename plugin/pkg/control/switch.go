@@ -95,7 +95,7 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	for i, when := range n.whens {
 		port := n.ports[i]
 		if ok, err := when(input); err != nil {
-			return nil, packet.WithError(err, inPck)
+			return nil, packet.NewError(err)
 		} else if ok {
 			outPcks[port] = inPck
 			break

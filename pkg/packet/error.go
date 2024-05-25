@@ -11,21 +11,14 @@ var (
 	ErrDiscardPacket = errors.New("discarded packet")
 )
 
-// WithError creates a new Packet representing an error with the given error and optional cause.
-// It constructs a Packet with error details, including the error message.
-// If a cause is provided, it is attached to the error packet.
-func WithError(err error, cause *Packet) *Packet {
+// NewError creates a new Packet representing an error with the given error.
+func NewError(err error) *Packet {
 	pairs := []primitive.Value{
 		primitive.NewString("__error"),
 		primitive.TRUE,
 		primitive.NewString("error"),
 		primitive.NewString(err.Error()),
 	}
-
-	if cause != nil {
-		pairs = append(pairs, primitive.NewString("cause"), cause.Payload())
-	}
-
 	return New(primitive.NewMap(pairs...))
 }
 

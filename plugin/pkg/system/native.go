@@ -111,15 +111,15 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		if len(n.operands) > i-offset {
 			if operand, err := n.operands[i-offset](input); err != nil {
-				return nil, packet.WithError(err, inPck)
+				return nil, packet.NewError(err)
 			} else if argument, err := primitive.MarshalText(operand); err != nil {
-				return nil, packet.WithError(err, inPck)
+				return nil, packet.NewError(err)
 			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
-				return nil, packet.WithError(err, inPck)
+				return nil, packet.NewError(err)
 			}
 		} else if i == offset {
 			if err := primitive.Unmarshal(inPayload, in.Interface()); err != nil {
-				return nil, packet.WithError(err, inPck)
+				return nil, packet.NewError(err)
 			}
 		}
 
@@ -134,7 +134,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		if err, ok := last.(error); ok {
 			if err != nil {
-				return nil, packet.WithError(err, inPck)
+				return nil, packet.NewError(err)
 			}
 		}
 	}
@@ -142,7 +142,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	outPayloads := make([]primitive.Value, len(outs))
 	for i, out := range outs {
 		if outPayload, err := primitive.MarshalText(out.Interface()); err != nil {
-			return nil, packet.WithError(err, inPck)
+			return nil, packet.NewError(err)
 		} else {
 			outPayloads[i] = outPayload
 		}

@@ -43,7 +43,11 @@ func (p *InPort) Open(proc *process.Process) *Reader {
 
 		p.readers[proc] = reader
 		proc.AddExitHook(process.ExitHookFunc(func(_ error) {
-			p.closeWithLock(proc)
+			p.mu.Lock()
+			defer p.mu.Unlock()
+
+			delete(p.readers, proc)
+			reader.Close()
 		}))
 
 		for _, h := range p.initHooks {
@@ -60,21 +64,8 @@ func (p *InPort) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for proc := range p.readers {
-		p.close(proc)
-	}
-}
-
-func (p *InPort) closeWithLock(proc *process.Process) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.close(proc)
-}
-
-func (p *InPort) close(proc *process.Process) {
-	if reader, ok := p.readers[proc]; ok {
-		delete(p.readers, proc)
+	for _, reader := range p.readers {
 		reader.Close()
 	}
+	p.readers = make(map[*process.Process]*Reader)
 }

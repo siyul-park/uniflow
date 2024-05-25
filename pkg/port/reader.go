@@ -58,36 +58,27 @@ func (r *Reader) Read() <-chan *packet.Packet {
 }
 
 func (r *Reader) Receive(pck *packet.Packet) bool {
-	w := r.writer()
-	if w == nil {
+	if w := r.writer(); w == nil {
 		return false
+	} else {
+		return w.receive(pck, r)
 	}
-	return w.receive(pck, r)
 }
 
 func (r *Reader) Close() {
-	writers := func() []*Writer {
-		r.mu.Lock()
-		defer r.mu.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-		select {
-		case <-r.done:
-			return nil
-		default:
-		}
-
-		writers := r.writers
-		r.writers = nil
-
-		close(r.done)
-		close(r.in)
-
-		return writers
-	}()
-
-	for _, w := range writers {
-		w.receive(packet.None, r)
+	select {
+	case <-r.done:
+		return
+	default:
 	}
+
+	r.writers = nil
+
+	close(r.done)
+	close(r.in)
 }
 
 func (r *Reader) write(pck *packet.Packet, writer *Writer) bool {

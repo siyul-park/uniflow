@@ -160,14 +160,14 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-outReader.Read()
+				_, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.WithError(err, inPck)
+				errPck := packet.NewError(err)
 				outReader.Receive(errPck)
 			}
 		}))
@@ -196,14 +196,14 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 			outReader := out.Open(proc)
 
 			for {
-				inPck, ok := <-outReader.Read()
+				_, ok := <-outReader.Read()
 				if !ok {
 					return
 				}
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.WithError(err, inPck)
+				errPck := packet.NewError(err)
 				outReader.Receive(errPck)
 			}
 		}))

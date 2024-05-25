@@ -98,12 +98,12 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 	format, err := n.format(input)
 	if err != nil {
-		return nil, packet.WithError(err, inPck)
+		return nil, packet.NewError(err)
 	}
 
 	len, err := n.writer.Write(format)
 	if err != nil {
-		return nil, packet.WithError(err, inPck)
+		return nil, packet.NewError(err)
 	}
 
 	return packet.New(primitive.NewInt(len)), nil

@@ -7,6 +7,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCall(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	w.Link(r)
+
+	go func() {
+		for {
+			inPck, ok := <-r.Read()
+			if !ok {
+				return
+			}
+			r.Receive(inPck)
+		}
+	}()
+
+	outPck := packet.New(nil)
+
+	backPck := Call(w, outPck)
+	assert.Equal(t, outPck, backPck)
+}
+
 func TestWriter_Write(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
@@ -43,13 +68,16 @@ func BenchmarkWriter_Write(b *testing.B) {
 
 	w.Link(r)
 
-	out := packet.New(nil)
-	for i := 0; i < b.N; i++ {
-		count := w.Write(out)
-		assert.Equal(b, 1, count)
+	b.RunParallel(func(p *testing.PB) {
+		out := packet.New(nil)
+	
+		for p.Next() {
+			count := w.Write(out)
+			assert.Equal(b, 1, count)
 
-		in, ok := <-r.Read()
-		assert.True(b, ok)
-		assert.Equal(b, out, in)
-	}
+			in, ok := <-r.Read()
+			assert.True(b, ok)
+			assert.Equal(b, out, in)
+		}
+	})
 }
