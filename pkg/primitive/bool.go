@@ -1,10 +1,11 @@
 package primitive
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"unsafe"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Bool is a representation of a bool.
@@ -44,7 +45,7 @@ func (b Bool) Compare(v Value) int {
 			return -1
 		}
 	}
-	if b.Kind() > v.Kind() {
+	if KindOf(b) > KindOf(v) {
 		return 1
 	}
 	return -1

@@ -1,9 +1,10 @@
 package primitive
 
 import (
-	"golang.org/x/exp/constraints"
 	"reflect"
 	"unsafe"
+
+	"golang.org/x/exp/constraints"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
@@ -76,15 +77,15 @@ func (f Float64) Interface() any {
 
 func compareAsFloat(f Float, v Value) int {
 	if r, ok := v.(Float); ok {
-		return compare[float64](f.Float(), r.Float())
+		return compare(f.Float(), r.Float())
 	}
 	if r, ok := v.(Integer); ok {
-		return compare[float64](f.Float(), float64(r.Int()))
+		return compare(f.Float(), float64(r.Int()))
 	}
 	if r, ok := v.(Uinteger); ok {
-		return compare[float64](f.Float(), float64(r.Uint()))
+		return compare(f.Float(), float64(r.Uint()))
 	}
-	if f.Kind() > v.Kind() {
+	if KindOf(f) > KindOf(v) {
 		return 1
 	}
 	return -1

@@ -48,7 +48,7 @@ func (b Binary) Compare(v Value) int {
 	if other, ok := v.(Binary); ok {
 		return bytes.Compare(b.Bytes(), other.Bytes())
 	}
-	if b.Kind() > v.Kind() {
+	if KindOf(b) > KindOf(v) {
 		return 1
 	}
 	return -1

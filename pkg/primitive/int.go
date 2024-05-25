@@ -1,11 +1,12 @@
 package primitive
 
 import (
+	"reflect"
+	"unsafe"
+
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"golang.org/x/exp/constraints"
-	"reflect"
-	"unsafe"
 )
 
 // Integer is an interface representing an integer.
@@ -162,15 +163,15 @@ func (i Int64) Interface() any {
 
 func compareAsInteger(i Integer, v Value) int {
 	if r, ok := v.(Integer); ok {
-		return compare[int64](i.Int(), r.Int())
+		return compare(i.Int(), r.Int())
 	}
 	if r, ok := v.(Uinteger); ok {
-		return compare[int64](i.Int(), int64(r.Uint()))
+		return compare(i.Int(), int64(r.Uint()))
 	}
 	if r, ok := v.(Float); ok {
-		return compare[float64](float64(i.Int()), r.Float())
+		return compare(float64(i.Int()), r.Float())
 	}
-	if i.Kind() > v.Kind() {
+	if KindOf(i) > KindOf(v) {
 		return 1
 	}
 	return -1

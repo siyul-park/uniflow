@@ -1,11 +1,12 @@
 package primitive
 
 import (
+	"reflect"
+	"unsafe"
+
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"golang.org/x/exp/constraints"
-	"reflect"
-	"unsafe"
 )
 
 // Uinteger is an interface representing an unsigned integer.
@@ -162,15 +163,15 @@ func (u Uint64) Interface() any {
 
 func compareAsUinteger(u Uinteger, v Value) int {
 	if r, ok := v.(Uinteger); ok {
-		return compare[uint64](u.Uint(), r.Uint())
+		return compare(u.Uint(), r.Uint())
 	}
 	if r, ok := v.(Integer); ok {
-		return compare[int64](int64(u.Uint()), r.Int())
+		return compare(int64(u.Uint()), r.Int())
 	}
 	if r, ok := v.(Float); ok {
-		return compare[float64](float64(u.Uint()), r.Float())
+		return compare(float64(u.Uint()), r.Float())
 	}
-	if u.Kind() > v.Kind() {
+	if KindOf(u) > KindOf(v) {
 		return 1
 	}
 	return -1

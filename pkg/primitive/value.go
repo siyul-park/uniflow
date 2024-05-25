@@ -47,6 +47,17 @@ func Compare(x, y Value) int {
 	}
 }
 
+// KindOf returns the kind of the provided value.
+// If the value is nil, it returns KindInvalid.
+// Otherwise, it calls the Kind method of the value to determine its kind.
+func KindOf(v Value) Kind {
+	if v == nil {
+		return KindInvalid
+	} else {
+		return v.Kind()
+	}
+}
+
 // Interface function converts a Value to a generic interface.
 // Nil values are returned as a nil interface.
 func Interface(v Value) any {

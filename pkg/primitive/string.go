@@ -2,10 +2,11 @@ package primitive
 
 import (
 	"encoding"
-	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"unsafe"
+
+	"github.com/pkg/errors"
+	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // String is a representation of a string.
@@ -19,13 +20,13 @@ func NewString(value string) String {
 }
 
 // Len returns the length of the string.
-func (o String) Len() int {
-	return len([]rune(o))
+func (s String) Len() int {
+	return len([]rune(s))
 }
 
 // Get returns the rune at the specified index in the string.
-func (o String) Get(index int) rune {
-	runes := []rune(o)
+func (s String) Get(index int) rune {
+	runes := []rune(s)
 	if index >= len(runes) {
 		return rune(0)
 	}
@@ -33,25 +34,25 @@ func (o String) Get(index int) rune {
 }
 
 // String returns the raw string representation.
-func (o String) String() string {
-	return string(o)
+func (s String) String() string {
+	return string(s)
 }
 
 // Kind returns the kind of the value.
-func (o String) Kind() Kind {
+func (s String) Kind() Kind {
 	return KindString
 }
 
 // Compare compares two String values.
-func (o String) Compare(v Value) int {
+func (s String) Compare(v Value) int {
 	if r, ok := v.(String); !ok {
-		if o.Kind() > v.Kind() {
+		if KindOf(s) > KindOf(v) {
 			return 1
 		} else {
 			return -1
 		}
 	} else {
-		return compare[string](o.String(), r.String())
+		return compare[string](s.String(), r.String())
 	}
 }
 

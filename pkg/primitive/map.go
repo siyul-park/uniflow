@@ -164,7 +164,7 @@ func (m *Map) Compare(v Value) int {
 		return 0
 	}
 
-	if m.Kind() > v.Kind() {
+	if KindOf(m) > KindOf(v) {
 		return 1
 	}
 	return -1

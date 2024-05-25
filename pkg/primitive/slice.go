@@ -113,7 +113,7 @@ func (s *Slice) Compare(v Value) int {
 		return 0
 	}
 
-	if s.Kind() > v.Kind() {
+	if KindOf(s) > KindOf(v) {
 		return 1
 	}
 	return -1
