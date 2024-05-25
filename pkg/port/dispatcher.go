@@ -32,12 +32,15 @@ func NewDispatcher(readers []*Reader, route RouteHook) *Dispatcher {
 
 // Write writes a packet to a specific reader and returns the count of successful writes.
 func (d *Dispatcher) Write(pck *packet.Packet, reader *Reader) int {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	index := d.indexOfReader(reader)
 	if index < 0 {
 		return 0
 	}
 
-	head := d.findHeadIndex()
+	head := d.indexOfHead(index)
 	if head < 0 {
 		d.reads = append(d.reads, make([]*packet.Packet, len(d.readers)))
 		head = len(d.reads) - 1
@@ -102,9 +105,9 @@ func (d *Dispatcher) indexOfReader(reader *Reader) int {
 	return -1
 }
 
-func (d *Dispatcher) findHeadIndex() int {
+func (d *Dispatcher) indexOfHead(index int) int {
 	for i, reads := range d.reads {
-		if len(reads) == len(d.readers) && reads[0] == nil {
+		if reads[index] == nil {
 			return i
 		}
 	}
