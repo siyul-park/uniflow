@@ -1,9 +1,8 @@
-package port
+package packet
 
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,8 +15,8 @@ func TestReader_Receive(t *testing.T) {
 
 	w.Link(r)
 
-	out1 := packet.New(nil)
-	out2 := packet.New(nil)
+	out1 := New(nil)
+	out2 := New(nil)
 
 	w.Write(out1)
 	w.Write(out2)
@@ -50,7 +49,7 @@ func BenchmarkReader_Receive(b *testing.B) {
 	w.Link(r)
 
 	b.RunParallel(func(p *testing.PB) {
-		out := packet.New(nil)
+		out := New(nil)
 
 		for p.Next() {
 			b.StopTimer()

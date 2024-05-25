@@ -3,13 +3,14 @@ package port
 import (
 	"sync"
 
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // OutPort represents an output port for sending data.
 type OutPort struct {
 	ins       []*InPort
-	writers   map[*process.Process]*Writer
+	writers   map[*process.Process]*packet.Writer
 	initHooks []InitHook
 	mu        sync.RWMutex
 }
@@ -17,7 +18,7 @@ type OutPort struct {
 // NewOut creates a new OutPort instance.
 func NewOut() *OutPort {
 	return &OutPort{
-		writers: make(map[*process.Process]*Writer),
+		writers: make(map[*process.Process]*packet.Writer),
 	}
 }
 
@@ -58,14 +59,14 @@ func (p *OutPort) Unlink(in *InPort) {
 }
 
 // Open opens the output port for a given process and returns a writer.
-func (p *OutPort) Open(proc *process.Process) *Writer {
-	writer, ok := func() (*Writer, bool) {
+func (p *OutPort) Open(proc *process.Process) *packet.Writer {
+	writer, ok := func() (*packet.Writer, bool) {
 		p.mu.Lock()
 		defer p.mu.Unlock()
 
 		writer, ok := p.writers[proc]
 		if !ok {
-			writer = NewWriter()
+			writer = packet.NewWriter()
 			if proc.Status() == process.StatusTerminated {
 				writer.Close()
 				return writer, true
@@ -109,6 +110,6 @@ func (p *OutPort) Close() {
 	for _, writer := range p.writers {
 		writer.Close()
 	}
-	p.writers = make(map[*process.Process]*Writer)
+	p.writers = make(map[*process.Process]*packet.Writer)
 	p.ins = nil
 }

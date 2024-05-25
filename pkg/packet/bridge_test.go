@@ -1,9 +1,8 @@
-package port
+package packet
 
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 
 		w.Link(r)
 
-		pck1 := packet.New(nil)
+		pck1 := New(nil)
 
 		w.Write(pck1)
 		<-r.Read()
@@ -29,7 +28,7 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 		assert.Equal(t, 0, count)
 
 		pck2 := <-w.Receive()
-		assert.Equal(t, packet.None, pck2)
+		assert.Equal(t, None, pck2)
 	})
 
 	t.Run("SingleOutput", func(t *testing.T) {
@@ -51,12 +50,12 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 		w1.Link(r1)
 		w2.Link(r2)
 
-		pck1 := packet.New(nil)
+		pck1 := New(nil)
 
 		w1.Write(pck1)
 		<-r1.Read()
 
-		count := b.Write([]*packet.Packet{pck1}, []*Reader{r1}, []*Writer{w2})
+		count := b.Write([]*Packet{pck1}, []*Reader{r1}, []*Writer{w2})
 		assert.Equal(t, 1, count)
 
 		pck2 := <-r2.Read()
@@ -98,12 +97,12 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 		w2.Link(r2)
 		w3.Link(r3)
 
-		pck1 := packet.New(nil)
+		pck1 := New(nil)
 
 		w1.Write(pck1)
 		<-r1.Read()
 
-		count := b.Write([]*packet.Packet{pck1, pck1}, []*Reader{r1}, []*Writer{w2, w3})
+		count := b.Write([]*Packet{pck1, pck1}, []*Reader{r1}, []*Writer{w2, w3})
 		assert.Equal(t, 2, count)
 
 		pck2 := <-r2.Read()
@@ -150,12 +149,12 @@ func BenchmarkBridge_WriteAndReceive(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
-			pck1 := packet.New(nil)
+			pck1 := New(nil)
 
 			w1.Write(pck1)
 			<-r1.Read()
 
-			count := br.Write([]*packet.Packet{pck1}, []*Reader{r1}, []*Writer{w2})
+			count := br.Write([]*Packet{pck1}, []*Reader{r1}, []*Writer{w2})
 			assert.Equal(b, 1, count)
 
 			pck2 := <-r2.Read()

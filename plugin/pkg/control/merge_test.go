@@ -45,7 +45,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inWriters := make([]*port.Writer, len(ins))
+		inWriters := make([]*packet.Writer, len(ins))
 		for i, in := range ins {
 			inWriters[i] = in.Open(proc)
 		}
@@ -103,7 +103,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inWriters := make([]*port.Writer, len(ins))
+		inWriters := make([]*packet.Writer, len(ins))
 		for i, in := range ins {
 			inWriters[i] = in.Open(proc)
 		}
@@ -161,7 +161,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inWriters := make([]*port.Writer, len(ins))
+		inWriters := make([]*packet.Writer, len(ins))
 		for i, in := range ins {
 			inWriters[i] = in.Open(proc)
 		}
@@ -222,7 +222,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inWriters := make([]*port.Writer, len(ins))
+		inWriters := make([]*packet.Writer, len(ins))
 		for i, in := range ins {
 			inWriters[i] = in.Open(proc)
 		}
@@ -283,7 +283,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		proc := process.New()
 		defer proc.Exit(nil)
 
-		inWriters := make([]*port.Writer, len(ins))
+		inWriters := make([]*packet.Writer, len(ins))
 		for i, in := range ins {
 			inWriters[i] = in.Open(proc)
 		}
@@ -354,7 +354,7 @@ func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	inWriters := make([]*port.Writer, len(ins))
+	inWriters := make([]*packet.Writer, len(ins))
 	for i, in := range ins {
 		inWriters[i] = in.Open(proc)
 	}

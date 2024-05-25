@@ -1,16 +1,14 @@
-package port
+package packet
 
 import (
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
 // Reader represents a packet reader.
 type Reader struct {
 	writers []*Writer
-	in      chan *packet.Packet
-	out     chan *packet.Packet
+	in      chan *Packet
+	out     chan *Packet
 	done    chan struct{}
 	mu      sync.Mutex
 }
@@ -18,15 +16,15 @@ type Reader struct {
 // NewReader creates a new Reader instance and starts its processing loop.
 func NewReader() *Reader {
 	r := &Reader{
-		in:   make(chan *packet.Packet),
-		out:  make(chan *packet.Packet),
+		in:   make(chan *Packet),
+		out:  make(chan *Packet),
 		done: make(chan struct{}),
 	}
 
 	go func() {
 		defer close(r.out)
 
-		buffer := make([]*packet.Packet, 0, 2)
+		buffer := make([]*Packet, 0, 2)
 		for {
 			pck, ok := <-r.in
 			if !ok {
@@ -56,12 +54,12 @@ func NewReader() *Reader {
 }
 
 // Read returns the channel for reading packets from the reader.
-func (r *Reader) Read() <-chan *packet.Packet {
+func (r *Reader) Read() <-chan *Packet {
 	return r.out
 }
 
 // Receive receives a packet from a writer and forwards it to the reader's input channel.
-func (r *Reader) Receive(pck *packet.Packet) bool {
+func (r *Reader) Receive(pck *Packet) bool {
 	if w := r.writer(); w == nil {
 		return false
 	} else {
@@ -83,7 +81,7 @@ func (r *Reader) Close() {
 	}
 }
 
-func (r *Reader) write(pck *packet.Packet, writer *Writer) bool {
+func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

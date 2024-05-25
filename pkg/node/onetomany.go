@@ -11,7 +11,7 @@ import (
 // OneToManyNode represents a node with one input and multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-	bridges  *process.Local[*port.Bridge]
+	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -24,7 +24,7 @@ var _ Node = (*OneToManyNode)(nil)
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
-		bridges:  process.NewLocal[*port.Bridge](),
+		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: nil,
 		errPort:  port.NewOut(),
@@ -101,12 +101,12 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	inReader := n.inPort.Open(proc)
-	outWriters := make([]*port.Writer, len(n.outPorts))
+	outWriters := make([]*packet.Writer, len(n.outPorts))
 	for i, outPort := range n.outPorts {
 		outWriters[i] = outPort.Open(proc)
 	}
@@ -119,9 +119,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		}
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
+			bridge.Write([]*packet.Packet{errPck}, []*packet.Reader{inReader}, []*packet.Writer{errWriter})
 		} else {
-			bridge.Write(outPcks, []*port.Reader{inReader}, outWriters)
+			bridge.Write(outPcks, []*packet.Reader{inReader}, outWriters)
 		}
 	}
 }
@@ -130,8 +130,8 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	outWriter := n.outPorts[index].Open(proc)
@@ -150,8 +150,8 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	errWriter := n.errPort.Open(proc)

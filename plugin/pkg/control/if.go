@@ -16,7 +16,7 @@ import (
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
 type IfNode struct {
 	when     func(any) (bool, error)
-	bridges  *process.Local[*port.Bridge]
+	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -50,7 +50,7 @@ func NewIfNode(code, lang string) (*IfNode, error) {
 			}
 			return !reflect.ValueOf(output).IsZero(), nil
 		},
-		bridges:  process.NewLocal[*port.Bridge](),
+		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -122,8 +122,8 @@ func (n *IfNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	inReader := n.inPort.Open(proc)
@@ -142,11 +142,11 @@ func (n *IfNode) forward(proc *process.Process) {
 
 		if ok, err := n.when(input); err != nil {
 			errPck := packet.WithError(err)
-			bridge.Write([]*packet.Packet{errPck}, []*port.Reader{inReader}, []*port.Writer{errWriter})
+			bridge.Write([]*packet.Packet{errPck}, []*packet.Reader{inReader}, []*packet.Writer{errWriter})
 		} else if ok {
-			bridge.Write([]*packet.Packet{inPck}, []*port.Reader{inReader}, []*port.Writer{outWriter0})
+			bridge.Write([]*packet.Packet{inPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter0})
 		} else {
-			bridge.Write([]*packet.Packet{inPck}, []*port.Reader{inReader}, []*port.Writer{outWriter1})
+			bridge.Write([]*packet.Packet{inPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter1})
 		}
 	}
 }
@@ -155,8 +155,8 @@ func (n *IfNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	outWriter := n.outPorts[index].Open(proc)
@@ -175,8 +175,8 @@ func (n *IfNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
-		return port.NewBridge(), nil
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
 	})
 
 	errWriter := n.errPort.Open(proc)

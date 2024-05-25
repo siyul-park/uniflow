@@ -1,9 +1,8 @@
-package port
+package packet
 
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +25,7 @@ func TestCall(t *testing.T) {
 		}
 	}()
 
-	outPck := packet.New(nil)
+	outPck := New(nil)
 
 	backPck := Call(w, outPck)
 	assert.Equal(t, outPck, backPck)
@@ -52,9 +51,9 @@ func TestCallOrReturn(t *testing.T) {
 			}
 		}()
 
-		outPck := packet.New(nil)
+		outPck := New(nil)
 
-		backPck := CallOrFallback(w, outPck, packet.None)
+		backPck := CallOrFallback(w, outPck, None)
 		assert.Equal(t, outPck, backPck)
 	})
 
@@ -62,10 +61,10 @@ func TestCallOrReturn(t *testing.T) {
 		w := NewWriter()
 		defer w.Close()
 
-		outPck := packet.New(nil)
+		outPck := New(nil)
 
-		backPck := CallOrFallback(w, outPck, packet.None)
-		assert.Equal(t, packet.None, backPck)
+		backPck := CallOrFallback(w, outPck, None)
+		assert.Equal(t, None, backPck)
 	})
 }
 
@@ -78,8 +77,8 @@ func TestWriter_Write(t *testing.T) {
 
 	w.Link(r)
 
-	out1 := packet.New(nil)
-	out2 := packet.New(nil)
+	out1 := New(nil)
+	out2 := New(nil)
 
 	count := w.Write(out1)
 	assert.Equal(t, 1, count)
@@ -106,7 +105,7 @@ func BenchmarkWriter_Write(b *testing.B) {
 	w.Link(r)
 
 	b.RunParallel(func(p *testing.PB) {
-		out := packet.New(nil)
+		out := New(nil)
 
 		for p.Next() {
 			count := w.Write(out)

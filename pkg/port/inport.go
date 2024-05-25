@@ -3,12 +3,13 @@ package port
 import (
 	"sync"
 
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // InPort represents an input port for receiving data.
 type InPort struct {
-	readers   map[*process.Process]*Reader
+	readers   map[*process.Process]*packet.Reader
 	initHooks []InitHook
 	mu        sync.RWMutex
 }
@@ -16,7 +17,7 @@ type InPort struct {
 // NewIn creates a new InPort instance.
 func NewIn() *InPort {
 	return &InPort{
-		readers: make(map[*process.Process]*Reader),
+		readers: make(map[*process.Process]*packet.Reader),
 	}
 }
 
@@ -29,13 +30,13 @@ func (p *InPort) AddInitHook(h InitHook) {
 }
 
 // Open opens the input port for a given process and returns a reader.
-func (p *InPort) Open(proc *process.Process) *Reader {
+func (p *InPort) Open(proc *process.Process) *packet.Reader {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	reader, ok := p.readers[proc]
 	if !ok {
-		reader = NewReader()
+		reader = packet.NewReader()
 		if proc.Status() == process.StatusTerminated {
 			reader.Close()
 			return reader
@@ -67,5 +68,5 @@ func (p *InPort) Close() {
 	for _, reader := range p.readers {
 		reader.Close()
 	}
-	p.readers = make(map[*process.Process]*Reader)
+	p.readers = make(map[*process.Process]*packet.Reader)
 }

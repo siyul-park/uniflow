@@ -15,7 +15,7 @@ import (
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
 	batch    int
-	bridges  *process.Local[*port.Bridge]
+	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -34,7 +34,7 @@ const KindLoop = "loop"
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{
 		batch:    1,
-		bridges:  process.NewLocal[*port.Bridge](),
+		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -138,9 +138,9 @@ func (n *LoopNode) forward(proc *process.Process) {
 
 		backPcks := make([]*packet.Packet, 0, len(outPcks))
 		for _, outPck := range outPcks {
-			backPck := port.Call(outWriter0, outPck)
+			backPck := packet.Call(outWriter0, outPck)
 			if _, ok := packet.AsError(backPck); ok {
-				backPck = port.CallOrFallback(errWriter, backPck, backPck)
+				backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 			}
 			backPcks = append(backPcks, backPck)
 			if _, ok := packet.AsError(backPck); ok {
@@ -150,7 +150,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 
 		backPck := packet.Merge(backPcks)
 		if _, ok := packet.AsError(backPck); !ok {
-			backPck = port.Call(outWriter1, backPck)
+			backPck = packet.Call(outWriter1, backPck)
 		}
 		inReader.Receive(backPck)
 	}

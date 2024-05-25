@@ -1,33 +1,31 @@
-package port
+package packet
 
 import (
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
 // Writer represents a packet writer.
 type Writer struct {
 	readers  []*Reader
-	receives [][]*packet.Packet
-	in       chan *packet.Packet
-	out      chan *packet.Packet
+	receives [][]*Packet
+	in       chan *Packet
+	out      chan *Packet
 	done     chan struct{}
 	mu       sync.Mutex
 }
 
 // Call sends a packet to the writer and returns the received packet or None if the write fails.
-func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
-	return CallOrFallback(writer, pck, packet.None)
+func Call(writer *Writer, pck *Packet) *Packet {
+	return CallOrFallback(writer, pck, None)
 }
 
 // CallOrFallback sends a packet to the writer and returns the received packet or a backup packet if the write fails.
-func CallOrFallback(writer *Writer, outPck *packet.Packet, backPck *packet.Packet) *packet.Packet {
+func CallOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
 	if writer.Write(outPck) == 0 {
 		return backPck
 	}
 	if backPck, ok := <-writer.Receive(); !ok {
-		return packet.None
+		return None
 	} else {
 		return backPck
 	}
@@ -44,15 +42,15 @@ func Discard(writer *Writer) {
 // NewWriter creates a new Writer instance and starts its processing loop.
 func NewWriter() *Writer {
 	w := &Writer{
-		in:   make(chan *packet.Packet),
-		out:  make(chan *packet.Packet),
+		in:   make(chan *Packet),
+		out:  make(chan *Packet),
 		done: make(chan struct{}),
 	}
 
 	go func() {
 		defer close(w.out)
 
-		buffer := make([]*packet.Packet, 0, 2)
+		buffer := make([]*Packet, 0, 2)
 		for {
 			pck, ok := <-w.in
 			if !ok {
@@ -90,7 +88,7 @@ func (w *Writer) Link(reader *Reader) {
 }
 
 // Write writes a packet to all linked readers and returns the count of successful writes.
-func (w *Writer) Write(pck *packet.Packet) int {
+func (w *Writer) Write(pck *Packet) int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -101,7 +99,7 @@ func (w *Writer) Write(pck *packet.Packet) int {
 	}
 
 	count := 0
-	receives := make([]*packet.Packet, len(w.readers))
+	receives := make([]*Packet, len(w.readers))
 	for i, r := range w.readers {
 		if r.write(pck, w) {
 			count++
@@ -110,7 +108,7 @@ func (w *Writer) Write(pck *packet.Packet) int {
 			receives = append(receives[:i], receives[i+1:]...)
 			i--
 		} else {
-			receives[i] = packet.None
+			receives[i] = None
 		}
 	}
 
@@ -120,7 +118,7 @@ func (w *Writer) Write(pck *packet.Packet) int {
 }
 
 // Receive returns the channel for receiving packets from the writer.
-func (w *Writer) Receive() <-chan *packet.Packet {
+func (w *Writer) Receive() <-chan *Packet {
 	return w.out
 }
 
@@ -140,7 +138,7 @@ func (w *Writer) Close() {
 	}
 }
 
-func (w *Writer) receive(pck *packet.Packet, reader *Reader) bool {
+func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -185,7 +183,7 @@ func (w *Writer) receive(pck *packet.Packet, reader *Reader) bool {
 	}
 
 	w.receives = append(w.receives[:head], w.receives[head+1:]...)
-	w.in <- packet.Merge(receives)
+	w.in <- Merge(receives)
 
 	return true
 }

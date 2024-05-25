@@ -177,11 +177,11 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var backPck *packet.Packet
 	if errPck != nil {
-		backPck = port.Call(errWriter, errPck)
+		backPck = packet.Call(errWriter, errPck)
 	} else {
-		backPck = port.Call(outWriter, outPck)
+		backPck = packet.Call(outWriter, outPck)
 		if _, ok := packet.AsError(backPck); ok {
-			backPck = port.CallOrFallback(errWriter, backPck, backPck)
+			backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 		}
 	}
 

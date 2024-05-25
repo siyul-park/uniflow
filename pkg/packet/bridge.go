@@ -1,15 +1,13 @@
-package port
+package packet
 
 import (
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
 // Bridge represents a data bridge between readers and writers.
 type Bridge struct {
 	readers  [][]*Reader
-	receives []map[*Writer]*packet.Packet
+	receives []map[*Writer]*Packet
 	mu       sync.Mutex
 }
 
@@ -20,11 +18,11 @@ func NewBridge() *Bridge {
 
 // Write writes packets to writers and returns the count of successful writes.
 // It also stores the received packets for each writer.
-func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writer) int {
+func (b *Bridge) Write(pcks []*Packet, readers []*Reader, writers []*Writer) int {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	receives := make(map[*Writer]*packet.Packet, len(writers))
+	receives := make(map[*Writer]*Packet, len(writers))
 	for i := 0; i < len(writers); i++ {
 		if len(pcks) <= i {
 			break
@@ -60,7 +58,7 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 
 // Receive receives a packet from a writer and stores it for further processing.
 // It returns true if the packet is successfully received, false otherwise.
-func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
+func (b *Bridge) Receive(pck *Packet, writer *Writer) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -99,12 +97,12 @@ func (b *Bridge) consume() {
 		b.readers = b.readers[1:]
 		b.receives = b.receives[1:]
 
-		pcks := make([]*packet.Packet, 0, len(receives))
+		pcks := make([]*Packet, 0, len(receives))
 		for _, pck := range receives {
 			pcks = append(pcks, pck)
 		}
 
-		pck := packet.Merge(pcks)
+		pck := Merge(pcks)
 		for _, r := range readers {
 			r.Receive(pck)
 		}

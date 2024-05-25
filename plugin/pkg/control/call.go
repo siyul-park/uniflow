@@ -104,16 +104,16 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 
-		backPck := port.Call(outWriter0, inPck)
+		backPck := packet.Call(outWriter0, inPck)
 		if backPck == packet.None {
 			inReader.Receive(backPck)
 			continue
 		}
 
 		if _, ok := packet.AsError(backPck); ok {
-			backPck = port.Call(errWriter, backPck)
+			backPck = packet.Call(errWriter, backPck)
 		} else {
-			backPck = port.Call(outWriter1, backPck)
+			backPck = packet.Call(outWriter1, backPck)
 		}
 
 		inReader.Receive(backPck)

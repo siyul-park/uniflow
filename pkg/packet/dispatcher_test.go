@@ -1,9 +1,8 @@
-package port
+package packet
 
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,12 +10,12 @@ func TestDispatcher_Write(t *testing.T) {
 	r := NewReader()
 	defer r.Close()
 
-	d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
+	d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*Packet) bool {
 		return true
 	}))
 	defer d.Close()
 
-	pck := packet.New(nil)
+	pck := New(nil)
 
 	count := d.Write(pck, r)
 	assert.Equal(t, 1, count)
@@ -28,13 +27,13 @@ func TestDispatcher_Forward(t *testing.T) {
 		defer r.Close()
 
 		count := 0
-		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
+		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*Packet) bool {
 			count++
 			return true
 		}))
 		defer d.Close()
 
-		pck := packet.New(nil)
+		pck := New(nil)
 
 		d.Write(pck, r)
 		assert.Equal(t, 1, count)
@@ -53,13 +52,13 @@ func TestDispatcher_Forward(t *testing.T) {
 		w.Link(r)
 
 		count := 0
-		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
+		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*Packet) bool {
 			count++
 			return false
 		}))
 		defer d.Close()
 
-		pck := packet.New(nil)
+		pck := New(nil)
 
 		w.Write(pck)
 		w.Write(pck)
@@ -69,10 +68,10 @@ func TestDispatcher_Forward(t *testing.T) {
 
 		d.Write(pck, r)
 		assert.Equal(t, 1, count)
-		assert.Equal(t, packet.None, <-w.Receive())
+		assert.Equal(t, None, <-w.Receive())
 
 		d.Write(pck, r)
 		assert.Equal(t, 2, count)
-		assert.Equal(t, packet.None, <-w.Receive())
+		assert.Equal(t, None, <-w.Receive())
 	})
 }
