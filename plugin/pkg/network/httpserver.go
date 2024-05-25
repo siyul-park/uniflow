@@ -154,6 +154,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		<-ctx.Done()
+		proc.Wait()
 		proc.Exit(ctx.Err())
 	}()
 
@@ -180,9 +181,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		backPck = port.Call(outWriter, outPck)
 		if _, ok := packet.AsError(backPck); ok {
-			if errWriter.Write(backPck) > 0 {
-				backPck, ok = <-errWriter.Receive()
-			}
+			backPck = port.CallOrReturn(errWriter, backPck, backPck)
 		}
 	}
 

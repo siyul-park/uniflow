@@ -32,6 +32,43 @@ func TestCall(t *testing.T) {
 	assert.Equal(t, outPck, backPck)
 }
 
+func TestCallOrReturn(t *testing.T) {
+	t.Run("Call", func(t *testing.T) {
+		w := NewWriter()
+		defer w.Close()
+
+		r := NewReader()
+		defer r.Close()
+
+		w.Link(r)
+
+		go func() {
+			for {
+				inPck, ok := <-r.Read()
+				if !ok {
+					return
+				}
+				r.Receive(inPck)
+			}
+		}()
+
+		outPck := packet.New(nil)
+
+		backPck := CallOrReturn(w, outPck, packet.None)
+		assert.Equal(t, outPck, backPck)
+	})
+
+	t.Run("Return", func(t *testing.T) {
+		w := NewWriter()
+		defer w.Close()
+
+		outPck := packet.New(nil)
+
+		backPck := CallOrReturn(w, outPck, packet.None)
+		assert.Equal(t, packet.None, backPck)
+	})
+}
+
 func TestWriter_Write(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
@@ -70,7 +107,7 @@ func BenchmarkWriter_Write(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		out := packet.New(nil)
-	
+
 		for p.Next() {
 			count := w.Write(out)
 			assert.Equal(b, 1, count)

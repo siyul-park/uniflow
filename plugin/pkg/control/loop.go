@@ -140,9 +140,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 		for _, outPck := range outPcks {
 			backPck := port.Call(outWriter0, outPck)
 			if _, ok := packet.AsError(backPck); ok {
-				if errWriter.Write(backPck) > 0 {
-					backPck = <-errWriter.Receive()
-				}
+				backPck = port.CallOrReturn(errWriter, backPck, backPck)
 			}
 			backPcks = append(backPcks, backPck)
 			if _, ok := packet.AsError(backPck); ok {

@@ -16,13 +16,17 @@ type Writer struct {
 }
 
 func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
-	if writer.Write(pck) == 0 {
-		return packet.None
+	return CallOrReturn(writer, pck, packet.None)
+}
+
+func CallOrReturn(writer *Writer, outPck *packet.Packet, backPck *packet.Packet) *packet.Packet {
+	if writer.Write(outPck) == 0 {
+		return backPck
 	}
-	if pck, ok := <-writer.Receive(); !ok {
+	if backPck, ok := <-writer.Receive(); !ok {
 		return packet.None
 	} else {
-		return pck
+		return backPck
 	}
 }
 
