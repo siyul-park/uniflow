@@ -34,7 +34,7 @@ func TestLoopNode_Port(t *testing.T) {
 }
 
 func TestLoopNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out -> In", func(t *testing.T) {
+	t.Run("SingleInputToSingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -78,7 +78,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out0 -> Out1 -> In", func(t *testing.T) {
+	t.Run("SingleInputToMultipleOutputs", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -133,7 +133,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out0 -> Error -> In", func(t *testing.T) {
+	t.Run("SingleInputToSingleError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -175,7 +175,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out0 -> Error -> Out1 -> In", func(t *testing.T) {
+	t.Run("SingleInputToSingleErrorAndMultipleOutputs", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -244,7 +244,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("batch = 2", func(t *testing.T) {
+	t.Run("BatchSize2", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

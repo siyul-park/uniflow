@@ -29,7 +29,36 @@ func TestOneToOneNode_Port(t *testing.T) {
 }
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
-	t.Run("ForwardPacket", func(t *testing.T) {
+	t.Run("SingleInputToNoOutput", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
+		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case <-inWriter.Receive():
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("SingleInputToSingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -71,7 +100,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("HandleErrorPacket", func(t *testing.T) {
+	t.Run("SingleInputToSingleError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

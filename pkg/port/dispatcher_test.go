@@ -7,43 +7,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGateway_Write(t *testing.T) {
+func TestDispatcher_Write(t *testing.T) {
 	r := NewReader()
 	defer r.Close()
 
-	g := NewGateway([]*Reader{r}, ForwardHookFunc(func(pcks []*packet.Packet) bool {
+	d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
 		return true
 	}))
-	defer g.Close()
+	defer d.Close()
 
 	pck := packet.New(nil)
 
-	count := g.Write(pck, r)
+	count := d.Write(pck, r)
 	assert.Equal(t, 1, count)
 }
 
-func TestGateway_Forward(t *testing.T) {
-	t.Run("forward", func(t *testing.T) {
+func TestDispatcher_Forward(t *testing.T) {
+	t.Run("Forward", func(t *testing.T) {
 		r := NewReader()
 		defer r.Close()
 
 		count := 0
-		g := NewGateway([]*Reader{r}, ForwardHookFunc(func(pcks []*packet.Packet) bool {
+		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
 			count++
 			return true
 		}))
-		defer g.Close()
+		defer d.Close()
 
 		pck := packet.New(nil)
 
-		g.Write(pck, r)
+		d.Write(pck, r)
 		assert.Equal(t, 1, count)
 
-		g.Write(pck, r)
+		d.Write(pck, r)
 		assert.Equal(t, 2, count)
 	})
 
-	t.Run("drop", func(t *testing.T) {
+	t.Run("Drop", func(t *testing.T) {
 		w := NewWriter()
 		defer w.Close()
 
@@ -53,11 +53,11 @@ func TestGateway_Forward(t *testing.T) {
 		w.Link(r)
 
 		count := 0
-		g := NewGateway([]*Reader{r}, ForwardHookFunc(func(pcks []*packet.Packet) bool {
+		d := NewDispatcher([]*Reader{r}, RouteHookFunc(func(pcks []*packet.Packet) bool {
 			count++
 			return false
 		}))
-		defer g.Close()
+		defer d.Close()
 
 		pck := packet.New(nil)
 
@@ -67,11 +67,11 @@ func TestGateway_Forward(t *testing.T) {
 		<-r.Read()
 		<-r.Read()
 
-		g.Write(pck, r)
+		d.Write(pck, r)
 		assert.Equal(t, 1, count)
 		assert.Equal(t, packet.None, <-w.Receive())
 
-		g.Write(pck, r)
+		d.Write(pck, r)
 		assert.Equal(t, 2, count)
 		assert.Equal(t, packet.None, <-w.Receive())
 	})

@@ -11,13 +11,13 @@ import (
 
 // ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
-	action   func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	gateways *process.Local[*port.Gateway]
-	bridges  *process.Local[*port.Bridge]
-	inPorts  []*port.InPort
-	outPort  *port.OutPort
-	errPort  *port.OutPort
-	mu       sync.RWMutex
+	action      func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
+	dispatchers *process.Local[*port.Dispatcher]
+	bridges     *process.Local[*port.Bridge]
+	inPorts     []*port.InPort
+	outPort     *port.OutPort
+	errPort     *port.OutPort
+	mu          sync.RWMutex
 }
 
 var _ Node = (*ManyToOneNode)(nil)
@@ -25,11 +25,11 @@ var _ Node = (*ManyToOneNode)(nil)
 // NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
-		action:   action,
-		gateways: process.NewLocal[*port.Gateway](),
-		bridges:  process.NewLocal[*port.Bridge](),
-		outPort:  port.NewOut(),
-		errPort:  port.NewOut(),
+		action:      action,
+		dispatchers: process.NewLocal[*port.Dispatcher](),
+		bridges:     process.NewLocal[*port.Bridge](),
+		outPort:     port.NewOut(),
+		errPort:     port.NewOut(),
 	}
 
 	if n.action != nil {
@@ -52,6 +52,7 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 				n.inPorts = append(n.inPorts, inPort)
 
 				if n.action != nil {
+					j := j
 					inPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
 						n.forward(proc, j)
 					}))
@@ -90,7 +91,7 @@ func (n *ManyToOneNode) Close() error {
 	}
 	n.outPort.Close()
 	n.errPort.Close()
-	n.gateways.Close()
+	n.dispatchers.Close()
 	n.bridges.Close()
 
 	return nil
@@ -100,7 +101,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	gateway, _ := n.gateways.LoadOrStore(proc, func() (*port.Gateway, error) {
+	dispatcher, _ := n.dispatchers.LoadOrStore(proc, func() (*port.Dispatcher, error) {
 		bridge, _ := n.bridges.LoadOrStore(proc, func() (*port.Bridge, error) {
 			return port.NewBridge(), nil
 		})
@@ -112,7 +113,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		outWriter := n.outPort.Open(proc)
 		errWriter := n.errPort.Open(proc)
 
-		return port.NewGateway(inReaders, port.ForwardHookFunc(func(pcks []*packet.Packet) bool {
+		return port.NewDispatcher(inReaders, port.RouteHookFunc(func(pcks []*packet.Packet) bool {
 			inReaders := lo.Filter(inReaders, func(_ *port.Reader, i int) bool {
 				return pcks[i] != nil
 			})
@@ -143,7 +144,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 			return
 		}
 
-		gateway.Write(inPck, inReader)
+		dispatcher.Write(inPck, inReader)
 	}
 }
 

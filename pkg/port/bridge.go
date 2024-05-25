@@ -6,16 +6,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
+// Bridge represents a data bridge between readers and writers.
 type Bridge struct {
 	readers  [][]*Reader
 	receives []map[*Writer]*packet.Packet
 	mu       sync.Mutex
 }
 
+// NewBridge creates a new Bridge instance.
 func NewBridge() *Bridge {
 	return &Bridge{}
 }
 
+// Write writes packets to writers and returns the count of successful writes.
+// It also stores the received packets for each writer.
 func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writer) int {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -54,30 +58,25 @@ func (b *Bridge) Write(pcks []*packet.Packet, readers []*Reader, writers []*Writ
 	return count
 }
 
+// Receive receives a packet from a writer and stores it for further processing.
+// It returns true if the packet is successfully received, false otherwise.
 func (b *Bridge) Receive(pck *packet.Packet, writer *Writer) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	index := -1
 	for i, receives := range b.receives {
-		if pck, ok := receives[writer]; ok && pck == nil {
-			index = i
-			break
+		if p, ok := receives[writer]; ok && p == nil {
+			receives[writer] = pck
+			if i == 0 {
+				b.consume()
+			}
+			return true
 		}
 	}
-	if index < 0 {
-		return false
-	}
-
-	receives := b.receives[index]
-	receives[writer] = pck
-
-	if index == 0 {
-		b.consume()
-	}
-	return true
+	return false
 }
 
+// Close closes the Bridge by clearing the stored data.
 func (b *Bridge) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()

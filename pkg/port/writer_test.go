@@ -54,7 +54,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := packet.New(nil)
 
-		backPck := CallOrReturn(w, outPck, packet.None)
+		backPck := CallOrFallback(w, outPck, packet.None)
 		assert.Equal(t, outPck, backPck)
 	})
 
@@ -64,7 +64,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := packet.New(nil)
 
-		backPck := CallOrReturn(w, outPck, packet.None)
+		backPck := CallOrFallback(w, outPck, packet.None)
 		assert.Equal(t, packet.None, backPck)
 	})
 }

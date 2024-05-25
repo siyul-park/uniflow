@@ -6,6 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 )
 
+// Writer represents a packet writer.
 type Writer struct {
 	readers  []*Reader
 	receives [][]*packet.Packet
@@ -15,11 +16,13 @@ type Writer struct {
 	mu       sync.Mutex
 }
 
+// Call sends a packet to the writer and returns the received packet or None if the write fails.
 func Call(writer *Writer, pck *packet.Packet) *packet.Packet {
-	return CallOrReturn(writer, pck, packet.None)
+	return CallOrFallback(writer, pck, packet.None)
 }
 
-func CallOrReturn(writer *Writer, outPck *packet.Packet, backPck *packet.Packet) *packet.Packet {
+// CallOrFallback sends a packet to the writer and returns the received packet or a backup packet if the write fails.
+func CallOrFallback(writer *Writer, outPck *packet.Packet, backPck *packet.Packet) *packet.Packet {
 	if writer.Write(outPck) == 0 {
 		return backPck
 	}
@@ -30,6 +33,7 @@ func CallOrReturn(writer *Writer, outPck *packet.Packet, backPck *packet.Packet)
 	}
 }
 
+// Discard discards all packets received by the writer.
 func Discard(writer *Writer) {
 	go func() {
 		for range writer.Receive() {
@@ -37,6 +41,7 @@ func Discard(writer *Writer) {
 	}()
 }
 
+// NewWriter creates a new Writer instance and starts its processing loop.
 func NewWriter() *Writer {
 	w := &Writer{
 		in:   make(chan *packet.Packet),
@@ -76,6 +81,7 @@ func NewWriter() *Writer {
 	return w
 }
 
+// Link connects a reader to the writer.
 func (w *Writer) Link(reader *Reader) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -83,6 +89,7 @@ func (w *Writer) Link(reader *Reader) {
 	w.readers = append(w.readers, reader)
 }
 
+// Write writes a packet to all linked readers and returns the count of successful writes.
 func (w *Writer) Write(pck *packet.Packet) int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -112,25 +119,25 @@ func (w *Writer) Write(pck *packet.Packet) int {
 	return count
 }
 
+// Receive returns the channel for receiving packets from the writer.
 func (w *Writer) Receive() <-chan *packet.Packet {
 	return w.out
 }
 
+// Close closes the writer and releases its resources.
 func (w *Writer) Close() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	select {
 	case <-w.done:
-		return
 	default:
+		w.readers = nil
+		w.receives = nil
+
+		close(w.done)
+		close(w.in)
 	}
-
-	w.readers = nil
-	w.receives = nil
-
-	close(w.done)
-	close(w.in)
 }
 
 func (w *Writer) receive(pck *packet.Packet, reader *Reader) bool {

@@ -39,7 +39,7 @@ func TestRDBNode_Isolation(t *testing.T) {
 }
 
 func TestRDBNode_SendAndReceive(t *testing.T) {
-	t.Run("Raw SQL", func(t *testing.T) {
+	t.Run("RawSQL", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -96,7 +96,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("Named SQL", func(t *testing.T) {
+	t.Run("NamedSQL", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

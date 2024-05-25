@@ -181,7 +181,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		backPck = port.Call(outWriter, outPck)
 		if _, ok := packet.AsError(backPck); ok {
-			backPck = port.CallOrReturn(errWriter, backPck, backPck)
+			backPck = port.CallOrFallback(errWriter, backPck, backPck)
 		}
 	}
 

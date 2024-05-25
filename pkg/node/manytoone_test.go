@@ -29,7 +29,7 @@ func TestManyToOneNode_Port(t *testing.T) {
 }
 
 func TestManyToOneNode_SendAndReceive(t *testing.T) {
-	t.Run("In0 -> None", func(t *testing.T) {
+	t.Run("SingleInputToNoOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -58,7 +58,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In0, In1 -> Out -> In0, In1", func(t *testing.T) {
+	t.Run("MultipleInputsToSingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -118,7 +118,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In0, In1 -> Error -> In0, In1", func(t *testing.T) {
+	t.Run("MultipleInputsToSingleError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

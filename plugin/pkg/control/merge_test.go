@@ -23,7 +23,7 @@ func TestNewMergeNode(t *testing.T) {
 }
 
 func TestMergeNode_SendAndReceive(t *testing.T) {
-	t.Run("depth = 0", func(t *testing.T) {
+	t.Run("Depth0", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -81,7 +81,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("depth = 1", func(t *testing.T) {
+	t.Run("Depth1", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -139,7 +139,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("depth = 2", func(t *testing.T) {
+	t.Run("Depth2", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -200,7 +200,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("depth = -1", func(t *testing.T) {
+	t.Run("Depth-1", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -261,7 +261,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("inplace = true", func(t *testing.T) {
+	t.Run("InPlace", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 

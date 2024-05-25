@@ -29,7 +29,7 @@ func TestOneToManyNode_Port(t *testing.T) {
 }
 
 func TestOneToManyNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> None", func(t *testing.T) {
+	t.Run("SingleInputToNoOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -58,7 +58,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out0 -> In", func(t *testing.T) {
+	t.Run("SingleInputToSingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -100,7 +100,61 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Error -> In", func(t *testing.T) {
+	t.Run("SingleInputToMultipleOutputs", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second*100)
+		defer cancel()
+
+		n := NewOneToManyNode(func(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+			return []*packet.Packet{inPck, inPck}, nil
+		})
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(PortIn))
+
+		out0 := port.NewIn()
+		n.Out(PortWithIndex(PortOut, 0)).Link(out0)
+
+		out1 := port.NewIn()
+		n.Out(PortWithIndex(PortOut, 1)).Link(out1)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+		outReader0 := out0.Open(proc)
+		outReader1 := out1.Open(proc)
+
+		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-outReader0.Read():
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+			outReader0.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case outPck := <-outReader1.Read():
+			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+			outReader1.Receive(outPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			assert.NotNil(t, backPck)
+		case <-ctx.Done():
+			assert.Fail(t, "timeout")
+		}
+	})
+
+	t.Run("SingleInputToSingleError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
