@@ -168,9 +168,9 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var errPck *packet.Packet
 	req, err := n.read(r)
 	if err != nil {
-		errPck = packet.NewError(err)
+		errPck = packet.WithError(err)
 	} else if outPayload, err := primitive.MarshalText(req); err != nil {
-		errPck = packet.NewError(err)
+		errPck = packet.WithError(err)
 	} else {
 		outPck = packet.New(outPayload)
 	}
@@ -237,7 +237,7 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 		if ok1 && ok2 {
 			req, err := n.read(r)
 			if err != nil {
-				inPck = packet.NewError(err)
+				inPck = packet.WithError(err)
 			}
 
 			var res *HTTPPayload

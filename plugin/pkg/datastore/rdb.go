@@ -81,7 +81,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		query, ok = primitive.Pick[string](inPck.Payload(), "0")
 	}
 	if !ok {
-		return nil, packet.NewError(packet.ErrInvalidPacket)
+		return nil, packet.WithError(packet.ErrInvalidPacket)
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
@@ -103,19 +103,19 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return tx, nil
 	})
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 
 	stmt, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
 		args, _ := primitive.Pick[[]any](inPck.Payload(), "1")
 		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
-			return nil, packet.NewError(err)
+			return nil, packet.WithError(err)
 		}
 	} else {
 		var args any
@@ -125,7 +125,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			args, _ = primitive.Pick[[]map[string]any](inPck.Payload(), "1")
 		}
 		if rows, err = stmt.QueryxContext(ctx, args); err != nil {
-			return nil, packet.NewError(err)
+			return nil, packet.WithError(err)
 		}
 	}
 
@@ -135,14 +135,14 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	for rows.Next() {
 		result := make(map[string]any)
 		if err := rows.MapScan(result); err != nil {
-			return nil, packet.NewError(err)
+			return nil, packet.WithError(err)
 		}
 		results = append(results, result)
 	}
 
 	outPayload, err := primitive.MarshalText(results)
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 
 	return packet.New(outPayload), nil

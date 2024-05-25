@@ -112,7 +112,7 @@ func (n *TriggerNode) Listen() {
 			errWriter := n.errPort.Open(proc)
 
 			if outPayload, err := primitive.MarshalText(e.Data()); err != nil {
-				errPck := packet.NewError(err)
+				errPck := packet.WithError(err)
 				port.Call(errWriter, errPck)
 			} else {
 				outPck := packet.New(outPayload)

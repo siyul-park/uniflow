@@ -86,25 +86,25 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	query, err := n.query(input)
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 
 	if n.args == nil {
 		outPayload, err := primitive.MarshalText(query)
 		if err != nil {
-			return nil, packet.NewError(err)
+			return nil, packet.WithError(err)
 		}
 		return packet.New(outPayload), nil
 	}
 
 	args, err := n.args(input)
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 
 	outPayload, err := primitive.MarshalText([]any{query, args})
 	if err != nil {
-		return nil, packet.NewError(err)
+		return nil, packet.WithError(err)
 	}
 	return packet.New(outPayload), nil
 }

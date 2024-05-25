@@ -12,7 +12,7 @@ import (
 func TestWithError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
-	pck2 := NewError(err)
+	pck2 := WithError(err)
 
 	assert.NotNil(t, pck2)
 
@@ -25,7 +25,7 @@ func TestWithError(t *testing.T) {
 func TestAsError(t *testing.T) {
 	err := errors.New(faker.Sentence())
 
-	pck2 := NewError(err)
+	pck2 := WithError(err)
 
 	err1, ok := AsError(pck2)
 	assert.True(t, ok)

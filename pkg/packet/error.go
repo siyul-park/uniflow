@@ -11,8 +11,8 @@ var (
 	ErrDiscardPacket = errors.New("discarded packet")
 )
 
-// NewError creates a new Packet representing an error with the given error.
-func NewError(err error) *Packet {
+// WithError creates a new Packet representing an error with the given error.
+func WithError(err error) *Packet {
 	pairs := []primitive.Value{
 		primitive.NewString("__error"),
 		primitive.TRUE,
