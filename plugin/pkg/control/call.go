@@ -12,6 +12,7 @@ import (
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
+	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -30,12 +31,16 @@ const KindCall = "call"
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {
 	n := &CallNode{
+		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.outPorts[0].AddInitHook(port.InitHookFunc(n.rewrite))
+	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward))
+	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n
 }
@@ -93,10 +98,12 @@ func (n *CallNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
+
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -104,19 +111,73 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 
-		backPck := packet.Call(outWriter0, inPck)
-		if backPck == packet.None {
-			inReader.Receive(backPck)
-			continue
+		bridge.Write([]*packet.Packet{inPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter0})
+	}
+}
+
+func (n *CallNode) rewrite(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
+
+	outWriter0 := n.outPorts[0].Open(proc)
+	outWriter1 := n.outPorts[1].Open(proc)
+	errWriter := n.errPort.Open(proc)
+
+	for {
+		backPck, ok := <-outWriter0.Receive()
+		if !ok {
+			return
 		}
 
 		if _, ok := packet.AsError(backPck); ok {
-			backPck = packet.Call(errWriter, backPck)
+			bridge.Rewrite(backPck, outWriter0, errWriter)
 		} else {
-			backPck = packet.Call(outWriter1, backPck)
+			bridge.Rewrite(backPck, outWriter0, outWriter1)
+		}
+	}
+}
+
+func (n *CallNode) backward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
+
+	outWriter1 := n.outPorts[1].Open(proc)
+
+	for {
+		backPck, ok := <-outWriter1.Receive()
+		if !ok {
+			return
 		}
 
-		inReader.Receive(backPck)
+		bridge.Receive(backPck, outWriter1)
+	}
+}
+
+func (n *CallNode) catch(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
+
+	errWriter := n.errPort.Open(proc)
+
+	for {
+		backPck, ok := <-errWriter.Receive()
+		if !ok {
+			return
+		}
+
+		bridge.Receive(backPck, errWriter)
 	}
 }
 

@@ -6,8 +6,9 @@ import (
 
 // Bridge represents a data bridge between readers and writers.
 type Bridge struct {
-	readers  [][]*Reader
-	receives []map[*Writer]*Packet
+	sources  [][]*Reader
+	targets  [][]*Writer
+	receives [][]*Packet
 	mu       sync.Mutex
 }
 
@@ -16,73 +17,108 @@ func NewBridge() *Bridge {
 	return &Bridge{}
 }
 
-// Write writes packets to writers and returns the count of successful writes.
-// It also stores the received packets for each writer.
-func (b *Bridge) Write(pcks []*Packet, readers []*Reader, writers []*Writer) int {
+// Write writes packets to the specified writers and tracks the success of each write.
+// It stores received packets for further processing.
+func (b *Bridge) Write(pcks []*Packet, sources []*Reader, targets []*Writer) int {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	receives := make(map[*Writer]*Packet, len(writers))
+	receives := make([]*Packet, len(targets))
+
 	count := 0
-	for i := 0; i < len(writers); i++ {
-		if len(pcks) <= i {
+	for i, writer := range targets {
+		if i >= len(pcks) {
 			break
 		}
 
-		writer := writers[i]
 		pck := pcks[i]
-
 		if pck == nil {
 			continue
 		}
 
 		if writer.Write(pck) > 0 {
-			receives[writer] = nil
+			receives[i] = nil
 			count++
 		} else {
-			receives[writer] = pck
+			receives[i] = pck
 		}
 	}
 
-	b.readers = append(b.readers, readers)
+	b.sources = append(b.sources, sources)
+	b.targets = append(b.targets, targets)
 	b.receives = append(b.receives, receives)
 
-	if len(b.readers) == 1 {
+	if len(b.sources) == 1 {
 		b.consume()
 	}
 	return count
 }
 
-// Receive receives a packet from a writer and stores it for further processing.
-// It returns true if the packet is successfully received, false otherwise.
-func (b *Bridge) Receive(pck *Packet, writer *Writer) bool {
+// Rewrite attempts to rewrite a packet from a source writer to a target writer.
+// Returns true if the rewrite is successful, false otherwise.
+func (b *Bridge) Rewrite(pck *Packet, source *Writer, target *Writer) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	for i, receives := range b.receives {
-		if p, ok := receives[writer]; ok && p == nil {
-			receives[writer] = pck
-			if i == 0 {
-				b.consume()
+	for i, targets := range b.targets {
+		for j, writer := range targets {
+			if writer == source && b.receives[i][j] == nil {
+				if target == nil {
+					b.targets[i] = append(b.targets[i][:j], b.targets[i][j+1:]...)
+					b.receives[i] = append(b.receives[i][:j], b.receives[i][j+1:]...)
+					j--
+				} else {
+					targets[j] = target
+
+					if target.Write(pck) > 0 {
+						b.receives[i][j] = nil
+					} else {
+						b.receives[i][j] = pck
+					}
+				}
+
+				if i == 0 {
+					b.consume()
+				}
+				return b.receives[i][j] == nil
 			}
-			return true
 		}
 	}
 	return false
 }
 
-// Close closes the Bridge by clearing the stored data.
+// Receive accepts a packet from a writer and stores it for further processing.
+// Returns true if the packet is successfully stored, false otherwise.
+func (b *Bridge) Receive(pck *Packet, target *Writer) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for i, targets := range b.targets {
+		for j, writer := range targets {
+			if writer == target && b.receives[i][j] == nil {
+				b.receives[i][j] = pck
+				if i == 0 {
+					b.consume()
+				}
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Close clears all stored data in the Bridge.
 func (b *Bridge) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	b.readers = nil
+	b.sources = nil
 	b.receives = nil
 }
 
 func (b *Bridge) consume() {
-	for len(b.readers) > 0 {
-		readers := b.readers[0]
+	for len(b.sources) > 0 {
+		sources := b.sources[0]
 		receives := b.receives[0]
 
 		for _, pck := range receives {
@@ -91,7 +127,8 @@ func (b *Bridge) consume() {
 			}
 		}
 
-		b.readers = b.readers[1:]
+		b.sources = b.sources[1:]
+		b.targets = b.targets[1:]
 		b.receives = b.receives[1:]
 
 		pcks := make([]*Packet, 0, len(receives))
@@ -99,9 +136,9 @@ func (b *Bridge) consume() {
 			pcks = append(pcks, pck)
 		}
 
-		pck := Merge(pcks)
-		for _, r := range readers {
-			r.Receive(pck)
+		merged := Merge(pcks)
+		for _, reader := range sources {
+			reader.Receive(merged)
 		}
 	}
 }

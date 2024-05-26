@@ -128,6 +128,62 @@ func TestBridge_WriteAndReceive(t *testing.T) {
 	})
 }
 
+func TestBridge_Rewrite(t *testing.T) {
+	b := NewBridge()
+	defer b.Close()
+
+	w1 := NewWriter()
+	defer w1.Close()
+
+	w2 := NewWriter()
+	defer w2.Close()
+
+	w3 := NewWriter()
+	defer w3.Close()
+
+	r1 := NewReader()
+	defer r1.Close()
+
+	r2 := NewReader()
+	defer r2.Close()
+
+	r3 := NewReader()
+	defer r3.Close()
+
+	w1.Link(r1)
+	w2.Link(r2)
+	w3.Link(r3)
+
+	pck1 := New(nil)
+
+	w1.Write(pck1)
+	<-r1.Read()
+
+	count := b.Write([]*Packet{pck1}, []*Reader{r1}, []*Writer{w2})
+	assert.Equal(t, 1, count)
+
+	pck2 := <-r2.Read()
+	assert.Equal(t, pck1, pck2)
+
+	r2.Receive(pck2)
+	<-w2.Receive()
+
+	ok := b.Rewrite(pck1, w2, w3)
+	assert.True(t, ok)
+
+	pck3 := <-r3.Read()
+	assert.Equal(t, pck1, pck3)
+
+	r3.Receive(pck3)
+	<-w3.Receive()
+
+	ok = b.Receive(pck3, w3)
+	assert.True(t, ok)
+
+	pck4 := <-w1.Receive()
+	assert.NotNil(t, pck4)
+}
+
 func BenchmarkBridge_WriteAndReceive(b *testing.B) {
 	br := NewBridge()
 	defer br.Close()
