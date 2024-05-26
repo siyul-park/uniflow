@@ -137,12 +137,7 @@ func (b *Bridge) consume() {
 		b.targets = b.targets[1:]
 		b.receives = b.receives[1:]
 
-		pcks := make([]*Packet, 0, len(receives))
-		for _, pck := range receives {
-			pcks = append(pcks, pck)
-		}
-
-		merged := Merge(pcks)
+		merged := Merge(receives)
 		for _, reader := range sources {
 			reader.Receive(merged)
 		}
