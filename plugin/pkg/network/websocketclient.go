@@ -68,16 +68,10 @@ func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packe
 		u.Host = n.url.Host
 	}
 	if n.url.Path != "" {
-		u.Path, _ = url.JoinPath(n.url.Path, u.Path)
+		u.Path = n.url.Path
 	}
-	if len(n.url.Query()) > 0 {
-		query := u.Query()
-		for k, v := range n.url.Query() {
-			for _, v := range v {
-				query.Add(k, v)
-			}
-		}
-		u.RawQuery = query.Encode()
+	if n.url.RawQuery != "" {
+		u.RawQuery = n.url.RawQuery
 	}
 
 	conn, _, err := n.dialer.DialContext(ctx, u.String(), nil)
