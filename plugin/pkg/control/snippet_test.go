@@ -16,184 +16,39 @@ import (
 )
 
 func TestNewSnippetNode(t *testing.T) {
-	n, err := NewSnippetNode("", "")
-	assert.NoError(t, err)
+	n := NewSnippetNode(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestSnippetNode_SendAndReceive(t *testing.T) {
-	t.Run(language.Text, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-		n, _ := NewSnippetNode("", language.Text)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, "", outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
+	n := NewSnippetNode(func(input any) (any, error) {
+		return input, nil
 	})
+	defer n.Close()
 
-	t.Run(language.Typescript, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-		n, _ := NewSnippetNode(`export default function (input: any): any {
-			return input;
-		}`, language.Typescript)
-		defer n.Close()
+	proc := process.New()
+	defer proc.Exit(nil)
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
+	inWriter := in.Open(proc)
 
-		proc := process.New()
-		defer proc.Exit(nil)
+	inPayload := primitive.NewString(faker.Word())
+	inPck := packet.New(inPayload)
 
-		inWriter := in.Open(proc)
+	inWriter.Write(inPck)
 
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.Javascript, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSnippetNode(`export default function (input) {
-			return input;
-		}`, language.Javascript)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.JSON, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSnippetNode(`{}`, language.JSON)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, map[any]any{}, outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.JSONata, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSnippetNode(`$`, language.JSONata)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(language.YAML, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSnippetNode(`{}`, language.YAML)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewMap().Interface(), outPck.Payload().Interface())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
+	select {
+	case outPck := <-inWriter.Receive():
+		assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
 }
 
 func TestSnippetNodeCodec_Decode(t *testing.T) {
@@ -211,143 +66,26 @@ func TestSnippetNodeCodec_Decode(t *testing.T) {
 }
 
 func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
-	b.Run(language.Text, func(b *testing.B) {
-		n, _ := NewSnippetNode("", language.Text)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
+	n := NewSnippetNode(func(input any) (any, error) {
+		return input, nil
 	})
+	defer n.Close()
 
-	b.Run(language.Typescript, func(b *testing.B) {
-		n, _ := NewSnippetNode(`export default function (input: any): any {
-			return input;
-		}`, language.Typescript)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
+	proc := process.New()
+	defer proc.Exit(nil)
 
-		proc := process.New()
-		defer proc.Exit(nil)
+	inWriter := in.Open(proc)
 
-		inWriter := in.Open(proc)
+	var inPayload primitive.Value
+	inPck := packet.New(inPayload)
 
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
+	b.ResetTimer()
 
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
-	})
-
-	b.Run(language.Javascript, func(b *testing.B) {
-		n, _ := NewSnippetNode(`export default function (input) {
-			return input;
-		}`, language.Javascript)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
-	})
-
-	b.Run(language.JSON, func(b *testing.B) {
-		n, _ := NewSnippetNode("{}", language.JSON)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
-	})
-
-	b.Run(language.JSONata, func(b *testing.B) {
-		n, _ := NewSnippetNode("$", language.JSONata)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewString(faker.Word())
-		inPck := packet.New(inPayload)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
-	})
-
-	b.Run(language.YAML, func(b *testing.B) {
-		n, _ := NewSnippetNode("{}", language.YAML)
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			inWriter.Write(inPck)
-			<-inWriter.Receive()
-		}
-	})
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
+	}
 }

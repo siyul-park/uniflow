@@ -35,21 +35,9 @@ var _ node.Node = (*IfNode)(nil)
 const KindIf = "if"
 
 // NewIfNode creates a new IfNode.
-func NewIfNode(code, lang string) (*IfNode, error) {
-	l := lang
-	transform, err := language.CompileTransform(code, &l)
-	if err != nil {
-		return nil, err
-	}
-
+func NewIfNode(when func(any) (bool, error)) *IfNode {
 	n := &IfNode{
-		when: func(input any) (bool, error) {
-			output, err := transform(input)
-			if err != nil {
-				return false, err
-			}
-			return !reflect.ValueOf(output).IsZero(), nil
-		},
+		when:     when,
 		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -65,7 +53,7 @@ func NewIfNode(code, lang string) (*IfNode, error) {
 	}
 	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
-	return n, nil
+	return n
 }
 
 // In returns the input port with the specified name.
@@ -194,6 +182,18 @@ func (n *IfNode) catch(proc *process.Process) {
 // NewIfNodeCodec creates a new codec for IfNodeSpec.
 func NewIfNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
-		return NewIfNode(spec.When, spec.Lang)
+		l := spec.Lang
+		transform, err := language.CompileTransform(spec.When, &l)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewIfNode(func(input any) (bool, error) {
+			output, err := transform(input)
+			if err != nil {
+				return false, err
+			}
+			return !reflect.ValueOf(output).IsZero(), nil
+		}), nil
 	})
 }

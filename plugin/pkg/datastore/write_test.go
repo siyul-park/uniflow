@@ -34,8 +34,6 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 	n := NewWriteNode(f)
 	defer n.Close()
 
-	n.SetFormat("$", "")
-
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 

@@ -15,7 +15,6 @@ import (
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
 	batch    int
-	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -34,7 +33,6 @@ const KindLoop = "loop"
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{
 		batch:    1,
-		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -107,7 +105,6 @@ func (n *LoopNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.bridges.Close()
 
 	return nil
 }

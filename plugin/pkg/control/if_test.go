@@ -2,9 +2,11 @@ package control
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -15,14 +17,13 @@ import (
 )
 
 func TestNewIfNode(t *testing.T) {
-	n, err := NewIfNode("$.foo = \"bar\"", "")
-	assert.NoError(t, err)
+	n := NewIfNode(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestIfNode_Port(t *testing.T) {
-	n, _ := NewIfNode("$.foo = \"bar\"", "")
+	n := NewIfNode(nil)
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -33,11 +34,13 @@ func TestIfNode_Port(t *testing.T) {
 }
 
 func TestIfNode_SendAndReceive(t *testing.T) {
-	t.Run("In -> Out0 -> In", func(t *testing.T) {
+	t.Run("SingleInputToFirstOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewIfNode("$.foo = \"bar\"", "")
+		n := NewIfNode(func(_ any) (bool, error) {
+			return true, nil
+		})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -73,11 +76,13 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Out1 -> In", func(t *testing.T) {
+	t.Run("SingleInputToSecondOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewIfNode("$.foo = \"bar\"", "")
+		n := NewIfNode(func(_ any) (bool, error) {
+			return false, nil
+		})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -113,11 +118,13 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("In -> Error -> In", func(t *testing.T) {
+	t.Run("SingleInputToSingleError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewIfNode("$ - 1", "")
+		n := NewIfNode(func(_ any) (bool, error) {
+			return false, errors.New(faker.Sentence())
+		})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -168,7 +175,9 @@ func TestIfNodeCodec_Decode(t *testing.T) {
 }
 
 func BenchmarkIfNode_SendAndReceive(b *testing.B) {
-	n, _ := NewIfNode("$.foo = \"bar\"", "")
+	n := NewIfNode(func(_ any) (bool, error) {
+		return true, nil
+	})
 	defer n.Close()
 
 	in := port.NewOut()

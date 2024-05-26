@@ -15,18 +15,9 @@ import (
 )
 
 func TestNewSQLNode(t *testing.T) {
-	n, err := NewSQLNode("", "")
-	assert.NoError(t, err)
+	n := NewSQLNode(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
-}
-
-func TestSQLNode_SetArguments(t *testing.T) {
-	n, _ := NewSQLNode("", "")
-	defer n.Close()
-
-	err := n.SetArguments("[\"foo\", \"bar\"]")
-	assert.NoError(t, err)
 }
 
 func TestSQLNode_SendAndReceive(t *testing.T) {
@@ -34,7 +25,9 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewSQLNode("SELECT * FROM Foo", "")
+		n := NewSQLNode(func(_ any) (string, error) {
+			return "SELECT * FROM Foo", nil
+		})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -65,11 +58,14 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewSQLNode("SELECT * FROM Foo WHERE id = :name", "")
+		n := NewSQLNode(func(_ any) (string, error) {
+			return "SELECT * FROM Foo WHERE id = :name", nil
+		})
 		defer n.Close()
 
-		err := n.SetArguments("$")
-		assert.NoError(t, err)
+		n.SetArguments(func(input any) (any, error) {
+			return input, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -115,10 +111,14 @@ func TestSQLNodeCodec_Decode(t *testing.T) {
 }
 
 func BenchmarkSQLNode_SendAndReceive(b *testing.B) {
-	n, _ := NewSQLNode("SELECT * FROM Foo WHERE id = :name", "")
+	n := NewSQLNode(func(_ any) (string, error) {
+		return "SELECT * FROM Foo WHERE id = :name", nil
+	})
 	defer n.Close()
 
-	_ = n.SetArguments("$")
+	n.SetArguments(func(input any) (any, error) {
+		return input, nil
+	})
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))

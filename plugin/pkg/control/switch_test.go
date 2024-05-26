@@ -27,7 +27,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	n := NewSwitchNode()
 	defer n.Close()
 
-	_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
+	_ = n.AddMatch(func(_ any) (bool, error) { return true, nil }, node.PortWithIndex(node.PortOut, 0))
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -85,7 +85,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 	n := NewSwitchNode()
 	defer n.Close()
 
-	_ = n.AddMatch("$.foo = \"bar\"", node.PortWithIndex(node.PortOut, 0))
+	_ = n.AddMatch(func(_ any) (bool, error) { return true, nil }, node.PortWithIndex(node.PortOut, 0))
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))

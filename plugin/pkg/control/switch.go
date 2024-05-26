@@ -17,7 +17,6 @@ import (
 // SwitchNode represents a switch node that directs incoming packets based on specified conditions.
 type SwitchNode struct {
 	*node.OneToManyNode
-	lang  string
 	whens []func(any) (bool, error)
 	ports []int
 	mu    sync.RWMutex
@@ -45,41 +44,17 @@ func NewSwitchNode() *SwitchNode {
 	return n
 }
 
-// SetLanguage sets the language for the SwitchNode.
-func (n *SwitchNode) SetLanguage(lang string) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.lang = lang
-}
-
 // AddMatch adds a condition to the SwitchNode, associating it with a specific output port.
-func (n *SwitchNode) AddMatch(when, port string) error {
+func (n *SwitchNode) AddMatch(when func(any) (bool, error), port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-
-	if when == "" {
-		when = "true"
-	}
-
-	lang := n.lang
-	transform, err := language.CompileTransform(when, &lang)
-	if err != nil {
-		return err
-	}
 
 	index, ok := node.IndexOfPort(node.PortOut, port)
 	if !ok {
 		return errors.WithStack(node.ErrUnsupportedPort)
 	}
 
-	n.whens = append(n.whens, func(input any) (bool, error) {
-		output, err := transform(input)
-		if err != nil {
-			return false, err
-		}
-		return !reflect.ValueOf(output).IsZero(), nil
-	})
+	n.whens = append(n.whens, when)
 	n.ports = append(n.ports, index)
 	return nil
 }
@@ -108,10 +83,26 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
+		whens := make([]func(any) (bool, error), len(spec.Match))
+		for i, condition := range spec.Match {
+			l := spec.Lang
+			transform, err := language.CompileTransform(condition.When, &l)
+			if err != nil {
+				return nil, err
+			}
+
+			whens[i] = func(input any) (bool, error) {
+				output, err := transform(input)
+				if err != nil {
+					return false, err
+				}
+				return !reflect.ValueOf(output).IsZero(), nil
+			}
+		}
+
 		n := NewSwitchNode()
-		n.SetLanguage(spec.Lang)
-		for _, condition := range spec.Match {
-			if err := n.AddMatch(condition.When, condition.Port); err != nil {
+		for i, condition := range spec.Match {
+			if err := n.AddMatch(whens[i], condition.Port); err != nil {
 				_ = n.Close()
 				return nil, err
 			}

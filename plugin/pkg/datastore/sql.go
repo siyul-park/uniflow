@@ -32,49 +32,19 @@ type SQLNodeSpec struct {
 const KindSQL = "sql"
 
 // NewSQLNode creates a new SQLNode instance.
-func NewSQLNode(query, lang string) (*SQLNode, error) {
-	l := lang
-	transform, err := language.CompileTransform(query, &l)
-	if err != nil {
-		return nil, err
-	}
-
-	n := &SQLNode{lang: lang}
+func NewSQLNode(query func(any) (string, error)) *SQLNode {
+	n := &SQLNode{query: query}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-	n.query = func(input any) (string, error) {
-		output, err := transform(input)
-		if err != nil {
-			return "", err
-		}
-		if output, ok := output.(string); !ok {
-			return "", errors.WithStack(packet.ErrInvalidPacket)
-		} else {
-			return output, nil
-		}
-	}
 
-	return n, nil
+	return n
 }
 
 // SetArguments sets the arguments for the SQL query.
-func (n *SQLNode) SetArguments(args string) error {
+func (n *SQLNode) SetArguments(args func(any) (any, error)) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if args == "" {
-		n.args = nil
-		return nil
-	}
-
-	lang := n.lang
-	transform, err := language.CompileTransform(args, &lang)
-	if err != nil {
-		return err
-	}
-
-	n.args = transform
-
-	return nil
+	n.args = args
 }
 
 func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -112,14 +82,33 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 // NewSQLNodeCodec creates a new codec for SQLNodeSpec.
 func NewSQLNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *SQLNodeSpec) (node.Node, error) {
-		n, err := NewSQLNode(spec.Query, spec.Lang)
+		l := spec.Lang
+		transform, err := language.CompileTransform(spec.Query, &l)
 		if err != nil {
 			return nil, err
 		}
-		if err := n.SetArguments(spec.Arguments); err != nil {
+
+		n := NewSQLNode(func(input any) (string, error) {
+			output, err := transform(input)
+			if err != nil {
+				return "", err
+			}
+			if output, ok := output.(string); !ok {
+				return "", errors.WithStack(packet.ErrInvalidPacket)
+			} else {
+				return output, nil
+			}
+		})
+
+		l = spec.Lang
+		args, err := language.CompileTransform(spec.Arguments, &l)
+		if err != nil {
 			_ = n.Close()
 			return nil, err
 		}
+
+		n.SetArguments(args)
+
 		return n, nil
 	})
 }

@@ -17,7 +17,6 @@ import (
 // NativeNode represents a node for executing internal calls.
 type NativeNode struct {
 	*node.OneToOneNode
-	lang     string
 	operator reflect.Value
 	operands []func(any) (any, error)
 	mu       sync.RWMutex
@@ -55,32 +54,12 @@ func NewNativeNode(operator any) (*NativeNode, error) {
 	return n, nil
 }
 
-// SetLanguage sets the language for the NativeNode.
-func (n *NativeNode) SetLanguage(lang string) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.lang = lang
-}
-
 // SetOperands sets operands, it processes the operands based on the specified language.
-func (n *NativeNode) SetOperands(operands ...string) error {
+func (n *NativeNode) SetOperands(operands ...func(any) (any, error)) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.operands = nil
-
-	for _, operand := range operands {
-		lang := n.lang
-		transform, err := language.CompileTransform(operand, &lang)
-		if err != nil {
-			return err
-		}
-
-		n.operands = append(n.operands, transform)
-	}
-
-	return nil
+	n.operands = operands
 }
 
 func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -193,11 +172,21 @@ func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		n.SetLanguage(spec.Lang)
-		if err := n.SetOperands(spec.Operands...); err != nil {
-			_ = n.Close()
-			return nil, err
+
+		operands := make([]func(any) (any, error), len(spec.Operands))
+		for i, operand := range spec.Operands {
+			lang := spec.Lang
+			transform, err := language.CompileTransform(operand, &lang)
+			if err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+
+			operands[i] = transform
 		}
+
+		n.SetOperands(operands...)
+
 		return n, nil
 	})
 }

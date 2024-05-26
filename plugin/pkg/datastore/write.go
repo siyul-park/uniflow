@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -40,43 +41,19 @@ func NewWriteNode(writer io.WriteCloser) *WriteNode {
 	n := &WriteNode{writer: writer}
 
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-	n.SetFormat("", "")
+	n.SetFormat(func(input any) ([]byte, error) {
+		output := fmt.Sprintf("%v", input)
+		return []byte(output), nil
+	})
 
 	return n
 }
 
-func (n *WriteNode) SetFormat(format, lang string) error {
+func (n *WriteNode) SetFormat(format func(any) ([]byte, error)) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	var transform func(any) (any, error)
-	if format == "" {
-		transform = func(v any) (any, error) {
-			return v, nil
-		}
-	} else {
-		var err error
-		transform, err = language.CompileTransform(format, &lang)
-		if err != nil {
-			return err
-		}
-	}
-
-	n.format = func(input any) ([]byte, error) {
-		output, err := transform(input)
-		if err != nil {
-			return nil, err
-		}
-
-		if v, ok := output.([]byte); ok {
-			return v, nil
-		} else if v, ok := output.(string); ok {
-			return []byte(v), nil
-		}
-		return nil, errors.WithStack(packet.ErrInvalidPacket)
-	}
-
-	return nil
+	n.format = format
 }
 
 func (n *WriteNode) Close() error {
@@ -125,9 +102,30 @@ func NewWriteNodeCodec() scheme.Codec {
 		}
 
 		n := NewWriteNode(file)
-		if err := n.SetFormat(spec.Format, spec.Lang); err != nil {
-			return nil, err
+
+		if spec.Format != "" {
+			l := spec.Lang
+			transform, err := language.CompileTransform(spec.Format, &l)
+			if err != nil {
+				_ = n.Close()
+				return nil, err
+			}
+
+			n.SetFormat(func(input any) ([]byte, error) {
+				output, err := transform(input)
+				if err != nil {
+					return nil, err
+				}
+
+				if v, ok := output.([]byte); ok {
+					return v, nil
+				} else if v, ok := output.(string); ok {
+					return []byte(v), nil
+				}
+				return nil, errors.WithStack(packet.ErrInvalidPacket)
+			})
 		}
+
 		return n, nil
 	})
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,13 +35,12 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 		defer n.Close()
 
 		n.SetTimeout(time.Second)
-		n.SetLanguage(language.Text)
-
-		err := n.SetMethod(http.MethodGet)
-		assert.NoError(t, err)
-
-		err = n.SetURL(s.URL)
-		assert.NoError(t, err)
+		n.SetMethod(func(_ any) (string, error) {
+			return http.MethodGet, nil
+		})
+		n.SetURL(func(_ any) (string, error) {
+			return s.URL, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -137,126 +135,6 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
-
-	t.Run("StaticQuery", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewHTTPClientNode()
-		defer n.Close()
-
-		n.SetTimeout(time.Second)
-
-		err := n.SetMethod(http.MethodGet)
-		assert.NoError(t, err)
-
-		err = n.SetURL(s.URL)
-		assert.NoError(t, err)
-
-		err = n.SetQuery(`{"foo": "bar"}`)
-		assert.NoError(t, err)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("StaticHeader", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewHTTPClientNode()
-		defer n.Close()
-
-		n.SetTimeout(time.Second)
-
-		err := n.SetMethod(http.MethodGet)
-		assert.NoError(t, err)
-
-		err = n.SetURL(s.URL)
-		assert.NoError(t, err)
-
-		err = n.SetHeader(`{"foo": "bar"}`)
-		assert.NoError(t, err)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("StaticBody", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewHTTPClientNode()
-		defer n.Close()
-
-		n.SetTimeout(time.Second)
-
-		err := n.SetMethod(http.MethodPost)
-		assert.NoError(t, err)
-
-		err = n.SetURL(s.URL)
-		assert.NoError(t, err)
-
-		err = n.SetBody(`{"foo": "bar"}`)
-		assert.NoError(t, err)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
 }
 
 func TestHTTPClientNodeCodec_Decode(t *testing.T) {
@@ -269,6 +147,9 @@ func TestHTTPClientNodeCodec_Decode(t *testing.T) {
 	spec := &HTTPClientNodeSpec{
 		Method: http.MethodGet,
 		URL:    s.URL,
+		Query:  `{"foo": "bar"}`,
+		Header: `{"foo": "bar"}`,
+		Body:   `{"foo": "bar"}`,
 	}
 
 	n, err := codec.Decode(spec)

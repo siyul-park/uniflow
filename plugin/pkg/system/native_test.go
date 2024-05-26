@@ -61,7 +61,9 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetOperands("$")
+		n.SetOperands(func(input any) (any, error) {
+			return input, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -93,7 +95,11 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetOperands("$", "$")
+		n.SetOperands(func(input any) (any, error) {
+			return input, nil
+		}, func(input any) (any, error) {
+			return input, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -155,7 +161,9 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetOperands("$")
+		n.SetOperands(func(input any) (any, error) {
+			return input, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -187,7 +195,9 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		_ = n.SetOperands("$")
+		n.SetOperands(func(input any) (any, error) {
+			return input, nil
+		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))

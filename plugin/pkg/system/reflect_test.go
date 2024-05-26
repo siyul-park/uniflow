@@ -38,7 +38,9 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewNativeNode(CreateNodes(st))
 	defer n.Close()
 
-	_ = n.SetOperands("[$]")
+	n.SetOperands(func(input any) (any, error) {
+		return []any{input}, nil
+	})
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -136,7 +138,9 @@ func TestUpdateNodes(t *testing.T) {
 	n, _ := NewNativeNode(UpdateNodes(st))
 	defer n.Close()
 
-	_ = n.SetOperands("[$]")
+	n.SetOperands(func(input any) (any, error) {
+		return []any{input}, nil
+	})
 
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
