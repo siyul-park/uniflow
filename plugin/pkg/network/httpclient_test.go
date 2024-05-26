@@ -17,7 +17,7 @@ import (
 )
 
 func TestNewHTTPClientNode(t *testing.T) {
-	n := NewHTTPClientNode()
+	n := NewHTTPClientNode(&url.URL{})
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
@@ -27,114 +27,36 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	}))
 	defer s.Close()
 
-	t.Run("StaticURL", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	u, _ := url.Parse(s.URL)
 
-		n := NewHTTPClientNode()
-		defer n.Close()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-		n.SetTimeout(time.Second)
-		n.SetMethod(func(_ any) (string, error) {
-			return http.MethodGet, nil
-		})
-		n.SetURL(func(_ any) (string, error) {
-			return s.URL, nil
-		})
+	n := NewHTTPClientNode(u)
+	defer n.Close()
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
+	n.SetTimeout(time.Second)
 
-		proc := process.New()
-		defer proc.Exit(nil)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-		inWriter := in.Open(proc)
+	proc := process.New()
+	defer proc.Exit(nil)
 
-		var inPayload primitive.Value
-		inPck := packet.New(inPayload)
+	inWriter := in.Open(proc)
 
-		inWriter.Write(inPck)
+	var inPayload primitive.Value
+	inPck := packet.New(inPayload)
 
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
+	inWriter.Write(inPck)
 
-	t.Run("DynamicURL", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewHTTPClientNode()
-		defer n.Close()
-
-		n.SetTimeout(time.Second)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewMap(
-			primitive.NewString("method"), primitive.NewString(http.MethodGet),
-			primitive.NewString("url"), primitive.NewString(s.URL),
-		)
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("DynamicURLElement", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewHTTPClientNode()
-		defer n.Close()
-
-		u, _ := url.Parse(s.URL)
-
-		n.SetTimeout(time.Second)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := primitive.NewMap(
-			primitive.NewString("method"), primitive.NewString(http.MethodGet),
-			primitive.NewString("scheme"), primitive.NewString(u.Scheme),
-			primitive.NewString("host"), primitive.NewString(u.Host),
-			primitive.NewString("path"), primitive.NewString(u.Path),
-		)
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			err, _ := packet.AsError(outPck)
-			assert.NoError(t, err)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
+	select {
+	case outPck := <-inWriter.Receive():
+		err, _ := packet.AsError(outPck)
+		assert.NoError(t, err)
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
 }
 
 func TestHTTPClientNodeCodec_Decode(t *testing.T) {
@@ -145,11 +67,7 @@ func TestHTTPClientNodeCodec_Decode(t *testing.T) {
 	codec := NewHTTPClientNodeCodec()
 
 	spec := &HTTPClientNodeSpec{
-		Method: http.MethodGet,
-		URL:    s.URL,
-		Query:  `{"foo": "bar"}`,
-		Header: `{"foo": "bar"}`,
-		Body:   `{"foo": "bar"}`,
+		URL: "http://localhost:3000/",
 	}
 
 	n, err := codec.Decode(spec)
@@ -163,7 +81,9 @@ func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 	}))
 	defer s.Close()
 
-	n := NewHTTPClientNode()
+	u, _ := url.Parse(s.URL)
+
+	n := NewHTTPClientNode(u)
 	defer n.Close()
 
 	n.SetTimeout(time.Second)

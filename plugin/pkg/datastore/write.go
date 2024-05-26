@@ -6,27 +6,22 @@ import (
 	"os"
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
 type WriteNode struct {
 	*node.OneToOneNode
 	writer io.WriteCloser
-	format func(any) ([]byte, error)
 	mu     sync.RWMutex
 }
 
 type WriteNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
 	File            string `map:"file"`
-	Lang            string `map:"lang,omitempty"`
-	Format          string `map:"format,omitempty"`
 }
 
 type nopWriteCloser struct {
@@ -41,19 +36,8 @@ func NewWriteNode(writer io.WriteCloser) *WriteNode {
 	n := &WriteNode{writer: writer}
 
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-	n.SetFormat(func(input any) ([]byte, error) {
-		output := fmt.Sprintf("%v", input)
-		return []byte(output), nil
-	})
 
 	return n
-}
-
-func (n *WriteNode) SetFormat(format func(any) ([]byte, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.format = format
 }
 
 func (n *WriteNode) Close() error {
@@ -73,9 +57,13 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	inPayload := inPck.Payload()
 	input := primitive.Interface(inPayload)
 
-	format, err := n.format(input)
-	if err != nil {
-		return nil, packet.WithError(err)
+	var format []byte
+	if v, ok := input.([]byte); ok {
+		format = v
+	} else if v, ok := input.(string); ok {
+		format = []byte(v)
+	} else {
+		format = []byte(fmt.Sprintf("%v", input))
 	}
 
 	len, err := n.writer.Write(format)
@@ -101,32 +89,7 @@ func NewWriteNodeCodec() scheme.Codec {
 			return nil, err
 		}
 
-		n := NewWriteNode(file)
-
-		if spec.Format != "" {
-			l := spec.Lang
-			transform, err := language.CompileTransform(spec.Format, &l)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetFormat(func(input any) ([]byte, error) {
-				output, err := transform(input)
-				if err != nil {
-					return nil, err
-				}
-
-				if v, ok := output.([]byte); ok {
-					return v, nil
-				} else if v, ok := output.(string); ok {
-					return []byte(v), nil
-				}
-				return nil, errors.WithStack(packet.ErrInvalidPacket)
-			})
-		}
-
-		return n, nil
+		return NewWriteNode(file), nil
 	})
 }
 

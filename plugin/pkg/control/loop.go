@@ -3,7 +3,6 @@ package control
 import (
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -14,7 +13,7 @@ import (
 
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
-	batch    int
+	bridges  *process.Local[*packet.Bridge]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -24,7 +23,6 @@ type LoopNode struct {
 // LoopNodeSpec holds the specifications for creating a LoopNode.
 type LoopNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Batch           int `map:"batch,omitempty"`
 }
 
 const KindLoop = "loop"
@@ -32,33 +30,16 @@ const KindLoop = "loop"
 // NewLoopNode creates a new LoopNode with default configurations.
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{
-		batch:    1,
+		bridges:  process.NewLocal[*packet.Bridge](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward))
 
 	return n
-}
-
-// Batch returns the batch size of the LoopNode.
-func (n *LoopNode) Batch() int {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-	return n.batch
-}
-
-// SetBatch sets the batch size of the LoopNode.
-func (n *LoopNode) SetBatch(batch int) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	if batch < 1 {
-		batch = 1
-	}
-	n.batch = batch
 }
 
 // In returns the input port with the specified name.
@@ -105,6 +86,7 @@ func (n *LoopNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
+	n.bridges.Close()
 
 	return nil
 }
@@ -112,6 +94,10 @@ func (n *LoopNode) Close() error {
 func (n *LoopNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
+
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
@@ -125,62 +111,67 @@ func (n *LoopNode) forward(proc *process.Process) {
 		}
 
 		inPayload := inPck.Payload()
-		outPayloads := n.chunk(inPayload)
 
-		outPcks := make([]*packet.Packet, len(outPayloads))
-		for i, outPayload := range outPayloads {
-			outPck := packet.New(outPayload)
-			outPcks[i] = outPck
+		var outPayloads []primitive.Value
+		if v, ok := inPayload.(*primitive.Slice); ok {
+			outPayloads = v.Values()
+		} else {
+			outPayloads = []primitive.Value{inPayload}
 		}
 
-		backPcks := make([]*packet.Packet, 0, len(outPcks))
-		for _, outPck := range outPcks {
-			backPck := packet.Call(outWriter0, outPck)
+		count := 0
+		for _, outPayload := range outPayloads {
+			outPck := packet.New(outPayload)
+			if outWriter0.Write(outPck) > 0 {
+				count++
+			}
+		}
+
+		backPcks := make([]*packet.Packet, count)
+		for i := 0; i < count; i++ {
+			backPck, ok := <-outWriter0.Receive()
+			if !ok {
+				return
+			}
+
 			if _, ok := packet.AsError(backPck); ok {
 				backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 			}
-			backPcks = append(backPcks, backPck)
-			if _, ok := packet.AsError(backPck); ok {
-				break
-			}
+			backPcks[i] = backPck
 		}
 
 		backPck := packet.Merge(backPcks)
-		if _, ok := packet.AsError(backPck); !ok {
-			backPck = packet.Call(outWriter1, backPck)
+		if _, ok := packet.AsError(backPck); ok {
+			bridge.Write(nil, []*packet.Reader{inReader}, nil)
+		} else {
+			bridge.Write([]*packet.Packet{backPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter1})
 		}
-		inReader.Receive(backPck)
 	}
 }
 
-func (n *LoopNode) chunk(val primitive.Value) []primitive.Value {
-	var values []primitive.Value
+func (n *LoopNode) backward(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
-	switch v := val.(type) {
-	case *primitive.Slice:
-		values = v.Values()
-	default:
-		values = []primitive.Value{val}
-	}
+	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
+		return packet.NewBridge(), nil
+	})
 
-	if n.batch > 1 {
-		chunks := lo.Chunk(values, n.batch)
+	outWriter1 := n.outPorts[1].Open(proc)
 
-		values = nil
-		for _, chunk := range chunks {
-			values = append(values, primitive.NewSlice(chunk...))
+	for {
+		backPck, ok := <-outWriter1.Receive()
+		if !ok {
+			return
 		}
-	}
 
-	return values
+		bridge.Receive(backPck, outWriter1)
+	}
 }
 
 // NewLoopNodeCodec creates a new codec for LoopNodeSpec.
 func NewLoopNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
-		n := NewLoopNode()
-		n.SetBatch(spec.Batch)
-
-		return n, nil
+		return NewLoopNode(), nil
 	})
 }

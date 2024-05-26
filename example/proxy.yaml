@@ -8,4 +8,4 @@
 
 - kind: http/client
   name: proxy
-  url: '"https://www.google.com" & path'
+  url: https://www.google.com/

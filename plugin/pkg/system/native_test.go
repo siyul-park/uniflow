@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,10 +60,6 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		n.SetOperands(func(input any) (any, error) {
-			return input, nil
-		})
-
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
@@ -95,12 +90,6 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		n.SetOperands(func(input any) (any, error) {
-			return input, nil
-		}, func(input any) (any, error) {
-			return input, nil
-		})
-
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
@@ -109,14 +98,17 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := primitive.NewSlice(
+			primitive.NewString(faker.UUIDHyphenated()),
+			primitive.NewString(faker.UUIDHyphenated()),
+		)
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
+			assert.Equal(t, inPayload.Get(1), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -161,10 +153,6 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n.Close()
 
-		n.SetOperands(func(input any) (any, error) {
-			return input, nil
-		})
-
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
@@ -194,10 +182,6 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 			return fmt.Errorf("%v", arg)
 		})
 		defer n.Close()
-
-		n.SetOperands(func(input any) (any, error) {
-			return input, nil
-		})
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -245,9 +229,7 @@ func TestNativeNodeCodec_Decode(t *testing.T) {
 	codec := NewNativeNodeCodec(module)
 
 	spec := &NativeNodeSpec{
-		Opcode:   operation,
-		Lang:     language.Text,
-		Operands: []string{"foo"},
+		Opcode: operation,
 	}
 
 	n, err := codec.Decode(spec)

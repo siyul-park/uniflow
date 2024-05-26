@@ -18,7 +18,6 @@ import (
 func TestNewLoopNode(t *testing.T) {
 	n := NewLoopNode()
 	assert.NotNil(t, n)
-	assert.Equal(t, 1, n.Batch())
 	assert.NoError(t, n.Close())
 }
 
@@ -160,12 +159,14 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 
 		inWriter.Write(inPck)
 
-		select {
-		case <-outReader0.Read():
-			backPck := packet.WithError(errors.New(faker.Sentence()))
-			outReader0.Receive(backPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+		for i := 0; i < inPayload.Len(); i++ {
+			select {
+			case <-outReader0.Read():
+				backPck := packet.WithError(errors.New(faker.Sentence()))
+				outReader0.Receive(backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
 		}
 
 		select {
@@ -243,59 +244,12 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
-
-	t.Run("BatchSize2", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n := NewLoopNode()
-		defer n.Close()
-
-		n.SetBatch(2)
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		out := port.NewIn()
-		n.Out(node.PortOut).Link(out)
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-		outReader := out.Open(proc)
-
-		inPayload := primitive.NewSlice()
-		for i := 0; i < 4; i++ {
-			inPayload = inPayload.Append(primitive.NewString(faker.UUIDHyphenated()))
-		}
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		for i := 0; i < inPayload.Len()/n.Batch(); i++ {
-			select {
-			case outPck := <-outReader.Read():
-				outReader.Receive(outPck)
-			case <-ctx.Done():
-				assert.Fail(t, "timeout")
-			}
-		}
-
-		select {
-		case <-inWriter.Receive():
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-	})
 }
 
 func TestLoopNodeCodec_Decode(t *testing.T) {
 	codec := NewLoopNodeCodec()
 
-	spec := &LoopNodeSpec{
-		Batch: 1,
-	}
+	spec := &LoopNodeSpec{}
 
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)

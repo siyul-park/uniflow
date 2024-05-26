@@ -3,6 +3,7 @@ package network
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
@@ -18,27 +19,19 @@ import (
 )
 
 func TestNewWebSocketClient(t *testing.T) {
-	n := NewWebSocketClientNode()
+	n := NewWebSocketClientNode(&url.URL{})
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestWebSocketClientNode_Port(t *testing.T) {
-	n := NewWebSocketClientNode()
+	n := NewWebSocketClientNode(&url.URL{})
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIO))
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
 	assert.NotNil(t, n.Out(node.PortErr))
-}
-
-func TestWebSocket_URL(t *testing.T) {
-	n := NewWebSocketClientNode()
-	defer n.Close()
-
-	err := n.SetURL(faker.URL())
-	assert.NoError(t, err)
 }
 
 func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
@@ -48,21 +41,21 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 	p, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
+	u, _ := url.Parse(fmt.Sprintf("ws://localhost:%d", p))
+
 	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
 	defer http.Close()
 
 	ws := NewWebSocketUpgradeNode()
 	defer ws.Close()
 
-	client := NewWebSocketClientNode()
+	client := NewWebSocketClientNode(u)
 	defer client.Close()
 
 	http.Out(node.PortOut).Link(ws.In(node.PortIO))
 	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
 	assert.NoError(t, http.Listen())
-
-	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
 
 	io := port.NewOut()
 	io.Link(client.In(node.PortIO))
@@ -141,7 +134,7 @@ func TestWebSocketClientNodeCodec_Decode(t *testing.T) {
 	codec := NewWebSocketClientNodeCodec()
 
 	spec := &WebSocketClientNodeSpec{
-		URL: "ws://localhost:8080",
+		URL: "ws://localhost:8080/",
 	}
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
@@ -152,21 +145,21 @@ func TestWebSocketClientNodeCodec_Decode(t *testing.T) {
 func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 	p, _ := freeport.GetFreePort()
 
+	u, _ := url.Parse(fmt.Sprintf("ws://localhost:%d", p))
+
 	http := NewHTTPServerNode(fmt.Sprintf(":%d", p))
 	defer http.Close()
 
 	ws := NewWebSocketUpgradeNode()
 	defer ws.Close()
 
-	client := NewWebSocketClientNode()
+	client := NewWebSocketClientNode(u)
 	defer client.Close()
 
 	http.Out(node.PortOut).Link(ws.In(node.PortIO))
 	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
 	http.Listen()
-
-	client.SetURL(fmt.Sprintf("ws://localhost:%d", p))
 
 	io := port.NewOut()
 	io.Link(client.In(node.PortIO))

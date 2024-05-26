@@ -23,19 +23,25 @@ func (b *Bridge) Write(pcks []*Packet, sources []*Reader, targets []*Writer) int
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	receives := make([]*Packet, len(targets))
+	if len(targets) > len(pcks) {
+		targets = targets[:len(pcks)]
+	}
+	if len(pcks) > len(targets) {
+		pcks = pcks[:len(targets)]
+	}
 
+	for i := 0; i < len(pcks); i++ {
+		if pcks[i] == nil {
+			pcks = append(pcks[:i], pcks[i+1:]...)
+			targets = append(targets[:i], targets[i+1:]...)
+			i--
+		}
+	}
+
+	receives := make([]*Packet, len(targets))
 	count := 0
 	for i, writer := range targets {
-		if i >= len(pcks) {
-			break
-		}
-
 		pck := pcks[i]
-		if pck == nil {
-			continue
-		}
-
 		if writer.Write(pck) > 0 {
 			receives[i] = nil
 			count++

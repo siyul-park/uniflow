@@ -38,10 +38,6 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewNativeNode(CreateNodes(st))
 	defer n.Close()
 
-	n.SetOperands(func(input any) (any, error) {
-		return []any{input}, nil
-	})
-
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
@@ -56,7 +52,7 @@ func TestCreateNodes(t *testing.T) {
 	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalText(spec)
-	inPck := packet.New(inPayload)
+	inPck := packet.New(primitive.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 
@@ -138,10 +134,6 @@ func TestUpdateNodes(t *testing.T) {
 	n, _ := NewNativeNode(UpdateNodes(st))
 	defer n.Close()
 
-	n.SetOperands(func(input any) (any, error) {
-		return []any{input}, nil
-	})
-
 	spec := &scheme.SpecMeta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
@@ -158,7 +150,7 @@ func TestUpdateNodes(t *testing.T) {
 	inWriter := in.Open(proc)
 
 	inPayload, _ := primitive.MarshalText(spec)
-	inPck := packet.New(inPayload)
+	inPck := packet.New(primitive.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 

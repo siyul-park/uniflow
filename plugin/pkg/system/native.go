@@ -11,23 +11,19 @@ import (
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
 // NativeNode represents a node for executing internal calls.
 type NativeNode struct {
 	*node.OneToOneNode
 	operator reflect.Value
-	operands []func(any) (any, error)
 	mu       sync.RWMutex
 }
 
 // NativeNodeSpec holds the specifications for creating a NativeNode.
 type NativeNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Lang            string   `map:"lang,omitempty"`
-	Opcode          string   `map:"opcode"`
-	Operands        []string `map:"operands,omitempty"`
+	Opcode          string `map:"opcode"`
 }
 
 // NativeModule represents a table of system call operations.
@@ -54,14 +50,6 @@ func NewNativeNode(operator any) (*NativeNode, error) {
 	return n, nil
 }
 
-// SetOperands sets operands, it processes the operands based on the specified language.
-func (n *NativeNode) SetOperands(operands ...func(any) (any, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.operands = operands
-}
-
 func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -73,7 +61,6 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	defer cancel()
 
 	inPayload := inPck.Payload()
-	input := primitive.Interface(inPayload)
 
 	ins := make([]reflect.Value, n.operator.Type().NumIn())
 
@@ -85,24 +72,27 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		}
 	}
 
-	for i := offset; i < len(ins); i++ {
-		in := reflect.New(n.operator.Type().In(i))
-
-		if len(n.operands) > i-offset {
-			if operand, err := n.operands[i-offset](input); err != nil {
-				return nil, packet.WithError(err)
-			} else if argument, err := primitive.MarshalText(operand); err != nil {
-				return nil, packet.WithError(err)
-			} else if err := primitive.Unmarshal(argument, in.Interface()); err != nil {
-				return nil, packet.WithError(err)
-			}
-		} else if i == offset {
-			if err := primitive.Unmarshal(inPayload, in.Interface()); err != nil {
-				return nil, packet.WithError(err)
-			}
+	if remains := len(ins) - offset; remains == 1 {
+		in := reflect.New(n.operator.Type().In(offset))
+		if err := primitive.Unmarshal(inPayload, in.Interface()); err != nil {
+			return nil, packet.WithError(err)
+		}
+		ins[offset] = in.Elem()
+	} else if remains > 1 {
+		var arguments []primitive.Value
+		if v, ok := inPayload.(*primitive.Slice); ok {
+			arguments = v.Values()
+		} else {
+			arguments = append(arguments, v)
 		}
 
-		ins[i] = in.Elem()
+		for i := offset; i < len(ins); i++ {
+			in := reflect.New(n.operator.Type().In(i))
+			if err := primitive.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
+				return nil, packet.WithError(err)
+			}
+			ins[i] = in.Elem()
+		}
 	}
 
 	outs := n.operator.Call(ins)
@@ -168,25 +158,6 @@ func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)
 		}
-		n, err := NewNativeNode(fn)
-		if err != nil {
-			return nil, err
-		}
-
-		operands := make([]func(any) (any, error), len(spec.Operands))
-		for i, operand := range spec.Operands {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(operand, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			operands[i] = transform
-		}
-
-		n.SetOperands(operands...)
-
-		return n, nil
+		return NewNativeNode(fn)
 	})
 }

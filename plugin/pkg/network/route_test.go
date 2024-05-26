@@ -211,40 +211,42 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+			defer cancel()
 
-		out := outs[tc.expectPort]
+			out := outs[tc.expectPort]
 
-		proc := process.New()
-		defer proc.Exit(nil)
+			proc := process.New()
+			defer proc.Exit(nil)
 
-		inWriter := in.Open(proc)
-		outReader := out.Open(proc)
+			inWriter := in.Open(proc)
+			outReader := out.Open(proc)
 
-		inPayload := primitive.NewMap(
-			primitive.NewString("method"), primitive.NewString(tc.whenMethod),
-			primitive.NewString("path"), primitive.NewString(tc.whenPath),
-		)
-		inPck := packet.New(inPayload)
+			inPayload := primitive.NewMap(
+				primitive.NewString("method"), primitive.NewString(tc.whenMethod),
+				primitive.NewString("path"), primitive.NewString(tc.whenPath),
+			)
+			inPck := packet.New(inPayload)
 
-		inWriter.Write(inPck)
+			inWriter.Write(inPck)
 
-		select {
-		case outPck := <-outReader.Read():
-			params, _ := primitive.Pick[map[string]string](outPck.Payload(), "params")
-			assert.Equal(t, tc.expectParams, params)
-			outReader.Receive(outPck)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
+			select {
+			case outPck := <-outReader.Read():
+				params, _ := primitive.Pick[map[string]string](outPck.Payload(), "params")
+				assert.Equal(t, tc.expectParams, params)
+				outReader.Receive(outPck)
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+			}
 
-		select {
-		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
+			select {
+			case backPck := <-inWriter.Receive():
+				assert.NotNil(t, backPck)
+			case <-ctx.Done():
+				assert.Fail(t, "timeout")
+			}
+		})
 	}
 }
 

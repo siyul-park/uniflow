@@ -6,28 +6,21 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
 // HTTPClientNode represents a node for making HTTP client requests.
 type HTTPClientNode struct {
 	*node.OneToOneNode
-	method  func(any) (string, error)
-	url     func(any) (string, error)
-	query   func(any) (url.Values, error)
-	header  func(any) (http.Header, error)
-	body    func(any) (primitive.Value, error)
+	url     *url.URL
 	timeout time.Duration
 	mu      sync.RWMutex
 }
@@ -35,156 +28,18 @@ type HTTPClientNode struct {
 // HTTPClientNodeSpec holds the specifications for creating an HTTPClientNode.
 type HTTPClientNodeSpec struct {
 	scheme.SpecMeta `map:",inline"`
-	Lang            string `map:"lang,omitempty"`
-	Method          string `map:"method,omitempty"`
-	URL             string `map:"url,omitempty"`
-	Query           string `map:"query,omitempty"`
-	Header          string `map:"header,omitempty"`
-	Body            string `map:"body,omitempty"`
+	URL             string        `map:"url"`
+	Timeout         time.Duration `map:"timeout,omitempty"`
 }
 
 const KindHTTPClient = "http/client"
 
 // NewHTTPClientNode creates a new HTTPClientNode instance.
-func NewHTTPClientNode() *HTTPClientNode {
-	n := &HTTPClientNode{}
+func NewHTTPClientNode(url *url.URL) *HTTPClientNode {
+	n := &HTTPClientNode{url: url}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
-	n.SetMethod(func(input any) (string, error) {
-		value := reflect.ValueOf(input)
-		if value.Kind() == reflect.Map {
-			if e := value.MapIndex(reflect.ValueOf("method")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					return e, nil
-				}
-			}
-		}
-		return http.MethodGet, nil
-	})
-	n.SetURL(func(input any) (string, error) {
-		v := &url.URL{Scheme: "https"}
-
-		value := reflect.ValueOf(input)
-		if value.Kind() == reflect.Map {
-			if e := value.MapIndex(reflect.ValueOf("url")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					var err error
-					if v, err = url.Parse(e); err != nil {
-						return "", err
-					}
-				}
-			}
-
-			if e := value.MapIndex(reflect.ValueOf("scheme")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					v.Scheme = e
-				}
-			}
-			if e := value.MapIndex(reflect.ValueOf("host")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					v.Host = e
-				}
-			}
-			if e := value.MapIndex(reflect.ValueOf("path")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					v.Path = e
-				}
-			}
-		}
-
-		return v.String(), nil
-	})
-	n.SetQuery(func(input any) (url.Values, error) {
-		value := reflect.ValueOf(input)
-		if value.Kind() == reflect.Map {
-			if e := value.MapIndex(reflect.ValueOf("query")); e.IsValid() {
-				var v url.Values
-				if e, err := primitive.MarshalText(e.Interface()); err != nil {
-					return nil, err
-				} else if err := primitive.Unmarshal(e, &v); err != nil {
-					return nil, err
-				}
-				return v, nil
-			}
-
-			if e := value.MapIndex(reflect.ValueOf("url")); e.IsValid() {
-				if e, ok := e.Interface().(string); ok {
-					if v, err := url.Parse(e); err != nil {
-						return nil, err
-					} else {
-						return v.Query(), nil
-					}
-				}
-			}
-		}
-		return nil, nil
-	})
-	n.SetHeader(func(input any) (http.Header, error) {
-		value := reflect.ValueOf(input)
-		if value.Kind() == reflect.Map {
-			if e := value.MapIndex(reflect.ValueOf("header")); e.IsValid() {
-				var v http.Header
-				if e, err := primitive.MarshalText(e); err != nil {
-					return nil, err
-				} else if err := primitive.Unmarshal(e, &v); err != nil {
-					return nil, err
-				}
-				return v, nil
-			}
-		}
-		return nil, nil
-	})
-	n.SetBody(func(input any) (primitive.Value, error) {
-		value := reflect.ValueOf(input)
-		if value.Kind() == reflect.Map {
-			if e := value.MapIndex(reflect.ValueOf("body")); e.IsValid() {
-				return primitive.MarshalText(e)
-			}
-		}
-		return nil, nil
-	})
-
 	return n
-}
-
-// SetMethod sets the HTTP request method.
-func (n *HTTPClientNode) SetMethod(method func(any) (string, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.method = method
-}
-
-// SetURL sets the target URL for the HTTP request.
-func (n *HTTPClientNode) SetURL(url func(any) (string, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.url = url
-}
-
-// SetQuery sets the query parameters for the HTTP request.
-func (n *HTTPClientNode) SetQuery(query func(any) (url.Values, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.query = query
-}
-
-// SetBody sets the body of the HTTP request.
-func (n *HTTPClientNode) SetHeader(header func(any) (http.Header, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.header = header
-}
-
-// SetTimeout sets the timeout duration for the HTTP request.
-func (n *HTTPClientNode) SetBody(body func(any) (primitive.Value, error)) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.body = body
 }
 
 // SetTimeout sets the timeout duration for the HTTP request.
@@ -206,12 +61,35 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 		defer cancel()
 	}
 
-	inPayload := inPck.Payload()
-	input := primitive.Interface(inPayload)
-
-	req, err := n.request(input)
-	if err != nil {
-		return nil, packet.WithError(err)
+	req := &HTTPPayload{
+		Query:  make(url.Values),
+		Header: make(http.Header),
+	}
+	if err := primitive.Unmarshal(inPck.Payload(), &req); err != nil {
+		req.Body = inPck.Payload()
+	}
+	if req.Method != "" {
+		if req.Body == nil {
+			req.Method = http.MethodGet
+		} else {
+			req.Method = http.MethodPost
+		}
+	}
+	if n.url.Scheme != "" {
+		req.Scheme = n.url.Scheme
+	}
+	if n.url.Host != "" {
+		req.Host = n.url.Host
+	}
+	if n.url.Path != "" {
+		req.Path, _ = url.JoinPath(n.url.Path, req.Path)
+	}
+	if len(n.url.Query()) > 0 {
+		for k, v := range n.url.Query() {
+			for _, v := range v {
+				req.Query.Add(k, v)
+			}
+		}
 	}
 
 	contentType := req.Header.Get(HeaderContentType)
@@ -264,48 +142,6 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 	return packet.New(outPayload), nil
 }
 
-func (n *HTTPClientNode) request(input any) (*HTTPPayload, error) {
-	method, err := n.method(input)
-	if err != nil {
-		return nil, err
-	}
-	rawURL, err := n.url(input)
-	if err != nil {
-		return nil, err
-	}
-	query, err := n.query(input)
-	if err != nil {
-		return nil, err
-	}
-	header, err := n.header(input)
-	if err != nil {
-		return nil, err
-	}
-	body, err := n.body(input)
-	if err != nil {
-		return nil, err
-	}
-
-	if header == nil {
-		header = make(http.Header)
-	}
-
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &HTTPPayload{
-		Method: method,
-		Scheme: u.Scheme,
-		Host:   u.Host,
-		Path:   u.Path,
-		Query:  query,
-		Header: header,
-		Body:   body,
-	}, nil
-}
-
 func (n *HTTPClientNode) response(w *http.Response) (*HTTPPayload, error) {
 	contentType := w.Header.Get(HeaderContentType)
 	contentEncoding := w.Header.Get(HeaderContentEncoding)
@@ -328,106 +164,13 @@ func (n *HTTPClientNode) response(w *http.Response) (*HTTPPayload, error) {
 
 func NewHTTPClientNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *HTTPClientNodeSpec) (node.Node, error) {
-		n := NewHTTPClientNode()
-
-		if spec.Method != "" {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(spec.Method, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetMethod(func(input any) (string, error) {
-				if output, err := transform(input); err != nil {
-					return "", err
-				} else if v, ok := output.(string); ok {
-					return v, nil
-				}
-				return "", errors.WithStack(packet.ErrInvalidPacket)
-			})
-
-		}
-		if spec.URL != "" {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(spec.URL, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetURL(func(input any) (string, error) {
-				if output, err := transform(input); err != nil {
-					return "", err
-				} else if v, ok := output.(string); ok {
-					return v, nil
-				}
-				return "", errors.WithStack(packet.ErrInvalidPacket)
-			})
-		}
-		if spec.Query != "" {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(spec.Query, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetQuery(func(input any) (url.Values, error) {
-				output, err := transform(input)
-				if err != nil {
-					return nil, err
-				}
-
-				var v url.Values
-				if e, err := primitive.MarshalText(output); err != nil {
-					return nil, err
-				} else if err := primitive.Unmarshal(e, &v); err != nil {
-					return nil, err
-				}
-				return v, nil
-			})
-		}
-		if spec.Header != "" {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(spec.Header, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetHeader(func(input any) (http.Header, error) {
-				output, err := transform(input)
-				if err != nil {
-					return nil, err
-				}
-
-				var v http.Header
-				if e, err := primitive.MarshalText(output); err != nil {
-					return nil, err
-				} else if err := primitive.Unmarshal(e, &v); err != nil {
-					return nil, err
-				}
-				return v, nil
-			})
-		}
-		if spec.Body != "" {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(spec.Body, &lang)
-			if err != nil {
-				_ = n.Close()
-				return nil, err
-			}
-
-			n.SetBody(func(input any) (primitive.Value, error) {
-				output, err := transform(input)
-				if err != nil {
-					return nil, err
-				}
-				return primitive.MarshalText(output)
-			})
+		url, err := url.Parse(spec.URL)
+		if err != nil {
+			return nil, err
 		}
 
+		n := NewHTTPClientNode(url)
+		n.SetTimeout(spec.Timeout)
 		return n, nil
 	})
 }
