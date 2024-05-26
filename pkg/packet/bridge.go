@@ -23,6 +23,7 @@ func (b *Bridge) Write(pcks []*Packet, readers []*Reader, writers []*Writer) int
 	defer b.mu.Unlock()
 
 	receives := make(map[*Writer]*Packet, len(writers))
+	count := 0
 	for i := 0; i < len(writers); i++ {
 		if len(pcks) <= i {
 			break
@@ -37,6 +38,7 @@ func (b *Bridge) Write(pcks []*Packet, readers []*Reader, writers []*Writer) int
 
 		if writer.Write(pck) > 0 {
 			receives[writer] = nil
+			count++
 		} else {
 			receives[writer] = pck
 		}
@@ -44,11 +46,6 @@ func (b *Bridge) Write(pcks []*Packet, readers []*Reader, writers []*Writer) int
 
 	b.readers = append(b.readers, readers)
 	b.receives = append(b.receives, receives)
-
-	count := 0
-	for range receives {
-		count++
-	}
 
 	if len(b.readers) == 1 {
 		b.consume()

@@ -15,8 +15,6 @@
 - kind: write
   name: stdout
   file: stdout
-  lang: javascript
-  format: "`${JSON.stringify($)}\n`"
   links:
     out:
       - name: nop
