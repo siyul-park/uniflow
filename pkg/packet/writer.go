@@ -102,25 +102,24 @@ func (w *Writer) Write(pck *Packet) int {
 	case <-w.done:
 		return 0
 	default:
-	}
-
-	count := 0
-	receives := make([]*Packet, len(w.readers))
-	for i, r := range w.readers {
-		if r.write(pck, w) {
-			count++
-		} else if len(w.receives) == 0 {
-			w.readers = append(w.readers[:i], w.readers[i+1:]...)
-			receives = append(receives[:i], receives[i+1:]...)
-			i--
-		} else {
-			receives[i] = None
+		count := 0
+		receives := make([]*Packet, len(w.readers))
+		for i, r := range w.readers {
+			if r.write(pck, w) {
+				count++
+			} else if len(w.receives) == 0 {
+				w.readers = append(w.readers[:i], w.readers[i+1:]...)
+				receives = append(receives[:i], receives[i+1:]...)
+				i--
+			} else {
+				receives[i] = None
+			}
 		}
+
+		w.receives = append(w.receives, receives)
+
+		return count
 	}
-
-	w.receives = append(w.receives, receives)
-
-	return count
 }
 
 // Receive returns the channel for receiving packets from the writer.
@@ -148,34 +147,33 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	case <-w.done:
 		return false
 	default:
-	}
-
-	index := w.indexOfReader(reader)
-	if index < 0 {
-		return false
-	}
-
-	head := w.indexOfHead(index)
-	if head < 0 {
-		return false
-	}
-
-	receives := w.receives[head]
-	receives[index] = pck
-
-	if head == 0 {
-		for _, pck := range receives {
-			if pck == nil {
-				return true
-			}
+		index := w.indexOfReader(reader)
+		if index < 0 {
+			return false
 		}
 
-		w.receives = w.receives[1:]
+		head := w.indexOfHead(index)
+		if head < 0 {
+			return false
+		}
 
-		w.in <- Merge(receives)
+		receives := w.receives[head]
+		receives[index] = pck
+
+		if head == 0 {
+			for _, pck := range receives {
+				if pck == nil {
+					return true
+				}
+			}
+
+			w.receives = w.receives[1:]
+
+			w.in <- Merge(receives)
+		}
+
+		return true
 	}
-
-	return true
 }
 
 func (w *Writer) indexOfReader(reader *Reader) int {
