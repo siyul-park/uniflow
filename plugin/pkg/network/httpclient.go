@@ -82,10 +82,14 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 		req.Host = n.url.Host
 	}
 	if n.url.Path != "" {
-		req.Path = n.url.Path
+		req.Path, _ = url.JoinPath(n.url.Path, req.Path)
 	}
 	if len(n.url.Query()) > 0 {
-		req.Query = n.url.Query()
+		for k, v := range n.url.Query() {
+			for _, v := range v {
+				req.Query.Add(k, v)
+			}
+		}
 	}
 
 	contentType := req.Header.Get(HeaderContentType)
