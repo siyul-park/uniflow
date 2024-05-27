@@ -24,11 +24,7 @@ func CallOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
 	if writer.Write(outPck) == 0 {
 		return backPck
 	}
-	if backPck, ok := <-writer.Receive(); !ok {
-		return None
-	} else {
-		return backPck
-	}
+	return <-writer.Receive()
 }
 
 // Discard discards all packets received by the writer.
@@ -49,28 +45,38 @@ func NewWriter() *Writer {
 
 	go func() {
 		defer close(w.out)
+		defer close(w.in)
 
 		buffer := make([]*Packet, 0, 2)
 		for {
-			pck, ok := <-w.in
-			if !ok {
+			var pck *Packet
+			select {
+			case pck = <-w.in:
+			case <-w.done:
+				w.mu.Lock()
+				receives := w.receives
+				w.readers = nil
+				w.receives = nil
+				w.mu.Unlock()
+
+				for range receives {
+					w.out <- None
+				}
 				return
 			}
 
 			select {
 			case w.out <- pck:
-				continue
 			default:
-			}
+				buffer = append(buffer, pck)
 
-			buffer = append(buffer, pck)
-
-			for len(buffer) > 0 {
-				select {
-				case pck = <-w.in:
-					buffer = append(buffer, pck)
-				case w.out <- buffer[0]:
-					buffer = buffer[1:]
+				for len(buffer) > 0 {
+					select {
+					case pck = <-w.in:
+						buffer = append(buffer, pck)
+					case w.out <- buffer[0]:
+						buffer = buffer[1:]
+					}
 				}
 			}
 		}
@@ -130,11 +136,7 @@ func (w *Writer) Close() {
 	select {
 	case <-w.done:
 	default:
-		w.readers = nil
-		w.receives = nil
-
 		close(w.done)
-		close(w.in)
 	}
 }
 
@@ -148,27 +150,12 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	default:
 	}
 
-	index := -1
-	for i, r := range w.readers {
-		if r == reader {
-			index = i
-			break
-		}
-	}
+	index := w.indexOfReader(reader)
 	if index < 0 {
 		return false
 	}
 
-	head := -1
-	for i, receives := range w.receives {
-		if len(receives) < index {
-			continue
-		}
-		if receives[index] == nil {
-			head = i
-			break
-		}
-	}
+	head := w.indexOfHead(index)
 	if head < 0 {
 		return false
 	}
@@ -176,14 +163,38 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	receives := w.receives[head]
 	receives[index] = pck
 
-	for _, pck := range receives {
-		if pck == nil {
-			return true
+	if head == 0 {
+		for _, pck := range receives {
+			if pck == nil {
+				return true
+			}
 		}
+
+		w.receives = w.receives[1:]
+
+		w.in <- Merge(receives)
 	}
 
-	w.receives = append(w.receives[:head], w.receives[head+1:]...)
-	w.in <- Merge(receives)
-
 	return true
+}
+
+func (w *Writer) indexOfReader(reader *Reader) int {
+	for i, r := range w.readers {
+		if r == reader {
+			return i
+		}
+	}
+	return -1
+}
+
+func (w *Writer) indexOfHead(index int) int {
+	for i, receives := range w.receives {
+		if len(receives) < index {
+			continue
+		}
+		if receives[index] == nil {
+			return i
+		}
+	}
+	return -1
 }

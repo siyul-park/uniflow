@@ -23,28 +23,36 @@ func NewReader() *Reader {
 
 	go func() {
 		defer close(r.out)
+		defer close(r.in)
 
 		buffer := make([]*Packet, 0, 2)
 		for {
-			pck, ok := <-r.in
-			if !ok {
+			var pck *Packet
+			select {
+			case pck = <-r.in:
+			case <-r.done:
+				for {
+					if w := r.writer(); w == nil {
+						break
+					} else {
+						w.receive(None, r)
+					}
+				}
 				return
 			}
 
 			select {
 			case r.out <- pck:
-				continue
 			default:
-			}
+				buffer = append(buffer, pck)
 
-			buffer = append(buffer, pck)
-
-			for len(buffer) > 0 {
-				select {
-				case pck = <-r.in:
-					buffer = append(buffer, pck)
-				case r.out <- buffer[0]:
-					buffer = buffer[1:]
+				for len(buffer) > 0 {
+					select {
+					case pck = <-r.in:
+						buffer = append(buffer, pck)
+					case r.out <- buffer[0]:
+						buffer = buffer[1:]
+					}
 				}
 			}
 		}
@@ -75,9 +83,7 @@ func (r *Reader) Close() {
 	select {
 	case <-r.done:
 	default:
-		r.writers = nil
 		close(r.done)
-		close(r.in)
 	}
 }
 
@@ -91,7 +97,6 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	default:
 		r.writers = append(r.writers, writer)
 		r.in <- pck
-
 		return true
 	}
 }

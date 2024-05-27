@@ -25,8 +25,7 @@ func (b *Bridge) Write(pcks []*Packet, sources []*Reader, targets []*Writer) int
 
 	if len(targets) > len(pcks) {
 		targets = targets[:len(pcks)]
-	}
-	if len(pcks) > len(targets) {
+	} else if len(pcks) > len(targets) {
 		pcks = pcks[:len(targets)]
 	}
 
@@ -69,18 +68,11 @@ func (b *Bridge) Rewrite(pck *Packet, source *Writer, target *Writer) bool {
 	for i, targets := range b.targets {
 		for j, writer := range targets {
 			if writer == source && b.receives[i][j] == nil {
-				if target == nil {
-					b.targets[i] = append(b.targets[i][:j], b.targets[i][j+1:]...)
-					b.receives[i] = append(b.receives[i][:j], b.receives[i][j+1:]...)
-					j--
+				targets[j] = target
+				if target.Write(pck) > 0 {
+					b.receives[i][j] = nil
 				} else {
-					targets[j] = target
-
-					if target.Write(pck) > 0 {
-						b.receives[i][j] = nil
-					} else {
-						b.receives[i][j] = pck
-					}
+					b.receives[i][j] = pck
 				}
 
 				if i == 0 {
