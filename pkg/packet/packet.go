@@ -14,6 +14,12 @@ type Packet struct {
 var None = New(nil)
 
 func Merge(pcks []*Packet) *Packet {
+	if len(pcks) == 0 {
+		return None
+	} else if len(pcks) == 1 {
+		return pcks[0]
+	}
+
 	var errs []error
 	for _, pck := range pcks {
 		if err, ok := AsError(pck); ok {

@@ -69,31 +69,6 @@ func (d *Dispatcher) Close() {
 	d.reads = nil
 }
 
-// consume processes the stored packets.
-func (d *Dispatcher) consume() {
-	for len(d.reads) > 0 {
-		reads := d.reads[0]
-
-		count := 0
-		for _, pck := range reads {
-			if pck != nil {
-				count++
-			}
-		}
-
-		if d.route.Route(reads) {
-			d.reads = d.reads[1:]
-		} else if count == len(reads) {
-			d.reads = d.reads[1:]
-			for _, r := range d.readers {
-				r.Receive(None)
-			}
-		} else {
-			break
-		}
-	}
-}
-
 func (d *Dispatcher) indexOfReader(reader *Reader) int {
 	for i, r := range d.readers {
 		if r == reader {
@@ -110,6 +85,28 @@ func (d *Dispatcher) indexOfHead(index int) int {
 		}
 	}
 	return -1
+}
+
+func (d *Dispatcher) consume() {
+	for len(d.reads) > 0 {
+		reads := d.reads[0]
+
+		if d.route.Route(reads) {
+			d.reads = d.reads[1:]
+		} else {
+			for _, pck := range reads {
+				if pck == nil {
+					return
+				}
+			}
+
+			d.reads = d.reads[1:]
+			
+			for _, r := range d.readers {
+				r.Receive(None)
+			}
+		}
+	}
 }
 
 // Route forwards packets using a RouteHook function.
