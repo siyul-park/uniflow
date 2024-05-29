@@ -86,8 +86,8 @@ func TestMarshalMIME(t *testing.T) {
 		},
 		{
 			whenValue: object.NewMap(
-				object.NewString("foo"), object.NewFloat64(1),
-				object.NewString("bar"), object.NewFloat64(2),
+				object.NewString("foo"), object.NewFloat(1),
+				object.NewString("bar"), object.NewFloat(2),
 			),
 			whenContentType: ApplicationJSON,
 			expect:          []byte(`{"bar":2,"foo":1}`),
@@ -164,7 +164,7 @@ func TestMarshalMIME(t *testing.T) {
 							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
 							object.NewString("Content-Type"), object.NewSlice(object.NewString(ApplicationOctetStream)),
 						),
-						object.NewString("size"), object.NewInt64(4),
+						object.NewString("size"), object.NewInteger(4),
 					)),
 				),
 			),
@@ -206,8 +206,8 @@ func TestUnmarshalMIME(t *testing.T) {
 			`),
 			whenContentType: ApplicationJSON,
 			expect: object.NewMap(
-				object.NewString("foo"), object.NewFloat64(1),
-				object.NewString("bar"), object.NewFloat64(2),
+				object.NewString("foo"), object.NewFloat(1),
+				object.NewString("bar"), object.NewFloat(2),
 			),
 		},
 		{
@@ -247,7 +247,7 @@ func TestUnmarshalMIME(t *testing.T) {
 							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
 							object.NewString("Content-Type"), object.NewSlice(object.NewString("application/octet-stream")),
 						),
-						object.NewString("size"), object.NewInt64(4),
+						object.NewString("size"), object.NewInteger(4),
 					)),
 				),
 			),

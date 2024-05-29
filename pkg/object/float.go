@@ -11,67 +11,32 @@ import (
 )
 
 // Float is an interface representing a floating-point number.
-type Float interface {
-	Object
-	Float() float64
-}
+type Float float64
 
-// Float32 is a representation of a float32.
-type Float32 float32
+var _ Object = (Float)(0)
 
-// Float64 is a representation of a float64.
-type Float64 float64
-
-var _ Float = (Float32)(0)
-var _ Float = (Float64)(0)
-
-// NewFloat32 returns a new Float32.
-func NewFloat32(value float32) Float32 {
-	return Float32(value)
+// NewFloat returns a new Float64.
+func NewFloat(value float64) Float {
+	return Float(value)
 }
 
 // Float returns the raw representation.
-func (f Float32) Float() float64 {
-	return float64(f)
-}
-
-// Kind returns the type of the float32 data.
-func (f Float32) Kind() Kind {
-	return KindFloat32
-}
-
-// Compare compares two Float32 values.
-func (f Float32) Compare(v Object) int {
-	return compareAsFloat(f, v)
-}
-
-// Interface converts Float32 to a float32.
-func (f Float32) Interface() any {
-	return float32(f)
-}
-
-// NewFloat64 returns a new Float64.
-func NewFloat64(value float64) Float64 {
-	return Float64(value)
-}
-
-// Float returns the raw representation.
-func (f Float64) Float() float64 {
+func (f Float) Float() float64 {
 	return float64(f)
 }
 
 // Kind returns the type of the float64 data.
-func (f Float64) Kind() Kind {
-	return KindFloat64
+func (f Float) Kind() Kind {
+	return KindFloat
 }
 
 // Compare compares two Float64 values.
-func (f Float64) Compare(v Object) int {
+func (f Float) Compare(v Object) int {
 	return compareAsFloat(f, v)
 }
 
 // Interface converts Float64 to a float64.
-func (f Float64) Interface() any {
+func (f Float) Interface() any {
 	return float64(f)
 }
 
@@ -82,7 +47,7 @@ func compareAsFloat(f Float, v Object) int {
 	if r, ok := v.(Integer); ok {
 		return compare(f.Float(), float64(r.Int()))
 	}
-	if r, ok := v.(Uinteger); ok {
+	if r, ok := v.(UInteger); ok {
 		return compare(f.Float(), float64(r.Uint()))
 	}
 	if KindOf(f) > KindOf(v) {
@@ -97,14 +62,14 @@ func newFloatEncoder() encoding.Compiler[*Object] {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*float32)(target)
-					*source = NewFloat32(t)
+					*source = NewFloat(float64(t))
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
 				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*float64)(target)
-					*source = NewFloat64(t)
+					*source = NewFloat(t)
 
 					return nil
 				}), nil

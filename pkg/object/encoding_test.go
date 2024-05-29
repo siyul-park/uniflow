@@ -29,48 +29,16 @@ func TestMarshalText(t *testing.T) {
 			expect: TRUE,
 		},
 		{
-			when:   0,
-			expect: NewInt(0),
-		},
-		{
-			when:   int8(0),
-			expect: NewInt8(0),
-		},
-		{
-			when:   int16(0),
-			expect: NewInt16(0),
-		},
-		{
-			when:   int32(0),
-			expect: NewInt32(0),
-		},
-		{
 			when:   int64(0),
-			expect: NewInt64(0),
-		},
-		{
-			when:   uint8(0),
-			expect: NewUint8(0),
-		},
-		{
-			when:   uint16(0),
-			expect: NewUint16(0),
-		},
-		{
-			when:   uint32(0),
-			expect: NewUint32(0),
+			expect: NewInteger(0),
 		},
 		{
 			when:   uint64(0),
-			expect: NewUint64(0),
-		},
-		{
-			when:   float32(0),
-			expect: NewFloat32(0),
+			expect: NewUInteger(0),
 		},
 		{
 			when:   float64(0),
-			expect: NewFloat64(0),
+			expect: NewFloat(0),
 		},
 		{
 			when:   "a",
@@ -113,48 +81,16 @@ func TestMarshalBinary(t *testing.T) {
 			expect: TRUE,
 		},
 		{
-			when:   0,
-			expect: NewInt(0),
-		},
-		{
-			when:   int8(0),
-			expect: NewInt8(0),
-		},
-		{
-			when:   int16(0),
-			expect: NewInt16(0),
-		},
-		{
-			when:   int32(0),
-			expect: NewInt32(0),
-		},
-		{
 			when:   int64(0),
-			expect: NewInt64(0),
-		},
-		{
-			when:   uint8(0),
-			expect: NewUint8(0),
-		},
-		{
-			when:   uint16(0),
-			expect: NewUint16(0),
-		},
-		{
-			when:   uint32(0),
-			expect: NewUint32(0),
+			expect: NewInteger(0),
 		},
 		{
 			when:   uint64(0),
-			expect: NewUint64(0),
-		},
-		{
-			when:   float32(0),
-			expect: NewFloat32(0),
+			expect: NewUInteger(0),
 		},
 		{
 			when:   float64(0),
-			expect: NewFloat64(0),
+			expect: NewFloat(0),
 		},
 		{
 			when:   "a",
@@ -197,47 +133,15 @@ func TestUnmarshal(t *testing.T) {
 			expect: true,
 		},
 		{
-			when:   NewInt(0),
-			expect: 0,
-		},
-		{
-			when:   NewInt8(0),
-			expect: int8(0),
-		},
-		{
-			when:   NewInt16(0),
-			expect: int16(0),
-		},
-		{
-			when:   NewInt32(0),
-			expect: int32(0),
-		},
-		{
-			when:   NewInt64(0),
+			when:   NewInteger(0),
 			expect: int64(0),
 		},
 		{
-			when:   NewUint8(0),
-			expect: uint8(0),
-		},
-		{
-			when:   NewUint16(0),
-			expect: uint16(0),
-		},
-		{
-			when:   NewUint32(0),
-			expect: uint32(0),
-		},
-		{
-			when:   NewUint64(0),
+			when:   NewUInteger(0),
 			expect: uint64(0),
 		},
 		{
-			when:   NewFloat32(0),
-			expect: float32(0),
-		},
-		{
-			when:   NewFloat64(0),
+			when:   NewFloat(0),
 			expect: float64(0),
 		},
 		{

@@ -16,18 +16,9 @@ const (
 	KindBinary
 	KindBuffer
 	KindBool
-	KindInt
-	KindInt8
-	KindInt16
-	KindInt32
-	KindInt64
-	KindUint
-	KindUint8
-	KindUint16
-	KindUint32
-	KindUint64
-	KindFloat32
-	KindFloat64
+	KindInteger
+	KindUInteger
+	KindFloat
 	KindMap
 	KindSlice
 	KindString

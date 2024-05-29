@@ -49,7 +49,7 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, inPayload.Len(), outPck.Payload().Interface())
+		assert.Equal(t, int64(inPayload.Len()), outPck.Payload().Interface())
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

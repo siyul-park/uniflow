@@ -71,7 +71,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err)
 	}
 
-	return packet.New(object.NewInt(len)), nil
+	return packet.New(object.NewInteger(int64(len))), nil
 }
 
 func NewWriteNodeCodec() scheme.Codec {
