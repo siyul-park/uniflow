@@ -11,7 +11,7 @@ import (
 
 // Unstructured is a data structure that implements the Spec interface and is not marshaled for structuring.
 type Unstructured struct {
-	doc *object.Map
+	doc object.Map
 	mu  sync.RWMutex
 }
 
@@ -30,7 +30,7 @@ var _ object.Marshaler = (*Unstructured)(nil)
 var _ object.Unmarshaler = (*Unstructured)(nil)
 
 // NewUnstructured returns a new Unstructured instance with an optional object.Map.
-func NewUnstructured(doc *object.Map) *Unstructured {
+func NewUnstructured(doc object.Map) *Unstructured {
 	if doc == nil {
 		doc = object.NewMap()
 	}
@@ -175,7 +175,7 @@ func (u *Unstructured) GetOrSet(key string, val any) error {
 }
 
 // Doc returns the raw object of the Unstructured.
-func (u *Unstructured) Doc() *object.Map {
+func (u *Unstructured) Doc() object.Map {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
@@ -195,7 +195,7 @@ func (u *Unstructured) UnmarshalObject(value object.Object) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, ok := value.(*object.Map); ok {
+	if v, ok := value.(object.Map); ok {
 		u.doc = v
 		return nil
 	}

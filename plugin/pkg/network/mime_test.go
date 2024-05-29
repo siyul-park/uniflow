@@ -119,13 +119,14 @@ func TestMarshalMIME(t *testing.T) {
 				),
 			),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
-			expect: []byte("--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
-				"Content-Type: text/plain; charset=utf-8\r\n" +
+			expect: []byte(
+				"--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: text/plain; charset=utf-8\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
@@ -141,12 +142,12 @@ func TestMarshalMIME(t *testing.T) {
 			),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
-				"Content-Type: text/plain; charset=utf-8\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: text/plain; charset=utf-8\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
@@ -170,12 +171,12 @@ func TestMarshalMIME(t *testing.T) {
 			),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
-				"Content-Type: application/octet-stream\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: application/octet-stream\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary--\r\n"),

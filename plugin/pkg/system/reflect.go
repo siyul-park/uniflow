@@ -55,7 +55,7 @@ func UpdateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructure
 				if doc, err := object.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
-					patches = append(patches, scheme.NewUnstructured(doc.(*object.Map).Merge(patch.Doc())))
+					patches = append(patches, scheme.NewUnstructured(doc.(object.Map).Merge(patch.Doc())))
 				}
 			}
 		}

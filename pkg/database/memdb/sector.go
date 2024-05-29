@@ -14,7 +14,7 @@ type Sector struct {
 	mu    *sync.RWMutex
 }
 
-func (s *Sector) Range(f func(doc *object.Map) bool) {
+func (s *Sector) Range(f func(doc object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

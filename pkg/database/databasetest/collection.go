@@ -105,7 +105,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
-		var docs []*object.Map
+		var docs []object.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
@@ -127,7 +127,7 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
-		var docs []*object.Map
+		var docs []object.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
@@ -207,7 +207,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 			ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 		}
 
-		var docs []*object.Map
+		var docs []object.Map
 		for _, id := range ids {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), id,
@@ -269,7 +269,7 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 		ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
-	var docs []*object.Map
+	var docs []object.Map
 	for _, id := range ids {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), id,
@@ -404,7 +404,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 		ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
-	var docs []*object.Map
+	var docs []object.Map
 	for _, id := range ids {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), id,
@@ -565,7 +565,7 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var docs []*object.Map
+		var docs []object.Map
 		for i := 0; i < benchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
@@ -681,7 +681,7 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 
 	name := object.NewString(faker.UUIDHyphenated())
 
-	var docs []*object.Map
+	var docs []object.Map
 	for i := 0; i < benchSize; i++ {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),

@@ -198,7 +198,7 @@ func primitiveToBson(data object.Object) (any, error) {
 		return primitive.Null{}, nil
 	}
 
-	if s, ok := data.(*object.Map); ok {
+	if s, ok := data.(object.Map); ok {
 		t := make(primitive.M, s.Len())
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)

@@ -125,7 +125,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil, err
 		}
 
-		writeField := func(obj *object.Map, key object.Object) error {
+		writeField := func(obj object.Map, key object.Object) error {
 			if key, ok := key.(object.String); ok {
 				value := obj.GetOr(key, nil)
 
@@ -159,7 +159,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 		writeFields := func(value object.Object) error {
-			if value, ok := value.(*object.Map); ok {
+			if value, ok := value.(object.Map); ok {
 				for _, key := range value.Keys() {
 					if err := writeField(value, key); err != nil {
 						return err
@@ -169,7 +169,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 		writeFiles := func(value object.Object) error {
-			if value, ok := value.(*object.Map); ok {
+			if value, ok := value.(object.Map); ok {
 				for _, key := range value.Keys() {
 					if key, ok := key.(object.String); ok {
 						value := value.GetOr(key, nil)
@@ -240,7 +240,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 
-		if v, ok := value.(*object.Map); ok {
+		if v, ok := value.(object.Map); ok {
 			for _, key := range v.Keys() {
 				value := v.GetOr(key, nil)
 

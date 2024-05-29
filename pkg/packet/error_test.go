@@ -16,7 +16,7 @@ func TestWithError(t *testing.T) {
 
 	assert.NotNil(t, pck2)
 
-	payload, ok := pck2.Payload().(*object.Map)
+	payload, ok := pck2.Payload().(object.Map)
 	assert.True(t, ok)
 	assert.Equal(t, object.TRUE, payload.GetOr(object.NewString("__error"), nil))
 	assert.Equal(t, err.Error(), payload.GetOr(object.NewString("error"), nil).Interface())

@@ -44,7 +44,7 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 		return nil, err
 	}
 
-	unstructured := scheme.NewUnstructured(doc.(*object.Map))
+	unstructured := scheme.NewUnstructured(doc.(object.Map))
 
 	if unstructured.GetNamespace() == "" {
 		if c.namespace != "" {

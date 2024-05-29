@@ -115,7 +115,7 @@ func (p *TablePrinter) Print(data any) (string, error) {
 	switch v := value.(type) {
 	case object.Slice:
 		elements = v.Slice()
-	case *object.Map:
+	case object.Map:
 		elements = append(elements, v.Interface())
 	default:
 		return "", errors.New("unsupported data type")

@@ -10,7 +10,7 @@ func Pick[T any](v Object, paths ...string) (T, bool) {
 	cur := v
 	for _, path := range paths {
 		switch v := cur.(type) {
-		case *Map:
+		case Map:
 			child, ok := v.Get(NewString(path))
 			if !ok {
 				return zero, false
