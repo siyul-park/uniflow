@@ -31,15 +31,6 @@ func (i Integer) Kind() Kind {
 
 // Compare compares two Int64 values.
 func (i Integer) Compare(v Object) int {
-	return compareAsInteger(i, v)
-}
-
-// Interface converts Int64 to an int64.
-func (i Integer) Interface() any {
-	return int64(i)
-}
-
-func compareAsInteger(i Integer, v Object) int {
 	if r, ok := v.(Integer); ok {
 		return compare(i.Int(), r.Int())
 	}
@@ -53,6 +44,16 @@ func compareAsInteger(i Integer, v Object) int {
 		return 1
 	}
 	return -1
+}
+
+// Hash calculates and returns the hash code.
+func (i Integer) Hash() uint64 {
+	return *(*uint64)(unsafe.Pointer(&i))
+}
+
+// Interface converts Int64 to an int64.
+func (i Integer) Interface() any {
+	return int64(i)
 }
 
 func NewIntegerEncoder() encoding.Compiler[*Object] {

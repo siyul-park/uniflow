@@ -31,15 +31,6 @@ func (u UInteger) Kind() Kind {
 
 // Compare compares two Uint64 values.
 func (u UInteger) Compare(v Object) int {
-	return compareAsUInteger(u, v)
-}
-
-// Interface converts Uint64 to a uint64.
-func (u UInteger) Interface() any {
-	return uint64(u)
-}
-
-func compareAsUInteger(u UInteger, v Object) int {
 	if r, ok := v.(UInteger); ok {
 		return compare(u.Uint(), r.Uint())
 	}
@@ -55,7 +46,17 @@ func compareAsUInteger(u UInteger, v Object) int {
 	return -1
 }
 
-func newUintegerEncoder() encoding.Compiler[*Object] {
+// Hash calculates and returns the hash code.
+func (u UInteger) Hash() uint64 {
+	return uint64(u)
+}
+
+// Interface converts Uint64 to a uint64.
+func (u UInteger) Interface() any {
+	return uint64(u)
+}
+
+func newUIntegerEncoder() encoding.Compiler[*Object] {
 	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Uint {

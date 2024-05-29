@@ -2,6 +2,7 @@ package object
 
 import (
 	"encoding"
+	"hash/fnv"
 	"reflect"
 	"unsafe"
 
@@ -41,6 +42,13 @@ func (s String) String() string {
 // Kind returns the kind of the value.
 func (s String) Kind() Kind {
 	return KindString
+}
+
+// Hash calculates and returns the hash code.
+func (s String) Hash() uint64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(s))
+	return h.Sum64()
 }
 
 // Compare compares two String values.

@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"encoding"
+	"hash/fnv"
 	"reflect"
 	"unsafe"
 
@@ -41,6 +42,13 @@ func (b Binary) Bytes() []byte {
 // Kind returns the type of the binary data.
 func (b Binary) Kind() Kind {
 	return KindBinary
+}
+
+// Hash calculates and returns the hash code.
+func (b Binary) Hash() uint64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(b))
+	return h.Sum64()
 }
 
 // Compare compares two Binary values.

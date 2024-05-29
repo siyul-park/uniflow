@@ -9,11 +9,12 @@ import (
 )
 
 func TestNewFloat(t *testing.T) {
-	v := NewFloat(0)
+	v := NewFloat(1)
 
 	assert.Equal(t, KindFloat, v.Kind())
-	assert.Equal(t, float64(0), v.Interface())
-	assert.Equal(t, float64(0), v.Float())
+	assert.NotEqual(t, uint64(0), v.Hash())
+	assert.Equal(t, float64(1), v.Interface())
+	assert.Equal(t, float64(1), v.Float())
 }
 
 func TestFloat_Compare(t *testing.T) {

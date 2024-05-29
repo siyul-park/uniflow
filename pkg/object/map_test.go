@@ -16,6 +16,7 @@ func TestNewMap(t *testing.T) {
 	o := NewMap(k1, v1)
 
 	assert.Equal(t, KindMap, o.Kind())
+	assert.NotEqual(t, uint64(0), o.Hash())
 	assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
 	assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, o.Map())
 }

@@ -13,6 +13,7 @@ func TestNewBinary(t *testing.T) {
 	v := NewBinary([]byte{0})
 
 	assert.Equal(t, KindBinary, v.Kind())
+	assert.NotEqual(t, uint64(0), v.Hash())
 	assert.Equal(t, []byte{0}, v.Interface())
 }
 

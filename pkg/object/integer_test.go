@@ -9,10 +9,11 @@ import (
 )
 
 func TestNewInteger(t *testing.T) {
-	v := NewInteger(0)
+	v := NewInteger(1)
 	assert.Equal(t, KindInteger, v.Kind())
-	assert.Equal(t, int64(0), v.Interface())
-	assert.Equal(t, int64(0), v.Int())
+	assert.NotEqual(t, uint64(0), v.Hash())
+	assert.Equal(t, int64(1), v.Interface())
+	assert.Equal(t, int64(1), v.Int())
 }
 
 func TestInteger_Compare(t *testing.T) {

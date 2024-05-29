@@ -1,6 +1,8 @@
 package object
 
 import (
+	"encoding/binary"
+	"hash/fnv"
 	"reflect"
 	"unsafe"
 
@@ -117,6 +119,22 @@ func (s *Slice) Compare(v Object) int {
 		return 1
 	}
 	return -1
+}
+
+func (s *Slice) Hash() uint64 {
+	h := fnv.New64a()
+
+	var buf [8]byte
+	itr := s.value.Iterator()
+	for i := 0; !itr.Done(); i++ {
+		_, v := itr.Next()
+
+		_, _ = h.Write([]byte{byte(KindOf(v))})
+		binary.BigEndian.PutUint64(buf[:], Hash(v))
+		_, _ = h.Write(buf[:])
+	}
+
+	return h.Sum64()
 }
 
 func (s *Slice) Interface() any {

@@ -16,6 +16,7 @@ func TestNewSlice(t *testing.T) {
 	o := NewSlice(v1)
 
 	assert.Equal(t, KindSlice, o.Kind())
+	assert.NotEqual(t, uint64(0), o.Hash())
 	assert.Equal(t, []string{v1.String()}, o.Interface())
 	assert.Equal(t, []any{v1.Interface()}, o.Slice())
 }

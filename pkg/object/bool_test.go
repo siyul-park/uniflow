@@ -12,6 +12,7 @@ func TestNewBool(t *testing.T) {
 	v := NewBool(true)
 
 	assert.Equal(t, KindBool, v.Kind())
+	assert.NotEqual(t, uint64(0), v.Hash())
 	assert.Equal(t, true, v.Interface())
 	assert.Equal(t, true, v.Bool())
 }

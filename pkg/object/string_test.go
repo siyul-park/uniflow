@@ -15,6 +15,7 @@ func TestNewString(t *testing.T) {
 	v := NewString(raw)
 
 	assert.Equal(t, KindString, v.Kind())
+	assert.NotEqual(t, uint64(0), v.Hash())
 	assert.Equal(t, raw, v.Interface())
 }
 func TestString_Get(t *testing.T) {

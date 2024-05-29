@@ -9,10 +9,11 @@ import (
 )
 
 func TestUinteger(t *testing.T) {
-	v := NewUInteger(0)
+	v := NewUInteger(1)
 	assert.Equal(t, KindUInteger, v.Kind())
-	assert.Equal(t, uint64(0), v.Interface())
-	assert.Equal(t, uint64(0), v.Uint())
+	assert.NotEqual(t, uint64(0), v.Hash())
+	assert.Equal(t, uint64(1), v.Interface())
+	assert.Equal(t, uint64(1), v.Uint())
 }
 
 func TestUinteger_Compare(t *testing.T) {
@@ -24,7 +25,7 @@ func TestUinteger_Compare(t *testing.T) {
 
 func TestUinteger_Encode(t *testing.T) {
 	enc := encoding.NewAssembler[*Object, any]()
-	enc.Add(newUintegerEncoder())
+	enc.Add(newUIntegerEncoder())
 
 	t.Run("uint", func(t *testing.T) {
 		source := uint(1)

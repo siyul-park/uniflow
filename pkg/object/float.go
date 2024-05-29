@@ -32,15 +32,6 @@ func (f Float) Kind() Kind {
 
 // Compare compares two Float64 values.
 func (f Float) Compare(v Object) int {
-	return compareAsFloat(f, v)
-}
-
-// Interface converts Float64 to a float64.
-func (f Float) Interface() any {
-	return float64(f)
-}
-
-func compareAsFloat(f Float, v Object) int {
 	if r, ok := v.(Float); ok {
 		return compare(f.Float(), r.Float())
 	}
@@ -54,6 +45,16 @@ func compareAsFloat(f Float, v Object) int {
 		return 1
 	}
 	return -1
+}
+
+// Hash calculates and returns the hash code.
+func (f Float) Hash() uint64 {
+	return *(*uint64)(unsafe.Pointer(&f))
+}
+
+// Interface converts Float64 to a float64.
+func (f Float) Interface() any {
+	return float64(f)
 }
 
 func newFloatEncoder() encoding.Compiler[*Object] {

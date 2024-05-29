@@ -51,6 +51,14 @@ func (b Bool) Compare(v Object) int {
 	return -1
 }
 
+// Hash calculates and returns the hash code.
+func (b Bool) Hash() uint64 {
+	if b == TRUE {
+		return 1
+	}
+	return 0
+}
+
 // Interface converts Bool to a bool.
 func (b Bool) Interface() any {
 	return bool(b)

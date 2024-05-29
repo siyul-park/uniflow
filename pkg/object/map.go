@@ -1,7 +1,9 @@
 package object
 
 import (
+	"encoding/binary"
 	"fmt"
+	"hash/fnv"
 	"reflect"
 	"strings"
 	"unsafe"
@@ -168,6 +170,27 @@ func (m *Map) Compare(v Object) int {
 		return 1
 	}
 	return -1
+}
+
+// Hash calculates and returns the hash code.
+func (m *Map) Hash() uint64 {
+	h := fnv.New64a()
+
+	var buf [8]byte
+	itr := m.value.Iterator()
+	for i := 0; !itr.Done(); i++ {
+		k, v, _ := itr.Next()
+
+		_, _ = h.Write([]byte{byte(KindOf(k))})
+		binary.BigEndian.PutUint64(buf[:], Hash(k))
+		_, _ = h.Write(buf[:])
+
+		_, _ = h.Write([]byte{byte(KindOf(v))})
+		binary.BigEndian.PutUint64(buf[:], Hash(v))
+		_, _ = h.Write(buf[:])
+	}
+
+	return h.Sum64()
 }
 
 // Interface converts the Map to an interface{}.
