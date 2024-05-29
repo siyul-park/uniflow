@@ -129,8 +129,8 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			if key, ok := key.(object.String); ok {
 				value := obj.GetOr(key, nil)
 
-				var elements *object.Slice
-				if v, ok := value.(*object.Slice); ok {
+				var elements object.Slice
+				if v, ok := value.(object.Slice); ok {
 					elements = v
 				} else {
 					elements = object.NewSlice(value)
@@ -174,8 +174,8 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 					if key, ok := key.(object.String); ok {
 						value := value.GetOr(key, nil)
 
-						var elements *object.Slice
-						if v, ok := value.(*object.Slice); ok {
+						var elements object.Slice
+						if v, ok := value.(object.Slice); ok {
 							elements = v
 						} else {
 							elements = object.NewSlice(value)
@@ -196,7 +196,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 							contentType := ""
 							contentTypes, _ := object.Pick[object.Object](header, HeaderContentType)
 							if contentTypes != nil {
-								if c, ok := contentTypes.(*object.Slice); ok {
+								if c, ok := contentTypes.(object.Slice); ok {
 									contentType, _ = object.Pick[string](c, "0")
 								} else if c, ok := contentTypes.(object.String); ok {
 									contentType = c.String()
@@ -206,7 +206,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 							contentEncoding := ""
 							contentEncodings, _ := object.Pick[object.Object](header, HeaderContentEncoding)
 							if contentEncodings != nil {
-								if c, ok := contentEncodings.(*object.Slice); ok {
+								if c, ok := contentEncodings.(object.Slice); ok {
 									contentEncoding, _ = object.Pick[string](c, "0")
 								} else if c, ok := contentEncodings.(object.String); ok {
 									contentEncoding = c.String()

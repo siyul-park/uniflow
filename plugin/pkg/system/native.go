@@ -80,7 +80,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		ins[offset] = in.Elem()
 	} else if remains > 1 {
 		var arguments []object.Object
-		if v, ok := inPayload.(*object.Slice); ok {
+		if v, ok := inPayload.(object.Slice); ok {
 			arguments = v.Values()
 		} else {
 			arguments = append(arguments, v)

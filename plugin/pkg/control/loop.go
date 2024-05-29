@@ -113,7 +113,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 
 		var outPayloads []object.Object
-		if v, ok := inPayload.(*object.Slice); ok {
+		if v, ok := inPayload.(object.Slice); ok {
 			outPayloads = v.Values()
 		} else {
 			outPayloads = []object.Object{inPayload}

@@ -28,7 +28,7 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 			plan = plan.union(newExecutionPlan(keys, child))
 		}
 	case database.IN:
-		value := filter.Value.(*object.Slice)
+		value := filter.Value.(object.Slice)
 		for _, v := range value.Values() {
 			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).Equal(v)))
 		}

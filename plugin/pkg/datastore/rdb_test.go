@@ -76,7 +76,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice(), outPck.Payload())
+			assert.Equal(t, object.NewSlice().Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -88,7 +88,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			outPayload, ok := outPck.Payload().(*object.Slice)
+			outPayload, ok := outPck.Payload().(object.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():
@@ -136,7 +136,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice(), outPck.Payload())
+			assert.Equal(t, object.NewSlice().Interface(), outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -148,7 +148,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			outPayload, ok := outPck.Payload().(*object.Slice)
+			outPayload, ok := outPck.Payload().(object.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():

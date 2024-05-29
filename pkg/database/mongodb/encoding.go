@@ -213,7 +213,7 @@ func primitiveToBson(data object.Object) (any, error) {
 			}
 		}
 		return t, nil
-	} else if s, ok := data.(*object.Slice); ok {
+	} else if s, ok := data.(object.Slice); ok {
 		t := make(primitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			if v, err := primitiveToBson(s.Get(i)); err != nil {

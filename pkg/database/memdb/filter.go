@@ -70,7 +70,7 @@ func parseFilter(filter *database.Filter) func(*object.Map) bool {
 				return false
 			} else if o == nil {
 				return false
-			} else if v, ok := filter.Value.(*object.Slice); !ok {
+			} else if v, ok := filter.Value.(object.Slice); !ok {
 				return false
 			} else {
 				for i := 0; i < v.Len(); i++ {
@@ -87,7 +87,7 @@ func parseFilter(filter *database.Filter) func(*object.Map) bool {
 				return true
 			} else if o == nil {
 				return true
-			} else if v, ok := filter.Value.(*object.Slice); !ok {
+			} else if v, ok := filter.Value.(object.Slice); !ok {
 				return false
 			} else {
 				for i := 0; i < v.Len(); i++ {

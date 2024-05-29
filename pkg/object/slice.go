@@ -8,93 +8,82 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-
-	"github.com/benbjohnson/immutable"
 )
 
-// Slice is a representation of a slice.
-type Slice struct {
-	value *immutable.List[Object]
-}
+// Slice represents a slice of Objects.
+type Slice []Object
 
-var _ Object = (*Slice)(nil)
+// Ensure Slice implements the Object interface.
+var _ Object = (Slice)(nil)
 
 // NewSlice returns a new Slice.
-func NewSlice(values ...Object) *Slice {
-	builder := immutable.NewListBuilder[Object]()
-	for _, v := range values {
-		builder.Append(v)
-	}
-	return &Slice{value: builder.List()}
+func NewSlice(values ...Object) Slice {
+	return Slice(values)
 }
 
-func (s *Slice) Prepend(value Object) *Slice {
-	return &Slice{value: s.value.Prepend(value)}
+// Prepend adds a value to the beginning of the slice.
+func (s Slice) Prepend(value Object) Slice {
+	return Slice(append([]Object{value}, s...))
 }
 
-func (s *Slice) Append(value Object) *Slice {
-	return &Slice{value: s.value.Append(value)}
+// Append adds a value to the end of the slice.
+func (s Slice) Append(value Object) Slice {
+	return Slice(append(s, value))
 }
 
-func (s *Slice) Sub(start, end int) *Slice {
-	return &Slice{value: s.value.Slice(start, end)}
+// Sub returns a new slice that is a sub-slice of the original slice.
+func (s Slice) Sub(start, end int) Slice {
+	return Slice(s[start:end])
 }
 
-func (s *Slice) Get(index int) Object {
-	if index >= s.value.Len() {
+// Get retrieves the value at the given index.
+func (s Slice) Get(index int) Object {
+	if index >= len(s) {
 		return nil
 	}
-	return s.value.Get(index)
+	return s[index]
 }
 
-func (s *Slice) Set(index int, value Object) *Slice {
-	if index < 0 || index >= s.value.Len() {
+// Set sets the value at the given index.
+func (s Slice) Set(index int, value Object) Slice {
+	if index < 0 || index >= len(s) {
 		return s
 	}
-	return &Slice{value: s.value.Set(index, value)}
+	clone := make([]Object, len(s))
+	copy(clone, s)
+	clone[index] = value
+	return Slice(clone)
 }
 
-func (s *Slice) Values() []Object {
-	values := make([]Object, s.value.Len())
-
-	itr := s.value.Iterator()
-	for i := 0; !itr.Done(); i++ {
-		_, v := itr.Next()
-
-		if v != nil {
-			values[i] = v
-		}
-	}
-
-	return values
+// Values returns the elements of the slice.
+func (s Slice) Values() []Object {
+	return s
 }
 
-func (s *Slice) Len() int {
-	return s.value.Len()
+// Len returns the length of the slice.
+func (s Slice) Len() int {
+	return len(s)
 }
 
-// Slice returns a raw representation.
-func (s *Slice) Slice() []any {
-	values := make([]any, s.value.Len())
-
-	itr := s.value.Iterator()
-	for i := 0; !itr.Done(); i++ {
-		_, v := itr.Next()
-
+// Slice returns a raw representation of the slice.
+func (s Slice) Slice() []any {
+	values := make([]any, len(s))
+	for i, v := range s {
 		if v != nil {
 			values[i] = v.Interface()
 		}
 	}
-
 	return values
 }
 
-func (s *Slice) Kind() Kind {
+// Kind returns the kind of the slice.
+func (s Slice) Kind() Kind {
 	return KindSlice
 }
 
-func (s *Slice) Compare(v Object) int {
-	if r, ok := v.(*Slice); ok {
+// Compare compares the slice with another Object.
+func (s Slice) Compare(v Object) int {
+	if r, ok := v.(Slice); ok {
 		minLen := s.Len()
 		if minLen > r.Len() {
 			minLen = r.Len()
@@ -111,7 +100,6 @@ func (s *Slice) Compare(v Object) int {
 		} else if s.Len() > r.Len() {
 			return 1
 		}
-
 		return 0
 	}
 
@@ -121,43 +109,33 @@ func (s *Slice) Compare(v Object) int {
 	return -1
 }
 
-func (s *Slice) Hash() uint64 {
+// Hash returns the hash value of the slice.
+func (s Slice) Hash() uint64 {
 	h := fnv.New64a()
-
 	var buf [8]byte
-	itr := s.value.Iterator()
-	for i := 0; !itr.Done(); i++ {
-		_, v := itr.Next()
-
+	for _, v := range s {
 		_, _ = h.Write([]byte{byte(KindOf(v))})
 		binary.BigEndian.PutUint64(buf[:], Hash(v))
 		_, _ = h.Write(buf[:])
 	}
-
 	return h.Sum64()
 }
 
-func (s *Slice) Interface() any {
-	values := make([]any, s.value.Len())
-
-	itr := s.value.Iterator()
-	for i := 0; !itr.Done(); i++ {
-		_, v := itr.Next()
-
+// Interface returns the slice as a generic interface.
+func (s Slice) Interface() any {
+	values := make([]any, len(s))
+	for i, v := range s {
 		if v != nil {
 			values[i] = v.Interface()
 		}
 	}
-
 	elementType := getCommonType(values)
-
-	t := reflect.MakeSlice(reflect.SliceOf(elementType), s.value.Len(), s.value.Len())
+	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(s), len(s))
 	for i, value := range values {
 		if value != nil {
 			t.Index(i).Set(reflect.ValueOf(value))
 		}
 	}
-
 	return t.Interface()
 }
 
@@ -175,7 +153,7 @@ func newSliceEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compile
 						}
 					}
 
-					*source = NewSlice(values...)
+					*source = Slice(values)
 					return nil
 				}), nil
 			}
@@ -208,7 +186,7 @@ func newSliceDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler
 			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
 				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					t := reflect.NewAt(typ.Elem(), target).Elem()
-					if s, ok := source.(*Slice); ok {
+					if s, ok := source.(Slice); ok {
 						for i := 0; i < s.Len(); i++ {
 							if err := setElement(s.Get(i), t, i); err != nil {
 								return err
@@ -220,7 +198,7 @@ func newSliceDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(*Slice); ok {
+					if s, ok := source.(Slice); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
