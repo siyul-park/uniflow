@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)
 
-	inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+	inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -99,7 +99,7 @@ func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)
 
-	inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+	inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 	inPck := packet.New(inPayload)
 
 	b.ResetTimer()

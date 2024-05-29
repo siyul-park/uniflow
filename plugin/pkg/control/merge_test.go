@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,12 +46,12 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []primitive.Value
+	var inPayloads []object.Object
 	for range inWriters {
-		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
+		inPayloads = append(inPayloads, object.NewString(faker.UUIDHyphenated()))
 	}
 
-	merged := primitive.NewSlice(inPayloads...).Interface()
+	merged := object.NewSlice(inPayloads...).Interface()
 
 	for i, inWriter := range inWriters {
 		inPck := packet.New(inPayloads[i])
@@ -110,9 +110,9 @@ func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []primitive.Value
+	var inPayloads []object.Object
 	for range inWriters {
-		inPayloads = append(inPayloads, primitive.NewString(faker.UUIDHyphenated()))
+		inPayloads = append(inPayloads, object.NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()

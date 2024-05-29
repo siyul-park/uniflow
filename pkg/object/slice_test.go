@@ -1,9 +1,10 @@
-package primitive
+package object
 
 import (
 	"fmt"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func TestSlice_Values(t *testing.T) {
 
 	o := NewSlice(v1, v2)
 
-	assert.Equal(t, []Value{v1, v2}, o.Values())
+	assert.Equal(t, []Object{v1, v2}, o.Values())
 }
 
 func TestSlice_Len(t *testing.T) {
@@ -93,7 +94,7 @@ func TestSlice_Compare(t *testing.T) {
 }
 
 func TestSlice_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -101,7 +102,7 @@ func TestSlice_Encode(t *testing.T) {
 		source := []string{"foo", "bar"}
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -111,7 +112,7 @@ func TestSlice_Encode(t *testing.T) {
 		source := [2]string{"foo", "bar"}
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -119,7 +120,7 @@ func TestSlice_Encode(t *testing.T) {
 }
 
 func TestSlice_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
@@ -198,7 +199,7 @@ func BenchmarkSlice_Interface(b *testing.B) {
 }
 
 func BenchmarkSlice_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -206,7 +207,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 		source := []string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
@@ -215,14 +216,14 @@ func BenchmarkSlice_Encode(b *testing.B) {
 		source := [2]string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }
 
 func BenchmarkSlice_Decode(b *testing.B) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 

@@ -1,13 +1,13 @@
-package primitive
+package object
 
 // Kind represents the enumeration of data types.
 type Kind uint
 
-// Value is an interface that signifies atomic data types.
-type Value interface {
-	Kind() Kind          // Returns the type of data.
-	Compare(v Value) int // Compares with another Value and returns the order.
-	Interface() any      // Converts the internal value to a generic interface.
+// Object is an interface that signifies atomic data types.
+type Object interface {
+	Kind() Kind           // Returns the type of data.
+	Compare(v Object) int // Compares with another Value and returns the order.
+	Interface() any       // Converts the internal value to a generic interface.
 }
 
 // Constants representing various data types.
@@ -35,7 +35,7 @@ const (
 
 // Compare function compares two Values and returns their order.
 // Nil values are treated as the lowest order.
-func Compare(x, y Value) int {
+func Compare(x, y Object) int {
 	if x == nil && y == nil {
 		return 0
 	} else if x == nil {
@@ -50,7 +50,7 @@ func Compare(x, y Value) int {
 // KindOf returns the kind of the provided value.
 // If the value is nil, it returns KindInvalid.
 // Otherwise, it calls the Kind method of the value to determine its kind.
-func KindOf(v Value) Kind {
+func KindOf(v Object) Kind {
 	if v == nil {
 		return KindInvalid
 	} else {
@@ -60,7 +60,7 @@ func KindOf(v Value) Kind {
 
 // Interface function converts a Value to a generic interface.
 // Nil values are returned as a nil interface.
-func Interface(v Value) any {
+func Interface(v Object) any {
 	if v == nil {
 		return nil
 	} else {

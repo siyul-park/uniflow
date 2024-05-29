@@ -3,7 +3,7 @@ package memdb
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/tidwall/btree"
 )
 
@@ -14,7 +14,7 @@ type Sector struct {
 	mu    *sync.RWMutex
 }
 
-func (s *Sector) Range(f func(doc *primitive.Map) bool) {
+func (s *Sector) Range(f func(doc *object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -32,7 +32,7 @@ func (s *Sector) Range(f func(doc *primitive.Map) bool) {
 	})
 }
 
-func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
+func (s *Sector) Scan(key string, min, max object.Object) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -43,10 +43,10 @@ func (s *Sector) Scan(key string, min, max primitive.Value) (*Sector, bool) {
 	return s.scan(min, max)
 }
 
-func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
+func (s *Sector) scan(min, max object.Object) (*Sector, bool) {
 	child := newIndexes()
 
-	if min != nil && max != nil && primitive.Compare(min, max) == 0 {
+	if min != nil && max != nil && object.Compare(min, max) == 0 {
 		if i, ok := s.index.Get(index{key: min}); ok {
 			child = i.value
 		}
@@ -55,7 +55,7 @@ func (s *Sector) scan(min, max primitive.Value) (*Sector, bool) {
 			k := i.key
 			v := i.value
 
-			if max != nil && primitive.Compare(k, max) > 0 {
+			if max != nil && object.Compare(k, max) > 0 {
 				return false
 			}
 

@@ -11,9 +11,9 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -130,7 +130,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 				inPayload := inPck.Payload()
 
 				var req *HTTPPayload
-				_ = primitive.Unmarshal(inPayload, &req)
+				_ = object.Unmarshal(inPayload, &req)
 
 				outPck := packet.New(req.Body)
 				outReader.Receive(outPck)
@@ -218,7 +218,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 
 				err, _ := packet.AsError(inPck)
 
-				outPck := packet.New(primitive.NewString(err.Error()))
+				outPck := packet.New(object.NewString(err.Error()))
 				errReader.Receive(outPck)
 			}
 		}))

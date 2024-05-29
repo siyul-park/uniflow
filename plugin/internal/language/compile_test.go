@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,7 @@ func TestCompileTransformWithPrimitive(t *testing.T) {
 	fun, err := CompileTransformWithPrimitive("$", "")
 	assert.NoError(t, err)
 
-	in := primitive.NewString(faker.Word())
+	in := object.NewString(faker.Word())
 	out, err := fun(in)
 	assert.NoError(t, err)
 	assert.Equal(t, in, out)

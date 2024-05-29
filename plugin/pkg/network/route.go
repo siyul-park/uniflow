@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -148,17 +148,17 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inPayload, ok := inPck.Payload().(*primitive.Map)
+	inPayload, ok := inPck.Payload().(*object.Map)
 	if !ok {
 		return nil, nil
 	}
 
-	method, _ := primitive.Pick[string](inPayload, "method")
-	path, _ := primitive.Pick[string](inPayload, "path")
+	method, _ := object.Pick[string](inPayload, "method")
+	path, _ := object.Pick[string](inPayload, "path")
 
 	route, paramValues := n.find(method, path)
 	if route == nil {
-		outPayload, _ := primitive.MarshalText(NewHTTPPayload(http.StatusNotFound))
+		outPayload, _ := object.MarshalText(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
 	}
 
@@ -171,16 +171,16 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 			res = NewHTTPPayload(http.StatusMethodNotAllowed)
 		}
 		res.Header.Set(HeaderAllow, route.allowHeader())
-		outPayload, _ := primitive.MarshalText(res)
+		outPayload, _ := object.MarshalText(res)
 		return nil, packet.New(outPayload)
 	}
 
-	params := make([]primitive.Value, 0, len(paramValues)*2)
+	params := make([]object.Object, 0, len(paramValues)*2)
 	for i, name := range route.paramNames {
-		params = append(params, primitive.NewString(name), primitive.NewString(paramValues[i]))
+		params = append(params, object.NewString(name), object.NewString(paramValues[i]))
 	}
 
-	outPayload := inPayload.Set(primitive.NewString("params"), primitive.NewMap(params...))
+	outPayload := inPayload.Set(object.NewString("params"), object.NewMap(params...))
 	outPck := packet.New(outPayload)
 
 	i, _ := node.IndexOfPort(node.PortOut, port)

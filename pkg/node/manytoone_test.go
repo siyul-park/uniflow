@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +46,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter0 := in0.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter0.Write(inPck)
@@ -68,7 +68,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 					return nil, nil
 				}
 			}
-			return packet.New(primitive.NewString(faker.UUIDHyphenated())), nil
+			return packet.New(object.NewString(faker.UUIDHyphenated())), nil
 		})
 		defer n.Close()
 
@@ -88,7 +88,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		inWriter1 := in1.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck0 := packet.New(inPayload)
 		inPck1 := packet.New(inPayload)
 
@@ -128,7 +128,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 					return nil, nil
 				}
 			}
-			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
+			return nil, packet.New(object.NewString(faker.UUIDHyphenated()))
 		})
 		defer n.Close()
 
@@ -148,7 +148,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		inWriter1 := in1.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck0 := packet.New(inPayload)
 		inPck1 := packet.New(inPayload)
 
@@ -186,7 +186,7 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 				return nil, nil
 			}
 		}
-		return packet.New(primitive.NewString(faker.UUIDHyphenated())), nil
+		return packet.New(object.NewString(faker.UUIDHyphenated())), nil
 	})
 	defer n.Close()
 
@@ -209,7 +209,7 @@ func BenchmarkManyToOneNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck0 := packet.New(inPayload)
 		inPck1 := packet.New(inPayload)
 

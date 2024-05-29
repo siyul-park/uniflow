@@ -2,16 +2,16 @@ package memdb
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
-func parseSorts(sorts []database.Sort) func(i, j *primitive.Map) bool {
-	return func(i, j *primitive.Map) bool {
+func parseSorts(sorts []database.Sort) func(i, j *object.Map) bool {
+	return func(i, j *object.Map) bool {
 		for _, s := range sorts {
-			x, _ := primitive.Pick[primitive.Value](i, parsePath(s.Key)...)
-			y, _ := primitive.Pick[primitive.Value](j, parsePath(s.Key)...)
+			x, _ := object.Pick[object.Object](i, parsePath(s.Key)...)
+			y, _ := object.Pick[object.Object](j, parsePath(s.Key)...)
 
-			e := primitive.Compare(x, y)
+			e := object.Compare(x, y)
 			if e == 0 {
 				continue
 			}

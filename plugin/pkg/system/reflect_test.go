@@ -9,9 +9,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
@@ -51,15 +51,15 @@ func TestCreateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalText(spec)
-	inPck := packet.New(primitive.NewSlice(inPayload))
+	inPayload, _ := object.MarshalText(spec)
+	inPck := packet.New(object.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
-		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
+		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -100,7 +100,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -108,7 +108,7 @@ func TestReadNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
-		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
+		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -149,15 +149,15 @@ func TestUpdateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalText(spec)
-	inPck := packet.New(primitive.NewSlice(inPayload))
+	inPayload, _ := object.MarshalText(spec)
+	inPck := packet.New(object.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
-		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
+		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -198,7 +198,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := primitive.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -206,7 +206,7 @@ func TestDeleteNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*scheme.SpecMeta
-		assert.NoError(t, primitive.Unmarshal(outPck.Payload(), &outPayload))
+		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

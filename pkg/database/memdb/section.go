@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/tidwall/btree"
 )
 
@@ -19,16 +19,16 @@ type Constraint struct {
 	Name    string
 	Keys    []string
 	Unique  bool
-	Partial func(*primitive.Map) bool
+	Partial func(*object.Map) bool
 }
 
 type node struct {
-	key   primitive.Value
-	value *primitive.Map
+	key   object.Object
+	value *object.Map
 }
 
 type index struct {
-	key   primitive.Value
+	key   object.Object
 	value *btree.BTreeG[index]
 }
 
@@ -51,14 +51,14 @@ var (
 	ErrPKDuplicated = errors.New("primary key is duplicated")
 )
 
-var keyID = primitive.NewString("id")
+var keyID = object.NewString("id")
 
 var (
 	nodeComparator = func(x, y node) bool {
-		return primitive.Compare(x.key, y.key) < 0
+		return object.Compare(x.key, y.key) < 0
 	}
 	indexComparator = func(x, y index) bool {
-		return primitive.Compare(x.key, y.key) < 0
+		return object.Compare(x.key, y.key) < 0
 	}
 )
 
@@ -129,7 +129,7 @@ func (s *Section) Constraints() []Constraint {
 	return s.constraints[:]
 }
 
-func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
+func (s *Section) Set(doc *object.Map) (object.Object, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -152,7 +152,7 @@ func (s *Section) Set(doc *primitive.Map) (primitive.Value, error) {
 	return id, nil
 }
 
-func (s *Section) Delete(doc *primitive.Map) bool {
+func (s *Section) Delete(doc *object.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -173,7 +173,7 @@ func (s *Section) Delete(doc *primitive.Map) bool {
 	return true
 }
 
-func (s *Section) Range(f func(doc *primitive.Map) bool) {
+func (s *Section) Range(f func(doc *object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -182,7 +182,7 @@ func (s *Section) Range(f func(doc *primitive.Map) bool) {
 	})
 }
 
-func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
+func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -203,11 +203,11 @@ func (s *Section) Scan(name string, min, max primitive.Value) (*Sector, bool) {
 	return nil, false
 }
 
-func (s *Section) Drop() []*primitive.Map {
+func (s *Section) Drop() []*object.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var data []*primitive.Map
+	var data []*object.Map
 	s.data.Scan(func(n node) bool {
 		data = append(data, n.value)
 		return true
@@ -221,7 +221,7 @@ func (s *Section) Drop() []*primitive.Map {
 	return data
 }
 
-func (s *Section) index(doc *primitive.Map) error {
+func (s *Section) index(doc *object.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return errors.WithStack(ErrPKNotFound)
@@ -236,7 +236,7 @@ func (s *Section) index(doc *primitive.Map) error {
 		cur := s.indexes[i]
 
 		for i, k := range constraint.Keys {
-			value, _ := primitive.Pick[primitive.Value](doc, k)
+			value, _ := object.Pick[object.Object](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {
@@ -259,7 +259,7 @@ func (s *Section) index(doc *primitive.Map) error {
 	return nil
 }
 
-func (s *Section) unindex(doc *primitive.Map) {
+func (s *Section) unindex(doc *object.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return
@@ -271,7 +271,7 @@ func (s *Section) unindex(doc *primitive.Map) {
 		paths := []index{{value: cur}}
 
 		for i, k := range constraint.Keys {
-			value, _ := primitive.Pick[primitive.Value](doc, k)
+			value, _ := object.Pick[object.Object](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {

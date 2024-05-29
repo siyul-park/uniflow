@@ -1,8 +1,9 @@
-package primitive
+package object
 
 import (
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
@@ -97,7 +98,7 @@ func TestMap_Merge(t *testing.T) {
 }
 
 func TestMap_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -105,7 +106,7 @@ func TestMap_Encode(t *testing.T) {
 		source := map[string]any{"foo": "bar"}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -120,7 +121,7 @@ func TestMap_Encode(t *testing.T) {
 		}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -128,7 +129,7 @@ func TestMap_Encode(t *testing.T) {
 }
 
 func TestMap_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
@@ -195,7 +196,7 @@ func BenchmarkMap_Interface(b *testing.B) {
 }
 
 func BenchmarkMap_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -203,7 +204,7 @@ func BenchmarkMap_Encode(b *testing.B) {
 		source := map[string]string{"foo": "bar"}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
@@ -218,14 +219,14 @@ func BenchmarkMap_Encode(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }
 
 func BenchmarkMap_Decode(b *testing.B) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 

@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,7 +42,7 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := primitive.NewString(faker.UUIDHyphenated())
+	inPayload := object.NewString(faker.UUIDHyphenated())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

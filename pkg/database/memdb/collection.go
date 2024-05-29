@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 type Collection struct {
@@ -16,13 +16,13 @@ type Collection struct {
 	section   *Section
 	indexView *IndexView
 	streams   []*Stream
-	matches   []func(*primitive.Map) bool
+	matches   []func(*object.Map) bool
 	mu        sync.RWMutex
 }
 
 type internalEvent struct {
 	op       database.EventOP
-	document *primitive.Map
+	document *object.Map
 }
 
 var _ database.Collection = (*Collection)(nil)
@@ -68,7 +68,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	return stream, nil
 }
 
-func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive.Value, error) {
+func (c *Collection) InsertOne(_ context.Context, doc *object.Map) (object.Object, error) {
 	id, err := c.section.Set(doc)
 	if err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
@@ -79,8 +79,8 @@ func (c *Collection) InsertOne(_ context.Context, doc *primitive.Map) (primitive
 	return id, nil
 }
 
-func (c *Collection) InsertMany(_ context.Context, docs []*primitive.Map) ([]primitive.Value, error) {
-	ids := make([]primitive.Value, len(docs))
+func (c *Collection) InsertMany(_ context.Context, docs []*object.Map) ([]object.Object, error) {
+	ids := make([]object.Object, len(docs))
 	for i, doc := range docs {
 		id, err := c.section.Set(doc)
 		if err != nil {
@@ -99,7 +99,7 @@ func (c *Collection) InsertMany(_ context.Context, docs []*primitive.Map) ([]pri
 	return ids, nil
 }
 
-func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (bool, error) {
+func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *object.Map, opts ...*database.UpdateOptions) (bool, error) {
 	opt := database.MergeUpdateOptions(opts)
 
 	upsert := false
@@ -116,7 +116,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 		return false, nil
 	}
 
-	var id primitive.Value
+	var id object.Object
 	if origin != nil {
 		id = origin.GetOr(keyID, nil)
 	}
@@ -145,7 +145,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 	return true, nil
 }
 
-func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch *primitive.Map, opts ...*database.UpdateOptions) (int, error) {
+func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch *object.Map, opts ...*database.UpdateOptions) (int, error) {
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
 	if opt != nil && opt.Upsert != nil {
@@ -180,7 +180,7 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 		c.section.Delete(origin)
 	}
 
-	patches := make([]*primitive.Map, len(origins))
+	patches := make([]*object.Map, len(origins))
 	for i, origin := range origins {
 		patches[i] = patch.Set(keyID, origin.GetOr(keyID, nil))
 	}
@@ -223,7 +223,7 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 	}
 }
 
-func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*primitive.Map, error) {
+func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*object.Map, error) {
 	docs, err := c.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 	return docs[0], nil
 }
 
-func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*primitive.Map, error) {
+func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*object.Map, error) {
 	opt := database.MergeFindOptions(opts)
 
 	limit := -1
@@ -266,7 +266,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	scan := newNodes()
 	defer deleteNodes(scan)
 
-	appends := func(doc *primitive.Map) bool {
+	appends := func(doc *object.Map) bool {
 		if match == nil || match(doc) {
 			scan.Set(node{key: doc.GetOr(keyID, nil), value: doc})
 		}
@@ -293,7 +293,7 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 		c.section.Range(appends)
 	}
 
-	var docs []*primitive.Map
+	var docs []*object.Map
 	scan.Scan(func(n node) bool {
 		docs = append(docs, n.value)
 		return true

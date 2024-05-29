@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
@@ -40,11 +40,11 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := primitive.Interface(inPayload)
+	input := object.Interface(inPayload)
 
 	if output, err := n.transform(input); err != nil {
 		return nil, packet.WithError(err)
-	} else if outPayload, err := primitive.MarshalText(output); err != nil {
+	} else if outPayload, err := object.MarshalText(output); err != nil {
 		return nil, packet.WithError(err)
 	} else {
 		return packet.New(outPayload), nil

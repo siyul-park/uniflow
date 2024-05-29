@@ -11,9 +11,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -91,7 +91,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 		}
 	}))
 
-	var inPayload primitive.Value
+	var inPayload object.Object
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
@@ -102,9 +102,9 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+	inPayload, _ = object.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
-		Data: primitive.NewString(faker.UUIDHyphenated()),
+		Data: object.NewString(faker.UUIDHyphenated()),
 	})
 	inPck = packet.New(inPayload)
 
@@ -116,7 +116,7 @@ func TestWebSocketClientNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+	inPayload, _ = object.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)
@@ -177,14 +177,14 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader := out.Open(proc)
 
-	var inPayload primitive.Value
+	var inPayload object.Object
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+	inPayload, _ = object.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
-		Data: primitive.NewString(faker.UUIDHyphenated()),
+		Data: object.NewString(faker.UUIDHyphenated()),
 	})
 	inPck = packet.New(inPayload)
 
@@ -196,7 +196,7 @@ func BenchmarkWebSocketClientNode_SendAndReceive(b *testing.B) {
 		outReader.Receive(outPck)
 	}
 
-	inPayload, _ = primitive.MarshalText(&WebSocketPayload{
+	inPayload, _ = object.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)

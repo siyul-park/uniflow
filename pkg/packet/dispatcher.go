@@ -101,7 +101,7 @@ func (d *Dispatcher) consume() {
 			}
 
 			d.reads = d.reads[1:]
-			
+
 			for _, r := range d.readers {
 				r.Receive(None)
 			}

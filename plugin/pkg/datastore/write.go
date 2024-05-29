@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -55,7 +55,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := primitive.Interface(inPayload)
+	input := object.Interface(inPayload)
 
 	var format []byte
 	if v, ok := input.([]byte); ok {
@@ -71,7 +71,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err)
 	}
 
-	return packet.New(primitive.NewInt(len)), nil
+	return packet.New(object.NewInt(len)), nil
 }
 
 func NewWriteNodeCodec() scheme.Codec {

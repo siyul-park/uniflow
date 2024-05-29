@@ -9,28 +9,28 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/plugin/internal/js"
 	"github.com/xiatechs/jsonata-go"
 	"gopkg.in/yaml.v3"
 )
 
-func CompileTransformWithPrimitive(code string, lang string) (func(primitive.Value) (primitive.Value, error), error) {
+func CompileTransformWithPrimitive(code string, lang string) (func(object.Object) (object.Object, error), error) {
 	transform, err := CompileTransform(code, &lang)
 	if err != nil {
 		return nil, err
 	}
 
-	return func(value primitive.Value) (primitive.Value, error) {
+	return func(value object.Object) (object.Object, error) {
 		var input any
 		switch lang {
 		case Typescript, Javascript, JSONata:
-			input = primitive.Interface(value)
+			input = object.Interface(value)
 		}
 		if output, err := transform(input); err != nil {
 			return nil, err
 		} else {
-			return primitive.MarshalText(output)
+			return object.MarshalText(output)
 		}
 	}, nil
 }

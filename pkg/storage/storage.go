@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
@@ -33,7 +33,7 @@ var indexes = []database.IndexModel{
 		Name:    "namespace_name",
 		Keys:    []string{scheme.KeyNamespace, scheme.KeyName},
 		Unique:  true,
-		Partial: database.Where(scheme.KeyName).NotEqual(primitive.NewString("")).And(database.Where(scheme.KeyName).IsNotNull()),
+		Partial: database.Where(scheme.KeyName).NotEqual(object.NewString("")).And(database.Where(scheme.KeyName).IsNotNull()),
 	},
 }
 
@@ -105,7 +105,7 @@ func (s *Storage) InsertOne(ctx context.Context, spec scheme.Spec) (uuid.UUID, e
 	}
 
 	var id uuid.UUID
-	if err := primitive.Unmarshal(pk, &id); err != nil {
+	if err := object.Unmarshal(pk, &id); err != nil {
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(scheme.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
@@ -117,7 +117,7 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []*primitive.Map
+	var docs []*object.Map
 	for _, spec := range specs {
 		if doc, err := s.specToDoc(spec); err != nil {
 			return nil, err
@@ -132,7 +132,7 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 	}
 
 	var ids []uuid.UUID
-	if err := primitive.Unmarshal(primitive.NewSlice(pks...), &ids); err != nil {
+	if err := object.Unmarshal(object.NewSlice(pks...), &ids); err != nil {
 		_, _ = s.nodes.DeleteMany(ctx, database.Where(scheme.KeyID).In(pks...))
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, err
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []*primitive.Map
+	var docs []*object.Map
 	for _, spec := range specs {
 		if doc, err := s.specToDoc(spec); err != nil {
 			return 0, err
@@ -254,18 +254,18 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	return specs, nil
 }
 
-func (s *Storage) docToSpec(doc *primitive.Map) (scheme.Spec, error) {
+func (s *Storage) docToSpec(doc *object.Map) (scheme.Spec, error) {
 	unstructured := scheme.NewUnstructured(doc)
 	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
-	} else if err := primitive.Unmarshal(doc, spec); err != nil {
+	} else if err := object.Unmarshal(doc, spec); err != nil {
 		return nil, err
 	} else {
 		return spec, nil
 	}
 }
 
-func (s *Storage) specToDoc(spec scheme.Spec) (*primitive.Map, error) {
+func (s *Storage) specToDoc(spec scheme.Spec) (*object.Map, error) {
 	if n, err := s.scheme.Decode(spec); err != nil {
 		return nil, err
 	} else if err := n.Close(); err != nil {

@@ -3,7 +3,7 @@ package packet
 import (
 	"errors"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 var (
@@ -13,13 +13,13 @@ var (
 
 // WithError creates a new Packet representing an error with the given error.
 func WithError(err error) *Packet {
-	pairs := []primitive.Value{
-		primitive.NewString("__error"),
-		primitive.TRUE,
-		primitive.NewString("error"),
-		primitive.NewString(err.Error()),
+	pairs := []object.Object{
+		object.NewString("__error"),
+		object.TRUE,
+		object.NewString("error"),
+		object.NewString(err.Error()),
 	}
-	return New(primitive.NewMap(pairs...))
+	return New(object.NewMap(pairs...))
 }
 
 // AsError extracts the error from a Packet, returning it along with a boolean indicating whether
@@ -32,11 +32,11 @@ func AsError(pck *Packet) (error, bool) {
 
 	payload := pck.Payload()
 
-	if ok, _ := primitive.Pick[bool](payload, "__error"); !ok {
+	if ok, _ := object.Pick[bool](payload, "__error"); !ok {
 		return nil, false
 	}
 
-	if err, ok := primitive.Pick[string](payload, "error"); !ok {
+	if err, ok := object.Pick[string](payload, "error"); !ok {
 		return nil, false
 	} else {
 		return errors.New(err), true

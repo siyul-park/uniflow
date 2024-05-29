@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -112,11 +112,11 @@ func (n *LoopNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		var outPayloads []primitive.Value
-		if v, ok := inPayload.(*primitive.Slice); ok {
+		var outPayloads []object.Object
+		if v, ok := inPayload.(*object.Slice); ok {
 			outPayloads = v.Values()
 		} else {
-			outPayloads = []primitive.Value{inPayload}
+			outPayloads = []object.Object{inPayload}
 		}
 
 		count := 0

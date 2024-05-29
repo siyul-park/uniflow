@@ -3,12 +3,12 @@ package packet
 import (
 	"errors"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 // Packet represents a formalized block of data.
 type Packet struct {
-	payload primitive.Value
+	payload object.Object
 }
 
 var None = New(nil)
@@ -30,7 +30,7 @@ func Merge(pcks []*Packet) *Packet {
 		return WithError(errors.Join(errs...))
 	}
 
-	payloads := make([]primitive.Value, 0, len(pcks))
+	payloads := make([]object.Object, 0, len(pcks))
 	for _, pck := range pcks {
 		if pck != nil && pck != None {
 			payloads = append(payloads, pck.Payload())
@@ -42,19 +42,19 @@ func Merge(pcks []*Packet) *Packet {
 	} else if len(payloads) == 1 {
 		return New(payloads[0])
 	} else {
-		return New(primitive.NewSlice(payloads...))
+		return New(object.NewSlice(payloads...))
 	}
 }
 
 // New creates a new Packet with the given payload.
 // It generates a new unique ID for the Packet.
-func New(payload primitive.Value) *Packet {
+func New(payload object.Object) *Packet {
 	return &Packet{
 		payload: payload,
 	}
 }
 
 // Payload returns the data payload.
-func (p *Packet) Payload() primitive.Value {
+func (p *Packet) Payload() object.Object {
 	return p.payload
 }

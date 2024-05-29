@@ -3,10 +3,9 @@ package system
 import (
 	"context"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
-
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/storage"
 )
@@ -53,10 +52,10 @@ func UpdateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructure
 			if patch, ok := lo.Find(specs, func(item *scheme.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
-				if doc, err := primitive.MarshalText(exist); err != nil {
+				if doc, err := object.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
-					patches = append(patches, scheme.NewUnstructured(doc.(*primitive.Map).Merge(patch.Doc())))
+					patches = append(patches, scheme.NewUnstructured(doc.(*object.Map).Merge(patch.Doc())))
 				}
 			}
 		}

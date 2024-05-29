@@ -7,8 +7,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -89,7 +89,7 @@ func (n *WebSocketUpgradeNode) WriteBufferSize() int {
 
 func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	var inPayload *HTTPPayload
-	if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+	if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
 	}
 

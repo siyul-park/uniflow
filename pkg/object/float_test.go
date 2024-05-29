@@ -1,8 +1,9 @@
-package primitive
+package object
 
 import (
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -42,14 +43,14 @@ func TestFloat_Compare(t *testing.T) {
 }
 
 func TestFloat_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newFloatEncoder())
 
 	t.Run("float32", func(t *testing.T) {
 		source := float32(1)
 		v := NewFloat32(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -59,7 +60,7 @@ func TestFloat_Encode(t *testing.T) {
 		source := float64(1)
 		v := NewFloat64(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -67,7 +68,7 @@ func TestFloat_Encode(t *testing.T) {
 }
 
 func TestFloat_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newFloatDecoder())
 
 	t.Run("float32", func(t *testing.T) {

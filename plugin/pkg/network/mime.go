@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 const (
@@ -68,8 +68,8 @@ func IsCompatibleMIMEType(x, y string) bool {
 	return true
 }
 
-// MarshalMIME converts a primitive.Value to MIME data.
-func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
+// MarshalMIME converts a object.Value to MIME data.
+func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 	if contentType == nil {
 		contentType = lo.ToPtr[string]("")
 	}
@@ -79,9 +79,9 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 	}
 
 	var data []byte
-	if v, ok := value.(primitive.String); ok {
+	if v, ok := value.(object.String); ok {
 		data = []byte(v.String())
-	} else if v, ok := value.(primitive.Binary); ok {
+	} else if v, ok := value.(object.Binary); ok {
 		data = v.Bytes()
 	}
 	if data != nil {
@@ -105,7 +105,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 		return json.Marshal(value.Interface())
 	case ApplicationForm:
 		urlValues := url.Values{}
-		if err := primitive.Unmarshal(value, &urlValues); err != nil {
+		if err := object.Unmarshal(value, &urlValues); err != nil {
 			return nil, err
 		}
 		return []byte(urlValues.Encode()), nil
@@ -125,15 +125,15 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 			return nil, err
 		}
 
-		writeField := func(obj *primitive.Map, key primitive.Value) error {
-			if key, ok := key.(primitive.String); ok {
+		writeField := func(obj *object.Map, key object.Object) error {
+			if key, ok := key.(object.String); ok {
 				value := obj.GetOr(key, nil)
 
-				var elements *primitive.Slice
-				if v, ok := value.(*primitive.Slice); ok {
+				var elements *object.Slice
+				if v, ok := value.(*object.Slice); ok {
 					elements = v
 				} else {
-					elements = primitive.NewSlice(value)
+					elements = object.NewSlice(value)
 				}
 
 				for _, element := range elements.Values() {
@@ -158,8 +158,8 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 			}
 			return nil
 		}
-		writeFields := func(value primitive.Value) error {
-			if value, ok := value.(*primitive.Map); ok {
+		writeFields := func(value object.Object) error {
+			if value, ok := value.(*object.Map); ok {
 				for _, key := range value.Keys() {
 					if err := writeField(value, key); err != nil {
 						return err
@@ -168,47 +168,47 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 			}
 			return nil
 		}
-		writeFiles := func(value primitive.Value) error {
-			if value, ok := value.(*primitive.Map); ok {
+		writeFiles := func(value object.Object) error {
+			if value, ok := value.(*object.Map); ok {
 				for _, key := range value.Keys() {
-					if key, ok := key.(primitive.String); ok {
+					if key, ok := key.(object.String); ok {
 						value := value.GetOr(key, nil)
 
-						var elements *primitive.Slice
-						if v, ok := value.(*primitive.Slice); ok {
+						var elements *object.Slice
+						if v, ok := value.(*object.Slice); ok {
 							elements = v
 						} else {
-							elements = primitive.NewSlice(value)
+							elements = object.NewSlice(value)
 						}
 
 						for _, element := range elements.Values() {
-							data, ok := primitive.Pick[primitive.Value](element, "data")
+							data, ok := object.Pick[object.Object](element, "data")
 							if !ok {
 								data = element
 							}
-							filename, ok := primitive.Pick[string](element, "filename")
+							filename, ok := object.Pick[string](element, "filename")
 							if !ok {
 								filename = key.String()
 							}
 
-							header, _ := primitive.Pick[primitive.Value](element, "header")
+							header, _ := object.Pick[object.Object](element, "header")
 
 							contentType := ""
-							contentTypes, _ := primitive.Pick[primitive.Value](header, HeaderContentType)
+							contentTypes, _ := object.Pick[object.Object](header, HeaderContentType)
 							if contentTypes != nil {
-								if c, ok := contentTypes.(*primitive.Slice); ok {
-									contentType, _ = primitive.Pick[string](c, "0")
-								} else if c, ok := contentTypes.(primitive.String); ok {
+								if c, ok := contentTypes.(*object.Slice); ok {
+									contentType, _ = object.Pick[string](c, "0")
+								} else if c, ok := contentTypes.(object.String); ok {
 									contentType = c.String()
 								}
 							}
 
 							contentEncoding := ""
-							contentEncodings, _ := primitive.Pick[primitive.Value](header, HeaderContentEncoding)
+							contentEncodings, _ := object.Pick[object.Object](header, HeaderContentEncoding)
 							if contentEncodings != nil {
-								if c, ok := contentEncodings.(*primitive.Slice); ok {
-									contentEncoding, _ = primitive.Pick[string](c, "0")
-								} else if c, ok := contentEncodings.(primitive.String); ok {
+								if c, ok := contentEncodings.(*object.Slice); ok {
+									contentEncoding, _ = object.Pick[string](c, "0")
+								} else if c, ok := contentEncodings.(object.String); ok {
 									contentEncoding = c.String()
 								}
 							}
@@ -223,7 +223,7 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 							}
 
 							h := textproto.MIMEHeader{}
-							_ = primitive.Unmarshal(header, &h)
+							_ = object.Unmarshal(header, &h)
 
 							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, quoteEscaper.Replace(key.String()), quoteEscaper.Replace(filename)))
 							h.Set(HeaderContentType, contentType)
@@ -240,15 +240,15 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 			return nil
 		}
 
-		if v, ok := value.(*primitive.Map); ok {
+		if v, ok := value.(*object.Map); ok {
 			for _, key := range v.Keys() {
 				value := v.GetOr(key, nil)
 
-				if key == primitive.NewString("value") {
+				if key == object.NewString("value") {
 					if err := writeFields(value); err != nil {
 						return nil, err
 					}
-				} else if key == primitive.NewString("file") {
+				} else if key == object.NewString("file") {
 					if err := writeFiles(value); err != nil {
 						return nil, err
 					}
@@ -267,8 +267,8 @@ func MarshalMIME(value primitive.Value, contentType *string) ([]byte, error) {
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
-// UnmarshalMIME converts MIME data into a primitive.Value.
-func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
+// UnmarshalMIME converts MIME data into a object.Value.
+func UnmarshalMIME(data []byte, contentType *string) (object.Object, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -296,15 +296,15 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 		if err := json.Unmarshal(data, &v); err != nil {
 			return nil, err
 		}
-		return primitive.MarshalText(v)
+		return object.MarshalText(v)
 	case ApplicationForm:
 		v, err := url.ParseQuery(string(data))
 		if err != nil {
 			return nil, err
 		}
-		return primitive.MarshalText(v)
+		return object.MarshalText(v)
 	case TextPlain:
-		return primitive.NewString(string(data)), nil
+		return object.NewString(string(data)), nil
 	case MultipartFormData:
 		reader := multipart.NewReader(bytes.NewReader(data), params["boundary"])
 		form, err := reader.ReadForm(int64(len(data)))
@@ -348,14 +348,14 @@ func UnmarshalMIME(data []byte, contentType *string) (primitive.Value, error) {
 			}
 		}
 
-		return primitive.MarshalText(map[string]any{
+		return object.MarshalText(map[string]any{
 			"value": form.Value,
 			"file":  files,
 		})
 	case ApplicationOctetStream:
-		return primitive.NewBinary(data), nil
+		return object.NewBinary(data), nil
 	default:
-		return primitive.NewBinary(data), nil
+		return object.NewBinary(data), nil
 	}
 }
 

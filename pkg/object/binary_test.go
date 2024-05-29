@@ -1,9 +1,10 @@
-package primitive
+package object
 
 import (
+	"testing"
+
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,14 +33,14 @@ func TestBinary_Compare(t *testing.T) {
 }
 
 func TestBinary_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newBinaryEncoder())
 
 	t.Run("encoding.BinaryMarshaler", func(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
 		v := NewBinary(source.Bytes())
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -49,7 +50,7 @@ func TestBinary_Encode(t *testing.T) {
 		source := []byte{0, 1, 2}
 		v := NewBinary(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -59,7 +60,7 @@ func TestBinary_Encode(t *testing.T) {
 		source := [3]byte{0, 1, 2}
 		v := NewBinary(source[:])
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -67,7 +68,7 @@ func TestBinary_Encode(t *testing.T) {
 }
 
 func TestBinary_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newBinaryDecoder())
 
 	t.Run("encoding.BinaryUnmarshaler", func(t *testing.T) {
@@ -112,14 +113,14 @@ func TestBinary_Decode(t *testing.T) {
 }
 
 func BenchmarkBinary_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newBinaryEncoder())
 
 	b.Run("encoding.BinaryMarshaler", func(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
@@ -128,7 +129,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 		source := []byte{0, 1, 2}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
@@ -137,14 +138,14 @@ func BenchmarkBinary_Encode(b *testing.B) {
 		source := [3]byte{0, 1, 2}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
 }
 
 func BenchmarkBinary_Decode(b *testing.B) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newBinaryDecoder())
 
 	b.Run("encoding.BinaryUnmarshaler", func(b *testing.B) {

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +46,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -79,7 +79,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -105,7 +105,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		n := NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return nil, packet.New(primitive.NewString(faker.UUIDHyphenated()))
+			return nil, packet.New(object.NewString(faker.UUIDHyphenated()))
 		})
 		defer n.Close()
 
@@ -121,7 +121,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -164,7 +164,7 @@ func BenchmarkOneToOneNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)

@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 // Filter represents a filter used to find matching primitives.
 type Filter struct {
-	OP       OP              // Comparison operator for the filter.
-	Key      string          // Key to apply the filter on.
-	Value    primitive.Value // Value to compare against.
-	Children []*Filter       // Child filters for logical operations.
+	OP       OP            // Comparison operator for the filter.
+	Key      string        // Key to apply the filter on.
+	Value    object.Object // Value to compare against.
+	Children []*Filter     // Child filters for logical operations.
 }
 
 // OP represents comparison operators for filters.
@@ -47,7 +47,7 @@ func Where(key string) *filterHelper {
 }
 
 // Equal creates an equality filter.
-func (fh *filterHelper) Equal(value primitive.Value) *Filter {
+func (fh *filterHelper) Equal(value object.Object) *Filter {
 	return &Filter{
 		OP:    EQ,
 		Key:   fh.key,
@@ -56,7 +56,7 @@ func (fh *filterHelper) Equal(value primitive.Value) *Filter {
 }
 
 // NotEqual creates a not-equal filter.
-func (fh *filterHelper) NotEqual(value primitive.Value) *Filter {
+func (fh *filterHelper) NotEqual(value object.Object) *Filter {
 	return &Filter{
 		OP:    NE,
 		Key:   fh.key,
@@ -65,7 +65,7 @@ func (fh *filterHelper) NotEqual(value primitive.Value) *Filter {
 }
 
 // LessThan creates a less-than filter.
-func (fh *filterHelper) LessThan(value primitive.Value) *Filter {
+func (fh *filterHelper) LessThan(value object.Object) *Filter {
 	return &Filter{
 		OP:    LT,
 		Key:   fh.key,
@@ -74,7 +74,7 @@ func (fh *filterHelper) LessThan(value primitive.Value) *Filter {
 }
 
 // LessThanOrEqual creates a less-than-or-equal filter.
-func (fh *filterHelper) LessThanOrEqual(value primitive.Value) *Filter {
+func (fh *filterHelper) LessThanOrEqual(value object.Object) *Filter {
 	return &Filter{
 		OP:    LTE,
 		Key:   fh.key,
@@ -83,7 +83,7 @@ func (fh *filterHelper) LessThanOrEqual(value primitive.Value) *Filter {
 }
 
 // GreaterThan creates a greater-than filter.
-func (fh *filterHelper) GreaterThan(value primitive.Value) *Filter {
+func (fh *filterHelper) GreaterThan(value object.Object) *Filter {
 	return &Filter{
 		OP:    GT,
 		Key:   fh.key,
@@ -92,7 +92,7 @@ func (fh *filterHelper) GreaterThan(value primitive.Value) *Filter {
 }
 
 // GreaterThanOrEqual creates a greater-than-or-equal filter.
-func (fh *filterHelper) GreaterThanOrEqual(value primitive.Value) *Filter {
+func (fh *filterHelper) GreaterThanOrEqual(value object.Object) *Filter {
 	return &Filter{
 		OP:    GTE,
 		Key:   fh.key,
@@ -101,20 +101,20 @@ func (fh *filterHelper) GreaterThanOrEqual(value primitive.Value) *Filter {
 }
 
 // In creates an in filter.
-func (fh *filterHelper) In(slice ...primitive.Value) *Filter {
+func (fh *filterHelper) In(slice ...object.Object) *Filter {
 	return &Filter{
 		OP:    IN,
 		Key:   fh.key,
-		Value: primitive.NewSlice(slice...),
+		Value: object.NewSlice(slice...),
 	}
 }
 
 // NotIn creates a not-in filter.
-func (fh *filterHelper) NotIn(slice ...primitive.Value) *Filter {
+func (fh *filterHelper) NotIn(slice ...object.Object) *Filter {
 	return &Filter{
 		OP:    NIN,
 		Key:   fh.key,
-		Value: primitive.NewSlice(slice...),
+		Value: object.NewSlice(slice...),
 	}
 }
 
@@ -181,7 +181,7 @@ func (ft *Filter) String() (string, error) {
 		return ft.Key + " " + string(ft.OP), nil
 	}
 
-	b, err := json.Marshal(primitive.Interface(ft.Value))
+	b, err := json.Marshal(object.Interface(ft.Value))
 	if err != nil {
 		return "", err
 	}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -76,9 +76,9 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	ctx := context.Background()
 
-	query, ok := primitive.Pick[string](inPck.Payload())
+	query, ok := object.Pick[string](inPck.Payload())
 	if !ok {
-		query, ok = primitive.Pick[string](inPck.Payload(), "0")
+		query, ok = object.Pick[string](inPck.Payload(), "0")
 	}
 	if !ok {
 		return nil, packet.WithError(packet.ErrInvalidPacket)
@@ -113,16 +113,16 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
-		args, _ := primitive.Pick[[]any](inPck.Payload(), "1")
+		args, _ := object.Pick[[]any](inPck.Payload(), "1")
 		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
 			return nil, packet.WithError(err)
 		}
 	} else {
 		var args any
 		var ok bool
-		args, ok = primitive.Pick[map[string]any](inPck.Payload(), "1")
+		args, ok = object.Pick[map[string]any](inPck.Payload(), "1")
 		if !ok {
-			args, _ = primitive.Pick[[]map[string]any](inPck.Payload(), "1")
+			args, _ = object.Pick[[]map[string]any](inPck.Payload(), "1")
 		}
 		if rows, err = stmt.QueryxContext(ctx, args); err != nil {
 			return nil, packet.WithError(err)
@@ -140,7 +140,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		results = append(results, result)
 	}
 
-	outPayload, err := primitive.MarshalText(results)
+	outPayload, err := object.MarshalText(results)
 	if err != nil {
 		return nil, packet.WithError(err)
 	}

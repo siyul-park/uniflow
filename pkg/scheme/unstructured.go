@@ -6,12 +6,12 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 // Unstructured is a data structure that implements the Spec interface and is not marshaled for structuring.
 type Unstructured struct {
-	doc *primitive.Map
+	doc *object.Map
 	mu  sync.RWMutex
 }
 
@@ -26,13 +26,13 @@ const (
 )
 
 var _ Spec = (*Unstructured)(nil)
-var _ primitive.Marshaler = (*Unstructured)(nil)
-var _ primitive.Unmarshaler = (*Unstructured)(nil)
+var _ object.Marshaler = (*Unstructured)(nil)
+var _ object.Unmarshaler = (*Unstructured)(nil)
 
-// NewUnstructured returns a new Unstructured instance with an optional primitive.Map.
-func NewUnstructured(doc *primitive.Map) *Unstructured {
+// NewUnstructured returns a new Unstructured instance with an optional object.Map.
+func NewUnstructured(doc *object.Map) *Unstructured {
 	if doc == nil {
-		doc = primitive.NewMap()
+		doc = object.NewMap()
 	}
 
 	return &Unstructured{doc: doc}
@@ -109,37 +109,37 @@ func (u *Unstructured) Get(key string) (any, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	v, _ := u.doc.Get(primitive.NewString(key))
+	v, _ := u.doc.Get(object.NewString(key))
 
 	var value any
 	var err error
 	switch key {
 	case KeyID:
 		var encoded uuid.UUID
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyKind:
 		var encoded string
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyNamespace:
 		var encoded string
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyName:
 		var encoded string
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyAnnotations:
 		var encoded map[string]string
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyLinks:
 		var encoded map[string][]PortLocation
-		err = primitive.Unmarshal(v, &encoded)
+		err = object.Unmarshal(v, &encoded)
 		value = encoded
 	default:
-		err = primitive.Unmarshal(v, &value)
+		err = object.Unmarshal(v, &value)
 	}
 	return value, err
 }
@@ -149,10 +149,10 @@ func (u *Unstructured) Set(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, err := primitive.MarshalBinary(val); err != nil {
+	if v, err := object.MarshalBinary(val); err != nil {
 		return err
 	} else {
-		u.doc = u.doc.Set(primitive.NewString(key), v)
+		u.doc = u.doc.Set(object.NewString(key), v)
 	}
 	return nil
 }
@@ -162,40 +162,40 @@ func (u *Unstructured) GetOrSet(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, ok := u.doc.Get(primitive.NewString(key)); ok {
-		if err := primitive.Unmarshal(v, val); err != nil {
+	if v, ok := u.doc.Get(object.NewString(key)); ok {
+		if err := object.Unmarshal(v, val); err != nil {
 			return err
 		}
-	} else if v, err := primitive.MarshalBinary(val); err != nil {
+	} else if v, err := object.MarshalBinary(val); err != nil {
 		return err
 	} else {
-		u.doc = u.doc.Set(primitive.NewString(key), v)
+		u.doc = u.doc.Set(object.NewString(key), v)
 	}
 	return nil
 }
 
 // Doc returns the raw object of the Unstructured.
-func (u *Unstructured) Doc() *primitive.Map {
+func (u *Unstructured) Doc() *object.Map {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.doc
 }
 
-// MarshalPrimitive convert Unstructured to primitive.Value.
-func (u *Unstructured) MarshalPrimitive() (primitive.Value, error) {
+// MarshalObject convert Unstructured to object.Value.
+func (u *Unstructured) MarshalObject() (object.Object, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.doc, nil
 }
 
-// UnmarshalPrimitive convert primitive.Value to Unstructured.
-func (u *Unstructured) UnmarshalPrimitive(value primitive.Value) error {
+// UnmarshalObject convert object.Value to Unstructured.
+func (u *Unstructured) UnmarshalObject(value object.Object) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, ok := value.(*primitive.Map); ok {
+	if v, ok := value.(*object.Map); ok {
 		u.doc = v
 		return nil
 	}

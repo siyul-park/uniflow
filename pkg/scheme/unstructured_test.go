@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,11 +69,11 @@ func TestUnstructured_MarshalPrimitive(t *testing.T) {
 		Kind: faker.UUIDHyphenated(),
 	}
 
-	doc1, _ := primitive.MarshalBinary(spec)
+	doc1, _ := object.MarshalBinary(spec)
 
-	u := NewUnstructured(doc1.(*primitive.Map))
+	u := NewUnstructured(doc1.(*object.Map))
 
-	doc2, err := u.MarshalPrimitive()
+	doc2, err := u.MarshalObject()
 	assert.NoError(t, err)
 	assert.Equal(t, doc1, doc2)
 }
@@ -84,11 +84,11 @@ func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
 		Kind: faker.UUIDHyphenated(),
 	}
 
-	doc, _ := primitive.MarshalBinary(spec)
+	doc, _ := object.MarshalBinary(spec)
 
 	u := NewUnstructured(nil)
 
-	err := u.UnmarshalPrimitive(doc)
+	err := u.UnmarshalObject(doc)
 	assert.NoError(t, err)
 	assert.Equal(t, u.GetID(), spec.GetID())
 	assert.Equal(t, u.GetKind(), spec.GetKind())

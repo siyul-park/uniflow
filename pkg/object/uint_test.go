@@ -1,8 +1,9 @@
-package primitive
+package object
 
 import (
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -82,14 +83,14 @@ func TestUinteger_Compare(t *testing.T) {
 }
 
 func TestUinteger_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newUintegerEncoder())
 
 	t.Run("uint", func(t *testing.T) {
 		source := uint(1)
 		v := NewUint(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -99,7 +100,7 @@ func TestUinteger_Encode(t *testing.T) {
 		source := uint8(1)
 		v := NewUint8(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -109,7 +110,7 @@ func TestUinteger_Encode(t *testing.T) {
 		source := uint16(1)
 		v := NewUint16(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -119,7 +120,7 @@ func TestUinteger_Encode(t *testing.T) {
 		source := uint32(1)
 		v := NewUint32(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -129,7 +130,7 @@ func TestUinteger_Encode(t *testing.T) {
 		source := uint64(1)
 		v := NewUint64(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -137,7 +138,7 @@ func TestUinteger_Encode(t *testing.T) {
 }
 
 func TestUinteger_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newUintegerDecoder())
 
 	t.Run("float32", func(t *testing.T) {

@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 // Stream is a stream to track scheme.Spec changes.
@@ -27,7 +27,7 @@ func newStream(stream database.Stream) *Stream {
 				return
 			case e := <-s.stream.Next():
 				var id uuid.UUID
-				if err := primitive.Unmarshal(e.DocumentID, &id); err != nil {
+				if err := object.Unmarshal(e.DocumentID, &id); err != nil {
 					continue
 				}
 				var op eventOP

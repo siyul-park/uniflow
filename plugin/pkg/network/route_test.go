@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -223,9 +223,9 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			inWriter := in.Open(proc)
 			outReader := out.Open(proc)
 
-			inPayload := primitive.NewMap(
-				primitive.NewString("method"), primitive.NewString(tc.whenMethod),
-				primitive.NewString("path"), primitive.NewString(tc.whenPath),
+			inPayload := object.NewMap(
+				object.NewString("method"), object.NewString(tc.whenMethod),
+				object.NewString("path"), object.NewString(tc.whenPath),
 			)
 			inPck := packet.New(inPayload)
 
@@ -233,7 +233,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 
 			select {
 			case outPck := <-outReader.Read():
-				params, _ := primitive.Pick[map[string]string](outPck.Payload(), "params")
+				params, _ := object.Pick[map[string]string](outPck.Payload(), "params")
 				assert.Equal(t, tc.expectParams, params)
 				outReader.Receive(outPck)
 			case <-ctx.Done():
@@ -287,9 +287,9 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)
 
-	inPayload := primitive.NewMap(
-		primitive.NewString("method"), primitive.NewString(http.MethodGet),
-		primitive.NewString("path"), primitive.NewString("/a/b/c"),
+	inPayload := object.NewMap(
+		object.NewString("method"), object.NewString(http.MethodGet),
+		object.NewString("path"), object.NewString("/a/b/c"),
 	)
 	inPck := packet.New(inPayload)
 

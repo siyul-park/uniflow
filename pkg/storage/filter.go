@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
@@ -173,9 +173,9 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 
 	value := ft.Value
 	if ft.OP == database.IN || ft.OP == database.NIN {
-		if v, err := primitive.MarshalBinary(ft.Value); err != nil {
+		if v, err := object.MarshalBinary(ft.Value); err != nil {
 			return nil, err
-		} else if v, ok := v.(*primitive.Slice); ok {
+		} else if v, ok := v.(*object.Slice); ok {
 			elements := make([]any, 0, v.Len())
 			for _, v := range v.Values() {
 				unstructed := scheme.NewUnstructured(nil)
@@ -198,7 +198,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		}
 	}
 
-	if v, err := primitive.MarshalBinary(value); err != nil {
+	if v, err := object.MarshalBinary(value); err != nil {
 		return nil, err
 	} else {
 		return &database.Filter{OP: ft.OP, Key: ft.Key, Value: v}, nil

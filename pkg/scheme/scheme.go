@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 )
 
 // Scheme is a registry for decoding Spec objects.
@@ -75,7 +75,7 @@ func (s *Scheme) Decode(spec Spec) (node.Node, error) {
 
 	if unstructured, ok := spec.(*Unstructured); ok {
 		if structured, ok := s.Spec(kind); ok {
-			if err := primitive.Unmarshal(unstructured.Doc(), structured); err != nil {
+			if err := object.Unmarshal(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
 				spec = structured
@@ -95,19 +95,19 @@ func (s *Scheme) Unstructured(spec Spec) (*Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc, err := primitive.MarshalBinary(structured)
+	doc, err := object.MarshalBinary(structured)
 	if err != nil {
 		return nil, err
 	}
-	return NewUnstructured(doc.(*primitive.Map)), nil
+	return NewUnstructured(doc.(*object.Map)), nil
 }
 
 // Structured converts the given Spec into a structured representation.
 func (s *Scheme) Structured(spec Spec) (Spec, error) {
 	if structured, ok := s.Spec(spec.GetKind()); ok {
-		if doc, err := primitive.MarshalBinary(spec); err != nil {
+		if doc, err := object.MarshalBinary(spec); err != nil {
 			return nil, err
-		} else if err := primitive.Unmarshal(doc, structured); err != nil {
+		} else if err := object.Unmarshal(doc, structured); err != nil {
 			return nil, err
 		} else {
 			return structured, nil

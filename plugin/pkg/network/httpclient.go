@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -65,7 +65,7 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 		Query:  make(url.Values),
 		Header: make(http.Header),
 	}
-	if err := primitive.Unmarshal(inPck.Payload(), &req); err != nil {
+	if err := object.Unmarshal(inPck.Payload(), &req); err != nil {
 		req.Body = inPck.Payload()
 	}
 	if req.Method != "" {
@@ -135,7 +135,7 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 		return nil, packet.WithError(err)
 	}
 
-	outPayload, err := primitive.MarshalText(res)
+	outPayload, err := object.MarshalText(res)
 	if err != nil {
 		return nil, packet.WithError(err)
 	}

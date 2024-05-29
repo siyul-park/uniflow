@@ -5,9 +5,9 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -111,7 +111,7 @@ func (n *TriggerNode) Listen() {
 			outWriter := n.outPort.Open(proc)
 			errWriter := n.errPort.Open(proc)
 
-			if outPayload, err := primitive.MarshalText(e.Data()); err != nil {
+			if outPayload, err := object.MarshalText(e.Data()); err != nil {
 				errPck := packet.WithError(err)
 				packet.Call(errWriter, errPck)
 			} else {
@@ -175,7 +175,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		e := event.New(primitive.Interface(inPayload))
+		e := event.New(object.Interface(inPayload))
 		n.producer.Produce(e)
 
 		inReader.Receive(packet.None)

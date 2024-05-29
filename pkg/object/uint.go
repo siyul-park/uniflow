@@ -1,4 +1,4 @@
-package primitive
+package object
 
 import (
 	"reflect"
@@ -11,7 +11,7 @@ import (
 
 // Uinteger is an interface representing an unsigned integer.
 type Uinteger interface {
-	Value
+	Object
 	Uint() uint64
 }
 
@@ -52,7 +52,7 @@ func (u Uint) Kind() Kind {
 }
 
 // Compare compares two Uint values.
-func (u Uint) Compare(v Value) int {
+func (u Uint) Compare(v Object) int {
 	return compareAsUinteger(u, v)
 }
 
@@ -77,7 +77,7 @@ func (u Uint8) Kind() Kind {
 }
 
 // Compare compares two Uint8 values.
-func (u Uint8) Compare(v Value) int {
+func (u Uint8) Compare(v Object) int {
 	return compareAsUinteger(u, v)
 }
 
@@ -102,7 +102,7 @@ func (u Uint16) Kind() Kind {
 }
 
 // Compare compares two Uint16 values.
-func (u Uint16) Compare(v Value) int {
+func (u Uint16) Compare(v Object) int {
 	return compareAsUinteger(u, v)
 }
 
@@ -127,7 +127,7 @@ func (u Uint32) Kind() Kind {
 }
 
 // Compare compares two Uint32 values.
-func (u Uint32) Compare(v Value) int {
+func (u Uint32) Compare(v Object) int {
 	return compareAsUinteger(u, v)
 }
 
@@ -152,7 +152,7 @@ func (u Uint64) Kind() Kind {
 }
 
 // Compare compares two Uint64 values.
-func (u Uint64) Compare(v Value) int {
+func (u Uint64) Compare(v Object) int {
 	return compareAsUinteger(u, v)
 }
 
@@ -161,7 +161,7 @@ func (u Uint64) Interface() any {
 	return uint64(u)
 }
 
-func compareAsUinteger(u Uinteger, v Value) int {
+func compareAsUinteger(u Uinteger, v Object) int {
 	if r, ok := v.(Uinteger); ok {
 		return compare(u.Uint(), r.Uint())
 	}
@@ -177,39 +177,39 @@ func compareAsUinteger(u Uinteger, v Value) int {
 	return -1
 }
 
-func newUintegerEncoder() encoding.Compiler[*Value] {
-	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Encoder[*Value, unsafe.Pointer], error) {
+func newUintegerEncoder() encoding.Compiler[*Object] {
+	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Uint {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*uint)(target)
 					*source = NewUint(t)
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint8 {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*uint8)(target)
 					*source = NewUint8(t)
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint16 {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*uint16)(target)
 					*source = NewUint16(t)
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint32 {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*uint32)(target)
 					*source = NewUint32(t)
 
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint64 {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*uint64)(target)
 					*source = NewUint64(t)
 
@@ -221,8 +221,8 @@ func newUintegerEncoder() encoding.Compiler[*Value] {
 	})
 }
 
-func newUintegerDecoder() encoding.Compiler[Value] {
-	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Encoder[Value, unsafe.Pointer], error) {
+func newUintegerDecoder() encoding.Compiler[Object] {
+	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return newUintegerDecoderWithType[float32](), nil
@@ -249,7 +249,7 @@ func newUintegerDecoder() encoding.Compiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newUintegerDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(Uinteger); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -262,8 +262,8 @@ func newUintegerDecoder() encoding.Compiler[Value] {
 	})
 }
 
-func newUintegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[Value, unsafe.Pointer] {
-	return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+func newUintegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[Object, unsafe.Pointer] {
+	return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 		if s, ok := source.(Uinteger); ok {
 			*(*T)(target) = T(s.Uint())
 			return nil

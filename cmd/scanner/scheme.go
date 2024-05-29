@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 
@@ -39,12 +39,12 @@ func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 
 // Decode decodes raw data into a scheme.Spec instance.
 func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
-	doc, err := primitive.MarshalBinary(data)
+	doc, err := object.MarshalBinary(data)
 	if err != nil {
 		return nil, err
 	}
 
-	unstructured := scheme.NewUnstructured(doc.(*primitive.Map))
+	unstructured := scheme.NewUnstructured(doc.(*object.Map))
 
 	if unstructured.GetNamespace() == "" {
 		if c.namespace != "" {
@@ -60,7 +60,7 @@ func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
 
 	if spec, ok := c.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
-	} else if err := primitive.Unmarshal(doc, spec); err != nil {
+	} else if err := object.Unmarshal(doc, spec); err != nil {
 		return nil, err
 	} else {
 		return spec, nil

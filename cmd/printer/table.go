@@ -7,7 +7,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/xiatechs/jsonata-go"
 )
 
@@ -106,16 +106,16 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 
 // Print formats and prints the provided data as a table.
 func (p *TablePrinter) Print(data any) (string, error) {
-	value, err := primitive.MarshalText(data)
+	value, err := object.MarshalText(data)
 	if err != nil {
 		return "", err
 	}
 
 	var elements []any
 	switch v := value.(type) {
-	case *primitive.Slice:
+	case *object.Slice:
 		elements = v.Slice()
-	case *primitive.Map:
+	case *object.Map:
 		elements = append(elements, v.Interface())
 	default:
 		return "", errors.New("unsupported data type")

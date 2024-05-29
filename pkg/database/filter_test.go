@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterHelper(t *testing.T) {
 	key := faker.UUIDHyphenated()
-	value := primitive.NewString(faker.UUIDHyphenated())
+	value := object.NewString(faker.UUIDHyphenated())
 
 	var testCase = []struct {
 		when   *Filter
@@ -35,11 +35,11 @@ func TestFilterHelper(t *testing.T) {
 		},
 		{
 			when:   Where(key).In(value),
-			expect: &Filter{OP: IN, Key: key, Value: primitive.NewSlice(value)},
+			expect: &Filter{OP: IN, Key: key, Value: object.NewSlice(value)},
 		},
 		{
 			when:   Where(key).NotIn(value),
-			expect: &Filter{OP: NIN, Key: key, Value: primitive.NewSlice(value)},
+			expect: &Filter{OP: NIN, Key: key, Value: object.NewSlice(value)},
 		},
 		{
 			when:   Where(key).IsNull(),
@@ -72,15 +72,15 @@ func TestFilter_String(t *testing.T) {
 		expect string
 	}{
 		{
-			when:   Where("1").Equal(primitive.NewString("1")),
+			when:   Where("1").Equal(object.NewString("1")),
 			expect: "1 = \"1\"",
 		},
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)),
+			when:   Where("1").Equal(object.NewInt(1)),
 			expect: "1 = 1",
 		},
 		{
-			when:   Where("1").Equal(primitive.TRUE),
+			when:   Where("1").Equal(object.TRUE),
 			expect: "1 = true",
 		},
 		{
@@ -89,15 +89,15 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").NotEqual(primitive.NewString("1")),
+			when:   Where("1").NotEqual(object.NewString("1")),
 			expect: "1 != \"1\"",
 		},
 		{
-			when:   Where("1").NotEqual(primitive.NewInt(1)),
+			when:   Where("1").NotEqual(object.NewInt(1)),
 			expect: "1 != 1",
 		},
 		{
-			when:   Where("1").NotEqual(primitive.TRUE),
+			when:   Where("1").NotEqual(object.TRUE),
 			expect: "1 != true",
 		},
 		{
@@ -106,56 +106,56 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").LessThan(primitive.NewString("1")),
+			when:   Where("1").LessThan(object.NewString("1")),
 			expect: "1 < \"1\"",
 		},
 		{
-			when:   Where("1").LessThan(primitive.NewInt(1)),
+			when:   Where("1").LessThan(object.NewInt(1)),
 			expect: "1 < 1",
 		},
 
 		{
-			when:   Where("1").LessThanOrEqual(primitive.NewString("1")),
+			when:   Where("1").LessThanOrEqual(object.NewString("1")),
 			expect: "1 <= \"1\"",
 		},
 		{
-			when:   Where("1").LessThanOrEqual(primitive.NewInt(1)),
+			when:   Where("1").LessThanOrEqual(object.NewInt(1)),
 			expect: "1 <= 1",
 		},
 
 		{
-			when:   Where("1").GreaterThan(primitive.NewString("1")),
+			when:   Where("1").GreaterThan(object.NewString("1")),
 			expect: "1 > \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThan(primitive.NewInt(1)),
+			when:   Where("1").GreaterThan(object.NewInt(1)),
 			expect: "1 > 1",
 		},
 
 		{
-			when:   Where("1").GreaterThanOrEqual(primitive.NewString("1")),
+			when:   Where("1").GreaterThanOrEqual(object.NewString("1")),
 			expect: "1 >= \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThanOrEqual(primitive.NewInt(1)),
+			when:   Where("1").GreaterThanOrEqual(object.NewInt(1)),
 			expect: "1 >= 1",
 		},
 
 		{
-			when:   Where("1").In(primitive.NewString("1")),
+			when:   Where("1").In(object.NewString("1")),
 			expect: "1 IN [\"1\"]",
 		},
 		{
-			when:   Where("1").In(primitive.NewInt(1)),
+			when:   Where("1").In(object.NewInt(1)),
 			expect: "1 IN [1]",
 		},
 
 		{
-			when:   Where("1").NotIn(primitive.NewString("1")),
+			when:   Where("1").NotIn(object.NewString("1")),
 			expect: "1 NOT IN [\"1\"]",
 		},
 		{
-			when:   Where("1").NotIn(primitive.NewInt(1)),
+			when:   Where("1").NotIn(object.NewInt(1)),
 			expect: "1 NOT IN [1]",
 		},
 
@@ -169,25 +169,25 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)).And(Where("2").Equal(primitive.NewInt(2))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))),
 			expect: "(1 = 1) AND (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)).And(Where("2").Equal(primitive.NewInt(2))).And(Where("3").Equal(primitive.NewInt(3))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))).And(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) AND (2 = 2)) AND (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)).Or(Where("2").Equal(primitive.NewInt(2))),
+			when:   Where("1").Equal(object.NewInt(1)).Or(Where("2").Equal(object.NewInt(2))),
 			expect: "(1 = 1) OR (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)).Or(Where("2").Equal(primitive.NewInt(2))).Or(Where("3").Equal(primitive.NewInt(3))),
+			when:   Where("1").Equal(object.NewInt(1)).Or(Where("2").Equal(object.NewInt(2))).Or(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) OR (2 = 2)) OR (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(primitive.NewInt(1)).And(Where("2").Equal(primitive.NewInt(2))).Or(Where("3").Equal(primitive.NewInt(3))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))).Or(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) AND (2 = 2)) OR (3 = 3)",
 		},
 	}

@@ -1,4 +1,4 @@
-package primitive
+package object
 
 import (
 	"reflect"
@@ -11,7 +11,7 @@ import (
 // Bool is a representation of a bool.
 type Bool bool
 
-var _ Value = (Bool)(false)
+var _ Object = (Bool)(false)
 
 var (
 	TRUE  = NewBool(true)
@@ -34,7 +34,7 @@ func (b Bool) Kind() Kind {
 }
 
 // Compare compares two Bool values.
-func (b Bool) Compare(v Value) int {
+func (b Bool) Compare(v Object) int {
 	if other, ok := v.(Bool); ok {
 		switch {
 		case b == other:
@@ -56,11 +56,11 @@ func (b Bool) Interface() any {
 	return bool(b)
 }
 
-func newBoolEncoder() encoding.Compiler[*Value] {
-	return encoding.CompilerFunc[*Value](func(typ reflect.Type) (encoding.Encoder[*Value, unsafe.Pointer], error) {
+func newBoolEncoder() encoding.Compiler[*Object] {
+	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.EncodeFunc[*Value, unsafe.Pointer](func(source *Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 					t := *(*bool)(target)
 					*source = NewBool(t)
 					return nil
@@ -71,11 +71,11 @@ func newBoolEncoder() encoding.Compiler[*Value] {
 	})
 }
 
-func newBoolDecoder() encoding.Compiler[Value] {
-	return encoding.CompilerFunc[Value](func(typ reflect.Type) (encoding.Encoder[Value, unsafe.Pointer], error) {
+func newBoolDecoder() encoding.Compiler[Object] {
+	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
@@ -83,7 +83,7 @@ func newBoolDecoder() encoding.Compiler[Value] {
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.EncodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(Bool); ok {
 						*(*any)(target) = s.Interface()
 						return nil

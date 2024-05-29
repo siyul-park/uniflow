@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"go.mongodb.org/mongo-driver/bson"
-	bsonprimitive "go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -166,7 +166,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 
-					var value primitive.Value
+					var value object.Object
 					if err := bsonToPrimitive(v, &value); err != nil {
 						return err
 					}
@@ -193,16 +193,16 @@ func bsonToFilter(data any, filter **database.Filter) error {
 	return nil
 }
 
-func primitiveToBson(data primitive.Value) (any, error) {
+func primitiveToBson(data object.Object) (any, error) {
 	if data == nil {
-		return bsonprimitive.Null{}, nil
+		return primitive.Null{}, nil
 	}
 
-	if s, ok := data.(*primitive.Map); ok {
-		t := make(bsonprimitive.M, s.Len())
+	if s, ok := data.(*object.Map); ok {
+		t := make(primitive.M, s.Len())
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
-			if k, ok := k.(primitive.String); !ok {
+			if k, ok := k.(object.String); !ok {
 				return nil, errors.WithStack(encoding.ErrInvalidValue)
 			} else {
 				if v, err := primitiveToBson(v); err != nil {
@@ -213,8 +213,8 @@ func primitiveToBson(data primitive.Value) (any, error) {
 			}
 		}
 		return t, nil
-	} else if s, ok := data.(*primitive.Slice); ok {
-		t := make(bsonprimitive.A, s.Len())
+	} else if s, ok := data.(*object.Slice); ok {
+		t := make(primitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			if v, err := primitiveToBson(s.Get(i)); err != nil {
 				return nil, err
@@ -228,45 +228,45 @@ func primitiveToBson(data primitive.Value) (any, error) {
 	}
 }
 
-func bsonToPrimitive(data any, v *primitive.Value) error {
+func bsonToPrimitive(data any, v *object.Object) error {
 	if data == nil {
 		*v = nil
 		return nil
-	} else if _, ok := data.(bsonprimitive.Null); ok {
+	} else if _, ok := data.(primitive.Null); ok {
 		*v = nil
 		return nil
-	} else if _, ok := data.(bsonprimitive.Undefined); ok {
+	} else if _, ok := data.(primitive.Undefined); ok {
 		*v = nil
 		return nil
-	} else if s, ok := data.(bsonprimitive.Binary); ok {
-		*v = primitive.NewBinary(s.Data)
+	} else if s, ok := data.(primitive.Binary); ok {
+		*v = object.NewBinary(s.Data)
 		return nil
-	} else if s, ok := data.(bsonprimitive.A); ok {
-		values := make([]primitive.Value, len(s))
+	} else if s, ok := data.(primitive.A); ok {
+		values := make([]object.Object, len(s))
 		for i, e := range s {
-			var value primitive.Value
+			var value object.Object
 			if err := bsonToPrimitive(e, &value); err != nil {
 				return err
 			}
 			values[i] = value
 		}
-		*v = primitive.NewSlice(values...)
+		*v = object.NewSlice(values...)
 		return nil
 	} else if s, ok := bsonM(data); ok {
-		pairs := make([]primitive.Value, len(s)*2)
+		pairs := make([]object.Object, len(s)*2)
 		i := 0
 		for k, v := range s {
-			var value primitive.Value
+			var value object.Object
 			if err := bsonToPrimitive(v, &value); err != nil {
 				return err
 			}
-			pairs[i*2] = primitive.NewString(externalKey(k))
+			pairs[i*2] = object.NewString(externalKey(k))
 			pairs[i*2+1] = value
 			i += 1
 		}
-		*v = primitive.NewMap(pairs...)
+		*v = object.NewMap(pairs...)
 		return nil
-	} else if s, err := primitive.MarshalBinary(data); err == nil {
+	} else if s, err := object.MarshalBinary(data); err == nil {
 		*v = s
 		return nil
 	}
@@ -311,7 +311,7 @@ func bsonMA(value any) ([]bson.M, bool) {
 	}
 
 	var m []bson.M
-	if v, ok := value.(bsonprimitive.A); ok {
+	if v, ok := value.(primitive.A); ok {
 		for _, e := range v {
 			if e, ok := bsonM(e); ok {
 				m = append(m, e)
@@ -333,7 +333,7 @@ func bsonM(value any) (bson.M, bool) {
 			m[e.Key] = e.Value
 		}
 		return m, true
-	} else if v, ok := value.(bsonprimitive.E); ok {
+	} else if v, ok := value.(primitive.E); ok {
 		return bson.M{v.Key: v.Value}, true
 	}
 	return nil, false

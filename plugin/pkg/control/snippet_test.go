@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := primitive.NewString(faker.Word())
+	inPayload := object.NewString(faker.Word())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -79,7 +79,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload primitive.Value
+	var inPayload object.Object
 	inPck := packet.New(inPayload)
 
 	b.ResetTimer()

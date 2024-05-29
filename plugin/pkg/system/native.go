@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -74,13 +74,13 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	if remains := len(ins) - offset; remains == 1 {
 		in := reflect.New(n.operator.Type().In(offset))
-		if err := primitive.Unmarshal(inPayload, in.Interface()); err != nil {
+		if err := object.Unmarshal(inPayload, in.Interface()); err != nil {
 			return nil, packet.WithError(err)
 		}
 		ins[offset] = in.Elem()
 	} else if remains > 1 {
-		var arguments []primitive.Value
-		if v, ok := inPayload.(*primitive.Slice); ok {
+		var arguments []object.Object
+		if v, ok := inPayload.(*object.Slice); ok {
 			arguments = v.Values()
 		} else {
 			arguments = append(arguments, v)
@@ -88,7 +88,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		for i := offset; i < len(ins); i++ {
 			in := reflect.New(n.operator.Type().In(i))
-			if err := primitive.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
+			if err := object.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
 				return nil, packet.WithError(err)
 			}
 			ins[i] = in.Elem()
@@ -108,9 +108,9 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		}
 	}
 
-	outPayloads := make([]primitive.Value, len(outs))
+	outPayloads := make([]object.Object, len(outs))
 	for i, out := range outs {
-		if outPayload, err := primitive.MarshalText(out.Interface()); err != nil {
+		if outPayload, err := object.MarshalText(out.Interface()); err != nil {
 			return nil, packet.WithError(err)
 		} else {
 			outPayloads[i] = outPayload
@@ -123,7 +123,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	if len(outPayloads) == 1 {
 		return packet.New(outPayloads[0]), nil
 	}
-	return packet.New(primitive.NewSlice(outPayloads...)), nil
+	return packet.New(object.NewSlice(outPayloads...)), nil
 }
 
 // NewNativeModule creates a new NativeModule instance.

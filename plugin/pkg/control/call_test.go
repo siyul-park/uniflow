@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -59,7 +59,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader1 := out1.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -106,7 +106,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -165,7 +165,7 @@ func BenchmarkCallNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)

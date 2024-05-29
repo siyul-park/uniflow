@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +38,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -68,7 +68,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -98,9 +98,9 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewSlice(
-			primitive.NewString(faker.UUIDHyphenated()),
-			primitive.NewString(faker.UUIDHyphenated()),
+		inPayload := object.NewSlice(
+			object.NewString(faker.UUIDHyphenated()),
+			object.NewString(faker.UUIDHyphenated()),
 		)
 		inPck := packet.New(inPayload)
 
@@ -131,7 +131,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -161,14 +161,14 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, primitive.NewSlice(inPayload, inPayload), outPck.Payload())
+			assert.Equal(t, object.NewSlice(inPayload, inPayload), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -195,7 +195,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := primitive.NewString(faker.UUIDHyphenated())
+		inPayload := object.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)

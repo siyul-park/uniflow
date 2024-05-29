@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
@@ -64,7 +64,7 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := primitive.Interface(inPayload)
+	input := object.Interface(inPayload)
 
 	outPcks := make([]*packet.Packet, len(n.whens))
 	for i, when := range n.whens {

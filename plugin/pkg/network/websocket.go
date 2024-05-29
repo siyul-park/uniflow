@@ -7,9 +7,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
@@ -26,8 +26,8 @@ type WebSocketNode struct {
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
-	Type int             `map:"type"`
-	Data primitive.Value `map:"data,omitempty"`
+	Type int           `map:"type"`
+	Data object.Object `map:"data,omitempty"`
 }
 
 var _ node.Node = (*WebSocketNode)(nil)
@@ -151,9 +151,9 @@ func (n *WebSocketNode) consume(proc *process.Process) {
 		}
 
 		var inPayload *WebSocketPayload
-		if err := primitive.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+		if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()
-			if _, ok := inPayload.Data.(primitive.Binary); !ok {
+			if _, ok := inPayload.Data.(object.Binary); !ok {
 				inPayload.Type = websocket.TextMessage
 			} else {
 				inPayload.Type = websocket.BinaryMessage
@@ -199,10 +199,10 @@ func (n *WebSocketNode) produce(proc *process.Process) {
 
 		data, err := UnmarshalMIME(p, lo.ToPtr(""))
 		if err != nil {
-			data = primitive.NewString(err.Error())
+			data = object.NewString(err.Error())
 		}
 
-		outPayload, _ := primitive.MarshalText(&WebSocketPayload{
+		outPayload, _ := object.MarshalText(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})

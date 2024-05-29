@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,10 +16,10 @@ func TestWithError(t *testing.T) {
 
 	assert.NotNil(t, pck2)
 
-	payload, ok := pck2.Payload().(*primitive.Map)
+	payload, ok := pck2.Payload().(*object.Map)
 	assert.True(t, ok)
-	assert.Equal(t, primitive.TRUE, payload.GetOr(primitive.NewString("__error"), nil))
-	assert.Equal(t, err.Error(), payload.GetOr(primitive.NewString("error"), nil).Interface())
+	assert.Equal(t, object.TRUE, payload.GetOr(object.NewString("__error"), nil))
+	assert.Equal(t, err.Error(), payload.GetOr(object.NewString("error"), nil).Interface())
 }
 
 func TestAsError(t *testing.T) {

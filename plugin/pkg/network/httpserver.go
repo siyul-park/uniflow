@@ -9,9 +9,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -169,7 +169,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req, err := n.read(r)
 	if err != nil {
 		errPck = packet.WithError(err)
-	} else if outPayload, err := primitive.MarshalText(req); err != nil {
+	} else if outPayload, err := object.MarshalText(req); err != nil {
 		errPck = packet.WithError(err)
 	} else {
 		outPck = packet.New(outPayload)
@@ -190,7 +190,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var res *HTTPPayload
 		if _, ok := packet.AsError(backPck); ok {
 			res = NewHTTPPayload(http.StatusInternalServerError)
-		} else if err := primitive.Unmarshal(backPck.Payload(), &res); err != nil {
+		} else if err := object.Unmarshal(backPck.Payload(), &res); err != nil {
 			res.Body = backPck.Payload()
 		}
 
@@ -243,7 +243,7 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 			var res *HTTPPayload
 			if _, ok := packet.AsError(inPck); ok {
 				res = NewHTTPPayload(http.StatusInternalServerError)
-			} else if err := primitive.Unmarshal(inPck.Payload(), &res); err != nil {
+			} else if err := object.Unmarshal(inPck.Payload(), &res); err != nil {
 				res.Body = inPck.Payload()
 			}
 

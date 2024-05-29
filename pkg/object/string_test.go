@@ -1,9 +1,10 @@
-package primitive
+package object
 
 import (
+	"testing"
+
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"testing"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
@@ -30,14 +31,14 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 
 	t.Run("encoding.TextMarshaler", func(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
 		v := NewString(source.String())
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -47,7 +48,7 @@ func TestString_Encode(t *testing.T) {
 		source := faker.Word()
 		v := NewString(source)
 
-		var decoded Value
+		var decoded Object
 		err := enc.Encode(&decoded, &source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
@@ -55,7 +56,7 @@ func TestString_Encode(t *testing.T) {
 }
 
 func TestString_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -90,14 +91,14 @@ func TestString_Decode(t *testing.T) {
 }
 
 func BenchmarkString_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newStringEncoder())
 
 	b.Run("encoding.TextMarshaler", func(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})
@@ -106,7 +107,7 @@ func BenchmarkString_Encode(b *testing.B) {
 		source := faker.Word()
 
 		for i := 0; i < b.N; i++ {
-			var decoded Value
+			var decoded Object
 			_ = enc.Encode(&decoded, &source)
 		}
 	})

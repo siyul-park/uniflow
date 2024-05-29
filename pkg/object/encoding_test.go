@@ -1,4 +1,4 @@
-package primitive
+package object
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 func TestMarshalText(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Value
+		expect Object
 	}{
 		{
 			when:   nil,
@@ -98,7 +98,7 @@ func TestMarshalText(t *testing.T) {
 func TestMarshalBinary(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Value
+		expect Object
 	}{
 		{
 			when:   nil,
@@ -169,7 +169,7 @@ func TestMarshalBinary(t *testing.T) {
 			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 		},
 		{
-			when:   map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
+			when:   map[string]Object{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
 			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 		},
 	}
@@ -185,7 +185,7 @@ func TestMarshalBinary(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	var testCase = []struct {
-		when   Value
+		when   Object
 		expect any
 	}{
 		{
@@ -254,7 +254,7 @@ func TestUnmarshal(t *testing.T) {
 		},
 		{
 			when:   NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
-			expect: map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
+			expect: map[string]Object{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
 		},
 	}
 
@@ -270,50 +270,50 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestShortcut_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newShortcutEncoder())
 
 	source := TRUE
 
-	var decoded Value
+	var decoded Object
 	err := enc.Encode(&decoded, &source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestShortcut_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newShortcutDecoder())
 
 	source := TRUE
 
-	var decoded Value
+	var decoded Object
 	err := dec.Encode(source, &decoded)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Value, any]()
+	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newPointerEncoder(enc))
 	enc.Add(newShortcutEncoder())
 
 	source := TRUE
 
-	var decoded Value
+	var decoded Object
 	err := enc.Encode(&decoded, lo.ToPtr(&source))
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Value, any]()
+	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newPointerDecoder(dec))
 	dec.Add(newShortcutDecoder())
 
 	source := TRUE
 
-	var decoded Value
+	var decoded Object
 	err := dec.Encode(source, lo.ToPtr(&decoded))
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)

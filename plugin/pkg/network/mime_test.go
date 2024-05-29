@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,42 +66,42 @@ func TestIsCompatibleMIMEType(t *testing.T) {
 
 func TestMarshalMIME(t *testing.T) {
 	testCases := []struct {
-		whenValue       primitive.Value
+		whenValue       object.Object
 		whenContentType string
 		expect          []byte
 	}{
 		{
-			whenValue: primitive.NewBinary([]byte("testtesttest")),
+			whenValue: object.NewBinary([]byte("testtesttest")),
 			expect:    []byte("testtesttest"),
 		},
 		{
-			whenValue:       primitive.NewString("testtesttest"),
+			whenValue:       object.NewString("testtesttest"),
 			whenContentType: TextPlain,
 			expect:          []byte("testtesttest"),
 		},
 		{
-			whenValue:       primitive.NewBinary([]byte("testtesttest")),
+			whenValue:       object.NewBinary([]byte("testtesttest")),
 			whenContentType: TextPlain,
 			expect:          []byte("testtesttest"),
 		},
 		{
-			whenValue: primitive.NewMap(
-				primitive.NewString("foo"), primitive.NewFloat64(1),
-				primitive.NewString("bar"), primitive.NewFloat64(2),
+			whenValue: object.NewMap(
+				object.NewString("foo"), object.NewFloat64(1),
+				object.NewString("bar"), object.NewFloat64(2),
 			),
 			whenContentType: ApplicationJSON,
 			expect:          []byte(`{"bar":2,"foo":1}`),
 		},
 		{
-			whenValue: primitive.NewMap(
-				primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("foo")),
-				primitive.NewString("bar"), primitive.NewSlice(primitive.NewString("bar")),
+			whenValue: object.NewMap(
+				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
+				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
 			),
 			whenContentType: ApplicationForm,
 			expect:          []byte("bar=bar&foo=foo"),
 		},
 		{
-			whenValue:       primitive.NewMap(primitive.NewString("test"), primitive.NewString("test")),
+			whenValue:       object.NewMap(object.NewString("test"), object.NewString("test")),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"\r\n" +
@@ -110,12 +110,12 @@ func TestMarshalMIME(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 		{
-			whenValue: primitive.NewMap(
-				primitive.NewString("value"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+			whenValue: object.NewMap(
+				object.NewString("value"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewString("test"),
+				object.NewString("file"), object.NewMap(
+					object.NewString("test"), object.NewString("test"),
 				),
 			),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
@@ -131,12 +131,12 @@ func TestMarshalMIME(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 		{
-			whenValue: primitive.NewMap(
-				primitive.NewString("value"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+			whenValue: object.NewMap(
+				object.NewString("value"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+				object.NewString("file"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
 			),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
@@ -152,19 +152,19 @@ func TestMarshalMIME(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 		{
-			whenValue: primitive.NewMap(
-				primitive.NewString("value"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+			whenValue: object.NewMap(
+				object.NewString("value"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewMap(
-						primitive.NewString("data"), primitive.NewBinary([]byte("test")),
-						primitive.NewString("filename"), primitive.NewString("test"),
-						primitive.NewString("header"), primitive.NewMap(
-							primitive.NewString("Content-Disposition"), primitive.NewSlice(primitive.NewString("form-data; name=\"test\"; filename=\"test\"")),
-							primitive.NewString("Content-Type"), primitive.NewSlice(primitive.NewString(ApplicationOctetStream)),
+				object.NewString("file"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewMap(
+						object.NewString("data"), object.NewBinary([]byte("test")),
+						object.NewString("filename"), object.NewString("test"),
+						object.NewString("header"), object.NewMap(
+							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							object.NewString("Content-Type"), object.NewSlice(object.NewString(ApplicationOctetStream)),
 						),
-						primitive.NewString("size"), primitive.NewInt64(4),
+						object.NewString("size"), object.NewInt64(4),
 					)),
 				),
 			),
@@ -195,7 +195,7 @@ func TestUnmarshalMIME(t *testing.T) {
 	testCases := []struct {
 		whenValue       []byte
 		whenContentType string
-		expect          primitive.Value
+		expect          object.Object
 	}{
 		{
 			whenValue: []byte(`
@@ -205,23 +205,23 @@ func TestUnmarshalMIME(t *testing.T) {
 				}
 			`),
 			whenContentType: ApplicationJSON,
-			expect: primitive.NewMap(
-				primitive.NewString("foo"), primitive.NewFloat64(1),
-				primitive.NewString("bar"), primitive.NewFloat64(2),
+			expect: object.NewMap(
+				object.NewString("foo"), object.NewFloat64(1),
+				object.NewString("bar"), object.NewFloat64(2),
 			),
 		},
 		{
 			whenValue:       []byte("foo=foo&bar=bar"),
 			whenContentType: ApplicationForm,
-			expect: primitive.NewMap(
-				primitive.NewString("foo"), primitive.NewSlice(primitive.NewString("foo")),
-				primitive.NewString("bar"), primitive.NewSlice(primitive.NewString("bar")),
+			expect: object.NewMap(
+				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
+				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
 			),
 		},
 		{
 			whenValue:       []byte("testtesttest"),
 			whenContentType: TextPlain,
-			expect:          primitive.NewString("testtesttest"),
+			expect:          object.NewString("testtesttest"),
 		},
 		{
 			whenValue: []byte("--MyBoundary\r\n" +
@@ -235,19 +235,19 @@ func TestUnmarshalMIME(t *testing.T) {
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
 			whenContentType: MultipartFormData + "; boundary=MyBoundary",
-			expect: primitive.NewMap(
-				primitive.NewString("value"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewString("test")),
+			expect: object.NewMap(
+				object.NewString("value"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				primitive.NewString("file"), primitive.NewMap(
-					primitive.NewString("test"), primitive.NewSlice(primitive.NewMap(
-						primitive.NewString("data"), primitive.NewBinary([]byte("test")),
-						primitive.NewString("filename"), primitive.NewString("test"),
-						primitive.NewString("header"), primitive.NewMap(
-							primitive.NewString("Content-Disposition"), primitive.NewSlice(primitive.NewString("form-data; name=\"test\"; filename=\"test\"")),
-							primitive.NewString("Content-Type"), primitive.NewSlice(primitive.NewString("application/octet-stream")),
+				object.NewString("file"), object.NewMap(
+					object.NewString("test"), object.NewSlice(object.NewMap(
+						object.NewString("data"), object.NewBinary([]byte("test")),
+						object.NewString("filename"), object.NewString("test"),
+						object.NewString("header"), object.NewMap(
+							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							object.NewString("Content-Type"), object.NewSlice(object.NewString("application/octet-stream")),
 						),
-						primitive.NewString("size"), primitive.NewInt64(4),
+						object.NewString("size"), object.NewInt64(4),
 					)),
 				),
 			),
@@ -255,7 +255,7 @@ func TestUnmarshalMIME(t *testing.T) {
 		{
 			whenValue:       []byte("testtesttest"),
 			whenContentType: ApplicationOctetStream,
-			expect:          primitive.NewBinary([]byte("testtesttest")),
+			expect:          object.NewBinary([]byte("testtesttest")),
 		},
 	}
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/primitive"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestSection_AddConstraint(t *testing.T) {
 		Name:    faker.UUIDHyphenated(),
 		Keys:    []string{"_id"},
 		Unique:  true,
-		Partial: func(_ *primitive.Map) bool { return true },
+		Partial: func(_ *object.Map) bool { return true },
 	}
 
 	err := s.AddConstraint(c)
@@ -32,7 +32,7 @@ func TestSection_DropConstraint(t *testing.T) {
 		Name:    faker.UUIDHyphenated(),
 		Keys:    []string{"_id"},
 		Unique:  true,
-		Partial: func(_ *primitive.Map) bool { return true },
+		Partial: func(_ *object.Map) bool { return true },
 	}
 
 	err := s.DropConstraint(c.Name)
@@ -48,8 +48,8 @@ func TestSection_DropConstraint(t *testing.T) {
 func TestSection_Set(t *testing.T) {
 	s := newSection()
 
-	doc := primitive.NewMap(
-		keyID, primitive.NewString(faker.UUIDHyphenated()),
+	doc := object.NewMap(
+		keyID, object.NewString(faker.UUIDHyphenated()),
 	)
 
 	pk, err := s.Set(doc)
@@ -63,8 +63,8 @@ func TestSection_Set(t *testing.T) {
 func TestSection_Delete(t *testing.T) {
 	s := newSection()
 
-	doc := primitive.NewMap(
-		keyID, primitive.NewString(faker.UUIDHyphenated()),
+	doc := object.NewMap(
+		keyID, object.NewString(faker.UUIDHyphenated()),
 	)
 
 	ok := s.Delete(doc)
@@ -79,14 +79,14 @@ func TestSection_Delete(t *testing.T) {
 func TestSection_Range(t *testing.T) {
 	s := newSection()
 
-	doc := primitive.NewMap(
-		keyID, primitive.NewString(faker.UUIDHyphenated()),
+	doc := object.NewMap(
+		keyID, object.NewString(faker.UUIDHyphenated()),
 	)
 
 	_, _ = s.Set(doc)
 
 	count := 0
-	s.Range(func(d *primitive.Map) bool {
+	s.Range(func(d *object.Map) bool {
 		assert.Equal(t, doc, d)
 		count += 1
 		return true
@@ -99,8 +99,8 @@ func TestSection_Scan(t *testing.T) {
 		t.Run("FastPath", func(t *testing.T) {
 			s := newSection()
 
-			doc := primitive.NewMap(
-				keyID, primitive.NewString(faker.UUIDHyphenated()),
+			doc := object.NewMap(
+				keyID, object.NewString(faker.UUIDHyphenated()),
 			)
 
 			_, _ = s.Set(doc)
@@ -110,7 +110,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child)
 
 			count := 0
-			child.Range(func(d *primitive.Map) bool {
+			child.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -121,8 +121,8 @@ func TestSection_Scan(t *testing.T) {
 		t.Run("SlowPath", func(t *testing.T) {
 			s := newSection()
 
-			doc := primitive.NewMap(
-				keyID, primitive.NewString(faker.UUIDHyphenated()),
+			doc := object.NewMap(
+				keyID, object.NewString(faker.UUIDHyphenated()),
 			)
 
 			_, _ = s.Set(doc)
@@ -132,7 +132,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child)
 
 			count := 0
-			child.Range(func(d *primitive.Map) bool {
+			child.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -146,8 +146,8 @@ func TestSection_Scan(t *testing.T) {
 			s := newSection()
 
 			constraintName := faker.UUIDHyphenated()
-			keyDepth1 := primitive.NewString(faker.UUIDHyphenated())
-			keyDepth2 := primitive.NewString(faker.UUIDHyphenated())
+			keyDepth1 := object.NewString(faker.UUIDHyphenated())
+			keyDepth2 := object.NewString(faker.UUIDHyphenated())
 
 			s.AddConstraint(Constraint{
 				Name:   constraintName,
@@ -155,10 +155,10 @@ func TestSection_Scan(t *testing.T) {
 				Unique: false,
 			})
 
-			doc := primitive.NewMap(
-				keyID, primitive.NewString(faker.UUIDHyphenated()),
-				keyDepth1, primitive.NewString(faker.UUIDHyphenated()),
-				keyDepth2, primitive.NewString(faker.UUIDHyphenated()),
+			doc := object.NewMap(
+				keyID, object.NewString(faker.UUIDHyphenated()),
+				keyDepth1, object.NewString(faker.UUIDHyphenated()),
+				keyDepth2, object.NewString(faker.UUIDHyphenated()),
 			)
 
 			_, _ = s.Set(doc)
@@ -172,7 +172,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child2)
 
 			count := 0
-			child2.Range(func(d *primitive.Map) bool {
+			child2.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -184,8 +184,8 @@ func TestSection_Scan(t *testing.T) {
 			s := newSection()
 
 			constraintName := faker.UUIDHyphenated()
-			keyDepth1 := primitive.NewString(faker.UUIDHyphenated())
-			keyDepth2 := primitive.NewString(faker.UUIDHyphenated())
+			keyDepth1 := object.NewString(faker.UUIDHyphenated())
+			keyDepth2 := object.NewString(faker.UUIDHyphenated())
 
 			s.AddConstraint(Constraint{
 				Name:   constraintName,
@@ -193,10 +193,10 @@ func TestSection_Scan(t *testing.T) {
 				Unique: false,
 			})
 
-			doc := primitive.NewMap(
-				keyID, primitive.NewString(faker.UUIDHyphenated()),
-				keyDepth1, primitive.NewString(faker.UUIDHyphenated()),
-				keyDepth2, primitive.NewString(faker.UUIDHyphenated()),
+			doc := object.NewMap(
+				keyID, object.NewString(faker.UUIDHyphenated()),
+				keyDepth1, object.NewString(faker.UUIDHyphenated()),
+				keyDepth2, object.NewString(faker.UUIDHyphenated()),
 			)
 
 			_, _ = s.Set(doc)
@@ -210,7 +210,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child2)
 
 			count := 0
-			child2.Range(func(d *primitive.Map) bool {
+			child2.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -223,8 +223,8 @@ func TestSection_Scan(t *testing.T) {
 func TestSection_Drop(t *testing.T) {
 	s := newSection()
 
-	doc := primitive.NewMap(
-		keyID, primitive.NewString(faker.UUIDHyphenated()),
+	doc := object.NewMap(
+		keyID, object.NewString(faker.UUIDHyphenated()),
 	)
 
 	_, _ = s.Set(doc)
@@ -233,7 +233,7 @@ func TestSection_Drop(t *testing.T) {
 	assert.Len(t, docs, 1)
 
 	count := 0
-	s.Range(func(_ *primitive.Map) bool {
+	s.Range(func(_ *object.Map) bool {
 		count += 1
 		return true
 	})

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,7 +45,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload primitive.Value
+	var inPayload object.Object
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -96,9 +96,9 @@ func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := primitive.NewMap(
-		primitive.NewString("method"), primitive.NewString(http.MethodGet),
-		primitive.NewString("url"), primitive.NewString(s.URL),
+	inPayload := object.NewMap(
+		object.NewString("method"), object.NewString(http.MethodGet),
+		object.NewString("url"), object.NewString(s.URL),
 	)
 	inPck := packet.New(inPayload)
 

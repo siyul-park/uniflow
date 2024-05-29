@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +55,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
 
-		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+		inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -97,7 +97,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader1 := out1.Open(proc)
 
-		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("foo"))
+		inPayload := object.NewMap(object.NewString("foo"), object.NewString("foo"))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -139,7 +139,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+		inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -192,7 +192,7 @@ func BenchmarkIfNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader0 := out0.Open(proc)
 
-	inPayload := primitive.NewMap(primitive.NewString("foo"), primitive.NewString("bar"))
+	inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 	inPck := packet.New(inPayload)
 
 	b.ResetTimer()

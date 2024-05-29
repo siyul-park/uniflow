@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/primitive"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
@@ -59,7 +59,7 @@ func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packe
 	defer cancel()
 
 	u := &url.URL{}
-	_ = primitive.Unmarshal(inPck.Payload(), &u)
+	_ = object.Unmarshal(inPck.Payload(), &u)
 
 	if n.url.Scheme != "" {
 		u.Scheme = n.url.Scheme
