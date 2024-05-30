@@ -53,11 +53,11 @@ func TestCollection_Watch(t *testing.T, collection database.Collection) {
 
 	doc := object.NewMap(
 		object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
-		object.NewString("version"), object.NewInteger(0),
+		object.NewString("version"), object.NewInt(0),
 	)
 
 	_, _ = collection.InsertOne(ctx, doc)
-	_, _ = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInteger(1)))
+	_, _ = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInt(1)))
 	_, _ = collection.DeleteOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)))
 }
 
@@ -71,8 +71,8 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 		doc := object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-			object.NewString("version"), object.NewInteger(0),
-			object.NewString("deleted"), object.FALSE,
+			object.NewString("version"), object.NewInt(0),
+			object.NewString("deleted"), object.False,
 		)
 
 		id, err := collection.InsertOne(ctx, doc)
@@ -87,8 +87,8 @@ func TestCollection_InsertOne(t *testing.T, collection database.Collection) {
 		doc := object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 			object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-			object.NewString("version"), object.NewInteger(0),
-			object.NewString("deleted"), object.FALSE,
+			object.NewString("version"), object.NewInt(0),
+			object.NewString("deleted"), object.False,
 		)
 
 		_, _ = collection.InsertOne(ctx, doc)
@@ -105,13 +105,13 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
-		var docs []object.Map
+		var docs []*object.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 				object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-				object.NewString("version"), object.NewInteger(0),
-				object.NewString("deleted"), object.FALSE,
+				object.NewString("version"), object.NewInt(0),
+				object.NewString("deleted"), object.False,
 			))
 		}
 
@@ -127,13 +127,13 @@ func TestCollection_InsertMany(t *testing.T, collection database.Collection) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
-		var docs []object.Map
+		var docs []*object.Map
 		for i := 0; i < batchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 				object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-				object.NewString("version"), object.NewInteger(0),
-				object.NewString("deleted"), object.FALSE,
+				object.NewString("version"), object.NewInt(0),
+				object.NewString("deleted"), object.False,
 			))
 		}
 
@@ -153,10 +153,10 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 	t.Run("Upsert = true", func(t *testing.T) {
 		doc := object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
-			object.NewString("version"), object.NewInteger(0),
+			object.NewString("version"), object.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
@@ -166,10 +166,10 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 	t.Run("Upsert = false", func(t *testing.T) {
 		doc := object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
-			object.NewString("version"), object.NewInteger(0),
+			object.NewString("version"), object.NewInt(0),
 		)
 
-		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err := collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -177,7 +177,7 @@ func TestCollection_UpdateOne(t *testing.T, collection database.Collection) {
 
 		_, _ = collection.InsertOne(ctx, doc)
 
-		ok, err = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		ok, err = collection.UpdateOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -194,7 +194,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	t.Run("Upsert = true", func(t *testing.T) {
 		id := object.NewBinary(uuid.Must(uuid.NewV7()).Bytes())
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").Equal(id), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		count, err := collection.UpdateMany(ctx, database.Where("id").Equal(id), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(true),
 		}))
 		assert.NoError(t, err)
@@ -207,17 +207,17 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 			ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 		}
 
-		var docs []object.Map
+		var docs []*object.Map
 		for _, id := range ids {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), id,
 				object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-				object.NewString("version"), object.NewInteger(0),
-				object.NewString("deleted"), object.FALSE,
+				object.NewString("version"), object.NewInt(0),
+				object.NewString("deleted"), object.False,
 			))
 		}
 
-		count, err := collection.UpdateMany(ctx, database.Where("id").In(ids...), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		count, err := collection.UpdateMany(ctx, database.Where("id").In(ids...), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 
 		_, _ = collection.InsertMany(ctx, docs)
 
-		count, err = collection.UpdateMany(ctx, database.Where("id").In(ids...), object.NewMap(object.NewString("version"), object.NewInteger(1)), lo.ToPtr(database.UpdateOptions{
+		count, err = collection.UpdateMany(ctx, database.Where("id").In(ids...), object.NewMap(object.NewString("version"), object.NewInt(1)), lo.ToPtr(database.UpdateOptions{
 			Upsert: lo.ToPtr(false),
 		}))
 		assert.NoError(t, err)
@@ -269,13 +269,13 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 		ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
-	var docs []object.Map
+	var docs []*object.Map
 	for _, id := range ids {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), id,
 			object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-			object.NewString("version"), object.NewInteger(0),
-			object.NewString("deleted"), object.FALSE,
+			object.NewString("version"), object.NewInt(0),
+			object.NewString("deleted"), object.False,
 		))
 	}
 
@@ -303,8 +303,8 @@ func TestCollection_FindOne(t *testing.T, collection database.Collection) {
 	doc := object.NewMap(
 		object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
 		object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-		object.NewString("version"), object.NewInteger(0),
-		object.NewString("deleted"), object.FALSE,
+		object.NewString("version"), object.NewInt(0),
+		object.NewString("deleted"), object.False,
 	)
 
 	res, err := collection.FindOne(ctx, database.Where("id").Equal(doc.GetOr(object.NewString("id"), nil)))
@@ -404,50 +404,50 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 		ids = append(ids, object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
 
-	var docs []object.Map
+	var docs []*object.Map
 	for _, id := range ids {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), id,
 			object.NewString("name"), object.NewString(faker.UUIDHyphenated()),
-			object.NewString("version"), object.NewInteger(0),
-			object.NewString("deleted"), object.FALSE,
+			object.NewString("version"), object.NewInt(0),
+			object.NewString("deleted"), object.False,
 		))
 	}
 
 	_, _ = collection.InsertMany(ctx, docs)
 
 	t.Run(string(database.EQ), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").Equal(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").Equal(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.NE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").NotEqual(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").NotEqual(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.GT), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.GTE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GreaterThanOrEqual(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThanOrEqual(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
 
 	t.Run(string(database.LT), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").LessThan(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").LessThan(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.LTE), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").LessThanOrEqual(object.NewInteger(0)))
+		res, err := collection.FindMany(ctx, database.Where("version").LessThanOrEqual(object.NewInt(0)))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
@@ -477,13 +477,13 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run(string(database.AND), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInteger(0)).And(database.Where("version").LessThanOrEqual(object.NewInteger(0))))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInt(0)).And(database.Where("version").LessThanOrEqual(object.NewInt(0))))
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	})
 
 	t.Run(string(database.OR), func(t *testing.T) {
-		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInteger(0)).Or(database.Where("version").LessThanOrEqual(object.NewInteger(0))))
+		res, err := collection.FindMany(ctx, database.Where("version").GreaterThan(object.NewInt(0)).Or(database.Where("version").LessThanOrEqual(object.NewInt(0))))
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 	})
@@ -518,7 +518,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 		var preID object.Object
 		for _, doc := range res {
 			curID := doc.GetOr(object.NewString("id"), nil)
-			assert.Equal(t, object.Compare(preID, curID), -1)
+			assert.False(t, object.Equal(preID, curID))
 			preID = curID
 		}
 	})
@@ -565,7 +565,7 @@ func BenchmarkCollection_InsertMany(b *testing.B, coll database.Collection) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var docs []object.Map
+		var docs []*object.Map
 		for i := 0; i < benchSize; i++ {
 			docs = append(docs, object.NewMap(
 				object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
@@ -681,7 +681,7 @@ func BenchmarkCollection_DeleteMany(b *testing.B, coll database.Collection) {
 
 	name := object.NewString(faker.UUIDHyphenated())
 
-	var docs []object.Map
+	var docs []*object.Map
 	for i := 0; i < benchSize; i++ {
 		docs = append(docs, object.NewMap(
 			object.NewString("id"), object.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),

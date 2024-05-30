@@ -84,18 +84,29 @@ func TestMap_Len(t *testing.T) {
 	assert.Equal(t, 1, o2.Len())
 }
 
-func TestMap_Merge(t *testing.T) {
+func TestMap_Equal(t *testing.T) {
 	k1 := NewString(faker.UUIDHyphenated())
-	k2 := NewString(faker.UUIDHyphenated())
 	v1 := NewString(faker.UUIDHyphenated())
-	v2 := NewString(faker.UUIDHyphenated())
 
-	o1 := NewMap(k1, v1)
-	o2 := NewMap(k2, v2)
+	o1 := NewMap()
+	o2 := NewMap(k1, v1)
 
-	o3 := o1.Merge(o2)
+	assert.True(t, o1.Equal(o1))
+	assert.True(t, o2.Equal(o2))
+	assert.False(t, o1.Equal(o2))
+}
 
-	assert.Equal(t, NewMap(k1, v1, k2, v2), o3)
+func TestMap_Compare(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o1 := NewMap()
+	o2 := NewMap(k1, v1)
+
+	assert.Equal(t, 0, o1.Compare(o1))
+	assert.Equal(t, 0, o2.Compare(o2))
+	assert.Equal(t, -1, o1.Compare(o2))
+	assert.Equal(t, 1, o2.Compare(o1))
 }
 
 func TestMap_Encode(t *testing.T) {

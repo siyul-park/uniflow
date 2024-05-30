@@ -117,7 +117,7 @@ func (s *Storage) InsertMany(ctx context.Context, specs []scheme.Spec) ([]uuid.U
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []object.Map
+	var docs []*object.Map
 	for _, spec := range specs {
 		if doc, err := s.specToDoc(spec); err != nil {
 			return nil, err
@@ -159,7 +159,7 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []scheme.Spec) (int, err
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []object.Map
+	var docs []*object.Map
 	for _, spec := range specs {
 		if doc, err := s.specToDoc(spec); err != nil {
 			return 0, err
@@ -254,7 +254,7 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 	return specs, nil
 }
 
-func (s *Storage) docToSpec(doc object.Map) (scheme.Spec, error) {
+func (s *Storage) docToSpec(doc *object.Map) (scheme.Spec, error) {
 	unstructured := scheme.NewUnstructured(doc)
 	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
@@ -265,7 +265,7 @@ func (s *Storage) docToSpec(doc object.Map) (scheme.Spec, error) {
 	}
 }
 
-func (s *Storage) specToDoc(spec scheme.Spec) (object.Map, error) {
+func (s *Storage) specToDoc(spec scheme.Spec) (*object.Map, error) {
 	if n, err := s.scheme.Decode(spec); err != nil {
 		return nil, err
 	} else if err := n.Close(); err != nil {

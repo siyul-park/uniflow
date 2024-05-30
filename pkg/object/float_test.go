@@ -8,19 +8,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewFloat(t *testing.T) {
-	v := NewFloat(1)
+func TestFloat_Float(t *testing.T) {
+	v := NewFloat(3.14)
+
+	assert.Equal(t, 3.14, v.Float())
+}
+
+func TestFloat_Kind(t *testing.T) {
+	v := NewFloat(3.14)
 
 	assert.Equal(t, KindFloat, v.Kind())
-	assert.NotEqual(t, uint64(0), v.Hash())
-	assert.Equal(t, float64(1), v.Interface())
-	assert.Equal(t, float64(1), v.Float())
+}
+
+func TestFloat_Hash(t *testing.T) {
+	v1 := NewFloat(3.14)
+	v2 := NewFloat(6.28)
+
+	assert.NotEqual(t, v1.Hash(), v2.Hash())
+}
+
+func TestFloat_Interface(t *testing.T) {
+	v := NewFloat(3.14)
+
+	assert.Equal(t, 3.14, v.Interface())
+}
+
+func TestFloat_Equal(t *testing.T) {
+	v1 := NewFloat(3.14)
+	v2 := NewFloat(6.28)
+
+	assert.True(t, v1.Equal(v1))
+	assert.True(t, v2.Equal(v2))
+	assert.False(t, v1.Equal(v2))
 }
 
 func TestFloat_Compare(t *testing.T) {
-	assert.Equal(t, 0, NewFloat(0).Compare(NewFloat(0)))
-	assert.Equal(t, 1, NewFloat(1).Compare(NewFloat(0)))
-	assert.Equal(t, -1, NewFloat(0).Compare(NewFloat(1)))
+	v1 := NewFloat(3.14)
+	v2 := NewFloat(6.28)
+
+	assert.Equal(t, 0, v1.Compare(v1))
+	assert.Equal(t, 0, v2.Compare(v2))
+	assert.Equal(t, -1, v1.Compare(v2))
+	assert.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestFloat_Encode(t *testing.T) {

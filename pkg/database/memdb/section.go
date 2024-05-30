@@ -19,12 +19,12 @@ type Constraint struct {
 	Name    string
 	Keys    []string
 	Unique  bool
-	Partial func(object.Map) bool
+	Partial func(*object.Map) bool
 }
 
 type node struct {
 	key   object.Object
-	value object.Map
+	value *object.Map
 }
 
 type index struct {
@@ -129,7 +129,7 @@ func (s *Section) Constraints() []Constraint {
 	return s.constraints[:]
 }
 
-func (s *Section) Set(doc object.Map) (object.Object, error) {
+func (s *Section) Set(doc *object.Map) (object.Object, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -152,7 +152,7 @@ func (s *Section) Set(doc object.Map) (object.Object, error) {
 	return id, nil
 }
 
-func (s *Section) Delete(doc object.Map) bool {
+func (s *Section) Delete(doc *object.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -173,7 +173,7 @@ func (s *Section) Delete(doc object.Map) bool {
 	return true
 }
 
-func (s *Section) Range(f func(doc object.Map) bool) {
+func (s *Section) Range(f func(doc *object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -203,11 +203,11 @@ func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
 	return nil, false
 }
 
-func (s *Section) Drop() []object.Map {
+func (s *Section) Drop() []*object.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var data []object.Map
+	var data []*object.Map
 	s.data.Scan(func(n node) bool {
 		data = append(data, n.value)
 		return true
@@ -221,7 +221,7 @@ func (s *Section) Drop() []object.Map {
 	return data
 }
 
-func (s *Section) index(doc object.Map) error {
+func (s *Section) index(doc *object.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return errors.WithStack(ErrPKNotFound)
@@ -259,7 +259,7 @@ func (s *Section) index(doc object.Map) error {
 	return nil
 }
 
-func (s *Section) unindex(doc object.Map) {
+func (s *Section) unindex(doc *object.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return

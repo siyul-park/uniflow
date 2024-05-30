@@ -52,10 +52,12 @@ func UpdateNodes(s *storage.Storage) func(context.Context, []*scheme.Unstructure
 			if patch, ok := lo.Find(specs, func(item *scheme.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
-				if doc, err := object.MarshalText(exist); err != nil {
+				if exist, err := object.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
-					patches = append(patches, scheme.NewUnstructured(doc.(object.Map).Merge(patch.Doc())))
+					exist := exist.(*object.Map)
+					patch := patch.Doc()
+					patches = append(patches, scheme.NewUnstructured(object.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
 				}
 			}
 		}

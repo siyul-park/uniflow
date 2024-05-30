@@ -64,7 +64,7 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := object.Interface(inPayload)
+	input := object.InterfaceOf(inPayload)
 
 	outPcks := make([]*packet.Packet, len(n.whens))
 	for i, when := range n.whens {

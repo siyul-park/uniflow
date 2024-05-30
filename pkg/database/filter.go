@@ -181,7 +181,7 @@ func (ft *Filter) String() (string, error) {
 		return ft.Key + " " + string(ft.OP), nil
 	}
 
-	b, err := json.Marshal(object.Interface(ft.Value))
+	b, err := json.Marshal(object.InterfaceOf(ft.Value))
 	if err != nil {
 		return "", err
 	}

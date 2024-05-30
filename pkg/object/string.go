@@ -10,24 +10,28 @@ import (
 	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// String is a representation of a string.
-type String string
+// String represents a string.
+type String struct {
+	value string
+}
 
-var _ Object = (String)("")
+var _ Object = (*String)(nil)
 
-// NewString returns a new String.
-func NewString(value string) String {
-	return String(value)
+// NewString creates a new String instance.
+func NewString(value string) *String {
+	return &String{
+		value: value,
+	}
 }
 
 // Len returns the length of the string.
-func (s String) Len() int {
-	return len([]rune(s))
+func (s *String) Len() int {
+	return len([]rune(s.value))
 }
 
 // Get returns the rune at the specified index in the string.
-func (s String) Get(index int) rune {
-	runes := []rune(s)
+func (s *String) Get(index int) rune {
+	runes := []rune(s.value)
 	if index >= len(runes) {
 		return rune(0)
 	}
@@ -35,38 +39,41 @@ func (s String) Get(index int) rune {
 }
 
 // String returns the raw string representation.
-func (s String) String() string {
-	return string(s)
+func (s *String) String() string {
+	return s.value
 }
 
 // Kind returns the kind of the value.
-func (s String) Kind() Kind {
+func (s *String) Kind() Kind {
 	return KindString
 }
 
-// Hash calculates and returns the hash code.
-func (s String) Hash() uint64 {
+// Hash calculates and returns the hash code using FNV-1a algorithm.
+func (s *String) Hash() uint64 {
 	h := fnv.New64a()
-	_, _ = h.Write([]byte(s))
+	_, _ = h.Write([]byte(s.value))
 	return h.Sum64()
 }
 
-// Compare compares two String values.
-func (s String) Compare(v Object) int {
-	if r, ok := v.(String); !ok {
-		if KindOf(s) > KindOf(v) {
-			return 1
-		} else {
-			return -1
-		}
-	} else {
-		return compare[string](s.String(), r.String())
-	}
+// Interface converts String to its underlying string.
+func (s *String) Interface() any {
+	return s.value
 }
 
-// Interface converts String to its underlying string.
-func (o String) Interface() any {
-	return string(o)
+// Equal checks if two String instances are equal.
+func (s *String) Equal(other Object) bool {
+	if o, ok := other.(*String); ok {
+		return s.value == o.value
+	}
+	return false
+}
+
+// Compare checks whether another Object is equal to this String instance.
+func (s *String) Compare(other Object) int {
+	if o, ok := other.(*String); ok {
+		return compare(s.value, o.value)
+	}
+	return compare(s.Kind(), KindOf(other))
 }
 
 func newStringEncoder() encoding2.Compiler[*Object] {
@@ -103,7 +110,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 	return encoding2.CompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[Object, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeTextUnmarshaler) {
 			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-				if s, ok := source.(String); ok {
+				if s, ok := source.(*String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText([]byte(s.String()))
 				}
@@ -111,7 +118,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 			}), nil
 		} else if typ.ConvertibleTo(typeBinaryUnmarshaler) {
 			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-				if s, ok := source.(String); ok {
+				if s, ok := source.(*String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary([]byte(s.String()))
 				}
@@ -120,7 +127,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
 				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(String); ok {
+					if s, ok := source.(*String); ok {
 						*(*string)(target) = s.String()
 						return nil
 					}
@@ -128,7 +135,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(String); ok {
+					if s, ok := source.(*String); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}

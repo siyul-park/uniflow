@@ -10,25 +10,65 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewString(t *testing.T) {
-	raw := faker.UUIDHyphenated()
-	v := NewString(raw)
+func TestString_Len(t *testing.T) {
+	v := NewString("hello")
+
+	assert.Equal(t, 5, v.Len())
+}
+
+func TestString_Get(t *testing.T) {
+	v := NewString("hello")
+
+	assert.Equal(t, 'h', v.Get(0))
+	assert.Equal(t, 'e', v.Get(1))
+	assert.Equal(t, 'l', v.Get(2))
+	assert.Equal(t, 'l', v.Get(3))
+	assert.Equal(t, 'o', v.Get(4))
+	assert.Equal(t, rune(0), v.Get(5))
+}
+
+func TestString_String(t *testing.T) {
+	v := NewString("hello")
+
+	assert.Equal(t, "hello", v.String())
+}
+
+func TestString_Kind(t *testing.T) {
+	v := NewString("hello")
 
 	assert.Equal(t, KindString, v.Kind())
-	assert.NotEqual(t, uint64(0), v.Hash())
-	assert.Equal(t, raw, v.Interface())
 }
-func TestString_Get(t *testing.T) {
-	v := NewString("A")
 
-	assert.Equal(t, 1, v.Len())
-	assert.Equal(t, rune('A'), v.Get(0))
+func TestString_Hash(t *testing.T) {
+	v1 := NewString("hello")
+	v2 := NewString("world")
+
+	assert.NotEqual(t, v1.Hash(), v2.Hash())
+}
+
+func TestString_Interface(t *testing.T) {
+	v := NewString("hello")
+
+	assert.Equal(t, "hello", v.Interface())
+}
+
+func TestString_Equal(t *testing.T) {
+	v1 := NewString("hello")
+	v2 := NewString("world")
+
+	assert.True(t, v1.Equal(v1))
+	assert.True(t, v2.Equal(v2))
+	assert.False(t, v1.Equal(v2))
 }
 
 func TestString_Compare(t *testing.T) {
-	assert.Equal(t, 0, NewString("A").Compare(NewString("A")))
-	assert.Equal(t, 1, NewString("a").Compare(NewString("A")))
-	assert.Equal(t, -1, NewString("A").Compare(NewString("a")))
+	v1 := NewString("hello")
+	v2 := NewString("world")
+
+	assert.Equal(t, 0, v1.Compare(v1))
+	assert.Equal(t, 0, v2.Compare(v2))
+	assert.Equal(t, -1, v1.Compare(v2))
+	assert.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestString_Encode(t *testing.T) {

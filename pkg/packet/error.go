@@ -12,10 +12,11 @@ var (
 )
 
 // WithError creates a new Packet representing an error with the given error.
+// FIXME: support object.Error
 func WithError(err error) *Packet {
 	pairs := []object.Object{
 		object.NewString("__error"),
-		object.TRUE,
+		object.True,
 		object.NewString("error"),
 		object.NewString(err.Error()),
 	}
@@ -25,6 +26,7 @@ func WithError(err error) *Packet {
 // AsError extracts the error from a Packet, returning it along with a boolean indicating whether
 // the Packet contains error information. If the Packet does not represent an error, the
 // returned error is nil, and the boolean is false.
+// FIXME: support object.Error
 func AsError(pck *Packet) (error, bool) {
 	if pck == nil {
 		return nil, false

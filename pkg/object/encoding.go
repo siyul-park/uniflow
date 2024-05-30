@@ -29,8 +29,8 @@ func init() {
 	textEncoder.Add(newBinaryEncoder())
 	textEncoder.Add(newBoolEncoder())
 	textEncoder.Add(newFloatEncoder())
-	textEncoder.Add(NewIntegerEncoder())
-	textEncoder.Add(newUIntegerEncoder())
+	textEncoder.Add(NewIntEncoder())
+	textEncoder.Add(newUintEncoder())
 	textEncoder.Add(newSliceEncoder(textEncoder))
 	textEncoder.Add(newMapEncoder(textEncoder))
 	textEncoder.Add(newPointerEncoder(textEncoder))
@@ -41,8 +41,8 @@ func init() {
 	binaryEncoder.Add(newStringEncoder())
 	binaryEncoder.Add(newBoolEncoder())
 	binaryEncoder.Add(newFloatEncoder())
-	binaryEncoder.Add(NewIntegerEncoder())
-	binaryEncoder.Add(newUIntegerEncoder())
+	binaryEncoder.Add(NewIntEncoder())
+	binaryEncoder.Add(newUintEncoder())
 	binaryEncoder.Add(newSliceEncoder(binaryEncoder))
 	binaryEncoder.Add(newMapEncoder(binaryEncoder))
 	binaryEncoder.Add(newPointerEncoder(binaryEncoder))
@@ -53,8 +53,8 @@ func init() {
 	decoder.Add(newStringDecoder())
 	decoder.Add(newBoolDecoder())
 	decoder.Add(newFloatDecoder())
-	decoder.Add(NewIntegerDecoder())
-	decoder.Add(newUintegerDecoder())
+	decoder.Add(NewIntDecoder())
+	decoder.Add(newUintDecoder())
 	decoder.Add(newSliceDecoder(decoder))
 	decoder.Add(newMapDecoder(decoder))
 	decoder.Add(newPointerDecoder(decoder))
@@ -89,7 +89,13 @@ func newShortcutEncoder() encoding.Compiler[*Object] {
 	typeValue := reflect.TypeOf((*Object)(nil)).Elem()
 
 	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
+		if typ.ConvertibleTo(typeValue) {
+			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+				t := reflect.NewAt(typ.Elem(), target).Interface().(Object)
+				*source = t
+				return nil
+			}), nil
+		} else if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
 			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Elem().Interface().(Object)
 				*source = t

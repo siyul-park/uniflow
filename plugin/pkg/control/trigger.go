@@ -175,7 +175,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		e := event.New(object.Interface(inPayload))
+		e := event.New(object.InterfaceOf(inPayload))
 		n.producer.Produce(e)
 
 		inReader.Receive(packet.None)

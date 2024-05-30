@@ -85,13 +85,23 @@ func TestSlice_Len(t *testing.T) {
 	assert.Equal(t, 2, o.Len())
 }
 
-func TestSlice_Compare(t *testing.T) {
-	v1 := NewString("1")
-	v2 := NewString("2")
+func TestSlice_Equal(t *testing.T) {
+	v1 := NewSlice(NewString("hello"))
+	v2 := NewSlice(NewString("world"))
 
-	assert.Equal(t, 0, NewSlice(v1, v2).Compare(NewSlice(v1, v2)))
-	assert.Equal(t, 1, NewSlice(v2, v1).Compare(NewSlice(v1, v2)))
-	assert.Equal(t, -1, NewSlice(v1, v2).Compare(NewSlice(v2, v1)))
+	assert.True(t, v1.Equal(v1))
+	assert.True(t, v2.Equal(v2))
+	assert.False(t, v1.Equal(v2))
+}
+
+func TestSlice_Compare(t *testing.T) {
+	v1 := NewSlice(NewString("hello"))
+	v2 := NewSlice(NewString("world"))
+
+	assert.Equal(t, 0, v1.Compare(v1))
+	assert.Equal(t, 0, v2.Compare(v2))
+	assert.Equal(t, -1, v1.Compare(v2))
+	assert.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestSlice_Encode(t *testing.T) {

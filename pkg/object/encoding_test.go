@@ -26,15 +26,15 @@ func TestMarshalText(t *testing.T) {
 		},
 		{
 			when:   true,
-			expect: TRUE,
+			expect: True,
 		},
 		{
 			when:   int64(0),
-			expect: NewInteger(0),
+			expect: NewInt(0),
 		},
 		{
 			when:   uint64(0),
-			expect: NewUInteger(0),
+			expect: NewUint(0),
 		},
 		{
 			when:   float64(0),
@@ -78,15 +78,15 @@ func TestMarshalBinary(t *testing.T) {
 		},
 		{
 			when:   true,
-			expect: TRUE,
+			expect: True,
 		},
 		{
 			when:   int64(0),
-			expect: NewInteger(0),
+			expect: NewInt(0),
 		},
 		{
 			when:   uint64(0),
-			expect: NewUInteger(0),
+			expect: NewUint(0),
 		},
 		{
 			when:   float64(0),
@@ -129,15 +129,15 @@ func TestUnmarshal(t *testing.T) {
 			when:   NewBinary([]byte{0}),
 		},
 		{
-			when:   TRUE,
+			when:   True,
 			expect: true,
 		},
 		{
-			when:   NewInteger(0),
+			when:   NewInt(0),
 			expect: int64(0),
 		},
 		{
-			when:   NewUInteger(0),
+			when:   NewUint(0),
 			expect: uint64(0),
 		},
 		{
@@ -177,7 +177,7 @@ func TestShortcut_Encode(t *testing.T) {
 	enc := encoding.NewAssembler[*Object, any]()
 	enc.Add(newShortcutEncoder())
 
-	source := TRUE
+	source := True
 
 	var decoded Object
 	err := enc.Encode(&decoded, &source)
@@ -189,7 +189,7 @@ func TestShortcut_Decode(t *testing.T) {
 	dec := encoding.NewAssembler[Object, any]()
 	dec.Add(newShortcutDecoder())
 
-	source := TRUE
+	source := True
 
 	var decoded Object
 	err := dec.Encode(source, &decoded)
@@ -202,7 +202,7 @@ func TestPointer_Encode(t *testing.T) {
 	enc.Add(newPointerEncoder(enc))
 	enc.Add(newShortcutEncoder())
 
-	source := TRUE
+	source := True
 
 	var decoded Object
 	err := enc.Encode(&decoded, lo.ToPtr(&source))
@@ -215,7 +215,7 @@ func TestPointer_Decode(t *testing.T) {
 	dec.Add(newPointerDecoder(dec))
 	dec.Add(newShortcutDecoder())
 
-	source := TRUE
+	source := True
 
 	var decoded Object
 	err := dec.Encode(source, lo.ToPtr(&decoded))

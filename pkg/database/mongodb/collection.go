@@ -55,7 +55,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	return newStream(ctx, stream), nil
 }
 
-func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Object, error) {
+func (c *Collection) InsertOne(ctx context.Context, doc *object.Map) (object.Object, error) {
 	raw, err := primitiveToBson(doc)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Obje
 	return id, nil
 }
 
-func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]object.Object, error) {
+func (c *Collection) InsertMany(ctx context.Context, docs []*object.Map) ([]object.Object, error) {
 	var raws bson.A
 	for _, doc := range docs {
 		if raw, err := primitiveToBson(doc); err != nil {
@@ -100,7 +100,7 @@ func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]objec
 	return ids, nil
 }
 
-func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (bool, error) {
+func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch *object.Map, opts ...*database.UpdateOptions) (bool, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
 		return false, err
@@ -118,7 +118,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 	return res.UpsertedCount+res.ModifiedCount > 0, nil
 }
 
-func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (int, error) {
+func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch *object.Map, opts ...*database.UpdateOptions) (int, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
 		return 0, err
@@ -164,7 +164,7 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 	return int(res.DeletedCount), nil
 }
 
-func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (object.Map, error) {
+func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (*object.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
 		return nil, err
@@ -186,10 +186,10 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 	if err := bsonToPrimitive(r, &doc); err != nil {
 		return nil, err
 	}
-	return doc.(object.Map), nil
+	return doc.(*object.Map), nil
 }
 
-func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]object.Map, error) {
+func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]*object.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 		return nil, errors.Wrap(database.ErrRead, err.Error())
 	}
 
-	var docs []object.Map
+	var docs []*object.Map
 	for cursor.Next(ctx) {
 		var doc object.Object
 		var r any
@@ -210,7 +210,7 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 		if err := bsonToPrimitive(r, &doc); err != nil {
 			return nil, err
 		}
-		docs = append(docs, doc.(object.Map))
+		docs = append(docs, doc.(*object.Map))
 	}
 
 	return docs, nil

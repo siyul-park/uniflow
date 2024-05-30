@@ -26,7 +26,7 @@ const KeyHTTPResponseWriter = "http.ResponseWriter"
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
 func NewHTTPPayload(status int, body ...object.Object) *HTTPPayload {
 	if len(body) == 0 {
-		body = []object.Object{object.String(http.StatusText(status))}
+		body = []object.Object{object.NewString(http.StatusText(status))}
 	}
 	return &HTTPPayload{
 		Header: http.Header{},

@@ -15,7 +15,7 @@ func TestSection_AddConstraint(t *testing.T) {
 		Name:    faker.UUIDHyphenated(),
 		Keys:    []string{"_id"},
 		Unique:  true,
-		Partial: func(_ object.Map) bool { return true },
+		Partial: func(_ *object.Map) bool { return true },
 	}
 
 	err := s.AddConstraint(c)
@@ -32,7 +32,7 @@ func TestSection_DropConstraint(t *testing.T) {
 		Name:    faker.UUIDHyphenated(),
 		Keys:    []string{"_id"},
 		Unique:  true,
-		Partial: func(_ object.Map) bool { return true },
+		Partial: func(_ *object.Map) bool { return true },
 	}
 
 	err := s.DropConstraint(c.Name)
@@ -86,7 +86,7 @@ func TestSection_Range(t *testing.T) {
 	_, _ = s.Set(doc)
 
 	count := 0
-	s.Range(func(d object.Map) bool {
+	s.Range(func(d *object.Map) bool {
 		assert.Equal(t, doc, d)
 		count += 1
 		return true
@@ -110,7 +110,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child)
 
 			count := 0
-			child.Range(func(d object.Map) bool {
+			child.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -132,7 +132,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child)
 
 			count := 0
-			child.Range(func(d object.Map) bool {
+			child.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -172,7 +172,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child2)
 
 			count := 0
-			child2.Range(func(d object.Map) bool {
+			child2.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -210,7 +210,7 @@ func TestSection_Scan(t *testing.T) {
 			assert.NotNil(t, child2)
 
 			count := 0
-			child2.Range(func(d object.Map) bool {
+			child2.Range(func(d *object.Map) bool {
 				assert.Equal(t, doc, d)
 				count += 1
 				return true
@@ -233,7 +233,7 @@ func TestSection_Drop(t *testing.T) {
 	assert.Len(t, docs, 1)
 
 	count := 0
-	s.Range(func(_ object.Map) bool {
+	s.Range(func(_ *object.Map) bool {
 		count += 1
 		return true
 	})

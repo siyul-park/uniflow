@@ -126,7 +126,7 @@ func (n *IfNode) forward(proc *process.Process) {
 		}
 
 		inPayload := inPck.Payload()
-		input := object.Interface(inPayload)
+		input := object.InterfaceOf(inPayload)
 
 		if ok, err := n.when(input); err != nil {
 			errPck := packet.WithError(err)

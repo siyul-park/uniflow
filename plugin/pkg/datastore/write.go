@@ -55,7 +55,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := object.Interface(inPayload)
+	input := object.InterfaceOf(inPayload)
 
 	var format []byte
 	if v, ok := input.([]byte); ok {
@@ -71,7 +71,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.WithError(err)
 	}
 
-	return packet.New(object.NewInteger(int64(len))), nil
+	return packet.New(object.NewInt(int64(len))), nil
 }
 
 func NewWriteNodeCodec() scheme.Codec {

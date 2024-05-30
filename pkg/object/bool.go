@@ -1,6 +1,7 @@
 package object
 
 import (
+	"hash/fnv"
 	"reflect"
 	"unsafe"
 
@@ -8,60 +9,75 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// Bool is a representation of a bool.
-type Bool bool
+// Bool is a representation of a boolean value.
+type Bool struct {
+	value bool
+}
 
-var _ Object = (Bool)(false)
+var _ Object = (*Bool)(nil)
 
+// Predefined True and False values for optimization.
 var (
-	TRUE  = NewBool(true)
-	FALSE = NewBool(false)
+	True  = &Bool{value: true}
+	False = &Bool{value: false}
 )
 
-// NewBool returns a new Bool.
-func NewBool(value bool) Bool {
-	return Bool(value)
+// NewBool returns a pointer to a Bool instance.
+func NewBool(value bool) *Bool {
+	if value {
+		return True
+	}
+	return False
 }
 
-// Bool returns a raw representation.
-func (b Bool) Bool() bool {
-	return bool(b)
+// Bool returns the raw boolean value.
+func (b *Bool) Bool() bool {
+	return b.value
 }
 
-// Kind returns the type of the bool data.
-func (b Bool) Kind() Kind {
+// Kind returns the kind of the boolean data.
+func (b *Bool) Kind() Kind {
 	return KindBool
 }
 
-// Compare compares two Bool values.
-func (b Bool) Compare(v Object) int {
-	if other, ok := v.(Bool); ok {
-		switch {
-		case b == other:
+// Hash returns the hash code for the boolean value.
+func (b *Bool) Hash() uint64 {
+	h := fnv.New64a()
+	var value byte
+	if b.value {
+		value = 1
+	} else {
+		value = 0
+	}
+	h.Write([]byte{value})
+	return h.Sum64()
+}
+
+// Interface converts Bool to a generic interface.
+func (b *Bool) Interface() any {
+	return b.value
+}
+
+// Equal checks if the other Object is equal to this Bool.
+func (b *Bool) Equal(other Object) bool {
+	if o, ok := other.(*Bool); ok {
+		return b.value == o.value
+	}
+	return false
+}
+
+// Compare checks whether another Object is equal to this Bool instance.
+func (b *Bool) Compare(other Object) int {
+	if o, ok := other.(*Bool); ok {
+		if b.value == o.value {
 			return 0
-		case b == TRUE:
-			return 1
-		default:
+		} else if !b.value && o.value {
 			return -1
+		} else {
+			return 1
 		}
 	}
-	if KindOf(b) > KindOf(v) {
-		return 1
-	}
-	return -1
-}
-
-// Hash calculates and returns the hash code.
-func (b Bool) Hash() uint64 {
-	if b == TRUE {
-		return 1
-	}
-	return 0
-}
-
-// Interface converts Bool to a bool.
-func (b Bool) Interface() any {
-	return bool(b)
+	return compare(b.Kind(), KindOf(other))
 }
 
 func newBoolEncoder() encoding.Compiler[*Object] {
@@ -84,7 +100,7 @@ func newBoolDecoder() encoding.Compiler[Object] {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
 				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Bool); ok {
+					if s, ok := source.(*Bool); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
 					}
@@ -92,7 +108,7 @@ func newBoolDecoder() encoding.Compiler[Object] {
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Bool); ok {
+					if s, ok := source.(*Bool); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}

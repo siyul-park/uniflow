@@ -71,7 +71,7 @@ func TestUnstructured_MarshalPrimitive(t *testing.T) {
 
 	doc1, _ := object.MarshalBinary(spec)
 
-	u := NewUnstructured(doc1.(object.Map))
+	u := NewUnstructured(doc1.(*object.Map))
 
 	doc2, err := u.MarshalObject()
 	assert.NoError(t, err)

@@ -76,11 +76,11 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 = \"1\"",
 		},
 		{
-			when:   Where("1").Equal(object.NewInteger(1)),
+			when:   Where("1").Equal(object.NewInt(1)),
 			expect: "1 = 1",
 		},
 		{
-			when:   Where("1").Equal(object.TRUE),
+			when:   Where("1").Equal(object.True),
 			expect: "1 = true",
 		},
 		{
@@ -93,11 +93,11 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 != \"1\"",
 		},
 		{
-			when:   Where("1").NotEqual(object.NewInteger(1)),
+			when:   Where("1").NotEqual(object.NewInt(1)),
 			expect: "1 != 1",
 		},
 		{
-			when:   Where("1").NotEqual(object.TRUE),
+			when:   Where("1").NotEqual(object.True),
 			expect: "1 != true",
 		},
 		{
@@ -110,7 +110,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 < \"1\"",
 		},
 		{
-			when:   Where("1").LessThan(object.NewInteger(1)),
+			when:   Where("1").LessThan(object.NewInt(1)),
 			expect: "1 < 1",
 		},
 
@@ -119,7 +119,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 <= \"1\"",
 		},
 		{
-			when:   Where("1").LessThanOrEqual(object.NewInteger(1)),
+			when:   Where("1").LessThanOrEqual(object.NewInt(1)),
 			expect: "1 <= 1",
 		},
 
@@ -128,7 +128,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 > \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThan(object.NewInteger(1)),
+			when:   Where("1").GreaterThan(object.NewInt(1)),
 			expect: "1 > 1",
 		},
 
@@ -137,7 +137,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 >= \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThanOrEqual(object.NewInteger(1)),
+			when:   Where("1").GreaterThanOrEqual(object.NewInt(1)),
 			expect: "1 >= 1",
 		},
 
@@ -146,7 +146,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 IN [\"1\"]",
 		},
 		{
-			when:   Where("1").In(object.NewInteger(1)),
+			when:   Where("1").In(object.NewInt(1)),
 			expect: "1 IN [1]",
 		},
 
@@ -155,7 +155,7 @@ func TestFilter_String(t *testing.T) {
 			expect: "1 NOT IN [\"1\"]",
 		},
 		{
-			when:   Where("1").NotIn(object.NewInteger(1)),
+			when:   Where("1").NotIn(object.NewInt(1)),
 			expect: "1 NOT IN [1]",
 		},
 
@@ -169,25 +169,25 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInteger(1)).And(Where("2").Equal(object.NewInteger(2))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))),
 			expect: "(1 = 1) AND (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(object.NewInteger(1)).And(Where("2").Equal(object.NewInteger(2))).And(Where("3").Equal(object.NewInteger(3))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))).And(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) AND (2 = 2)) AND (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInteger(1)).Or(Where("2").Equal(object.NewInteger(2))),
+			when:   Where("1").Equal(object.NewInt(1)).Or(Where("2").Equal(object.NewInt(2))),
 			expect: "(1 = 1) OR (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(object.NewInteger(1)).Or(Where("2").Equal(object.NewInteger(2))).Or(Where("3").Equal(object.NewInteger(3))),
+			when:   Where("1").Equal(object.NewInt(1)).Or(Where("2").Equal(object.NewInt(2))).Or(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) OR (2 = 2)) OR (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInteger(1)).And(Where("2").Equal(object.NewInteger(2))).Or(Where("3").Equal(object.NewInteger(3))),
+			when:   Where("1").Equal(object.NewInt(1)).And(Where("2").Equal(object.NewInt(2))).Or(Where("3").Equal(object.NewInt(3))),
 			expect: "((1 = 1) AND (2 = 2)) OR (3 = 3)",
 		},
 	}

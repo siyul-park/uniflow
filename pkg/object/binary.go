@@ -12,59 +12,74 @@ import (
 )
 
 // Binary is a representation of a []byte.
-type Binary []byte
+type Binary struct {
+	value []byte
+	hash  uint64
+}
 
-var _ Object = (Binary)(nil)
+var _ Object = (*Binary)(nil)
 
-// NewBinary creates a new Binary instance.
-func NewBinary(value []byte) Binary {
-	return value
+// NewBinary creates a new *Binary instance.
+func NewBinary(value []byte) *Binary {
+	h := fnv.New64a()
+	h.Write(value)
+
+	return &Binary{
+		value: value,
+		hash:  h.Sum64(),
+	}
 }
 
 // Len returns the length of the binary data.
-func (b Binary) Len() int {
-	return len(b)
+func (b *Binary) Len() int {
+	return len(b.value)
 }
 
 // Get returns the byte at the specified index.
-func (b Binary) Get(index int) byte {
-	if index >= len(b) {
+// If the index is out of bounds, it returns 0.
+func (b *Binary) Get(index int) byte {
+	if index >= len(b.value) {
 		return 0
 	}
-	return b[index]
+	return b.value[index]
 }
 
 // Bytes returns the raw byte slice.
-func (b Binary) Bytes() []byte {
-	return b
+func (b *Binary) Bytes() []byte {
+	return b.value
 }
 
 // Kind returns the type of the binary data.
-func (b Binary) Kind() Kind {
+func (b *Binary) Kind() Kind {
 	return KindBinary
 }
 
-// Hash calculates and returns the hash code.
-func (b Binary) Hash() uint64 {
-	h := fnv.New64a()
-	_, _ = h.Write([]byte(b))
-	return h.Sum64()
+// Hash returns the precomputed hash code.
+func (b *Binary) Hash() uint64 {
+	return b.hash
 }
 
-// Compare compares two Binary values.
-func (b Binary) Compare(v Object) int {
-	if other, ok := v.(Binary); ok {
-		return bytes.Compare(b.Bytes(), other.Bytes())
-	}
-	if KindOf(b) > KindOf(v) {
-		return 1
-	}
-	return -1
+// Interface converts *Binary to a byte slice.
+func (b *Binary) Interface() any {
+	return b.value
 }
 
-// Interface converts Binary to a byte slice.
-func (b Binary) Interface() any {
-	return []byte(b)
+// Equal checks whether another Object is equal to this Binary instance.
+func (b *Binary) Equal(other Object) bool {
+	if o, ok := other.(*Binary); ok {
+		if b.hash == o.hash {
+			return bytes.Equal(b.value, o.value)
+		}
+	}
+	return false
+}
+
+// Compare checks whether another Object is equal to this Binary instance.
+func (b *Binary) Compare(other Object) int {
+	if o, ok := other.(*Binary); ok {
+		return bytes.Compare(b.Bytes(), o.Bytes())
+	}
+	return compare(b.Kind(), KindOf(other))
 }
 
 func newBinaryEncoder() encoding2.Compiler[*Object] {
@@ -101,7 +116,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 	return encoding2.CompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[Object, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeBinaryUnmarshaler) {
 			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-				if s, ok := source.(Binary); ok {
+				if s, ok := source.(*Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary(s.Bytes())
 				}
@@ -109,7 +124,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 			}), nil
 		} else if typ.ConvertibleTo(typeTextUnmarshaler) {
 			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-				if s, ok := source.(Binary); ok {
+				if s, ok := source.(*Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText(s.Bytes())
 				}
@@ -118,7 +133,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
 				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Binary); ok {
+					if s, ok := source.(*Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes()).Convert(t.Type())))
 						return nil
@@ -127,7 +142,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Array && typ.Elem().Elem().Kind() == reflect.Uint8 {
 				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Binary); ok {
+					if s, ok := source.(*Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
 						return nil
@@ -136,7 +151,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Binary); ok {
+					if s, ok := source.(*Binary); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}

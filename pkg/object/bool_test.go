@@ -8,22 +8,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBool(t *testing.T) {
-	v := NewBool(true)
+func TestBool_NewBool(t *testing.T) {
+	assert.Equal(t, True, NewBool(true))
+	assert.Equal(t, False, NewBool(false))
+}
 
-	assert.Equal(t, KindBool, v.Kind())
-	assert.NotEqual(t, uint64(0), v.Hash())
-	assert.Equal(t, true, v.Interface())
-	assert.Equal(t, true, v.Bool())
+func TestBool_Bool(t *testing.T) {
+	assert.Equal(t, true, True.Bool())
+	assert.Equal(t, false, False.Bool())
+}
+
+func TestBool_Kind(t *testing.T) {
+	assert.Equal(t, KindBool, True.Kind())
+}
+
+func TestBool_Hash(t *testing.T) {
+	assert.NotEqual(t, True.Hash(), False.Hash())
+}
+
+func TestBool_Interface(t *testing.T) {
+	assert.Equal(t, true, True.Interface())
+	assert.Equal(t, false, False.Interface())
+}
+
+func TestBool_Equal(t *testing.T) {
+	assert.True(t, True.Equal(True))
+	assert.True(t, False.Equal(False))
+	assert.False(t, True.Equal(False))
+	assert.False(t, False.Equal(True))
 }
 
 func TestBool_Compare(t *testing.T) {
-	assert.Equal(t, 0, TRUE.Compare(TRUE))
-	assert.Equal(t, 0, FALSE.Compare(FALSE))
-	assert.Equal(t, 1, TRUE.Compare(FALSE))
-	assert.Equal(t, -1, FALSE.Compare(TRUE))
-	assert.Equal(t, 1, TRUE.Compare(FALSE))
-	assert.Equal(t, -1, FALSE.Compare(TRUE))
+	assert.Equal(t, 0, True.Compare(True))
+	assert.Equal(t, 0, False.Compare(False))
+	assert.Equal(t, -1, False.Compare(True))
+	assert.Equal(t, 1, True.Compare(False))
 }
 
 func TestBool_Encode(t *testing.T) {

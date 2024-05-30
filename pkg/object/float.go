@@ -1,6 +1,7 @@
 package object
 
 import (
+	"hash/fnv"
 	"reflect"
 	"unsafe"
 
@@ -11,50 +12,55 @@ import (
 )
 
 // Float is an interface representing a floating-point number.
-type Float float64
-
-var _ Object = (Float)(0)
-
-// NewFloat returns a new Float64.
-func NewFloat(value float64) Float {
-	return Float(value)
+type Float struct {
+	value float64
 }
 
-// Float returns the raw representation.
-func (f Float) Float() float64 {
-	return float64(f)
+var _ Object = (*Float)(nil)
+
+// NewFloat returns a new Float instance.
+func NewFloat(value float64) *Float {
+	return &Float{
+		value: value,
+	}
 }
 
-// Kind returns the type of the float64 data.
-func (f Float) Kind() Kind {
+// Float returns the raw representation of the float.
+func (f *Float) Float() float64 {
+	return f.value
+}
+
+// Kind returns the type of the float data.
+func (f *Float) Kind() Kind {
 	return KindFloat
 }
 
-// Compare compares two Float64 values.
-func (f Float) Compare(v Object) int {
-	if r, ok := v.(Float); ok {
-		return compare(f.Float(), r.Float())
-	}
-	if r, ok := v.(Integer); ok {
-		return compare(f.Float(), float64(r.Int()))
-	}
-	if r, ok := v.(UInteger); ok {
-		return compare(f.Float(), float64(r.Uint()))
-	}
-	if KindOf(f) > KindOf(v) {
-		return 1
-	}
-	return -1
-}
-
 // Hash calculates and returns the hash code.
-func (f Float) Hash() uint64 {
-	return *(*uint64)(unsafe.Pointer(&f))
+func (f *Float) Hash() uint64 {
+	h := fnv.New64a()
+	h.Write((*[8]byte)(unsafe.Pointer(&f.value))[:])
+	return h.Sum64()
 }
 
-// Interface converts Float64 to a float64.
-func (f Float) Interface() any {
-	return float64(f)
+// Interface converts Float to a float64.
+func (f *Float) Interface() any {
+	return f.value
+}
+
+// Equal checks whether two Float instances are equal.
+func (f *Float) Equal(other Object) bool {
+	if o, ok := other.(*Float); ok {
+		return f.value == o.value
+	}
+	return false
+}
+
+// Compare checks whether another Object is equal to this Float instance.
+func (f *Float) Compare(other Object) int {
+	if o, ok := other.(*Float); ok {
+		return compare(f.value, o.value)
+	}
+	return compare(f.Kind(), KindOf(other))
 }
 
 func newFloatEncoder() encoding.Compiler[*Object] {
@@ -109,7 +115,7 @@ func newFloatDecoder() encoding.Compiler[Object] {
 				return newFloatDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Float); ok {
+					if s, ok := source.(*Float); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
@@ -123,7 +129,7 @@ func newFloatDecoder() encoding.Compiler[Object] {
 
 func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[Object, unsafe.Pointer] {
 	return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-		if s, ok := source.(Float); ok {
+		if s, ok := source.(*Float); ok {
 			*(*T)(target) = T(s.Float())
 			return nil
 		}

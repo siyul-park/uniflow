@@ -25,7 +25,7 @@ func CompileTransformWithPrimitive(code string, lang string) (func(object.Object
 		var input any
 		switch lang {
 		case Typescript, Javascript, JSONata:
-			input = object.Interface(value)
+			input = object.InterfaceOf(value)
 		}
 		if output, err := transform(input); err != nil {
 			return nil, err

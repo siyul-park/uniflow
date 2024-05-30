@@ -9,19 +9,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBinary(t *testing.T) {
-	v := NewBinary([]byte{0})
-
-	assert.Equal(t, KindBinary, v.Kind())
-	assert.NotEqual(t, uint64(0), v.Hash())
-	assert.Equal(t, []byte{0}, v.Interface())
-}
-
-func TestBinary_GetAndLen(t *testing.T) {
+func TestBinary_Len(t *testing.T) {
 	v := NewBinary([]byte{0})
 
 	assert.Equal(t, 1, v.Len())
+}
+
+func TestBinary_Get(t *testing.T) {
+	v := NewBinary([]byte{0})
+
 	assert.Equal(t, byte(0), v.Get(0))
+}
+
+func TestBinary_Bytes(t *testing.T) {
+	v := NewBinary([]byte{0})
+
+	assert.Equal(t, []byte{0}, v.Bytes())
+}
+
+func TestBinary_Kind(t *testing.T) {
+	v := NewBinary([]byte{0})
+
+	assert.Equal(t, KindBinary, v.Kind())
+}
+
+func TestBinary_Hash(t *testing.T) {
+	v1 := NewBinary([]byte{0})
+	v2 := NewBinary([]byte{1})
+
+	assert.NotEqual(t, v1.Hash(), v2.Hash())
+}
+
+func TestBinary_Interface(t *testing.T) {
+	v := NewBinary([]byte{0})
+
+	assert.Equal(t, []byte{0}, v.Interface())
+}
+
+func TestBinary_Equal(t *testing.T) {
+	v1 := NewBinary([]byte{0})
+	v2 := NewBinary([]byte{1})
+
+	assert.True(t, v1.Equal(v1))
+	assert.True(t, v2.Equal(v2))
+	assert.False(t, v1.Equal(v2))
 }
 
 func TestBinary_Compare(t *testing.T) {
@@ -29,6 +60,7 @@ func TestBinary_Compare(t *testing.T) {
 	v2 := NewBinary([]byte{1})
 
 	assert.Equal(t, 0, v1.Compare(v1))
+	assert.Equal(t, 0, v2.Compare(v2))
 	assert.Equal(t, -1, v1.Compare(v2))
 	assert.Equal(t, 1, v2.Compare(v1))
 }

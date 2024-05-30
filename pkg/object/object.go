@@ -2,20 +2,11 @@ package object
 
 // Object is an interface that signifies atomic data types.
 type Object interface {
-	// Kind returns the type of data.
-	Kind() Kind
-
-	// Hash returns the hash code for this object.
-	// The hash is unique within the same kind.
-	Hash() uint64
-
-	// Compare compares this object with another object.
-	// Returns an integer indicating the order.
-	// Deprecated: Use Hash for comparison instead.
-	Compare(v Object) int
-
-	// Interface converts the internal value to a generic interface{}.
-	Interface() any
+	Kind() Kind               // Kind returns the kind of the Object.
+	Hash() uint64             // Hash returns the hash code of the Object.
+	Interface() any           // Interface returns the Object as a generic interface.
+	Equal(other Object) bool  // Equal checks whether the Object is equal to another Object.
+	Compare(other Object) int // Compare compares the Object with another Object.
 }
 
 // Kind represents the enumeration of data types.
@@ -23,21 +14,20 @@ type Kind byte
 
 // Constants representing various data types.
 const (
-	KindInvalid Kind = iota
-	KindBinary
-	KindBuffer
-	KindBool
-	KindInteger
-	KindUInteger
-	KindFloat
-	KindMap
-	KindSlice
-	KindString
+	KindInvalid Kind = iota // Represents an invalid or nil type.
+	KindBinary              // Represents binary data.
+	KindBuffer              // Represents a buffer.
+	KindBool                // Represents a boolean value.
+	KindInt                 // Represents an integer value.
+	KindUint                // Represents an unsigned integer value.
+	KindFloat               // Represents a floating-point number.
+	KindMap                 // Represents a map.
+	KindSlice               // Represents a slice.
+	KindString              // Represents a string.
 )
 
-// KindOf returns the kind of the provided value.
-// If the value is nil, it returns KindInvalid.
-// Otherwise, it calls the Kind method of the value to determine its kind.
+// KindOf returns the kind of the provided Object.
+// If the Object is nil, it returns KindInvalid.
 func KindOf(v Object) Kind {
 	if v == nil {
 		return KindInvalid
@@ -45,17 +35,43 @@ func KindOf(v Object) Kind {
 	return v.Kind()
 }
 
-// Hash returns the hash code of the provided Object.
+// HashOf returns the hash code of the provided Object.
 // If the Object is nil, it returns 0.
-func Hash(v Object) uint64 {
+func HashOf(v Object) uint64 {
 	if v == nil {
 		return 0
 	}
 	return v.Hash()
 }
 
-// Compare function compares two Objects and returns their order.
-// Nil values are treated as the lowest order.
+// InterfaceOf converts an Object to a generic interface.
+// Nil values are returned as a nil interface.
+func InterfaceOf(v Object) any {
+	if v == nil {
+		return nil
+	}
+	return v.Interface()
+}
+
+// Equal checks whether two Objects are equal.
+// If both Objects are nil, they are considered equal.
+// If their kinds differ, they are not equal.
+func Equal(x, y Object) bool {
+	if x == nil && y == nil {
+		return true
+	}
+	if x == nil || y == nil {
+		return false
+	}
+	return x.Equal(y)
+}
+
+// Compare compares two Objects and returns:
+// -1 if x is less than y,
+// 0 if they are equal,
+// 1 if x is greater than y.
+// If both Objects are nil, they are considered equal.
+// If their kinds differ, they are not equal.
 func Compare(x, y Object) int {
 	if x == nil && y == nil {
 		return 0
@@ -67,13 +83,4 @@ func Compare(x, y Object) int {
 		return 1
 	}
 	return x.Compare(y)
-}
-
-// Interface converts an Object to a generic interface.
-// Nil values are returned as a nil interface.
-func Interface(v Object) any {
-	if v == nil {
-		return nil
-	}
-	return v.Interface()
 }

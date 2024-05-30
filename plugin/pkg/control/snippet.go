@@ -40,7 +40,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := object.Interface(inPayload)
+	input := object.InterfaceOf(inPayload)
 
 	if output, err := n.transform(input); err != nil {
 		return nil, packet.WithError(err)
