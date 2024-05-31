@@ -82,26 +82,24 @@ func (b *Binary) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBinaryEncoder() encoding2.Compiler[*Object] {
+func newBinaryEncoder() encoding2.EncodeCompiler[Object] {
 	typeBinaryMarshaler := reflect.TypeOf((*encoding.BinaryMarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[*Object](func(typ reflect.Type) (encoding2.Encoder[*Object, unsafe.Pointer], error) {
+	return encoding2.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[unsafe.Pointer, Object], error) {
 		if typ.ConvertibleTo(typeBinaryMarshaler) {
-			return encoding2.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-				t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryMarshaler)
+			return encoding2.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+				t := reflect.NewAt(typ.Elem(), source).Interface().(encoding.BinaryMarshaler)
 				if s, err := t.MarshalBinary(); err != nil {
-					return err
+					return nil, err
 				} else {
-					*source = NewBinary(s)
+					return NewBinary(s), nil
 				}
-				return nil
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if (typ.Elem().Kind() == reflect.Slice || typ.Elem().Kind() == reflect.Array) && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := reflect.NewAt(typ.Elem(), target).Elem()
-					*source = NewBinary(t.Bytes())
-					return nil
+				return encoding2.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := reflect.NewAt(typ.Elem(), source).Elem()
+					return NewBinary(t.Bytes()), nil
 				}), nil
 			}
 		}
@@ -109,13 +107,13 @@ func newBinaryEncoder() encoding2.Compiler[*Object] {
 	})
 }
 
-func newBinaryDecoder() encoding2.Compiler[Object] {
+func newBinaryDecoder() encoding2.DecodeCompiler[Object] {
 	typeBinaryUnmarshaler := reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[Object, unsafe.Pointer], error) {
+	return encoding2.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Decoder[Object, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeBinaryUnmarshaler) {
-			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				if s, ok := source.(*Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary(s.Bytes())
@@ -123,7 +121,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 				return errors.WithStack(encoding2.ErrUnsupportedValue)
 			}), nil
 		} else if typ.ConvertibleTo(typeTextUnmarshaler) {
-			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				if s, ok := source.(*Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText(s.Bytes())
@@ -132,7 +130,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes()).Convert(t.Type())))
@@ -141,7 +139,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 					return errors.WithStack(encoding2.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Array && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
@@ -150,7 +148,7 @@ func newBinaryDecoder() encoding2.Compiler[Object] {
 					return errors.WithStack(encoding2.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Binary); ok {
 						*(*any)(target) = s.Interface()
 						return nil

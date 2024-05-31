@@ -174,51 +174,49 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestShortcut_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newShortcutEncoder())
 
 	source := True
 
-	var decoded Object
-	err := enc.Encode(&decoded, &source)
+	decoded, err := enc.Encode(&source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestShortcut_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newShortcutDecoder())
 
 	source := True
 
 	var decoded Object
-	err := dec.Encode(source, &decoded)
+	err := dec.Decode(source, &decoded)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newPointerEncoder(enc))
 	enc.Add(newShortcutEncoder())
 
 	source := True
 
-	var decoded Object
-	err := enc.Encode(&decoded, lo.ToPtr(&source))
+	decoded, err := enc.Encode(&source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newPointerDecoder(dec))
 	dec.Add(newShortcutDecoder())
 
 	source := True
 
 	var decoded Object
-	err := dec.Encode(source, lo.ToPtr(&decoded))
+	err := dec.Decode(source, lo.ToPtr(&decoded))
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }

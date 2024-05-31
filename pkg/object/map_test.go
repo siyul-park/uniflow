@@ -110,7 +110,7 @@ func TestMap_Compare(t *testing.T) {
 }
 
 func TestMap_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -118,8 +118,7 @@ func TestMap_Encode(t *testing.T) {
 		source := map[string]any{"foo": "bar"}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -133,15 +132,14 @@ func TestMap_Encode(t *testing.T) {
 		}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestMap_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
@@ -150,7 +148,7 @@ func TestMap_Decode(t *testing.T) {
 		v := NewMap(NewString("foo"), NewString("bar"))
 
 		var decoded map[string]string
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -172,7 +170,7 @@ func TestMap_Decode(t *testing.T) {
 			Foo string `map:"foo"`
 			Bar string `map:"bar"`
 		}
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -208,7 +206,7 @@ func BenchmarkMap_Interface(b *testing.B) {
 }
 
 func BenchmarkMap_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -216,8 +214,7 @@ func BenchmarkMap_Encode(b *testing.B) {
 		source := map[string]string{"foo": "bar"}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Object
-			_ = enc.Encode(&decoded, &source)
+			enc.Encode(&source)
 		}
 	})
 
@@ -231,14 +228,13 @@ func BenchmarkMap_Encode(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			var decoded Object
-			_ = enc.Encode(&decoded, &source)
+			enc.Encode(&source)
 		}
 	})
 }
 
 func BenchmarkMap_Decode(b *testing.B) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
@@ -247,7 +243,7 @@ func BenchmarkMap_Decode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			var decoded map[string]string
-			_ = dec.Encode(v, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 
@@ -262,7 +258,7 @@ func BenchmarkMap_Decode(b *testing.B) {
 				Foo string `map:"foo"`
 				Bar string `map:"bar"`
 			}
-			_ = dec.Encode(v, &decoded)
+			_ = dec.Decode(v, &decoded)
 		}
 	})
 }

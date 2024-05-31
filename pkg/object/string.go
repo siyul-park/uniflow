@@ -76,26 +76,24 @@ func (s *String) Compare(other Object) int {
 	return compare(s.Kind(), KindOf(other))
 }
 
-func newStringEncoder() encoding2.Compiler[*Object] {
+func newStringEncoder() encoding2.EncodeCompiler[Object] {
 	typeTextMarshaler := reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[*Object](func(typ reflect.Type) (encoding2.Encoder[*Object, unsafe.Pointer], error) {
+	return encoding2.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[unsafe.Pointer, Object], error) {
 		if typ.ConvertibleTo(typeTextMarshaler) {
-			return encoding2.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+			return encoding2.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextMarshaler)
 				if s, err := t.MarshalText(); err != nil {
-					return err
+					return nil, err
 				} else {
-					*source = NewString(string(s))
+					return NewString(string(s)), nil
 				}
-				return nil
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
-				return encoding2.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+				return encoding2.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
 					t := *(*string)(target)
-					*source = NewString(t)
-					return nil
+					return NewString(t), nil
 				}), nil
 			}
 		}
@@ -103,13 +101,13 @@ func newStringEncoder() encoding2.Compiler[*Object] {
 	})
 }
 
-func newStringDecoder() encoding2.Compiler[Object] {
+func newStringDecoder() encoding2.DecodeCompiler[Object] {
 	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 	typeBinaryUnmarshaler := reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 
-	return encoding2.CompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[Object, unsafe.Pointer], error) {
+	return encoding2.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Decoder[Object, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeTextUnmarshaler) {
-			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				if s, ok := source.(*String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText([]byte(s.String()))
@@ -117,7 +115,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 				return errors.WithStack(encoding2.ErrUnsupportedValue)
 			}), nil
 		} else if typ.ConvertibleTo(typeBinaryUnmarshaler) {
-			return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				if s, ok := source.(*String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary([]byte(s.String()))
@@ -126,7 +124,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
-				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*String); ok {
 						*(*string)(target) = s.String()
 						return nil
@@ -134,7 +132,7 @@ func newStringDecoder() encoding2.Compiler[Object] {
 					return errors.WithStack(encoding2.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding2.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*String); ok {
 						*(*any)(target) = s.Interface()
 						return nil

@@ -46,27 +46,26 @@ func TestBool_Compare(t *testing.T) {
 }
 
 func TestBool_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newBoolEncoder())
 
 	source := true
 	v := NewBool(source)
 
-	var decoded Object
-	err := enc.Encode(&decoded, &source)
+	decoded, err := enc.Encode(&source)
 	assert.NoError(t, err)
 	assert.Equal(t, v, decoded)
 }
 
 func TestBool_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newBoolDecoder())
 
 	t.Run("bool", func(t *testing.T) {
 		v := NewBool(true)
 
 		var decoded bool
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, true, decoded)
 	})
@@ -75,7 +74,7 @@ func TestBool_Decode(t *testing.T) {
 		v := NewBool(true)
 
 		var decoded any
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, true, decoded)
 	})

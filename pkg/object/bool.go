@@ -80,14 +80,13 @@ func (b *Bool) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBoolEncoder() encoding.Compiler[*Object] {
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
+func newBoolEncoder() encoding.EncodeCompiler[Object] {
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*bool)(target)
-					*source = NewBool(t)
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*bool)(source)
+					return NewBool(t), nil
 				}), nil
 			}
 		}
@@ -95,11 +94,11 @@ func newBoolEncoder() encoding.Compiler[*Object] {
 	})
 }
 
-func newBoolDecoder() encoding.Compiler[Object] {
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+func newBoolDecoder() encoding.DecodeCompiler[Object] {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Bool); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
@@ -107,7 +106,7 @@ func newBoolDecoder() encoding.Compiler[Object] {
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Bool); ok {
 						*(*any)(target) = s.Interface()
 						return nil

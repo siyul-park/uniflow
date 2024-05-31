@@ -216,57 +216,62 @@ func (*comparer) Compare(x, y Object) int {
 	return Compare(x, y)
 }
 
-func newMapEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compiler[*Object] {
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
+func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[Object] {
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Map {
-				keyType := typ.Elem().Key()
-				valueType := typ.Elem().Elem()
+				keyType := reflect.PointerTo(typ.Elem().Key())
+				valueType := reflect.PointerTo(typ.Elem().Elem())
 
 				keyEncoder, _ := encoder.Compile(keyType)
 				valueEncoder, _ := encoder.Compile(valueType)
 
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := reflect.NewAt(typ.Elem(), target).Elem()
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := reflect.NewAt(typ.Elem(), source).Elem()
 
 					pairs := make([]Object, 0, t.Len()*2)
+
+					var err error
 					for _, k := range t.MapKeys() {
 						v := t.MapIndex(k)
 
 						k = reflect.ValueOf(k.Interface())
 						v = reflect.ValueOf(v.Interface())
 
-						var key Object
-						if keyEncoder != nil && k.Type() == keyType {
-							kPtr := reflect.New(keyType)
-							kPtr.Elem().Set(k)
+						kPtr := reflect.New(k.Type())
+						kPtr.Elem().Set(k)
 
-							if err := keyEncoder.Encode(&key, kPtr.UnsafePointer()); err != nil {
-								return err
-							}
-						} else if err := encoder.Encode(&key, k.Interface()); err != nil {
-							return err
+						vPtr := reflect.New(v.Type())
+						vPtr.Elem().Set(v)
+
+						var key Object
+						if keyEncoder != nil && k.Type() == keyType.Elem() {
+							key, err = keyEncoder.Encode(kPtr.UnsafePointer())
+						} else {
+							key, err = encoder.Encode(kPtr.Interface())
 						}
-						pairs = append(pairs, key)
+						if err != nil {
+							return nil, err
+						}
 
 						var val Object
-						if valueEncoder != nil && k.Type() == keyType {
-							vPtr := reflect.New(valueType)
-							vPtr.Elem().Set(v)
-
-							if err := valueEncoder.Encode(&val, vPtr.UnsafePointer()); err != nil {
-								return err
-							}
-						} else if err := encoder.Encode(&val, v.Interface()); err != nil {
-							return err
+						if valueEncoder != nil && v.Type() == valueType.Elem() {
+							val, err = valueEncoder.Encode(vPtr.UnsafePointer())
+						} else {
+							val, err = encoder.Encode(vPtr.Interface())
 						}
+						if err != nil {
+							return nil, err
+						}
+
+						pairs = append(pairs, key)
 						pairs = append(pairs, val)
 					}
-					*source = NewMap(pairs...)
-					return nil
+
+					return NewMap(pairs...), nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {
-				var encoders []encoding.Encoder[*[]Object, unsafe.Pointer]
+				var encoders []encoding.Encoder[unsafe.Pointer, []Object]
 
 				for i := 0; i < typ.Elem().NumField(); i++ {
 					field := typ.Elem().Field(i)
@@ -276,7 +281,7 @@ func newMapEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compiler[
 						continue
 					}
 
-					child, err := encoder.Compile(field.Type)
+					child, err := encoder.Compile(reflect.PointerTo(field.Type))
 					if err != nil {
 						return nil, err
 					}
@@ -284,50 +289,47 @@ func newMapEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compiler[
 					offset := field.Offset
 					alias := NewString(tag.alias)
 
-					var enc encoding.Encoder[*[]Object, unsafe.Pointer]
+					var enc encoding.Encoder[unsafe.Pointer, []Object]
 					if tag.inline {
-						enc = encoding.EncodeFunc[*[]Object, unsafe.Pointer](func(source *[]Object, target unsafe.Pointer) error {
-							var s Object
-							if err := child.Encode(&s, unsafe.Pointer(uintptr(target)+offset)); err != nil {
-								return err
-							} else if t, ok := s.(*Map); !ok {
-								return errors.WithStack(encoding.ErrInvalidValue)
+						enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+							if target, err := child.Encode(unsafe.Pointer(uintptr(source) + offset)); err != nil {
+								return nil, err
+							} else if t, ok := target.(*Map); !ok {
+								return nil, errors.WithStack(encoding.ErrInvalidValue)
 							} else {
-								*source = append(*source, t.Pairs()...)
+								return t.Pairs(), nil
 							}
-							return nil
 						})
 					} else {
-						enc = encoding.EncodeFunc[*[]Object, unsafe.Pointer](func(source *[]Object, target unsafe.Pointer) error {
-							t := unsafe.Pointer(uintptr(target) + offset)
+						enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+							t := unsafe.Pointer(uintptr(source) + offset)
 							if tag.omitempty {
 								if t := reflect.NewAt(field.Type, t).Elem(); t.IsZero() {
-									return nil
+									return nil, nil
 								}
 							}
 
-							var s Object
-							if err := child.Encode(&s, t); err != nil {
-								return err
+							if target, err := child.Encode(t); err != nil {
+								return nil, err
 							} else {
-								*source = append(*source, alias, s)
+								return []Object{alias, target}, nil
 							}
-							return nil
 						})
 					}
 
 					encoders = append(encoders, enc)
 				}
 
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
 					pairs := make([]Object, 0, len(encoders)*2)
 					for _, enc := range encoders {
-						if err := enc.Encode(&pairs, target); err != nil {
-							return err
+						if target, err := enc.Encode(target); err != nil {
+							return nil, err
+						} else {
+							pairs = append(pairs, target...)
 						}
 					}
-					*source = NewMap(pairs...)
-					return nil
+					return NewMap(pairs...), nil
 				}), nil
 			}
 		}
@@ -335,23 +337,23 @@ func newMapEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compiler[
 	})
 }
 
-func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[Object] {
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+func newMapDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.DecodeCompiler[Object] {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Map {
 				keyType := typ.Elem().Key()
 				valueType := typ.Elem().Elem()
 
-				keyDecoder, err := decoder.Compile(keyType)
+				keyDecoder, err := decoder.Compile(reflect.PointerTo(keyType))
 				if err != nil {
 					return nil, err
 				}
-				valueDecoder, err := decoder.Compile(valueType)
+				valueDecoder, err := decoder.Compile(reflect.PointerTo(valueType))
 				if err != nil {
 					return nil, err
 				}
 
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Map); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						if t.IsNil() {
@@ -364,9 +366,9 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 							k := reflect.New(keyType)
 							v := reflect.New(valueType)
 
-							if err := keyDecoder.Encode(key, k.UnsafePointer()); err != nil {
+							if err := keyDecoder.Decode(key, k.UnsafePointer()); err != nil {
 								return err
-							} else if err := valueDecoder.Encode(value, v.UnsafePointer()); err != nil {
+							} else if err := valueDecoder.Decode(value, v.UnsafePointer()); err != nil {
 								return err
 							} else {
 								t.SetMapIndex(k.Elem(), v.Elem())
@@ -377,7 +379,7 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {
-				var decoders []encoding.Encoder[*Map, unsafe.Pointer]
+				var decoders []encoding.Decoder[*Map, unsafe.Pointer]
 				for i := 0; i < typ.Elem().NumField(); i++ {
 					field := typ.Elem().Field(i)
 					tag := getMapTag(field)
@@ -386,7 +388,7 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 						continue
 					}
 
-					child, err := decoder.Compile(field.Type)
+					child, err := decoder.Compile(reflect.PointerTo(field.Type))
 					if err != nil {
 						return nil, err
 					}
@@ -394,13 +396,13 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 					offset := field.Offset
 					alias := NewString(tag.alias)
 
-					var dec encoding.Encoder[*Map, unsafe.Pointer]
+					var dec encoding.Decoder[*Map, unsafe.Pointer]
 					if tag.inline {
-						dec = encoding.EncodeFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
-							return child.Encode(source, unsafe.Pointer(uintptr(target)+offset))
+						dec = encoding.DecodeFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
+							return child.Decode(source, unsafe.Pointer(uintptr(target)+offset))
 						})
 					} else {
-						dec = encoding.EncodeFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
+						dec = encoding.DecodeFunc[*Map, unsafe.Pointer](func(source *Map, target unsafe.Pointer) error {
 							value, ok := source.Get(alias)
 							if !ok {
 								if !tag.omitempty {
@@ -408,17 +410,17 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 								}
 								return nil
 							}
-							return child.Encode(value, unsafe.Pointer(uintptr(target)+offset))
+							return child.Decode(value, unsafe.Pointer(uintptr(target)+offset))
 						})
 					}
 
 					decoders = append(decoders, dec)
 				}
 
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Map); ok {
 						for _, dec := range decoders {
-							if err := dec.Encode(s, target); err != nil {
+							if err := dec.Decode(s, target); err != nil {
 								return err
 							}
 						}
@@ -427,7 +429,7 @@ func newMapDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[O
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Map); ok {
 						*(*any)(target) = s.Interface()
 						return nil

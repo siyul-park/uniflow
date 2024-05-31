@@ -17,9 +17,9 @@ type Unmarshaler interface {
 }
 
 var (
-	textEncoder   = encoding.NewAssembler[*Object, any]()
-	binaryEncoder = encoding.NewAssembler[*Object, any]()
-	decoder       = encoding.NewAssembler[Object, any]()
+	textEncoder   = encoding.NewEncodeAssembler[any, Object]()
+	binaryEncoder = encoding.NewEncodeAssembler[any, Object]()
+	decoder       = encoding.NewDecodeAssembler[Object, any]()
 )
 
 func init() {
@@ -62,56 +62,49 @@ func init() {
 
 // MarshalText returns the Object of v.
 func MarshalText(v any) (Object, error) {
-	var data Object
-	if err := textEncoder.Encode(&data, v); err != nil {
-		return nil, err
-	} else {
-		return data, nil
+	if v == nil {
+		return nil, nil
 	}
+	ptr := reflect.New(reflect.TypeOf(v))
+	ptr.Elem().Set(reflect.ValueOf(v))
+	return textEncoder.Encode(ptr.Interface())
 }
 
 // MarshalBinary returns the Object of v.
 func MarshalBinary(v any) (Object, error) {
-	var data Object
-	if err := binaryEncoder.Encode(&data, v); err != nil {
-		return nil, err
-	} else {
-		return data, nil
+	if v == nil {
+		return nil, nil
 	}
+	ptr := reflect.New(reflect.TypeOf(v))
+	ptr.Elem().Set(reflect.ValueOf(v))
+	return binaryEncoder.Encode(ptr.Interface())
 }
 
 // Unmarshal parses the Object and stores the result.
 func Unmarshal(data Object, v any) error {
-	return decoder.Encode(data, v)
+	return decoder.Decode(data, v)
 }
 
-func newShortcutEncoder() encoding.Compiler[*Object] {
+func newShortcutEncoder() encoding.EncodeCompiler[Object] {
 	typeValue := reflect.TypeOf((*Object)(nil)).Elem()
 
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
-		if typ.ConvertibleTo(typeValue) {
-			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-				t := reflect.NewAt(typ.Elem(), target).Interface().(Object)
-				*source = t
-				return nil
-			}), nil
-		} else if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
-			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-				t := reflect.NewAt(typ.Elem(), target).Elem().Interface().(Object)
-				*source = t
-				return nil
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
+		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
+			return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+				t := reflect.NewAt(typ.Elem(), source).Elem().Interface().(Object)
+				return t, nil
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
-func newShortcutDecoder() encoding.Compiler[Object] {
+func newShortcutDecoder() encoding.DecodeCompiler[Object] {
 	typeValue := reflect.TypeOf((*Object)(nil)).Elem()
 
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
-			return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				*(*Object)(target) = source
 				return nil
 			}), nil
@@ -120,31 +113,30 @@ func newShortcutDecoder() encoding.Compiler[Object] {
 	})
 }
 
-func newExpandedEncoder() encoding.Compiler[*Object] {
+func newExpandedEncoder() encoding.EncodeCompiler[Object] {
 	typeMarshaler := reflect.TypeOf((*Marshaler)(nil)).Elem()
 
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
 		if typ.Kind() == reflect.Pointer && typ.ConvertibleTo(typeMarshaler) {
-			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+			return encoding.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(Marshaler)
 				if s, err := t.MarshalObject(); err != nil {
-					return err
+					return nil, err
 				} else {
-					*source = s
+					return s, nil
 				}
-				return nil
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
-func newExpandedDecoder() encoding.Compiler[Object] {
+func newExpandedDecoder() encoding.DecodeCompiler[Object] {
 	typeUnmarshaler := reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.ConvertibleTo(typeUnmarshaler) {
-			return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(Unmarshaler)
 				return t.UnmarshalObject(source)
 			}), nil
@@ -153,28 +145,38 @@ func newExpandedDecoder() encoding.Compiler[Object] {
 	})
 }
 
-func newPointerEncoder(encoder *encoding.Assembler[*Object, any]) encoding.Compiler[*Object] {
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.Pointer {
-			return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
+func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[Object] {
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
+		if typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Ptr {
+			enc, err := encoder.Compile(typ.Elem())
+			if err != nil {
+				return nil, err
+			}
+
+			return encoding.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
 				t := reflect.NewAt(typ.Elem(), target)
-				return encoder.Encode(source, t.Elem().Interface())
+				return enc.Encode(t.Elem().UnsafePointer())
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
 }
 
-func newPointerDecoder(decoder *encoding.Assembler[Object, any]) encoding.Compiler[Object] {
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+func newPointerDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.DecodeCompiler[Object] {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.Pointer {
-			return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+			dec, err := decoder.Compile(typ.Elem())
+			if err != nil {
+				return nil, err
+			}
+
+			return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target)
 				if t.Elem().IsNil() {
 					zero := reflect.New(t.Type().Elem().Elem())
 					t.Elem().Set(zero)
 				}
-				return decoder.Encode(source, t.Elem().Interface())
+				return dec.Decode(source, t.Elem().UnsafePointer())
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)

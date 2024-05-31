@@ -53,15 +53,14 @@ func TestInt_Compare(t *testing.T) {
 }
 
 func TestInt_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(NewIntEncoder())
 
 	t.Run("int", func(t *testing.T) {
 		source := 1
 		v := NewInt(int64(source))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -70,8 +69,7 @@ func TestInt_Encode(t *testing.T) {
 		source := int8(1)
 		v := NewInt(int64(source))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -80,8 +78,7 @@ func TestInt_Encode(t *testing.T) {
 		source := int16(1)
 		v := NewInt(int64(source))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -90,8 +87,7 @@ func TestInt_Encode(t *testing.T) {
 		source := int32(1)
 		v := NewInt(int64(source))
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -100,15 +96,14 @@ func TestInt_Encode(t *testing.T) {
 		source := int64(1)
 		v := NewInt(source)
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestInt_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(NewIntDecoder())
 
 	t.Run("float32", func(t *testing.T) {
@@ -116,7 +111,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded float32
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -126,7 +121,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded float64
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -136,7 +131,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded int
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -146,7 +141,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded int8
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -156,7 +151,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded int16
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -166,7 +161,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded int32
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -176,7 +171,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded int64
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -186,7 +181,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded uint
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -196,7 +191,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded uint8
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -206,7 +201,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded uint16
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -216,7 +211,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded uint32
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})
@@ -226,7 +221,7 @@ func TestInt_Decode(t *testing.T) {
 		v := NewInt(int64(source))
 
 		var decoded uint64
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.EqualValues(t, source, decoded)
 	})

@@ -62,43 +62,33 @@ func (i *Int) Compare(other Object) int {
 	return compare(i.Kind(), KindOf(other))
 }
 
-func NewIntEncoder() encoding.Compiler[*Object] {
-	return encoding.CompilerFunc[*Object](func(typ reflect.Type) (encoding.Encoder[*Object, unsafe.Pointer], error) {
+func NewIntEncoder() encoding.EncodeCompiler[Object] {
+	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Int {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*int)(target)
-					*source = NewInt(int64(t))
-
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*int)(source)
+					return NewInt(int64(t)), nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int8 {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*int8)(target)
-					*source = NewInt(int64(t))
-
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*int8)(source)
+					return NewInt(int64(t)), nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int16 {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*int16)(target)
-					*source = NewInt(int64(t))
-
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*int16)(source)
+					return NewInt(int64(t)), nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int32 {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*int32)(target)
-					*source = NewInt(int64(t))
-
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*int32)(source)
+					return NewInt(int64(t)), nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int64 {
-				return encoding.EncodeFunc[*Object, unsafe.Pointer](func(source *Object, target unsafe.Pointer) error {
-					t := *(*int64)(target)
-					*source = NewInt(t)
-
-					return nil
+				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+					t := *(*int64)(source)
+					return NewInt(t), nil
 				}), nil
 			}
 		}
@@ -106,8 +96,8 @@ func NewIntEncoder() encoding.Compiler[*Object] {
 	})
 }
 
-func NewIntDecoder() encoding.Compiler[Object] {
-	return encoding.CompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[Object, unsafe.Pointer], error) {
+func NewIntDecoder() encoding.DecodeCompiler[Object] {
+	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return NewIntDecoderWithType[float32](), nil
@@ -134,7 +124,7 @@ func NewIntDecoder() encoding.Compiler[Object] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return NewIntDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(*Int); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -147,8 +137,8 @@ func NewIntDecoder() encoding.Compiler[Object] {
 	})
 }
 
-func NewIntDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[Object, unsafe.Pointer] {
-	return encoding.EncodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+func NewIntDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Object, unsafe.Pointer] {
+	return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 		if s, ok := source.(*Int); ok {
 			*(*T)(target) = T(s.Int())
 			return nil

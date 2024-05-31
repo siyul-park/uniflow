@@ -125,7 +125,7 @@ func (s *Scheme) Spec(kind string) (Spec, bool) {
 		return nil, false
 	} else {
 		value := reflect.New(t).Elem()
-		if value.Kind() == reflect.Ptr {
+		if value.Kind() == reflect.Pointer {
 			value.Set(reflect.New(t.Elem()))
 		}
 		v, ok := value.Interface().(Spec)

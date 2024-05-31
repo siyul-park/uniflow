@@ -72,15 +72,14 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newStringEncoder())
 
 	t.Run("encoding.TextMarshaler", func(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
 		v := NewString(source.String())
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -89,15 +88,14 @@ func TestString_Encode(t *testing.T) {
 		source := faker.Word()
 		v := NewString(source)
 
-		var decoded Object
-		err := enc.Encode(&decoded, &source)
+		decoded, err := enc.Encode(&source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
 }
 
 func TestString_Decode(t *testing.T) {
-	dec := encoding.NewAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Object, any]()
 	dec.Add(newStringDecoder())
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -105,7 +103,7 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source.String())
 
 		var decoded uuid.UUID
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -115,7 +113,7 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source)
 
 		var decoded string
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
@@ -125,22 +123,21 @@ func TestString_Decode(t *testing.T) {
 		v := NewString(source)
 
 		var decoded any
-		err := dec.Encode(v, &decoded)
+		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
 		assert.Equal(t, source, decoded)
 	})
 }
 
 func BenchmarkString_Encode(b *testing.B) {
-	enc := encoding.NewAssembler[*Object, any]()
+	enc := encoding.NewEncodeAssembler[any, Object]()
 	enc.Add(newStringEncoder())
 
 	b.Run("encoding.TextMarshaler", func(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
 
 		for i := 0; i < b.N; i++ {
-			var decoded Object
-			_ = enc.Encode(&decoded, &source)
+			enc.Encode(&source)
 		}
 	})
 
@@ -148,8 +145,7 @@ func BenchmarkString_Encode(b *testing.B) {
 		source := faker.Word()
 
 		for i := 0; i < b.N; i++ {
-			var decoded Object
-			_ = enc.Encode(&decoded, &source)
+			enc.Encode(&source)
 		}
 	})
 }
