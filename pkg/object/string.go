@@ -19,9 +19,7 @@ var _ Object = (*String)(nil)
 
 // NewString creates a new String instance.
 func NewString(value string) *String {
-	return &String{
-		value: value,
-	}
+	return &String{value: value}
 }
 
 // Len returns the length of the string.

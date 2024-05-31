@@ -19,9 +19,7 @@ var _ Object = (*Int)(nil)
 
 // NewInt returns a new Int instance.
 func NewInt(value int64) *Int {
-	return &Int{
-		value: value,
-	}
+	return &Int{value: value}
 }
 
 // Int returns the raw representation of the integer.
@@ -66,30 +64,15 @@ func NewIntEncoder() encoding.EncodeCompiler[Object] {
 	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Int {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*int)(source)
-					return NewInt(int64(t)), nil
-				}), nil
+				return newIntEncoderWithType[int](), nil
 			} else if typ.Elem().Kind() == reflect.Int8 {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*int8)(source)
-					return NewInt(int64(t)), nil
-				}), nil
+				return newIntEncoderWithType[int8](), nil
 			} else if typ.Elem().Kind() == reflect.Int16 {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*int16)(source)
-					return NewInt(int64(t)), nil
-				}), nil
+				return newIntEncoderWithType[int16](), nil
 			} else if typ.Elem().Kind() == reflect.Int32 {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*int32)(source)
-					return NewInt(int64(t)), nil
-				}), nil
+				return newIntEncoderWithType[int32](), nil
 			} else if typ.Elem().Kind() == reflect.Int64 {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*int64)(source)
-					return NewInt(t), nil
-				}), nil
+				return newIntEncoderWithType[int64](), nil
 			}
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
@@ -134,6 +117,13 @@ func NewIntDecoder() encoding.DecodeCompiler[Object] {
 			}
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	})
+}
+
+func newIntEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[unsafe.Pointer, Object] {
+	return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
+		t := *(*T)(source)
+		return NewInt(int64(t)), nil
 	})
 }
 

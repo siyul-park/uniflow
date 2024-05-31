@@ -34,6 +34,7 @@ func NewEncoderGroup[S, T any]() *EncoderGroup[S, T] {
 func (g *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
 	g.encoders = append(g.encoders, encoder)
 }
 
@@ -41,6 +42,7 @@ func (g *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) {
 func (g *EncoderGroup[S, T]) Len() int {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
+
 	return len(g.encoders)
 }
 
@@ -65,6 +67,7 @@ func (g *EncoderGroup[S, T]) Encode(source S) (T, error) {
 func (g *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
 	g.decoders = append(g.decoders, decoder)
 }
 
@@ -72,6 +75,7 @@ func (g *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) {
 func (g *DecoderGroup[S, T]) Len() int {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
+
 	return len(g.decoders)
 }
 

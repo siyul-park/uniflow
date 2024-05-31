@@ -72,10 +72,6 @@ func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[unsafe.Pointe
 		return enc.(Encoder[unsafe.Pointer, T]), nil
 	}
 
-	if enc, ok := a.encoders.Load(typ); ok {
-		return enc.(Encoder[unsafe.Pointer, T]), nil
-	}
-
 	var encoders []Encoder[unsafe.Pointer, T]
 	for _, compiler := range a.compilers {
 		if enc, err := compiler.Compile(typ); err == nil {
@@ -132,10 +128,6 @@ func (a *DecodeAssembler[S, T]) Decode(source S, target T) error {
 func (a *DecodeAssembler[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Pointer], error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-
-	if dec, ok := a.decoders.Load(typ); ok {
-		return dec.(Decoder[S, unsafe.Pointer]), nil
-	}
 
 	if dec, ok := a.decoders.Load(typ); ok {
 		return dec.(Decoder[S, unsafe.Pointer]), nil

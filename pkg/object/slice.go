@@ -14,46 +14,28 @@ import (
 // Slice represents a slice of Objects.
 type Slice struct {
 	value *immutable.List[Object]
-	hash  uint64
 }
 
 var _ Object = (*Slice)(nil)
 
 // NewSlice returns a new Slice.
 func NewSlice(elements ...Object) *Slice {
-	return newSlice(immutable.NewList(elements...))
-}
-
-func newSlice(value *immutable.List[Object]) *Slice {
-	h := fnv.New64a()
-	var buf [8]byte
-	for itr := value.Iterator(); !itr.Done(); {
-		_, v := itr.Next()
-
-		_, _ = h.Write([]byte{byte(KindOf(v))})
-		binary.BigEndian.PutUint64(buf[:], HashOf(v))
-		_, _ = h.Write(buf[:])
-	}
-
-	return &Slice{
-		value: value,
-		hash:  h.Sum64(),
-	}
+	return &Slice{value: immutable.NewList(elements...)}
 }
 
 // Prepend adds a value to the beginning of the slice.
 func (s *Slice) Prepend(value Object) *Slice {
-	return newSlice(s.value.Prepend(value))
+	return &Slice{value: s.value.Prepend(value)}
 }
 
 // Append adds a value to the end of the slice.
 func (s *Slice) Append(value Object) *Slice {
-	return newSlice(s.value.Append(value))
+	return &Slice{value: s.value.Append(value)}
 }
 
 // Sub returns a new slice that is a sub-slice of the original slice.
 func (s *Slice) Sub(start, end int) *Slice {
-	return newSlice(s.value.Slice(start, end))
+	return &Slice{value: s.value.Slice(start, end)}
 }
 
 // Get retrieves the value at the given index.
@@ -69,7 +51,7 @@ func (s *Slice) Set(index int, value Object) *Slice {
 	if index < 0 || index >= s.value.Len() {
 		return s
 	}
-	return newSlice(s.value.Set(index, value))
+	return &Slice{value: s.value.Set(index, value)}
 }
 
 // Values returns the elements of the slice.
@@ -102,23 +84,47 @@ func (s *Slice) Kind() Kind {
 	return KindSlice
 }
 
+// Hash returns the hash value of the slice.
+func (s *Slice) Hash() uint64 {
+	h := fnv.New64a()
+	var buf [8]byte
+	for itr := s.value.Iterator(); !itr.Done(); {
+		_, v := itr.Next()
+
+		binary.BigEndian.PutUint64(buf[:], HashOf(v))
+		_, _ = h.Write(buf[:])
+	}
+	return h.Sum64()
+}
+
+// Interface returns the slice as a generic interface.
+func (s *Slice) Interface() any {
+	elements := s.Slice()
+	elementType := getCommonType(elements)
+	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(elements), len(elements))
+	for i, value := range elements {
+		if value != nil {
+			t.Index(i).Set(reflect.ValueOf(value))
+		}
+	}
+	return t.Interface()
+}
+
 // Equal checks if two Slice instances are equal.
 func (s *Slice) Equal(other Object) bool {
 	if o, ok := other.(*Slice); ok {
-		if s.hash == o.hash {
-			if s.value.Len() == o.value.Len() {
-				itr1 := s.value.Iterator()
-				itr2 := o.value.Iterator()
-				for !itr1.Done() && !itr2.Done() {
-					_, v1 := itr1.Next()
-					_, v2 := itr2.Next()
+		if s.value.Len() == o.value.Len() {
+			itr1 := s.value.Iterator()
+			itr2 := o.value.Iterator()
+			for !itr1.Done() && !itr2.Done() {
+				_, v1 := itr1.Next()
+				_, v2 := itr2.Next()
 
-					if !Equal(v1, v2) {
-						return false
-					}
+				if !Equal(v1, v2) {
+					return false
 				}
-				return true
 			}
+			return true
 		}
 	}
 	return false
@@ -140,24 +146,6 @@ func (s *Slice) Compare(other Object) int {
 		return compare(s.value.Len(), o.value.Len())
 	}
 	return compare(s.Kind(), KindOf(other))
-}
-
-// Hash returns the hash value of the slice.
-func (s *Slice) Hash() uint64 {
-	return s.hash
-}
-
-// Interface returns the slice as a generic interface.
-func (s *Slice) Interface() any {
-	elements := s.Slice()
-	elementType := getCommonType(elements)
-	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(elements), len(elements))
-	for i, value := range elements {
-		if value != nil {
-			t.Index(i).Set(reflect.ValueOf(value))
-		}
-	}
-	return t.Interface()
 }
 
 func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[Object] {

@@ -17,7 +17,6 @@ import (
 // Map represents a map structure.
 type Map struct {
 	value *immutable.SortedMap[Object, Object]
-	hash  uint64
 }
 
 // mapTag represents the tag for map fields.
@@ -42,29 +41,7 @@ func NewMap(pairs ...Object) *Map {
 		k, v := pairs[i*2], pairs[i*2+1]
 		b.Set(k, v)
 	}
-	return newMap(b.Map())
-}
-
-func newMap(value *immutable.SortedMap[Object, Object]) *Map {
-	h := fnv.New64a()
-
-	var buf [8]byte
-	for itr := value.Iterator(); !itr.Done(); {
-		k, v, _ := itr.Next()
-
-		_, _ = h.Write([]byte{byte(KindOf(k))})
-		binary.BigEndian.PutUint64(buf[:], HashOf(k))
-		_, _ = h.Write(buf[:])
-
-		_, _ = h.Write([]byte{byte(KindOf(v))})
-		binary.BigEndian.PutUint64(buf[:], HashOf(v))
-		_, _ = h.Write(buf[:])
-	}
-
-	return &Map{
-		value: value,
-		hash:  h.Sum64(),
-	}
+	return &Map{value: b.Map()}
 }
 
 // Get retrieves the value for a given key.
@@ -82,12 +59,12 @@ func (m *Map) GetOr(key, value Object) Object {
 
 // Set adds or updates a key-value pair in the map.
 func (m *Map) Set(key, value Object) *Map {
-	return newMap(m.value.Set(key, value))
+	return &Map{value: m.value.Set(key, value)}
 }
 
 // Delete removes a key and its corresponding value from the map.
 func (m *Map) Delete(key Object) *Map {
-	return newMap(m.value.Delete(key))
+	return &Map{value: m.value.Delete(key)}
 }
 
 // Keys returns all keys in the map.
@@ -112,7 +89,7 @@ func (m *Map) Values() []Object {
 
 // Pairs returns all keys and values in the map.
 func (m *Map) Pairs() []Object {
-	pairs := make([]Object, 0, m.value.Len()*1)
+	pairs := make([]Object, 0, m.value.Len()*2)
 	for itr := m.value.Iterator(); !itr.Done(); {
 		k, v, _ := itr.Next()
 		pairs = append(pairs, k)
@@ -143,7 +120,18 @@ func (m *Map) Kind() Kind {
 
 // Hash calculates and returns the hash code.
 func (m *Map) Hash() uint64 {
-	return m.hash
+	h := fnv.New64a()
+	var buf [8]byte
+	for itr := m.value.Iterator(); !itr.Done(); {
+		k, v, _ := itr.Next()
+
+		binary.BigEndian.PutUint64(buf[:], HashOf(k))
+		_, _ = h.Write(buf[:])
+
+		binary.BigEndian.PutUint64(buf[:], HashOf(v))
+		_, _ = h.Write(buf[:])
+	}
+	return h.Sum64()
 }
 
 // Interface converts the Map to an interface{}.
@@ -172,20 +160,18 @@ func (m *Map) Interface() any {
 // Compare compares two maps.
 func (m *Map) Equal(other Object) bool {
 	if o, ok := other.(*Map); ok {
-		if m.hash == o.hash {
-			if m.value.Len() == o.value.Len() {
-				itr1 := m.value.Iterator()
-				itr2 := o.value.Iterator()
-				for !itr1.Done() && !itr2.Done() {
-					k1, v1, _ := itr1.Next()
-					k2, v2, _ := itr2.Next()
+		if m.value.Len() == o.value.Len() {
+			itr1 := m.value.Iterator()
+			itr2 := o.value.Iterator()
+			for !itr1.Done() && !itr2.Done() {
+				k1, v1, _ := itr1.Next()
+				k2, v2, _ := itr2.Next()
 
-					if !Equal(k1, k2) || !Equal(v1, v2) {
-						return false
-					}
+				if !Equal(k1, k2) || !Equal(v1, v2) {
+					return false
 				}
-				return true
 			}
+			return true
 		}
 	}
 	return false
