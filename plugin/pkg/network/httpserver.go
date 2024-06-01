@@ -194,11 +194,13 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			res.Body = backPck.Payload()
 		}
 
-		n.negotiate(req, res)
-		_ = n.write(w, res)
-
 		if res.Status >= 400 && res.Status < 600 {
 			err = errors.New(http.StatusText(res.Status))
+		}
+
+		if w, ok := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
+			n.negotiate(req, res)
+			_ = n.write(w, res)
 		}
 	}
 
@@ -232,26 +234,32 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 			return
 		}
 
-		w, ok1 := proc.Data().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
+		var res *HTTPPayload
+		if _, ok := inPck.Payload().(*object.Error); ok {
+			res = NewHTTPPayload(http.StatusInternalServerError)
+		} else if err := object.Unmarshal(inPck.Payload(), &res); err != nil {
+			res.Body = inPck.Payload()
+		}
+
+		var err error
+		if res.Status >= 400 && res.Status < 600 {
+			err = errors.New(http.StatusText(res.Status))
+		}
+
+		w, ok1 := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter)
 		r, ok2 := proc.Data().Load(KeyHTTPRequest).(*http.Request)
 		if ok1 && ok2 {
-			req, err := n.read(r)
-			if err != nil {
-				inPck = packet.New(object.NewError(err))
-			}
-
-			var res *HTTPPayload
-			if _, ok := inPck.Payload().(*object.Error); ok {
-				res = NewHTTPPayload(http.StatusInternalServerError)
-			} else if err := object.Unmarshal(inPck.Payload(), &res); err != nil {
-				res.Body = inPck.Payload()
-			}
+			req, _ := n.read(r)
 
 			n.negotiate(req, res)
 			_ = n.write(w, res)
 		}
 
-		inReader.Receive(packet.None)
+		if err == nil {
+			inReader.Receive(packet.None)
+		} else {
+			inReader.Receive(packet.New(object.NewError(err)))
+		}
 	}
 }
 

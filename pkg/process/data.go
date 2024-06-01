@@ -15,6 +15,21 @@ func newData() *Data {
 	}
 }
 
+func (d *Data) LoadAndDelete(key string) any {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if val, ok := d.data[key]; ok {
+		delete(d.data, key)
+		return val
+	}
+
+	if d.outer == nil {
+		return nil
+	}
+	return d.outer.LoadAndDelete(key)
+}
+
 func (d *Data) Load(key string) any {
 	d.mu.RLock()
 	defer d.mu.RUnlock()

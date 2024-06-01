@@ -7,6 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestData_LoadAndDelete(t *testing.T) {
+	d := newData()
+	defer d.Close()
+
+	k := faker.UUIDHyphenated()
+	v := faker.UUIDHyphenated()
+
+	d.Store(k, v)
+
+	r := d.LoadAndDelete(k)
+	assert.Equal(t, v, r)
+
+	r = d.Load(k)
+	assert.Equal(t, nil, r)
+}
+
 func TestData_Load(t *testing.T) {
 	d := newData()
 	defer d.Close()
