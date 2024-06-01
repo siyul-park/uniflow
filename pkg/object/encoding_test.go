@@ -1,6 +1,7 @@
 package object
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -43,6 +44,10 @@ func TestMarshalText(t *testing.T) {
 		{
 			when:   "a",
 			expect: NewString("a"),
+		},
+		{
+			when:   errors.New("error"),
+			expect: NewError(errors.New("error")),
 		},
 		{
 			when:   []string{"a", "b", "c"},
@@ -97,6 +102,10 @@ func TestMarshalBinary(t *testing.T) {
 			expect: NewString("a"),
 		},
 		{
+			when:   errors.New("error"),
+			expect: NewError(errors.New("error")),
+		},
+		{
 			when:   []string{"a", "b", "c"},
 			expect: NewSlice(NewString("a"), NewString("b"), NewString("c")),
 		},
@@ -147,6 +156,10 @@ func TestUnmarshal(t *testing.T) {
 		{
 			when:   NewString("a"),
 			expect: "a",
+		},
+		{
+			when:   NewError(errors.New("error")),
+			expect: errors.New("error"),
 		},
 		{
 			when:   NewSlice(NewString("a"), NewString("b"), NewString("c")),

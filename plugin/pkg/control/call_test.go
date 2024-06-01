@@ -85,7 +85,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return nil, packet.WithError(errors.New(faker.Sentence()))
+			return nil, packet.New(object.NewError(errors.New(faker.Sentence())))
 		})
 		defer n1.Close()
 

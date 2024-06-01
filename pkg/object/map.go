@@ -260,6 +260,8 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.Enco
 				var encoders []encoding.Encoder[unsafe.Pointer, []Object]
 
 				for i := 0; i < typ.Elem().NumField(); i++ {
+					i := i
+
 					field := typ.Elem().Field(i)
 					tag := getMapTag(field)
 
@@ -267,40 +269,77 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.Enco
 						continue
 					}
 
-					child, err := encoder.Compile(reflect.PointerTo(field.Type))
-					if err != nil {
-						return nil, err
-					}
+					fieldEncoder, _ := encoder.Compile(reflect.PointerTo(field.Type))
 
 					offset := field.Offset
 					alias := NewString(tag.alias)
 
 					var enc encoding.Encoder[unsafe.Pointer, []Object]
-					if tag.inline {
-						enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
-							if target, err := child.Encode(unsafe.Pointer(uintptr(source) + offset)); err != nil {
-								return nil, err
-							} else if t, ok := target.(*Map); !ok {
-								return nil, errors.WithStack(encoding.ErrInvalidValue)
-							} else {
-								return t.Pairs(), nil
-							}
-						})
-					} else {
-						enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
-							t := unsafe.Pointer(uintptr(source) + offset)
-							if tag.omitempty {
-								if t := reflect.NewAt(field.Type, t).Elem(); t.IsZero() {
-									return nil, nil
-								}
-							}
 
-							if target, err := child.Encode(t); err != nil {
-								return nil, err
-							} else {
-								return []Object{alias, target}, nil
-							}
-						})
+					if fieldEncoder != nil {
+						if tag.inline {
+							enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+								if target, err := fieldEncoder.Encode(unsafe.Pointer(uintptr(source) + offset)); err != nil {
+									return nil, err
+								} else if t, ok := target.(*Map); !ok {
+									return nil, errors.WithStack(encoding.ErrInvalidValue)
+								} else {
+									return t.Pairs(), nil
+								}
+							})
+						} else {
+							enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+								t := unsafe.Pointer(uintptr(source) + offset)
+								if tag.omitempty {
+									if t := reflect.NewAt(field.Type, t).Elem(); t.IsZero() {
+										return nil, nil
+									}
+								}
+
+								if target, err := fieldEncoder.Encode(t); err != nil {
+									return nil, err
+								} else {
+									return []Object{alias, target}, nil
+								}
+							})
+						}
+					} else {
+						if tag.inline {
+							enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+								t := reflect.NewAt(typ.Elem(), source).Elem()
+								v := reflect.ValueOf(t.Field(i).Interface())
+
+								ptr := reflect.New(v.Type())
+								ptr.Elem().Set(v)
+
+								if target, err := encoder.Encode(ptr.Interface()); err != nil {
+									return nil, err
+								} else if t, ok := target.(*Map); !ok {
+									return nil, errors.WithStack(encoding.ErrInvalidValue)
+								} else {
+									return t.Pairs(), nil
+								}
+							})
+						} else {
+							enc = encoding.EncodeFunc[unsafe.Pointer, []Object](func(source unsafe.Pointer) ([]Object, error) {
+								t := reflect.NewAt(typ.Elem(), source).Elem()
+								v := reflect.ValueOf(t.Field(i).Interface())
+
+								ptr := reflect.New(v.Type())
+								ptr.Elem().Set(v)
+
+								if tag.omitempty {
+									if v.IsZero() {
+										return nil, nil
+									}
+								}
+								if target, err := encoder.Encode(ptr.Interface()); err != nil {
+									return nil, err
+								} else {
+									return []Object{alias, target}, nil
+								}
+							})
+						}
 					}
 
 					encoders = append(encoders, enc)

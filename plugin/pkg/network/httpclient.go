@@ -97,11 +97,11 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 
 	b, err := MarshalMIME(req.Body, &contentType)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 	b, err = Compress(b, contentEncoding)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 
 	req.Header.Set(HeaderContentLength, strconv.Itoa(len(b)))
@@ -118,7 +118,7 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 
 	r, err := http.NewRequest(req.Method, u.String(), bytes.NewReader(b))
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 	r = r.WithContext(ctx)
 
@@ -126,18 +126,18 @@ func (n *HTTPClientNode) action(proc *process.Process, inPck *packet.Packet) (*p
 
 	w, err := client.Do(r)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 	defer w.Body.Close()
 
 	res, err := n.response(w)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 
 	outPayload, err := object.MarshalText(res)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 	return packet.New(outPayload), nil
 }

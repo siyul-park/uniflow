@@ -25,6 +25,7 @@ var (
 func init() {
 	textEncoder.Add(newShortcutEncoder())
 	textEncoder.Add(newExpandedEncoder())
+	textEncoder.Add(newErrorEncoder())
 	textEncoder.Add(newStringEncoder())
 	textEncoder.Add(newBinaryEncoder())
 	textEncoder.Add(newBoolEncoder())
@@ -37,6 +38,7 @@ func init() {
 
 	binaryEncoder.Add(newShortcutEncoder())
 	binaryEncoder.Add(newExpandedEncoder())
+	binaryEncoder.Add(newErrorEncoder())
 	binaryEncoder.Add(newBinaryEncoder())
 	binaryEncoder.Add(newStringEncoder())
 	binaryEncoder.Add(newBoolEncoder())
@@ -49,6 +51,7 @@ func init() {
 
 	decoder.Add(newShortcutDecoder())
 	decoder.Add(newExpandedDecoder())
+	decoder.Add(newErrorDecoder())
 	decoder.Add(newBinaryDecoder())
 	decoder.Add(newStringDecoder())
 	decoder.Add(newBoolDecoder())

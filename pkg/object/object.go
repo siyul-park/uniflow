@@ -16,8 +16,8 @@ type Kind byte
 const (
 	KindInvalid Kind = iota // Represents an invalid or nil type.
 	KindBinary              // Represents binary data.
-	KindBuffer              // Represents a buffer.
 	KindBool                // Represents a boolean value.
+	KindError               // Represents a error value.
 	KindInt                 // Represents an integer value.
 	KindUint                // Represents an unsigned integer value.
 	KindFloat               // Represents a floating-point number.

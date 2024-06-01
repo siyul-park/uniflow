@@ -52,8 +52,8 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		err, _ := packet.AsError(outPck)
-		assert.NoError(t, err)
+		_, ok := outPck.Payload().(*object.Error)
+		assert.False(t, ok)
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

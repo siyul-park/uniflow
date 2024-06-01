@@ -72,22 +72,20 @@ func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[unsafe.Pointe
 		return enc.(Encoder[unsafe.Pointer, T]), nil
 	}
 
-	var encoders []Encoder[unsafe.Pointer, T]
+	encoderGroup := NewEncoderGroup[unsafe.Pointer, T]()
+	a.encoders.Store(typ, encoderGroup)
+
 	for _, compiler := range a.compilers {
 		if enc, err := compiler.Compile(typ); err == nil {
-			encoders = append(encoders, enc)
+			encoderGroup.Add(enc)
 		}
 	}
-	if len(encoders) == 0 {
+
+	if encoderGroup.Len() == 0 {
+		a.encoders.Delete(typ)
 		return nil, errors.WithStack(ErrUnsupportedValue)
 	}
 
-	encoderGroup := NewEncoderGroup[unsafe.Pointer, T]()
-	for _, enc := range encoders {
-		encoderGroup.Add(enc)
-	}
-
-	a.encoders.Store(typ, encoderGroup)
 	return encoderGroup, nil
 }
 

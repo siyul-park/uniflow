@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -95,7 +96,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 
 	w, ok := proc.Data().Load(KeyHTTPResponseWriter).(http.ResponseWriter)
 	if !ok {
-		return nil, packet.ErrInvalidPacket
+		return nil, encoding.ErrUnsupportedValue
 	}
 
 	r := &http.Request{

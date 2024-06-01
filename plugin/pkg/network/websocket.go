@@ -108,7 +108,7 @@ func (n *WebSocketNode) connect(proc *process.Process) {
 		}
 
 		if conn, err := n.action(proc, inPck); err != nil {
-			errPck := packet.WithError(err)
+			errPck := packet.New(object.NewError(err))
 			backPck := packet.CallOrFallback(errWriter, errPck, errPck)
 			ioReader.Receive(backPck)
 		} else {
@@ -161,12 +161,12 @@ func (n *WebSocketNode) consume(proc *process.Process) {
 		}
 
 		if data, err := MarshalMIME(inPayload.Data, lo.ToPtr("")); err != nil {
-			errPck := packet.WithError(err)
+			errPck := packet.New(object.NewError(err))
 			if errWriter.Write(errPck) > 0 {
 				<-errWriter.Receive()
 			}
 		} else if err := conn.WriteMessage(inPayload.Type, data); err != nil {
-			errPck := packet.WithError(err)
+			errPck := packet.New(object.NewError(err))
 			if errWriter.Write(errPck) > 0 {
 				<-errWriter.Receive()
 			}

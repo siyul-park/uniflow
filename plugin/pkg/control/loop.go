@@ -134,14 +134,14 @@ func (n *LoopNode) forward(proc *process.Process) {
 				return
 			}
 
-			if _, ok := packet.AsError(backPck); ok {
+			if _, ok := backPck.Payload().(*object.Error); ok {
 				backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 			}
 			backPcks[i] = backPck
 		}
 
 		backPck := packet.Merge(backPcks)
-		if _, ok := packet.AsError(backPck); ok {
+		if _, ok := backPck.Payload().(*object.Error); ok {
 			bridge.Write(nil, []*packet.Reader{inReader}, nil)
 		} else {
 			bridge.Write([]*packet.Packet{backPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter1})

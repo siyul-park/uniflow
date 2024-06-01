@@ -22,12 +22,14 @@ func Merge(pcks []*Packet) *Packet {
 
 	var errs []error
 	for _, pck := range pcks {
-		if err, ok := AsError(pck); ok {
-			errs = append(errs, err)
+		if err, ok := pck.Payload().(*object.Error); ok {
+			errs = append(errs, err.Interface().(error))
 		}
 	}
-	if len(errs) > 0 {
-		return WithError(errors.Join(errs...))
+	if len(errs) == 1 {
+		return New(object.NewError(errs[0]))
+	} else if len(errs) > 1 {
+		return New(object.NewError(errors.Join(errs...)))
 	}
 
 	payloads := make([]object.Object, 0, len(pcks))

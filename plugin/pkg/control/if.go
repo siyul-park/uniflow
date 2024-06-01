@@ -129,7 +129,7 @@ func (n *IfNode) forward(proc *process.Process) {
 		input := object.InterfaceOf(inPayload)
 
 		if ok, err := n.when(input); err != nil {
-			errPck := packet.WithError(err)
+			errPck := packet.New(object.NewError(err))
 			bridge.Write([]*packet.Packet{errPck}, []*packet.Reader{inReader}, []*packet.Writer{errWriter})
 		} else if ok {
 			bridge.Write([]*packet.Packet{inPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter0})

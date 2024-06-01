@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -133,7 +134,7 @@ func (n *CallNode) rewrite(proc *process.Process) {
 			return
 		}
 
-		if _, ok := packet.AsError(backPck); ok {
+		if _, ok := backPck.Payload().(*object.Error); ok {
 			bridge.Rewrite(backPck, outWriter0, errWriter)
 		} else {
 			bridge.Rewrite(backPck, outWriter0, outWriter1)

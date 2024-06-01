@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -81,7 +82,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		query, ok = object.Pick[string](inPck.Payload(), "0")
 	}
 	if !ok {
-		return nil, packet.WithError(packet.ErrInvalidPacket)
+		return nil, packet.New(object.NewError(encoding.ErrUnsupportedValue))
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
@@ -103,19 +104,19 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return tx, nil
 	})
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 
 	stmt, err := tx.PrepareNamedContext(ctx, query)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
 		args, _ := object.Pick[[]any](inPck.Payload(), "1")
 		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
-			return nil, packet.WithError(err)
+			return nil, packet.New(object.NewError(err))
 		}
 	} else {
 		var args any
@@ -125,7 +126,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			args, _ = object.Pick[[]map[string]any](inPck.Payload(), "1")
 		}
 		if rows, err = stmt.QueryxContext(ctx, args); err != nil {
-			return nil, packet.WithError(err)
+			return nil, packet.New(object.NewError(err))
 		}
 	}
 
@@ -135,14 +136,14 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	for rows.Next() {
 		result := make(map[string]any)
 		if err := rows.MapScan(result); err != nil {
-			return nil, packet.WithError(err)
+			return nil, packet.New(object.NewError(err))
 		}
 		results = append(results, result)
 	}
 
 	outPayload, err := object.MarshalText(results)
 	if err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	}
 
 	return packet.New(outPayload), nil

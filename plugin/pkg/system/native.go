@@ -75,7 +75,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	if remains := len(ins) - offset; remains == 1 {
 		in := reflect.New(n.operator.Type().In(offset))
 		if err := object.Unmarshal(inPayload, in.Interface()); err != nil {
-			return nil, packet.WithError(err)
+			return nil, packet.New(object.NewError(err))
 		}
 		ins[offset] = in.Elem()
 	} else if remains > 1 {
@@ -89,7 +89,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		for i := offset; i < len(ins); i++ {
 			in := reflect.New(n.operator.Type().In(i))
 			if err := object.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
-				return nil, packet.WithError(err)
+				return nil, packet.New(object.NewError(err))
 			}
 			ins[i] = in.Elem()
 		}
@@ -103,7 +103,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		if err, ok := last.(error); ok {
 			if err != nil {
-				return nil, packet.WithError(err)
+				return nil, packet.New(object.NewError(err))
 			}
 		}
 	}
@@ -111,7 +111,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	outPayloads := make([]object.Object, len(outs))
 	for i, out := range outs {
 		if outPayload, err := object.MarshalText(out.Interface()); err != nil {
-			return nil, packet.WithError(err)
+			return nil, packet.New(object.NewError(err))
 		} else {
 			outPayloads[i] = outPayload
 		}

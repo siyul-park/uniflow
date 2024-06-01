@@ -43,9 +43,9 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	input := object.InterfaceOf(inPayload)
 
 	if output, err := n.transform(input); err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	} else if outPayload, err := object.MarshalText(output); err != nil {
-		return nil, packet.WithError(err)
+		return nil, packet.New(object.NewError(err))
 	} else {
 		return packet.New(outPayload), nil
 	}

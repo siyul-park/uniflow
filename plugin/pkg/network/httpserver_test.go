@@ -167,7 +167,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.WithError(err)
+				errPck := packet.New(object.NewError(err))
 				outReader.Receive(errPck)
 			}
 		}))
@@ -203,7 +203,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.WithError(err)
+				errPck := packet.New(object.NewError(err))
 				outReader.Receive(errPck)
 			}
 		}))
@@ -216,7 +216,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 					return
 				}
 
-				err, _ := packet.AsError(inPck)
+				err, _ := inPck.Payload().(*object.Error)
 
 				outPck := packet.New(object.NewString(err.Error()))
 				errReader.Receive(outPck)
