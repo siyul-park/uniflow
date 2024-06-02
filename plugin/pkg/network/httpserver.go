@@ -346,9 +346,6 @@ func (n *HTTPServerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	if _, err := w.Write(b); err != nil {
 		return err
 	}
-	if f, ok := w.(http.Flusher); ok {
-		f.Flush()
-	}
 	return nil
 }
 
