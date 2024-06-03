@@ -113,7 +113,7 @@ func TestSlice_Encode(t *testing.T) {
 		source := []string{"foo", "bar"}
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -122,7 +122,7 @@ func TestSlice_Encode(t *testing.T) {
 		source := [2]string{"foo", "bar"}
 		v := NewSlice(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -216,7 +216,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 		source := []string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 
@@ -224,7 +224,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 		source := [2]string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 }

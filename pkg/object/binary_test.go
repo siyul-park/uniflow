@@ -73,7 +73,7 @@ func TestBinary_Encode(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
 		v := NewBinary(source.Bytes())
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -82,7 +82,7 @@ func TestBinary_Encode(t *testing.T) {
 		source := []byte{0, 1, 2}
 		v := NewBinary(source)
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -91,7 +91,7 @@ func TestBinary_Encode(t *testing.T) {
 		source := [3]byte{0, 1, 2}
 		v := NewBinary(source[:])
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -150,7 +150,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 
@@ -158,7 +158,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 		source := []byte{0, 1, 2}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 
@@ -166,7 +166,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 		source := [3]byte{0, 1, 2}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 }

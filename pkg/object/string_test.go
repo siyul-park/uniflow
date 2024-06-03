@@ -79,7 +79,7 @@ func TestString_Encode(t *testing.T) {
 		source := uuid.Must(uuid.NewV7())
 		v := NewString(source.String())
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -88,7 +88,7 @@ func TestString_Encode(t *testing.T) {
 		source := faker.Word()
 		v := NewString(source)
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -137,7 +137,7 @@ func BenchmarkString_Encode(b *testing.B) {
 		source := uuid.Must(uuid.NewV7())
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 
@@ -145,7 +145,7 @@ func BenchmarkString_Encode(b *testing.B) {
 		source := faker.Word()
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 }

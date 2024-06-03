@@ -60,12 +60,14 @@ func (e *Error) Compare(other Object) int {
 	return compare(e.Kind(), KindOf(other))
 }
 
-func newErrorEncoder() encoding.EncodeCompiler[Object] {
-	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(reflect.TypeOf((*error)(nil)).Elem()) {
-			return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-				t := reflect.NewAt(typ.Elem(), source).Elem().Interface().(error)
-				return NewError(t), nil
+func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
+	typeError := reflect.TypeOf((*error)(nil)).Elem()
+
+	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
+		if typ.ConvertibleTo(typeError) {
+			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := source.(error)
+				return NewError(s), nil
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)

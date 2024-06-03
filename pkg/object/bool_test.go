@@ -52,7 +52,7 @@ func TestBool_Encode(t *testing.T) {
 	source := true
 	v := NewBool(source)
 
-	decoded, err := enc.Encode(&source)
+	decoded, err := enc.Encode(source)
 	assert.NoError(t, err)
 	assert.Equal(t, v, decoded)
 }

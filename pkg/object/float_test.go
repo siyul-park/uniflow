@@ -60,7 +60,7 @@ func TestFloat_Encode(t *testing.T) {
 		source := float32(1)
 		v := NewFloat(float64(source))
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -69,7 +69,7 @@ func TestFloat_Encode(t *testing.T) {
 		source := float64(1)
 		v := NewFloat(source)
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})

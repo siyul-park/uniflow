@@ -74,26 +74,27 @@ func (s *String) Compare(other Object) int {
 	return compare(s.Kind(), KindOf(other))
 }
 
-func newStringEncoder() encoding2.EncodeCompiler[Object] {
+func newStringEncoder() encoding2.EncodeCompiler[any, Object] {
 	typeTextMarshaler := reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
-	return encoding2.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[unsafe.Pointer, Object], error) {
+	return encoding2.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding2.Encoder[any, Object], error) {
 		if typ.ConvertibleTo(typeTextMarshaler) {
-			return encoding2.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
-				t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextMarshaler)
-				if s, err := t.MarshalText(); err != nil {
+			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := source.(encoding.TextMarshaler)
+				if s, err := s.MarshalText(); err != nil {
 					return nil, err
 				} else {
 					return NewString(string(s)), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Pointer {
-			if typ.Elem().Kind() == reflect.String {
-				return encoding2.EncodeFunc[unsafe.Pointer, Object](func(target unsafe.Pointer) (Object, error) {
-					t := *(*string)(target)
-					return NewString(t), nil
-				}), nil
-			}
+		} else if typ.Kind() == reflect.String {
+			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+				if s, ok := source.(string); ok {
+					return NewString(s), nil
+				} else {
+					return NewString(reflect.ValueOf(source).String()), nil
+				}
+			}), nil
 		}
 		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
 	})

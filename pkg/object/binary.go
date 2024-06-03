@@ -77,26 +77,33 @@ func (b *Binary) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBinaryEncoder() encoding2.EncodeCompiler[Object] {
+func newBinaryEncoder() encoding2.EncodeCompiler[any, Object] {
 	typeBinaryMarshaler := reflect.TypeOf((*encoding.BinaryMarshaler)(nil)).Elem()
 
-	return encoding2.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Encoder[unsafe.Pointer, Object], error) {
+	return encoding2.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding2.Encoder[any, Object], error) {
 		if typ.ConvertibleTo(typeBinaryMarshaler) {
-			return encoding2.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-				t := reflect.NewAt(typ.Elem(), source).Interface().(encoding.BinaryMarshaler)
-				if s, err := t.MarshalBinary(); err != nil {
+			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := source.(encoding.BinaryMarshaler)
+				if t, err := s.MarshalBinary(); err != nil {
 					return nil, err
 				} else {
-					return NewBinary(s), nil
+					return NewBinary(t), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Pointer {
-			if (typ.Elem().Kind() == reflect.Slice || typ.Elem().Kind() == reflect.Array) && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := reflect.NewAt(typ.Elem(), source).Elem()
-					return NewBinary(t.Bytes()), nil
-				}), nil
-			}
+		} else if typ.Kind() == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
+			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := reflect.ValueOf(source)
+				return NewBinary(s.Bytes()), nil
+			}), nil
+		} else if typ.Kind() == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
+			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := reflect.ValueOf(source)
+				t := reflect.MakeSlice(reflect.SliceOf(typ.Elem()), s.Len(), s.Len())
+
+				reflect.Copy(t, s)
+
+				return NewBinary(t.Bytes()), nil
+			}), nil
 		}
 		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
 	})

@@ -192,7 +192,7 @@ func TestShortcut_Encode(t *testing.T) {
 
 	source := True
 
-	decoded, err := enc.Encode(&source)
+	decoded, err := enc.Encode(source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
@@ -216,7 +216,7 @@ func TestPointer_Encode(t *testing.T) {
 
 	source := True
 
-	decoded, err := enc.Encode(&source)
+	decoded, err := enc.Encode(source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }

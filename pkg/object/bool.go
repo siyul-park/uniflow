@@ -80,15 +80,16 @@ func (b *Bool) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBoolEncoder() encoding.EncodeCompiler[Object] {
-	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
-		if typ.Kind() == reflect.Pointer {
-			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := *(*bool)(source)
-					return NewBool(t), nil
-				}), nil
-			}
+func newBoolEncoder() encoding.EncodeCompiler[any, Object] {
+	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
+		if typ.Kind() == reflect.Bool {
+			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+				if s, ok := source.(bool); ok {
+					return NewBool(s), nil
+				} else {
+					return NewBool(reflect.ValueOf(source).Bool()), nil
+				}
+			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})

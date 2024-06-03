@@ -10,7 +10,7 @@ import (
 
 // EncodeAssembler compiles and executes encoders for a specific source type.
 type EncodeAssembler[S, T any] struct {
-	compilers []EncodeCompiler[T]
+	compilers []EncodeCompiler[S, T]
 	encoders  sync.Map
 	mu        sync.RWMutex
 }
@@ -22,7 +22,7 @@ type DecodeAssembler[S, T any] struct {
 	mu        sync.RWMutex
 }
 
-var _ EncodeCompiler[any] = (*EncodeAssembler[any, any])(nil)
+var _ EncodeCompiler[any, any] = (*EncodeAssembler[any, any])(nil)
 var _ Encoder[any, any] = (*EncodeAssembler[any, any])(nil)
 
 var _ DecodeCompiler[any] = (*DecodeAssembler[any, any])(nil)
@@ -34,7 +34,7 @@ func NewEncodeAssembler[S, T any]() *EncodeAssembler[S, T] {
 }
 
 // Add adds a compiler to the EncodeAssembler.
-func (a *EncodeAssembler[S, T]) Add(compiler EncodeCompiler[T]) {
+func (a *EncodeAssembler[S, T]) Add(compiler EncodeCompiler[S, T]) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -51,28 +51,24 @@ func (a *EncodeAssembler[S, T]) Len() int {
 
 // Encode encodes the source into the target type.
 func (a *EncodeAssembler[S, T]) Encode(source S) (T, error) {
-	var zero T
-
-	val := reflect.ValueOf(source)
-	ptr := val.UnsafePointer()
-
-	enc, err := a.Compile(val.Type())
+	enc, err := a.Compile(reflect.TypeOf(source))
 	if err != nil {
+		var zero T
 		return zero, nil
 	}
-	return enc.Encode(ptr)
+	return enc.Encode(source)
 }
 
 // Compile compiles an encoder for a given type.
-func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[unsafe.Pointer, T], error) {
+func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[S, T], error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	if enc, ok := a.encoders.Load(typ); ok {
-		return enc.(Encoder[unsafe.Pointer, T]), nil
+		return enc.(Encoder[S, T]), nil
 	}
 
-	encoderGroup := NewEncoderGroup[unsafe.Pointer, T]()
+	encoderGroup := NewEncoderGroup[S, T]()
 	a.encoders.Store(typ, encoderGroup)
 
 	for _, compiler := range a.compilers {

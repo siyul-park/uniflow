@@ -148,42 +148,25 @@ func (s *Slice) Compare(other Object) int {
 	return compare(s.Kind(), KindOf(other))
 }
 
-func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[Object] {
-	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
-		if typ.Kind() == reflect.Pointer {
-			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
-				valueType := reflect.PointerTo(typ.Elem().Elem())
-				enc, _ := encoder.Compile(valueType)
+func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[any, Object] {
+	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
+		if typ.Kind() == reflect.Array || typ.Kind() == reflect.Slice {
+			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+				s := reflect.ValueOf(source)
 
-				return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-					t := reflect.NewAt(typ.Elem(), source).Elem()
+				values := make([]Object, 0, s.Len())
+				for i := 0; i < s.Len(); i++ {
+					v := s.Index(i)
 
-					values := make([]Object, 0, t.Len())
-					for i := 0; i < t.Len(); i++ {
-						v := t.Index(i)
-						v = reflect.ValueOf(v.Interface())
-
-						vPtr := reflect.New(v.Type())
-						vPtr.Elem().Set(v)
-
-						var value Object
-						var err error
-						if enc != nil && v.Type() == valueType.Elem() {
-							value, err = enc.Encode(vPtr.UnsafePointer())
-						} else {
-							value, err = encoder.Encode(vPtr.Interface())
-						}
-
-						if err != nil {
-							return nil, err
-						} else {
-							values = append(values, value)
-						}
+					if value, err := encoder.Encode(v.Interface()); err != nil {
+						return nil, err
+					} else {
+						values = append(values, value)
 					}
+				}
 
-					return NewSlice(values...), nil
-				}), nil
-			}
+				return NewSlice(values...), nil
+			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})

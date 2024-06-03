@@ -78,7 +78,7 @@ func TestError_Encode(t *testing.T) {
 	err := errors.New("test error")
 	e := NewError(err)
 
-	encoded, encodeErr := enc.Encode(&err)
+	encoded, encodeErr := enc.Encode(err)
 	assert.NoError(t, encodeErr)
 	assert.Equal(t, e, encoded)
 }

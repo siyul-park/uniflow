@@ -118,7 +118,7 @@ func TestMap_Encode(t *testing.T) {
 		source := map[string]any{"foo": "bar"}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -132,7 +132,7 @@ func TestMap_Encode(t *testing.T) {
 		}
 		v := NewMap(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(&source)
+		decoded, err := enc.Encode(source)
 		assert.NoError(t, err)
 		assert.Equal(t, v, decoded)
 	})
@@ -214,7 +214,7 @@ func BenchmarkMap_Encode(b *testing.B) {
 		source := map[string]string{"foo": "bar"}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 
@@ -228,7 +228,7 @@ func BenchmarkMap_Encode(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			enc.Encode(&source)
+			enc.Encode(source)
 		}
 	})
 }

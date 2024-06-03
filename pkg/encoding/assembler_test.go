@@ -12,7 +12,7 @@ import (
 
 func TestEncodeAssembler_Add(t *testing.T) {
 	a := NewEncodeAssembler[any, any]()
-	a.Add(EncodeCompilerFunc[any](func(typ reflect.Type) (Encoder[unsafe.Pointer, any], error) {
+	a.Add(EncodeCompilerFunc[any, any](func(typ reflect.Type) (Encoder[any, any], error) {
 		return nil, nil
 	}))
 
@@ -21,34 +21,34 @@ func TestEncodeAssembler_Add(t *testing.T) {
 
 func TestEncodeAssembler_Compile(t *testing.T) {
 	a := NewEncodeAssembler[any, any]()
-	a.Add(EncodeCompilerFunc[any](func(typ reflect.Type) (Encoder[unsafe.Pointer, any], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.String {
-			return EncodeFunc[unsafe.Pointer, any](func(source unsafe.Pointer) (any, error) {
-				return *(*string)(source), nil
+	a.Add(EncodeCompilerFunc[any, any](func(typ reflect.Type) (Encoder[any, any], error) {
+		if typ.Kind() == reflect.String {
+			return EncodeFunc[any, any](func(source any) (any, error) {
+				return source, nil
 			}), nil
 		}
 		return nil, errors.WithStack(ErrUnsupportedValue)
 	}))
 
 	source := "test"
-	e, err := a.Compile(reflect.TypeOf(&source))
+	e, err := a.Compile(reflect.TypeOf(source))
 	assert.NoError(t, err)
 	assert.NotNil(t, e)
 }
 
 func TestEncodeAssembler_Encode(t *testing.T) {
 	a := NewEncodeAssembler[any, any]()
-	a.Add(EncodeCompilerFunc[any](func(typ reflect.Type) (Encoder[unsafe.Pointer, any], error) {
-		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.String {
-			return EncodeFunc[unsafe.Pointer, any](func(source unsafe.Pointer) (any, error) {
-				return *(*string)(source), nil
+	a.Add(EncodeCompilerFunc[any, any](func(typ reflect.Type) (Encoder[any, any], error) {
+		if typ.Kind() == reflect.String {
+			return EncodeFunc[any, any](func(source any) (any, error) {
+				return source, nil
 			}), nil
 		}
 		return nil, errors.WithStack(ErrUnsupportedValue)
 	}))
 
 	source := "test"
-	target, err := a.Encode(&source)
+	target, err := a.Encode(source)
 	assert.NoError(t, err)
 	assert.Equal(t, source, target)
 }

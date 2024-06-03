@@ -60,14 +60,12 @@ func (f *Float) Compare(other Object) int {
 	return compare(f.Kind(), KindOf(other))
 }
 
-func newFloatEncoder() encoding.EncodeCompiler[Object] {
-	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
-		if typ.Kind() == reflect.Pointer {
-			if typ.Elem().Kind() == reflect.Float32 {
-				return newFloatEncoderWithType[float32](), nil
-			} else if typ.Elem().Kind() == reflect.Float64 {
-				return newFloatEncoderWithType[float64](), nil
-			}
+func newFloatEncoder() encoding.EncodeCompiler[any, Object] {
+	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
+		if typ.Kind() == reflect.Float32 {
+			return newFloatEncoderWithType[float32](), nil
+		} else if typ.Kind() == reflect.Float64 {
+			return newFloatEncoderWithType[float64](), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
@@ -114,10 +112,13 @@ func newFloatDecoder() encoding.DecodeCompiler[Object] {
 	})
 }
 
-func newFloatEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[unsafe.Pointer, Object] {
-	return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-		t := *(*T)(source)
-		return NewFloat(float64(t)), nil
+func newFloatEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[any, Object] {
+	return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		if s, ok := source.(T); ok {
+			return NewFloat(float64(s)), nil
+		} else {
+			return NewFloat(reflect.ValueOf(source).Float()), nil
+		}
 	})
 }
 

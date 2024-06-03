@@ -60,20 +60,18 @@ func (i *Int) Compare(other Object) int {
 	return compare(i.Kind(), KindOf(other))
 }
 
-func NewIntEncoder() encoding.EncodeCompiler[Object] {
-	return encoding.EncodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Encoder[unsafe.Pointer, Object], error) {
-		if typ.Kind() == reflect.Pointer {
-			if typ.Elem().Kind() == reflect.Int {
-				return newIntEncoderWithType[int](), nil
-			} else if typ.Elem().Kind() == reflect.Int8 {
-				return newIntEncoderWithType[int8](), nil
-			} else if typ.Elem().Kind() == reflect.Int16 {
-				return newIntEncoderWithType[int16](), nil
-			} else if typ.Elem().Kind() == reflect.Int32 {
-				return newIntEncoderWithType[int32](), nil
-			} else if typ.Elem().Kind() == reflect.Int64 {
-				return newIntEncoderWithType[int64](), nil
-			}
+func NewIntEncoder() encoding.EncodeCompiler[any, Object] {
+	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
+		if typ.Kind() == reflect.Int {
+			return newIntEncoderWithType[int](), nil
+		} else if typ.Kind() == reflect.Int8 {
+			return newIntEncoderWithType[int8](), nil
+		} else if typ.Kind() == reflect.Int16 {
+			return newIntEncoderWithType[int16](), nil
+		} else if typ.Kind() == reflect.Int32 {
+			return newIntEncoderWithType[int32](), nil
+		} else if typ.Kind() == reflect.Int64 {
+			return newIntEncoderWithType[int64](), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
@@ -120,10 +118,13 @@ func NewIntDecoder() encoding.DecodeCompiler[Object] {
 	})
 }
 
-func newIntEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[unsafe.Pointer, Object] {
-	return encoding.EncodeFunc[unsafe.Pointer, Object](func(source unsafe.Pointer) (Object, error) {
-		t := *(*T)(source)
-		return NewInt(int64(t)), nil
+func newIntEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[any, Object] {
+	return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		if s, ok := source.(T); ok {
+			return NewInt(int64(s)), nil
+		} else {
+			return NewInt(reflect.ValueOf(source).Int()), nil
+		}
 	})
 }
 
