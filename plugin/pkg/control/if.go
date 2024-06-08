@@ -182,8 +182,8 @@ func (n *IfNode) catch(proc *process.Process) {
 // NewIfNodeCodec creates a new codec for IfNodeSpec.
 func NewIfNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
-		l := spec.Lang
-		transform, err := language.CompileTransform(spec.When, &l)
+		lang := spec.Lang
+		transform, err := language.CompileTransform(spec.When, &lang)
 		if err != nil {
 			return nil, err
 		}

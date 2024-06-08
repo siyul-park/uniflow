@@ -85,8 +85,8 @@ func NewSwitchNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
 		whens := make([]func(any) (bool, error), len(spec.Match))
 		for i, condition := range spec.Match {
-			l := spec.Lang
-			transform, err := language.CompileTransform(condition.When, &l)
+			lang := spec.Lang
+			transform, err := language.CompileTransform(condition.When, &lang)
 			if err != nil {
 				return nil, err
 			}
