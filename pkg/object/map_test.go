@@ -114,27 +114,54 @@ func TestMap_Encode(t *testing.T) {
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
-	t.Run("map", func(t *testing.T) {
-		source := map[string]any{"foo": "bar"}
-		v := NewMap(NewString("foo"), NewString("bar"))
+	t.Run("static", func(t *testing.T) {
+		t.Run("map", func(t *testing.T) {
+			source := map[string]string{"foo": "bar"}
+			v := NewMap(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
+
+		t.Run("struct", func(t *testing.T) {
+			source := struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar,omitempty"`
+			}{
+				Foo: "bar",
+			}
+			v := NewMap(NewString("foo"), NewString("bar"))
+
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
 	})
 
-	t.Run("struct", func(t *testing.T) {
-		source := struct {
-			Foo string `map:"foo"`
-			Bar string `map:"bar,omitempty"`
-		}{
-			Foo: "bar",
-		}
-		v := NewMap(NewString("foo"), NewString("bar"))
+	t.Run("dynamic", func(t *testing.T) {
+		t.Run("map", func(t *testing.T) {
+			source := map[any]any{"foo": "bar"}
+			v := NewMap(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
+
+		t.Run("struct", func(t *testing.T) {
+			source := struct {
+				Foo any `map:"foo"`
+				Bar any `map:"bar,omitempty"`
+			}{
+				Foo: "bar",
+			}
+			v := NewMap(NewString("foo"), NewString("bar"))
+
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
 	})
 }
 
@@ -210,26 +237,52 @@ func BenchmarkMap_Encode(b *testing.B) {
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
-	b.Run("map", func(b *testing.B) {
-		source := map[string]string{"foo": "bar"}
+	b.Run("static", func(b *testing.B) {
+		b.Run("map", func(b *testing.B) {
+			source := map[string]string{"foo": "bar"}
 
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
+
+		b.Run("struct", func(b *testing.B) {
+			source := struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar"`
+			}{
+				Foo: "foo",
+				Bar: "bar",
+			}
+
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
 	})
 
-	b.Run("struct", func(b *testing.B) {
-		source := struct {
-			Foo string `map:"foo"`
-			Bar string `map:"bar"`
-		}{
-			Foo: "foo",
-			Bar: "bar",
-		}
+	b.Run("dynamic", func(b *testing.B) {
+		b.Run("map", func(b *testing.B) {
+			source := map[any]any{"foo": "bar"}
 
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
+
+		b.Run("struct", func(b *testing.B) {
+			source := struct {
+				Foo any `map:"foo"`
+				Bar any `map:"bar"`
+			}{
+				Foo: "foo",
+				Bar: "bar",
+			}
+
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
 	})
 }
 

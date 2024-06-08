@@ -109,22 +109,44 @@ func TestSlice_Encode(t *testing.T) {
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
-	t.Run("slice", func(t *testing.T) {
-		source := []string{"foo", "bar"}
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	t.Run("static", func(t *testing.T) {
+		t.Run("slice", func(t *testing.T) {
+			source := []string{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
+
+		t.Run("array", func(t *testing.T) {
+			source := [2]string{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
+
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
 	})
 
-	t.Run("array", func(t *testing.T) {
-		source := [2]string{"foo", "bar"}
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	t.Run("dynamic", func(t *testing.T) {
+		t.Run("slice", func(t *testing.T) {
+			source := []any{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
+
+		t.Run("array", func(t *testing.T) {
+			source := [2]any{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
+
+			decoded, err := enc.Encode(source)
+			assert.NoError(t, err)
+			assert.Equal(t, v, decoded)
+		})
 	})
 }
 
@@ -212,20 +234,40 @@ func BenchmarkSlice_Encode(b *testing.B) {
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
-	b.Run("slice", func(b *testing.B) {
-		source := []string{"foo", "bar"}
+	b.Run("static", func(b *testing.B) {
+		b.Run("slice", func(b *testing.B) {
+			source := []string{"foo", "bar"}
 
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
+
+		b.Run("array", func(b *testing.B) {
+			source := [2]string{"foo", "bar"}
+
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
 	})
 
-	b.Run("array", func(b *testing.B) {
-		source := [2]string{"foo", "bar"}
+	b.Run("dynamic", func(b *testing.B) {
+		b.Run("slice", func(b *testing.B) {
+			source := []any{"foo", "bar"}
 
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
+
+		b.Run("array", func(b *testing.B) {
+			source := [2]any{"foo", "bar"}
+
+			for i := 0; i < b.N; i++ {
+				enc.Encode(source)
+			}
+		})
 	})
 }
 

@@ -205,19 +205,31 @@ func (*comparer) Compare(x, y Object) int {
 func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[any, Object] {
 	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
 		if typ.Kind() == reflect.Map {
+			keyType := typ.Key()
+			valueType := typ.Elem()
+
+			keyEncoder, _ := encoder.Compile(keyType)
+			if keyEncoder == nil {
+				keyEncoder = encoder
+			}
+			valueEncoder, _ := encoder.Compile(valueType)
+			if valueEncoder == nil {
+				valueEncoder = encoder
+			}
+
 			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
 				s := reflect.ValueOf(source)
 				pairs := make([]Object, 0, s.Len()*2)
 				for _, k := range s.MapKeys() {
 					v := s.MapIndex(k)
 
-					if key, err := encoder.Encode(k.Interface()); err != nil {
+					if key, err := keyEncoder.Encode(k.Interface()); err != nil {
 						return nil, err
 					} else {
 						pairs = append(pairs, key)
 					}
 
-					if val, err := encoder.Encode(v.Interface()); err != nil {
+					if val, err := valueEncoder.Encode(v.Interface()); err != nil {
 						return nil, err
 					} else {
 						pairs = append(pairs, val)
@@ -226,6 +238,17 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.Enco
 				return NewMap(pairs...), nil
 			}), nil
 		} else if typ.Kind() == reflect.Struct {
+			valueEncoders := make([]encoding.Encoder[any, Object], 0, typ.NumField())
+			for i := 0; i < typ.NumField(); i++ {
+				field := typ.Field(i)
+
+				valueEncoder, _ := encoder.Compile(field.Type)
+				if valueEncoder == nil {
+					valueEncoder = encoder
+				}
+				valueEncoders = append(valueEncoders, valueEncoder)
+			}
+
 			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
 				s := reflect.ValueOf(source)
 
@@ -239,9 +262,10 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.Enco
 					}
 
 					elem := s.Field(i)
+					valueEncoder := valueEncoders[i]
 
 					if tag.inline {
-						if target, err := encoder.Encode(elem.Interface()); err != nil {
+						if target, err := valueEncoder.Encode(elem.Interface()); err != nil {
 							return nil, err
 						} else if t, ok := target.(*Map); !ok {
 							return nil, errors.WithStack(encoding.ErrInvalidValue)
@@ -249,18 +273,14 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.Enco
 							pairs = append(pairs, t.Pairs()...)
 						}
 					} else {
-						alias := NewString(tag.alias)
-
-						if tag.omitempty {
-							if elem.IsZero() {
-								continue
-							}
+						if tag.omitempty && elem.IsZero() {
+							continue
 						}
 
-						if target, err := encoder.Encode(elem.Interface()); err != nil {
+						if target, err := valueEncoder.Encode(elem.Interface()); err != nil {
 							return nil, err
 						} else {
-							pairs = append(pairs, alias, target)
+							pairs = append(pairs, NewString(tag.alias), target)
 						}
 					}
 				}

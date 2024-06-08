@@ -151,6 +151,11 @@ func (s *Slice) Compare(other Object) int {
 func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.EncodeCompiler[any, Object] {
 	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
 		if typ.Kind() == reflect.Array || typ.Kind() == reflect.Slice {
+			valueEncoder, _ := encoder.Compile(typ.Elem())
+			if valueEncoder == nil {
+				valueEncoder = encoder
+			}
+
 			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
 				s := reflect.ValueOf(source)
 
@@ -158,7 +163,7 @@ func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.En
 				for i := 0; i < s.Len(); i++ {
 					v := s.Index(i)
 
-					if value, err := encoder.Encode(v.Interface()); err != nil {
+					if value, err := valueEncoder.Encode(v.Interface()); err != nil {
 						return nil, err
 					} else {
 						values = append(values, value)
