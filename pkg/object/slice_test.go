@@ -212,7 +212,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
-	b.Run("map", func(b *testing.B) {
+	b.Run("slice", func(b *testing.B) {
 		source := []string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
@@ -220,7 +220,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 		}
 	})
 
-	b.Run("struct", func(b *testing.B) {
+	b.Run("array", func(b *testing.B) {
 		source := [2]string{"foo", "bar"}
 
 		for i := 0; i < b.N; i++ {
