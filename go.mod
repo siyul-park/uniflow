@@ -4,7 +4,7 @@ go 1.22.4
 
 require (
 	github.com/benbjohnson/immutable v0.4.3
-	github.com/go-faker/faker/v4 v4.4.1
+	github.com/go-faker/faker/v4 v4.4.2
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
