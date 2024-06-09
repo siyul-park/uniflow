@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 type WriteNode struct {
@@ -20,8 +20,8 @@ type WriteNode struct {
 }
 
 type WriteNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	File            string `map:"file"`
+	spec.Meta `map:",inline"`
+	File      string `map:"file"`
 }
 
 type nopWriteCloser struct {
@@ -74,8 +74,8 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	return packet.New(object.NewInt(int64(len))), nil
 }
 
-func NewWriteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
+func NewWriteNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
 		var file io.WriteCloser
 		var err error
 		if spec.File == "/dev/stdout" || spec.File == "stdout" {

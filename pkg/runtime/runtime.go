@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/loader"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -16,13 +16,13 @@ import (
 type Config struct {
 	Namespace string
 	Hook      *hook.Hook
-	Scheme    *scheme.Scheme
+	Scheme    *spec.Scheme
 	Database  database.Database
 }
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	storage    *scheme.Storage
+	storage    *spec.Storage
 	table      *symbol.Table
 	loader     *loader.Loader
 	reconciler *loader.Reconciler
@@ -34,13 +34,13 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		config.Hook = hook.New()
 	}
 	if config.Scheme == nil {
-		config.Scheme = scheme.New()
+		config.Scheme = spec.NewScheme()
 	}
 	if config.Database == nil {
 		config.Database = memdb.New("")
 	}
 
-	st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, err := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   config.Scheme,
 		Database: config.Database,
 	})
@@ -73,7 +73,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}, nil
 }
 
-// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from scheme.Storage.
+// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from spec.Storage.
 func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)
@@ -83,8 +83,8 @@ func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 }
 
 // Start initiates the Runtime.
-// It loads all scheme.Specs as node.Nodes from the database.Collection,
-// and continuously monitors and runs them by staying up-to-date with scheme.Spec changes.
+// It loads all spec.Specs as node.Nodes from the database.Collection,
+// and continuously monitors and runs them by staying up-to-date with spec.Spec changes.
 func (r *Runtime) Start(ctx context.Context) error {
 	if err := r.reconciler.Watch(ctx); err != nil {
 		return err

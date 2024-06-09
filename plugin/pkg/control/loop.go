@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // LoopNode represents a node that Loops over input data in batches.
@@ -22,7 +22,7 @@ type LoopNode struct {
 
 // LoopNodeSpec holds the specifications for creating a LoopNode.
 type LoopNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
+	spec.Meta `map:",inline"`
 }
 
 const KindLoop = "loop"
@@ -170,8 +170,8 @@ func (n *LoopNode) backward(proc *process.Process) {
 }
 
 // NewLoopNodeCodec creates a new codec for LoopNodeSpec.
-func NewLoopNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
+func NewLoopNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
 		return NewLoopNode(), nil
 	})
 }

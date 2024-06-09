@@ -3,12 +3,12 @@ package datastore
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddToScheme(t *testing.T) {
-	s := scheme.New()
+	s := spec.NewScheme()
 
 	err := AddToScheme()(s)
 	assert.NoError(t, err)

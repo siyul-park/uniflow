@@ -8,7 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,16 +17,16 @@ func TestLoader_LoadOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -39,62 +39,62 @@ func TestLoader_LoadOne(t *testing.T) {
 			Table:   tb,
 		})
 
-		spec1 := &scheme.SpecMeta{
+		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
-		spec2 := &scheme.SpecMeta{
+		meta2 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]scheme.PortLocation{
+			Links: map[string][]spec.PortLocation{
 				node.PortIO: {
 					{
-						ID:   spec1.GetID(),
+						ID:   meta1.GetID(),
 						Port: node.PortIO,
 					},
 				},
 			},
 		}
-		spec3 := &scheme.SpecMeta{
+		meta3 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]scheme.PortLocation{
+			Links: map[string][]spec.PortLocation{
 				node.PortIO: {
 					{
-						Name: spec2.GetName(),
+						Name: meta2.GetName(),
 						Port: node.PortIO,
 					},
 				},
 			},
 		}
 
-		st.InsertOne(ctx, spec1)
-		st.InsertOne(ctx, spec2)
-		st.InsertOne(ctx, spec3)
+		st.InsertOne(ctx, meta1)
+		st.InsertOne(ctx, meta2)
+		st.InsertOne(ctx, meta3)
 
-		r, err := ld.LoadOne(ctx, spec3.GetID())
+		r, err := ld.LoadOne(ctx, meta3.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
-		_, ok := tb.LookupByID(spec1.GetID())
+		_, ok := tb.LookupByID(meta1.GetID())
 		assert.True(t, ok)
 
-		_, ok = tb.LookupByID(spec2.GetID())
+		_, ok = tb.LookupByID(meta2.GetID())
 		assert.True(t, ok)
 
-		_, ok = tb.LookupByID(spec3.GetID())
+		_, ok = tb.LookupByID(meta3.GetID())
 		assert.True(t, ok)
 
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -107,19 +107,19 @@ func TestLoader_LoadOne(t *testing.T) {
 			Table:   tb,
 		})
 
-		spec := &scheme.SpecMeta{
+		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, spec)
+		st.InsertOne(ctx, meta)
 
-		r1, err := ld.LoadOne(ctx, spec.GetID())
+		r1, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		r2, err := ld.LoadOne(ctx, spec.GetID())
+		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r2)
 
@@ -127,7 +127,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -140,25 +140,25 @@ func TestLoader_LoadOne(t *testing.T) {
 			Table:   tb,
 		})
 
-		spec := &scheme.SpecMeta{
+		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, spec)
+		st.InsertOne(ctx, meta)
 
-		r1, err := ld.LoadOne(ctx, spec.GetID())
+		r1, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
+		st.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
 
-		r2, err := ld.LoadOne(ctx, spec.GetID())
+		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
 		assert.Nil(t, r2)
 
-		_, ok := tb.LookupByID(spec.GetID())
+		_, ok := tb.LookupByID(meta.GetID())
 		assert.False(t, ok)
 	})
 }
@@ -167,16 +167,16 @@ func TestLoader_LoadAll(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -189,64 +189,64 @@ func TestLoader_LoadAll(t *testing.T) {
 			Table:   tb,
 		})
 
-		spec1 := &scheme.SpecMeta{
+		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
-		spec2 := &scheme.SpecMeta{
+		meta2 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]scheme.PortLocation{
+			Links: map[string][]spec.PortLocation{
 				node.PortIO: {
 					{
-						ID:   spec1.GetID(),
+						ID:   meta1.GetID(),
 						Port: node.PortIO,
 					},
 				},
 			},
 		}
-		spec3 := &scheme.SpecMeta{
+		meta3 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]scheme.PortLocation{
+			Links: map[string][]spec.PortLocation{
 				node.PortIO: {
 					{
-						Name: spec2.GetName(),
+						Name: meta2.GetName(),
 						Port: node.PortIO,
 					},
 				},
 			},
 		}
 
-		st.InsertOne(ctx, spec1)
-		st.InsertOne(ctx, spec2)
-		st.InsertOne(ctx, spec3)
+		st.InsertOne(ctx, meta1)
+		st.InsertOne(ctx, meta2)
+		st.InsertOne(ctx, meta3)
 
 		r, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
 		assert.Len(t, r, 3)
 
-		sym1, ok := tb.LookupByID(spec1.GetID())
+		sym1, ok := tb.LookupByID(meta1.GetID())
 		assert.True(t, ok)
 		assert.Contains(t, r, sym1)
 
-		sym2, ok := tb.LookupByID(spec2.GetID())
+		sym2, ok := tb.LookupByID(meta2.GetID())
 		assert.True(t, ok)
 		assert.Contains(t, r, sym2)
 
-		sym3, ok := tb.LookupByID(spec3.GetID())
+		sym3, ok := tb.LookupByID(meta3.GetID())
 		assert.True(t, ok)
 		assert.Contains(t, r, sym3)
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -259,13 +259,13 @@ func TestLoader_LoadAll(t *testing.T) {
 			Table:   tb,
 		})
 
-		spec := &scheme.SpecMeta{
+		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: scheme.DefaultNamespace,
+			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, spec)
+		st.InsertOne(ctx, meta)
 
 		r1, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
@@ -283,15 +283,15 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -304,25 +304,25 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		Table:   tb,
 	})
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	st.InsertOne(ctx, spec)
+	st.InsertOne(ctx, meta)
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		r, err := ld.LoadOne(ctx, spec.GetID())
+		r, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(b, err)
 		assert.NotNil(b, r)
 
 		b.StopTimer()
 
-		tb.Free(spec.GetID())
+		tb.Free(meta.GetID())
 
 		b.StartTimer()
 	}
@@ -332,15 +332,15 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -353,14 +353,14 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		Table:   tb,
 	})
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	st.InsertOne(ctx, spec)
+	st.InsertOne(ctx, meta)
 
 	b.ResetTimer()
 
@@ -371,7 +371,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 
 		b.StopTimer()
 
-		tb.Free(spec.GetID())
+		tb.Free(meta.GetID())
 
 		b.StartTimer()
 	}

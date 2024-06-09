@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"sync"

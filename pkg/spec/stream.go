@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"github.com/gofrs/uuid"
@@ -6,7 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 )
 
-// Stream is a stream to track scheme.Spec changes.
+// Stream is a stream to track spec.Spec changes.
 type Stream struct {
 	stream  database.Stream
 	channel chan Event

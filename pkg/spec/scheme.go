@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"reflect"
@@ -19,8 +19,8 @@ type Scheme struct {
 
 var _ Codec = (*Scheme)(nil)
 
-// New creates a new Scheme instance.
-func New() *Scheme {
+// NewScheme creates a new Scheme instance.
+func NewScheme() *Scheme {
 	return &Scheme{
 		types:  make(map[string]reflect.Type),
 		codecs: make(map[string]Codec),

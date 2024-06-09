@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // NOPNode represents a node that performs no operation and simply forwards incoming packets.
@@ -18,7 +18,7 @@ type NOPNode struct {
 
 // NOPNodeSpec defines the specification for creating a NOPNode.
 type NOPNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
+	spec.Meta `map:",inline"`
 }
 
 var _ node.Node = (*NOPNode)(nil)
@@ -83,8 +83,8 @@ func (n *NOPNode) forward(proc *process.Process) {
 }
 
 // NewNOPNodeCodec creates a codec for decoding NOPNodeSpec.
-func NewNOPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
+func NewNOPNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
 		return NewNOPNode(), nil
 	})
 }

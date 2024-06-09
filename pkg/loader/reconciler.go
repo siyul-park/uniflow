@@ -5,22 +5,22 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // ReconcilerConfig holds the configuration settings for the Reconciler.
 type ReconcilerConfig struct {
-	Namespace string          // Namespace associated with the Reconciler
-	Storage   *scheme.Storage // Storage used for watching changes to scheme.Spec
-	Loader    *Loader         // Loader to load scheme.Spec into the symbol.Table
+	Namespace string        // Namespace associated with the Reconciler
+	Storage   *spec.Storage // Storage used for watching changes to spec.Spec
+	Loader    *Loader       // Loader to load spec.Spec into the symbol.Table
 }
 
-// Reconciler tracks changes to scheme.Spec and keeps the symbol.Table up to date.
+// Reconciler tracks changes to spec.Spec and keeps the symbol.Table up to date.
 type Reconciler struct {
 	namespace string
-	storage   *scheme.Storage
+	storage   *spec.Storage
 	loader    *Loader
-	stream    *scheme.Stream
+	stream    *spec.Stream
 	mu        sync.RWMutex
 }
 
@@ -33,7 +33,7 @@ func NewReconciler(config ReconcilerConfig) *Reconciler {
 	}
 }
 
-// Watch starts watching for changes to scheme.Spec.
+// Watch starts watching for changes to spec.Spec.
 func (r *Reconciler) Watch(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -42,9 +42,9 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 		return nil
 	}
 
-	var filter *scheme.Filter
+	var filter *spec.Filter
 	if r.namespace != "" {
-		filter = scheme.Where[string](scheme.KeyNamespace).EQ(r.namespace)
+		filter = spec.Where[string](spec.KeyNamespace).EQ(r.namespace)
 	}
 
 	s, err := r.storage.Watch(ctx, filter)
@@ -67,9 +67,9 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 	return nil
 }
 
-// Reconcile reflects changes to scheme.Spec in the symbol.Table.
+// Reconcile reflects changes to spec.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	stream := func() *scheme.Stream {
+	stream := func() *spec.Stream {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 

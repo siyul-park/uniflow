@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
@@ -20,9 +20,9 @@ type SnippetNode struct {
 
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Lang            string `map:"lang,omitempty"`
-	Code            string `map:"code"`
+	spec.Meta `map:",inline"`
+	Lang      string `map:"lang,omitempty"`
+	Code      string `map:"code"`
 }
 
 const KindSnippet = "snippet"
@@ -52,8 +52,8 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 }
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
-func NewSnippetNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
+func NewSnippetNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
 		lang := spec.Lang
 		transform, err := language.CompileTransform(spec.Code, &lang)
 		if err != nil {

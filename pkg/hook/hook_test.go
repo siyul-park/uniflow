@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +22,7 @@ func TestHook_LoadHook(t *testing.T) {
 
 	hooks.AddLoadHook(h)
 
-	err := hooks.Load(symbol.New(&scheme.SpecMeta{}, n))
+	err := hooks.Load(symbol.New(&spec.Meta{}, n))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }
@@ -40,7 +40,7 @@ func TestHook_UnloadHook(t *testing.T) {
 
 	hooks.AddUnloadHook(h)
 
-	err := hooks.Unload(symbol.New(&scheme.SpecMeta{}, n))
+	err := hooks.Unload(symbol.New(&spec.Meta{}, n))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }

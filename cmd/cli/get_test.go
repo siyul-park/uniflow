@@ -8,7 +8,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,30 +16,30 @@ func TestGetCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	db := memdb.New("")
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
 
 	kind := faker.UUIDHyphenated()
 
-	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	codec := spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	id, _ := st.InsertOne(ctx, spec)
+	id, _ := st.InsertOne(ctx, meta)
 
 	output := new(bytes.Buffer)
 

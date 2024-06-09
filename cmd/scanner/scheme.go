@@ -2,24 +2,24 @@ package scanner
 
 import (
 	"github.com/siyul-park/uniflow/pkg/object"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // SpecCodecOptions holds options for creating a SpecCodec.
 type SpecCodecOptions struct {
-	Scheme    *scheme.Scheme
+	Scheme    *spec.Scheme
 	Namespace string
 }
 
-// SpecCodec is responsible for decoding raw data into scheme.Spec instances.
+// SpecCodec is responsible for decoding raw data into spec.Spec instances.
 type SpecCodec struct {
-	scheme    *scheme.Scheme
+	scheme    *spec.Scheme
 	namespace string
 }
 
 // NewSpecCodec creates a new SpecCodec instance with the provided options.
 func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
-	var scheme *scheme.Scheme
+	var scheme *spec.Scheme
 	var namespace string
 
 	for _, opt := range opts {
@@ -37,20 +37,20 @@ func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 	}
 }
 
-// Decode decodes raw data into a scheme.Spec instance.
-func (c *SpecCodec) Decode(data any) (scheme.Spec, error) {
+// Decode decodes raw data into a spec.Spec instance.
+func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
 	doc, err := object.MarshalBinary(data)
 	if err != nil {
 		return nil, err
 	}
 
-	unstructured := scheme.NewUnstructured(doc.(*object.Map))
+	unstructured := spec.NewUnstructured(doc.(*object.Map))
 
 	if unstructured.GetNamespace() == "" {
 		if c.namespace != "" {
 			unstructured.SetNamespace(c.namespace)
 		} else {
-			unstructured.SetNamespace(scheme.DefaultNamespace)
+			unstructured.SetNamespace(spec.DefaultNamespace)
 		}
 	}
 

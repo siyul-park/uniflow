@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"testing"
@@ -64,7 +64,7 @@ func TestUnstructured_GetAndLinks(t *testing.T) {
 }
 
 func TestUnstructured_MarshalPrimitive(t *testing.T) {
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
 	}
@@ -79,7 +79,7 @@ func TestUnstructured_MarshalPrimitive(t *testing.T) {
 }
 
 func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
 	}

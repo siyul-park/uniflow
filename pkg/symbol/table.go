@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // TableOptions holds options for configuring a Table.
@@ -18,7 +18,7 @@ type TableOptions struct {
 
 // Table manages the storage and operations for Symbols.
 type Table struct {
-	scheme      *scheme.Scheme
+	scheme      *spec.Scheme
 	symbols     map[uuid.UUID]*Symbol
 	index       map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
@@ -27,7 +27,7 @@ type Table struct {
 }
 
 // NewTable returns a new SymbolTable with the specified options.
-func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
+func NewTable(sh *spec.Scheme, opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
@@ -46,7 +46,7 @@ func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 }
 
 // Insert adds a Symbol to the table.
-func (t *Table) Insert(spec scheme.Spec) (*Symbol, error) {
+func (t *Table) Insert(spec spec.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -192,7 +192,7 @@ func (t *Table) links(sym *Symbol) error {
 					if ref.Namespace() == sym.Namespace() {
 						if in := ref.In(location.Port); in != nil {
 							out.Link(in)
-							ref.linked[location.Port] = append(ref.linked[location.Port], scheme.PortLocation{
+							ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
 								ID:   sym.ID(),
 								Name: location.Name,
 								Port: name,
@@ -226,7 +226,7 @@ func (t *Table) links(sym *Symbol) error {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
 					if in := sym.In(location.Port); in != nil {
 						out.Link(in)
-						sym.linked[location.Port] = append(sym.linked[location.Port], scheme.PortLocation{
+						sym.linked[location.Port] = append(sym.linked[location.Port], spec.PortLocation{
 							ID:   ref.ID(),
 							Name: location.Name,
 							Port: name,
@@ -271,7 +271,7 @@ func (t *Table) unlinks(sym *Symbol) error {
 				continue
 			}
 
-			var locations []scheme.PortLocation
+			var locations []spec.PortLocation
 			for _, location := range ref.linked[location.Port] {
 				if location.ID != sym.ID() && location.Port != name {
 					locations = append(locations, location)
@@ -290,14 +290,14 @@ func (t *Table) unlinks(sym *Symbol) error {
 		for i, location := range locations {
 			ref := t.symbols[location.ID]
 
-			var unlink scheme.PortLocation
+			var unlink spec.PortLocation
 			if location.Name == "" {
-				unlink = scheme.PortLocation{
+				unlink = spec.PortLocation{
 					ID:   sym.ID(),
 					Port: name,
 				}
 			} else {
-				unlink = scheme.PortLocation{
+				unlink = spec.PortLocation{
 					Name: location.Name,
 					Port: name,
 				}

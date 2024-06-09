@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"

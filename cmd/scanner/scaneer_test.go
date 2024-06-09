@@ -9,7 +9,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,35 +17,35 @@ func TestScanner_Scan(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
 	kind := faker.UUIDHyphenated()
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
 
-	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	codec := spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
 	filename := "spec.json"
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	data, _ := json.Marshal(spec)
+	data, _ := json.Marshal(meta)
 
-	_, _ = st.InsertOne(ctx, spec)
+	_, _ = st.InsertOne(ctx, meta)
 
 	fsys[filename] = &fstest.MapFile{
 		Data: data,
@@ -54,7 +54,7 @@ func TestScanner_Scan(t *testing.T) {
 	scanner := New().
 		Scheme(s).
 		Storage(st).
-		Namespace(scheme.DefaultNamespace).
+		Namespace(spec.DefaultNamespace).
 		FS(fsys).
 		Filename(filename)
 

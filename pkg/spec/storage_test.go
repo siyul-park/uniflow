@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"context"
@@ -20,8 +20,8 @@ func TestNewStorage(t *testing.T) {
 
 		kind := faker.UUIDHyphenated()
 
-		s := New()
-		s.AddKnownType(kind, &SpecMeta{})
+		s := NewScheme()
+		s.AddKnownType(kind, &Meta{})
 		s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 			return node.NewOneToOneNode(nil), nil
 		}))
@@ -40,8 +40,8 @@ func TestNewStorage(t *testing.T) {
 
 		kind := faker.UUIDHyphenated()
 
-		s := New()
-		s.AddKnownType(kind, &SpecMeta{})
+		s := NewScheme()
+		s.AddKnownType(kind, &Meta{})
 		s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 			return node.NewOneToOneNode(nil), nil
 		}))
@@ -65,8 +65,8 @@ func TestStorage_Watch(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -92,7 +92,7 @@ func TestStorage_Watch(t *testing.T) {
 		}
 	}()
 
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: DefaultNamespace,
@@ -109,8 +109,8 @@ func TestStorage_InsertOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -120,7 +120,7 @@ func TestStorage_InsertOne(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
@@ -136,8 +136,8 @@ func TestStorage_InsertMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -149,7 +149,7 @@ func TestStorage_InsertMany(t *testing.T) {
 
 	var specs []Spec
 	for i := 0; i < batchSize; i++ {
-		specs = append(specs, &SpecMeta{
+		specs = append(specs, &Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
 		})
@@ -169,8 +169,8 @@ func TestStorage_UpdateOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -182,13 +182,13 @@ func TestStorage_UpdateOne(t *testing.T) {
 
 	id := uuid.Must(uuid.NewV7())
 
-	origin := &SpecMeta{
+	origin := &Meta{
 		ID:        id,
 		Kind:      kind,
 		Namespace: DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
-	patch := &SpecMeta{
+	patch := &Meta{
 		ID:        id,
 		Kind:      kind,
 		Namespace: DefaultNamespace,
@@ -217,8 +217,8 @@ func TestStorage_UpdateMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -236,13 +236,13 @@ func TestStorage_UpdateMany(t *testing.T) {
 	var origins []Spec
 	var patches []Spec
 	for _, id := range ids {
-		origins = append(origins, &SpecMeta{
+		origins = append(origins, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
-		patches = append(patches, &SpecMeta{
+		patches = append(patches, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -275,8 +275,8 @@ func TestStorage_DeleteOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -286,7 +286,7 @@ func TestStorage_DeleteOne(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: DefaultNamespace,
@@ -309,8 +309,8 @@ func TestStorage_DeleteMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -327,7 +327,7 @@ func TestStorage_DeleteMany(t *testing.T) {
 
 	var specs []Spec
 	for _, id := range ids {
-		specs = append(specs, &SpecMeta{
+		specs = append(specs, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -352,8 +352,8 @@ func TestStorage_FindOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -363,7 +363,7 @@ func TestStorage_FindOne(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: DefaultNamespace,
@@ -383,8 +383,8 @@ func TestStorage_FindMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -401,7 +401,7 @@ func TestStorage_FindMany(t *testing.T) {
 
 	var specs []Spec
 	for _, id := range ids {
-		specs = append(specs, &SpecMeta{
+		specs = append(specs, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -427,8 +427,8 @@ func BenchmarkStorage_InsertOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -441,7 +441,7 @@ func BenchmarkStorage_InsertOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		spec := &SpecMeta{
+		spec := &Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
 		}
@@ -456,8 +456,8 @@ func BenchmarkStorage_InsertMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -472,7 +472,7 @@ func BenchmarkStorage_InsertMany(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var specs []Spec
 		for j := 0; j < batchSize; j++ {
-			specs = append(specs, &SpecMeta{
+			specs = append(specs, &Meta{
 				ID:   uuid.Must(uuid.NewV7()),
 				Kind: kind,
 			})
@@ -488,8 +488,8 @@ func BenchmarkStorage_UpdateOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -501,7 +501,7 @@ func BenchmarkStorage_UpdateOne(b *testing.B) {
 
 	id := uuid.Must(uuid.NewV7())
 
-	origin := &SpecMeta{
+	origin := &Meta{
 		ID:        id,
 		Kind:      kind,
 		Namespace: DefaultNamespace,
@@ -513,7 +513,7 @@ func BenchmarkStorage_UpdateOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		patch := &SpecMeta{
+		patch := &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -530,8 +530,8 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -548,7 +548,7 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 
 	var origins []Spec
 	for _, id := range ids {
-		origins = append(origins, &SpecMeta{
+		origins = append(origins, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -565,7 +565,7 @@ func BenchmarkStorage_UpdateMany(b *testing.B) {
 
 		var patches []Spec
 		for _, id := range ids {
-			patches = append(patches, &SpecMeta{
+			patches = append(patches, &Meta{
 				ID:        id,
 				Kind:      kind,
 				Namespace: DefaultNamespace,
@@ -585,8 +585,8 @@ func BenchmarkStorage_DeleteOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -601,7 +601,7 @@ func BenchmarkStorage_DeleteOne(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		spec := &SpecMeta{
+		spec := &Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -620,8 +620,8 @@ func BenchmarkStorage_DeleteMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -643,7 +643,7 @@ func BenchmarkStorage_DeleteMany(b *testing.B) {
 
 		var specs []Spec
 		for _, id := range ids {
-			specs = append(specs, &SpecMeta{
+			specs = append(specs, &Meta{
 				ID:        id,
 				Kind:      kind,
 				Namespace: DefaultNamespace,
@@ -666,8 +666,8 @@ func BenchmarkStorage_FindOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -677,14 +677,14 @@ func BenchmarkStorage_FindOne(b *testing.B) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	spec := &SpecMeta{
+	spec := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: DefaultNamespace,
 	}
 
 	for i := 0; i < batchSize; i++ {
-		_, _ = st.InsertOne(ctx, &SpecMeta{
+		_, _ = st.InsertOne(ctx, &Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: DefaultNamespace,
@@ -705,8 +705,8 @@ func BenchmarkStorage_FindMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := New()
-	s.AddKnownType(kind, &SpecMeta{})
+	s := NewScheme()
+	s.AddKnownType(kind, &Meta{})
 	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
@@ -723,7 +723,7 @@ func BenchmarkStorage_FindMany(b *testing.B) {
 
 	var specs []Spec
 	for _, id := range ids {
-		specs = append(specs, &SpecMeta{
+		specs = append(specs, &Meta{
 			ID:        id,
 			Kind:      kind,
 			Namespace: DefaultNamespace,

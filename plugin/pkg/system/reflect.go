@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/object"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 const (
@@ -16,39 +16,39 @@ const (
 	OPDeleteNodes = "nodes.delete"
 )
 
-func CreateNodes(s *scheme.Storage) func(context.Context, []*scheme.Unstructured) ([]scheme.Spec, error) {
-	return func(ctx context.Context, specs []*scheme.Unstructured) ([]scheme.Spec, error) {
-		if ids, err := s.InsertMany(ctx, lo.Map(specs, func(spec *scheme.Unstructured, _ int) scheme.Spec {
+func CreateNodes(s *spec.Storage) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
+		if ids, err := s.InsertMany(ctx, lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
 		})); err != nil {
 			return nil, err
 		} else {
-			return s.FindMany(ctx, scheme.Where[uuid.UUID](scheme.KeyID).IN(ids...))
+			return s.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).IN(ids...))
 		}
 	}
 }
 
-func ReadNodes(s *scheme.Storage) func(context.Context, *scheme.Filter) ([]scheme.Spec, error) {
-	return func(ctx context.Context, filter *scheme.Filter) ([]scheme.Spec, error) {
+func ReadNodes(s *spec.Storage) func(context.Context, *spec.Filter) ([]spec.Spec, error) {
+	return func(ctx context.Context, filter *spec.Filter) ([]spec.Spec, error) {
 		return s.FindMany(ctx, filter)
 	}
 }
 
-func UpdateNodes(s *scheme.Storage) func(context.Context, []*scheme.Unstructured) ([]scheme.Spec, error) {
-	return func(ctx context.Context, specs []*scheme.Unstructured) ([]scheme.Spec, error) {
+func UpdateNodes(s *spec.Storage) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		ids := make([]uuid.UUID, 0, len(specs))
 		for _, spec := range specs {
 			ids = append(ids, spec.GetID())
 		}
 
-		exists, err := s.FindMany(ctx, scheme.Where[uuid.UUID](scheme.KeyID).IN(ids...))
+		exists, err := s.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).IN(ids...))
 		if err != nil {
 			return nil, err
 		}
 
-		patches := make([]scheme.Spec, 0, len(specs))
+		patches := make([]spec.Spec, 0, len(specs))
 		for _, exist := range exists {
-			if patch, ok := lo.Find(specs, func(item *scheme.Unstructured) bool {
+			if patch, ok := lo.Find(specs, func(item *spec.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
 				if exist, err := object.MarshalText(exist); err != nil {
@@ -56,7 +56,7 @@ func UpdateNodes(s *scheme.Storage) func(context.Context, []*scheme.Unstructured
 				} else {
 					exist := exist.(*object.Map)
 					patch := patch.Doc()
-					patches = append(patches, scheme.NewUnstructured(object.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
+					patches = append(patches, spec.NewUnstructured(object.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
 				}
 			}
 		}
@@ -68,8 +68,8 @@ func UpdateNodes(s *scheme.Storage) func(context.Context, []*scheme.Unstructured
 	}
 }
 
-func DeleteNodes(s *scheme.Storage) func(context.Context, *scheme.Filter) ([]scheme.Spec, error) {
-	return func(ctx context.Context, filter *scheme.Filter) ([]scheme.Spec, error) {
+func DeleteNodes(s *spec.Storage) func(context.Context, *spec.Filter) ([]spec.Spec, error) {
+	return func(ctx context.Context, filter *spec.Filter) ([]spec.Spec, error) {
 		exists, err := s.FindMany(ctx, filter)
 		if err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func DeleteNodes(s *scheme.Storage) func(context.Context, *scheme.Filter) ([]sch
 			ids = append(ids, exist.GetID())
 		}
 
-		if _, err := s.DeleteMany(ctx, scheme.Where[uuid.UUID](scheme.KeyID).IN(ids...)); err != nil {
+		if _, err := s.DeleteMany(ctx, spec.Where[uuid.UUID](spec.KeyID).IN(ids...)); err != nil {
 			return nil, err
 		}
 		return exists, nil

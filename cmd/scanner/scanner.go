@@ -6,13 +6,13 @@ import (
 	"io/fs"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// Scanner is responsible for building scheme.Spec instances from raw data.
+// Scanner is responsible for building spec.Spec instances from raw data.
 type Scanner struct {
-	scheme    *scheme.Scheme
-	storage   *scheme.Storage
+	scheme    *spec.Scheme
+	storage   *spec.Storage
 	namespace string
 	fsys      fs.FS
 	filename  string
@@ -24,13 +24,13 @@ func New() *Scanner {
 }
 
 // Scheme sets the scheme for the Builder.
-func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
+func (s *Scanner) Scheme(scheme *spec.Scheme) *Scanner {
 	s.scheme = scheme
 	return s
 }
 
 // Storage sets the storage for the Builder.
-func (s *Scanner) Storage(storage *scheme.Storage) *Scanner {
+func (s *Scanner) Storage(storage *spec.Storage) *Scanner {
 	s.storage = storage
 	return s
 }
@@ -53,8 +53,8 @@ func (s *Scanner) Filename(filename string) *Scanner {
 	return s
 }
 
-// Scan builds scheme.Spec instances based on the configured parameters.
-func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
+// Scan builds spec.Spec instances based on the configured parameters.
+func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 	if s.fsys == nil || s.filename == "" {
 		return nil, nil
 	}
@@ -84,7 +84,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
 		Namespace: s.namespace,
 	})
 
-	var specs []scheme.Spec
+	var specs []spec.Spec
 	for _, raw := range raws {
 		spec, err := codec.Decode(raw)
 		if err != nil {
@@ -94,20 +94,20 @@ func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
 	}
 
 	if s.storage != nil {
-		for _, spec := range specs {
-			if spec.GetID() == (uuid.UUID{}) {
-				if spec.GetName() != "" {
-					filter := scheme.Where[string](scheme.KeyName).EQ(spec.GetName()).And(scheme.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
+		for _, v := range specs {
+			if v.GetID() == (uuid.UUID{}) {
+				if v.GetName() != "" {
+					filter := spec.Where[string](spec.KeyName).EQ(v.GetName()).And(spec.Where[string](spec.KeyNamespace).EQ(v.GetNamespace()))
 					if exist, err := s.storage.FindOne(ctx, filter); err != nil {
 						return nil, err
 					} else if exist != nil {
-						spec.SetID(exist.GetID())
+						v.SetID(exist.GetID())
 					}
 				}
 			}
 
-			if spec.GetID() == (uuid.UUID{}) {
-				spec.SetID(uuid.Must(uuid.NewV7()))
+			if v.GetID() == (uuid.UUID{}) {
+				v.SetID(uuid.Must(uuid.NewV7()))
 			}
 		}
 	}

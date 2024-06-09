@@ -6,7 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // MergeNode represents a node that Merges multiple input packets into a single output packet.
@@ -17,7 +17,7 @@ type MergeNode struct {
 
 // MergeNodeSpec holds the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
+	spec.Meta `map:",inline"`
 }
 
 const KindMerge = "merge"
@@ -45,8 +45,8 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 }
 
 // NewMergeNodeCodec creates a new codec for MergeNodeSpec.
-func NewMergeNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *MergeNodeSpec) (node.Node, error) {
+func NewMergeNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *MergeNodeSpec) (node.Node, error) {
 		return NewMergeNode(), nil
 	})
 }

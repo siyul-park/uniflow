@@ -4,17 +4,17 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // Symbol represents an object that binds a Node and a Spec.
 type Symbol struct {
-	spec    scheme.Spec
+	spec    spec.Spec
 	node    node.Node
 	status  Status
-	links   map[string][]scheme.PortLocation
-	unlinks map[string][]scheme.PortLocation
-	linked  map[string][]scheme.PortLocation
+	links   map[string][]spec.PortLocation
+	unlinks map[string][]spec.PortLocation
+	linked  map[string][]spec.PortLocation
 }
 
 type Status int
@@ -27,13 +27,13 @@ const (
 var _ node.Node = (*Symbol)(nil)
 
 // New returns a new Symbol.
-func New(spec scheme.Spec, node node.Node) *Symbol {
+func New(s spec.Spec, n node.Node) *Symbol {
 	return &Symbol{
-		spec:    spec,
-		node:    node,
-		links:   spec.GetLinks(),
-		unlinks: make(map[string][]scheme.PortLocation),
-		linked:  make(map[string][]scheme.PortLocation),
+		spec:    s,
+		node:    n,
+		links:   s.GetLinks(),
+		unlinks: make(map[string][]spec.PortLocation),
+		linked:  make(map[string][]spec.PortLocation),
 	}
 }
 
@@ -68,7 +68,7 @@ func (s *Symbol) Status() Status {
 }
 
 // Spec returns the spec.
-func (s *Symbol) Spec() scheme.Spec {
+func (s *Symbol) Spec() spec.Spec {
 	return s.spec
 }
 

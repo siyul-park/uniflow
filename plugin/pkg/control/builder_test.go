@@ -6,7 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,7 @@ func TestAddToHook(t *testing.T) {
 	n := node.NewManyToOneNode(nil)
 	defer n.Close()
 
-	sym := symbol.New(&scheme.SpecMeta{}, n)
+	sym := symbol.New(&spec.Meta{}, n)
 
 	err = h.Load(sym)
 	assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestAddToHook(t *testing.T) {
 }
 
 func TestAddToScheme(t *testing.T) {
-	s := scheme.New()
+	s := spec.NewScheme()
 
 	b := event.NewBroker()
 	defer b.Close()

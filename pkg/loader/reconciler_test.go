@@ -9,7 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,15 +18,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -40,7 +40,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	r := NewReconciler(ReconcilerConfig{
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 		Storage:   st,
 		Loader:    ld,
 	})
@@ -51,13 +51,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	go r.Reconcile(ctx)
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 	}
 
-	st.InsertOne(ctx, spec)
+	st.InsertOne(ctx, meta)
 
 	func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -69,8 +69,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				assert.NoError(t, ctx.Err())
 				return
 			default:
-				if sym, ok := tb.LookupByID(spec.GetID()); ok {
-					assert.Equal(t, spec.GetID(), sym.ID())
+				if sym, ok := tb.LookupByID(meta.GetID()); ok {
+					assert.Equal(t, meta.GetID(), sym.ID())
 					return
 				}
 			}

@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // WebSocketClientNode represents a node for establishing WebSocket client connections.
@@ -23,9 +23,9 @@ type WebSocketClientNode struct {
 
 // WebSocketClientNodeSpec holds the specifications for creating a WebSocketClientNode.
 type WebSocketClientNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	URL             string        `map:"url"`
-	Timeout         time.Duration `map:"timeout,omitempty"`
+	spec.Meta `map:",inline"`
+	URL       string        `map:"url"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 const KindWebSocketClient = "websocket/client"
@@ -79,8 +79,8 @@ func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packe
 }
 
 // NewWebSocketClientNodeCodec creates a new codec for WebSocketClientNodeSpec.
-func NewWebSocketClientNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WebSocketClientNodeSpec) (node.Node, error) {
+func NewWebSocketClientNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *WebSocketClientNodeSpec) (node.Node, error) {
 		url, err := url.Parse(spec.URL)
 		if err != nil {
 			return nil, err

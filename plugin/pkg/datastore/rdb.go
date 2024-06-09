@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // RDBNode represents a node for interacting with a relational database.
@@ -25,10 +25,10 @@ type RDBNode struct {
 
 // RDBNodeSpec holds the specifications for creating a RDBNode.
 type RDBNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Driver          string             `map:"driver"`
-	Source          string             `map:"source"`
-	Isolation       sql.IsolationLevel `map:"isolation"`
+	spec.Meta `map:",inline"`
+	Driver    string             `map:"driver"`
+	Source    string             `map:"source"`
+	Isolation sql.IsolationLevel `map:"isolation"`
 }
 
 const KindRDB = "rdb"
@@ -150,8 +150,8 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 }
 
 // NewRDBNodeCodec creates a new codec for RDBNodeSpec.
-func NewRDBNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
+func NewRDBNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
 		db, err := sqlx.Connect(spec.Driver, spec.Source)
 		if err != nil {
 			return nil, err

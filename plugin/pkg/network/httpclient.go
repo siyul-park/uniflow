@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // HTTPClientNode represents a node for making HTTP client requests.
@@ -27,9 +27,9 @@ type HTTPClientNode struct {
 
 // HTTPClientNodeSpec holds the specifications for creating an HTTPClientNode.
 type HTTPClientNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	URL             string        `map:"url"`
-	Timeout         time.Duration `map:"timeout,omitempty"`
+	spec.Meta `map:",inline"`
+	URL       string        `map:"url"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 const KindHTTPClient = "http/client"
@@ -162,8 +162,8 @@ func (n *HTTPClientNode) response(w *http.Response) (*HTTPPayload, error) {
 	}
 }
 
-func NewHTTPClientNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *HTTPClientNodeSpec) (node.Node, error) {
+func NewHTTPClientNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *HTTPClientNodeSpec) (node.Node, error) {
 		url, err := url.Parse(spec.URL)
 		if err != nil {
 			return nil, err

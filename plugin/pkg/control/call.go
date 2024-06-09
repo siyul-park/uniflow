@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
@@ -22,7 +22,7 @@ type CallNode struct {
 
 // CallNodeSpec holds the specifications for creating a CallNode.
 type CallNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
+	spec.Meta `map:",inline"`
 }
 
 var _ node.Node = (*CallNode)(nil)
@@ -183,8 +183,8 @@ func (n *CallNode) catch(proc *process.Process) {
 }
 
 // NewCallNodeCodec creates a new codec for CallNodeSpec.
-func NewCallNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
+func NewCallNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
 		n := NewCallNode()
 
 		return n, nil

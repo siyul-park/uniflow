@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // RouteNode represents a node for routing based on HTTP method, path, and port.
@@ -23,8 +23,8 @@ type RouteNode struct {
 
 // RouteNodeSpec defines the specification for configuring a RouteNode.
 type RouteNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Routes          []Route `map:"routes"`
+	spec.Meta `map:",inline"`
+	Routes    []Route `map:"routes"`
 }
 
 // Route represents a routing configuration with a specific HTTP method, path, and port.
@@ -505,8 +505,8 @@ func (r *route) label() byte {
 }
 
 // NewRouteNodeCodec creates a new codec for RouteNodeSpec.
-func NewRouteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
+func NewRouteNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
 		n := NewRouteNode()
 		for _, route := range spec.Routes {
 			if err := n.Add(route.Method, route.Path, route.Port); err != nil {

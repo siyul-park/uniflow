@@ -3,7 +3,7 @@ package control
 import (
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -42,9 +42,9 @@ func AddToHook(broker *event.Broker) func(*hook.Hook) error {
 	}
 }
 
-// AddToScheme returns a function that adds node types and codecs to the provided scheme.
-func AddToScheme(broker *event.Broker) func(*scheme.Scheme) error {
-	return func(s *scheme.Scheme) error {
+// AddToScheme returns a function that adds node types and codecs to the provided spec.
+func AddToScheme(broker *event.Broker) func(*spec.Scheme) error {
+	return func(s *spec.Scheme) error {
 		s.AddKnownType(KindCall, &CallNodeSpec{})
 		s.AddCodec(KindCall, NewCallNodeCodec())
 

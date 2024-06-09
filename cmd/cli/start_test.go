@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,34 +22,34 @@ func TestStartCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := scheme.New()
+	s := spec.NewScheme()
 	h := hook.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
 
 	kind := faker.UUIDHyphenated()
 
-	codec := scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	codec := spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
 	filename := "patch.json"
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: scheme.DefaultNamespace,
+		Namespace: spec.DefaultNamespace,
 	}
 
-	data, _ := json.Marshal(spec)
+	data, _ := json.Marshal(meta)
 
 	fsys[filename] = &fstest.MapFile{
 		Data: data,
@@ -83,7 +83,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				if r, _ := st.FindOne(ctx, scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID())); r != nil {
+				if r, _ := st.FindOne(ctx, spec.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID())); r != nil {
 					return
 				}
 			}

@@ -9,7 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,15 +19,15 @@ func TestRuntime_Lookup(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	db := memdb.New(faker.UUIDHyphenated())
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
@@ -38,17 +38,17 @@ func TestRuntime_Lookup(t *testing.T) {
 	})
 	defer r.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, spec)
+	_, _ = st.InsertOne(ctx, meta)
 
-	n, err := r.Lookup(ctx, spec.GetID())
+	n, err := r.Lookup(ctx, meta.GetID())
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-	assert.Equal(t, spec.GetID(), n.ID())
+	assert.Equal(t, meta.GetID(), n.ID())
 }
 
 func TestRuntime_Start(t *testing.T) {
@@ -57,15 +57,15 @@ func TestRuntime_Start(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	db := memdb.New(faker.UUIDHyphenated())
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
@@ -76,12 +76,12 @@ func TestRuntime_Start(t *testing.T) {
 	})
 	defer r.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, spec)
+	_, _ = st.InsertOne(ctx, meta)
 
 	go r.Start(ctx)
 
@@ -98,7 +98,7 @@ func TestRuntime_Start(t *testing.T) {
 				assert.NoError(t, ctx.Err())
 				return
 			case <-ticker.C:
-				if n, _ := r.Lookup(ctx, spec.GetID()); n != nil {
+				if n, _ := r.Lookup(ctx, meta.GetID()); n != nil {
 					return
 				}
 			}
@@ -112,9 +112,9 @@ func BenchmarkNewRuntime(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 

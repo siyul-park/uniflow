@@ -6,13 +6,13 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/cobra"
 )
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	Scheme   *scheme.Scheme
+	Scheme   *spec.Scheme
 	Database database.Database
 	FS       fs.FS
 }
@@ -44,7 +44,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, err := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -63,10 +63,10 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		var filter *scheme.Filter
-		for _, spec := range specs {
-			filter = filter.And(scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()).
-				And(scheme.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
+		var filter *spec.Filter
+		for _, v := range specs {
+			filter = filter.And(spec.Where[uuid.UUID](spec.KeyID).EQ(v.GetID()).
+				And(spec.Where[string](spec.KeyNamespace).EQ(v.GetNamespace())))
 		}
 
 		_, err = st.DeleteMany(ctx, filter)

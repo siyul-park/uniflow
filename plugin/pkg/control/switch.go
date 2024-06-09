@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
@@ -24,9 +24,9 @@ type SwitchNode struct {
 
 // SwitchNodeSpec holds the specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Lang            string      `map:"lang,omitempty"`
-	Match           []Condition `map:"match"`
+	spec.Meta `map:",inline"`
+	Lang      string      `map:"lang,omitempty"`
+	Match     []Condition `map:"match"`
 }
 
 // Condition represents a condition for directing packets to specific ports.
@@ -81,8 +81,8 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 }
 
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
-func NewSwitchNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
+func NewSwitchNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
 		whens := make([]func(any) (bool, error), len(spec.Match))
 		for i, condition := range spec.Match {
 			lang := spec.Lang

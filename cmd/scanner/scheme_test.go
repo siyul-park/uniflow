@@ -5,28 +5,28 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSpecCodec_Decode(t *testing.T) {
-	s := scheme.New()
+	s := spec.NewScheme()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &scheme.SpecMeta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
 	codec := NewSpecCodec(SpecCodecOptions{
 		Scheme: s,
 	})
 
 	data := map[string]any{
-		scheme.KeyID:   uuid.Must(uuid.NewV7()).String(),
-		scheme.KeyKind: kind,
+		spec.KeyID:   uuid.Must(uuid.NewV7()).String(),
+		spec.KeyKind: kind,
 	}
 
-	spec, err := codec.Decode(data)
+	meta, err := codec.Decode(data)
 	assert.NoError(t, err)
-	assert.IsType(t, spec, &scheme.SpecMeta{})
-	assert.Equal(t, data[scheme.KeyID], spec.GetID().String())
-	assert.Equal(t, data[scheme.KeyKind], spec.GetKind())
+	assert.IsType(t, meta, &spec.Meta{})
+	assert.Equal(t, data[spec.KeyID], meta.GetID().String())
+	assert.Equal(t, data[spec.KeyKind], meta.GetKind())
 }

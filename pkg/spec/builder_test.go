@@ -1,4 +1,4 @@
-package scheme
+package spec
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ func TestSchemeBuilder_AddToScheme(t *testing.T) {
 
 	b.Register(func(_ *Scheme) error { return nil })
 
-	err := b.AddToScheme(New())
+	err := b.AddToScheme(NewScheme())
 	assert.NoError(t, err)
 }
 

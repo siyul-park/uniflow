@@ -13,7 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,13 +23,13 @@ func TestCreateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -37,7 +37,7 @@ func TestCreateNodes(t *testing.T) {
 	n, _ := NewNativeNode(CreateNodes(st))
 	defer n.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
@@ -50,14 +50,14 @@ func TestCreateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(spec)
+	inPayload, _ := object.MarshalText(meta)
 	inPck := packet.New(object.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*scheme.SpecMeta
+		var outPayload []*spec.Meta
 		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -70,13 +70,13 @@ func TestReadNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -84,12 +84,12 @@ func TestReadNodes(t *testing.T) {
 	n, _ := NewNativeNode(ReadNodes(st))
 	defer n.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	id, _ := st.InsertOne(ctx, spec)
+	id, _ := st.InsertOne(ctx, meta)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -99,14 +99,14 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(scheme.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(spec.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*scheme.SpecMeta
+		var outPayload []*spec.Meta
 		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -119,13 +119,13 @@ func TestUpdateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -133,12 +133,12 @@ func TestUpdateNodes(t *testing.T) {
 	n, _ := NewNativeNode(UpdateNodes(st))
 	defer n.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, spec)
+	_, _ = st.InsertOne(ctx, meta)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -148,14 +148,14 @@ func TestUpdateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(spec)
+	inPayload, _ := object.MarshalText(meta)
 	inPck := packet.New(object.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*scheme.SpecMeta
+		var outPayload []*spec.Meta
 		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -168,13 +168,13 @@ func TestDeleteNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &scheme.SpecMeta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec scheme.Spec) (node.Node, error) {
+	s := spec.NewScheme()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
+	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -182,12 +182,12 @@ func TestDeleteNodes(t *testing.T) {
 	n, _ := NewNativeNode(DeleteNodes(st))
 	defer n.Close()
 
-	spec := &scheme.SpecMeta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	id, _ := st.InsertOne(ctx, spec)
+	id, _ := st.InsertOne(ctx, meta)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -197,14 +197,14 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(scheme.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(spec.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*scheme.SpecMeta
+		var outPayload []*spec.Meta
 		assert.NoError(t, object.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())

@@ -38,14 +38,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
 )
 
 func main() {
 	hb := hook.NewBuilder()
-	sb := scheme.NewBuilder()
+	sb := spec.NewBuilder()
 
 	hb.Register(network.AddToHook())
 	sb.Register(control.AddToScheme())

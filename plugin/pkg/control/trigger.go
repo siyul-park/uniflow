@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // TriggerNode represents a node that triggers events.
@@ -25,8 +25,8 @@ type TriggerNode struct {
 
 // TriggerNodeSpec holds the specifications for creating a TriggerNode.
 type TriggerNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Topic           string `map:"topic"`
+	spec.Meta `map:",inline"`
+	Topic     string `map:"topic"`
 }
 
 const KindTrigger = "trigger"
@@ -183,8 +183,8 @@ func (n *TriggerNode) forward(proc *process.Process) {
 }
 
 // NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
-func NewTriggerNodeCodec(broker *event.Broker) scheme.Codec {
-	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
+func NewTriggerNodeCodec(broker *event.Broker) spec.Codec {
+	return spec.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
 		p := broker.Producer(spec.Topic)
 		c := broker.Consumer(spec.Topic)
 

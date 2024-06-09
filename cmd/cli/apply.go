@@ -8,13 +8,13 @@ import (
 	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/cobra"
 )
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	Scheme   *scheme.Scheme
+	Scheme   *spec.Scheme
 	Database database.Database
 	FS       fs.FS
 }
@@ -46,7 +46,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
+		st, err := spec.NewStorage(ctx, spec.StorageConfig{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -70,7 +70,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := st.FindMany(ctx, scheme.Where[uuid.UUID](scheme.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := st.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {
@@ -82,8 +82,8 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			exists[spec.GetID()] = struct{}{}
 		}
 
-		var inserted []scheme.Spec
-		var updated []scheme.Spec
+		var inserted []spec.Spec
+		var updated []spec.Spec
 		for _, spec := range specs {
 			if _, ok := exists[spec.GetID()]; ok {
 				updated = append(updated, spec)

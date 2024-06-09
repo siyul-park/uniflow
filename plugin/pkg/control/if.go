@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
 
@@ -25,9 +25,9 @@ type IfNode struct {
 
 // IfNodeSpec holds the specifications for creating a IfNode.
 type IfNodeSpec struct {
-	scheme.SpecMeta `map:",inline"`
-	Lang            string `map:"lang,omitempty"`
-	When            string `map:"when"`
+	spec.Meta `map:",inline"`
+	Lang      string `map:"lang,omitempty"`
+	When      string `map:"when"`
 }
 
 var _ node.Node = (*IfNode)(nil)
@@ -180,8 +180,8 @@ func (n *IfNode) catch(proc *process.Process) {
 }
 
 // NewIfNodeCodec creates a new codec for IfNodeSpec.
-func NewIfNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
+func NewIfNodeCodec() spec.Codec {
+	return spec.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
 		lang := spec.Lang
 		transform, err := language.CompileTransform(spec.When, &lang)
 		if err != nil {
