@@ -15,7 +15,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +27,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
@@ -84,7 +83,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				if r, _ := st.FindOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID())); r != nil {
+				if r, _ := st.FindOne(ctx, scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID())); r != nil {
 					return
 				}
 			}

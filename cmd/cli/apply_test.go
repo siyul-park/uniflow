@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +23,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})
@@ -67,7 +66,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(ctx, storage.Where[string](scheme.KeyName).EQ(spec.GetName()))
+	r, err := st.FindOne(ctx, scheme.Where[string](scheme.KeyName).EQ(spec.GetName()))
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 

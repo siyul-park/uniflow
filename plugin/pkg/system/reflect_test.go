@@ -14,7 +14,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +29,7 @@ func TestCreateNodes(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -77,7 +76,7 @@ func TestReadNodes(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -100,7 +99,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(scheme.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -126,7 +125,7 @@ func TestUpdateNodes(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -175,7 +174,7 @@ func TestDeleteNodes(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -198,7 +197,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := object.MarshalText(storage.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := object.MarshalText(scheme.Where[uuid.UUID]("id").EQ(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

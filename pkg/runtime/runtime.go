@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/loader"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -23,7 +22,7 @@ type Config struct {
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	storage    *storage.Storage
+	storage    *scheme.Storage
 	table      *symbol.Table
 	loader     *loader.Loader
 	reconciler *loader.Reconciler
@@ -41,7 +40,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		config.Database = memdb.New("")
 	}
 
-	st, err := storage.New(ctx, storage.Config{
+	st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   config.Scheme,
 		Database: config.Database,
 	})
@@ -74,7 +73,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	}, nil
 }
 
-// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from storage.Storage.
+// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from scheme.Storage.
 func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)

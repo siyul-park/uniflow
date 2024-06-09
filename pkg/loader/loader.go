@@ -8,22 +8,21 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // Config contains the configuration settings for the Loader.
 type Config struct {
-	Namespace string           // Namespace associated with the Loader
-	Table     *symbol.Table    // Symbol table for storing loaded symbols
-	Storage   *storage.Storage // Storage to retrieve scheme.Spec from
+	Namespace string          // Namespace associated with the Loader
+	Table     *symbol.Table   // Symbol table for storing loaded symbols
+	Storage   *scheme.Storage // Storage to retrieve scheme.Spec from
 }
 
 // Loader is responsible for loading scheme.Spec into the symbol.Table.
 type Loader struct {
 	namespace string
 	table     *symbol.Table
-	storage   *storage.Storage
+	storage   *scheme.Storage
 	mu        sync.RWMutex
 }
 
@@ -36,7 +35,7 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single scheme.Spec from storage.Storage.
+// LoadOne loads a single scheme.Spec from scheme.Storage.
 // It recursively loads linked scheme.Spec based on the specified ID.
 // If the Loader is associated with a namespace, it uses that namespace.
 // Loaded symbols are added to the symbol table for future reference.
@@ -52,21 +51,21 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 		next = nil
 
 		exists := map[any]bool{}
-		var filter *storage.Filter
+		var filter *scheme.Filter
 
 		for _, key := range cur {
 			exists[key] = false
 
 			switch k := key.(type) {
 			case uuid.UUID:
-				filter = filter.Or(storage.Where[uuid.UUID](scheme.KeyID).EQ(k))
+				filter = filter.Or(scheme.Where[uuid.UUID](scheme.KeyID).EQ(k))
 			case string:
-				filter = filter.Or(storage.Where[string](scheme.KeyName).EQ(k))
+				filter = filter.Or(scheme.Where[string](scheme.KeyName).EQ(k))
 			}
 		}
 
 		if namespace != "" {
-			filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(namespace))
+			filter = filter.And(scheme.Where[string](scheme.KeyNamespace).EQ(namespace))
 		}
 
 		specs, err := ld.storage.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(cur))})
@@ -128,7 +127,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 	}
 }
 
-// LoadAll loads all scheme.Spec from the storage.Storage.
+// LoadAll loads all scheme.Spec from the scheme.Storage.
 // It adds the retrieved scheme.Spec to the symbol table for future reference.
 // If the loader is associated with a namespace, it filters the loading based on that namespace.
 func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
@@ -145,10 +144,10 @@ func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 		}
 	}
 
-	var filter *storage.Filter
+	var filter *scheme.Filter
 
 	if ld.namespace != "" {
-		filter = filter.And(storage.Where[string](scheme.KeyNamespace).EQ(ld.namespace))
+		filter = filter.And(scheme.Where[string](scheme.KeyNamespace).EQ(ld.namespace))
 	}
 
 	specs, err := ld.storage.FindMany(ctx, filter)

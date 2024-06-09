@@ -7,13 +7,12 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
 // Scanner is responsible for building scheme.Spec instances from raw data.
 type Scanner struct {
 	scheme    *scheme.Scheme
-	storage   *storage.Storage
+	storage   *scheme.Storage
 	namespace string
 	fsys      fs.FS
 	filename  string
@@ -31,7 +30,7 @@ func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
 }
 
 // Storage sets the storage for the Builder.
-func (s *Scanner) Storage(storage *storage.Storage) *Scanner {
+func (s *Scanner) Storage(storage *scheme.Storage) *Scanner {
 	s.storage = storage
 	return s
 }
@@ -98,7 +97,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]scheme.Spec, error) {
 		for _, spec := range specs {
 			if spec.GetID() == (uuid.UUID{}) {
 				if spec.GetName() != "" {
-					filter := storage.Where[string](scheme.KeyName).EQ(spec.GetName()).And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
+					filter := scheme.Where[string](scheme.KeyName).EQ(spec.GetName()).And(scheme.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace()))
 					if exist, err := s.storage.FindOne(ctx, filter); err != nil {
 						return nil, err
 					} else if exist != nil {

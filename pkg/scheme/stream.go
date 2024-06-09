@@ -1,4 +1,4 @@
-package storage
+package scheme
 
 import (
 	"github.com/gofrs/uuid"

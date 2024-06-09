@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +51,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			st, err := storage.New(ctx, storage.Config{
+			st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 				Scheme:   config.Scheme,
 				Database: config.Database,
 			})
@@ -60,7 +59,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			filter := storage.Where[string](scheme.KeyNamespace).EQ(namespace)
+			filter := scheme.Where[string](scheme.KeyNamespace).EQ(namespace)
 			specs, err := st.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 			if err != nil {
 				return err

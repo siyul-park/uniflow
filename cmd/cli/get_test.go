@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ func TestGetCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	db := memdb.New("")
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: db,
 	})

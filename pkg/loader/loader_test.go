@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +26,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := storage.New(ctx, storage.Config{
+		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -95,7 +94,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st, _ := storage.New(ctx, storage.Config{
+		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -128,7 +127,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st, _ := storage.New(ctx, storage.Config{
+		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -153,7 +152,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
+		st.DeleteOne(ctx, scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()))
 
 		r2, err := ld.LoadOne(ctx, spec.GetID())
 		assert.NoError(t, err)
@@ -177,7 +176,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := storage.New(ctx, storage.Config{
+		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -247,7 +246,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st, _ := storage.New(ctx, storage.Config{
+		st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -292,7 +291,7 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -341,7 +340,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := storage.New(ctx, storage.Config{
+	st, _ := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})

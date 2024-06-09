@@ -14,7 +14,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/datastore"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
@@ -85,7 +84,7 @@ func main() {
 		db = memdb.New(databaseName)
 	}
 
-	st, err := storage.New(ctx, storage.Config{
+	st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 		Scheme:   sc,
 		Database: db,
 	})

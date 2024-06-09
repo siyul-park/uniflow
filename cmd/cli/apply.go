@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +46,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		st, err := storage.New(ctx, storage.Config{
+		st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -71,7 +70,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := st.FindMany(ctx, storage.Where[uuid.UUID](scheme.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := st.FindMany(ctx, scheme.Where[uuid.UUID](scheme.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {

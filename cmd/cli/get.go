@@ -4,7 +4,6 @@ import (
 	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +35,7 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		st, err := storage.New(ctx, storage.Config{
+		st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -44,9 +43,9 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		var filter *storage.Filter
+		var filter *scheme.Filter
 		if namespace != "" {
-			filter = storage.Where[string](scheme.KeyNamespace).EQ(namespace)
+			filter = scheme.Where[string](scheme.KeyNamespace).EQ(namespace)
 		}
 
 		specs, err := st.FindMany(ctx, filter)

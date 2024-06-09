@@ -6,22 +6,21 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 )
 
 // ReconcilerConfig holds the configuration settings for the Reconciler.
 type ReconcilerConfig struct {
-	Namespace string           // Namespace associated with the Reconciler
-	Storage   *storage.Storage // Storage used for watching changes to scheme.Spec
-	Loader    *Loader          // Loader to load scheme.Spec into the symbol.Table
+	Namespace string          // Namespace associated with the Reconciler
+	Storage   *scheme.Storage // Storage used for watching changes to scheme.Spec
+	Loader    *Loader         // Loader to load scheme.Spec into the symbol.Table
 }
 
 // Reconciler tracks changes to scheme.Spec and keeps the symbol.Table up to date.
 type Reconciler struct {
 	namespace string
-	storage   *storage.Storage
+	storage   *scheme.Storage
 	loader    *Loader
-	stream    *storage.Stream
+	stream    *scheme.Stream
 	mu        sync.RWMutex
 }
 
@@ -43,9 +42,9 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 		return nil
 	}
 
-	var filter *storage.Filter
+	var filter *scheme.Filter
 	if r.namespace != "" {
-		filter = storage.Where[string](scheme.KeyNamespace).EQ(r.namespace)
+		filter = scheme.Where[string](scheme.KeyNamespace).EQ(r.namespace)
 	}
 
 	s, err := r.storage.Watch(ctx, filter)
@@ -70,7 +69,7 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 
 // Reconcile reflects changes to scheme.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	stream := func() *storage.Stream {
+	stream := func() *scheme.Stream {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 

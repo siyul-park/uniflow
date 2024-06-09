@@ -7,7 +7,6 @@ import (
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +44,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		st, err := storage.New(ctx, storage.Config{
+		st, err := scheme.NewStorage(ctx, scheme.StorageConfig{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -64,10 +63,10 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		var filter *storage.Filter
+		var filter *scheme.Filter
 		for _, spec := range specs {
-			filter = filter.And(storage.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()).
-				And(storage.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
+			filter = filter.And(scheme.Where[uuid.UUID](scheme.KeyID).EQ(spec.GetID()).
+				And(scheme.Where[string](scheme.KeyNamespace).EQ(spec.GetNamespace())))
 		}
 
 		_, err = st.DeleteMany(ctx, filter)
