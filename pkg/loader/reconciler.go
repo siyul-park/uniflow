@@ -6,21 +6,22 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 )
 
 // ReconcilerConfig holds the configuration settings for the Reconciler.
 type ReconcilerConfig struct {
-	Namespace string        // Namespace associated with the Reconciler
-	Storage   *spec.Storage // Storage used for watching changes to spec.Spec
-	Loader    *Loader       // Loader to load spec.Spec into the symbol.Table
+	Namespace string       // Namespace associated with the Reconciler
+	Store     *store.Store // Store used for watching changes to spec.Spec
+	Loader    *Loader      // Loader to load spec.Spec into the symbol.Table
 }
 
 // Reconciler tracks changes to spec.Spec and keeps the symbol.Table up to date.
 type Reconciler struct {
 	namespace string
-	storage   *spec.Storage
+	store     *store.Store
 	loader    *Loader
-	stream    *spec.Stream
+	stream    *store.Stream
 	mu        sync.RWMutex
 }
 
@@ -28,7 +29,7 @@ type Reconciler struct {
 func NewReconciler(config ReconcilerConfig) *Reconciler {
 	return &Reconciler{
 		namespace: config.Namespace,
-		storage:   config.Storage,
+		store:     config.Store,
 		loader:    config.Loader,
 	}
 }
@@ -42,12 +43,12 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 		return nil
 	}
 
-	var filter *spec.Filter
+	var filter *store.Filter
 	if r.namespace != "" {
-		filter = spec.Where[string](spec.KeyNamespace).EQ(r.namespace)
+		filter = store.Where[string](spec.KeyNamespace).EQ(r.namespace)
 	}
 
-	s, err := r.storage.Watch(ctx, filter)
+	s, err := r.store.Watch(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 
 // Reconcile reflects changes to spec.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	stream := func() *spec.Stream {
+	stream := func() *store.Stream {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 

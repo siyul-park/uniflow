@@ -9,12 +9,12 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCommend_Execute(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 	h := hook.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)

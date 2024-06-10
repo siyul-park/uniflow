@@ -13,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -350,8 +351,8 @@ func (n *HTTPServerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 }
 
 // NewHTTPServerNodeCodec creates a new codec for HTTPServerNodeSpec.
-func NewHTTPServerNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *HTTPServerNodeSpec) (node.Node, error) {
+func NewHTTPServerNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *HTTPServerNodeSpec) (node.Node, error) {
 		return NewHTTPServerNode(spec.Address), nil
 	})
 }

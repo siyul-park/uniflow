@@ -1,8 +1,9 @@
-package spec
+package store
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // Filter is a filter for finding matched document.
@@ -177,7 +178,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		} else if v, ok := v.(*object.Slice); ok {
 			elements := make([]any, 0, v.Len())
 			for _, v := range v.Values() {
-				unstructed := NewUnstructured(nil)
+				unstructed := spec.NewUnstructured(nil)
 				if err := unstructed.Set(ft.Key, v); err != nil {
 					return nil, err
 				} else if v, err := unstructed.Get(ft.Key); err != nil {
@@ -189,7 +190,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 			value = elements
 		}
 	} else {
-		unstructed := NewUnstructured(nil)
+		unstructed := spec.NewUnstructured(nil)
 		if err := unstructed.Set(ft.Key, ft.Value); err != nil {
 			return nil, err
 		} else if value, err = unstructed.Get(ft.Key); err != nil {

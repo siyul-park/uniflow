@@ -1,4 +1,4 @@
-package spec
+package scheme
 
 import (
 	"reflect"
@@ -8,25 +8,26 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScheme_KnownType(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
 	typ, ok := s.KnownType(kind)
 	assert.True(t, ok)
-	assert.Equal(t, reflect.TypeOf(&Meta{}), typ)
+	assert.Equal(t, reflect.TypeOf(&spec.Meta{}), typ)
 }
 
 func TestScheme_Codec(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	c := CodecFunc(func(spec Spec) (node.Node, error) {
+	c := CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
@@ -37,71 +38,71 @@ func TestScheme_Codec(t *testing.T) {
 }
 
 func TestScheme_Unstructured(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
-	spec := &Meta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	unstructured, err := s.Unstructured(spec)
+	unstructured, err := s.Unstructured(meta)
 	assert.NoError(t, err)
-	assert.Equal(t, unstructured.GetID(), spec.GetID())
-	assert.IsType(t, unstructured, &Unstructured{})
+	assert.Equal(t, unstructured.GetID(), meta.GetID())
+	assert.IsType(t, unstructured, &spec.Unstructured{})
 }
 
 func TestScheme_Structured(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
-	spec := &Meta{
+	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	structured, err := s.Structured(spec)
+	structured, err := s.Structured(meta)
 	assert.NoError(t, err)
-	assert.Equal(t, structured.GetID(), spec.GetID())
-	assert.IsType(t, structured, &Meta{})
+	assert.Equal(t, structured.GetID(), meta.GetID())
+	assert.IsType(t, structured, &spec.Meta{})
 }
 
 func TestScheme_Spec(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
-	spec, ok := s.Spec(kind)
+	meta, ok := s.Spec(kind)
 	assert.True(t, ok)
-	assert.IsType(t, spec, &Meta{})
+	assert.IsType(t, meta, &spec.Meta{})
 }
 
 func TestScheme_Decode(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
-	s.AddCodec(kind, CodecFunc(func(spec Spec) (node.Node, error) {
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	n, err := s.Decode(&Meta{})
+	n, err := s.Decode(&spec.Meta{})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 }
 
 func TestScheme_Kinds(t *testing.T) {
-	s := NewScheme()
+	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &Meta{})
+	s.AddKnownType(kind, &spec.Meta{})
 
-	kinds := s.Kinds(&Meta{})
+	kinds := s.Kinds(&spec.Meta{})
 	assert.Len(t, kinds, 1)
 	assert.Equal(t, kind, kinds[0])
 }

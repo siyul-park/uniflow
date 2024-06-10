@@ -2,24 +2,25 @@ package scanner
 
 import (
 	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // SpecCodecOptions holds options for creating a SpecCodec.
 type SpecCodecOptions struct {
-	Scheme    *spec.Scheme
+	Scheme    *scheme.Scheme
 	Namespace string
 }
 
 // SpecCodec is responsible for decoding raw data into spec.Spec instances.
 type SpecCodec struct {
-	scheme    *spec.Scheme
+	scheme    *scheme.Scheme
 	namespace string
 }
 
 // NewSpecCodec creates a new SpecCodec instance with the provided options.
 func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
-	var scheme *spec.Scheme
+	var scheme *scheme.Scheme
 	var namespace string
 
 	for _, opt := range opts {

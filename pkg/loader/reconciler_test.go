@@ -9,7 +9,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,15 +20,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -35,13 +37,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 	defer tb.Clear()
 
 	ld := New(Config{
-		Storage: st,
-		Table:   tb,
+		Store: st,
+		Table: tb,
 	})
 
 	r := NewReconciler(ReconcilerConfig{
 		Namespace: spec.DefaultNamespace,
-		Storage:   st,
+		Store:     st,
 		Loader:    ld,
 	})
 	defer r.Close()

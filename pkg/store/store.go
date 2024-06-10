@@ -1,4 +1,4 @@
-package spec
+package store
 
 import (
 	"context"
@@ -8,17 +8,19 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// StorageConfig is a configuration struct for Storage.
-type StorageConfig struct {
-	Scheme   *Scheme
+// Config is a configuration struct for Store.
+type Config struct {
+	Scheme   *scheme.Scheme
 	Database database.Database
 }
 
-// Storage is responsible for storing Spec.
-type Storage struct {
-	scheme *Scheme
+// Store is responsible for storing spec.Spec.
+type Store struct {
+	scheme *scheme.Scheme
 	nodes  database.Collection
 	mu     sync.RWMutex
 }
@@ -26,18 +28,18 @@ type Storage struct {
 var indexes = []database.IndexModel{
 	{
 		Name: "kind",
-		Keys: []string{KeyKind},
+		Keys: []string{spec.KeyKind},
 	},
 	{
 		Name:    "namespace_name",
-		Keys:    []string{KeyNamespace, KeyName},
+		Keys:    []string{spec.KeyNamespace, spec.KeyName},
 		Unique:  true,
-		Partial: database.Where(KeyName).NotEqual(object.NewString("")).And(database.Where(KeyName).IsNotNull()),
+		Partial: database.Where(spec.KeyName).NotEqual(object.NewString("")).And(database.Where(spec.KeyName).IsNotNull()),
 	},
 }
 
-// NewStorage creates a new Storage instance.
-func NewStorage(ctx context.Context, config StorageConfig) (*Storage, error) {
+// New creates a new Store instance.
+func New(ctx context.Context, config Config) (*Store, error) {
 	scheme := config.Scheme
 	db := config.Database
 
@@ -68,14 +70,14 @@ func NewStorage(ctx context.Context, config StorageConfig) (*Storage, error) {
 		}
 	}
 
-	return &Storage{
+	return &Store{
 		scheme: scheme,
 		nodes:  nodes,
 	}, nil
 }
 
 // Watch returns a Stream to track changes based on the provided filter.
-func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
+func (s *Store) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	f, err := filter.Encode()
 	if err != nil {
 		return nil, err
@@ -88,12 +90,12 @@ func (s *Storage) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	return newStream(stream), nil
 }
 
-// InsertOne inserts a single Spec and returns its ID.
-func (s *Storage) InsertOne(ctx context.Context, spec Spec) (uuid.UUID, error) {
+// InsertOne inserts a single spec.Spec and returns its ID.
+func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	doc, err := s.specToDoc(spec)
+	doc, err := s.specToDoc(spc)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -105,20 +107,20 @@ func (s *Storage) InsertOne(ctx context.Context, spec Spec) (uuid.UUID, error) {
 
 	var id uuid.UUID
 	if err := object.Unmarshal(pk, &id); err != nil {
-		_, _ = s.nodes.DeleteOne(ctx, database.Where(KeyID).Equal(pk))
+		_, _ = s.nodes.DeleteOne(ctx, database.Where(spec.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
 	return id, nil
 }
 
-// InsertMany inserts multiple Spec instances and returns their IDs.
-func (s *Storage) InsertMany(ctx context.Context, specs []Spec) ([]uuid.UUID, error) {
+// InsertMany inserts multiple spec.Spec instances and returns their IDs.
+func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var docs []*object.Map
-	for _, spec := range specs {
-		if doc, err := s.specToDoc(spec); err != nil {
+	for _, spc := range spcs {
+		if doc, err := s.specToDoc(spc); err != nil {
 			return nil, err
 		} else {
 			docs = append(docs, doc)
@@ -132,20 +134,20 @@ func (s *Storage) InsertMany(ctx context.Context, specs []Spec) ([]uuid.UUID, er
 
 	var ids []uuid.UUID
 	if err := object.Unmarshal(object.NewSlice(pks...), &ids); err != nil {
-		_, _ = s.nodes.DeleteMany(ctx, database.Where(KeyID).In(pks...))
+		_, _ = s.nodes.DeleteMany(ctx, database.Where(spec.KeyID).In(pks...))
 		return nil, err
 	}
 	return ids, nil
 }
 
-// UpdateOne updates a single Spec and returns success or failure.
-func (s *Storage) UpdateOne(ctx context.Context, spec Spec) (bool, error) {
+// UpdateOne updates a single spec.Spec and returns success or failure.
+func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	filter, _ := Where[uuid.UUID](KeyID).EQ(spec.GetID()).Encode()
+	filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
 
-	doc, err := s.specToDoc(spec)
+	doc, err := s.specToDoc(spc)
 	if err != nil {
 		return false, err
 	}
@@ -153,14 +155,14 @@ func (s *Storage) UpdateOne(ctx context.Context, spec Spec) (bool, error) {
 	return s.nodes.UpdateOne(ctx, filter, doc)
 }
 
-// UpdateMany updates multiple Spec instances and returns the number of successes.
-func (s *Storage) UpdateMany(ctx context.Context, specs []Spec) (int, error) {
+// UpdateMany updates multiple spec.Spec instances and returns the number of successes.
+func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var docs []*object.Map
-	for _, spec := range specs {
-		if doc, err := s.specToDoc(spec); err != nil {
+	for _, spc := range spcs {
+		if doc, err := s.specToDoc(spc); err != nil {
 			return 0, err
 		} else {
 			docs = append(docs, doc)
@@ -169,7 +171,7 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []Spec) (int, error) {
 
 	count := 0
 	for i, doc := range docs {
-		filter, _ := Where[uuid.UUID](KeyID).EQ(specs[i].GetID()).Encode()
+		filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spcs[i].GetID()).Encode()
 		if ok, err := s.nodes.UpdateOne(ctx, filter, doc); err != nil {
 			return count, err
 		} else if ok {
@@ -179,8 +181,8 @@ func (s *Storage) UpdateMany(ctx context.Context, specs []Spec) (int, error) {
 	return count, nil
 }
 
-// DeleteOne deletes a single Spec and returns success or failure.
-func (s *Storage) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
+// DeleteOne deletes a single spec.Spec and returns success or failure.
+func (s *Store) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -192,8 +194,8 @@ func (s *Storage) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
 	return s.nodes.DeleteOne(ctx, f)
 }
 
-// DeleteMany deletes multiple Spec instances and returns the number of successes.
-func (s *Storage) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
+// DeleteMany deletes multiple spec.Spec instances and returns the number of successes.
+func (s *Store) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -205,8 +207,8 @@ func (s *Storage) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 	return s.nodes.DeleteMany(ctx, f)
 }
 
-// FindOne returns a single Spec matched by the filter.
-func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (Spec, error) {
+// FindOne returns a single spec.Spec matched by the filter.
+func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -224,8 +226,8 @@ func (s *Storage) FindOne(ctx context.Context, filter *Filter, options ...*datab
 	}
 }
 
-// FindMany returns multiple Spec instances matched by the filter.
-func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]Spec, error) {
+// FindMany returns multiple spec.Spec instances matched by the filter.
+func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -239,22 +241,22 @@ func (s *Storage) FindMany(ctx context.Context, filter *Filter, options ...*data
 		return nil, err
 	}
 
-	var specs []Spec
+	var spcs []spec.Spec
 	for _, doc := range docs {
 		if doc == nil {
 			continue
 		}
-		if spec, err := s.docToSpec(doc); err != nil {
+		if spc, err := s.docToSpec(doc); err != nil {
 			return nil, err
 		} else {
-			specs = append(specs, spec)
+			spcs = append(spcs, spc)
 		}
 	}
-	return specs, nil
+	return spcs, nil
 }
 
-func (s *Storage) docToSpec(doc *object.Map) (Spec, error) {
-	unstructured := NewUnstructured(doc)
+func (s *Store) docToSpec(doc *object.Map) (spec.Spec, error) {
+	unstructured := spec.NewUnstructured(doc)
 	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
 	} else if err := object.Unmarshal(doc, spec); err != nil {
@@ -264,20 +266,20 @@ func (s *Storage) docToSpec(doc *object.Map) (Spec, error) {
 	}
 }
 
-func (s *Storage) specToDoc(spec Spec) (*object.Map, error) {
-	if n, err := s.scheme.Decode(spec); err != nil {
+func (s *Store) specToDoc(spc spec.Spec) (*object.Map, error) {
+	if n, err := s.scheme.Decode(spc); err != nil {
 		return nil, err
 	} else if err := n.Close(); err != nil {
 		return nil, err
 	}
 
-	unstructured, err := s.scheme.Unstructured(spec)
+	unstructured, err := s.scheme.Unstructured(spc)
 	if err != nil {
 		return nil, err
 	}
 
 	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(DefaultNamespace)
+		unstructured.SetNamespace(spec.DefaultNamespace)
 	}
 	if unstructured.GetID() == (uuid.UUID{}) {
 		unstructured.SetID(uuid.Must(uuid.NewV7()))

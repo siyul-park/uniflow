@@ -6,13 +6,15 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/scanner"
 	"github.com/siyul-park/uniflow/pkg/database"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	Scheme   *spec.Scheme
+	Scheme   *scheme.Scheme
 	Database database.Database
 	FS       fs.FS
 }
@@ -44,7 +46,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		st, err := spec.NewStorage(ctx, spec.StorageConfig{
+		st, err := store.New(ctx, store.Config{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -54,7 +56,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
-			Storage(st).
+			Store(st).
 			Namespace(namespace).
 			FS(config.FS).
 			Filename(filename).
@@ -63,10 +65,10 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		var filter *spec.Filter
+		var filter *store.Filter
 		for _, v := range specs {
-			filter = filter.And(spec.Where[uuid.UUID](spec.KeyID).EQ(v.GetID()).
-				And(spec.Where[string](spec.KeyNamespace).EQ(v.GetNamespace())))
+			filter = filter.And(store.Where[uuid.UUID](spec.KeyID).EQ(v.GetID()).
+				And(store.Where[string](spec.KeyNamespace).EQ(v.GetNamespace())))
 		}
 
 		_, err = st.DeleteMany(ctx, filter)

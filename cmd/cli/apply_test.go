@@ -11,7 +11,9 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,18 +21,18 @@ func TestApplyCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	db := memdb.New("")
 	fsys := make(fstest.MapFS)
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: db,
 	})
 
 	kind := faker.UUIDHyphenated()
 
-	codec := spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	codec := scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
@@ -66,7 +68,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(ctx, spec.Where[string](spec.KeyName).EQ(meta.GetName()))
+	r, err := st.FindOne(ctx, store.Where[string](spec.KeyName).EQ(meta.GetName()))
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 

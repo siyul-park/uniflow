@@ -3,13 +3,15 @@ package cli
 import (
 	"github.com/siyul-park/uniflow/cmd/printer"
 	"github.com/siyul-park/uniflow/pkg/database"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
-	Scheme   *spec.Scheme
+	Scheme   *scheme.Scheme
 	Database database.Database
 }
 
@@ -35,7 +37,7 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		st, err := spec.NewStorage(ctx, spec.StorageConfig{
+		st, err := store.New(ctx, store.Config{
 			Scheme:   config.Scheme,
 			Database: config.Database,
 		})
@@ -43,9 +45,9 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		var filter *spec.Filter
+		var filter *store.Filter
 		if namespace != "" {
-			filter = spec.Where[string](spec.KeyNamespace).EQ(namespace)
+			filter = store.Where[string](spec.KeyNamespace).EQ(namespace)
 		}
 
 		specs, err := st.FindMany(ctx, filter)

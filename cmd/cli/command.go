@@ -10,13 +10,13 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/spf13/cobra"
 )
 
 // Config holds the configuration parameters for the root command.
 type Config struct {
-	Scheme   *spec.Scheme
+	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
 	Database database.Database
 	FS       fs.FS

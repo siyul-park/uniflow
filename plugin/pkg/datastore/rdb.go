@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -150,8 +151,8 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 }
 
 // NewRDBNodeCodec creates a new codec for RDBNodeSpec.
-func NewRDBNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
+func NewRDBNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
 		db, err := sqlx.Connect(spec.Driver, spec.Source)
 		if err != nil {
 			return nil, err

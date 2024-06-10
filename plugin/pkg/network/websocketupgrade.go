@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -115,8 +116,8 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 }
 
 // NewWebSocketUpgradeNodeCodec creates a new codec for WebSocketUpgradeNodeSpec.
-func NewWebSocketUpgradeNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *WebSocketUpgradeNodeSpec) (node.Node, error) {
+func NewWebSocketUpgradeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketUpgradeNodeSpec) (node.Node, error) {
 		n := NewWebSocketUpgradeNode()
 		n.SetTimeout(spec.Timeout)
 		n.SetReadBufferSize(spec.Read)

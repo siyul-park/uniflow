@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -152,8 +153,8 @@ func (t *NativeModule) Load(opcode string) (any, bool) {
 }
 
 // NewNativeNodeCodec creates a new codec for NativeNodeSpec.
-func NewNativeNodeCodec(module *NativeModule) spec.Codec {
-	return spec.CodecWithType(func(spec *NativeNodeSpec) (node.Node, error) {
+func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
+	return scheme.CodecWithType(func(spec *NativeNodeSpec) (node.Node, error) {
 		fn, ok := module.Load(spec.Opcode)
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)

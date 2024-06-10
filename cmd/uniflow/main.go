@@ -13,7 +13,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/datastore"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
@@ -44,7 +45,7 @@ func main() {
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
 
-	sb := spec.NewBuilder()
+	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
 	module := system.NewNativeModule()
@@ -84,7 +85,7 @@ func main() {
 		db = memdb.New(databaseName)
 	}
 
-	st, err := spec.NewStorage(ctx, spec.StorageConfig{
+	st, err := store.New(ctx, store.Config{
 		Scheme:   sc,
 		Database: db,
 	})

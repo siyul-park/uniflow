@@ -8,7 +8,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/loader"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -16,13 +17,13 @@ import (
 type Config struct {
 	Namespace string
 	Hook      *hook.Hook
-	Scheme    *spec.Scheme
+	Scheme    *scheme.Scheme
 	Database  database.Database
 }
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	storage    *spec.Storage
+	store      *store.Store
 	table      *symbol.Table
 	loader     *loader.Loader
 	reconciler *loader.Reconciler
@@ -34,13 +35,13 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		config.Hook = hook.New()
 	}
 	if config.Scheme == nil {
-		config.Scheme = spec.NewScheme()
+		config.Scheme = scheme.New()
 	}
 	if config.Database == nil {
 		config.Database = memdb.New("")
 	}
 
-	st, err := spec.NewStorage(ctx, spec.StorageConfig{
+	st, err := store.New(ctx, store.Config{
 		Scheme:   config.Scheme,
 		Database: config.Database,
 	})
@@ -55,25 +56,25 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 
 	ld := loader.New(loader.Config{
 		Namespace: config.Namespace,
-		Storage:   st,
+		Store:     st,
 		Table:     tb,
 	})
 
 	rc := loader.NewReconciler(loader.ReconcilerConfig{
 		Namespace: config.Namespace,
-		Storage:   st,
+		Store:     st,
 		Loader:    ld,
 	})
 
 	return &Runtime{
-		storage:    st,
+		store:      st,
 		table:      tb,
 		loader:     ld,
 		reconciler: rc,
 	}, nil
 }
 
-// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from spec.Storage.
+// Lookup searches for a node.Node in the symbol.Table. If not found, it loads it from store.Store.
 func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); !ok {
 		return r.loader.LoadOne(ctx, id)

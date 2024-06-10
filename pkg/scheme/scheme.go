@@ -1,4 +1,4 @@
-package spec
+package scheme
 
 import (
 	"reflect"
@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // Scheme is a registry for decoding Spec objects.
@@ -19,8 +20,8 @@ type Scheme struct {
 
 var _ Codec = (*Scheme)(nil)
 
-// NewScheme creates a new Scheme instance.
-func NewScheme() *Scheme {
+// New creates a new Scheme instance.
+func New() *Scheme {
 	return &Scheme{
 		types:  make(map[string]reflect.Type),
 		codecs: make(map[string]Codec),
@@ -28,7 +29,7 @@ func NewScheme() *Scheme {
 }
 
 // AddKnownType adds a Spec type to the Scheme, associating it with a kind.
-func (s *Scheme) AddKnownType(kind string, spec Spec) {
+func (s *Scheme) AddKnownType(kind string, spec spec.Spec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -62,36 +63,36 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 }
 
 // Decode decodes the given Spec into a node.Node.
-func (s *Scheme) Decode(spec Spec) (node.Node, error) {
+func (s *Scheme) Decode(spc spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	kind := spec.GetKind()
+	kind := spc.GetKind()
 	if kind == "" {
-		if kinds := s.Kinds(spec); len(kinds) > 0 {
+		if kinds := s.Kinds(spc); len(kinds) > 0 {
 			kind = kinds[0]
 		}
 	}
 
-	if unstructured, ok := spec.(*Unstructured); ok {
+	if unstructured, ok := spc.(*spec.Unstructured); ok {
 		if structured, ok := s.Spec(kind); ok {
 			if err := object.Unmarshal(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
-				spec = structured
+				spc = structured
 			}
 		}
 	}
 
 	if codec, ok := s.Codec(kind); ok {
-		return codec.Decode(spec)
+		return codec.Decode(spc)
 	}
 	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
 // Unstructured converts the given Spec into an Unstructured representation.
-func (s *Scheme) Unstructured(spec Spec) (*Unstructured, error) {
-	structured, err := s.Structured(spec)
+func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
+	structured, err := s.Structured(spc)
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +100,13 @@ func (s *Scheme) Unstructured(spec Spec) (*Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewUnstructured(doc.(*object.Map)), nil
+	return spec.NewUnstructured(doc.(*object.Map)), nil
 }
 
 // Structured converts the given Spec into a structured representation.
-func (s *Scheme) Structured(spec Spec) (Spec, error) {
-	if structured, ok := s.Spec(spec.GetKind()); ok {
-		if doc, err := object.MarshalBinary(spec); err != nil {
+func (s *Scheme) Structured(spc spec.Spec) (spec.Spec, error) {
+	if structured, ok := s.Spec(spc.GetKind()); ok {
+		if doc, err := object.MarshalBinary(spc); err != nil {
 			return nil, err
 		} else if err := object.Unmarshal(doc, structured); err != nil {
 			return nil, err
@@ -113,11 +114,11 @@ func (s *Scheme) Structured(spec Spec) (Spec, error) {
 			return structured, nil
 		}
 	}
-	return spec, nil
+	return spc, nil
 }
 
 // Spec creates a new instance of Spec with the given kind.
-func (s *Scheme) Spec(kind string) (Spec, bool) {
+func (s *Scheme) Spec(kind string) (spec.Spec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -128,17 +129,17 @@ func (s *Scheme) Spec(kind string) (Spec, bool) {
 		if value.Kind() == reflect.Pointer {
 			value.Set(reflect.New(t.Elem()))
 		}
-		v, ok := value.Interface().(Spec)
+		v, ok := value.Interface().(spec.Spec)
 		return v, ok
 	}
 }
 
 // Kinds returns the kinds associated with the given Spec.
-func (s *Scheme) Kinds(spec Spec) []string {
+func (s *Scheme) Kinds(spc spec.Spec) []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	typ := reflect.TypeOf(spec)
+	typ := reflect.TypeOf(spc)
 
 	var kinds []string
 	for kind, t := range s.types {

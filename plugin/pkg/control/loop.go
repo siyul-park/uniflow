@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -170,8 +171,8 @@ func (n *LoopNode) backward(proc *process.Process) {
 }
 
 // NewLoopNodeCodec creates a new codec for LoopNodeSpec.
-func NewLoopNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
+func NewLoopNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
 		return NewLoopNode(), nil
 	})
 }

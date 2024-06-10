@@ -2,7 +2,7 @@ package network
 
 import (
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -28,8 +28,8 @@ func AddToHook() func(*hook.Hook) error {
 }
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme() func(*spec.Scheme) error {
-	return func(s *spec.Scheme) error {
+func AddToScheme() func(*scheme.Scheme) error {
+	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindHTTPClient, &HTTPClientNodeSpec{})
 		s.AddCodec(KindHTTPClient, NewHTTPClientNodeCodec())
 

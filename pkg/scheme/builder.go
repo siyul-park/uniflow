@@ -1,4 +1,4 @@
-package spec
+package scheme
 
 // Builder is a collection of functions to construct a new Scheme.
 type Builder []func(*Scheme) error
@@ -25,7 +25,7 @@ func (b *Builder) Register(funcs ...func(*Scheme) error) {
 
 // Build yields a new Scheme containing the registered types.
 func (b *Builder) Build() (*Scheme, error) {
-	s := NewScheme()
+	s := New()
 	if err := b.AddToScheme(s); err != nil {
 		return nil, err
 	}

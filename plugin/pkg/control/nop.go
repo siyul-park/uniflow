@@ -7,6 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -83,8 +84,8 @@ func (n *NOPNode) forward(proc *process.Process) {
 }
 
 // NewNOPNodeCodec creates a codec for decoding NOPNodeSpec.
-func NewNOPNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
+func NewNOPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
 		return NewNOPNode(), nil
 	})
 }

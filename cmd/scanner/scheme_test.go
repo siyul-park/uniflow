@@ -5,12 +5,13 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSpecCodec_Decode(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})

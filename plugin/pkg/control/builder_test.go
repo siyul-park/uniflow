@@ -6,6 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestAddToHook(t *testing.T) {
 }
 
 func TestAddToScheme(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	b := event.NewBroker()
 	defer b.Close()

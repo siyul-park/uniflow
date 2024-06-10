@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -74,8 +75,8 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	return packet.New(object.NewInt(int64(len))), nil
 }
 
-func NewWriteNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
+func NewWriteNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
 		var file io.WriteCloser
 		var err error
 		if spec.File == "/dev/stdout" || spec.File == "stdout" {

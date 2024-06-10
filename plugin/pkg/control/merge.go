@@ -6,6 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -45,8 +46,8 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 }
 
 // NewMergeNodeCodec creates a new codec for MergeNodeSpec.
-func NewMergeNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *MergeNodeSpec) (node.Node, error) {
+func NewMergeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *MergeNodeSpec) (node.Node, error) {
 		return NewMergeNode(), nil
 	})
 }

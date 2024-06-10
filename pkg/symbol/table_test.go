@@ -6,17 +6,18 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_Insert(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -287,12 +288,12 @@ func TestTable_Insert(t *testing.T) {
 }
 
 func TestTable_Free(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -380,12 +381,12 @@ func TestTable_Free(t *testing.T) {
 }
 
 func TestTable_LookupByID(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -406,12 +407,12 @@ func TestTable_LookupByID(t *testing.T) {
 }
 
 func TestTable_LookupByName(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -433,12 +434,12 @@ func TestTable_LookupByName(t *testing.T) {
 }
 
 func TestTable_Keys(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -459,12 +460,12 @@ func TestTable_Keys(t *testing.T) {
 }
 
 func TestTable_Hook(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -560,12 +561,12 @@ func TestTable_Hook(t *testing.T) {
 }
 
 func BenchmarkTable_Insert(b *testing.B) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
@@ -584,12 +585,12 @@ func BenchmarkTable_Insert(b *testing.B) {
 }
 
 func BenchmarkTable_Free(b *testing.B) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 

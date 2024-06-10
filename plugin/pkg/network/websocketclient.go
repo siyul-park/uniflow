@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -79,8 +80,8 @@ func (n *WebSocketClientNode) connect(proc *process.Process, inPck *packet.Packe
 }
 
 // NewWebSocketClientNodeCodec creates a new codec for WebSocketClientNodeSpec.
-func NewWebSocketClientNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *WebSocketClientNodeSpec) (node.Node, error) {
+func NewWebSocketClientNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketClientNodeSpec) (node.Node, error) {
 		url, err := url.Parse(spec.URL)
 		if err != nil {
 			return nil, err

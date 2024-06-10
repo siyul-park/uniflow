@@ -11,13 +11,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // StartConfig holds the configuration for the uniflow command.
 type StartConfig struct {
-	Scheme   *spec.Scheme
+	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
 	Database database.Database
 	FS       fs.FS
@@ -51,7 +53,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			st, err := spec.NewStorage(ctx, spec.StorageConfig{
+			st, err := store.New(ctx, store.Config{
 				Scheme:   config.Scheme,
 				Database: config.Database,
 			})
@@ -59,7 +61,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			filter := spec.Where[string](spec.KeyNamespace).EQ(namespace)
+			filter := store.Where[string](spec.KeyNamespace).EQ(namespace)
 			specs, err := st.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 			if err != nil {
 				return err
@@ -70,7 +72,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 			specs, err = scanner.New().
 				Scheme(config.Scheme).
-				Storage(st).
+				Store(st).
 				Namespace(namespace).
 				FS(config.FS).
 				Filename(filename).

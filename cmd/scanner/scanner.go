@@ -6,13 +6,15 @@ import (
 	"io/fs"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 )
 
 // Scanner is responsible for building spec.Spec instances from raw data.
 type Scanner struct {
-	scheme    *spec.Scheme
-	storage   *spec.Storage
+	scheme    *scheme.Scheme
+	store     *store.Store
 	namespace string
 	fsys      fs.FS
 	filename  string
@@ -24,14 +26,14 @@ func New() *Scanner {
 }
 
 // Scheme sets the scheme for the Builder.
-func (s *Scanner) Scheme(scheme *spec.Scheme) *Scanner {
+func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
 	s.scheme = scheme
 	return s
 }
 
-// Storage sets the storage for the Builder.
-func (s *Scanner) Storage(storage *spec.Storage) *Scanner {
-	s.storage = storage
+// Store sets the store for the Builder.
+func (s *Scanner) Store(store *store.Store) *Scanner {
+	s.store = store
 	return s
 }
 
@@ -93,12 +95,12 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		specs = append(specs, spec)
 	}
 
-	if s.storage != nil {
+	if s.store != nil {
 		for _, v := range specs {
 			if v.GetID() == (uuid.UUID{}) {
 				if v.GetName() != "" {
-					filter := spec.Where[string](spec.KeyName).EQ(v.GetName()).And(spec.Where[string](spec.KeyNamespace).EQ(v.GetNamespace()))
-					if exist, err := s.storage.FindOne(ctx, filter); err != nil {
+					filter := store.Where[string](spec.KeyName).EQ(v.GetName()).And(store.Where[string](spec.KeyNamespace).EQ(v.GetNamespace()))
+					if exist, err := s.store.FindOne(ctx, filter); err != nil {
 						return nil, err
 					} else if exist != nil {
 						v.SetID(exist.GetID())

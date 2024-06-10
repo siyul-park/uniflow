@@ -45,7 +45,7 @@ import (
 
 func main() {
 	hb := hook.NewBuilder()
-	sb := spec.NewBuilder()
+	sb := scheme.NewBuilder()
 
 	hb.Register(network.AddToHook())
 	sb.Register(control.AddToScheme())

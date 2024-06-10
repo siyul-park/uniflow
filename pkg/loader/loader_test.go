@@ -8,7 +8,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,16 +19,16 @@ func TestLoader_LoadOne(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+		st, _ := store.New(ctx, store.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -35,8 +37,8 @@ func TestLoader_LoadOne(t *testing.T) {
 		defer tb.Clear()
 
 		ld := New(Config{
-			Storage: st,
-			Table:   tb,
+			Store: st,
+			Table: tb,
 		})
 
 		meta1 := &spec.Meta{
@@ -94,7 +96,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+		st, _ := store.New(ctx, store.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -103,8 +105,8 @@ func TestLoader_LoadOne(t *testing.T) {
 		defer tb.Clear()
 
 		ld := New(Config{
-			Storage: st,
-			Table:   tb,
+			Store: st,
+			Table: tb,
 		})
 
 		meta := &spec.Meta{
@@ -127,7 +129,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+		st, _ := store.New(ctx, store.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -136,8 +138,8 @@ func TestLoader_LoadOne(t *testing.T) {
 		defer tb.Clear()
 
 		ld := New(Config{
-			Storage: st,
-			Table:   tb,
+			Store: st,
+			Table: tb,
 		})
 
 		meta := &spec.Meta{
@@ -152,7 +154,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+		st.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
 
 		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
@@ -167,16 +169,16 @@ func TestLoader_LoadAll(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+		st, _ := store.New(ctx, store.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -185,8 +187,8 @@ func TestLoader_LoadAll(t *testing.T) {
 		defer tb.Clear()
 
 		ld := New(Config{
-			Storage: st,
-			Table:   tb,
+			Store: st,
+			Table: tb,
 		})
 
 		meta1 := &spec.Meta{
@@ -246,7 +248,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+		st, _ := store.New(ctx, store.Config{
 			Scheme:   s,
 			Database: memdb.New(faker.UUIDHyphenated()),
 		})
@@ -255,8 +257,8 @@ func TestLoader_LoadAll(t *testing.T) {
 		defer tb.Clear()
 
 		ld := New(Config{
-			Storage: st,
-			Table:   tb,
+			Store: st,
+			Table: tb,
 		})
 
 		meta := &spec.Meta{
@@ -283,15 +285,15 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -300,8 +302,8 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 	defer tb.Clear()
 
 	ld := New(Config{
-		Storage: st,
-		Table:   tb,
+		Store: st,
+		Table: tb,
 	})
 
 	meta := &spec.Meta{
@@ -332,15 +334,15 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
@@ -349,8 +351,8 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 	defer tb.Clear()
 
 	ld := New(Config{
-		Storage: st,
-		Table:   tb,
+		Store: st,
+		Table: tb,
 	})
 
 	meta := &spec.Meta{

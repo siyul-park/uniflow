@@ -6,6 +6,7 @@ import (
 
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestAddToHook(t *testing.T) {
 }
 
 func TestAddToScheme(t *testing.T) {
-	s := spec.NewScheme()
+	s := scheme.New()
 
 	err := AddToScheme()(s)
 	assert.NoError(t, err)

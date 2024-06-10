@@ -9,7 +9,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,15 +21,15 @@ func TestRuntime_Lookup(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	db := memdb.New(faker.UUIDHyphenated())
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -57,15 +59,15 @@ func TestRuntime_Start(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
 	db := memdb.New(faker.UUIDHyphenated())
 
-	st, _ := spec.NewStorage(ctx, spec.StorageConfig{
+	st, _ := store.New(ctx, store.Config{
 		Scheme:   s,
 		Database: db,
 	})
@@ -112,9 +114,9 @@ func BenchmarkNewRuntime(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := spec.NewScheme()
+	s := scheme.New()
 	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, spec.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 

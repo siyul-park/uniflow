@@ -10,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/plugin/internal/language"
 )
@@ -81,8 +82,8 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 }
 
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
-func NewSwitchNodeCodec() spec.Codec {
-	return spec.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
+func NewSwitchNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
 		whens := make([]func(any) (bool, error), len(spec.Match))
 		for i, condition := range spec.Match {
 			lang := spec.Lang

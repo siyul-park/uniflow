@@ -1,4 +1,4 @@
-package spec
+package store
 
 import (
 	"github.com/gofrs/uuid"

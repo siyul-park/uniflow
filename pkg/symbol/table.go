@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -16,9 +17,9 @@ type TableOptions struct {
 	UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
 }
 
-// Table manages the storage and operations for Symbols.
+// Table manages the store and operations for Symbols.
 type Table struct {
-	scheme      *spec.Scheme
+	scheme      *scheme.Scheme
 	symbols     map[uuid.UUID]*Symbol
 	index       map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
@@ -27,7 +28,7 @@ type Table struct {
 }
 
 // NewTable returns a new SymbolTable with the specified options.
-func NewTable(sh *spec.Scheme, opts ...TableOptions) *Table {
+func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
