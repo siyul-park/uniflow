@@ -198,11 +198,11 @@ func primitiveToBson(data object.Object) (any, error) {
 		return primitive.Null{}, nil
 	}
 
-	if s, ok := data.(*object.Map); ok {
+	if s, ok := data.(object.Map); ok {
 		t := make(primitive.M, s.Len())
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
-			if k, ok := k.(*object.String); !ok {
+			if k, ok := k.(object.String); !ok {
 				return nil, errors.WithStack(encoding.ErrInvalidValue)
 			} else {
 				if v, err := primitiveToBson(v); err != nil {
@@ -213,7 +213,7 @@ func primitiveToBson(data object.Object) (any, error) {
 			}
 		}
 		return t, nil
-	} else if s, ok := data.(*object.Slice); ok {
+	} else if s, ok := data.(object.Slice); ok {
 		t := make(primitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			if v, err := primitiveToBson(s.Get(i)); err != nil {

@@ -153,7 +153,7 @@ func (n *WebSocketNode) consume(proc *process.Process) {
 		var inPayload *WebSocketPayload
 		if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()
-			if _, ok := inPayload.Data.(*object.Binary); !ok {
+			if _, ok := inPayload.Data.(object.Binary); !ok {
 				inPayload.Type = websocket.TextMessage
 			} else {
 				inPayload.Type = websocket.BinaryMessage

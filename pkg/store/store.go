@@ -118,7 +118,7 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []*object.Map
+	var docs []object.Map
 	for _, spc := range spcs {
 		if doc, err := s.specToDoc(spc); err != nil {
 			return nil, err
@@ -160,7 +160,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []*object.Map
+	var docs []object.Map
 	for _, spc := range spcs {
 		if doc, err := s.specToDoc(spc); err != nil {
 			return 0, err
@@ -255,7 +255,7 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 	return spcs, nil
 }
 
-func (s *Store) docToSpec(doc *object.Map) (spec.Spec, error) {
+func (s *Store) docToSpec(doc object.Map) (spec.Spec, error) {
 	unstructured := spec.NewUnstructured(doc)
 	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
@@ -266,7 +266,7 @@ func (s *Store) docToSpec(doc *object.Map) (spec.Spec, error) {
 	}
 }
 
-func (s *Store) specToDoc(spc spec.Spec) (*object.Map, error) {
+func (s *Store) specToDoc(spc spec.Spec) (object.Map, error) {
 	if n, err := s.scheme.Decode(spc); err != nil {
 		return nil, err
 	} else if err := n.Close(); err != nil {

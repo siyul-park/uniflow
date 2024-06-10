@@ -149,7 +149,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inPayload, ok := inPck.Payload().(*object.Map)
+	inPayload, ok := inPck.Payload().(object.Map)
 	if !ok {
 		return nil, nil
 	}

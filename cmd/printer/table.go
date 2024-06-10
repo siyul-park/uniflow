@@ -113,9 +113,9 @@ func (p *TablePrinter) Print(data any) (string, error) {
 
 	var elements []any
 	switch v := value.(type) {
-	case *object.Slice:
+	case object.Slice:
 		elements = v.Slice()
-	case *object.Map:
+	case object.Map:
 		elements = append(elements, v.Interface())
 	default:
 		return "", errors.New("unsupported data type")

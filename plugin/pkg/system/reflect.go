@@ -55,7 +55,7 @@ func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 				if exist, err := object.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
-					exist := exist.(*object.Map)
+					exist := exist.(object.Map)
 					patch := patch.Doc()
 					patches = append(patches, spec.NewUnstructured(object.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
 				}

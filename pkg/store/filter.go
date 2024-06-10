@@ -175,7 +175,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 	if ft.OP == database.IN || ft.OP == database.NIN {
 		if v, err := object.MarshalBinary(ft.Value); err != nil {
 			return nil, err
-		} else if v, ok := v.(*object.Slice); ok {
+		} else if v, ok := v.(object.Slice); ok {
 			elements := make([]any, 0, v.Len())
 			for _, v := range v.Values() {
 				unstructed := spec.NewUnstructured(nil)

@@ -15,46 +15,46 @@ type Uint struct {
 	value uint64
 }
 
-var _ Object = (*Uint)(nil)
+var _ Object = Uint{}
 
 // NewUint returns a new Uint64.
-func NewUint(value uint64) *Uint {
-	return &Uint{value: value}
+func NewUint(value uint64) Uint {
+	return Uint{value: value}
 }
 
 // Uint returns the raw representation.
-func (u *Uint) Uint() uint64 {
+func (u Uint) Uint() uint64 {
 	return u.value
 }
 
 // Kind returns the type of the uint64 data.
-func (u *Uint) Kind() Kind {
+func (u Uint) Kind() Kind {
 	return KindUint
 }
 
 // Hash returns the hash code for the uint64 value.
-func (u *Uint) Hash() uint64 {
+func (u Uint) Hash() uint64 {
 	h := fnv.New64a()
 	h.Write((*[8]byte)(unsafe.Pointer(&u.value))[:])
 	return h.Sum64()
 }
 
 // Interface converts Uint64 to a uint64.
-func (u *Uint) Interface() any {
+func (u Uint) Interface() any {
 	return u.value
 }
 
 // Equal checks if two Uint objects are equal.
-func (u *Uint) Equal(other Object) bool {
-	if o, ok := other.(*Uint); ok {
+func (u Uint) Equal(other Object) bool {
+	if o, ok := other.(Uint); ok {
 		return u.value == o.value
 	}
 	return false
 }
 
 // Compare checks whether another Object is equal to this Uint instance.
-func (u *Uint) Compare(other Object) int {
-	if o, ok := other.(*Uint); ok {
+func (u Uint) Compare(other Object) int {
+	if o, ok := other.(Uint); ok {
 		return compare(u.value, o.value)
 	}
 	return compare(u.Kind(), KindOf(other))
@@ -106,7 +106,7 @@ func newUintDecoder() encoding.DecodeCompiler[Object] {
 				return newUintDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(*Uint); ok {
+					if s, ok := source.(Uint); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
@@ -130,7 +130,7 @@ func newUintEncoderWithType[T constraints.Integer | constraints.Float]() encodin
 
 func newUintDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Object, unsafe.Pointer] {
 	return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-		if s, ok := source.(*Uint); ok {
+		if s, ok := source.(Uint); ok {
 			*(*T)(target) = T(s.Uint())
 			return nil
 		}

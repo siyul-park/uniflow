@@ -79,9 +79,9 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 	}
 
 	var data []byte
-	if v, ok := value.(*object.String); ok {
+	if v, ok := value.(object.String); ok {
 		data = []byte(v.String())
-	} else if v, ok := value.(*object.Binary); ok {
+	} else if v, ok := value.(object.Binary); ok {
 		data = v.Bytes()
 	}
 	if data != nil {
@@ -125,12 +125,12 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil, err
 		}
 
-		writeField := func(obj *object.Map, key object.Object) error {
-			if key, ok := key.(*object.String); ok {
+		writeField := func(obj object.Map, key object.Object) error {
+			if key, ok := key.(object.String); ok {
 				value := obj.GetOr(key, nil)
 
-				var elements *object.Slice
-				if v, ok := value.(*object.Slice); ok {
+				var elements object.Slice
+				if v, ok := value.(object.Slice); ok {
 					elements = v
 				} else {
 					elements = object.NewSlice(value)
@@ -159,7 +159,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 		writeFields := func(value object.Object) error {
-			if value, ok := value.(*object.Map); ok {
+			if value, ok := value.(object.Map); ok {
 				for _, key := range value.Keys() {
 					if err := writeField(value, key); err != nil {
 						return err
@@ -169,13 +169,13 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 		writeFiles := func(value object.Object) error {
-			if value, ok := value.(*object.Map); ok {
+			if value, ok := value.(object.Map); ok {
 				for _, key := range value.Keys() {
-					if key, ok := key.(*object.String); ok {
+					if key, ok := key.(object.String); ok {
 						value := value.GetOr(key, nil)
 
-						var elements *object.Slice
-						if v, ok := value.(*object.Slice); ok {
+						var elements object.Slice
+						if v, ok := value.(object.Slice); ok {
 							elements = v
 						} else {
 							elements = object.NewSlice(value)
@@ -196,9 +196,9 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 							contentType := ""
 							contentTypes, _ := object.Pick[object.Object](header, HeaderContentType)
 							if contentTypes != nil {
-								if c, ok := contentTypes.(*object.Slice); ok {
+								if c, ok := contentTypes.(object.Slice); ok {
 									contentType, _ = object.Pick[string](c, "0")
-								} else if c, ok := contentTypes.(*object.String); ok {
+								} else if c, ok := contentTypes.(object.String); ok {
 									contentType = c.String()
 								}
 							}
@@ -206,9 +206,9 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 							contentEncoding := ""
 							contentEncodings, _ := object.Pick[object.Object](header, HeaderContentEncoding)
 							if contentEncodings != nil {
-								if c, ok := contentEncodings.(*object.Slice); ok {
+								if c, ok := contentEncodings.(object.Slice); ok {
 									contentEncoding, _ = object.Pick[string](c, "0")
-								} else if c, ok := contentEncodings.(*object.String); ok {
+								} else if c, ok := contentEncodings.(object.String); ok {
 									contentEncoding = c.String()
 								}
 							}
@@ -240,7 +240,7 @@ func MarshalMIME(value object.Object, contentType *string) ([]byte, error) {
 			return nil
 		}
 
-		if v, ok := value.(*object.Map); ok {
+		if v, ok := value.(object.Map); ok {
 			for _, key := range v.Keys() {
 				value := v.GetOr(key, nil)
 

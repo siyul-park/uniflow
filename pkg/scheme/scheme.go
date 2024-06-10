@@ -100,7 +100,7 @@ func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	return spec.NewUnstructured(doc.(*object.Map)), nil
+	return spec.NewUnstructured(doc.(object.Map)), nil
 }
 
 // Structured converts the given Spec into a structured representation.
