@@ -8,7 +8,7 @@ require (
 	github.com/evanw/esbuild v0.21.4
 	github.com/go-faker/faker/v4 v4.4.1
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.2
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.22
