@@ -8,61 +8,61 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBool_NewBool(t *testing.T) {
-	assert.Equal(t, True, NewBool(true))
-	assert.Equal(t, False, NewBool(false))
+func TestBoolean_NewBoolean(t *testing.T) {
+	assert.Equal(t, True, NewBoolean(true))
+	assert.Equal(t, False, NewBoolean(false))
 }
 
-func TestBool_Bool(t *testing.T) {
+func TestBoolean_Boolean(t *testing.T) {
 	assert.Equal(t, true, True.Bool())
 	assert.Equal(t, false, False.Bool())
 }
 
-func TestBool_Kind(t *testing.T) {
-	assert.Equal(t, KindBool, True.Kind())
+func TestBoolean_Kind(t *testing.T) {
+	assert.Equal(t, KindBoolean, True.Kind())
 }
 
-func TestBool_Hash(t *testing.T) {
+func TestBoolean_Hash(t *testing.T) {
 	assert.NotEqual(t, True.Hash(), False.Hash())
 }
 
-func TestBool_Interface(t *testing.T) {
+func TestBoolean_Interface(t *testing.T) {
 	assert.Equal(t, true, True.Interface())
 	assert.Equal(t, false, False.Interface())
 }
 
-func TestBool_Equal(t *testing.T) {
+func TestBoolean_Equal(t *testing.T) {
 	assert.True(t, True.Equal(True))
 	assert.True(t, False.Equal(False))
 	assert.False(t, True.Equal(False))
 	assert.False(t, False.Equal(True))
 }
 
-func TestBool_Compare(t *testing.T) {
+func TestBoolean_Compare(t *testing.T) {
 	assert.Equal(t, 0, True.Compare(True))
 	assert.Equal(t, 0, False.Compare(False))
 	assert.Equal(t, -1, False.Compare(True))
 	assert.Equal(t, 1, True.Compare(False))
 }
 
-func TestBool_Encode(t *testing.T) {
+func TestBoolean_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Object]()
-	enc.Add(newBoolEncoder())
+	enc.Add(newBooleanEncoder())
 
 	source := true
-	v := NewBool(source)
+	v := NewBoolean(source)
 
 	decoded, err := enc.Encode(source)
 	assert.NoError(t, err)
 	assert.Equal(t, v, decoded)
 }
 
-func TestBool_Decode(t *testing.T) {
+func TestBoolean_Decode(t *testing.T) {
 	dec := encoding.NewDecodeAssembler[Object, any]()
-	dec.Add(newBoolDecoder())
+	dec.Add(newBooleanDecoder())
 
 	t.Run("bool", func(t *testing.T) {
-		v := NewBool(true)
+		v := NewBoolean(true)
 
 		var decoded bool
 		err := dec.Decode(v, &decoded)
@@ -71,7 +71,7 @@ func TestBool_Decode(t *testing.T) {
 	})
 
 	t.Run("any", func(t *testing.T) {
-		v := NewBool(true)
+		v := NewBoolean(true)
 
 		var decoded any
 		err := dec.Decode(v, &decoded)

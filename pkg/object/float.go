@@ -11,50 +11,105 @@ import (
 )
 
 // Float is an interface representing a floating-point number.
-type Float struct {
+type Float interface {
+	Object
+	Float() float64
+}
+
+// Float32 represents a float32 type.
+type Float32 struct {
+	value float32
+}
+
+// Float64 represents a float64 type.
+type Float64 struct {
 	value float64
 }
 
-var _ Object = Float{}
+var _ Float = Float32{}
+var _ Float = Float64{}
 
-// NewFloat returns a new Float instance.
-func NewFloat(value float64) Float {
-	return Float{value: value}
+// NewFloat32 returns a new Float32 instance.
+func NewFloat32(value float32) Float32 {
+	return Float32{value: value}
 }
 
 // Float returns the raw representation of the float.
-func (f Float) Float() float64 {
-	return f.value
+func (f Float32) Float() float64 {
+	return float64(f.value)
 }
 
 // Kind returns the type of the float data.
-func (f Float) Kind() Kind {
-	return KindFloat
+func (f Float32) Kind() Kind {
+	return KindFloat32
 }
 
 // Hash calculates and returns the hash code.
-func (f Float) Hash() uint64 {
+func (f Float32) Hash() uint64 {
 	h := fnv.New64a()
-	h.Write((*[8]byte)(unsafe.Pointer(&f.value))[:])
+	h.Write((*[4]byte)(unsafe.Pointer(&f.value))[:])
 	return h.Sum64()
 }
 
-// Interface converts Float to a float64.
-func (f Float) Interface() any {
+// Interface converts Float32 to a float32.
+func (f Float32) Interface() any {
 	return f.value
 }
 
-// Equal checks whether two Float instances are equal.
-func (f Float) Equal(other Object) bool {
-	if o, ok := other.(Float); ok {
+// Equal checks whether two Float32 instances are equal.
+func (f Float32) Equal(other Object) bool {
+	if o, ok := other.(Float32); ok {
 		return f.value == o.value
 	}
 	return false
 }
 
-// Compare checks whether another Object is equal to this Float instance.
-func (f Float) Compare(other Object) int {
-	if o, ok := other.(Float); ok {
+// Compare checks whether another Object is equal to this Float32 instance.
+func (f Float32) Compare(other Object) int {
+	if o, ok := other.(Float32); ok {
+		return compare(f.value, o.value)
+	}
+	return compare(f.Kind(), KindOf(other))
+}
+
+// NewFloat64 returns a new Float64 instance.
+func NewFloat64(value float64) Float64 {
+	return Float64{value: value}
+}
+
+// Float returns the raw representation of the float.
+func (f Float64) Float() float64 {
+	return f.value
+}
+
+// Kind returns the type of the float data.
+func (f Float64) Kind() Kind {
+	return KindFloat64
+}
+
+// Hash calculates and returns the hash code.
+func (f Float64) Hash() uint64 {
+	h := fnv.New64a()
+	h.Write((*[8]byte)(unsafe.Pointer(&f.value))[:])
+	return h.Sum64()
+}
+
+// Interface converts Float64 to a float64.
+func (f Float64) Interface() any {
+	return f.value
+}
+
+// Equal checks whether two Float64 instances are equal.
+func (f Float64) Equal(other Object) bool {
+	if o, ok := other.(Float64); ok {
+		return f.value == o.value
+	}
+	return false
+}
+
+// Compare checks whether another Object is equal to this Float64 instance.
+func (f Float64) Compare(other Object) int {
+	if o, ok := other.(Float64); ok {
 		return compare(f.value, o.value)
 	}
 	return compare(f.Kind(), KindOf(other))
@@ -63,9 +118,21 @@ func (f Float) Compare(other Object) int {
 func newFloatEncoder() encoding.EncodeCompiler[any, Object] {
 	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
 		if typ.Kind() == reflect.Float32 {
-			return newFloatEncoderWithType[float32](), nil
+			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+				if s, ok := source.(float32); ok {
+					return NewFloat32(s), nil
+				} else {
+					return NewFloat32(float32(reflect.ValueOf(source).Float())), nil
+				}
+			}), nil
 		} else if typ.Kind() == reflect.Float64 {
-			return newFloatEncoderWithType[float64](), nil
+			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+				if s, ok := source.(float64); ok {
+					return NewFloat64(s), nil
+				} else {
+					return NewFloat64(reflect.ValueOf(source).Float()), nil
+				}
+			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 	})
@@ -109,16 +176,6 @@ func newFloatDecoder() encoding.DecodeCompiler[Object] {
 			}
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-	})
-}
-
-func newFloatEncoderWithType[T constraints.Integer | constraints.Float]() encoding.Encoder[any, Object] {
-	return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
-		if s, ok := source.(T); ok {
-			return NewFloat(float64(s)), nil
-		} else {
-			return NewFloat(reflect.ValueOf(source).Float()), nil
-		}
 	})
 }
 

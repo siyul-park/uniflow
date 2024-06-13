@@ -30,16 +30,16 @@ func TestMarshalText(t *testing.T) {
 			expect: True,
 		},
 		{
-			when:   int64(0),
+			when:   int(0),
 			expect: NewInt(0),
 		},
 		{
-			when:   uint64(0),
+			when:   uint(0),
 			expect: NewUint(0),
 		},
 		{
 			when:   float64(0),
-			expect: NewFloat(0),
+			expect: NewFloat64(0),
 		},
 		{
 			when:   "a",
@@ -86,16 +86,16 @@ func TestMarshalBinary(t *testing.T) {
 			expect: True,
 		},
 		{
-			when:   int64(0),
+			when:   int(0),
 			expect: NewInt(0),
 		},
 		{
-			when:   uint64(0),
+			when:   uint(0),
 			expect: NewUint(0),
 		},
 		{
 			when:   float64(0),
-			expect: NewFloat(0),
+			expect: NewFloat64(0),
 		},
 		{
 			when:   "a",
@@ -142,7 +142,7 @@ func TestUnmarshal(t *testing.T) {
 			expect: true,
 		},
 		{
-			when:   NewInt(0),
+			when:   NewInt64(0),
 			expect: int64(0),
 		},
 		{
@@ -150,7 +150,7 @@ func TestUnmarshal(t *testing.T) {
 			expect: uint64(0),
 		},
 		{
-			when:   NewFloat(0),
+			when:   NewFloat64(0),
 			expect: float64(0),
 		},
 		{

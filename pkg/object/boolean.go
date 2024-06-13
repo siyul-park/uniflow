@@ -9,21 +9,21 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// Bool is a representation of a boolean value.
-type Bool struct {
+// Boolean is a representation of a boolean value.
+type Boolean struct {
 	value bool
 }
 
-var _ Object = Bool{}
+var _ Object = Boolean{}
 
 // Predefined True and False values for optimization.
 var (
-	True  = Bool{value: true}
-	False = Bool{value: false}
+	True  = Boolean{value: true}
+	False = Boolean{value: false}
 )
 
-// NewBool returns a pointer to a Bool instance.
-func NewBool(value bool) Bool {
+// NewBoolean returns a pointer to a Boolean instance.
+func NewBoolean(value bool) Boolean {
 	if value {
 		return True
 	}
@@ -31,17 +31,17 @@ func NewBool(value bool) Bool {
 }
 
 // Bool returns the raw boolean value.
-func (b Bool) Bool() bool {
+func (b Boolean) Bool() bool {
 	return b.value
 }
 
 // Kind returns the kind of the boolean data.
-func (b Bool) Kind() Kind {
-	return KindBool
+func (b Boolean) Kind() Kind {
+	return KindBoolean
 }
 
 // Hash returns the hash code for the boolean value.
-func (b Bool) Hash() uint64 {
+func (b Boolean) Hash() uint64 {
 	h := fnv.New64a()
 	var value byte
 	if b.value {
@@ -53,22 +53,22 @@ func (b Bool) Hash() uint64 {
 	return h.Sum64()
 }
 
-// Interface converts Bool to a generic interface.
-func (b Bool) Interface() any {
+// Interface converts Boolean to a generic interface.
+func (b Boolean) Interface() any {
 	return b.value
 }
 
-// Equal checks if the other Object is equal to this Bool.
-func (b Bool) Equal(other Object) bool {
-	if o, ok := other.(Bool); ok {
+// Equal checks if the other Object is equal to this Boolean.
+func (b Boolean) Equal(other Object) bool {
+	if o, ok := other.(Boolean); ok {
 		return b.value == o.value
 	}
 	return false
 }
 
-// Compare checks whether another Object is equal to this Bool instance.
-func (b Bool) Compare(other Object) int {
-	if o, ok := other.(Bool); ok {
+// Compare checks whether another Object is equal to this Boolean instance.
+func (b Boolean) Compare(other Object) int {
+	if o, ok := other.(Boolean); ok {
 		if b.value == o.value {
 			return 0
 		} else if !b.value && o.value {
@@ -80,14 +80,14 @@ func (b Bool) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBoolEncoder() encoding.EncodeCompiler[any, Object] {
+func newBooleanEncoder() encoding.EncodeCompiler[any, Object] {
 	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
 		if typ.Kind() == reflect.Bool {
 			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
 				if s, ok := source.(bool); ok {
-					return NewBool(s), nil
+					return NewBoolean(s), nil
 				} else {
-					return NewBool(reflect.ValueOf(source).Bool()), nil
+					return NewBoolean(reflect.ValueOf(source).Bool()), nil
 				}
 			}), nil
 		}
@@ -95,12 +95,12 @@ func newBoolEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func newBoolDecoder() encoding.DecodeCompiler[Object] {
+func newBooleanDecoder() encoding.DecodeCompiler[Object] {
 	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Bool); ok {
+					if s, ok := source.(Boolean); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
 					}
@@ -108,7 +108,7 @@ func newBoolDecoder() encoding.DecodeCompiler[Object] {
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
-					if s, ok := source.(Bool); ok {
+					if s, ok := source.(Boolean); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
