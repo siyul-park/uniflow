@@ -21,7 +21,7 @@ func Merge(pcks []*Packet) *Packet {
 		if pck == nil || pck == None {
 			continue
 		}
-		if err, ok := pck.Payload().(*object.Error); ok {
+		if err, ok := pck.Payload().(object.Error); ok {
 			errs = append(errs, err.Interface().(error))
 		} else {
 			payloads = append(payloads, pck.Payload())

@@ -181,7 +181,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		backPck = packet.Call(errWriter, errPck)
 	} else {
 		backPck = packet.Call(outWriter, outPck)
-		if _, ok := backPck.Payload().(*object.Error); ok {
+		if _, ok := backPck.Payload().(object.Error); ok {
 			backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 		}
 	}
@@ -189,7 +189,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = nil
 	if backPck != packet.None {
 		var res *HTTPPayload
-		if _, ok := backPck.Payload().(*object.Error); ok {
+		if _, ok := backPck.Payload().(object.Error); ok {
 			res = NewHTTPPayload(http.StatusInternalServerError)
 		} else if err := object.Unmarshal(backPck.Payload(), &res); err != nil {
 			res.Body = backPck.Payload()
@@ -236,7 +236,7 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 		}
 
 		var res *HTTPPayload
-		if _, ok := inPck.Payload().(*object.Error); ok {
+		if _, ok := inPck.Payload().(object.Error); ok {
 			res = NewHTTPPayload(http.StatusInternalServerError)
 		} else if err := object.Unmarshal(inPck.Payload(), &res); err != nil {
 			res.Body = inPck.Payload()

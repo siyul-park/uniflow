@@ -136,7 +136,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 				return
 			}
 
-			if _, ok := backPck.Payload().(*object.Error); ok {
+			if _, ok := backPck.Payload().(object.Error); ok {
 				backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 			}
 			backPcks[i] = backPck
@@ -145,7 +145,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 		backPck := packet.Merge(backPcks)
 
 		tracer.Transform(inPck, backPck)
-		if _, ok := backPck.Payload().(*object.Error); ok {
+		if _, ok := backPck.Payload().(object.Error); ok {
 			tracer.Write(errWriter, backPck)
 		} else {
 			tracer.Write(outWriter1, backPck)

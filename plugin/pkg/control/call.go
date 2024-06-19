@@ -137,7 +137,7 @@ func (n *CallNode) rewrite(proc *process.Process) {
 			return
 		}
 
-		if _, ok := backPck.Payload().(*object.Error); ok {
+		if _, ok := backPck.Payload().(object.Error); ok {
 			if errWriter.Write(backPck) > 0 {
 				tracer.Redirect(outWriter0, errWriter)
 			} else {

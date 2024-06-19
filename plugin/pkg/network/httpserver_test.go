@@ -216,7 +216,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 					return
 				}
 
-				err, _ := inPck.Payload().(*object.Error)
+				err, _ := inPck.Payload().(object.Error)
 
 				outPck := packet.New(object.NewString(err.Error()))
 				errReader.Receive(outPck)
