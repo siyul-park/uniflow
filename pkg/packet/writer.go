@@ -105,7 +105,7 @@ func (w *Writer) Write(pck *Packet) int {
 		count := 0
 		receives := make([]*Packet, len(w.readers))
 		for i, r := range w.readers {
-			if r.write(pck, w) {
+			if r.write(New(pck.Payload()), w) {
 				count++
 			} else if len(w.receives) == 0 {
 				w.readers = append(w.readers[:i], w.readers[i+1:]...)

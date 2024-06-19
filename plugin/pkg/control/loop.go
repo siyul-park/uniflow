@@ -14,7 +14,7 @@ import (
 
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
-	bridges  *process.Local[*packet.Bridge]
+	tracers  *process.Local[*packet.Tracer]
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -31,7 +31,7 @@ const KindLoop = "loop"
 // NewLoopNode creates a new LoopNode with default configurations.
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{
-		bridges:  process.NewLocal[*packet.Bridge](),
+		tracers:  process.NewLocal[*packet.Tracer](),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -87,7 +87,7 @@ func (n *LoopNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.bridges.Close()
+	n.tracers.Close()
 
 	return nil
 }
@@ -96,8 +96,8 @@ func (n *LoopNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
-		return packet.NewBridge(), nil
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
 	})
 
 	inReader := n.inPort.Open(proc)
@@ -110,6 +110,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
+		tracer.Read(inReader, inPck)
 
 		inPayload := inPck.Payload()
 
@@ -142,10 +143,12 @@ func (n *LoopNode) forward(proc *process.Process) {
 		}
 
 		backPck := packet.Merge(backPcks)
+
+		tracer.Transform(inPck, backPck)
 		if _, ok := backPck.Payload().(*object.Error); ok {
-			bridge.Write(nil, []*packet.Reader{inReader}, nil)
+			tracer.Write(errWriter, backPck)
 		} else {
-			bridge.Write([]*packet.Packet{backPck}, []*packet.Reader{inReader}, []*packet.Writer{outWriter1})
+			tracer.Write(outWriter1, backPck)
 		}
 	}
 }
@@ -154,8 +157,8 @@ func (n *LoopNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
-		return packet.NewBridge(), nil
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
 	})
 
 	outWriter1 := n.outPorts[1].Open(proc)
@@ -166,7 +169,7 @@ func (n *LoopNode) backward(proc *process.Process) {
 			return
 		}
 
-		bridge.Receive(backPck, outWriter1)
+		tracer.Receive(outWriter1, backPck)
 	}
 }
 

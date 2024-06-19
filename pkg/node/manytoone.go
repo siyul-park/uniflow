@@ -13,7 +13,7 @@ import (
 type ManyToOneNode struct {
 	action      func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
 	dispatchers *process.Local[*packet.Dispatcher]
-	bridges     *process.Local[*packet.Bridge]
+	tracers     *process.Local[*packet.Tracer]
 	inPorts     []*port.InPort
 	outPort     *port.OutPort
 	errPort     *port.OutPort
@@ -27,7 +27,7 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 	n := &ManyToOneNode{
 		action:      action,
 		dispatchers: process.NewLocal[*packet.Dispatcher](),
-		bridges:     process.NewLocal[*packet.Bridge](),
+		tracers:     process.NewLocal[*packet.Tracer](),
 		outPort:     port.NewOut(),
 		errPort:     port.NewOut(),
 	}
@@ -92,7 +92,7 @@ func (n *ManyToOneNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 	n.dispatchers.Close()
-	n.bridges.Close()
+	n.tracers.Close()
 
 	return nil
 }
@@ -102,8 +102,8 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	defer n.mu.RUnlock()
 
 	dispatcher, _ := n.dispatchers.LoadOrStore(proc, func() (*packet.Dispatcher, error) {
-		bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
-			return packet.NewBridge(), nil
+		tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+			return packet.NewTracer(), nil
 		})
 
 		inReaders := make([]*packet.Reader, len(n.inPorts))
@@ -113,24 +113,40 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		outWriter := n.outPort.Open(proc)
 		errWriter := n.errPort.Open(proc)
 
-		return packet.NewDispatcher(inReaders, packet.RouteHookFunc(func(pcks []*packet.Packet) bool {
+		return packet.NewDispatcher(inReaders, packet.RouteHookFunc(func(inPcks []*packet.Packet) bool {
 			inReaders := lo.Filter(inReaders, func(_ *packet.Reader, i int) bool {
-				return pcks[i] != nil
+				return inPcks[i] != nil
 			})
 
-			outPck, errPck := n.action(proc, pcks)
+			outPck, errPck := n.action(proc, inPcks)
+
 			if outPck == nil && errPck == nil {
-				if len(pcks) == len(inReaders) {
-					bridge.Write(nil, inReaders, nil)
+				if len(inPcks) == len(inReaders) {
+					for i, inReader := range inReaders {
+						tracer.Read(inReader, inPcks[i])
+					}
+					for _, inPck := range inPcks {
+						tracer.Transform(inPck, packet.None)
+					}
 					return true
 				}
 				return false
 			}
 
+			for i, inReader := range inReaders {
+				tracer.Read(inReader, inPcks[i])
+			}
+
 			if errPck != nil {
-				bridge.Write([]*packet.Packet{errPck}, inReaders, []*packet.Writer{errWriter})
+				for _, inPck := range inPcks {
+					tracer.Transform(inPck, errPck)
+				}
+				tracer.Write(errWriter, errPck)
 			} else {
-				bridge.Write([]*packet.Packet{outPck}, inReaders, []*packet.Writer{outWriter})
+				for _, inPck := range inPcks {
+					tracer.Transform(inPck, outPck)
+				}
+				tracer.Write(outWriter, outPck)
 			}
 			return true
 		})), nil
@@ -152,8 +168,8 @@ func (n *ManyToOneNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
-		return packet.NewBridge(), nil
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
 	})
 
 	outWriter := n.outPort.Open(proc)
@@ -164,7 +180,7 @@ func (n *ManyToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		bridge.Receive(backPck, outWriter)
+		tracer.Receive(outWriter, backPck)
 	}
 }
 
@@ -172,8 +188,8 @@ func (n *ManyToOneNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	bridge, _ := n.bridges.LoadOrStore(proc, func() (*packet.Bridge, error) {
-		return packet.NewBridge(), nil
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
 	})
 
 	errWriter := n.errPort.Open(proc)
@@ -184,6 +200,6 @@ func (n *ManyToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		bridge.Receive(backPck, errWriter)
+		tracer.Receive(errWriter, backPck)
 	}
 }

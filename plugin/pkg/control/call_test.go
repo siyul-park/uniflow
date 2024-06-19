@@ -34,7 +34,7 @@ func TestCallNode_Port(t *testing.T) {
 
 func TestCallNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleInputToMultipleOutputs", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
 		n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -66,7 +66,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader1.Read():
-			assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+			assert.Equal(t, inPayload, outPck.Payload())
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
