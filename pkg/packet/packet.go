@@ -14,36 +14,32 @@ type Packet struct {
 var None = New(nil)
 
 func Merge(pcks []*Packet) *Packet {
-	if len(pcks) == 0 {
-		return None
-	} else if len(pcks) == 1 {
-		return pcks[0]
-	}
-
 	var errs []error
+	var payloads []object.Object
+
 	for _, pck := range pcks {
+		if pck == nil || pck == None {
+			continue
+		}
 		if err, ok := pck.Payload().(*object.Error); ok {
 			errs = append(errs, err.Interface().(error))
-		}
-	}
-	if len(errs) == 1 {
-		return New(object.NewError(errs[0]))
-	} else if len(errs) > 1 {
-		return New(object.NewError(errors.Join(errs...)))
-	}
-
-	payloads := make([]object.Object, 0, len(pcks))
-	for _, pck := range pcks {
-		if pck != nil && pck != None {
+		} else {
 			payloads = append(payloads, pck.Payload())
 		}
 	}
 
-	if len(payloads) == 0 {
+	if len(errs) == 1 {
+		return New(object.NewError(errs[0]))
+	} else if len(errs) > 0 {
+		return New(object.NewError(errors.Join(errs...)))
+	}
+
+	switch len(payloads) {
+	case 0:
 		return None
-	} else if len(payloads) == 1 {
+	case 1:
 		return New(payloads[0])
-	} else {
+	default:
 		return New(object.NewSlice(payloads...))
 	}
 }
