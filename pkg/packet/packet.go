@@ -28,18 +28,19 @@ func Merge(pcks []*Packet) *Packet {
 		}
 	}
 
+	if len(errs)+len(payloads) == 0 {
+		return None
+	}
+
 	if len(errs) == 1 {
 		return New(object.NewError(errs[0]))
-	} else if len(errs) > 0 {
+	} else if len(errs) > 1 {
 		return New(object.NewError(errors.Join(errs...)))
 	}
 
-	switch len(payloads) {
-	case 0:
-		return None
-	case 1:
+	if len(payloads) == 1 {
 		return New(payloads[0])
-	default:
+	} else {
 		return New(object.NewSlice(payloads...))
 	}
 }

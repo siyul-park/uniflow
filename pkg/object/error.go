@@ -64,7 +64,7 @@ func (e Error) Compare(other Object) int {
 }
 
 func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
-	typeError := reflect.TypeOf((Error)(nil)).Elem()
+	typeError := reflect.TypeOf((*error)(nil)).Elem()
 
 	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
 		if typ.ConvertibleTo(typeError) {
@@ -80,7 +80,7 @@ func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
 func newErrorDecoder() encoding.DecodeCompiler[Object] {
 	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer {
-			if typ.Elem().ConvertibleTo(reflect.TypeOf((Error)(nil)).Elem()) {
+			if typ.Elem().ConvertibleTo(reflect.TypeOf((*error)(nil)).Elem()) {
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						t := reflect.NewAt(typ.Elem(), target)

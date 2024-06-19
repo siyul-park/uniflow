@@ -57,7 +57,7 @@ func (t *Tracer) Write(writer *Writer, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if writer.Write(pck) > 0 {
+	if writer != nil && writer.Write(pck) > 0 {
 		t.writes[writer] = append(t.writes[writer], pck)
 		t.receives[pck] = append(t.receives[pck], nil)
 	} else {
