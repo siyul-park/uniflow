@@ -10,13 +10,13 @@ import (
 
 // ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
-	action      func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	dispatchers *process.Local[*packet.Dispatcher]
-	tracers     *process.Local[*packet.Tracer]
-	inPorts     []*port.InPort
-	outPort     *port.OutPort
-	errPort     *port.OutPort
-	mu          sync.RWMutex
+	action     func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
+	collectors *process.Local[*packet.Collector]
+	tracers    *process.Local[*packet.Tracer]
+	inPorts    []*port.InPort
+	outPort    *port.OutPort
+	errPort    *port.OutPort
+	mu         sync.RWMutex
 }
 
 var _ Node = (*ManyToOneNode)(nil)
@@ -24,11 +24,11 @@ var _ Node = (*ManyToOneNode)(nil)
 // NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
-		action:      action,
-		dispatchers: process.NewLocal[*packet.Dispatcher](),
-		tracers:     process.NewLocal[*packet.Tracer](),
-		outPort:     port.NewOut(),
-		errPort:     port.NewOut(),
+		action:     action,
+		collectors: process.NewLocal[*packet.Collector](),
+		tracers:    process.NewLocal[*packet.Tracer](),
+		outPort:    port.NewOut(),
+		errPort:    port.NewOut(),
 	}
 
 	if n.action != nil {
@@ -90,7 +90,7 @@ func (n *ManyToOneNode) Close() error {
 	}
 	n.outPort.Close()
 	n.errPort.Close()
-	n.dispatchers.Close()
+	n.collectors.Close()
 	n.tracers.Close()
 
 	return nil
@@ -100,12 +100,12 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	dispatcher, _ := n.dispatchers.LoadOrStore(proc, func() (*packet.Dispatcher, error) {
+	collector, _ := n.collectors.LoadOrStore(proc, func() (*packet.Collector, error) {
 		inReaders := make([]*packet.Reader, len(n.inPorts))
 		for i, inPort := range n.inPorts {
 			inReaders[i] = inPort.Open(proc)
 		}
-		return packet.NewDispatcher(inReaders), nil
+		return packet.NewCollector(inReaders), nil
 	})
 	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
 		return packet.NewTracer(), nil
@@ -123,27 +123,23 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		if !ok {
 			return
 		}
-
 		tracer.Read(inReaders[index], inPck)
-		inPcks := dispatcher.Read(inReaders[index], inPck)
 
-		if len(inPcks) == len(inReaders) {
-			outPck, errPck := n.action(proc, inPcks)
-
-			if outPck == nil && errPck == nil {
-				for _, inPck := range inPcks {
-					tracer.Transform(inPck, packet.None)
-				}
-			} else if errPck != nil {
+		if inPcks := collector.Read(inReaders[index], inPck); len(inPcks) == len(inReaders) {
+			if outPck, errPck := n.action(proc, inPcks); errPck != nil {
 				for _, inPck := range inPcks {
 					tracer.Transform(inPck, errPck)
 				}
 				tracer.Write(errWriter, errPck)
-			} else {
+			} else if outPck != nil {
 				for _, inPck := range inPcks {
 					tracer.Transform(inPck, outPck)
 				}
 				tracer.Write(outWriter, outPck)
+			} else {
+				for _, inPck := range inPcks {
+					tracer.Transform(inPck, packet.None)
+				}
 			}
 		}
 	}
