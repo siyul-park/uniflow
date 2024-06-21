@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -102,42 +101,40 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	defer n.mu.RUnlock()
 
 	dispatcher, _ := n.dispatchers.LoadOrStore(proc, func() (*packet.Dispatcher, error) {
-		tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-			return packet.NewTracer(), nil
-		})
-
 		inReaders := make([]*packet.Reader, len(n.inPorts))
 		for i, inPort := range n.inPorts {
 			inReaders[i] = inPort.Open(proc)
 		}
-		outWriter := n.outPort.Open(proc)
-		errWriter := n.errPort.Open(proc)
+		return packet.NewDispatcher(inReaders), nil
+	})
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
+	})
 
-		return packet.NewDispatcher(inReaders, packet.RouteHookFunc(func(inPcks []*packet.Packet) bool {
-			inReaders := lo.Filter(inReaders, func(_ *packet.Reader, i int) bool {
-				return inPcks[i] != nil
-			})
+	inReaders := make([]*packet.Reader, len(n.inPorts))
+	for i, inPort := range n.inPorts {
+		inReaders[i] = inPort.Open(proc)
+	}
+	outWriter := n.outPort.Open(proc)
+	errWriter := n.errPort.Open(proc)
 
+	for {
+		inPck, ok := <-inReaders[index].Read()
+		if !ok {
+			return
+		}
+
+		tracer.Read(inReaders[index], inPck)
+		inPcks := dispatcher.Read(inReaders[index], inPck)
+
+		if len(inPcks) == len(inReaders) {
 			outPck, errPck := n.action(proc, inPcks)
 
 			if outPck == nil && errPck == nil {
-				if len(inPcks) == len(inReaders) {
-					for i, inReader := range inReaders {
-						tracer.Read(inReader, inPcks[i])
-					}
-					for _, inPck := range inPcks {
-						tracer.Transform(inPck, packet.None)
-					}
-					return true
+				for _, inPck := range inPcks {
+					tracer.Transform(inPck, packet.None)
 				}
-				return false
-			}
-
-			for i, inReader := range inReaders {
-				tracer.Read(inReader, inPcks[i])
-			}
-
-			if errPck != nil {
+			} else if errPck != nil {
 				for _, inPck := range inPcks {
 					tracer.Transform(inPck, errPck)
 				}
@@ -148,19 +145,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 				}
 				tracer.Write(outWriter, outPck)
 			}
-			return true
-		})), nil
-	})
-
-	inReader := n.inPorts[index].Open(proc)
-
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
 		}
-
-		dispatcher.Write(inPck, inReader)
 	}
 }
 

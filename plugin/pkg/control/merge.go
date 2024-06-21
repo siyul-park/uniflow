@@ -36,12 +36,6 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	for _, inPck := range inPcks {
-		if inPck == nil {
-			return nil, nil
-		}
-	}
-
 	return packet.Merge(inPcks), nil
 }
 

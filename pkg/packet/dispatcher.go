@@ -8,34 +8,24 @@ import (
 type Dispatcher struct {
 	readers []*Reader
 	reads   [][]*Packet
-	route   RouteHook
 	mu      sync.Mutex
 }
 
-// RouteHook represents a function that routes packets.
-type RouteHook interface {
-	Route(pcks []*Packet) bool
-}
-
-// RouteHookFunc is an adapter to allow the use of ordinary functions as RouteHooks.
-type RouteHookFunc func(pcks []*Packet) bool
-
 // NewDispatcher creates a new Dispatcher instance.
-func NewDispatcher(readers []*Reader, route RouteHook) *Dispatcher {
+func NewDispatcher(readers []*Reader) *Dispatcher {
 	return &Dispatcher{
 		readers: readers,
-		route:   route,
 	}
 }
 
-// Write writes a packet to a specific reader and returns the count of successful writes.
-func (d *Dispatcher) Write(pck *Packet, reader *Reader) int {
+// Read records a packet read by a reader and returns a complete set of packets if available.
+func (d *Dispatcher) Read(reader *Reader, pck *Packet) []*Packet {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	index := d.indexOfReader(reader)
 	if index < 0 {
-		return 0
+		return nil
 	}
 
 	head := d.indexOfHead(index)
@@ -47,17 +37,12 @@ func (d *Dispatcher) Write(pck *Packet, reader *Reader) int {
 	reads := d.reads[head]
 	reads[index] = pck
 
-	if head == 0 {
-		d.consume()
+	if head == 0 && d.isFull(reads) {
+		d.reads = d.reads[1:]
+		return reads
 	}
 
-	count := 0
-	for _, pck := range reads {
-		if pck != nil {
-			count++
-		}
-	}
-	return count
+	return nil
 }
 
 // Close closes the Dispatcher by clearing the stored data.
@@ -87,29 +72,11 @@ func (d *Dispatcher) indexOfHead(index int) int {
 	return -1
 }
 
-func (d *Dispatcher) consume() {
-	for len(d.reads) > 0 {
-		reads := d.reads[0]
-
-		if d.route.Route(reads) {
-			d.reads = d.reads[1:]
-		} else {
-			for _, pck := range reads {
-				if pck == nil {
-					return
-				}
-			}
-
-			d.reads = d.reads[1:]
-
-			for _, r := range d.readers {
-				r.Receive(None)
-			}
+func (d *Dispatcher) isFull(packets []*Packet) bool {
+	for _, p := range packets {
+		if p == nil {
+			return false
 		}
 	}
-}
-
-// Route forwards packets using a RouteHook function.
-func (h RouteHookFunc) Route(pcks []*Packet) bool {
-	return h(pcks)
+	return true
 }
