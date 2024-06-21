@@ -11,7 +11,7 @@ import (
 type Database struct {
 	internal    *mongo.Database
 	collections map[string]*Collection
-	lock        sync.RWMutex
+	mu          sync.RWMutex
 }
 
 var _ database.Database = &Database{}
@@ -28,8 +28,8 @@ func (d *Database) Name() string {
 }
 
 func (d *Database) Collection(_ context.Context, name string) (database.Collection, error) {
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	if coll, ok := d.collections[name]; ok {
 		return coll, nil
@@ -42,8 +42,8 @@ func (d *Database) Collection(_ context.Context, name string) (database.Collecti
 }
 
 func (d *Database) Drop(ctx context.Context) error {
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	for _, coll := range d.collections {
 		if err := coll.Drop(ctx); err != nil {

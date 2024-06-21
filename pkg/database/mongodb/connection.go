@@ -12,7 +12,7 @@ import (
 type Connection struct {
 	internal  *mongo.Client
 	databases map[string]*Database
-	lock      sync.RWMutex
+	mu        sync.RWMutex
 }
 
 func Connect(ctx context.Context, opts ...*options.ClientOptions) (*Connection, error) {
@@ -31,8 +31,8 @@ func NewConnection(client *mongo.Client) *Connection {
 }
 
 func (c *Connection) Database(_ context.Context, name string) (database.Database, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if db, ok := c.databases[name]; ok {
 		return db, nil
@@ -45,8 +45,8 @@ func (c *Connection) Database(_ context.Context, name string) (database.Database
 }
 
 func (c *Connection) Disconnect(ctx context.Context) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	c.databases = map[string]*Database{}
 

@@ -15,7 +15,7 @@ import (
 
 type Collection struct {
 	internal *mongo.Collection
-	lock     sync.RWMutex
+	mu       sync.RWMutex
 }
 
 var _ database.Collection = (*Collection)(nil)
@@ -29,15 +29,15 @@ func (c *Collection) Name() string {
 }
 
 func (c *Collection) Indexes() database.IndexView {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	return newIndexView(c.internal.Indexes())
 }
 
 func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	var pipeline mongo.Pipeline
 	if filter != nil {
@@ -217,8 +217,8 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 }
 
 func (c *Collection) Drop(ctx context.Context) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if err := c.internal.Drop(ctx); err != nil {
 		return errors.Wrap(database.ErrDelete, err.Error())

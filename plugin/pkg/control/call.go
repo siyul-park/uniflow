@@ -114,7 +114,7 @@ func (n *CallNode) forward(proc *process.Process) {
 			return
 		}
 		tracer.Read(inReader, inPck)
-		
+
 		tracer.Write(outWriter0, inPck)
 	}
 }
