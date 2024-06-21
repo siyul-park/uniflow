@@ -95,7 +95,7 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 }
 
 // Redirect transfers the packet write operation from one writer to another.
-func (t *Tracer) Redirect(source, target *Writer) {
+func (t *Tracer) Redirect(source, target *Writer, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -111,7 +111,19 @@ func (t *Tracer) Redirect(source, target *Writer) {
 		delete(t.writes, source)
 	}
 
-	t.writes[target] = append(t.writes[target], write)
+	if target.Write(pck) > 0 {
+		t.writes[target] = append(t.writes[target], write)
+	} else {
+		receives := t.receives[write]
+		for i, receive := range receives {
+			if receive == nil {
+				receives[i] = pck
+				break
+			}
+		}
+
+		t.receive(write)
+	}
 }
 
 func (t *Tracer) receive(pck *Packet) {

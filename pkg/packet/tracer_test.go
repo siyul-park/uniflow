@@ -84,8 +84,7 @@ func TestTracer_Redirect(t *testing.T) {
 	r2.Receive(pck2)
 	w2.Receive()
 
-	w3.Write(pck2)
-	tr.Redirect(w2, w3)
+	tr.Redirect(w2, w3, pck2)
 
 	<-r3.Read()
 	r3.Receive(pck2)

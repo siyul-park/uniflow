@@ -113,8 +113,8 @@ func (n *CallNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
-
 		tracer.Read(inReader, inPck)
+		
 		tracer.Write(outWriter0, inPck)
 	}
 }
@@ -138,17 +138,9 @@ func (n *CallNode) rewrite(proc *process.Process) {
 		}
 
 		if _, ok := backPck.Payload().(object.Error); ok {
-			if errWriter.Write(backPck) > 0 {
-				tracer.Redirect(outWriter0, errWriter)
-			} else {
-				tracer.Receive(outWriter0, backPck)
-			}
+			tracer.Redirect(outWriter0, errWriter, backPck)
 		} else {
-			if outWriter1.Write(backPck) > 0 {
-				tracer.Redirect(outWriter0, outWriter1)
-			} else {
-				tracer.Receive(outWriter0, backPck)
-			}
+			tracer.Redirect(outWriter0, outWriter1, backPck)
 		}
 	}
 }
