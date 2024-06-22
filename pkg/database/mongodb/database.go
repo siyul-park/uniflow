@@ -8,26 +8,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Database represents a MongoDB database manager.
 type Database struct {
 	internal    *mongo.Database
 	collections map[string]*Collection
 	mu          sync.RWMutex
 }
 
-var _ database.Database = &Database{}
+var _ database.Database = (*Database)(nil)
 
 func newDatabase(db *mongo.Database) *Database {
 	return &Database{
 		internal:    db,
-		collections: map[string]*Collection{},
+		collections: make(map[string]*Collection),
 	}
 }
 
+// Name returns the name of the MongoDB database.
 func (d *Database) Name() string {
 	return d.internal.Name()
 }
 
-func (d *Database) Collection(_ context.Context, name string) (database.Collection, error) {
+// Collection returns a collection handle for the specified collection name.
+func (d *Database) Collection(ctx context.Context, name string) (database.Collection, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -41,17 +44,21 @@ func (d *Database) Collection(_ context.Context, name string) (database.Collecti
 	return coll, nil
 }
 
+// Drop deletes the MongoDB database and clears cached collections.
 func (d *Database) Drop(ctx context.Context) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	// Drop all collections in the database first.
 	for _, coll := range d.collections {
 		if err := coll.Drop(ctx); err != nil {
 			return err
 		}
 	}
 
-	d.collections = map[string]*Collection{}
+	// Clear the collections map to release references.
+	d.collections = make(map[string]*Collection)
 
+	// Drop the actual MongoDB database.
 	return d.internal.Drop(ctx)
 }

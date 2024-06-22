@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 )
 
+// IndexView provides methods to manage indexes for a database section.
 type IndexView struct {
 	section *Section
 	models  map[string]database.IndexModel
@@ -16,7 +17,7 @@ type IndexView struct {
 
 var _ database.IndexView = (*IndexView)(nil)
 
-var ErrIndexConflict = errors.New("index is conflict")
+var ErrIndexConflict = errors.New("index conflict")
 
 func newIndexView(segment *Section) *IndexView {
 	return &IndexView{
@@ -25,6 +26,7 @@ func newIndexView(segment *Section) *IndexView {
 	}
 }
 
+// List returns a list of all index models in the index view.
 func (v *IndexView) List(_ context.Context) ([]database.IndexModel, error) {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
@@ -37,9 +39,16 @@ func (v *IndexView) List(_ context.Context) ([]database.IndexModel, error) {
 	return models, nil
 }
 
+// Create creates a new index in the index view with the provided index model.
+// It adds the index model to the index view's models and registers a constraint in the associated section.
+// Returns ErrIndexConflict if an index with the same name already exists.
 func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
+
+	if _, exists := v.models[index.Name]; exists {
+		return ErrIndexConflict
+	}
 
 	constraint := Constraint{
 		Name:    index.Name,
@@ -49,13 +58,17 @@ func (v *IndexView) Create(_ context.Context, index database.IndexModel) error {
 	}
 
 	v.models[index.Name] = index
+
 	return v.section.AddConstraint(constraint)
 }
 
+// Drop removes an index from the index view with the specified name.
+// It deletes the index model from the index view's models and drops the corresponding constraint from the associated section.
 func (v *IndexView) Drop(_ context.Context, name string) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
 	delete(v.models, name)
+
 	return v.section.DropConstraint(name)
 }

@@ -10,12 +10,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Stream represents a database streaming interface using MongoDB Change Streams.
 type Stream struct {
 	internal *mongo.ChangeStream
 	channel  chan database.Event
 	done     chan struct{}
 	mu       sync.Mutex
 }
+
+var _ database.Stream = (*Stream)(nil)
 
 func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	s := &Stream{
@@ -25,10 +28,12 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	}
 
 	go func() {
-		defer func() { _ = s.internal.Close(ctx) }()
+		defer s.internal.Close(ctx)
 		defer close(s.channel)
 
 		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		go func() {
 			defer cancel()
 			<-s.done
@@ -77,14 +82,17 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 	return s
 }
 
+// Next returns the channel where database.Event instances are sent.
 func (s *Stream) Next() <-chan database.Event {
 	return s.channel
 }
 
+// Done returns the channel indicating completion of the Stream.
 func (s *Stream) Done() <-chan struct{} {
 	return s.done
 }
 
+// Close signals the Stream to stop processing events and closes the done channel.
 func (s *Stream) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

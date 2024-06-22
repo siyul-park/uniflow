@@ -8,13 +8,15 @@ import (
 	"github.com/tidwall/btree"
 )
 
+// Section represents a database section storing data and supporting constraints and indexing.
 type Section struct {
-	data        *btree.BTreeG[node]
+	data        *btree.BTreeG[node] 
 	indexes     []*btree.BTreeG[index]
-	constraints []Constraint
-	mu          sync.RWMutex
+	constraints []Constraint          
+	mu          sync.RWMutex          
 }
 
+// Constraint represents a constraint applied to the Section for indexing and data integrity.
 type Constraint struct {
 	Name    string
 	Keys    []string
@@ -35,7 +37,7 @@ type index struct {
 var (
 	nodePool = sync.Pool{
 		New: func() any {
-			return btree.NewBTreeG[node](nodeComparator)
+			return btree.NewBTreeG(nodeComparator)
 		},
 	}
 
@@ -47,7 +49,7 @@ var (
 )
 
 var (
-	ErrPKNotFound   = errors.New("primary key is not found")
+	ErrPKNotFound   = errors.New("primary key not found")
 	ErrPKDuplicated = errors.New("primary key is duplicated")
 )
 
@@ -80,6 +82,7 @@ func newSection() *Section {
 	return s
 }
 
+// AddConstraint adds a new constraint to the Section and updates indexes accordingly.
 func (s *Section) AddConstraint(constraint Constraint) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -104,6 +107,7 @@ func (s *Section) AddConstraint(constraint Constraint) error {
 	return err
 }
 
+// DropConstraint removes a constraint from the Section and drops corresponding indexes.
 func (s *Section) DropConstraint(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -122,6 +126,7 @@ func (s *Section) DropConstraint(name string) error {
 	return nil
 }
 
+// Constraints returns a list of constraints currently applied to the Section.
 func (s *Section) Constraints() []Constraint {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -129,6 +134,7 @@ func (s *Section) Constraints() []Constraint {
 	return s.constraints[:]
 }
 
+// Set inserts a document into the Section with the primary key.
 func (s *Section) Set(doc object.Map) (object.Object, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -152,6 +158,7 @@ func (s *Section) Set(doc object.Map) (object.Object, error) {
 	return id, nil
 }
 
+// Delete removes a document from the Section.
 func (s *Section) Delete(doc object.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -173,6 +180,7 @@ func (s *Section) Delete(doc object.Map) bool {
 	return true
 }
 
+// Range iterates over all documents in the Section and applies the given function.
 func (s *Section) Range(f func(doc object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -182,6 +190,7 @@ func (s *Section) Range(f func(doc object.Map) bool) {
 	})
 }
 
+// Scan performs a range scan on a specific index within the Section.
 func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -203,6 +212,7 @@ func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
 	return nil, false
 }
 
+// Drop clears all data and indexes in the Section and returns the deleted data.
 func (s *Section) Drop() []object.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()

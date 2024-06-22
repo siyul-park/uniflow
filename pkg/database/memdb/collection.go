@@ -11,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 )
 
+// Collection represents a collection of documents in a database.
 type Collection struct {
 	name      string
 	section   *Section
@@ -20,13 +21,14 @@ type Collection struct {
 	mu        sync.RWMutex
 }
 
-type internalEvent struct {
+type event struct {
 	op       database.EventOP
 	document object.Map
 }
 
 var _ database.Collection = (*Collection)(nil)
 
+// NewCollection creates a new collection with the given name.
 func NewCollection(name string) *Collection {
 	segment := newSection()
 
@@ -38,20 +40,24 @@ func NewCollection(name string) *Collection {
 	}
 }
 
+// Name returns the name of the collection.
 func (c *Collection) Name() string {
 	return c.name
 }
 
+// Indexes returns the index view of the collection.
 func (c *Collection) Indexes() database.IndexView {
 	return c.indexView
 }
 
+// Watch sets up a stream to watch for changes that match the given filter.
 func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	stream := newStream()
 
+	// Add the stream and its filter match function to the collection.
 	c.streams = append(c.streams, stream)
 	c.matches = append(c.matches, parseFilter(filter))
 
@@ -68,17 +74,18 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	return stream, nil
 }
 
+// InsertOne inserts a single document into the collection.
 func (c *Collection) InsertOne(_ context.Context, doc object.Map) (object.Object, error) {
 	id, err := c.section.Set(doc)
 	if err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
 	}
 
-	c.emit(internalEvent{op: database.EventInsert, document: doc})
-
+	c.emit(event{op: database.EventInsert, document: doc})
 	return id, nil
 }
 
+// InsertMany inserts multiple documents into the collection.
 func (c *Collection) InsertMany(_ context.Context, docs []object.Map) ([]object.Object, error) {
 	ids := make([]object.Object, len(docs))
 	for i, doc := range docs {
@@ -93,12 +100,12 @@ func (c *Collection) InsertMany(_ context.Context, docs []object.Map) ([]object.
 	}
 
 	for _, doc := range docs {
-		c.emit(internalEvent{op: database.EventInsert, document: doc})
+		c.emit(event{op: database.EventInsert, document: doc})
 	}
-
 	return ids, nil
 }
 
+// UpdateOne updates a single document in the collection that matches the filter.
 func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (bool, error) {
 	opt := database.MergeUpdateOptions(opts)
 
@@ -140,11 +147,11 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 		return false, errors.Wrap(err, database.ErrCodeWrite)
 	}
 
-	c.emit(internalEvent{op: database.EventUpdate, document: patch})
-
+	c.emit(event{op: database.EventUpdate, document: patch})
 	return true, nil
 }
 
+// UpdateMany updates multiple documents in the collection that match the filter.
 func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (int, error) {
 	opt := database.MergeUpdateOptions(opts)
 	upsert := false
@@ -195,34 +202,36 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 	}
 
 	for _, patch := range patches {
-		c.emit(internalEvent{op: database.EventUpdate, document: patch})
+		c.emit(event{op: database.EventUpdate, document: patch})
 	}
-
 	return len(patches), nil
 }
 
+// DeleteOne deletes a single document in the collection that matches the filter.
 func (c *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
 	if doc, err := c.FindOne(ctx, filter); err != nil || doc == nil {
 		return false, err
 	} else {
 		c.section.Delete(doc)
-		c.emit(internalEvent{op: database.EventDelete, document: doc})
+		c.emit(event{op: database.EventDelete, document: doc})
 		return true, nil
 	}
 }
 
+// DeleteMany deletes multiple documents in the collection that match the filter.
 func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (int, error) {
 	if docs, err := c.FindMany(ctx, filter); err != nil {
 		return 0, err
 	} else {
 		for _, doc := range docs {
 			c.section.Delete(doc)
-			c.emit(internalEvent{op: database.EventDelete, document: doc})
+			c.emit(event{op: database.EventDelete, document: doc})
 		}
 		return len(docs), nil
 	}
 }
 
+// FindOne finds a single document in the collection that matches the filter.
 func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (object.Map, error) {
 	docs, err := c.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 	if err != nil {
@@ -234,6 +243,7 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 	return docs[0], nil
 }
 
+// FindMany finds multiple documents in the collection that match the filter.
 func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]object.Map, error) {
 	opt := database.MergeFindOptions(opts)
 
@@ -316,10 +326,11 @@ func (c *Collection) FindMany(_ context.Context, filter *database.Filter, opts .
 	return docs, nil
 }
 
+// Drop drops the collection and closes all active streams.
 func (c *Collection) Drop(_ context.Context) error {
 	data := c.section.Drop()
 	for _, doc := range data {
-		c.emit(internalEvent{op: database.EventDelete, document: doc})
+		c.emit(event{op: database.EventDelete, document: doc})
 	}
 
 	c.mu.Lock()
@@ -335,6 +346,7 @@ func (c *Collection) Drop(_ context.Context) error {
 	return nil
 }
 
+// unwatch removes the stream from the collection's active streams.
 func (c *Collection) unwatch(stream database.Stream) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -348,7 +360,8 @@ func (c *Collection) unwatch(stream database.Stream) {
 	}
 }
 
-func (c *Collection) emit(evt internalEvent) {
+// emit emits an internal event to all matching streams.
+func (c *Collection) emit(evt event) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

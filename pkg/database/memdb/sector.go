@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/btree"
 )
 
+// Sector represents a sector within a Section, facilitating range scans and traversal.
 type Sector struct {
 	keys  []string
 	data  *btree.BTreeG[node]
@@ -14,6 +15,7 @@ type Sector struct {
 	mu    *sync.RWMutex
 }
 
+// Range iterates over all documents in the sector and applies the given function.
 func (s *Sector) Range(f func(doc object.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -24,14 +26,15 @@ func (s *Sector) Range(f func(doc object.Map) bool) {
 	}
 
 	s.index.Scan(func(i index) bool {
-		if n, ok := s.data.Get(node{key: i.key}); !ok {
-			return true
-		} else {
+		if n, ok := s.data.Get(node{key: i.key}); ok {
 			return f(n.value)
 		}
+		return true
 	})
 }
 
+// Scan performs a range scan on the sector using the specified key, min, and max values.
+// It returns a new sector and a boolean indicating if the scan was successful.
 func (s *Sector) Scan(key string, min, max object.Object) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

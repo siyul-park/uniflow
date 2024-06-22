@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Collection represents a MongoDB collection wrapper that implements the database.Collection interface.
 type Collection struct {
 	internal *mongo.Collection
 	mu       sync.RWMutex
@@ -24,10 +25,12 @@ func newCollection(coll *mongo.Collection) *Collection {
 	return &Collection{internal: coll}
 }
 
+// Name returns the name of the collection.
 func (c *Collection) Name() string {
 	return c.internal.Name()
 }
 
+// Indexes returns an IndexView for managing indexes on this collection.
 func (c *Collection) Indexes() database.IndexView {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -35,6 +38,7 @@ func (c *Collection) Indexes() database.IndexView {
 	return newIndexView(c.internal.Indexes())
 }
 
+// Watch starts a change stream on the collection based on the provided filter.
 func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (database.Stream, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -55,6 +59,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 	return newStream(ctx, stream), nil
 }
 
+// InsertOne inserts a single document into the collection.
 func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Object, error) {
 	raw, err := primitiveToBson(doc)
 	if err != nil {
@@ -73,6 +78,7 @@ func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Obje
 	return id, nil
 }
 
+// InsertMany inserts multiple documents into the collection.
 func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]object.Object, error) {
 	var raws bson.A
 	for _, doc := range docs {
@@ -100,6 +106,7 @@ func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]objec
 	return ids, nil
 }
 
+// UpdateOne updates a single document in the collection matching the filter with the provided patch.
 func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (bool, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
@@ -118,6 +125,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 	return res.UpsertedCount+res.ModifiedCount > 0, nil
 }
 
+// UpdateMany updates multiple documents in the collection matching the filter with the provided patch.
 func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (int, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
@@ -136,6 +144,7 @@ func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, pa
 	return int(res.UpsertedCount + res.ModifiedCount), nil
 }
 
+// DeleteOne deletes a single document from the collection matching the filter.
 func (c *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bool, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
@@ -150,6 +159,7 @@ func (c *Collection) DeleteOne(ctx context.Context, filter *database.Filter) (bo
 	return res.DeletedCount > 0, nil
 }
 
+// DeleteMany deletes multiple documents from the collection matching the filter.
 func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (int, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
@@ -164,6 +174,7 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 	return int(res.DeletedCount), nil
 }
 
+// FindOne retrieves a single document from the collection matching the filter.
 func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (object.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
@@ -189,6 +200,7 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 	return doc.(object.Map), nil
 }
 
+// FindMany retrieves multiple documents from the collection matching the filter.
 func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]object.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
@@ -216,6 +228,7 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 	return docs, nil
 }
 
+// Drop drops the entire collection.
 func (c *Collection) Drop(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

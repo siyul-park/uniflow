@@ -34,10 +34,12 @@ var (
 	}
 )
 
+// Server retrieves a MongoDB server instance from the serverPool.
 func Server() *memongo.Server {
 	return serverPool.Get().(*memongo.Server)
 }
 
+// ReleaseServer releases a MongoDB server instance back to the serverPool after cleanup.
 func ReleaseServer(server *memongo.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -51,6 +53,7 @@ func ReleaseServer(server *memongo.Server) {
 			}
 		}
 		_ = client.Disconnect(ctx)
+
 		serverPool.Put(server)
 	}
 }
