@@ -7,6 +7,7 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/expr-lang/expr"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/object"
@@ -61,6 +62,16 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 		return func(_ any) (any, error) {
 			return data, nil
 		}, nil
+	case Expr:
+		program, err := expr.Compile(code)
+		if err != nil {
+			return nil, err
+		}
+
+		return func(input any) (any, error) {
+			return expr.Run(program, input)
+		}, nil
+
 	case Javascript, Typescript:
 		if !js.AssertExportFunction(code, "default") {
 			code = fmt.Sprintf("module.exports = ($) => { return (%s); }", code)

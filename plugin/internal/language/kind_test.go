@@ -19,12 +19,17 @@ func TestDetect(t *testing.T) {
 			when:   "Hello",
 			expect: Text,
 		},
+
+		{
+			when:   "author.User?.Name",
+			expect: Expr,
+		},
 		{
 			when:   "$.Hello as string",
 			expect: Typescript,
 		},
 		{
-			when:   "$.Hello ?? null",
+			when:   "var foo = 'bar';",
 			expect: Javascript,
 		},
 		{
@@ -50,7 +55,9 @@ func TestDetect(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actual := Detect(tc.when)
-		assert.Equal(t, tc.expect, actual)
+		t.Run(tc.when, func(t *testing.T) {
+			actual := Detect(tc.when)
+			assert.Equal(t, tc.expect, actual)
+		})
 	}
 }

@@ -31,6 +31,16 @@ func TestCompileTransform(t *testing.T) {
 		assert.Equal(t, in, out)
 	})
 
+	t.Run(Expr, func(t *testing.T) {
+		fun, err := CompileTransform("$env", lo.ToPtr(Expr))
+		assert.NoError(t, err)
+
+		in := faker.Word()
+		out, err := fun(in)
+		assert.NoError(t, err)
+		assert.Equal(t, in, out)
+	})
+
 	t.Run(Text, func(t *testing.T) {
 		in := faker.Word()
 
