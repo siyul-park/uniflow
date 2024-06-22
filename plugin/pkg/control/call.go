@@ -40,8 +40,8 @@ func NewCallNode() *CallNode {
 	}
 
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-	n.outPorts[0].AddInitHook(port.InitHookFunc(n.rewrite))
-	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward))
+	n.outPorts[0].AddInitHook(port.InitHookFunc(n.backward0))
+	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward1))
 	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n
@@ -107,6 +107,8 @@ func (n *CallNode) forward(proc *process.Process) {
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
+	outWriter1 := n.outPorts[1].Open(proc)
+	errWriter := n.errPort.Open(proc)
 
 	for {
 		inPck, ok := <-inReader.Read()
@@ -115,11 +117,20 @@ func (n *CallNode) forward(proc *process.Process) {
 		}
 		tracer.Read(inReader, inPck)
 
+		tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+			tracer.Transform(inPck, backPck)
+			if _, ok := backPck.Payload().(object.Error); ok {
+				tracer.Write(errWriter, backPck)
+			} else {
+				tracer.Write(outWriter1, backPck)
+			}
+		}))
+
 		tracer.Write(outWriter0, inPck)
 	}
 }
 
-func (n *CallNode) rewrite(proc *process.Process) {
+func (n *CallNode) backward0(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -128,8 +139,6 @@ func (n *CallNode) rewrite(proc *process.Process) {
 	})
 
 	outWriter0 := n.outPorts[0].Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-	errWriter := n.errPort.Open(proc)
 
 	for {
 		backPck, ok := <-outWriter0.Receive()
@@ -137,15 +146,11 @@ func (n *CallNode) rewrite(proc *process.Process) {
 			return
 		}
 
-		if _, ok := backPck.Payload().(object.Error); ok {
-			tracer.Redirect(outWriter0, errWriter, backPck)
-		} else {
-			tracer.Redirect(outWriter0, outWriter1, backPck)
-		}
+		tracer.Receive(outWriter0, backPck)
 	}
 }
 
-func (n *CallNode) backward(proc *process.Process) {
+func (n *CallNode) backward1(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 

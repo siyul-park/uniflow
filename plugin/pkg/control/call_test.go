@@ -74,7 +74,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
+			assert.Equal(t, inPayload, backPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, "timeout")
 		}

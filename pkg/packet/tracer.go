@@ -5,6 +5,7 @@ import "sync"
 // Tracer is responsible for tracking the lifecycle and transformations of packets
 // as they move through various readers and writers.
 type Tracer struct {
+	sniffers map[*Packet][]Handler
 	sources  map[*Packet][]*Packet
 	receives map[*Packet][]*Packet
 	reads    map[*Reader][]*Packet
@@ -16,12 +17,21 @@ type Tracer struct {
 // NewTracer initializes and returns a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
+		sniffers: make(map[*Packet][]Handler),
 		sources:  make(map[*Packet][]*Packet),
 		receives: make(map[*Packet][]*Packet),
 		reads:    make(map[*Reader][]*Packet),
 		writes:   make(map[*Writer][]*Packet),
 		reader:   make(map[*Packet]*Reader),
 	}
+}
+
+// Sniff adds a sniff function to be called when a packet is fully processed.
+func (t *Tracer) Sniff(pck *Packet, sniffer Handler) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.sniffers[pck] = append(t.sniffers[pck], sniffer)
 }
 
 // Transform tracks the transformation of a source packet into a target packet.
@@ -94,38 +104,6 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 	t.receive(write)
 }
 
-// Redirect transfers the packet write operation from one writer to another.
-func (t *Tracer) Redirect(source, target *Writer, pck *Packet) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	writes := t.writes[source]
-	if len(writes) == 0 {
-		return
-	}
-
-	write := writes[0]
-
-	t.writes[source] = writes[1:]
-	if len(t.writes[source]) == 0 {
-		delete(t.writes, source)
-	}
-
-	if target.Write(pck) > 0 {
-		t.writes[target] = append(t.writes[target], write)
-	} else {
-		receives := t.receives[write]
-		for i, receive := range receives {
-			if receive == nil {
-				receives[i] = pck
-				break
-			}
-		}
-
-		t.receive(write)
-	}
-}
-
 func (t *Tracer) receive(pck *Packet) {
 	receives := t.receives[pck]
 	if len(receives) > 0 && receives[len(receives)-1] == nil {
@@ -133,17 +111,31 @@ func (t *Tracer) receive(pck *Packet) {
 	}
 
 	merged := Merge(receives)
-	for _, source := range t.sources[pck] {
-		receives := t.receives[source]
-		for i, receive := range receives {
-			if receive == nil {
-				receives[i] = merged
-				break
-			}
+
+	if sniffers := t.sniffers[pck]; len(sniffers) > 0 {
+		delete(t.sniffers, pck)
+		delete(t.receives, pck)
+		t.mu.Unlock()
+		for _, sniffer := range sniffers {
+			sniffer.Handle(merged)
 		}
-		t.receive(source)
+		t.mu.Lock()
+		return
 	}
-	delete(t.sources, pck)
+
+	if sources, ok := t.sources[pck]; ok {
+		delete(t.sources, pck)
+		for _, source := range sources {
+			receives := t.receives[source]
+			for i, receive := range receives {
+				if receive == nil {
+					receives[i] = merged
+					break
+				}
+			}
+			t.receive(source)
+		}
+	}
 
 	if reader, ok := t.reader[pck]; ok {
 		reads := t.reads[reader]

@@ -38,7 +38,9 @@ func NewLoopNode() *LoopNode {
 	}
 
 	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward))
+	n.outPorts[0].AddInitHook(port.InitHookFunc(n.backward0))
+	n.outPorts[1].AddInitHook(port.InitHookFunc(n.backward1))
+	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
 
 	return n
 }
@@ -121,39 +123,49 @@ func (n *LoopNode) forward(proc *process.Process) {
 			outPayloads = []object.Object{inPayload}
 		}
 
-		count := 0
-		for _, outPayload := range outPayloads {
+		outPcks := make([]*packet.Packet, len(outPayloads))
+		for i, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
-			if outWriter0.Write(outPck) > 0 {
-				count++
-			}
+			outPcks[i] = outPck
+			tracer.Transform(inPck, outPck)
 		}
 
-		backPcks := make([]*packet.Packet, count)
-		for i := 0; i < count; i++ {
-			backPck, ok := <-outWriter0.Receive()
-			if !ok {
-				return
-			}
-
+		tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+			tracer.Transform(inPck, backPck)
 			if _, ok := backPck.Payload().(object.Error); ok {
-				backPck = packet.CallOrFallback(errWriter, backPck, backPck)
+				tracer.Write(errWriter, backPck)
+			} else {
+				tracer.Write(outWriter1, backPck)
 			}
-			backPcks[i] = backPck
-		}
+		}))
 
-		backPck := packet.Merge(backPcks)
-
-		tracer.Transform(inPck, backPck)
-		if _, ok := backPck.Payload().(object.Error); ok {
-			tracer.Write(errWriter, backPck)
-		} else {
-			tracer.Write(outWriter1, backPck)
+		for _, outPck := range outPcks {
+			tracer.Write(outWriter0, outPck)
 		}
 	}
 }
 
-func (n *LoopNode) backward(proc *process.Process) {
+func (n *LoopNode) backward0(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
+	})
+
+	outWriter0 := n.outPorts[0].Open(proc)
+
+	for {
+		backPck, ok := <-outWriter0.Receive()
+		if !ok {
+			return
+		}
+
+		tracer.Receive(outWriter0, backPck)
+	}
+}
+
+func (n *LoopNode) backward1(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -170,6 +182,26 @@ func (n *LoopNode) backward(proc *process.Process) {
 		}
 
 		tracer.Receive(outWriter1, backPck)
+	}
+}
+
+func (n *LoopNode) catch(proc *process.Process) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
+		return packet.NewTracer(), nil
+	})
+
+	errWriter := n.errPort.Open(proc)
+
+	for {
+		backPck, ok := <-errWriter.Receive()
+		if !ok {
+			return
+		}
+
+		tracer.Receive(errWriter, backPck)
 	}
 }
 
