@@ -113,11 +113,10 @@ func (t *Tracer) receive(pck *Packet) {
 		return
 	}
 
-	merged := Merge(receives)
-
 	if sources, ok := t.sources[pck]; ok {
 		delete(t.sources, pck)
 
+		merged := Merge(receives)
 		for _, source := range sources {
 			receives := t.receives[source]
 			for i, receive := range receives {
@@ -126,7 +125,6 @@ func (t *Tracer) receive(pck *Packet) {
 					break
 				}
 			}
-
 			t.receive(source)
 		}
 	}
