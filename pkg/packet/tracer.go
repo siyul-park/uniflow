@@ -105,26 +105,19 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 }
 
 func (t *Tracer) receive(pck *Packet) {
+	t.sniff(pck)
+
 	receives := t.receives[pck]
+
 	if len(receives) > 0 && receives[len(receives)-1] == nil {
 		return
 	}
 
 	merged := Merge(receives)
 
-	if sniffers := t.sniffers[pck]; len(sniffers) > 0 {
-		delete(t.sniffers, pck)
-		delete(t.receives, pck)
-		t.mu.Unlock()
-		for _, sniffer := range sniffers {
-			sniffer.Handle(merged)
-		}
-		t.mu.Lock()
-		return
-	}
-
 	if sources, ok := t.sources[pck]; ok {
 		delete(t.sources, pck)
+
 		for _, source := range sources {
 			receives := t.receives[source]
 			for i, receive := range receives {
@@ -133,6 +126,7 @@ func (t *Tracer) receive(pck *Packet) {
 					break
 				}
 			}
+
 			t.receive(source)
 		}
 	}
@@ -163,5 +157,26 @@ func (t *Tracer) receive(pck *Packet) {
 		}
 	} else {
 		delete(t.receives, pck)
+	}
+}
+
+func (t *Tracer) sniff(pck *Packet) {
+	receives := t.receives[pck]
+
+	if len(receives) > 0 && receives[len(receives)-1] == nil {
+		return
+	}
+
+	if sniffers := t.sniffers[pck]; len(sniffers) > 0 {
+		merged := Merge(receives)
+
+		delete(t.sniffers, pck)
+		delete(t.receives, pck)
+
+		t.mu.Unlock()
+		for _, sniffer := range sniffers {
+			sniffer.Handle(merged)
+		}
+		t.mu.Lock()
 	}
 }

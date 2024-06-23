@@ -11,9 +11,9 @@ import (
 
 // Connection represents a MongoDB client connection manager.
 type Connection struct {
-	internal  *mongo.Client        
-	databases map[string]*Database 
-	mu        sync.RWMutex         
+	internal  *mongo.Client
+	databases map[string]*Database
+	mu        sync.RWMutex
 }
 
 // Connect creates a new MongoDB connection using the provided options.

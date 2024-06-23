@@ -10,10 +10,10 @@ import (
 
 // Section represents a database section storing data and supporting constraints and indexing.
 type Section struct {
-	data        *btree.BTreeG[node] 
+	data        *btree.BTreeG[node]
 	indexes     []*btree.BTreeG[index]
-	constraints []Constraint          
-	mu          sync.RWMutex          
+	constraints []Constraint
+	mu          sync.RWMutex
 }
 
 // Constraint represents a constraint applied to the Section for indexing and data integrity.
