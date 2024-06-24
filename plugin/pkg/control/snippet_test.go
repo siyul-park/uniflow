@@ -11,7 +11,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,10 +53,13 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 }
 
 func TestSnippetNodeCodec_Decode(t *testing.T) {
-	codec := NewSnippetNodeCodec()
+	m := language.NewModule()
+	m.Store(text.Kind, text.NewCompiler())
+
+	codec := NewSnippetNodeCodec(m)
 
 	spec := &SnippetNodeSpec{
-		Lang: language.Text,
+		Lang: text.Kind,
 		Code: "",
 	}
 

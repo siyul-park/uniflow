@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -161,11 +161,10 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 }
 
 func TestIfNodeCodec_Decode(t *testing.T) {
-	codec := NewIfNodeCodec()
+	codec := NewIfNodeCodec(text.NewCompiler())
 
 	spec := &IfNodeSpec{
-		Lang: language.JSONata,
-		When: "$.foo = \"bar\"",
+		When: "",
 	}
 
 	n, err := codec.Decode(spec)

@@ -1,0 +1,23 @@
+package language
+
+import (
+	"testing"
+
+	"github.com/go-faker/faker/v4"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestModule_StoreAndLoad(t *testing.T) {
+	lang := faker.Word()
+	c := CompileFunc(func(s string) (Program, error) {
+		return RunFunc(func(a any) (any, error) {
+			return nil, nil
+		}), nil
+	})
+
+	m := NewModule()
+	m.Store(lang, c)
+
+	_, ok := m.Load(lang)
+	assert.True(t, ok)
+}

@@ -10,6 +10,7 @@
 
 - kind: snippet
   name: loopback
+  lang: jsonata
   code: $
 
 - kind: write

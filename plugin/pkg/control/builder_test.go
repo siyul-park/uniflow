@@ -9,6 +9,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/expr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +20,14 @@ func TestAddToHook(t *testing.T) {
 	b := event.NewBroker()
 	defer b.Close()
 
-	err := AddToHook(b)(h)
+	m := language.NewModule()
+	m.Store(expr.Kind, expr.NewCompiler())
+
+	err := AddToHook(Config{
+		Broker:     b,
+		Module:     m,
+		Expression: expr.Kind,
+	})(h)
 	assert.NoError(t, err)
 
 	n := node.NewManyToOneNode(nil)
@@ -39,7 +48,14 @@ func TestAddToScheme(t *testing.T) {
 	b := event.NewBroker()
 	defer b.Close()
 
-	err := AddToScheme(b)(s)
+	m := language.NewModule()
+	m.Store(expr.Kind, expr.NewCompiler())
+
+	err := AddToScheme(Config{
+		Broker:     b,
+		Module:     m,
+		Expression: expr.Kind,
+	})(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindCall, KindIf, KindLoop, KindMerge, KindNOP, KindSnippet, KindSwitch}

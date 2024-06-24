@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/siyul-park/uniflow/cmd/cli"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
@@ -17,6 +18,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/plugin/pkg/control"
 	"github.com/siyul-park/uniflow/plugin/pkg/datastore"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/expr"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/javascript"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/json"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/jsonata"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/text"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/typescript"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/plugin/pkg/network"
 	"github.com/siyul-park/uniflow/plugin/pkg/system"
 	"github.com/spf13/viper"
@@ -48,16 +57,34 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	module := system.NewNativeModule()
+	native := system.NewNativeModule()
+
+	lang := language.NewModule()
+	lang.Store(text.Kind, text.NewCompiler())
+	lang.Store(json.Kind, json.NewCompiler())
+	lang.Store(yaml.Kind, yaml.NewCompiler())
+	lang.Store(jsonata.Kind, jsonata.NewCompiler())
+	lang.Store(javascript.Kind, javascript.NewCompiler(api.TransformOptions{}))
+	lang.Store(typescript.Kind, typescript.NewCompiler())
+	lang.Store(expr.Kind, expr.NewCompiler())
+
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(control.AddToScheme(broker))
+	sb.Register(control.AddToScheme(control.Config{
+		Broker:     broker,
+		Module:     lang,
+		Expression: expr.Kind,
+	}))
 	sb.Register(datastore.AddToScheme())
 	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(module))
+	sb.Register(system.AddToScheme(native))
 
-	hb.Register(control.AddToHook(broker))
+	hb.Register(control.AddToHook(control.Config{
+		Broker:     broker,
+		Module:     lang,
+		Expression: expr.Kind,
+	}))
 	hb.Register(network.AddToHook())
 
 	sc, err := sb.Build()
@@ -93,10 +120,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	module.Store(system.OPCreateNodes, system.CreateNodes(st))
-	module.Store(system.OPReadNodes, system.ReadNodes(st))
-	module.Store(system.OPUpdateNodes, system.UpdateNodes(st))
-	module.Store(system.OPDeleteNodes, system.DeleteNodes(st))
+	native.Store(system.OPCreateNodes, system.CreateNodes(st))
+	native.Store(system.OPReadNodes, system.ReadNodes(st))
+	native.Store(system.OPUpdateNodes, system.UpdateNodes(st))
+	native.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

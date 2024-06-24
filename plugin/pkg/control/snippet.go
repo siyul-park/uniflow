@@ -3,13 +3,14 @@ package control
 import (
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
 )
 
 // SnippetNode represents a node that executes code snippets in various language.
@@ -27,6 +28,8 @@ type SnippetNodeSpec struct {
 }
 
 const KindSnippet = "snippet"
+
+var ErrInvalidLanguage = errors.New("language is invalid")
 
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
 func NewSnippetNode(transform func(any) (any, error)) *SnippetNode {
@@ -53,14 +56,21 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 }
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
-func NewSnippetNodeCodec() scheme.Codec {
+func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
 		lang := spec.Lang
-		transform, err := language.CompileTransform(spec.Code, &lang)
+		compiler, ok := module.Load(lang)
+		if !ok {
+			return nil, errors.WithStack(ErrInvalidLanguage)
+		}
+
+		program, err := compiler.Compile(spec.Code)
 		if err != nil {
 			return nil, err
 		}
 
-		return NewSnippetNode(transform), nil
+		return NewSnippetNode(func(env any) (any, error) {
+			return program.Run(env)
+		}), nil
 	})
 }

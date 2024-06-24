@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
 )
 
 // SwitchNode represents a switch node that directs incoming packets based on specified conditions.
@@ -26,7 +26,6 @@ type SwitchNode struct {
 // SwitchNodeSpec holds the specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Lang      string      `map:"lang,omitempty"`
 	Match     []Condition `map:"match"`
 }
 
@@ -82,22 +81,21 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 }
 
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
-func NewSwitchNodeCodec() scheme.Codec {
+func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
 		whens := make([]func(any) (bool, error), len(spec.Match))
 		for i, condition := range spec.Match {
-			lang := spec.Lang
-			transform, err := language.CompileTransform(condition.When, &lang)
+			program, err := compiler.Compile(condition.When)
 			if err != nil {
 				return nil, err
 			}
 
-			whens[i] = func(input any) (bool, error) {
-				output, err := transform(input)
+			whens[i] = func(env any) (bool, error) {
+				res, err := program.Run(env)
 				if err != nil {
 					return false, err
 				}
-				return !reflect.ValueOf(output).IsZero(), nil
+				return !reflect.ValueOf(res).IsZero(), nil
 			}
 		}
 

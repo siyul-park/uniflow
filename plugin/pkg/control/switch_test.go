@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,13 +63,12 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 }
 
 func TestSwitchNodeCodec_Decode(t *testing.T) {
-	codec := NewSwitchNodeCodec()
+	codec := NewSwitchNodeCodec(text.NewCompiler())
 
 	spec := &SwitchNodeSpec{
-		Lang: language.JSONata,
 		Match: []Condition{
 			{
-				When: "$.foo = \"bar\"",
+				When: "",
 				Port: node.PortWithIndex(node.PortOut, 0),
 			},
 		},

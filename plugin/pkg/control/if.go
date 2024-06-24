@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/plugin/internal/language"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
 )
 
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
@@ -27,7 +27,6 @@ type IfNode struct {
 // IfNodeSpec holds the specifications for creating a IfNode.
 type IfNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Lang      string `map:"lang,omitempty"`
 	When      string `map:"when"`
 }
 
@@ -183,20 +182,18 @@ func (n *IfNode) catch(proc *process.Process) {
 }
 
 // NewIfNodeCodec creates a new codec for IfNodeSpec.
-func NewIfNodeCodec() scheme.Codec {
+func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
 	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
-		lang := spec.Lang
-		transform, err := language.CompileTransform(spec.When, &lang)
+		program, err := compiler.Compile(spec.When)
 		if err != nil {
 			return nil, err
 		}
-
-		return NewIfNode(func(input any) (bool, error) {
-			output, err := transform(input)
+		return NewIfNode(func(env any) (bool, error) {
+			res, err := program.Run(env)
 			if err != nil {
 				return false, err
 			}
-			return !reflect.ValueOf(output).IsZero(), nil
+			return !reflect.ValueOf(res).IsZero(), nil
 		}), nil
 	})
 }

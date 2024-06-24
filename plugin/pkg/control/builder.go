@@ -1,14 +1,24 @@
 package control
 
 import (
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/plugin/pkg/language"
 )
 
+type Config struct {
+	Broker     *event.Broker
+	Module     *language.Module
+	Expression string
+}
+
 // AddToHook returns a function that adds hook to the provided hook.
-func AddToHook(broker *event.Broker) func(*hook.Hook) error {
+func AddToHook(config Config) func(*hook.Hook) error {
+	broker := config.Broker
+
 	load := broker.Producer(TopicLoad)
 	unload := broker.Producer(TopicUnload)
 
@@ -43,13 +53,21 @@ func AddToHook(broker *event.Broker) func(*hook.Hook) error {
 }
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme(broker *event.Broker) func(*scheme.Scheme) error {
+func AddToScheme(config Config) func(*scheme.Scheme) error {
+	broker := config.Broker
+	module := config.Module
+
 	return func(s *scheme.Scheme) error {
+		expr, ok := module.Load(config.Expression)
+		if !ok {
+			return errors.WithStack(ErrInvalidLanguage)
+		}
+
 		s.AddKnownType(KindCall, &CallNodeSpec{})
 		s.AddCodec(KindCall, NewCallNodeCodec())
 
 		s.AddKnownType(KindIf, &IfNodeSpec{})
-		s.AddCodec(KindIf, NewIfNodeCodec())
+		s.AddCodec(KindIf, NewIfNodeCodec(expr))
 
 		s.AddKnownType(KindLoop, &LoopNodeSpec{})
 		s.AddCodec(KindLoop, NewLoopNodeCodec())
@@ -61,10 +79,10 @@ func AddToScheme(broker *event.Broker) func(*scheme.Scheme) error {
 		s.AddCodec(KindNOP, NewNOPNodeCodec())
 
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
-		s.AddCodec(KindSnippet, NewSnippetNodeCodec())
+		s.AddCodec(KindSnippet, NewSnippetNodeCodec(module))
 
 		s.AddKnownType(KindSwitch, &SwitchNodeSpec{})
-		s.AddCodec(KindSwitch, NewSwitchNodeCodec())
+		s.AddCodec(KindSwitch, NewSwitchNodeCodec(expr))
 
 		s.AddKnownType(KindTrigger, &TriggerNodeSpec{})
 		s.AddCodec(KindTrigger, NewTriggerNodeCodec(broker))
