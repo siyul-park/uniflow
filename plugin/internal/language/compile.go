@@ -3,6 +3,7 @@ package language
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -69,7 +70,19 @@ func CompileTransform(code string, lang *string) (func(any) (any, error), error)
 		}
 
 		return func(input any) (any, error) {
-			return expr.Run(program, input)
+			env := map[any]any{}
+			env["$"] = input
+
+			typ := reflect.TypeOf(input)
+			if typ.Kind() == reflect.Map {
+				val := reflect.ValueOf(input)
+				for _, k := range val.MapKeys() {
+					v := val.MapIndex(k)
+					env[k.Interface()] = v.Interface()
+				}
+			}
+
+			return expr.Run(program, env)
 		}, nil
 
 	case Javascript, Typescript:

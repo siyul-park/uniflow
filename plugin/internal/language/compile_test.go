@@ -32,7 +32,7 @@ func TestCompileTransform(t *testing.T) {
 	})
 
 	t.Run(Expr, func(t *testing.T) {
-		fun, err := CompileTransform("$env", lo.ToPtr(Expr))
+		fun, err := CompileTransform("$", lo.ToPtr(Expr))
 		assert.NoError(t, err)
 
 		in := faker.Word()
