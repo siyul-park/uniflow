@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/siyul-park/uniflow/cmd/cli"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
@@ -64,7 +63,7 @@ func main() {
 	lang.Store(json.Kind, json.NewCompiler())
 	lang.Store(yaml.Kind, yaml.NewCompiler())
 	lang.Store(jsonata.Kind, jsonata.NewCompiler())
-	lang.Store(javascript.Kind, javascript.NewCompiler(api.TransformOptions{}))
+	lang.Store(javascript.Kind, javascript.NewCompiler())
 	lang.Store(typescript.Kind, typescript.NewCompiler())
 	lang.Store(expr.Kind, expr.NewCompiler())
 

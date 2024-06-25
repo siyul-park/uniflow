@@ -3,13 +3,12 @@ package javascript
 import (
 	"testing"
 
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCompiler_Compile(t *testing.T) {
-	c := NewCompiler(api.TransformOptions{})
+	c := NewCompiler()
 	_, err := c.Compile(`export default function (msg) {
 		return msg;
 	}`)
@@ -17,7 +16,7 @@ func TestCompiler_Compile(t *testing.T) {
 }
 
 func TestProgram_Run(t *testing.T) {
-	c := NewCompiler(api.TransformOptions{})
+	c := NewCompiler()
 	p, _ := c.Compile(`export default function (msg) {
 		return msg;
 	}`)
