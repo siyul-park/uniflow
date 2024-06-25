@@ -21,7 +21,7 @@ type TableOptions struct {
 type Table struct {
 	scheme      *scheme.Scheme
 	symbols     map[uuid.UUID]*Symbol
-	index       map[string]map[string]uuid.UUID
+	namespaces  map[string]map[string]uuid.UUID
 	loadHooks   []LoadHook
 	unloadHooks []UnloadHook
 	mu          sync.RWMutex
@@ -40,7 +40,7 @@ func NewTable(sheme *scheme.Scheme, opts ...TableOptions) *Table {
 	return &Table{
 		scheme:      sheme,
 		symbols:     make(map[uuid.UUID]*Symbol),
-		index:       make(map[string]map[string]uuid.UUID),
+		namespaces:  make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
 	}
@@ -97,7 +97,7 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if namespace, ok := t.index[namespace]; ok {
+	if namespace, ok := t.namespaces[namespace]; ok {
 		if id, ok := namespace[name]; ok {
 			sym, ok := t.symbols[id]
 			return sym, ok
@@ -136,7 +136,7 @@ func (t *Table) Clear() error {
 func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
-		t.index[sym.Namespace()] = lo.Assign(t.index[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
+		t.namespaces[sym.Namespace()] = lo.Assign(t.namespaces[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
 	}
 
 	if err := t.links(sym); err != nil {
@@ -160,10 +160,10 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 	}
 
 	if sym.Name() != "" {
-		if namespace, ok := t.index[sym.Namespace()]; ok {
+		if namespace, ok := t.namespaces[sym.Namespace()]; ok {
 			delete(namespace, sym.Name())
 			if len(namespace) == 0 {
-				delete(t.index, sym.Namespace())
+				delete(t.namespaces, sym.Namespace())
 			}
 		}
 	}
@@ -183,7 +183,7 @@ func (t *Table) links(sym *Symbol) error {
 		for _, location := range locations {
 			id := location.ID
 			if location.Name != "" {
-				if namespace, ok := t.index[sym.Namespace()]; ok {
+				if namespace, ok := t.namespaces[sym.Namespace()]; ok {
 					id = namespace[location.Name]
 				}
 			}
@@ -193,6 +193,7 @@ func (t *Table) links(sym *Symbol) error {
 					if ref.Namespace() == sym.Namespace() {
 						if in := ref.In(location.Port); in != nil {
 							out.Link(in)
+
 							ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
 								ID:   sym.ID(),
 								Name: location.Name,
@@ -223,11 +224,13 @@ func (t *Table) links(sym *Symbol) error {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
 					if in := sym.In(location.Port); in != nil {
 						out.Link(in)
+
 						sym.linked[location.Port] = append(sym.linked[location.Port], spec.PortLocation{
 							ID:   ref.ID(),
 							Name: location.Name,
 							Port: name,
 						})
+
 						ref.unlinks[name] = append(locations[:i], locations[i+1:]...)
 						if len(ref.unlinks[name]) == 0 {
 							delete(ref.unlinks, name)
@@ -250,7 +253,7 @@ func (t *Table) unlinks(sym *Symbol) error {
 		for _, location := range locations {
 			id := location.ID
 			if location.Name != "" {
-				if namespace, ok := t.index[sym.Namespace()]; ok {
+				if namespace, ok := t.namespaces[sym.Namespace()]; ok {
 					id = namespace[location.Name]
 				}
 			}
@@ -394,7 +397,7 @@ func (t *Table) active(sym *Symbol) bool {
 			for _, location := range locations {
 				id := location.ID
 				if location.Name != "" {
-					if namespace, ok := t.index[sym.Namespace()]; ok {
+					if namespace, ok := t.namespaces[sym.Namespace()]; ok {
 						id = namespace[location.Name]
 					}
 				}

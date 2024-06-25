@@ -2,6 +2,8 @@ package language
 
 import (
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 // Module represents a collection of compilers identified by language.
@@ -9,6 +11,8 @@ type Module struct {
 	compilers map[string]Compiler
 	mu        sync.RWMutex
 }
+
+var ErrInvalidLanguage = errors.New("language is invalid")
 
 // NewModule creates and returns a new Module instance.
 func NewModule() *Module {
@@ -27,10 +31,13 @@ func (m *Module) Store(lang string, compiler Compiler) {
 
 // Load retrieves the compiler for the given language from the module.
 // Returns the compiler and a boolean indicating whether the compiler was found.
-func (m *Module) Load(lang string) (Compiler, bool) {
+func (m *Module) Load(lang string) (Compiler, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	compiler, ok := m.compilers[lang]
-	return compiler, ok
+	if compiler, ok := m.compilers[lang]; !ok {
+		return nil, errors.WithStack(ErrInvalidLanguage)
+	} else {
+		return compiler, nil
+	}
 }

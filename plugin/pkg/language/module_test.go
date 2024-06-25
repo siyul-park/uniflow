@@ -18,6 +18,6 @@ func TestModule_StoreAndLoad(t *testing.T) {
 	m := NewModule()
 	m.Store(lang, c)
 
-	_, ok := m.Load(lang)
-	assert.True(t, ok)
+	_, err := m.Load(lang)
+	assert.NoError(t, err)
 }

@@ -3,7 +3,6 @@ package control
 import (
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -28,8 +27,6 @@ type SnippetNodeSpec struct {
 }
 
 const KindSnippet = "snippet"
-
-var ErrInvalidLanguage = errors.New("language is invalid")
 
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
 func NewSnippetNode(transform func(any) (any, error)) *SnippetNode {
@@ -58,10 +55,9 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
-		lang := spec.Lang
-		compiler, ok := module.Load(lang)
-		if !ok {
-			return nil, errors.WithStack(ErrInvalidLanguage)
+		compiler, err := module.Load(spec.Lang)
+		if err != nil {
+			return nil, err
 		}
 
 		program, err := compiler.Compile(spec.Code)
@@ -69,8 +65,6 @@ func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 			return nil, err
 		}
 
-		return NewSnippetNode(func(env any) (any, error) {
-			return program.Run(env)
-		}), nil
+		return NewSnippetNode(program.Run), nil
 	})
 }

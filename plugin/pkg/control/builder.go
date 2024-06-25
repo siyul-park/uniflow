@@ -1,7 +1,6 @@
 package control
 
 import (
-	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -58,9 +57,9 @@ func AddToScheme(config Config) func(*scheme.Scheme) error {
 	module := config.Module
 
 	return func(s *scheme.Scheme) error {
-		expr, ok := module.Load(config.Expression)
-		if !ok {
-			return errors.WithStack(ErrInvalidLanguage)
+		expr, err := module.Load(config.Expression)
+		if err != nil {
+			return err
 		}
 
 		s.AddKnownType(KindCall, &CallNodeSpec{})

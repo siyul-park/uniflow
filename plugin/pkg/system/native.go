@@ -144,20 +144,23 @@ func (t *NativeModule) Store(opcode string, fn any) {
 
 // Load retrieves a system call opcode from the table.
 // It returns the opcode function and a boolean indicating if the opcode exists.
-func (t *NativeModule) Load(opcode string) (any, bool) {
+func (t *NativeModule) Load(opcode string) (any, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	fn, ok := t.data[opcode]
-	return fn, ok
+	if fn, ok := t.data[opcode]; !ok {
+		return nil, errors.WithStack(ErrInvalidOperation)
+	} else {
+		return fn, nil
+	}
 }
 
 // NewNativeNodeCodec creates a new codec for NativeNodeSpec.
 func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
 	return scheme.CodecWithType(func(spec *NativeNodeSpec) (node.Node, error) {
-		fn, ok := module.Load(spec.Opcode)
-		if !ok {
-			return nil, errors.WithStack(ErrInvalidOperation)
+		fn, err := module.Load(spec.Opcode)
+		if err != nil {
+			return nil, err
 		}
 		return NewNativeNode(fn)
 	})
