@@ -11,18 +11,10 @@ import (
 type Symbol struct {
 	spec    spec.Spec
 	node    node.Node
-	status  Status
 	links   map[string][]spec.PortLocation
 	unlinks map[string][]spec.PortLocation
 	linked  map[string][]spec.PortLocation
 }
-
-type Status int
-
-const (
-	StatusNotReady Status = iota
-	StatusReady
-)
 
 var _ node.Node = (*Symbol)(nil)
 
@@ -60,11 +52,6 @@ func (s *Symbol) Name() string {
 // Annotations returns the annotations.
 func (s *Symbol) Annotations() map[string]string {
 	return s.spec.GetAnnotations()
-}
-
-// Status returns the current status.
-func (s *Symbol) Status() Status {
-	return s.status
 }
 
 // Spec returns the spec.

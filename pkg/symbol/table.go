@@ -2,6 +2,7 @@ package symbol
 
 import (
 	"reflect"
+	"slices"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -11,7 +12,6 @@ import (
 )
 
 // TableOptions holds options for configuring a Table.
-
 type TableOptions struct {
 	LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
 	UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
@@ -28,7 +28,7 @@ type Table struct {
 }
 
 // NewTable returns a new SymbolTable with the specified options.
-func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
+func NewTable(sheme *scheme.Scheme, opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
@@ -38,7 +38,7 @@ func NewTable(sh *scheme.Scheme, opts ...TableOptions) *Table {
 	}
 
 	return &Table{
-		scheme:      sh,
+		scheme:      sheme,
 		symbols:     make(map[uuid.UUID]*Symbol),
 		index:       make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
@@ -208,10 +208,6 @@ func (t *Table) links(sym *Symbol) error {
 		}
 	}
 
-	if err := t.load(sym); err != nil {
-		return err
-	}
-
 	for _, ref := range t.symbols {
 		if ref.Namespace() != sym.Namespace() {
 			continue
@@ -240,13 +236,9 @@ func (t *Table) links(sym *Symbol) error {
 				}
 			}
 		}
-
-		if err := t.load(ref); err != nil {
-			return err
-		}
 	}
 
-	return nil
+	return t.load(sym)
 }
 
 func (t *Table) unlinks(sym *Symbol) error {
@@ -313,102 +305,89 @@ func (t *Table) unlinks(sym *Symbol) error {
 }
 
 func (t *Table) load(sym *Symbol) error {
-	next := []uuid.UUID{sym.ID()}
-	visits := map[uuid.UUID]struct{}{}
-	for len(next) > 0 {
-		id := next[0]
-		next = next[1:]
-
-		if _, ok := visits[id]; ok {
-			continue
-		}
-		visits[id] = struct{}{}
-
-		sym, ok := t.symbols[id]
-		if !ok {
-			continue
-		}
-		if sym.Status() == StatusReady {
-			continue
-		}
-
-		for _, locations := range sym.linked {
-			for _, location := range locations {
-				next = append(next, location.ID)
+	linked := t.linked(sym)
+	for _, sym := range linked {
+		if t.active(sym) {
+			for _, hook := range t.loadHooks {
+				if err := hook.Load(sym); err != nil {
+					return err
+				}
 			}
 		}
-
-		if t.shouldSkipLoad(sym) {
-			continue
-		}
-
-		for _, hook := range t.loadHooks {
-			if err := hook.Load(sym); err != nil {
-				return err
-			}
-		}
-
-		sym.status = StatusReady
 	}
 	return nil
 }
 
 func (t *Table) unload(sym *Symbol) error {
-	next := []uuid.UUID{sym.ID()}
-	visits := map[uuid.UUID]struct{}{}
-	for len(next) > 0 {
-		id := next[0]
-		next = next[1:]
-
-		if _, ok := visits[id]; ok {
-			continue
-		}
-		visits[id] = struct{}{}
-
-		sym, ok := t.symbols[id]
-		if !ok {
-			continue
-		}
-		if sym.Status() == StatusNotReady {
-			continue
-		}
-
-		for _, locations := range sym.linked {
-			for _, location := range locations {
-				next = append(next, location.ID)
+	linked := t.linked(sym)
+	for i := len(linked) - 1; i >= 0; i-- {
+		sym := linked[i]
+		if t.active(sym) {
+			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
+				hook := t.unloadHooks[j]
+				if err := hook.Unload(sym); err != nil {
+					return err
+				}
 			}
 		}
-
-		for _, hook := range t.unloadHooks {
-			if err := hook.Unload(sym); err != nil {
-				return err
-			}
-		}
-
-		sym.status = StatusNotReady
 	}
 	return nil
 }
 
-func (t *Table) shouldSkipLoad(sym *Symbol) bool {
-	next := []uuid.UUID{sym.ID()}
-	visits := map[uuid.UUID]struct{}{}
-	for len(next) > 0 {
-		id := next[0]
-		next = next[1:]
+func (t *Table) linked(sym *Symbol) []*Symbol {
+	nexts := []*Symbol{sym}
 
-		if _, ok := visits[id]; ok {
+	var linked []*Symbol
+	for len(nexts) > 0 {
+		sym := nexts[len(nexts)-1]
+		ok := true
+		for _, locations := range sym.linked {
+			for _, location := range locations {
+				next := t.symbols[location.ID]
+				ok = false
+				for _, cur := range nexts {
+					if ok = ok || cur == next; ok {
+						break
+					}
+				}
+				for _, cur := range linked {
+					if ok = ok || cur == next; ok {
+						break
+					}
+				}
+				if !ok {
+					nexts = append(nexts, next)
+					break
+				}
+			}
+			if !ok {
+				break
+			}
+		}
+		if ok {
+			nexts = nexts[0 : len(nexts)-1]
+			linked = append(linked, sym)
+		}
+	}
+
+	slices.Reverse(linked)
+	return linked
+}
+
+func (t *Table) active(sym *Symbol) bool {
+	nexts := []*Symbol{sym}
+	visits := map[*Symbol]struct{}{}
+	for len(nexts) > 0 {
+		sym := nexts[0]
+		nexts = nexts[1:]
+
+		if _, visit := visits[sym]; visit {
 			continue
 		}
-		visits[id] = struct{}{}
-
-		sym, ok := t.symbols[id]
-		if !ok {
-			continue
-		}
+		visits[sym] = struct{}{}
 
 		if len(sym.unlinks) > 0 {
-			return true
+			return false
 		}
 
 		for _, locations := range sym.links {
@@ -419,9 +398,11 @@ func (t *Table) shouldSkipLoad(sym *Symbol) bool {
 						id = namespace[location.Name]
 					}
 				}
-				next = append(next, id)
+
+				next := t.symbols[id]
+				nexts = append(nexts, next)
 			}
 		}
 	}
-	return false
+	return true
 }

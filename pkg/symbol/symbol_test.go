@@ -39,7 +39,6 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Equal(t, spec.GetNamespace(), sym.Namespace())
 	assert.Equal(t, spec.GetName(), sym.Name())
 	assert.Equal(t, spec.GetAnnotations(), sym.Annotations())
-	assert.Equal(t, StatusNotReady, sym.Status())
 	assert.Equal(t, spec, sym.Spec())
 	assert.Equal(t, n, sym.Unwrap())
 
