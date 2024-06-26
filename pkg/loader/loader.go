@@ -45,16 +45,16 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 	defer ld.mu.Unlock()
 
 	namespace := ld.namespace
-	next := []any{id}
+	nexts := []any{id}
 
-	for len(next) > 0 {
-		cur := next
-		next = nil
+	for len(nexts) > 0 {
+		keys := nexts
+		nexts = nil
 
 		exists := map[any]bool{}
 		var filter *store.Filter
 
-		for _, key := range cur {
+		for _, key := range keys {
 			exists[key] = false
 
 			switch k := key.(type) {
@@ -69,7 +69,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 			filter = filter.And(store.Where[string](spec.KeyNamespace).EQ(namespace))
 		}
 
-		specs, err := ld.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(cur))})
+		specs, err := ld.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
 		if err != nil {
 			return nil, err
 		}
@@ -93,9 +93,9 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 			for _, locations := range spec.GetLinks() {
 				for _, location := range locations {
 					if location.ID != (uuid.UUID{}) {
-						next = append(next, location.ID)
+						nexts = append(nexts, location.ID)
 					} else if location.Name != "" {
-						next = append(next, location.Name)
+						nexts = append(nexts, location.Name)
 					}
 				}
 			}

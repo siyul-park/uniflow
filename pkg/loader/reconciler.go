@@ -80,7 +80,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	var next []uuid.UUID
+	var nexts []uuid.UUID
 	for {
 		select {
 		case <-ctx.Done():
@@ -90,12 +90,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			next = append(next, event.NodeID)
+			nexts = append(nexts, event.NodeID)
 
-			for i := len(next) - 1; i >= 0; i-- {
-				id := next[i]
+			for i := len(nexts) - 1; i >= 0; i-- {
+				id := nexts[i]
 				if _, err := r.loader.LoadOne(ctx, id); err == nil {
-					next = append(next[:i], next[i+1:]...)
+					nexts = append(nexts[:i], nexts[i+1:]...)
 				}
 			}
 		}
