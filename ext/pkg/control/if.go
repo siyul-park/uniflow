@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -11,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/x/pkg/language"
 )
 
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.

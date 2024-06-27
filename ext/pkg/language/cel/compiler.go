@@ -2,7 +2,7 @@ package cel
 
 import (
 	"github.com/google/cel-go/cel"
-	"github.com/siyul-park/uniflow/x/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 )
 
 func NewCompiler() language.Compiler {

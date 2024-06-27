@@ -3,9 +3,9 @@ package control
 import (
 	"testing"
 
+	"github.com/siyul-park/uniflow/ext/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/x/pkg/language"
-	"github.com/siyul-park/uniflow/x/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 

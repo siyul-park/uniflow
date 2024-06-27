@@ -20,7 +20,7 @@ To integrate into your project, use the following import statements:
 
 ```shell
 go get -u github.com/siyul-park/uniflow
-go get -u github.com/siyul-park/uniflow/x
+go get -u github.com/siyul-park/uniflow/ext
 ```
 
 ### Usage Example
@@ -39,8 +39,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/x/pkg/control"
-	"github.com/siyul-park/uniflow/x/pkg/network"
+	"github.com/siyul-park/uniflow/ext/pkg/control"
+	"github.com/siyul-park/uniflow/ext/pkg/network"
 )
 
 func main() {

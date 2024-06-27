@@ -1,8 +1,8 @@
 package control
 
 import (
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/x/pkg/language"
 )
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.

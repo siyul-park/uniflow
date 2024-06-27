@@ -1,6 +1,6 @@
 package text
 
-import "github.com/siyul-park/uniflow/x/pkg/language"
+import "github.com/siyul-park/uniflow/ext/pkg/language"
 
 func NewCompiler() language.Compiler {
 	return language.CompileFunc(func(code string) (language.Program, error) {

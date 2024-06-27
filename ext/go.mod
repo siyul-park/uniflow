@@ -1,4 +1,4 @@
-module github.com/siyul-park/uniflow/x
+module github.com/siyul-park/uniflow/ext
 
 go 1.22.4
 

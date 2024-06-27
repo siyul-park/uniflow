@@ -9,7 +9,7 @@ require (
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/samber/lo v1.39.0
 	github.com/siyul-park/uniflow v0.7.0
-	github.com/siyul-park/uniflow/x v0.7.0
+	github.com/siyul-park/uniflow/ext v0.7.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
@@ -70,3 +70,5 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
+
+replace github.com/siyul-park/uniflow/ext => ../ext

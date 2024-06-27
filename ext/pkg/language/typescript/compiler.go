@@ -2,8 +2,8 @@ package typescript
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
-	"github.com/siyul-park/uniflow/x/pkg/language"
-	"github.com/siyul-park/uniflow/x/pkg/language/javascript"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language/javascript"
 )
 
 func NewCompiler() language.Compiler {

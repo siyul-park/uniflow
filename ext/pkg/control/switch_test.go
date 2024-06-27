@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/siyul-park/uniflow/ext/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/x/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 
