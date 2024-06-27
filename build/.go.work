@@ -3,11 +3,11 @@ go 1.22.4
 use (
 	.
 	./cmd
-	./plugin
+	./x
 )
 
 replace (
 	github.com/siyul-park/uniflow v0.6.0 => ./
 	github.com/siyul-park/uniflow/cmd v0.0.0 => ./cmd/
-	github.com/siyul-park/uniflow/plugin v0.6.0 => ./plugin/
+	github.com/siyul-park/uniflow/x v0.6.0 => ./x/
 )

@@ -98,8 +98,8 @@ github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp
 github.com/shopspring/decimal v1.4.0/go.mod h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=
 github.com/siyul-park/uniflow v0.6.0 h1:E6svG4L66XmyupthFZCn/tEzMsNldZerC5WVA9ZtHzw=
 github.com/siyul-park/uniflow v0.6.0/go.mod h1:kWsveDVe8RMD/Rxjp6cMLI8rfswB4lZ7HwFT9CzEulw=
-github.com/siyul-park/uniflow/plugin v0.6.0 h1:hcH7riYN1n81BZT127of8QzdsV1H+YjnhFcfU+0HEBU=
-github.com/siyul-park/uniflow/plugin v0.6.0/go.mod h1:Ty5f1Wbe/2rAcE6mxxBMXHblr1nDkf1qRnFa4je5LjQ=
+github.com/siyul-park/uniflow/x v0.6.0 h1:hcH7riYN1n81BZT127of8QzdsV1H+YjnhFcfU+0HEBU=
+github.com/siyul-park/uniflow/x v0.6.0/go.mod h1:Ty5f1Wbe/2rAcE6mxxBMXHblr1nDkf1qRnFa4je5LjQ=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=

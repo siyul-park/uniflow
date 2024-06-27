@@ -15,18 +15,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/plugin/pkg/control"
-	"github.com/siyul-park/uniflow/plugin/pkg/datastore"
-	"github.com/siyul-park/uniflow/plugin/pkg/language"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/expr"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/javascript"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/json"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/jsonata"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/text"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/typescript"
-	"github.com/siyul-park/uniflow/plugin/pkg/language/yaml"
-	"github.com/siyul-park/uniflow/plugin/pkg/network"
-	"github.com/siyul-park/uniflow/plugin/pkg/system"
+	controlx "github.com/siyul-park/uniflow/x/pkg/control"
+	eventx "github.com/siyul-park/uniflow/x/pkg/event"
+	iox "github.com/siyul-park/uniflow/x/pkg/io"
+	"github.com/siyul-park/uniflow/x/pkg/language"
+	"github.com/siyul-park/uniflow/x/pkg/language/expr"
+	"github.com/siyul-park/uniflow/x/pkg/language/javascript"
+	"github.com/siyul-park/uniflow/x/pkg/language/json"
+	"github.com/siyul-park/uniflow/x/pkg/language/jsonata"
+	"github.com/siyul-park/uniflow/x/pkg/language/text"
+	"github.com/siyul-park/uniflow/x/pkg/language/typescript"
+	"github.com/siyul-park/uniflow/x/pkg/language/yaml"
+	networkx "github.com/siyul-park/uniflow/x/pkg/network"
+	"github.com/siyul-park/uniflow/x/pkg/system"
+	systemx "github.com/siyul-park/uniflow/x/pkg/system"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -56,35 +58,28 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	native := system.NewNativeModule()
+	natives := systemx.NewNativeModule()
 
-	lang := language.NewModule()
-	lang.Store(text.Kind, text.NewCompiler())
-	lang.Store(json.Kind, json.NewCompiler())
-	lang.Store(yaml.Kind, yaml.NewCompiler())
-	lang.Store(jsonata.Kind, jsonata.NewCompiler())
-	lang.Store(javascript.Kind, javascript.NewCompiler())
-	lang.Store(typescript.Kind, typescript.NewCompiler())
-	lang.Store(expr.Kind, expr.NewCompiler())
+	langs := language.NewModule()
+	langs.Store(text.Kind, text.NewCompiler())
+	langs.Store(json.Kind, json.NewCompiler())
+	langs.Store(yaml.Kind, yaml.NewCompiler())
+	langs.Store(jsonata.Kind, jsonata.NewCompiler())
+	langs.Store(javascript.Kind, javascript.NewCompiler())
+	langs.Store(typescript.Kind, typescript.NewCompiler())
+	langs.Store(expr.Kind, expr.NewCompiler())
 
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(control.AddToScheme(control.Config{
-		Broker:     broker,
-		Module:     lang,
-		Expression: expr.Kind,
-	}))
-	sb.Register(datastore.AddToScheme())
-	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(native))
+	sb.Register(controlx.AddToScheme(langs, expr.Kind))
+	sb.Register(eventx.AddToScheme(broker))
+	sb.Register(iox.AddToScheme())
+	sb.Register(networkx.AddToScheme())
+	sb.Register(systemx.AddToScheme(natives))
 
-	hb.Register(control.AddToHook(control.Config{
-		Broker:     broker,
-		Module:     lang,
-		Expression: expr.Kind,
-	}))
-	hb.Register(network.AddToHook())
+	hb.Register(eventx.AddToHook(broker))
+	hb.Register(networkx.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {
@@ -119,10 +114,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	native.Store(system.OPCreateNodes, system.CreateNodes(st))
-	native.Store(system.OPReadNodes, system.ReadNodes(st))
-	native.Store(system.OPUpdateNodes, system.UpdateNodes(st))
-	native.Store(system.OPDeleteNodes, system.DeleteNodes(st))
+	natives.Store(system.OPCreateNodes, system.CreateNodes(st))
+	natives.Store(system.OPReadNodes, system.ReadNodes(st))
+	natives.Store(system.OPUpdateNodes, system.UpdateNodes(st))
+	natives.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {
