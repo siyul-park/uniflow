@@ -7,8 +7,8 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/oliveagle/jsonpath"
 	"github.com/siyul-park/uniflow/pkg/object"
-	"github.com/xiatechs/jsonata-go"
 )
 
 // TableColumnDefinition represents the definition of a table column.
@@ -20,7 +20,7 @@ type TableColumnDefinition struct {
 // TablePrinter is responsible for printing tabular data based on the provided columns.
 type TablePrinter struct {
 	names   []string
-	formats []*jsonata.Expr
+	formats []string
 }
 
 // SpecTableColumnDefinitions defines columns for displaying spec information.
@@ -85,17 +85,11 @@ func PrintTable(writer io.Writer, data any, columns []TableColumnDefinition) err
 // NewTable creates a new TablePrinter based on the provided column definitions.
 func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 	names := make([]string, len(columns))
-	formats := make([]*jsonata.Expr, len(columns))
+	formats := make([]string, len(columns))
 
 	for i, column := range columns {
-		name := column.Name
-		format, err := jsonata.Compile(column.Format)
-		if err != nil {
-			return nil, err
-		}
-
-		names[i] = name
-		formats[i] = format
+		names[i] = column.Name
+		formats[i] = column.Format
 	}
 
 	return &TablePrinter{
@@ -130,7 +124,7 @@ func (p *TablePrinter) Print(data any) (string, error) {
 	for i, element := range elements {
 		row := make(table.Row, len(p.formats))
 		for j, format := range p.formats {
-			data, _ := format.Eval(element)
+			data, _ := jsonpath.JsonPathLookup(element, format)
 			row[j] = data
 		}
 		rows[i] = row

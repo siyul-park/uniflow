@@ -10,8 +10,8 @@
 
 - kind: snippet
   name: loopback
-  lang: jsonata
-  code: $
+  lang: cel
+  code: self
 
 - kind: write
   name: stdout

@@ -1,4 +1,4 @@
-package expr
+package cel
 
 import (
 	"testing"
@@ -9,13 +9,13 @@ import (
 
 func TestCompiler_Compile(t *testing.T) {
 	c := NewCompiler()
-	_, err := c.Compile("$env")
+	_, err := c.Compile("self")
 	assert.NoError(t, err)
 }
 
 func TestProgram_Run(t *testing.T) {
 	c := NewCompiler()
-	p, _ := c.Compile("$env")
+	p, _ := c.Compile("self")
 
 	env := faker.Word()
 

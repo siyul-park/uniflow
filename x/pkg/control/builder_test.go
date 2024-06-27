@@ -5,7 +5,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/x/pkg/language"
-	"github.com/siyul-park/uniflow/x/pkg/language/expr"
+	"github.com/siyul-park/uniflow/x/pkg/language/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +13,9 @@ func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
 	m := language.NewModule()
-	m.Store(expr.Kind, expr.NewCompiler())
+	m.Store(text.Kind, text.NewCompiler())
 
-	err := AddToScheme(m, expr.Kind)(s)
+	err := AddToScheme(m, text.Kind)(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindCall, KindIf, KindLoop, KindMerge, KindNOP, KindSnippet, KindSwitch}
