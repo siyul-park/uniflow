@@ -3,7 +3,6 @@ package event
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -15,8 +14,8 @@ import (
 
 // TriggerNode represents a node that triggers events.
 type TriggerNode struct {
-	producer *event.Producer
-	consumer *event.Consumer
+	producer *Producer
+	consumer *Consumer
 	done     chan struct{}
 	inPort   *port.InPort
 	outPort  *port.OutPort
@@ -38,7 +37,7 @@ const (
 )
 
 // NewTriggerNode creates a new TriggerNode instance.
-func NewTriggerNode(producer *event.Producer, consumer *event.Consumer) *TriggerNode {
+func NewTriggerNode(producer *Producer, consumer *Consumer) *TriggerNode {
 	n := &TriggerNode{
 		producer: producer,
 		consumer: consumer,
@@ -97,7 +96,7 @@ func (n *TriggerNode) Listen() {
 	done := n.done
 	go func() {
 		for {
-			var e *event.Event
+			var e *Event
 			var ok bool
 			select {
 			case e, ok = <-n.consumer.Consume():
@@ -176,7 +175,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		e := event.New(object.InterfaceOf(inPayload))
+		e := New(object.InterfaceOf(inPayload))
 		n.producer.Produce(e)
 
 		inReader.Receive(packet.None)
@@ -184,7 +183,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 }
 
 // NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
-func NewTriggerNodeCodec(upsteam, downsteam *event.Broker) scheme.Codec {
+func NewTriggerNodeCodec(upsteam, downsteam *Broker) scheme.Codec {
 	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
 		p := upsteam.Producer(spec.Topic)
 		c := downsteam.Consumer(spec.Topic)

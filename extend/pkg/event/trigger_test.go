@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -16,9 +15,9 @@ import (
 )
 
 func TestNewTriggerNode(t *testing.T) {
-	q := event.NewQueue(0)
-	c := event.NewConsumer(q)
-	p := event.NewProducer(q)
+	q := NewQueue(0)
+	c := NewConsumer(q)
+	p := NewProducer(q)
 
 	n := NewTriggerNode(p, c)
 	assert.NotNil(t, n)
@@ -26,9 +25,9 @@ func TestNewTriggerNode(t *testing.T) {
 }
 
 func TestTriggerNode_Port(t *testing.T) {
-	q := event.NewQueue(0)
-	c := event.NewConsumer(q)
-	p := event.NewProducer(q)
+	q := NewQueue(0)
+	c := NewConsumer(q)
+	p := NewProducer(q)
 
 	n := NewTriggerNode(p, c)
 	defer n.Close()
@@ -43,9 +42,9 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second*10)
 		defer cancel()
 
-		q := event.NewQueue(0)
-		c := event.NewConsumer(q)
-		p := event.NewProducer(q)
+		q := NewQueue(0)
+		c := NewConsumer(q)
+		p := NewProducer(q)
 
 		n := NewTriggerNode(p, c)
 		defer n.Close()
@@ -70,7 +69,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 			}
 		}))
 
-		e := event.New(nil)
+		e := New(nil)
 		q.Push(e)
 
 		select {
@@ -85,9 +84,9 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		q := event.NewQueue(0)
-		c := event.NewConsumer(q)
-		p := event.NewProducer(q)
+		q := NewQueue(0)
+		c := NewConsumer(q)
+		p := NewProducer(q)
 
 		n := NewTriggerNode(p, c)
 		defer n.Close()
@@ -121,7 +120,7 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 }
 
 func TestTriggerNodeCodec_Decode(t *testing.T) {
-	broker := event.NewBroker()
+	broker := NewBroker()
 
 	topic := faker.UUIDHyphenated()
 
@@ -138,9 +137,9 @@ func TestTriggerNodeCodec_Decode(t *testing.T) {
 }
 
 func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
-	q := event.NewQueue(0)
-	c := event.NewConsumer(q)
-	p := event.NewProducer(q)
+	q := NewQueue(0)
+	c := NewConsumer(q)
+	p := NewProducer(q)
 
 	n := NewTriggerNode(p, c)
 	defer n.Close()
@@ -165,7 +164,7 @@ func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		e := event.New(nil)
+		e := New(nil)
 		q.Push(e)
 		<-e.Done()
 	}

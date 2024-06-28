@@ -3,7 +3,6 @@ package event
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -15,7 +14,7 @@ import (
 func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
-	b := event.NewBroker()
+	b := NewBroker()
 	defer b.Close()
 
 	err := AddToHook(b, b)(h)
@@ -36,7 +35,7 @@ func TestAddToHook(t *testing.T) {
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	b := event.NewBroker()
+	b := NewBroker()
 	defer b.Close()
 
 	err := AddToScheme(b, b)(s)

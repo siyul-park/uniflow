@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
-	controlx "github.com/siyul-park/uniflow/extend/pkg/control"
-	eventx "github.com/siyul-park/uniflow/extend/pkg/event"
-	iox "github.com/siyul-park/uniflow/extend/pkg/io"
+	"github.com/siyul-park/uniflow/extend/pkg/control"
+	"github.com/siyul-park/uniflow/extend/pkg/event"
+	"github.com/siyul-park/uniflow/extend/pkg/io"
 	"github.com/siyul-park/uniflow/extend/pkg/language"
 	"github.com/siyul-park/uniflow/extend/pkg/language/cel"
 	"github.com/siyul-park/uniflow/extend/pkg/language/javascript"
@@ -18,12 +18,11 @@ import (
 	"github.com/siyul-park/uniflow/extend/pkg/language/text"
 	"github.com/siyul-park/uniflow/extend/pkg/language/typescript"
 	"github.com/siyul-park/uniflow/extend/pkg/language/yaml"
-	networkx "github.com/siyul-park/uniflow/extend/pkg/network"
-	systemx "github.com/siyul-park/uniflow/extend/pkg/system"
+	"github.com/siyul-park/uniflow/extend/pkg/network"
+	"github.com/siyul-park/uniflow/extend/pkg/system"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
-	"github.com/siyul-park/uniflow/pkg/event"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/store"
@@ -56,7 +55,7 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	natives := systemx.NewNativeModule()
+	natives := system.NewNativeModule()
 
 	langs := language.NewModule()
 	langs.Store(text.Kind, text.NewCompiler())
@@ -69,14 +68,14 @@ func main() {
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(controlx.AddToScheme(langs, cel.Kind))
-	sb.Register(eventx.AddToScheme(broker, broker))
-	sb.Register(iox.AddToScheme())
-	sb.Register(networkx.AddToScheme())
-	sb.Register(systemx.AddToScheme(natives))
+	sb.Register(control.AddToScheme(langs, cel.Kind))
+	sb.Register(event.AddToScheme(broker, broker))
+	sb.Register(io.AddToScheme())
+	sb.Register(network.AddToScheme())
+	sb.Register(system.AddToScheme(natives))
 
-	hb.Register(eventx.AddToHook(broker, broker))
-	hb.Register(networkx.AddToHook())
+	hb.Register(event.AddToHook(broker, broker))
+	hb.Register(network.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {
@@ -111,10 +110,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	natives.Store(systemx.OPCreateNodes, systemx.CreateNodes(st))
-	natives.Store(systemx.OPReadNodes, systemx.ReadNodes(st))
-	natives.Store(systemx.OPUpdateNodes, systemx.UpdateNodes(st))
-	natives.Store(systemx.OPDeleteNodes, systemx.DeleteNodes(st))
+	natives.Store(system.OPCreateNodes, system.CreateNodes(st))
+	natives.Store(system.OPReadNodes, system.ReadNodes(st))
+	natives.Store(system.OPUpdateNodes, system.UpdateNodes(st))
+	natives.Store(system.OPDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {
