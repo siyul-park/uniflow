@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/hook"
 	"github.com/siyul-park/uniflow/loader"
 	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
 	"github.com/siyul-park/uniflow/store"
 	"github.com/siyul-park/uniflow/symbol"
 )
@@ -80,6 +81,26 @@ func (r *Runtime) Lookup(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 		return r.loader.LoadOne(ctx, id)
 	} else {
 		return s, nil
+	}
+}
+
+// Insert inserts a spec.Spec into the Runtime and returns the corresponding symbol.Symbol.
+func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, error) {
+	if _, err := r.store.InsertOne(ctx, spc); err != nil {
+		return nil, err
+	} else {
+		return r.table.Insert(spc)
+	}
+}
+
+// Free removes a spec.Spec from the Runtime and returns whether it was successfully deleted.
+func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
+	if ok, err := r.store.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).EQ(spc.GetID())); err != nil {
+		return false, err
+	} else if _, err := r.table.Free(spc.GetID()); err != nil {
+		return false, err
+	} else {
+		return ok, nil
 	}
 }
 
