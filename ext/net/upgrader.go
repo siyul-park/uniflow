@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/encoding"
 	"github.com/siyul-park/uniflow/node"
 	"github.com/siyul-park/uniflow/object"
@@ -15,34 +16,34 @@ import (
 	"github.com/siyul-park/uniflow/spec"
 )
 
-// WebSocketUpgradeNode is a node for WebSocket communication.
-type WebSocketUpgradeNode struct {
-	*WebSocketNode
+// WebSocketUpgraderNode is a node for upgrading an HTTP connection to a WebSocket connection.
+type WebSocketUpgraderNode struct {
+	*WebSocketConnNode
 	upgrader websocket.Upgrader
 }
 
-// WebSocketUpgradeNodeSpec holds the specifications for creating a WebSocketUpgradeNode.
-type WebSocketUpgradeNodeSpec struct {
+// UpgraderNodeSpec holds the specifications for creating a UpgraderNode.
+type UpgraderNodeSpec struct {
 	spec.Meta `map:",inline"`
+	Protocol  string        `map:"protocol"`
 	Timeout   time.Duration `map:"timeout"`
-	Read      int           `map:"read"`
-	Write     int           `map:"write"`
+	Buffer    int           `map:"buffer"`
 }
 
-const KindWebSocketUpgrade = "websocket/upgrade"
+const KindUpgrader = "upgrader"
 
-var _ node.Node = (*WebSocketUpgradeNode)(nil)
+var _ node.Node = (*WebSocketUpgraderNode)(nil)
 
-// NewWebSocketUpgradeNode creates a new WebSocketUpgradeNode.
-func NewWebSocketUpgradeNode() *WebSocketUpgradeNode {
-	n := &WebSocketUpgradeNode{}
-	n.WebSocketNode = newWebSocketNode(n.upgrade)
+// NewWebSocketUpgraderNode creates a new WebSocketUpgraderNode.
+func NewWebSocketUpgraderNode() *WebSocketUpgraderNode {
+	n := &WebSocketUpgraderNode{}
+	n.WebSocketConnNode = NewWebSocketConnNode(n.upgrade)
 
 	return n
 }
 
 // Timeout returns the timeout duration.
-func (n *WebSocketUpgradeNode) Timeout() time.Duration {
+func (n *WebSocketUpgraderNode) Timeout() time.Duration {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -50,7 +51,7 @@ func (n *WebSocketUpgradeNode) Timeout() time.Duration {
 }
 
 // SetTimeout sets the timeout duration.
-func (n *WebSocketUpgradeNode) SetTimeout(timeout time.Duration) {
+func (n *WebSocketUpgraderNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -58,7 +59,7 @@ func (n *WebSocketUpgradeNode) SetTimeout(timeout time.Duration) {
 }
 
 // ReadBufferSize returns the read buffer size.
-func (n *WebSocketUpgradeNode) ReadBufferSize() int {
+func (n *WebSocketUpgraderNode) ReadBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -66,7 +67,7 @@ func (n *WebSocketUpgradeNode) ReadBufferSize() int {
 }
 
 // SetReadBufferSize sets the read buffer size.
-func (n *WebSocketUpgradeNode) SetReadBufferSize(size int) {
+func (n *WebSocketUpgraderNode) SetReadBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -74,7 +75,7 @@ func (n *WebSocketUpgradeNode) SetReadBufferSize(size int) {
 }
 
 // SetWriteBufferSize sets the write buffer size.
-func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
+func (n *WebSocketUpgraderNode) SetWriteBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -82,14 +83,14 @@ func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
 }
 
 // WriteBufferSize returns the write buffer size.
-func (n *WebSocketUpgradeNode) WriteBufferSize() int {
+func (n *WebSocketUpgraderNode) WriteBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.WriteBufferSize
 }
 
-func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+func (n *WebSocketUpgraderNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	var inPayload *HTTPPayload
 	if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
@@ -115,13 +116,17 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 	return n.upgrader.Upgrade(w, r, nil)
 }
 
-// NewWebSocketUpgradeNodeCodec creates a new codec for WebSocketUpgradeNodeSpec.
-func NewWebSocketUpgradeNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WebSocketUpgradeNodeSpec) (node.Node, error) {
-		n := NewWebSocketUpgradeNode()
-		n.SetTimeout(spec.Timeout)
-		n.SetReadBufferSize(spec.Read)
-		n.SetWriteBufferSize(spec.Write)
-		return n, nil
+// NewUpgraderNodeCodec creates a new codec for UpgraderNodeSpec.
+func NewUpgraderNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *UpgraderNodeSpec) (node.Node, error) {
+		switch spec.Protocol {
+		case ProtocolWebsocket:
+			n := NewWebSocketUpgraderNode()
+			n.SetTimeout(spec.Timeout)
+			n.SetReadBufferSize(spec.Buffer)
+			n.SetWriteBufferSize(spec.Buffer)
+			return n, nil
+		}
+		return nil, errors.WithStack(ErrInvalidProtocol)
 	})
 }

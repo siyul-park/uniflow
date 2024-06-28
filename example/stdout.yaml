@@ -1,6 +1,7 @@
-- kind: http/server
-  name: server
-  address: :8000
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
   links:
     out:
       - name: loopback
@@ -10,7 +11,7 @@
 
 - kind: snippet
   name: loopback
-  lang: cel
+  language: cel
   code: self
 
 - kind: write

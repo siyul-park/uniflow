@@ -59,8 +59,8 @@ func TestSnippetNodeCodec_Decode(t *testing.T) {
 	codec := NewSnippetNodeCodec(m)
 
 	spec := &SnippetNodeSpec{
-		Lang: text.Kind,
-		Code: "",
+		Language: text.Kind,
+		Code:     "",
 	}
 
 	n, err := codec.Decode(spec)

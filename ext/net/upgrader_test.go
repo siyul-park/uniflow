@@ -17,14 +17,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewWebSocketUpgradeNode(t *testing.T) {
-	n := NewWebSocketUpgradeNode()
+func TestNewWebSocketUpgraderNode(t *testing.T) {
+	n := NewWebSocketUpgraderNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestWebSocket_Timeout(t *testing.T) {
-	n := NewWebSocketUpgradeNode()
+	n := NewWebSocketUpgraderNode()
 	defer n.Close()
 
 	v := time.Second
@@ -34,7 +34,7 @@ func TestWebSocket_Timeout(t *testing.T) {
 }
 
 func TestWebSocket_ReadBufferSize(t *testing.T) {
-	n := NewWebSocketUpgradeNode()
+	n := NewWebSocketUpgraderNode()
 	defer n.Close()
 
 	v := 64
@@ -44,7 +44,7 @@ func TestWebSocket_ReadBufferSize(t *testing.T) {
 }
 
 func TestWebSocket_WriteBufferSize(t *testing.T) {
-	n := NewWebSocketUpgradeNode()
+	n := NewWebSocketUpgraderNode()
 	defer n.Close()
 
 	v := 64
@@ -53,8 +53,8 @@ func TestWebSocket_WriteBufferSize(t *testing.T) {
 	assert.Equal(t, v, n.WriteBufferSize())
 }
 
-func TestWebSocketUpgradeNode_Port(t *testing.T) {
-	n := NewWebSocketUpgradeNode()
+func TestWebSocketUpgraderNode_Port(t *testing.T) {
+	n := NewWebSocketUpgraderNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIO))
@@ -63,15 +63,15 @@ func TestWebSocketUpgradeNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortErr))
 }
 
-func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
+func TestWebSocketUpgraderNode_SendAndReceive(t *testing.T) {
 	t.Run("Upgrade", func(t *testing.T) {
 		port, err := freeport.GetFreePort()
 		assert.NoError(t, err)
 
-		http := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+		http := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 		defer http.Close()
 
-		ws := NewWebSocketUpgradeNode()
+		ws := NewWebSocketUpgraderNode()
 		defer ws.Close()
 
 		http.Out(node.PortOut).Link(ws.In(node.PortIO))
@@ -97,7 +97,7 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 	})
 
 	t.Run("IO -> Error -> IO", func(t *testing.T) {
-		n := NewWebSocketUpgradeNode()
+		n := NewWebSocketUpgraderNode()
 		defer n.Close()
 
 		io := port.NewOut()
@@ -137,13 +137,13 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestWebSocketUpgradeNodeCodec_Decode(t *testing.T) {
-	codec := NewWebSocketUpgradeNodeCodec()
+func TestUpgraderNodeCodec_Decode(t *testing.T) {
+	codec := NewUpgraderNodeCodec()
 
-	spec := &WebSocketUpgradeNodeSpec{
-		Timeout: time.Second,
-		Read:    64,
-		Write:   64,
+	spec := &UpgraderNodeSpec{
+		Protocol: ProtocolWebsocket,
+		Timeout:  time.Second,
+		Buffer:   64,
 	}
 	n, err := codec.Decode(spec)
 	assert.NoError(t, err)
@@ -151,13 +151,13 @@ func TestWebSocketUpgradeNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkWebSocketUpgradeNode_SendAndReceive(b *testing.B) {
+func BenchmarkWebSocketUpgraderNode_SendAndReceive(b *testing.B) {
 	port, _ := freeport.GetFreePort()
 
-	http := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+	http := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 	defer http.Close()
 
-	ws := NewWebSocketUpgradeNode()
+	ws := NewWebSocketUpgraderNode()
 	defer ws.Close()
 
 	http.Out(node.PortOut).Link(ws.In(node.PortIO))

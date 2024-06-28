@@ -18,20 +18,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewHTTPServerNode(t *testing.T) {
+func TestNewHTTPListenerNode(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestHTTPServerNode_Port(t *testing.T) {
+func TestHTTPListenerNode_Port(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -39,11 +39,11 @@ func TestHTTPServerNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortErr))
 }
 
-func TestHTTPServerNode_ListenAndShutdown(t *testing.T) {
+func TestHTTPListenerNode_ListenAndShutdown(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPServerNode(fmt.Sprintf(":%d", port))
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	err = n.Listen()
@@ -65,9 +65,9 @@ func TestHTTPServerNode_ListenAndShutdown(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHTTPServerNode_ServeHTTP(t *testing.T) {
+func TestHTTPListenerNode_ServeHTTP(t *testing.T) {
 	t.Run("NoResponseGiven", func(t *testing.T) {
-		n := NewHTTPServerNode("")
+		n := NewHTTPListenerNode("")
 		defer n.Close()
 
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -80,7 +80,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("HTTPPayloadResponse", func(t *testing.T) {
-		n := NewHTTPServerNode("")
+		n := NewHTTPListenerNode("")
 		defer n.Close()
 
 		out := port.NewIn()
@@ -112,7 +112,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("BodyResponse", func(t *testing.T) {
-		n := NewHTTPServerNode("")
+		n := NewHTTPListenerNode("")
 		defer n.Close()
 
 		out := port.NewIn()
@@ -150,7 +150,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("ErrorResponse", func(t *testing.T) {
-		n := NewHTTPServerNode("")
+		n := NewHTTPListenerNode("")
 		defer n.Close()
 
 		out := port.NewIn()
@@ -183,7 +183,7 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("HandleErrorResponse", func(t *testing.T) {
-		n := NewHTTPServerNode("")
+		n := NewHTTPListenerNode("")
 		defer n.Close()
 
 		out := port.NewIn()
@@ -236,14 +236,15 @@ func TestHTTPServerNode_ServeHTTP(t *testing.T) {
 	})
 }
 
-func TestHTTPServerNodeCodec_Decode(t *testing.T) {
+func TestListenerNodeCodec_Decode(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	codec := NewHTTPServerNodeCodec()
+	codec := NewListenerNodeCodec()
 
-	spec := &HTTPServerNodeSpec{
-		Address: fmt.Sprintf(":%d", port),
+	spec := &ListenerNodeSpec{
+		Protocol: ProtocolHTTP,
+		Port:     port,
 	}
 
 	n, err := codec.Decode(spec)
@@ -252,8 +253,8 @@ func TestHTTPServerNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkHTTPServerNode_ServeHTTP(b *testing.B) {
-	n := NewHTTPServerNode("")
+func BenchmarkHTTPListenerNode_ServeHTTP(b *testing.B) {
+	n := NewHTTPListenerNode("")
 	defer n.Close()
 
 	in := port.NewOut()

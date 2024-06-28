@@ -22,7 +22,7 @@ type SnippetNode struct {
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Lang      string `map:"lang,omitempty"`
+	Language  string `map:"language,omitempty"`
 	Code      string `map:"code"`
 }
 
@@ -55,7 +55,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
 func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
-		compiler, err := module.Load(spec.Lang)
+		compiler, err := module.Load(spec.Language)
 		if err != nil {
 			return nil, err
 		}

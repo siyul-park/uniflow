@@ -16,13 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewHTTPClientNode(t *testing.T) {
-	n := NewHTTPClientNode(&url.URL{})
+func TestNewHTTPNode(t *testing.T) {
+	n := NewHTTPNode(&url.URL{})
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestHTTPClient_SendAndReceive(t *testing.T) {
+func TestHTTP_SendAndReceive(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
@@ -32,7 +32,7 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewHTTPClientNode(u)
+	n := NewHTTPNode(u)
 	defer n.Close()
 
 	n.SetTimeout(time.Second)
@@ -59,14 +59,14 @@ func TestHTTPClient_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestHTTPClientNodeCodec_Decode(t *testing.T) {
+func TestHTTPNodeCodec_Decode(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
-	codec := NewHTTPClientNodeCodec()
+	codec := NewHTTPNodeCodec()
 
-	spec := &HTTPClientNodeSpec{
+	spec := &HTTPNodeSpec{
 		URL: "http://localhost:3000/",
 	}
 
@@ -76,14 +76,14 @@ func TestHTTPClientNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkHTTPClientNode_SendAndReceive(b *testing.B) {
+func BenchmarkHTTPNode_SendAndReceive(b *testing.B) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
 	u, _ := url.Parse(s.URL)
 
-	n := NewHTTPClientNode(u)
+	n := NewHTTPNode(u)
 	defer n.Close()
 
 	n.SetTimeout(time.Second)

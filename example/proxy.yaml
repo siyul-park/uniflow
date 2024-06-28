@@ -1,11 +1,12 @@
-- kind: http/server
-  name: server
-  address: :8000
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
   links:
     out:
-      - name: proxy
+      - name: google
         port: in
 
-- kind: http/client
-  name: proxy
+- kind: http
+  name: google
   url: https://www.google.com/

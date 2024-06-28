@@ -1,6 +1,9 @@
 package net
 
 import (
+	"context"
+	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -11,10 +14,19 @@ import (
 	"github.com/siyul-park/uniflow/packet"
 	"github.com/siyul-park/uniflow/port"
 	"github.com/siyul-park/uniflow/process"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
 )
 
 // WebSocketNode represents a node for establishing WebSocket client connections.
 type WebSocketNode struct {
+	*WebSocketConnNode
+	dialer *websocket.Dialer
+	url    *url.URL
+}
+
+// WebSocketConnNode represents a node for handling WebSocket connections.
+type WebSocketConnNode struct {
 	action  func(*process.Process, *packet.Packet) (*websocket.Conn, error)
 	conns   *process.Local[*websocket.Conn]
 	ioPort  *port.InPort
@@ -24,16 +36,72 @@ type WebSocketNode struct {
 	mu      sync.RWMutex
 }
 
+// WebSocketNodeSpec holds the specifications for creating a WebSocketNode.
+type WebSocketNodeSpec struct {
+	spec.Meta `map:",inline"`
+	URL       string        `map:"url"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
+}
+
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
 	Type int           `map:"type"`
 	Data object.Object `map:"data,omitempty"`
 }
 
-var _ node.Node = (*WebSocketNode)(nil)
+const KindWebSocket = "websocket"
 
-func newWebSocketNode(action func(*process.Process, *packet.Packet) (*websocket.Conn, error)) *WebSocketNode {
+var _ node.Node = (*WebSocketConnNode)(nil)
+
+// NewWebSocketNode creates a new WebSocketNode.
+func NewWebSocketNode(url *url.URL) *WebSocketNode {
 	n := &WebSocketNode{
+		dialer: &websocket.Dialer{
+			Proxy:            http.ProxyFromEnvironment,
+			HandshakeTimeout: 45 * time.Second,
+		},
+		url: url,
+	}
+	n.WebSocketConnNode = NewWebSocketConnNode(n.connect)
+
+	return n
+}
+
+// SetTimeout sets the handshake timeout for WebSocket connections.
+func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.dialer.HandshakeTimeout = timeout
+}
+
+func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	u := &url.URL{}
+	_ = object.Unmarshal(inPck.Payload(), &u)
+
+	if n.url.Scheme != "" {
+		u.Scheme = n.url.Scheme
+	}
+	if n.url.Host != "" {
+		u.Host = n.url.Host
+	}
+	if n.url.Path != "" {
+		u.Path = n.url.Path
+	}
+	if n.url.RawQuery != "" {
+		u.RawQuery = n.url.RawQuery
+	}
+
+	conn, _, err := n.dialer.DialContext(ctx, u.String(), nil)
+	return conn, err
+}
+
+// NewWebSocketConnNode creates a new WebSocketConnNode.
+func NewWebSocketConnNode(action func(*process.Process, *packet.Packet) (*websocket.Conn, error)) *WebSocketConnNode {
+	n := &WebSocketConnNode{
 		action:  action,
 		conns:   process.NewLocal[*websocket.Conn](),
 		ioPort:  port.NewIn(),
@@ -49,7 +117,7 @@ func newWebSocketNode(action func(*process.Process, *packet.Packet) (*websocket.
 }
 
 // In returns the input port with the specified name.
-func (n *WebSocketNode) In(name string) *port.InPort {
+func (n *WebSocketConnNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -65,7 +133,7 @@ func (n *WebSocketNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *WebSocketNode) Out(name string) *port.OutPort {
+func (n *WebSocketConnNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -80,8 +148,8 @@ func (n *WebSocketNode) Out(name string) *port.OutPort {
 	return nil
 }
 
-// Close closes all ports of the WebSocketNode.
-func (n *WebSocketNode) Close() error {
+// Close closes all ports of the WebSocketConnNode.
+func (n *WebSocketConnNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -94,7 +162,7 @@ func (n *WebSocketNode) Close() error {
 	return nil
 }
 
-func (n *WebSocketNode) connect(proc *process.Process) {
+func (n *WebSocketConnNode) connect(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -122,7 +190,7 @@ func (n *WebSocketNode) connect(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketNode) consume(proc *process.Process) {
+func (n *WebSocketConnNode) consume(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -176,7 +244,7 @@ func (n *WebSocketNode) consume(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketNode) produce(proc *process.Process) {
+func (n *WebSocketConnNode) produce(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -215,11 +283,25 @@ func (n *WebSocketNode) produce(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketNode) conn(proc *process.Process) (*websocket.Conn, bool) {
+func (n *WebSocketConnNode) conn(proc *process.Process) (*websocket.Conn, bool) {
 	for ; proc != nil; proc = proc.Parent() {
 		if conn, ok := n.conns.Load(proc); ok {
 			return conn, true
 		}
 	}
 	return nil, false
+}
+
+// NewWebSocketNodeCodec creates a new codec for WebSocketNodeSpec.
+func NewWebSocketNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketNodeSpec) (node.Node, error) {
+		url, err := url.Parse(spec.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		n := NewWebSocketNode(url)
+		n.SetTimeout(spec.Timeout)
+		return n, nil
+	})
 }

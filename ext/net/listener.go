@@ -1,6 +1,7 @@
 package net
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -17,8 +18,8 @@ import (
 	"github.com/siyul-park/uniflow/spec"
 )
 
-// HTTPServerNode represents a Node for handling HTTP requests.
-type HTTPServerNode struct {
+// HTTPListenerNode represents a Node for handling HTTP requests.
+type HTTPListenerNode struct {
 	server   *http.Server
 	listener net.Listener
 	inPort   *port.InPort
@@ -27,20 +28,24 @@ type HTTPServerNode struct {
 	mu       sync.RWMutex
 }
 
-// HTTPServerNodeSpec holds the specifications for creating a HTTPServerNode.
-type HTTPServerNodeSpec struct {
+// ListenerNodeSpec holds the specifications for creating a ListenerNode.
+type ListenerNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Address   string `map:"address"`
+	Protocol  string `map:"protocol"`
+	Port      int    `map:"port"`
 }
 
-const KindHTTPServer = "http/server"
+const KindListener = "listener"
 
-var _ node.Node = (*HTTPServerNode)(nil)
-var _ http.Handler = (*HTTPServerNode)(nil)
+const KeyHTTPRequest = "http.Request"
+const KeyHTTPResponseWriter = "http.ResponseWriter"
 
-// NewHTTPServerNode creates a new HTTPServerNode with the specified address.
-func NewHTTPServerNode(address string) *HTTPServerNode {
-	n := &HTTPServerNode{
+var _ node.Node = (*HTTPListenerNode)(nil)
+var _ http.Handler = (*HTTPListenerNode)(nil)
+
+// NewHTTPListenerNode creates a new HTTPListenerNode with the specified address.
+func NewHTTPListenerNode(address string) *HTTPListenerNode {
+	n := &HTTPListenerNode{
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
@@ -57,7 +62,7 @@ func NewHTTPServerNode(address string) *HTTPServerNode {
 }
 
 // In returns the input port with the specified name.
-func (n *HTTPServerNode) In(name string) *port.InPort {
+func (n *HTTPListenerNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -71,7 +76,7 @@ func (n *HTTPServerNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *HTTPServerNode) Out(name string) *port.OutPort {
+func (n *HTTPListenerNode) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -87,7 +92,7 @@ func (n *HTTPServerNode) Out(name string) *port.OutPort {
 }
 
 // Address returns the listener address if available.
-func (n *HTTPServerNode) Address() net.Addr {
+func (n *HTTPListenerNode) Address() net.Addr {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -98,7 +103,7 @@ func (n *HTTPServerNode) Address() net.Addr {
 }
 
 // Listen starts the HTTP server.
-func (n *HTTPServerNode) Listen() error {
+func (n *HTTPListenerNode) Listen() error {
 	if err := func() error {
 		n.mu.Lock()
 		defer n.mu.Unlock()
@@ -121,10 +126,10 @@ func (n *HTTPServerNode) Listen() error {
 	return nil
 }
 
-// Shutdown shuts down the HTTPServerNode by closing the server and its associated listener.
+// Shutdown shuts down the HTTPListenerNode by closing the server and its associated listener.
 // It locks the mutex to ensure safe concurrent access to the server and listener.
 // If an error occurs during the shutdown process, it returns the error.
-func (n *HTTPServerNode) Shutdown() error {
+func (n *HTTPListenerNode) Shutdown() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -146,7 +151,7 @@ func (n *HTTPServerNode) Shutdown() error {
 }
 
 // ServeHTTP handles HTTP requests.
-func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *HTTPListenerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -212,7 +217,7 @@ func (n *HTTPServerNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // Close closes all ports and stops the HTTP server.
-func (n *HTTPServerNode) Close() error {
+func (n *HTTPListenerNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -223,7 +228,7 @@ func (n *HTTPServerNode) Close() error {
 	return n.server.Close()
 }
 
-func (n *HTTPServerNode) forward(proc *process.Process) {
+func (n *HTTPListenerNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -264,7 +269,7 @@ func (n *HTTPServerNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *HTTPServerNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
+func (n *HTTPListenerNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 	if res.Header == nil {
 		res.Header = http.Header{}
 	}
@@ -278,7 +283,7 @@ func (n *HTTPServerNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 	}
 }
 
-func (n *HTTPServerNode) read(r *http.Request) (*HTTPPayload, error) {
+func (n *HTTPListenerNode) read(r *http.Request) (*HTTPPayload, error) {
 	contentType := r.Header.Get(HeaderContentType)
 	contentEncoding := r.Header.Get(HeaderContentEncoding)
 
@@ -303,7 +308,7 @@ func (n *HTTPServerNode) read(r *http.Request) (*HTTPPayload, error) {
 	}
 }
 
-func (n *HTTPServerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
+func (n *HTTPListenerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	if res == nil {
 		return nil
 	}
@@ -350,9 +355,13 @@ func (n *HTTPServerNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	return nil
 }
 
-// NewHTTPServerNodeCodec creates a new codec for HTTPServerNodeSpec.
-func NewHTTPServerNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *HTTPServerNodeSpec) (node.Node, error) {
-		return NewHTTPServerNode(spec.Address), nil
+// NewListenerNodeCodec creates a new codec for ListenerNodeSpec.
+func NewListenerNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *ListenerNodeSpec) (node.Node, error) {
+		switch spec.Protocol {
+		case ProtocolHTTP:
+			return NewHTTPListenerNode(fmt.Sprintf(":%d", spec.Port)), nil
+		}
+		return nil, errors.WithStack(ErrInvalidProtocol)
 	})
 }
