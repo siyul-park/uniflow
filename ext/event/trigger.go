@@ -184,10 +184,10 @@ func (n *TriggerNode) forward(proc *process.Process) {
 }
 
 // NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
-func NewTriggerNodeCodec(broker *event.Broker) scheme.Codec {
+func NewTriggerNodeCodec(upsteam, downsteam *event.Broker) scheme.Codec {
 	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
-		p := broker.Producer(spec.Topic)
-		c := broker.Consumer(spec.Topic)
+		p := upsteam.Producer(spec.Topic)
+		c := downsteam.Consumer(spec.Topic)
 
 		return NewTriggerNode(p, c), nil
 	})

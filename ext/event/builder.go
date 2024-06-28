@@ -8,9 +8,9 @@ import (
 )
 
 // AddToHook returns a function that adds hook to the provided hook.
-func AddToHook(broker *event.Broker) func(*hook.Hook) error {
-	load := broker.Producer(TopicLoad)
-	unload := broker.Producer(TopicUnload)
+func AddToHook(upsteam, downsteam *event.Broker) func(*hook.Hook) error {
+	load := upsteam.Producer(TopicLoad)
+	unload := upsteam.Producer(TopicUnload)
 
 	return func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
@@ -43,10 +43,10 @@ func AddToHook(broker *event.Broker) func(*hook.Hook) error {
 }
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme(broker *event.Broker) func(*scheme.Scheme) error {
+func AddToScheme(upsteam, downsteam *event.Broker) func(*scheme.Scheme) error {
 	return func(s *scheme.Scheme) error {
 		s.AddKnownType(KindTrigger, &TriggerNodeSpec{})
-		s.AddCodec(KindTrigger, NewTriggerNodeCodec(broker))
+		s.AddCodec(KindTrigger, NewTriggerNodeCodec(upsteam, downsteam))
 
 		return nil
 	}

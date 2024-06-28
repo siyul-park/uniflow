@@ -70,12 +70,12 @@ func main() {
 	defer broker.Close()
 
 	sb.Register(ctrlx.AddToScheme(langs, cel.Kind))
-	sb.Register(eventx.AddToScheme(broker))
+	sb.Register(eventx.AddToScheme(broker, broker))
 	sb.Register(iox.AddToScheme())
 	sb.Register(netx.AddToScheme())
 	sb.Register(sysx.AddToScheme(natives))
 
-	hb.Register(eventx.AddToHook(broker))
+	hb.Register(eventx.AddToHook(broker, broker))
 	hb.Register(netx.AddToHook())
 
 	sc, err := sb.Build()

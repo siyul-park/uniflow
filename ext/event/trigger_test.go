@@ -125,7 +125,7 @@ func TestTriggerNodeCodec_Decode(t *testing.T) {
 
 	topic := faker.UUIDHyphenated()
 
-	codec := NewTriggerNodeCodec(broker)
+	codec := NewTriggerNodeCodec(broker, broker)
 
 	spec := &TriggerNodeSpec{
 		Topic: topic,
