@@ -4,7 +4,7 @@ go 1.22.4
 
 require (
 	github.com/andybalholm/brotli v1.1.0
-	github.com/dop251/goja v0.0.0-20240610225006-393f6d42497b
+	github.com/dop251/goja v0.0.0-20240627195025-eb1f15ee67d2
 	github.com/evanw/esbuild v0.21.5
 	github.com/go-faker/faker/v4 v4.4.2
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
-	github.com/samber/lo v1.42.0
+	github.com/samber/lo v1.43.0
 	github.com/siyul-park/uniflow v0.7.0
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1

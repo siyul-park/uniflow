@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
-	github.com/samber/lo v1.42.0
+	github.com/samber/lo v1.43.0
 	github.com/siyul-park/uniflow v0.7.0
 	github.com/siyul-park/uniflow/extend v0.7.0
 	github.com/spf13/cobra v1.8.1
@@ -24,7 +24,7 @@ require (
 	github.com/benbjohnson/immutable v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
-	github.com/dop251/goja v0.0.0-20240610225006-393f6d42497b // indirect
+	github.com/dop251/goja v0.0.0-20240627195025-eb1f15ee67d2 // indirect
 	github.com/evanw/esbuild v0.21.5 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
@@ -71,4 +71,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-replace github.com/siyul-park/uniflow/extend => ../extendend
+replace github.com/siyul-park/uniflow/extend => ../extend/
