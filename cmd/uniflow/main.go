@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/database/memdb"
 	"github.com/siyul-park/uniflow/database/mongodb"
 	"github.com/siyul-park/uniflow/event"
-	ctrlx "github.com/siyul-park/uniflow/ext/ctrl"
+	controlx "github.com/siyul-park/uniflow/ext/control"
 	eventx "github.com/siyul-park/uniflow/ext/event"
 	iox "github.com/siyul-park/uniflow/ext/io"
 	"github.com/siyul-park/uniflow/ext/language"
@@ -22,8 +22,8 @@ import (
 	"github.com/siyul-park/uniflow/ext/language/text"
 	"github.com/siyul-park/uniflow/ext/language/typescript"
 	"github.com/siyul-park/uniflow/ext/language/yaml"
-	netx "github.com/siyul-park/uniflow/ext/net"
-	sysx "github.com/siyul-park/uniflow/ext/sys"
+	networkx "github.com/siyul-park/uniflow/ext/network"
+	systemx "github.com/siyul-park/uniflow/ext/system"
 	"github.com/siyul-park/uniflow/hook"
 	"github.com/siyul-park/uniflow/scheme"
 	"github.com/siyul-park/uniflow/store"
@@ -56,7 +56,7 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	natives := sysx.NewNativeModule()
+	natives := systemx.NewNativeModule()
 
 	langs := language.NewModule()
 	langs.Store(text.Kind, text.NewCompiler())
@@ -69,14 +69,14 @@ func main() {
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(ctrlx.AddToScheme(langs, cel.Kind))
+	sb.Register(controlx.AddToScheme(langs, cel.Kind))
 	sb.Register(eventx.AddToScheme(broker, broker))
 	sb.Register(iox.AddToScheme())
-	sb.Register(netx.AddToScheme())
-	sb.Register(sysx.AddToScheme(natives))
+	sb.Register(networkx.AddToScheme())
+	sb.Register(systemx.AddToScheme(natives))
 
 	hb.Register(eventx.AddToHook(broker, broker))
-	hb.Register(netx.AddToHook())
+	hb.Register(networkx.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {
@@ -111,10 +111,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	natives.Store(sysx.OPCreateNodes, sysx.CreateNodes(st))
-	natives.Store(sysx.OPReadNodes, sysx.ReadNodes(st))
-	natives.Store(sysx.OPUpdateNodes, sysx.UpdateNodes(st))
-	natives.Store(sysx.OPDeleteNodes, sysx.DeleteNodes(st))
+	natives.Store(systemx.OPCreateNodes, systemx.CreateNodes(st))
+	natives.Store(systemx.OPReadNodes, systemx.ReadNodes(st))
+	natives.Store(systemx.OPUpdateNodes, systemx.UpdateNodes(st))
+	natives.Store(systemx.OPDeleteNodes, systemx.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

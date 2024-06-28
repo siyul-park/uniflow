@@ -1,0 +1,291 @@
+package network
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/go-faker/faker/v4"
+	"github.com/phayes/freeport"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/node"
+	"github.com/siyul-park/uniflow/object"
+	"github.com/siyul-park/uniflow/packet"
+	"github.com/siyul-park/uniflow/port"
+	"github.com/siyul-park/uniflow/process"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewHTTPListenerNode(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
+func TestHTTPListenerNode_Port(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
+	defer n.Close()
+
+	assert.NotNil(t, n.In(node.PortIn))
+	assert.NotNil(t, n.Out(node.PortOut))
+	assert.NotNil(t, n.Out(node.PortErr))
+}
+
+func TestHTTPListenerNode_ListenAndShutdown(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
+	defer n.Close()
+
+	err = n.Listen()
+	assert.NoError(t, err)
+
+	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
+	assert.NoError(t, err)
+
+	err = n.Shutdown()
+	assert.NoError(t, err)
+
+	err = n.Listen()
+	assert.NoError(t, err)
+
+	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
+	assert.NoError(t, err)
+
+	err = n.Shutdown()
+	assert.NoError(t, err)
+}
+
+func TestHTTPListenerNode_ServeHTTP(t *testing.T) {
+	t.Run("NoResponseGiven", func(t *testing.T) {
+		n := NewHTTPListenerNode("")
+		defer n.Close()
+
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, "", w.Body.String())
+	})
+
+	t.Run("HTTPPayloadResponse", func(t *testing.T) {
+		n := NewHTTPListenerNode("")
+		defer n.Close()
+
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
+
+			for {
+				inPck, ok := <-outReader.Read()
+				if !ok {
+					return
+				}
+
+				outReader.Receive(inPck)
+			}
+		}))
+
+		body := faker.Sentence()
+
+		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, body, w.Body.String())
+	})
+
+	t.Run("BodyResponse", func(t *testing.T) {
+		n := NewHTTPListenerNode("")
+		defer n.Close()
+
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
+
+			for {
+				inPck, ok := <-outReader.Read()
+				if !ok {
+					return
+				}
+
+				inPayload := inPck.Payload()
+
+				var req *HTTPPayload
+				_ = object.Unmarshal(inPayload, &req)
+
+				outPck := packet.New(req.Body)
+				outReader.Receive(outPck)
+			}
+		}))
+
+		body := faker.Sentence()
+
+		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, body, w.Body.String())
+	})
+
+	t.Run("ErrorResponse", func(t *testing.T) {
+		n := NewHTTPListenerNode("")
+		defer n.Close()
+
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
+
+			for {
+				_, ok := <-outReader.Read()
+				if !ok {
+					return
+				}
+
+				err := errors.New(faker.Sentence())
+
+				errPck := packet.New(object.NewError(err))
+				outReader.Receive(errPck)
+			}
+		}))
+
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, "Internal Server Error", w.Body.String())
+	})
+
+	t.Run("HandleErrorResponse", func(t *testing.T) {
+		n := NewHTTPListenerNode("")
+		defer n.Close()
+
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
+
+		err := port.NewIn()
+		n.Out(node.PortErr).Link(err)
+
+		out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			outReader := out.Open(proc)
+
+			for {
+				_, ok := <-outReader.Read()
+				if !ok {
+					return
+				}
+
+				err := errors.New(faker.Sentence())
+
+				errPck := packet.New(object.NewError(err))
+				outReader.Receive(errPck)
+			}
+		}))
+		err.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+			errReader := err.Open(proc)
+
+			for {
+				inPck, ok := <-errReader.Read()
+				if !ok {
+					return
+				}
+
+				err, _ := inPck.Payload().(object.Error)
+
+				outPck := packet.New(object.NewString(err.Error()))
+				errReader.Receive(outPck)
+			}
+		}))
+
+		body := faker.Sentence()
+
+		r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+		w := httptest.NewRecorder()
+
+		n.ServeHTTP(w, r)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.NotEmpty(t, w.Body.String())
+	})
+}
+
+func TestListenerNodeCodec_Decode(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	codec := NewListenerNodeCodec()
+
+	spec := &ListenerNodeSpec{
+		Protocol: ProtocolHTTP,
+		Port:     port,
+	}
+
+	n, err := codec.Decode(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
+func BenchmarkHTTPListenerNode_ServeHTTP(b *testing.B) {
+	n := NewHTTPListenerNode("")
+	defer n.Close()
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			inPck, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(inPck)
+		}
+	}))
+
+	body := faker.Sentence()
+
+	b.ResetTimer()
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			r := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(body))
+			w := httptest.NewRecorder()
+
+			n.ServeHTTP(w, r)
+		}
+	})
+}

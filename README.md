@@ -39,17 +39,17 @@ import (
 	"github.com/siyul-park/uniflow/hook"
 	"github.com/siyul-park/uniflow/runtime"
 	"github.com/siyul-park/uniflow/spec"
-	"github.com/siyul-park/uniflow/ext/ctrl"
-	"github.com/siyul-park/uniflow/ext/net"
+	"github.com/siyul-park/uniflow/ext/control"
+	"github.com/siyul-park/uniflow/ext/network"
 )
 
 func main() {
 	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
 
-	hb.Register(net.AddToHook())
-	sb.Register(ctrl.AddToScheme())
-	sb.Register(net.AddToScheme())
+	hb.Register(network.AddToHook())
+	sb.Register(control.AddToScheme())
+	sb.Register(network.AddToScheme())
 	
 	hk, _ := hb.Build()
 	sc, _ := sb.Build()
