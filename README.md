@@ -97,7 +97,7 @@ Following these steps ensures that the project is properly set up, built, and th
 
 ### Starting
 
-Now ready to be used. To initiate the [ping](/example/ping.yaml) example, execute the following command:
+Now ready to be used. To initiate the [ping](/examples/ping.yaml) example, execute the following command:
 
 ```shell
 ./dist/uniflow start --filename example/ping.yaml
