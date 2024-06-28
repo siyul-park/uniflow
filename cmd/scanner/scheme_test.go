@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
 	"github.com/stretchr/testify/assert"
 )
 

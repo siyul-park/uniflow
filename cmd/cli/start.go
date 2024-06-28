@@ -8,12 +8,12 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/scanner"
-	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/runtime"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/database"
+	"github.com/siyul-park/uniflow/hook"
+	"github.com/siyul-park/uniflow/runtime"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
+	"github.com/siyul-park/uniflow/store"
 	"github.com/spf13/cobra"
 )
 

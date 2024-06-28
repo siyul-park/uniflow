@@ -8,25 +8,25 @@ import (
 	"strings"
 
 	"github.com/siyul-park/uniflow/cmd/cli"
-	controlx "github.com/siyul-park/uniflow/ext/pkg/control"
-	eventx "github.com/siyul-park/uniflow/ext/pkg/event"
-	iox "github.com/siyul-park/uniflow/ext/pkg/io"
-	"github.com/siyul-park/uniflow/ext/pkg/language"
-	"github.com/siyul-park/uniflow/ext/pkg/language/cel"
-	"github.com/siyul-park/uniflow/ext/pkg/language/javascript"
-	"github.com/siyul-park/uniflow/ext/pkg/language/json"
-	"github.com/siyul-park/uniflow/ext/pkg/language/text"
-	"github.com/siyul-park/uniflow/ext/pkg/language/typescript"
-	"github.com/siyul-park/uniflow/ext/pkg/language/yaml"
-	networkx "github.com/siyul-park/uniflow/ext/pkg/network"
-	systemx "github.com/siyul-park/uniflow/ext/pkg/system"
-	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/database/mongodb"
-	"github.com/siyul-park/uniflow/pkg/event"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/database"
+	"github.com/siyul-park/uniflow/database/memdb"
+	"github.com/siyul-park/uniflow/database/mongodb"
+	"github.com/siyul-park/uniflow/event"
+	ctrlx "github.com/siyul-park/uniflow/ext/ctrl"
+	eventx "github.com/siyul-park/uniflow/ext/event"
+	iox "github.com/siyul-park/uniflow/ext/io"
+	"github.com/siyul-park/uniflow/ext/language"
+	"github.com/siyul-park/uniflow/ext/language/cel"
+	"github.com/siyul-park/uniflow/ext/language/javascript"
+	"github.com/siyul-park/uniflow/ext/language/json"
+	"github.com/siyul-park/uniflow/ext/language/text"
+	"github.com/siyul-park/uniflow/ext/language/typescript"
+	"github.com/siyul-park/uniflow/ext/language/yaml"
+	netx "github.com/siyul-park/uniflow/ext/net"
+	sysx "github.com/siyul-park/uniflow/ext/sys"
+	"github.com/siyul-park/uniflow/hook"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/store"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -56,7 +56,7 @@ func main() {
 	sb := scheme.NewBuilder()
 	hb := hook.NewBuilder()
 
-	natives := systemx.NewNativeModule()
+	natives := sysx.NewNativeModule()
 
 	langs := language.NewModule()
 	langs.Store(text.Kind, text.NewCompiler())
@@ -69,14 +69,14 @@ func main() {
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(controlx.AddToScheme(langs, cel.Kind))
+	sb.Register(ctrlx.AddToScheme(langs, cel.Kind))
 	sb.Register(eventx.AddToScheme(broker))
 	sb.Register(iox.AddToScheme())
-	sb.Register(networkx.AddToScheme())
-	sb.Register(systemx.AddToScheme(natives))
+	sb.Register(netx.AddToScheme())
+	sb.Register(sysx.AddToScheme(natives))
 
 	hb.Register(eventx.AddToHook(broker))
-	hb.Register(networkx.AddToHook())
+	hb.Register(netx.AddToHook())
 
 	sc, err := sb.Build()
 	if err != nil {
@@ -111,10 +111,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	natives.Store(systemx.OPCreateNodes, systemx.CreateNodes(st))
-	natives.Store(systemx.OPReadNodes, systemx.ReadNodes(st))
-	natives.Store(systemx.OPUpdateNodes, systemx.UpdateNodes(st))
-	natives.Store(systemx.OPDeleteNodes, systemx.DeleteNodes(st))
+	natives.Store(sysx.OPCreateNodes, sysx.CreateNodes(st))
+	natives.Store(sysx.OPReadNodes, sysx.ReadNodes(st))
+	natives.Store(sysx.OPUpdateNodes, sysx.UpdateNodes(st))
+	natives.Store(sysx.OPDeleteNodes, sysx.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {

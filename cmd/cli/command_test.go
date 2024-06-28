@@ -7,9 +7,9 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/database/memdb"
+	"github.com/siyul-park/uniflow/hook"
+	"github.com/siyul-park/uniflow/scheme"
 	"github.com/stretchr/testify/assert"
 )
 

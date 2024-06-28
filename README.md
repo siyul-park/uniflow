@@ -35,21 +35,21 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/runtime"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/ext/pkg/control"
-	"github.com/siyul-park/uniflow/ext/pkg/network"
+	"github.com/siyul-park/uniflow/database/memdb"
+	"github.com/siyul-park/uniflow/hook"
+	"github.com/siyul-park/uniflow/runtime"
+	"github.com/siyul-park/uniflow/spec"
+	"github.com/siyul-park/uniflow/ext/ctrl"
+	"github.com/siyul-park/uniflow/ext/net"
 )
 
 func main() {
 	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
 
-	hb.Register(network.AddToHook())
-	sb.Register(control.AddToScheme())
-	sb.Register(network.AddToScheme())
+	hb.Register(net.AddToHook())
+	sb.Register(ctrl.AddToScheme())
+	sb.Register(net.AddToScheme())
 	
 	hk, _ := hb.Build()
 	sc, _ := sb.Build()

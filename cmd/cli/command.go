@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/database"
+	"github.com/siyul-park/uniflow/hook"
+	"github.com/siyul-park/uniflow/scheme"
 	"github.com/spf13/cobra"
 )
 

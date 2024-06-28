@@ -6,9 +6,9 @@ import (
 	"io/fs"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
+	"github.com/siyul-park/uniflow/store"
 )
 
 // Scanner is responsible for building spec.Spec instances from raw data.

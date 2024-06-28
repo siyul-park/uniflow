@@ -1,9 +1,9 @@
 package scanner
 
 import (
-	"github.com/siyul-park/uniflow/pkg/object"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/object"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
 )
 
 // SpecCodecOptions holds options for creating a SpecCodec.

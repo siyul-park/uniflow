@@ -8,7 +8,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/oliveagle/jsonpath"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/object"
 )
 
 // TableColumnDefinition represents the definition of a table column.

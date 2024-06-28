@@ -8,11 +8,11 @@ import (
 	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/database/memdb"
+	"github.com/siyul-park/uniflow/node"
+	"github.com/siyul-park/uniflow/scheme"
+	"github.com/siyul-park/uniflow/spec"
+	"github.com/siyul-park/uniflow/store"
 	"github.com/stretchr/testify/assert"
 )
 
