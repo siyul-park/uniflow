@@ -4,19 +4,14 @@
   port: 8000
   links:
     out:
-      - name: loopback
+      - name: nop
         port: in
       - name: stdout
         port: in
 
-- kind: snippet
-  name: loopback
-  language: cel
-  code: self
-
 - kind: write
   name: stdout
-  file: stdout
+  filename: /dev/stdout
   links:
     out:
       - name: nop

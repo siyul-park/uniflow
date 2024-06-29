@@ -14,15 +14,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
+// WriteNode represents a node responsible for writing data to an io.WriteCloser.
 type WriteNode struct {
 	*node.OneToOneNode
 	writer io.WriteCloser
 	mu     sync.RWMutex
 }
 
+// WriteNodeSpec holds the specifications for creating a WriteNode.
 type WriteNodeSpec struct {
 	spec.Meta `map:",inline"`
-	File      string `map:"file"`
+	Filename  string `map:"filename"`
 }
 
 type nopWriteCloser struct {
@@ -33,14 +35,14 @@ const KindWrite = "write"
 
 var _ io.WriteCloser = (*nopWriteCloser)(nil)
 
+// NewWriteNode creates a new WriteNode with the provided writer.
 func NewWriteNode(writer io.WriteCloser) *WriteNode {
 	n := &WriteNode{writer: writer}
-
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-
 	return n
 }
 
+// Close closes the WriteNode and its underlying writer.
 func (n *WriteNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -58,39 +60,43 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	inPayload := inPck.Payload()
 	input := object.InterfaceOf(inPayload)
 
-	var format []byte
-	if v, ok := input.([]byte); ok {
-		format = v
-	} else if v, ok := input.(string); ok {
-		format = []byte(v)
-	} else {
-		format = []byte(fmt.Sprintf("%v", input))
+	var buf []byte
+	switch v := input.(type) {
+	case []byte:
+		buf = v
+	case string:
+		buf = []byte(v)
+	default:
+		buf = []byte(fmt.Sprintf("%v", input))
 	}
 
-	len, err := n.writer.Write(format)
+	length, err := n.writer.Write(buf)
 	if err != nil {
 		return nil, packet.New(object.NewError(err))
 	}
 
-	return packet.New(object.NewInt64(int64(len))), nil
+	return packet.New(object.NewInt64(int64(length))), nil
 }
 
+// NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
 func NewWriteNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
-		var file io.WriteCloser
-		var err error
-		if spec.File == "/dev/stdout" || spec.File == "stdout" {
-			file = &nopWriteCloser{os.Stdout}
-		} else if spec.File == "/dev/stderr" || spec.File == "stderr" {
-			file = &nopWriteCloser{os.Stderr}
-		} else {
-			file, err = os.OpenFile(spec.File, os.O_WRONLY|os.O_CREATE, 0644)
+		var writer io.WriteCloser
+		switch spec.Filename {
+		case "/dev/stdin", "stdin":
+			writer = &nopWriteCloser{os.Stdin}
+		case "/dev/stdout", "stdout":
+			writer = &nopWriteCloser{os.Stdout}
+		case "/dev/stderr", "stderr":
+			writer = &nopWriteCloser{os.Stderr}
+		default:
+			var err error
+			writer, err = os.OpenFile(spec.Filename, os.O_APPEND|os.O_CREATE, 0644)
+			if err != nil {
+				return nil, err
+			}
 		}
-		if err != nil {
-			return nil, err
-		}
-
-		return NewWriteNode(file), nil
+		return NewWriteNode(writer), nil
 	})
 }
 

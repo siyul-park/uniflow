@@ -1,7 +1,9 @@
 package io
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -15,23 +17,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewWriteNode(t *testing.T) {
+func TestNewReadNode(t *testing.T) {
 	f, _ := os.CreateTemp("", "*")
 	defer f.Close()
 
-	n := NewWriteNode(f)
+	n := NewReadNode(f)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestWriteNode_SendAndReceive(t *testing.T) {
+func TestReadNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	f, _ := os.CreateTemp("", "*")
-	defer f.Close()
+	contents := []byte(faker.Sentence())
+	r := bytes.NewReader(contents)
 
-	n := NewWriteNode(f)
+	n := NewReadNode(io.NopCloser(r))
 	defer n.Close()
 
 	in := port.NewOut()
@@ -42,24 +44,24 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewString(faker.UUIDHyphenated())
+	inPayload := object.NewInt(len(contents))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, int64(inPayload.Len()), outPck.Payload().Interface())
+		assert.Equal(t, contents, outPck.Payload().Interface())
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 }
 
-func TestWriteNodeCodec_Decode(t *testing.T) {
-	codec := NewWriteNodeCodec()
+func TestReadNodeCodec_Decode(t *testing.T) {
+	codec := NewReadNodeCodec()
 
-	spec := &WriteNodeSpec{
-		Filename: "stdout",
+	spec := &ReadNodeSpec{
+		Filename: "stdin",
 	}
 
 	n, err := codec.Decode(spec)

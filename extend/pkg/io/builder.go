@@ -8,6 +8,9 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindRDB, &RDBNodeSpec{})
 		s.AddCodec(KindRDB, NewRDBNodeCodec())
 
+		s.AddKnownType(KindRead, &ReadNodeSpec{})
+		s.AddCodec(KindRead, NewReadNodeCodec())
+
 		s.AddKnownType(KindWrite, &WriteNodeSpec{})
 		s.AddCodec(KindWrite, NewWriteNodeCodec())
 
