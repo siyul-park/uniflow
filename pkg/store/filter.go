@@ -151,7 +151,7 @@ func (ft *Filter) Or(x ...*Filter) *Filter {
 
 // Encode encodes the filter to a database.Filter.
 func (ft *Filter) Encode() (*database.Filter, error) {
-	if ft == nil {
+	if ft == nil || ft.OP == "" {
 		return nil, nil
 	}
 

@@ -4,21 +4,12 @@
   port: 8000
   links:
     out:
-      - name: nop
-        port: in
-      - name: fork
-        port: in
-
-- kind: fork
-  name: fork
-  links:
-    out:
       - name: stdout
         port: in
 
-- kind: write
+- kind: block
   name: stdout
-  filename: /dev/stdout
-
-- kind: nop
-  name: nop
+  specs:
+    - kind: fork
+    - kind: write
+      filename: /dev/stdout

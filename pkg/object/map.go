@@ -310,6 +310,9 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.Deco
 				}
 
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+					if source == nil {
+						return nil
+					}
 					if s, ok := source.(Map); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						if t.IsNil() {
@@ -374,6 +377,9 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.Deco
 				}
 
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+					if source == nil {
+						return nil
+					}
 					if s, ok := source.(Map); ok {
 						for _, dec := range decoders {
 							if err := dec.Decode(s, target); err != nil {

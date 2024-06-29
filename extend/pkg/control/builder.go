@@ -13,6 +13,9 @@ func AddToScheme(module *language.Module, lang string) func(*scheme.Scheme) erro
 			return err
 		}
 
+		s.AddKnownType(KindBlock, &BlockNodeSpec{})
+		s.AddCodec(KindBlock, NewBlockNodeCodec(s))
+
 		s.AddKnownType(KindCall, &CallNodeSpec{})
 		s.AddCodec(KindCall, NewCallNodeCodec())
 

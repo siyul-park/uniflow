@@ -169,6 +169,12 @@ func TestMap_Decode(t *testing.T) {
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
+	t.Run("nil", func(t *testing.T) {
+		var decoded map[string]string
+		err := dec.Decode(nil, &decoded)
+		assert.NoError(t, err)
+	})
+
 	t.Run("map", func(t *testing.T) {
 		source := map[string]string{"foo": "bar"}
 		v := NewMap(NewString("foo"), NewString("bar"))
