@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcess_Data(t *testing.T) {
+func TestNewProcess(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
 	assert.NotNil(t, proc.Data())
+	assert.NotNil(t, proc.Context())
 	assert.Equal(t, nil, proc.Err())
 	assert.Equal(t, StatusRunning, proc.Status())
 }

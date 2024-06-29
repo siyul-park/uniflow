@@ -29,6 +29,9 @@ type SyscallNodeSpec struct {
 
 const KindSyscall = "syscall"
 
+var typeContext = reflect.TypeOf((*context.Context)(nil)).Elem()
+var typeError = reflect.TypeOf((*error)(nil)).Elem()
+
 // NewSyscallNode creates a new SyscallNode with the provided function.
 // It returns an error if the provided function is not valid.
 func NewSyscallNode(operator any) (*SyscallNode, error) {
@@ -47,11 +50,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	contextInterface := reflect.TypeOf((*context.Context)(nil)).Elem()
-	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := proc.Context()
 
 	inPayload := inPck.Payload()
 
@@ -59,7 +58,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	offset := 0
 	if n.operator.Type().NumIn() > 0 {
-		if n.operator.Type().In(0).Implements(contextInterface) {
+		if n.operator.Type().In(0).Implements(typeContext) {
 			ins[0] = reflect.ValueOf(ctx)
 			offset++
 		}
@@ -90,7 +89,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	outs := n.operator.Call(ins)
 
-	if n.operator.Type().NumOut() > 0 && n.operator.Type().Out(n.operator.Type().NumOut()-1).Implements(errorInterface) {
+	if n.operator.Type().NumOut() > 0 && n.operator.Type().Out(n.operator.Type().NumOut()-1).Implements(typeError) {
 		last := outs[len(outs)-1].Interface()
 		outs = outs[:len(outs)-1]
 

@@ -1,7 +1,6 @@
 package io
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 
@@ -76,7 +75,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx := context.Background()
+	ctx := proc.Context()
 
 	query, ok := object.Pick[string](inPck.Payload())
 	if !ok {
