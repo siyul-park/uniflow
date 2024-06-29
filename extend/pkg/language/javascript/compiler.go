@@ -14,6 +14,8 @@ import (
 
 type fieldNameMapper struct{}
 
+const Language = "javascript"
+
 const (
 	keyModule  = "module"
 	keyExports = "exports"

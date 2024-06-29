@@ -5,6 +5,8 @@ import (
 	"github.com/siyul-park/uniflow/extend/pkg/language"
 )
 
+const Language = "cel"
+
 func NewCompiler() language.Compiler {
 	return language.CompileFunc(func(code string) (language.Program, error) {
 		env, err := cel.NewEnv(

@@ -13,9 +13,9 @@ func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
 	m := language.NewModule()
-	m.Store(text.Kind, text.NewCompiler())
+	m.Store(text.Language, text.NewCompiler())
 
-	err := AddToScheme(m, text.Kind)(s)
+	err := AddToScheme(m, text.Language)(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindCall, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindSnippet, KindSwitch}

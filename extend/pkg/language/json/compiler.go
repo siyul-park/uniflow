@@ -6,6 +6,8 @@ import (
 	"github.com/siyul-park/uniflow/extend/pkg/language"
 )
 
+const Language = "json"
+
 func NewCompiler() language.Compiler {
 	return language.CompileFunc(func(code string) (language.Program, error) {
 		var data any

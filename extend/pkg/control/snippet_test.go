@@ -54,12 +54,12 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 func TestSnippetNodeCodec_Decode(t *testing.T) {
 	m := language.NewModule()
-	m.Store(text.Kind, text.NewCompiler())
+	m.Store(text.Language, text.NewCompiler())
 
 	codec := NewSnippetNodeCodec(m)
 
 	spec := &SnippetNodeSpec{
-		Language: text.Kind,
+		Language: text.Language,
 		Code:     "",
 	}
 

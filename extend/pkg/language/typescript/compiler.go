@@ -6,6 +6,8 @@ import (
 	"github.com/siyul-park/uniflow/extend/pkg/language/javascript"
 )
 
+const Language = "typescript"
+
 func NewCompiler() language.Compiler {
 	return javascript.NewCompiler(api.TransformOptions{
 		Format: api.FormatCommonJS,
