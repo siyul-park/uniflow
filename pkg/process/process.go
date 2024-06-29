@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-
 // Process represents a process with its state, context, and synchronization mechanisms.
 type Process struct {
 	data      *Data
@@ -21,8 +20,8 @@ type Process struct {
 type Status int
 
 const (
-	StatusRunning Status = iota 
-	StatusTerminated            
+	StatusRunning Status = iota
+	StatusTerminated
 )
 
 // Ensure Process implements ExitHook interface.
@@ -61,7 +60,7 @@ func (p *Process) Status() Status {
 func (p *Process) Err() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	
+
 	return p.err
 }
 

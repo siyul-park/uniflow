@@ -263,7 +263,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 
 		child := proc.Fork()
 
-		outWriter := n.outPort.Open(proc)
+		outWriter := n.outPort.Open(child)
 
 		data, err := UnmarshalMIME(p, lo.ToPtr(""))
 		if err != nil {
