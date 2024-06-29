@@ -63,7 +63,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader.Read():
-				assert.Equal(t, inPayload.Get(i).Interface(), outPck.Payload().Interface())
+				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader.Receive(outPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -111,7 +111,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader0.Read():
-				assert.Equal(t, inPayload.Get(i).Interface(), outPck.Payload().Interface())
+				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader0.Receive(outPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")

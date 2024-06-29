@@ -76,7 +76,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice().Interface(), outPck.Payload().Interface())
+			assert.Equal(t, object.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -136,7 +136,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice().Interface(), outPck.Payload().Interface())
+			assert.Equal(t, object.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

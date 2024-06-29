@@ -6,16 +6,19 @@
     out:
       - name: nop
         port: in
+      - name: fork
+        port: in
+
+- kind: fork
+  name: fork
+  links:
+    out:
       - name: stdout
         port: in
 
 - kind: write
   name: stdout
   filename: /dev/stdout
-  links:
-    out:
-      - name: nop
-        port: in
 
 - kind: nop
   name: nop

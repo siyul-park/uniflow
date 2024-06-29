@@ -16,6 +16,9 @@ func AddToScheme(module *language.Module, lang string) func(*scheme.Scheme) erro
 		s.AddKnownType(KindCall, &CallNodeSpec{})
 		s.AddCodec(KindCall, NewCallNodeCodec())
 
+		s.AddKnownType(KindFork, &ForkNodeSpec{})
+		s.AddCodec(KindFork, NewForkNodeCodec())
+
 		s.AddKnownType(KindIf, &IfNodeSpec{})
 		s.AddCodec(KindIf, NewIfNodeCodec(expr))
 

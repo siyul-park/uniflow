@@ -85,7 +85,7 @@ func (n *NOPNode) forward(proc *process.Process) {
 
 // NewNOPNodeCodec creates a codec for decoding NOPNodeSpec.
 func NewNOPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *NOPNodeSpec) (node.Node, error) {
+	return scheme.CodecWithType(func(_ *NOPNodeSpec) (node.Node, error) {
 		return NewNOPNode(), nil
 	})
 }

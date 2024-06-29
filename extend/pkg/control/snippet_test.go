@@ -46,7 +46,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, inPayload.Interface(), outPck.Payload().Interface())
+		assert.Equal(t, inPayload, outPck.Payload())
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

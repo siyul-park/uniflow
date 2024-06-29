@@ -51,8 +51,6 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 		inPayloads = append(inPayloads, object.NewString(faker.UUIDHyphenated()))
 	}
 
-	merged := object.NewSlice(inPayloads...).Interface()
-
 	for i, inWriter := range inWriters {
 		inPck := packet.New(inPayloads[i])
 		inWriter.Write(inPck)
@@ -60,7 +58,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-outReader.Read():
-		assert.Equal(t, merged, outPck.Payload().Interface())
+		assert.Equal(t, object.NewSlice(inPayloads...), outPck.Payload())
 		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())

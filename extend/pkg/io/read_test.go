@@ -51,7 +51,7 @@ func TestReadNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, contents, outPck.Payload().Interface())
+		assert.Equal(t, object.NewBinary(contents), outPck.Payload())
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

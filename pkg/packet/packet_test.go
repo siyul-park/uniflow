@@ -3,6 +3,7 @@ package packet
 import (
 	"testing"
 
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,6 +33,6 @@ func TestMerge(t *testing.T) {
 		pck1 := New(nil)
 		pck2 := New(nil)
 		res := Merge([]*Packet{pck1, pck2})
-		assert.Equal(t, []any{nil, nil}, res.Payload().Interface())
+		assert.Equal(t, object.NewSlice(nil, nil), res.Payload())
 	})
 }
