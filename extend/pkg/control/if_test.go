@@ -46,14 +46,14 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
 
-		out0 := port.NewIn()
-		n.Out(node.PortWithIndex(node.PortOut, 0)).Link(out0)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
 		proc := process.New()
 		defer proc.Exit(nil)
 
 		inWriter := in.Open(proc)
-		outReader0 := out0.Open(proc)
+		outReader := out.Open(proc)
 
 		inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 		inPck := packet.New(inPayload)
@@ -61,9 +61,9 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		inWriter.Write(inPck)
 
 		select {
-		case outPck := <-outReader0.Read():
+		case outPck := <-outReader.Read():
 			assert.Equal(t, inPayload, outPck.Payload())
-			outReader0.Receive(outPck)
+			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

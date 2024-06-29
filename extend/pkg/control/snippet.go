@@ -15,8 +15,8 @@ import (
 // SnippetNode represents a node that executes code snippets in various language.
 type SnippetNode struct {
 	*node.OneToOneNode
-	transform func(any) (any, error)
-	mu        sync.RWMutex
+	fn func(any) (any, error)
+	mu sync.RWMutex
 }
 
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
@@ -29,8 +29,8 @@ type SnippetNodeSpec struct {
 const KindSnippet = "snippet"
 
 // NewSnippetNode creates a new SnippetNode with the specified language.Language and code.
-func NewSnippetNode(transform func(any) (any, error)) *SnippetNode {
-	n := &SnippetNode{transform: transform}
+func NewSnippetNode(fn func(any) (any, error)) *SnippetNode {
+	n := &SnippetNode{fn: fn}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n
@@ -43,7 +43,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	inPayload := inPck.Payload()
 	input := object.InterfaceOf(inPayload)
 
-	if output, err := n.transform(input); err != nil {
+	if output, err := n.fn(input); err != nil {
 		return nil, packet.New(object.NewError(err))
 	} else if outPayload, err := object.MarshalText(output); err != nil {
 		return nil, packet.New(object.NewError(err))
