@@ -19,13 +19,14 @@ const (
 
 func CreateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
-		if ids, err := s.InsertMany(ctx, lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
+		patches := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
-		})); err != nil {
+		})
+		ids, err := s.InsertMany(ctx, patches)
+		if err != nil {
 			return nil, err
-		} else {
-			return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
 		}
+		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
 	}
 }
 

@@ -122,7 +122,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 				return nil, packet.New(object.NewString(faker.UUIDHyphenated()))
 			}),
 			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return nil, packet.New(object.NewString(faker.UUIDHyphenated()))
+				return inPck, nil
 			}),
 		)
 		defer n.Close()
