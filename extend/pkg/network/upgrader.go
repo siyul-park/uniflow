@@ -26,8 +26,8 @@ type WebSocketUpgraderNode struct {
 type UpgraderNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string        `map:"protocol"`
-	Timeout   time.Duration `map:"timeout"`
-	Buffer    int           `map:"buffer"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
+	Buffer    int           `map:"buffer,omitempty"`
 }
 
 const KindUpgrader = "upgrader"

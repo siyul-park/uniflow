@@ -10,10 +10,10 @@ import (
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme(NewNativeModule())(s)
+	err := AddToScheme(NewTable())(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindNative}
+	testCase := []string{KindSyscall}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {

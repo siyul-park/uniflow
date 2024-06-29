@@ -14,44 +14,36 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// NativeNode represents a node for executing internal calls.
-type NativeNode struct {
+// SyscallNode represents a node for executing internal calls.
+type SyscallNode struct {
 	*node.OneToOneNode
 	operator reflect.Value
 	mu       sync.RWMutex
 }
 
-// NativeNodeSpec holds the specifications for creating a NativeNode.
-type NativeNodeSpec struct {
+// SyscallNodeSpec holds the specifications for creating a SyscallNode.
+type SyscallNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Opcode    string `map:"opcode"`
+	OPCode    string `map:"opcode"`
 }
 
-// NativeModule represents a table of system call operations.
-type NativeModule struct {
-	data map[string]any
-	mu   sync.RWMutex
-}
+const KindSyscall = "syscall"
 
-const KindNative = "native"
-
-var ErrInvalidOperation = errors.New("operation is invalid")
-
-// NewNativeNode creates a new NativeNode with the provided function.
+// NewSyscallNode creates a new SyscallNode with the provided function.
 // It returns an error if the provided function is not valid.
-func NewNativeNode(operator any) (*NativeNode, error) {
+func NewSyscallNode(operator any) (*SyscallNode, error) {
 	op := reflect.ValueOf(operator)
 	if op.Kind() != reflect.Func {
 		return nil, errors.WithStack(ErrInvalidOperation)
 	}
 
-	n := &NativeNode{operator: op}
+	n := &SyscallNode{operator: op}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 
 	return n, nil
 }
 
-func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -127,41 +119,13 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	return packet.New(object.NewSlice(outPayloads...)), nil
 }
 
-// NewNativeModule creates a new NativeModule instance.
-func NewNativeModule() *NativeModule {
-	return &NativeModule{
-		data: make(map[string]any),
-	}
-}
-
-// Store adds or updates a system call opcode in the table.
-func (t *NativeModule) Store(opcode string, fn any) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.data[opcode] = fn
-}
-
-// Load retrieves a system call opcode from the table.
-// It returns the opcode function and a boolean indicating if the opcode exists.
-func (t *NativeModule) Load(opcode string) (any, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	if fn, ok := t.data[opcode]; !ok {
-		return nil, errors.WithStack(ErrInvalidOperation)
-	} else {
-		return fn, nil
-	}
-}
-
-// NewNativeNodeCodec creates a new codec for NativeNodeSpec.
-func NewNativeNodeCodec(module *NativeModule) scheme.Codec {
-	return scheme.CodecWithType(func(spec *NativeNodeSpec) (node.Node, error) {
-		fn, err := module.Load(spec.Opcode)
+// NewSyscallNodeCodec creates a new codec for SyscallNodeSpec.
+func NewSyscallNodeCodec(table *Table) scheme.Codec {
+	return scheme.CodecWithType(func(spec *SyscallNodeSpec) (node.Node, error) {
+		fn, err := table.Load(spec.OPCode)
 		if err != nil {
 			return nil, err
 		}
-		return NewNativeNode(fn)
+		return NewSyscallNode(fn)
 	})
 }

@@ -15,19 +15,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNativeNode(t *testing.T) {
-	n, err := NewNativeNode(func() {})
+func TestNewSyscallNode(t *testing.T) {
+	n, err := NewSyscallNode(func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestNativeNode_SendAndReceive(t *testing.T) {
+func TestSyscallNode_SendAndReceive(t *testing.T) {
 	t.Run("Operands, Returns = 0", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func() {})
+		n, _ := NewSyscallNode(func() {})
 		defer n.Close()
 
 		in := port.NewOut()
@@ -55,7 +55,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func(arg any) any {
+		n, _ := NewSyscallNode(func(arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -85,7 +85,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func(arg1, arg2 any) any {
+		n, _ := NewSyscallNode(func(arg1, arg2 any) any {
 			return arg2
 		})
 		defer n.Close()
@@ -118,7 +118,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func(ctx context.Context, arg any) any {
+		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any {
 			return arg
 		})
 		defer n.Close()
@@ -148,7 +148,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func(arg any) (any, any) {
+		n, _ := NewSyscallNode(func(arg any) (any, any) {
 			return arg, arg
 		})
 		defer n.Close()
@@ -178,7 +178,7 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n, _ := NewNativeNode(func(arg any) error {
+		n, _ := NewSyscallNode(func(arg any) error {
 			return fmt.Errorf("%v", arg)
 		})
 		defer n.Close()
@@ -217,19 +217,19 @@ func TestNativeNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestNativeNodeCodec_Decode(t *testing.T) {
-	module := NewNativeModule()
+func TestSyscallNodeCodec_Decode(t *testing.T) {
+	table := NewTable()
 
 	operation := faker.UUIDHyphenated()
 
-	module.Store(operation, func(arg any) any {
+	table.Store(operation, func(arg any) any {
 		return arg
 	})
 
-	codec := NewNativeNodeCodec(module)
+	codec := NewSyscallNodeCodec(table)
 
-	spec := &NativeNodeSpec{
-		Opcode: operation,
+	spec := &SyscallNodeSpec{
+		OPCode: operation,
 	}
 
 	n, err := codec.Decode(spec)

@@ -52,10 +52,10 @@ func main() {
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
 
-	sb := scheme.NewBuilder()
-	hb := hook.NewBuilder()
+	sbuilder := scheme.NewBuilder()
+	hbuilder := hook.NewBuilder()
 
-	natives := system.NewNativeModule()
+	stable := system.NewTable()
 
 	langs := language.NewModule()
 	langs.Store(text.Kind, text.NewCompiler())
@@ -68,20 +68,20 @@ func main() {
 	broker := event.NewBroker()
 	defer broker.Close()
 
-	sb.Register(control.AddToScheme(langs, cel.Kind))
-	sb.Register(event.AddToScheme(broker, broker))
-	sb.Register(io.AddToScheme())
-	sb.Register(network.AddToScheme())
-	sb.Register(system.AddToScheme(natives))
+	sbuilder.Register(control.AddToScheme(langs, cel.Kind))
+	sbuilder.Register(event.AddToScheme(broker, broker))
+	sbuilder.Register(io.AddToScheme())
+	sbuilder.Register(network.AddToScheme())
+	sbuilder.Register(system.AddToScheme(stable))
 
-	hb.Register(event.AddToHook(broker, broker))
-	hb.Register(network.AddToHook())
+	hbuilder.Register(event.AddToHook(broker, broker))
+	hbuilder.Register(network.AddToHook())
 
-	sc, err := sb.Build()
+	scheme, err := sbuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
-	hk, err := hb.Build()
+	hook, err := hbuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,17 +103,17 @@ func main() {
 	}
 
 	st, err := store.New(ctx, store.Config{
-		Scheme:   sc,
+		Scheme:   scheme,
 		Database: db,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	natives.Store(system.OPCreateNodes, system.CreateNodes(st))
-	natives.Store(system.OPReadNodes, system.ReadNodes(st))
-	natives.Store(system.OPUpdateNodes, system.UpdateNodes(st))
-	natives.Store(system.OPDeleteNodes, system.DeleteNodes(st))
+	stable.Store(system.CodeCreateNodes, system.CreateNodes(st))
+	stable.Store(system.CodeReadNodes, system.ReadNodes(st))
+	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(st))
+	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(st))
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -122,8 +122,8 @@ func main() {
 	fsys := os.DirFS(wd)
 
 	cmd := cli.NewCommand(cli.Config{
-		Scheme:   sc,
-		Hook:     hk,
+		Scheme:   scheme,
+		Hook:     hook,
 		Database: db,
 		FS:       fsys,
 	})

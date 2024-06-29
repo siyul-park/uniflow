@@ -36,7 +36,7 @@ func TestCreateNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewNativeNode(CreateNodes(st))
+	n, _ := NewSyscallNode(CreateNodes(st))
 	defer n.Close()
 
 	meta := &spec.Meta{
@@ -83,7 +83,7 @@ func TestReadNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewNativeNode(ReadNodes(st))
+	n, _ := NewSyscallNode(ReadNodes(st))
 	defer n.Close()
 
 	meta := &spec.Meta{
@@ -132,7 +132,7 @@ func TestUpdateNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewNativeNode(UpdateNodes(st))
+	n, _ := NewSyscallNode(UpdateNodes(st))
 	defer n.Close()
 
 	meta := &spec.Meta{
@@ -181,7 +181,7 @@ func TestDeleteNodes(t *testing.T) {
 		Database: memdb.New(faker.UUIDHyphenated()),
 	})
 
-	n, _ := NewNativeNode(DeleteNodes(st))
+	n, _ := NewSyscallNode(DeleteNodes(st))
 	defer n.Close()
 
 	meta := &spec.Meta{

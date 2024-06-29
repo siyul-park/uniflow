@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	OPCreateNodes = "nodes.create"
-	OPReadNodes   = "nodes.read"
-	OPUpdateNodes = "nodes.update"
-	OPDeleteNodes = "nodes.delete"
+	CodeCreateNodes = "nodes.create"
+	CodeReadNodes   = "nodes.read"
+	CodeUpdateNodes = "nodes.update"
+	CodeDeleteNodes = "nodes.delete"
 )
 
 func CreateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {

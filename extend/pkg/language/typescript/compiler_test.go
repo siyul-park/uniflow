@@ -9,16 +9,16 @@ import (
 
 func TestCompiler_Compile(t *testing.T) {
 	c := NewCompiler()
-	_, err := c.Compile(`export default function (msg: any) {
-		return msg;
+	_, err := c.Compile(`export default function (args: any) {
+		return args;
 	}`)
 	assert.NoError(t, err)
 }
 
 func TestProgram_Run(t *testing.T) {
 	c := NewCompiler()
-	p, _ := c.Compile(`export default function (msg: any) {
-		return msg;
+	p, _ := c.Compile(`export default function (args: any) {
+		return args;
 	}`)
 
 	env := faker.Word()
