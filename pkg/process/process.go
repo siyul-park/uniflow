@@ -29,12 +29,7 @@ var _ ExitHook = (*Process)(nil)
 
 // New creates a new Process with a background context.
 func New() *Process {
-	return NewWithContext(context.Background())
-}
-
-// NewWithContext creates a new Process with a given context.
-func NewWithContext(ctx context.Context) *Process {
-	ctx, cancel := context.WithCancelCause(ctx)
+	ctx, cancel := context.WithCancelCause(context.Background())
 	proc := &Process{
 		data: newData(),
 		ctx:  ctx,
@@ -83,7 +78,7 @@ func (p *Process) Wait() {
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
 
-	ctx, cancel := context.WithCancelCause(p.ctx)
+	ctx, cancel := context.WithCancelCause(context.Background())
 
 	child := &Process{
 		data:   p.data.Fork(),
