@@ -1,0 +1,37 @@
+# curl \
+#     --include \
+#     --no-buffer \
+#     --header "Connection: Upgrade" \
+#     --header "Upgrade: websocket" \
+#     --header "Host: localhost:8000" \
+#     --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+#     --header "Sec-WebSocket-Version: 13" \
+#     http://localhost:8000/ws
+
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  links:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ws
+      port: out[0]
+  links:
+    out[0]:
+      - name: upgrader
+        port: io
+
+- kind: upgrader
+  name: upgrader
+  protocol: websocket
+  links:
+    out:
+      - name: upgrader
+        port: in
