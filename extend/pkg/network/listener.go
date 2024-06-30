@@ -22,7 +22,6 @@ import (
 type HTTPListenerNode struct {
 	server   *http.Server
 	listener net.Listener
-	inPort   *port.InPort
 	outPort  *port.OutPort
 	errPort  *port.OutPort
 	mu       sync.RWMutex
@@ -46,12 +45,9 @@ var _ http.Handler = (*HTTPListenerNode)(nil)
 // NewHTTPListenerNode creates a new HTTPListenerNode with the specified address.
 func NewHTTPListenerNode(address string) *HTTPListenerNode {
 	n := &HTTPListenerNode{
-		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
-
-	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	s := new(http.Server)
 	s.Addr = address
@@ -63,15 +59,6 @@ func NewHTTPListenerNode(address string) *HTTPListenerNode {
 
 // In returns the input port with the specified name.
 func (n *HTTPListenerNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	switch name {
-	case node.PortIn:
-		return n.inPort
-	default:
-	}
-
 	return nil
 }
 
@@ -221,52 +208,10 @@ func (n *HTTPListenerNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
 
 	return n.server.Close()
-}
-
-func (n *HTTPListenerNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	inReader := n.inPort.Open(proc)
-
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
-
-		var res *HTTPPayload
-		if _, ok := inPck.Payload().(object.Error); ok {
-			res = NewHTTPPayload(http.StatusInternalServerError)
-		} else if err := object.Unmarshal(inPck.Payload(), &res); err != nil {
-			res.Body = inPck.Payload()
-		}
-
-		var err error
-		if res.Status >= 400 && res.Status < 600 {
-			err = errors.New(http.StatusText(res.Status))
-		}
-
-		w, ok1 := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter)
-		r, ok2 := proc.Data().Load(KeyHTTPRequest).(*http.Request)
-		if ok1 && ok2 {
-			req, _ := n.read(r)
-
-			n.negotiate(req, res)
-			_ = n.write(w, res)
-		}
-
-		if err == nil {
-			inReader.Receive(packet.None)
-		} else {
-			inReader.Receive(packet.New(object.NewError(err)))
-		}
-	}
 }
 
 func (n *HTTPListenerNode) negotiate(req *HTTPPayload, res *HTTPPayload) {

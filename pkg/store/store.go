@@ -257,13 +257,7 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 
 func (s *Store) docToSpec(doc object.Map) (spec.Spec, error) {
 	unstructured := spec.NewUnstructured(doc)
-	if spec, ok := s.scheme.Spec(unstructured.GetKind()); !ok {
-		return unstructured, nil
-	} else if err := object.Unmarshal(doc, spec); err != nil {
-		return nil, err
-	} else {
-		return spec, nil
-	}
+	return s.scheme.Structured(unstructured)
 }
 
 func (s *Store) specToDoc(spc spec.Spec) (object.Map, error) {

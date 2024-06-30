@@ -34,7 +34,6 @@ func TestHTTPListenerNode_Port(t *testing.T) {
 	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
 	assert.NotNil(t, n.Out(node.PortErr))
 }
