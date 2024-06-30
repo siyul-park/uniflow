@@ -31,11 +31,6 @@ type TriggerNodeSpec struct {
 
 const KindTrigger = "trigger"
 
-const (
-	TopicLoad   = "load"
-	TopicUnload = "unload"
-)
-
 // NewTriggerNode creates a new TriggerNode instance.
 func NewTriggerNode(producer *Producer, consumer *Consumer) *TriggerNode {
 	n := &TriggerNode{

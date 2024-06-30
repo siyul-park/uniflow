@@ -1,18 +1,16 @@
-- kind: nop
-  name: init
-
 - kind: trigger
-  name: load
-  topic: load
+  name: boot
+  topic: boot
   links:
     out:
-      - name: boot
+      - name: hello_world
         port: in
 
 - kind: block
-  name: boot
+  name: hello_world
   specs:
-    - kind: if
-      when: self.name == "init"
+    - kind: snippet
+      language: text
+      code: Hello, world!
     - kind: write
       filename: /dev/stdout

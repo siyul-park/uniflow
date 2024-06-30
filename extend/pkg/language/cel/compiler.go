@@ -2,16 +2,18 @@ package cel
 
 import (
 	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/ext"
 	"github.com/siyul-park/uniflow/extend/pkg/language"
 )
 
 const Language = "cel"
 
-func NewCompiler() language.Compiler {
+func NewCompiler(opts ...cel.EnvOption) language.Compiler {
+	if opts == nil {
+		opts = append(opts, ext.Encoders(), ext.Math(), ext.Lists(), ext.Sets(), ext.Strings())
+	}
 	return language.CompileFunc(func(code string) (language.Program, error) {
-		env, err := cel.NewEnv(
-			cel.Variable("self", cel.AnyType),
-		)
+		env, err := cel.NewEnv(append(opts, cel.Variable("self", cel.AnyType))...)
 		if err != nil {
 			return nil, err
 		}

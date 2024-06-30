@@ -1,24 +1,36 @@
 package hook
 
 import (
+	"context"
 	"sync"
 
+	"github.com/siyul-park/uniflow/pkg/boot"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // Hook represents a collection of hook functions.
 type Hook struct {
+	bootHooks   []boot.BootHook
 	loadHooks   []symbol.LoadHook
 	unloadHooks []symbol.UnloadHook
 	mu          sync.RWMutex
 }
 
+var _ boot.BootHook = (*Hook)(nil)
 var _ symbol.LoadHook = (*Hook)(nil)
 var _ symbol.UnloadHook = (*Hook)(nil)
 
 // New creates a new instance of Hook.
 func New() *Hook {
 	return &Hook{}
+}
+
+// AddBootHook adds a BootHook function to the Hook.
+func (h *Hook) AddBootHook(hook boot.BootHook) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.bootHooks = append(h.bootHooks, hook)
 }
 
 // AddLoadHook adds a LoadHook function to the Hook.
@@ -35,6 +47,19 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 	defer h.mu.Unlock()
 
 	h.unloadHooks = append(h.unloadHooks, hook)
+}
+
+// Boot executes BootHooks on the context.
+func (h *Hook) Boot(ctx context.Context) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, hook := range h.bootHooks {
+		if err := hook.Boot(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Load executes LoadHooks on the provided node.

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/boot"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -24,10 +25,11 @@ type Config struct {
 
 // Runtime represents an execution environment for running Flows.
 type Runtime struct {
-	store      *store.Store
-	table      *symbol.Table
-	loader     *loader.Loader
-	reconciler *loader.Reconciler
+	store       *store.Store
+	table       *symbol.Table
+	loader      *loader.Loader
+	reconciler  *loader.Reconciler
+	bootstraper *boot.Bootstraper
 }
 
 // New creates a new Runtime instance with the specified configuration.
@@ -67,11 +69,18 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		Loader:    ld,
 	})
 
+	bs := boot.NewBootstraper(boot.BootstraperConfig{
+		Loader:     ld,
+		Reconciler: rc,
+		BootHooks:  []boot.BootHook{config.Hook},
+	})
+
 	return &Runtime{
-		store:      st,
-		table:      tb,
-		loader:     ld,
-		reconciler: rc,
+		store:       st,
+		table:       tb,
+		loader:      ld,
+		reconciler:  rc,
+		bootstraper: bs,
 	}, nil
 }
 
@@ -108,10 +117,7 @@ func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
 // It loads all spec.Specs as node.Nodes from the database.Collection,
 // and continuously monitors and runs them by staying up-to-date with spec.Spec changes.
 func (r *Runtime) Start(ctx context.Context) error {
-	if err := r.reconciler.Watch(ctx); err != nil {
-		return err
-	}
-	if _, err := r.loader.LoadAll(ctx); err != nil {
+	if err := r.bootstraper.Boot(ctx); err != nil {
 		return err
 	}
 	return r.reconciler.Reconcile(ctx)
