@@ -100,7 +100,7 @@ Following these steps ensures that the project is properly set up, built, and th
 Now ready to be used. To initiate the [ping](/examples/ping.yaml) example, execute the following command:
 
 ```shell
-./dist/uniflow start --filename example/ping.yaml
+./dist/uniflow exec --filename example/ping.yaml
 ```
 
 The `--filename` flag automatically installs if the node does not exist in the namespace.
@@ -117,7 +117,7 @@ If you want to apply nodes to a running server, utilize the `apply` command.
 For additional details, run the following command:
 
 ```shell
-./dist/uniflow start --help
+./dist/uniflow exec --help
 ```
 
 ### Configuration

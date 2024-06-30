@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStartCommand_Execute(t *testing.T) {
+func TestExecCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -63,7 +63,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		output := new(bytes.Buffer)
 
-		cmd := NewStartCommand(StartConfig{
+		cmd := NewExecCommand(ExecConfig{
 			Scheme:   s,
 			Hook:     h,
 			FS:       fsys,
