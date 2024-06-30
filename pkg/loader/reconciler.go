@@ -70,12 +70,10 @@ func (r *Reconciler) Watch(ctx context.Context) error {
 
 // Reconcile reflects changes to spec.Spec in the symbol.Table.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	stream := func() *store.Stream {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
+	r.mu.RLock()
+	stream := r.stream
+	r.mu.RUnlock()
 
-		return r.stream
-	}()
 	if stream == nil {
 		return nil
 	}
