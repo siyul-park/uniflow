@@ -3,7 +3,7 @@ package cel
 import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/ext"
-	"github.com/siyul-park/uniflow/extend/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 )
 
 const Language = "cel"

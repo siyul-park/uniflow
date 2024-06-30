@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/extend/pkg/language/text"
+	"github.com/siyul-park/uniflow/ext/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"

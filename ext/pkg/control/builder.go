@@ -1,7 +1,7 @@
 package control
 
 import (
-	"github.com/siyul-park/uniflow/extend/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 )
 

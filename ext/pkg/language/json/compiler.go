@@ -3,7 +3,7 @@ package json
 import (
 	"encoding/json"
 
-	"github.com/siyul-park/uniflow/extend/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 )
 
 const Language = "json"

@@ -1,6 +1,6 @@
 package text
 
-import "github.com/siyul-park/uniflow/extend/pkg/language"
+import "github.com/siyul-park/uniflow/ext/pkg/language"
 
 const Language = "text"
 

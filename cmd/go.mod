@@ -9,7 +9,7 @@ require (
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/samber/lo v1.44.0
 	github.com/siyul-park/uniflow v0.7.0
-	github.com/siyul-park/uniflow/extend v0.7.0
+	github.com/siyul-park/uniflow/ext v0.7.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
@@ -71,4 +71,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-replace github.com/siyul-park/uniflow/extend => ../extend/
+replace github.com/siyul-park/uniflow/ext => ../ext/

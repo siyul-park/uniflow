@@ -9,7 +9,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/iancoleman/strcase"
-	"github.com/siyul-park/uniflow/extend/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 )
 
 type fieldNameMapper struct{}

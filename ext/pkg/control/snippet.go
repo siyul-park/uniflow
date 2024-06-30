@@ -3,7 +3,7 @@ package control
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/extend/pkg/language"
+	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
