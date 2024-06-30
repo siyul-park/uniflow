@@ -1,8 +1,9 @@
 - kind: block
-  name: proxy
+  name: logging
   specs:
     - kind: listener
       protocol: http
       port: 8000
-    - kind: http
-      url: https://www.google.com/
+    - kind: fork
+    - kind: write
+      filename: /dev/stdout

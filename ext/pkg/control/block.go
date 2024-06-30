@@ -8,14 +8,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // BlockNode is a node that handles multiple sub-nodes.
 type BlockNode struct {
-	nodes    []node.Node
-	eoutPort *port.OutPort
-	einPort  *port.InPort
-	mu       sync.RWMutex
+	nodes      []node.Node
+	errOutPort *port.OutPort
+	errInPort  *port.InPort
+	mu         sync.RWMutex
 }
 
 // BlockNodeSpec defines the specification for creating a BlockNode.
@@ -31,13 +32,13 @@ var _ node.Node = (*BlockNode)(nil)
 // BlockNodeSpec defines the specification for creating a BlockNode.
 func NewBlockNode(nodes ...node.Node) *BlockNode {
 	n := &BlockNode{
-		nodes:    nodes,
-		eoutPort: port.NewOut(),
-		einPort:  port.NewIn(),
+		nodes:      nodes,
+		errOutPort: port.NewOut(),
+		errInPort:  port.NewIn(),
 	}
 
-	n.eoutPort.AddInitHook(port.InitHookFunc(n.backward))
-	n.einPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.errOutPort.AddInitHook(port.InitHookFunc(n.backward))
+	n.errInPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	for i := 1; i < len(n.nodes); i++ {
 		out := n.nodes[i-1].Out(node.PortOut)
@@ -50,11 +51,19 @@ func NewBlockNode(nodes ...node.Node) *BlockNode {
 
 	for _, cur := range n.nodes {
 		if err := cur.Out(node.PortErr); err != nil {
-			err.Link(n.einPort)
+			err.Link(n.errInPort)
 		}
 	}
 
 	return n
+}
+
+// Nodes returns the sub-nodes.
+func (n *BlockNode) Nodes() []node.Node {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.nodes
 }
 
 // In returns the input port with the specified name.
@@ -75,7 +84,7 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 
 	switch name {
 	case node.PortErr:
-		return n.eoutPort
+		return n.errOutPort
 	default:
 		if len(n.nodes) > 0 {
 			return n.nodes[len(n.nodes)-1].Out(name)
@@ -90,8 +99,8 @@ func (n *BlockNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.eoutPort.Close()
-	n.einPort.Close()
+	n.errOutPort.Close()
+	n.errInPort.Close()
 
 	for _, n := range n.nodes {
 		if err := n.Close(); err != nil {
@@ -106,8 +115,8 @@ func (n *BlockNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	errWriter := n.eoutPort.Open(proc)
-	errReader := n.einPort.Open(proc)
+	errWriter := n.errOutPort.Open(proc)
+	errReader := n.errInPort.Open(proc)
 
 	for {
 		inPck, ok := <-errReader.Read()
@@ -125,8 +134,8 @@ func (n *BlockNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	errWriter := n.eoutPort.Open(proc)
-	errReader := n.einPort.Open(proc)
+	errWriter := n.errOutPort.Open(proc)
+	errReader := n.errInPort.Open(proc)
 
 	for {
 		backPck, ok := <-errWriter.Receive()
@@ -150,7 +159,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				}
 				return nil, err
 			}
-			nodes = append(nodes, n)
+			nodes = append(nodes, symbol.New(spec, n))
 		}
 		return NewBlockNode(nodes...), nil
 	})

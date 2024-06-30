@@ -7,9 +7,9 @@ import (
 )
 
 // AddToHook returns a function that adds hook to the provided hook.
-func AddToHook(upsteam, downsteam *Broker) func(*hook.Hook) error {
-	load := upsteam.Producer(TopicLoad)
-	unload := upsteam.Producer(TopicUnload)
+func AddToHook(broker *Broker) func(*hook.Hook) error {
+	load := broker.Producer(TopicLoad)
+	unload := broker.Producer(TopicUnload)
 
 	return func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {

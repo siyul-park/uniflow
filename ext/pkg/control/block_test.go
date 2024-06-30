@@ -22,6 +22,14 @@ func TestNewBlockNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
+func TestBlockNode_Nodes(t *testing.T) {
+	c := node.NewOneToOneNode(nil)
+	n := NewBlockNode(c)
+	defer n.Close()
+
+	assert.Contains(t, n.Nodes(), c)
+}
+
 func TestBlockNode_Port(t *testing.T) {
 	n := NewBlockNode(node.NewOneToOneNode(nil))
 	defer n.Close()

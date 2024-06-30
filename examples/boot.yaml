@@ -1,17 +1,11 @@
 - kind: nop
   name: init
 
-- kind: trigger
-  name: load
-  topic: load
-  links:
-    out:
-      - name: boot
-        port: in
-
 - kind: block
   name: boot
   specs:
+    - kind: trigger
+      topic: load
     - kind: if
       when: self.name == "init"
     - kind: write

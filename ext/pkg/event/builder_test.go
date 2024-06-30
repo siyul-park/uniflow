@@ -17,7 +17,7 @@ func TestAddToHook(t *testing.T) {
 	b := NewBroker()
 	defer b.Close()
 
-	err := AddToHook(b, b)(h)
+	err := AddToHook(b)(h)
 	assert.NoError(t, err)
 
 	n := node.NewManyToOneNode(nil)

@@ -74,7 +74,8 @@ func main() {
 	sbuilder.Register(network.AddToScheme())
 	sbuilder.Register(system.AddToScheme(stable))
 
-	hbuilder.Register(event.AddToHook(broker, broker))
+	hbuilder.Register(control.AddToHook())
+	hbuilder.Register(event.AddToHook(broker))
 	hbuilder.Register(network.AddToHook())
 
 	scheme, err := sbuilder.Build()
