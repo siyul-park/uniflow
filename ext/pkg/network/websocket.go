@@ -200,7 +200,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 	conn, ok := n.conn(proc)
 	if !ok {
 		ticker := time.NewTicker(time.Millisecond)
-		proc.AtExit(process.ExitHookFunc(func(err error) {
+		proc.AddExitHook(process.ExitHookFunc(func(err error) {
 			ticker.Stop()
 		}))
 		for range ticker.C {

@@ -73,7 +73,7 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 			}
 
 			p.writers[proc] = writer
-			proc.AtExit(process.ExitHookFunc(func(_ error) {
+			proc.AddExitHook(process.ExitHookFunc(func(_ error) {
 				p.mu.Lock()
 				defer p.mu.Unlock()
 
