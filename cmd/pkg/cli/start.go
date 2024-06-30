@@ -17,20 +17,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ExecConfig holds the configuration for the uniflow command.
-type ExecConfig struct {
+// StartConfig holds the configuration for the uniflow command.
+type StartConfig struct {
 	Scheme   *scheme.Scheme
 	Hook     *hook.Hook
 	Database database.Database
 	FS       fs.FS
 }
 
-// NewExecCommand creates a new Cobra command for the uniflow application.
-func NewExecCommand(config ExecConfig) *cobra.Command {
+// NewStartCommand creates a new Cobra command for the uniflow application.
+func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "exec",
-		Short: "Exec a application",
-		RunE:  runExecCommand(config),
+		Use:   "start",
+		Short: "Start a application",
+		RunE:  runStartCommand(config),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the namespace for running")
@@ -39,7 +39,7 @@ func NewExecCommand(config ExecConfig) *cobra.Command {
 	return cmd
 }
 
-func runExecCommand(config ExecConfig) func(cmd *cobra.Command, args []string) error {
+func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 

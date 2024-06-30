@@ -106,7 +106,7 @@ func NewCommand(config Config) *cobra.Command {
 		Scheme:   sc,
 		Database: db,
 	}))
-	cmd.AddCommand(NewExecCommand(ExecConfig{
+	cmd.AddCommand(NewStartCommand(StartConfig{
 		Scheme:   sc,
 		Hook:     hk,
 		Database: db,
