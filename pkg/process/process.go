@@ -96,16 +96,13 @@ func (p *Process) Fork() *Process {
 			}),
 		},
 	}
-
-	p.AddExitHook(ExitHookFunc(func(err error) {
-		child.Exit(err)
-	}))
+	p.AtExit(child)
 
 	return child
 }
 
-// AddExitHook adds an exit hook to the process.
-func (p *Process) AddExitHook(h ExitHook) {
+// AtExit adds an exit hook to the process.
+func (p *Process) AtExit(h ExitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

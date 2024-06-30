@@ -26,14 +26,14 @@ func TestProcess_Exit(t *testing.T) {
 	assert.Equal(t, StatusTerminated, proc.Status())
 }
 
-func TestProcess_AddExitHook(t *testing.T) {
+func TestProcess_AtExit(t *testing.T) {
 	proc := New()
 
 	count := 0
 	h := ExitHookFunc(func(err error) {
 		count++
 	})
-	proc.AddExitHook(h)
+	proc.AtExit(h)
 
 	proc.Exit(nil)
 	assert.Equal(t, 1, count)

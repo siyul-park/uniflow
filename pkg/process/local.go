@@ -32,7 +32,7 @@ func (l *Local[T]) Store(proc *Process, val T) {
 	_, ok := l.data[proc]
 	l.data[proc] = val
 	if !ok {
-		proc.AddExitHook(ExitHookFunc(func(err error) {
+		proc.AtExit(ExitHookFunc(func(err error) {
 			l.Delete(proc)
 		}))
 	}
@@ -65,7 +65,7 @@ func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) 
 	}
 
 	l.data[proc] = v
-	proc.AddExitHook(ExitHookFunc(func(err error) {
+	proc.AtExit(ExitHookFunc(func(err error) {
 		l.Delete(proc)
 	}))
 
