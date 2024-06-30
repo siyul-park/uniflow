@@ -36,8 +36,8 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindListener, &ListenerNodeSpec{})
 		s.AddCodec(KindListener, NewListenerNodeCodec())
 
-		s.AddKnownType(KindRoute, &RouteNodeSpec{})
-		s.AddCodec(KindRoute, NewRouteNodeCodec())
+		s.AddKnownType(KindRouter, &RouterNodeSpec{})
+		s.AddCodec(KindRouter, NewRouterNodeCodec())
 
 		s.AddKnownType(KindWebSocket, &WebSocketNodeSpec{})
 		s.AddCodec(KindWebSocket, NewWebSocketNodeCodec())

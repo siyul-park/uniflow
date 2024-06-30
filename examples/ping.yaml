@@ -4,11 +4,11 @@
   port: 8000
   links:
     out:
-      - name: route
+      - name: router
         port: in
 
-- kind: route
-  name: route
+- kind: router
+  name: router
   routes:
     - method: GET
       path: /ping

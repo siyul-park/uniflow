@@ -15,13 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewRouteNode(t *testing.T) {
-	n := NewRouteNode()
+func TestNewRouterNode(t *testing.T) {
+	n := NewRouterNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestRouteNode_Add(t *testing.T) {
+func TestRouterNode_Add(t *testing.T) {
 	testCases := []struct {
 		whenMethod   string
 		whenPath     string
@@ -71,7 +71,7 @@ func TestRouteNode_Add(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
-			n := NewRouteNode()
+			n := NewRouterNode()
 			defer n.Close()
 
 			expectPort := node.PortWithIndex(node.PortOut, 0)
@@ -93,8 +93,8 @@ func TestRouteNode_Add(t *testing.T) {
 	}
 }
 
-func TestRouteNode_Find(t *testing.T) {
-	n := NewRouteNode()
+func TestRouterNode_Find(t *testing.T) {
+	n := NewRouterNode()
 	defer n.Close()
 
 	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
@@ -148,8 +148,8 @@ func TestRouteNode_Find(t *testing.T) {
 	}
 }
 
-func TestRouteNode_SendAndReceive(t *testing.T) {
-	n := NewRouteNode()
+func TestRouterNode_SendAndReceive(t *testing.T) {
+	n := NewRouterNode()
 	defer n.Close()
 
 	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
@@ -250,10 +250,10 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestRouteNodeCodec_Decode(t *testing.T) {
-	codec := NewRouteNodeCodec()
+func TestRouterNodeCodec_Decode(t *testing.T) {
+	codec := NewRouterNodeCodec()
 
-	spec := &RouteNodeSpec{
+	spec := &RouterNodeSpec{
 		Routes: []Route{
 			{
 				Method: http.MethodGet,
@@ -269,8 +269,8 @@ func TestRouteNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
-	n := NewRouteNode()
+func BenchmarkRouterNode_SendAndReceive(b *testing.B) {
+	n := NewRouterNode()
 	defer n.Close()
 
 	_ = n.Add(http.MethodGet, "/a/b/c", node.PortWithIndex(node.PortOut, 0))

@@ -15,15 +15,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// RouteNode represents a node for routing based on HTTP method, path, and port.
-type RouteNode struct {
+// RouterNode represents a node for routing based on HTTP method, path, and port.
+type RouterNode struct {
 	*node.OneToManyNode
 	tree *route
 	mu   sync.RWMutex
 }
 
-// RouteNodeSpec defines the specification for configuring a RouteNode.
-type RouteNodeSpec struct {
+// RouterNodeSpec defines the specification for configuring a RouterNode.
+type RouterNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Routes    []Route `map:"routes"`
 }
@@ -48,7 +48,7 @@ type route struct {
 
 type routeKind uint8
 
-const KindRoute = "route"
+const KindRouter = "router"
 
 const (
 	staticKind routeKind = iota
@@ -59,15 +59,15 @@ const (
 	anyLabel   = byte('*')
 )
 
-// NewRouteNode creates a new RouteNode.
-func NewRouteNode() *RouteNode {
-	n := &RouteNode{tree: &route{}}
+// NewRouterNode creates a new RouterNode.
+func NewRouterNode() *RouterNode {
+	n := &RouterNode{tree: &route{}}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
 
 // Add adds a new route to the routing tree for the specified HTTP method, path, and port.
-func (n *RouteNode) Add(method, path, port string) error {
+func (n *RouterNode) Add(method, path, port string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -121,7 +121,7 @@ func (n *RouteNode) Add(method, path, port string) error {
 }
 
 // Find searches for a matching route based on the provided HTTP method and path.
-func (n *RouteNode) Find(method, path string) (string, map[string]string) {
+func (n *RouterNode) Find(method, path string) (string, map[string]string) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -145,7 +145,7 @@ func (n *RouteNode) Find(method, path string) (string, map[string]string) {
 	return port, params
 }
 
-func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+func (n *RouterNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -192,7 +192,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	return outPcks, nil
 }
 
-func (n *RouteNode) insert(method, path string, kind routeKind, paramNames []string, port string) {
+func (n *RouterNode) insert(method, path string, kind routeKind, paramNames []string, port string) {
 	cur := n.tree
 	search := path
 
@@ -300,7 +300,7 @@ func (n *RouteNode) insert(method, path string, kind routeKind, paramNames []str
 	}
 }
 
-func (n *RouteNode) find(method, path string) (*route, []string) {
+func (n *RouterNode) find(method, path string) (*route, []string) {
 	bestMatchedRoute := n.tree
 
 	var (
@@ -505,10 +505,10 @@ func (r *route) label() byte {
 	return r.prefix[0]
 }
 
-// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
-func NewRouteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
-		n := NewRouteNode()
+// NewRouterNodeCodec creates a new codec for RouterNodeSpec.
+func NewRouterNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *RouterNodeSpec) (node.Node, error) {
+		n := NewRouterNode()
 		for _, route := range spec.Routes {
 			if err := n.Add(route.Method, route.Path, route.Port); err != nil {
 				_ = n.Close()
