@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
-	github.com/samber/lo v1.43.0
+	github.com/samber/lo v1.44.0
 	github.com/siyul-park/uniflow v0.7.0
 	github.com/siyul-park/uniflow/extend v0.7.0
 	github.com/spf13/cobra v1.8.1
