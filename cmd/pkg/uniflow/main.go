@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
+	"github.com/siyul-park/uniflow/cmd/pkg/fs"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
 	"github.com/siyul-park/uniflow/ext/pkg/event"
 	"github.com/siyul-park/uniflow/ext/pkg/io"
@@ -116,11 +116,7 @@ func main() {
 	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(st))
 	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(st))
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fsys := os.DirFS(wd)
+	fsys := fs.ExtFS()
 
 	cmd := cli.NewCommand(cli.Config{
 		Scheme:   scheme,
