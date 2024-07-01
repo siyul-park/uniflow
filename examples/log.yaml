@@ -1,14 +1,14 @@
-- kind: listener
-  name: listener
+- kind: listen
+  name: listen
   protocol: http
   port: 8000
   links:
     out:
-      - name: logging
+      - name: log
         port: in
 
 - kind: block
-  name: logging
+  name: log
   specs:
     - kind: fork
     - kind: write

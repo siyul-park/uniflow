@@ -43,10 +43,10 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 
 	u, _ := url.Parse(fmt.Sprintf("ws://localhost:%d", p))
 
-	http := NewHTTPListenerNode(fmt.Sprintf(":%d", p))
+	http := NewHTTPListenNode(fmt.Sprintf(":%d", p))
 	defer http.Close()
 
-	ws := NewWebSocketUpgraderNode()
+	ws := NewWebSocketUpgradeNode()
 	defer ws.Close()
 
 	client := NewWebSocketNode(u)
@@ -147,10 +147,10 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 
 	u, _ := url.Parse(fmt.Sprintf("ws://localhost:%d", p))
 
-	http := NewHTTPListenerNode(fmt.Sprintf(":%d", p))
+	http := NewHTTPListenNode(fmt.Sprintf(":%d", p))
 	defer http.Close()
 
-	ws := NewWebSocketUpgraderNode()
+	ws := NewWebSocketUpgradeNode()
 	defer ws.Close()
 
 	client := NewWebSocketNode(u)

@@ -16,34 +16,34 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// WebSocketUpgraderNode is a node for upgrading an HTTP connection to a WebSocket connection.
-type WebSocketUpgraderNode struct {
+// WebSocketUpgradeNode is a node for upgrading an HTTP connection to a WebSocket connection.
+type WebSocketUpgradeNode struct {
 	*WebSocketConnNode
 	upgrader websocket.Upgrader
 }
 
-// UpgraderNodeSpec holds the specifications for creating a UpgraderNode.
-type UpgraderNodeSpec struct {
+// UpgradeNodeSpec holds the specifications for creating a UpgradeNode.
+type UpgradeNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string        `map:"protocol"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 	Buffer    int           `map:"buffer,omitempty"`
 }
 
-const KindUpgrader = "upgrader"
+const KindUpgrade = "upgrade"
 
-var _ node.Node = (*WebSocketUpgraderNode)(nil)
+var _ node.Node = (*WebSocketUpgradeNode)(nil)
 
-// NewWebSocketUpgraderNode creates a new WebSocketUpgraderNode.
-func NewWebSocketUpgraderNode() *WebSocketUpgraderNode {
-	n := &WebSocketUpgraderNode{}
+// NewWebSocketUpgradeNode creates a new WebSocketUpgradeNode.
+func NewWebSocketUpgradeNode() *WebSocketUpgradeNode {
+	n := &WebSocketUpgradeNode{}
 	n.WebSocketConnNode = NewWebSocketConnNode(n.upgrade)
 
 	return n
 }
 
 // Timeout returns the timeout duration.
-func (n *WebSocketUpgraderNode) Timeout() time.Duration {
+func (n *WebSocketUpgradeNode) Timeout() time.Duration {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -51,7 +51,7 @@ func (n *WebSocketUpgraderNode) Timeout() time.Duration {
 }
 
 // SetTimeout sets the timeout duration.
-func (n *WebSocketUpgraderNode) SetTimeout(timeout time.Duration) {
+func (n *WebSocketUpgradeNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -59,7 +59,7 @@ func (n *WebSocketUpgraderNode) SetTimeout(timeout time.Duration) {
 }
 
 // ReadBufferSize returns the read buffer size.
-func (n *WebSocketUpgraderNode) ReadBufferSize() int {
+func (n *WebSocketUpgradeNode) ReadBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -67,7 +67,7 @@ func (n *WebSocketUpgraderNode) ReadBufferSize() int {
 }
 
 // SetReadBufferSize sets the read buffer size.
-func (n *WebSocketUpgraderNode) SetReadBufferSize(size int) {
+func (n *WebSocketUpgradeNode) SetReadBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -75,7 +75,7 @@ func (n *WebSocketUpgraderNode) SetReadBufferSize(size int) {
 }
 
 // SetWriteBufferSize sets the write buffer size.
-func (n *WebSocketUpgraderNode) SetWriteBufferSize(size int) {
+func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -83,14 +83,14 @@ func (n *WebSocketUpgraderNode) SetWriteBufferSize(size int) {
 }
 
 // WriteBufferSize returns the write buffer size.
-func (n *WebSocketUpgraderNode) WriteBufferSize() int {
+func (n *WebSocketUpgradeNode) WriteBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.WriteBufferSize
 }
 
-func (n *WebSocketUpgraderNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	var inPayload *HTTPPayload
 	if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
@@ -116,12 +116,12 @@ func (n *WebSocketUpgraderNode) upgrade(proc *process.Process, inPck *packet.Pac
 	return n.upgrader.Upgrade(w, r, nil)
 }
 
-// NewUpgraderNodeCodec creates a new codec for UpgraderNodeSpec.
-func NewUpgraderNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *UpgraderNodeSpec) (node.Node, error) {
+// NewUpgradeNodeCodec creates a new codec for UpgradeNodeSpec.
+func NewUpgradeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *UpgradeNodeSpec) (node.Node, error) {
 		switch spec.Protocol {
 		case ProtocolWebsocket:
-			n := NewWebSocketUpgraderNode()
+			n := NewWebSocketUpgradeNode()
 			n.SetTimeout(spec.Timeout)
 			n.SetReadBufferSize(spec.Buffer)
 			n.SetWriteBufferSize(spec.Buffer)

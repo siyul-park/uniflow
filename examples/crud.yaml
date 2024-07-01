@@ -1,14 +1,14 @@
-- kind: listener
-  name: listener
+- kind: listen
+  name: listen
   protocol: http
   port: 8000
   links:
     out:
-      - name: router
+      - name: route
         port: in
 
-- kind: router
-  name: router
+- kind: route
+  name: route
   routes:
     - method: POST
       path: /v1/nodes

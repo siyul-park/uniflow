@@ -21,7 +21,7 @@ func TestAddToHook(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 
-	n := NewHTTPListenerNode(fmt.Sprintf(":%d", port))
+	n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
 	sym := symbol.New(&spec.Meta{}, n)
@@ -39,7 +39,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme()(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindHTTP, KindListener, KindRouter, KindWebSocket, KindUpgrader}
+	testCase := []string{KindHTTP, KindListen, KindRoute, KindWebSocket, KindUpgrade}
 
 	for _, tc := range testCase {
 		t.Run(tc, func(t *testing.T) {
