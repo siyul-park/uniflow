@@ -13,10 +13,10 @@ import (
 
 // BlockNode is a node that handles multiple sub-nodes.
 type BlockNode struct {
-	nodes      []node.Node
-	errOutPort *port.OutPort
-	errInPort  *port.InPort
-	mu         sync.RWMutex
+	nodes    []node.Node
+	inPorts  map[string]*port.InPort
+	outPorts map[string]*port.OutPort
+	mu       sync.RWMutex
 }
 
 // BlockNodeSpec defines the specification for creating a BlockNode.
@@ -32,13 +32,10 @@ var _ node.Node = (*BlockNode)(nil)
 // BlockNodeSpec defines the specification for creating a BlockNode.
 func NewBlockNode(nodes ...node.Node) *BlockNode {
 	n := &BlockNode{
-		nodes:      nodes,
-		errOutPort: port.NewOut(),
-		errInPort:  port.NewIn(),
+		nodes:    nodes,
+		inPorts:  make(map[string]*port.InPort),
+		outPorts: make(map[string]*port.OutPort),
 	}
-
-	n.errOutPort.AddInitHook(port.InitHookFunc(n.backward))
-	n.errInPort.AddInitHook(port.InitHookFunc(n.forward))
 
 	for i := 1; i < len(n.nodes); i++ {
 		out := n.nodes[i-1].Out(node.PortOut)
@@ -49,9 +46,20 @@ func NewBlockNode(nodes ...node.Node) *BlockNode {
 		out.Link(in)
 	}
 
-	for _, cur := range n.nodes {
-		if err := cur.Out(node.PortErr); err != nil {
-			err.Link(n.errInPort)
+	if len(n.nodes) > 1 {
+		inPort := port.NewIn()
+		outPort := port.NewOut()
+
+		inPort.AddInitHook(port.InitHookFunc(n.throw))
+		outPort.AddInitHook(port.InitHookFunc(n.catch))
+
+		n.inPorts[node.PortErr] = inPort
+		n.outPorts[node.PortErr] = outPort
+
+		for _, cur := range n.nodes {
+			if err := cur.Out(node.PortErr); err != nil {
+				err.Link(inPort)
+			}
 		}
 	}
 
@@ -68,29 +76,35 @@ func (n *BlockNode) Nodes() []node.Node {
 
 // In returns the input port with the specified name.
 func (n *BlockNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
+	if p, ok := n.inPorts[name]; ok {
+		return p
+	}
 	if len(n.nodes) > 0 {
-		return n.nodes[0].In(name)
+		if p := n.nodes[0].In(name); p != nil {
+			n.inPorts[name] = p
+			return p
+		}
 	}
 	return nil
 }
 
 // Out returns the output port with the specified name.
 func (n *BlockNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	switch name {
-	case node.PortErr:
-		return n.errOutPort
-	default:
-		if len(n.nodes) > 0 {
-			return n.nodes[len(n.nodes)-1].Out(name)
+	if p, ok := n.outPorts[name]; ok {
+		return p
+	}
+	if len(n.nodes) > 0 {
+		if p := n.nodes[len(n.nodes)-1].Out(name); p != nil {
+			n.outPorts[name] = p
+			return p
 		}
 	}
-
 	return nil
 }
 
@@ -99,24 +113,30 @@ func (n *BlockNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.errOutPort.Close()
-	n.errInPort.Close()
-
 	for _, n := range n.nodes {
 		if err := n.Close(); err != nil {
 			return err
 		}
 	}
 
+	for name, p := range n.inPorts {
+		p.Close()
+		delete(n.inPorts, name)
+	}
+	for name, p := range n.outPorts {
+		p.Close()
+		delete(n.outPorts, name)
+	}
+
 	return nil
 }
 
-func (n *BlockNode) forward(proc *process.Process) {
+func (n *BlockNode) throw(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	errWriter := n.errOutPort.Open(proc)
-	errReader := n.errInPort.Open(proc)
+	errWriter := n.outPorts[node.PortErr].Open(proc)
+	errReader := n.inPorts[node.PortErr].Open(proc)
 
 	for {
 		inPck, ok := <-errReader.Read()
@@ -130,12 +150,12 @@ func (n *BlockNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *BlockNode) backward(proc *process.Process) {
+func (n *BlockNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	errWriter := n.errOutPort.Open(proc)
-	errReader := n.errInPort.Open(proc)
+	errWriter := n.outPorts[node.PortErr].Open(proc)
+	errReader := n.inPorts[node.PortErr].Open(proc)
 
 	for {
 		backPck, ok := <-errWriter.Receive()
