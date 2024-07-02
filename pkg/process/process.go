@@ -7,11 +7,11 @@ import (
 
 // Process represents a process with its state, context, and synchronization mechanisms.
 type Process struct {
+	parent    *Process
 	data      *Data
 	status    Status
 	err       error
 	ctx       context.Context
-	parent    *Process
 	exitHooks []ExitHook
 	wait      sync.WaitGroup
 	mu        sync.RWMutex

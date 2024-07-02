@@ -7,6 +7,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLocal_Watch(t *testing.T) {
+	l := NewLocal[string]()
+	defer l.Close()
+
+	proc := New()
+	defer proc.Exit(nil)
+
+	count := 0
+	ok := l.Watch(proc, func(_ string) {
+		count++
+	})
+	assert.False(t, ok)
+
+	v := faker.UUIDHyphenated()
+
+	l.Store(proc, v)
+	assert.Equal(t, 1, count)
+
+	ok = l.Watch(proc, func(_ string) {
+		count++
+	})
+	assert.True(t, ok)
+	assert.Equal(t, 2, count)
+}
+
 func TestLocal_Load(t *testing.T) {
 	l := NewLocal[string]()
 	defer l.Close()

@@ -199,20 +199,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 
 	conn, ok := n.conn(proc)
 	if !ok {
-		ticker := time.NewTicker(time.Millisecond)
-		func() {
-			for {
-				select {
-				case <-ticker.C:
-					if conn, ok = n.conn(proc); ok {
-						ticker.Stop()
-						return
-					}
-				case <-proc.Context().Done():
-					return
-				}
-			}
-		}()
+		return
 	}
 
 	for {
@@ -288,12 +275,22 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 }
 
 func (n *WebSocketConnNode) conn(proc *process.Process) (*websocket.Conn, bool) {
-	for ; proc != nil; proc = proc.Parent() {
-		if conn, ok := n.conns.Load(proc); ok {
-			return conn, true
-		}
+	conns := make(chan *websocket.Conn, 1)
+	defer close(conns)
+
+	p := proc
+	for ; p != nil; p = p.Parent() {
+		n.conns.Watch(p, func(conn *websocket.Conn) {
+			conns <- conn
+		})
 	}
-	return nil, false
+
+	select {
+	case con := <-conns:
+		return con, true
+	case <-proc.Context().Done():
+		return nil, false
+	}
 }
 
 // NewWebSocketNodeCodec creates a new codec for WebSocketNodeSpec.

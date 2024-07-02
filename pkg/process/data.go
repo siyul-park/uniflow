@@ -4,8 +4,8 @@ import "sync"
 
 // Data is a concurrent map-like data structure.
 type Data struct {
-	data  map[string]any
 	outer *Data
+	data  map[string]any
 	mu    sync.RWMutex
 }
 
