@@ -1,4 +1,4 @@
-package network
+package mime
 
 import "regexp"
 

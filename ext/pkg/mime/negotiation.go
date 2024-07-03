@@ -1,4 +1,4 @@
-package network
+package mime
 
 import (
 	"mime"
@@ -25,7 +25,7 @@ func Negotiate(value string, offers []string) string {
 			accept = mediaType
 		} else {
 			for _, offer := range offers {
-				if IsCompatibleMIMEType(mediaType, offer) {
+				if IsCompatible(mediaType, offer) {
 					accept = offer
 					break
 				}

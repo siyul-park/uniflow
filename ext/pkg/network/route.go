@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -171,7 +172,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 		} else {
 			res = NewHTTPPayload(http.StatusMethodNotAllowed)
 		}
-		res.Header.Set(HeaderAllow, route.allowHeader())
+		res.Header.Set(mime.HeaderAllow, route.allowHeader())
 		outPayload, _ := object.MarshalText(res)
 		return nil, packet.New(outPayload)
 	}

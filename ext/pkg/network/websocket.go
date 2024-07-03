@@ -1,14 +1,16 @@
 package network
 
 import (
+	"bytes"
 	"context"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/samber/lo"
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -219,12 +221,14 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 			}
 		}
 
-		if data, err := MarshalMIME(inPayload.Data, lo.ToPtr("")); err != nil {
-			errPck := packet.New(object.NewError(err))
-			if errWriter.Write(errPck) > 0 {
-				<-errWriter.Receive()
+		w := mime.WriterFunc(func(b []byte) (int, error) {
+			if err := conn.WriteMessage(inPayload.Type, b); err != nil {
+				return 0, err
 			}
-		} else if err := conn.WriteMessage(inPayload.Type, data); err != nil {
+			return len(b), nil
+		})
+
+		if err := mime.Encode(w, inPayload.Data, textproto.MIMEHeader{}); err != nil {
 			errPck := packet.New(object.NewError(err))
 			if errWriter.Write(errPck) > 0 {
 				<-errWriter.Receive()
@@ -253,10 +257,16 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 		}
 
 		child := proc.Fork()
-
 		outWriter := n.outPort.Open(child)
 
-		data, err := UnmarshalMIME(p, lo.ToPtr(""))
+		mtype := mime.ApplicationOctetStream
+		if typ == websocket.TextMessage {
+			mtype = mime.TextPlainCharsetUTF8
+		}
+
+		data, err := mime.Decode(bytes.NewReader(p), textproto.MIMEHeader{
+			mime.HeaderContentType: []string{mtype},
+		})
 		if err != nil {
 			data = object.NewString(err.Error())
 		}

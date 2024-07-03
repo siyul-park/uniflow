@@ -1,14 +1,16 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"strconv"
+	"net/textproto"
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -218,28 +220,20 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 	if res.Header == nil {
 		res.Header = http.Header{}
 	}
-	if res.Header.Get(HeaderContentEncoding) == "" {
-		acceptEncoding := req.Header.Get(HeaderAcceptEncoding)
-		res.Header.Set(HeaderContentEncoding, Negotiate(acceptEncoding, []string{EncodingIdentity, EncodingGzip, EncodingDeflate, EncodingBr}))
+	if res.Header.Get(mime.HeaderContentEncoding) == "" {
+		acceptEncoding := req.Header.Get(mime.HeaderAcceptEncoding)
+		res.Header.Set(mime.HeaderContentEncoding, mime.Negotiate(acceptEncoding, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr}))
 	}
-	if res.Header.Get(HeaderContentType) == "" {
-		accept := req.Header.Get(HeaderAccept)
-		res.Header.Set(HeaderContentType, Negotiate(accept, []string{ApplicationJSON, ApplicationForm, ApplicationOctetStream, TextPlain, MultipartFormData}))
+	if res.Header.Get(mime.HeaderContentType) == "" {
+		accept := req.Header.Get(mime.HeaderAccept)
+		res.Header.Set(mime.HeaderContentType, mime.Negotiate(accept, []string{mime.ApplicationJSON, mime.ApplicationFormURLEncoded, mime.ApplicationOctetStream, mime.TextPlain, mime.MultipartFormData}))
 	}
 }
 
 func (n *HTTPListenNode) read(r *http.Request) (*HTTPPayload, error) {
-	contentType := r.Header.Get(HeaderContentType)
-	contentEncoding := r.Header.Get(HeaderContentEncoding)
-
-	if b, err := io.ReadAll(r.Body); err != nil {
-		return nil, err
-	} else if b, err := Decompress(b, contentEncoding); err != nil {
-		return nil, err
-	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
+	if body, err := mime.Decode(r.Body, textproto.MIMEHeader(r.Header)); err != nil {
 		return nil, err
 	} else {
-		r.Header.Set(HeaderContentType, contentType)
 		return &HTTPPayload{
 			Method: r.Method,
 			Scheme: r.URL.Scheme,
@@ -248,7 +242,7 @@ func (n *HTTPListenNode) read(r *http.Request) (*HTTPPayload, error) {
 			Query:  r.URL.Query(),
 			Proto:  r.Proto,
 			Header: r.Header,
-			Body:   b,
+			Body:   body,
 		}, nil
 	}
 }
@@ -257,36 +251,26 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	if res == nil {
 		return nil
 	}
-
-	contentType := res.Header.Get(HeaderContentType)
-	contentEncoding := res.Header.Get(HeaderContentEncoding)
-
-	b, err := MarshalMIME(res.Body, &contentType)
-	if err != nil {
-		return err
-	}
-	b, err = Compress(b, contentEncoding)
-	if err != nil {
-		return err
-	}
-
 	if res.Header == nil {
 		res.Header = http.Header{}
 	}
-	res.Header.Set(HeaderContentType, contentType)
+
 	for key := range w.Header() {
 		w.Header().Del(key)
 	}
 	for key, headers := range res.Header {
-		if !IsResponseHeader(key) {
+		if !mime.IsResponseHeader(key) {
 			continue
 		}
 		for _, header := range headers {
 			w.Header().Add(key, header)
 		}
 	}
-	w.Header().Set(HeaderContentLength, strconv.Itoa(len(b)))
-	w.Header().Set(HeaderContentType, contentType)
+
+	buf := bytes.NewBuffer(nil)
+	if err := mime.Encode(buf, res.Body, textproto.MIMEHeader(w.Header())); err != nil {
+		return err
+	}
 
 	status := res.Status
 	if status == 0 {
@@ -294,9 +278,10 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	}
 	w.WriteHeader(status)
 
-	if _, err := w.Write(b); err != nil {
+	if _, err := io.Copy(w, buf); err != nil {
 		return err
 	}
+
 	return nil
 }
 

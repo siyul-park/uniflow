@@ -1,108 +1,50 @@
-package network
+package mime
 
 import (
+	"bytes"
 	"fmt"
+	"net/textproto"
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsCompatibleMIMEType(t *testing.T) {
+func TestEncode(t *testing.T) {
 	testCases := []struct {
-		whenX  string
-		whenY  string
-		expect bool
+		whenValue object.Object
+		whenType  string
+		expect    []byte
 	}{
 		{
-			whenX:  "",
-			whenY:  "",
-			expect: true,
-		},
-		{
-			whenX:  "*",
-			whenY:  "*",
-			expect: true,
-		},
-		{
-			whenX:  "text/plain",
-			whenY:  "text/plain",
-			expect: true,
-		},
-		{
-			whenX:  "text/plain",
-			whenY:  "*",
-			expect: true,
-		},
-		{
-			whenX:  "*",
-			whenY:  "text/plain",
-			expect: true,
-		},
-		{
-			whenX:  "text/plain",
-			whenY:  "*/plain",
-			expect: true,
-		},
-		{
-			whenX:  "text/plain",
-			whenY:  "text/*",
-			expect: true,
-		},
-		{
-			whenX:  "application/json",
-			whenY:  "text/plain",
-			expect: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s, %s", tc.whenX, tc.whenY), func(t *testing.T) {
-			ok := IsCompatibleMIMEType(tc.whenX, tc.whenY)
-			assert.Equal(t, tc.expect, ok)
-		})
-	}
-}
-
-func TestMarshalMIME(t *testing.T) {
-	testCases := []struct {
-		whenValue       object.Object
-		whenContentType string
-		expect          []byte
-	}{
-		{
-			whenValue: object.NewBinary([]byte("testtesttest")),
+			whenValue: object.NewString("testtesttest"),
+			whenType:  TextPlain,
 			expect:    []byte("testtesttest"),
 		},
 		{
-			whenValue:       object.NewString("testtesttest"),
-			whenContentType: TextPlain,
-			expect:          []byte("testtesttest"),
-		},
-		{
-			whenValue:       object.NewBinary([]byte("testtesttest")),
-			whenContentType: TextPlain,
-			expect:          []byte("testtesttest"),
+			whenValue: object.NewBinary([]byte("testtesttest")),
+			whenType:  TextPlain,
+			expect:    []byte("testtesttest"),
 		},
 		{
 			whenValue: object.NewMap(
 				object.NewString("foo"), object.NewFloat64(1),
 				object.NewString("bar"), object.NewFloat64(2),
 			),
-			whenContentType: ApplicationJSON,
-			expect:          []byte(`{"bar":2,"foo":1}`),
+			whenType: ApplicationJSON,
+			expect:   []byte("{\"bar\":2,\"foo\":1}\n"),
 		},
 		{
 			whenValue: object.NewMap(
 				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
 				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
 			),
-			whenContentType: ApplicationForm,
-			expect:          []byte("bar=bar&foo=foo"),
+			whenType: ApplicationFormURLEncoded,
+			expect:   []byte("bar=bar&foo=foo"),
 		},
 		{
-			whenValue:       object.NewMap(object.NewString("test"), object.NewString("test")),
-			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			whenValue: object.NewMap(object.NewString("test"), object.NewString("test")),
+			whenType:  MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"\r\n" +
 				"\r\n" +
@@ -118,7 +60,7 @@ func TestMarshalMIME(t *testing.T) {
 					object.NewString("test"), object.NewString("test"),
 				),
 			),
-			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			whenType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
 				"Content-Type: text/plain; charset=utf-8\r\n" +
@@ -139,7 +81,7 @@ func TestMarshalMIME(t *testing.T) {
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
 			),
-			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			whenType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
 				"Content-Type: text/plain; charset=utf-8\r\n" +
@@ -168,7 +110,7 @@ func TestMarshalMIME(t *testing.T) {
 					)),
 				),
 			),
-			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			whenType: MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
 				"Content-Type: application/octet-stream\r\n" +
@@ -183,19 +125,22 @@ func TestMarshalMIME(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenContentType), func(t *testing.T) {
-			encode, err := MarshalMIME(tc.whenValue, &tc.whenContentType)
+		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenType), func(t *testing.T) {
+			w := bytes.NewBuffer(nil)
+			err := Encode(w, tc.whenValue, textproto.MIMEHeader{
+				HeaderContentType: []string{tc.whenType},
+			})
 			assert.NoError(t, err)
-			assert.Equal(t, string(tc.expect), string(encode))
+			assert.Equal(t, string(tc.expect), w.String())
 		})
 	}
 }
 
-func TestUnmarshalMIME(t *testing.T) {
+func TestDecode(t *testing.T) {
 	testCases := []struct {
-		whenValue       []byte
-		whenContentType string
-		expect          object.Object
+		whenValue []byte
+		whenType  string
+		expect    object.Object
 	}{
 		{
 			whenValue: []byte(`
@@ -204,24 +149,24 @@ func TestUnmarshalMIME(t *testing.T) {
 					"bar": 2
 				}
 			`),
-			whenContentType: ApplicationJSON,
+			whenType: ApplicationJSON,
 			expect: object.NewMap(
 				object.NewString("foo"), object.NewFloat64(1),
 				object.NewString("bar"), object.NewFloat64(2),
 			),
 		},
 		{
-			whenValue:       []byte("foo=foo&bar=bar"),
-			whenContentType: ApplicationForm,
+			whenValue: []byte("foo=foo&bar=bar"),
+			whenType:  ApplicationFormURLEncoded,
 			expect: object.NewMap(
 				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
 				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
 			),
 		},
 		{
-			whenValue:       []byte("testtesttest"),
-			whenContentType: TextPlain,
-			expect:          object.NewString("testtesttest"),
+			whenValue: []byte("testtesttest"),
+			whenType:  TextPlain,
+			expect:    object.NewString("testtesttest"),
 		},
 		{
 			whenValue: []byte("--MyBoundary\r\n" +
@@ -234,7 +179,7 @@ func TestUnmarshalMIME(t *testing.T) {
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
-			whenContentType: MultipartFormData + "; boundary=MyBoundary",
+			whenType: MultipartFormData + "; boundary=MyBoundary",
 			expect: object.NewMap(
 				object.NewString("value"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
@@ -253,15 +198,17 @@ func TestUnmarshalMIME(t *testing.T) {
 			),
 		},
 		{
-			whenValue:       []byte("testtesttest"),
-			whenContentType: ApplicationOctetStream,
-			expect:          object.NewBinary([]byte("testtesttest")),
+			whenValue: []byte("testtesttest"),
+			whenType:  ApplicationOctetStream,
+			expect:    object.NewBinary([]byte("testtesttest")),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.whenContentType, func(t *testing.T) {
-			decode, err := UnmarshalMIME(tc.whenValue, &tc.whenContentType)
+		t.Run(tc.whenType, func(t *testing.T) {
+			decode, err := Decode(bytes.NewBuffer(tc.whenValue), textproto.MIMEHeader{
+				HeaderContentType: []string{tc.whenType},
+			})
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect.Interface(), decode.Interface())
 		})

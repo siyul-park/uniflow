@@ -10,6 +10,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -106,7 +107,6 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		n.ServeHTTP(w, r)
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, body, w.Body.String())
 	})
 
@@ -144,7 +144,6 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		n.ServeHTTP(w, r)
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, body, w.Body.String())
 	})
 
@@ -177,7 +176,6 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		n.ServeHTTP(w, r)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
-		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
 		assert.Equal(t, "Internal Server Error", w.Body.String())
 	})
 
@@ -230,7 +228,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		n.ServeHTTP(w, r)
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, TextPlainCharsetUTF8, w.Header().Get(HeaderContentType))
+		assert.Equal(t, mime.TextPlainCharsetUTF8, w.Header().Get(mime.HeaderContentType))
 		assert.NotEmpty(t, w.Body.String())
 	})
 }

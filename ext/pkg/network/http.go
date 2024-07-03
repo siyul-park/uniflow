@@ -3,13 +3,13 @@ package network
 import (
 	"bytes"
 	"context"
-	"io"
 	"net/http"
+	"net/textproto"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -106,21 +106,13 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		}
 	}
 
-	contentType := req.Header.Get(HeaderContentType)
-	contentEncoding := req.Header.Get(HeaderContentEncoding)
-
-	b, err := MarshalMIME(req.Body, &contentType)
-	if err != nil {
-		return nil, packet.New(object.NewError(err))
-	}
-	b, err = Compress(b, contentEncoding)
-	if err != nil {
-		return nil, packet.New(object.NewError(err))
+	if req.Header == nil {
+		req.Header = http.Header{}
 	}
 
-	req.Header.Set(HeaderContentLength, strconv.Itoa(len(b)))
-	if contentType != "" {
-		req.Header.Set(HeaderContentType, contentType)
+	buf := bytes.NewBuffer(nil)
+	if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
+		return nil, packet.New(object.NewError(err))
 	}
 
 	u := &url.URL{
@@ -130,7 +122,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		RawQuery: req.Query.Encode(),
 	}
 
-	r, err := http.NewRequest(req.Method, u.String(), bytes.NewReader(b))
+	r, err := http.NewRequest(req.Method, u.String(), buf)
 	if err != nil {
 		return nil, packet.New(object.NewError(err))
 	}
@@ -158,21 +150,12 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 // response processes the HTTP response and returns the payload.
 func (n *HTTPNode) response(w *http.Response) (*HTTPPayload, error) {
-	contentType := w.Header.Get(HeaderContentType)
-	contentEncoding := w.Header.Get(HeaderContentEncoding)
-
-	if b, err := io.ReadAll(w.Body); err != nil {
-		return nil, err
-	} else if b, err := Decompress(b, contentEncoding); err != nil {
-		return nil, err
-	} else if b, err := UnmarshalMIME(b, &contentType); err != nil {
+	if body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header)); err != nil {
 		return nil, err
 	} else {
-		w.Header.Set(HeaderContentType, contentType)
-
 		return &HTTPPayload{
 			Header: w.Header,
-			Body:   b,
+			Body:   body,
 		}, nil
 	}
 }
