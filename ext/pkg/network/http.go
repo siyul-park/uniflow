@@ -136,9 +136,14 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 	defer w.Body.Close()
 
-	res, err := n.response(w)
+	body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header))
 	if err != nil {
 		return nil, packet.New(object.NewError(err))
+	}
+
+	res := &HTTPPayload{
+		Header: w.Header,
+		Body:   body,
 	}
 
 	outPayload, err := object.MarshalText(res)
@@ -146,18 +151,6 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		return nil, packet.New(object.NewError(err))
 	}
 	return packet.New(outPayload), nil
-}
-
-// response processes the HTTP response and returns the payload.
-func (n *HTTPNode) response(w *http.Response) (*HTTPPayload, error) {
-	if body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header)); err != nil {
-		return nil, err
-	} else {
-		return &HTTPPayload{
-			Header: w.Header,
-			Body:   body,
-		}, nil
-	}
 }
 
 // NewHTTPNodeCodec creates a new codec for HTTPNode.

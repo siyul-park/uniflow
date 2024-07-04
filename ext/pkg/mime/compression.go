@@ -17,33 +17,28 @@ const (
 
 // Compress compresses input data using the specified encoding, returns original if unsupported.
 func Compress(writer io.Writer, encoding string) (io.Writer, error) {
-	var w io.Writer
 	switch encoding {
 	case EncodingGzip:
-		w = gzip.NewWriter(writer)
+		return gzip.NewWriter(writer), nil
 	case EncodingDeflate:
-		w = zlib.NewWriter(writer)
+		return zlib.NewWriter(writer), nil
 	case EncodingBr:
-		w = brotli.NewWriter(writer)
+		return brotli.NewWriter(writer), nil
 	default:
-		w = writer
+		return writer, nil
 	}
-	return w, nil
 }
 
 // Decompress decompresses input data using the specified encoding, returns original if unsupported.
 func Decompress(reader io.Reader, encoding string) (io.Reader, error) {
-	var r io.Reader
-	var err error
 	switch encoding {
 	case EncodingGzip:
-		r, err = gzip.NewReader(reader)
+		return gzip.NewReader(reader)
 	case EncodingDeflate:
-		r, err = zlib.NewReader(reader)
+		return zlib.NewReader(reader)
 	case EncodingBr:
-		r = brotli.NewReader(reader)
+		return brotli.NewReader(reader), nil
 	default:
 		return reader, nil
 	}
-	return r, err
 }

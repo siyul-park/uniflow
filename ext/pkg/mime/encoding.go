@@ -17,6 +17,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/object"
 )
 
+var (
+	keyValues = object.NewString("values")
+	keyFiles  = object.NewString("files")
+)
+
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
 // Encode encodes the given object into the writer with the specified MIME headers.
@@ -32,14 +37,7 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	})
 
 	if typ == "" {
-		switch value.(type) {
-		case object.Binary:
-			typ = ApplicationOctetStream
-		case object.String:
-			typ = TextPlainCharsetUTF8
-		default:
-			typ = ApplicationJSONCharsetUTF8
-		}
+		typ = detectContentType(value)
 		header.Set(HeaderContentType, typ)
 	}
 
@@ -75,7 +73,7 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	case MultipartFormData:
 		boundary := params["boundary"]
 		if boundary == "" {
-			boundary = randomMultiPartBoundary()
+			boundary = randomMultipartBoundary()
 			params["boundary"] = boundary
 			header.Set(HeaderContentType, mime.FormatMediaType(typ, params))
 		}
@@ -151,14 +149,7 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
-								switch data.(type) {
-								case object.Binary:
-									typ = ApplicationOctetStream
-								case object.String:
-									typ = TextPlainCharsetUTF8
-								default:
-									typ = ApplicationJSONCharsetUTF8
-								}
+								typ = detectContentType(data)
 								h.Set(HeaderContentType, typ)
 							}
 
@@ -170,7 +161,7 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 							if typ == MultipartFormData {
 								boundary := params["boundary"]
 								if boundary == "" {
-									boundary = randomMultiPartBoundary()
+									boundary = randomMultipartBoundary()
 									params["boundary"] = boundary
 									h.Set(HeaderContentType, mime.FormatMediaType(typ, params))
 								}
@@ -194,11 +185,11 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			for _, key := range v.Keys() {
 				value := v.GetOr(key, nil)
 
-				if key.Equal(object.NewString("value")) {
+				if key.Equal(keyValues) {
 					if err := writeFields(value); err != nil {
 						return err
 					}
-				} else if key.Equal(object.NewString("file")) {
+				} else if key.Equal(keyFiles) {
 					if err := writeFiles(value); err != nil {
 						return err
 					}
@@ -305,8 +296,8 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		}
 
 		return object.MarshalText(map[string]any{
-			"value": form.Value,
-			"file":  files,
+			keyValues.String(): form.Value,
+			keyFiles.String():  files,
 		})
 	}
 
@@ -317,7 +308,18 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 	return object.NewBinary(data), nil
 }
 
-func randomMultiPartBoundary() string {
+func detectContentType(value object.Object) string {
+	switch value.(type) {
+	case object.Binary:
+		return ApplicationOctetStream
+	case object.String:
+		return TextPlainCharsetUTF8
+	default:
+		return ApplicationJSONCharsetUTF8
+	}
+}
+
+func randomMultipartBoundary() string {
 	var buf [30]byte
 	_, err := io.ReadFull(rand.Reader, buf[:])
 	if err != nil {

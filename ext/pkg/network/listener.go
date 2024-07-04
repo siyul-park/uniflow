@@ -36,7 +36,7 @@ type ListenNodeSpec struct {
 	Port      int    `map:"port"`
 }
 
-const KindListen = "listen"
+const KindListener = "listener"
 
 const KeyHTTPRequest = "http.Request"
 const KeyHTTPResponseWriter = "http.ResponseWriter"

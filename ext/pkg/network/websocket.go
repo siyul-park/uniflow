@@ -259,13 +259,8 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 		child := proc.Fork()
 		outWriter := n.outPort.Open(child)
 
-		mtype := mime.ApplicationOctetStream
-		if typ == websocket.TextMessage {
-			mtype = mime.TextPlainCharsetUTF8
-		}
-
 		data, err := mime.Decode(bytes.NewReader(p), textproto.MIMEHeader{
-			mime.HeaderContentType: []string{mtype},
+			mime.HeaderContentType: []string{http.DetectContentType(p)},
 		})
 		if err != nil {
 			data = object.NewString(err.Error())

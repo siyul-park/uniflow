@@ -53,10 +53,10 @@ func TestEncode(t *testing.T) {
 		},
 		{
 			whenValue: object.NewMap(
-				object.NewString("value"), object.NewMap(
+				object.NewString("values"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				object.NewString("file"), object.NewMap(
+				object.NewString("files"), object.NewMap(
 					object.NewString("test"), object.NewString("test"),
 				),
 			),
@@ -74,10 +74,10 @@ func TestEncode(t *testing.T) {
 		},
 		{
 			whenValue: object.NewMap(
-				object.NewString("value"), object.NewMap(
+				object.NewString("values"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				object.NewString("file"), object.NewMap(
+				object.NewString("files"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
 			),
@@ -95,10 +95,10 @@ func TestEncode(t *testing.T) {
 		},
 		{
 			whenValue: object.NewMap(
-				object.NewString("value"), object.NewMap(
+				object.NewString("values"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				object.NewString("file"), object.NewMap(
+				object.NewString("files"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewMap(
 						object.NewString("data"), object.NewBinary([]byte("test")),
 						object.NewString("filename"), object.NewString("test"),
@@ -181,10 +181,10 @@ func TestDecode(t *testing.T) {
 				"--MyBoundary--\r\n"),
 			whenType: MultipartFormData + "; boundary=MyBoundary",
 			expect: object.NewMap(
-				object.NewString("value"), object.NewMap(
+				object.NewString("values"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewString("test")),
 				),
-				object.NewString("file"), object.NewMap(
+				object.NewString("files"), object.NewMap(
 					object.NewString("test"), object.NewSlice(object.NewMap(
 						object.NewString("data"), object.NewBinary([]byte("test")),
 						object.NewString("filename"), object.NewString("test"),

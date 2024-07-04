@@ -30,7 +30,7 @@ type UpgradeNodeSpec struct {
 	Buffer    int           `map:"buffer,omitempty"`
 }
 
-const KindUpgrade = "upgrade"
+const KindUpgrader = "upgrader"
 
 var _ node.Node = (*WebSocketUpgradeNode)(nil)
 

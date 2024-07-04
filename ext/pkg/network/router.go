@@ -49,7 +49,7 @@ type route struct {
 
 type routeKind uint8
 
-const KindRoute = "route"
+const KindRouter = "router"
 
 const (
 	staticKind routeKind = iota

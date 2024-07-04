@@ -33,17 +33,17 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddKnownType(KindHTTP, &HTTPNodeSpec{})
 		s.AddCodec(KindHTTP, NewHTTPNodeCodec())
 
-		s.AddKnownType(KindListen, &ListenNodeSpec{})
-		s.AddCodec(KindListen, NewListenNodeCodec())
+		s.AddKnownType(KindListener, &ListenNodeSpec{})
+		s.AddCodec(KindListener, NewListenNodeCodec())
 
-		s.AddKnownType(KindRoute, &RouteNodeSpec{})
-		s.AddCodec(KindRoute, NewRouteNodeCodec())
+		s.AddKnownType(KindRouter, &RouteNodeSpec{})
+		s.AddCodec(KindRouter, NewRouteNodeCodec())
 
 		s.AddKnownType(KindWebSocket, &WebSocketNodeSpec{})
 		s.AddCodec(KindWebSocket, NewWebSocketNodeCodec())
 
-		s.AddKnownType(KindUpgrade, &UpgradeNodeSpec{})
-		s.AddCodec(KindUpgrade, NewUpgradeNodeCodec())
+		s.AddKnownType(KindUpgrader, &UpgradeNodeSpec{})
+		s.AddCodec(KindUpgrader, NewUpgradeNodeCodec())
 
 		return nil
 	}

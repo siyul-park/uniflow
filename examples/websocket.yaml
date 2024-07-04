@@ -1,25 +1,25 @@
-- kind: listen
-  name: listen
+- kind: listener
+  name: listener
   protocol: http
   port: 8000
   links:
     out:
-      - name: route
+      - name: router
         port: in
 
-- kind: route
-  name: route
+- kind: router
+  name: router
   routes:
     - method: GET
       path: /ws
       port: out[0]
   links:
     out[0]:
-      - name: upgrade
+      - name: upgrader
         port: io
 
-- kind: upgrade
-  name: upgrade
+- kind: upgrader
+  name: upgrader
   protocol: websocket
   links:
     out:

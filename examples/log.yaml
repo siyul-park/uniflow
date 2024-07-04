@@ -1,5 +1,5 @@
-- kind: listen
-  name: listen
+- kind: listener
+  name: listener
   protocol: http
   port: 8000
   links:
