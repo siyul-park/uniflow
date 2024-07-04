@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRuntime_Lookup(t *testing.T) {
+func TestRuntime_LookupByID(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -47,7 +47,46 @@ func TestRuntime_Lookup(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	n, err := r.Lookup(ctx, meta.GetID())
+	n, err := r.LookupByID(ctx, meta.GetID())
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.Equal(t, meta.GetID(), n.ID())
+}
+
+func TestRuntime_LookupByName(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	db := memdb.New(faker.UUIDHyphenated())
+
+	st, _ := store.New(ctx, store.Config{
+		Scheme:   s,
+		Database: db,
+	})
+
+	r, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: db,
+	})
+	defer r.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+		Name: faker.Word(),
+	}
+
+	_, _ = st.InsertOne(ctx, meta)
+
+	n, err := r.LookupByName(ctx, meta.GetName())
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.Equal(t, meta.GetID(), n.ID())
@@ -82,7 +121,7 @@ func TestRuntime_Insert(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, meta.GetID(), n1.ID())
 
-	n2, err := r.Lookup(ctx, meta.GetID())
+	n2, err := r.LookupByID(ctx, meta.GetID())
 	assert.NoError(t, err)
 	assert.Equal(t, n1, n2)
 }
@@ -114,7 +153,7 @@ func TestRuntime_Free(t *testing.T) {
 
 	_, _ = r.Insert(ctx, meta)
 
-	n1, err := r.Lookup(ctx, meta.GetID())
+	n1, err := r.LookupByID(ctx, meta.GetID())
 	assert.NoError(t, err)
 	assert.Equal(t, meta.GetID(), n1.ID())
 
@@ -122,12 +161,12 @@ func TestRuntime_Free(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	n2, err := r.Lookup(ctx, meta.GetID())
+	n2, err := r.LookupByID(ctx, meta.GetID())
 	assert.NoError(t, err)
 	assert.Nil(t, n2)
 }
 
-func TestRuntime_Start(t *testing.T) {
+func TestRuntime_Load(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -159,6 +198,46 @@ func TestRuntime_Start(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, meta)
 
+	r.Load(ctx)
+
+	n, err := r.LookupByID(ctx, meta.GetID())
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+}
+
+func TestRuntime_Reconcile(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	s := scheme.New()
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	}))
+
+	db := memdb.New(faker.UUIDHyphenated())
+
+	st, _ := store.New(ctx, store.Config{
+		Scheme:   s,
+		Database: db,
+	})
+
+	r, _ := New(ctx, Config{
+		Scheme:   s,
+		Database: db,
+	})
+	defer r.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	_, _ = st.InsertOne(ctx, meta)
+
+	r.Watch(ctx)
 	go r.Start(ctx)
 
 	func() {
@@ -174,7 +253,7 @@ func TestRuntime_Start(t *testing.T) {
 				assert.NoError(t, ctx.Err())
 				return
 			case <-ticker.C:
-				if n, _ := r.Lookup(ctx, meta.GetID()); n != nil {
+				if n, _ := r.LookupByID(ctx, meta.GetID()); n != nil {
 					return
 				}
 			}

@@ -19,11 +19,12 @@ type Config struct {
 	Store     *store.Store  // Store to retrieve spec.Spec from
 }
 
-// Loader is responsible for loading spec.Spec into the symbol.Table.
+// Loader loads spec.Spec into the symbol.Table.
 type Loader struct {
 	namespace string
 	table     *symbol.Table
 	store     *store.Store
+	stream    *store.Stream
 	mu        sync.RWMutex
 }
 
@@ -36,15 +37,12 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single spec.Spec from store.Store.
-// It recursively loads linked spec.Spec based on the specified ID.
-// If the Loader is associated with a namespace, it uses that namespace.
-// Loaded symbols are added to the symbol table for future reference.
-func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
+// LoadOne loads a single spec.Spec by ID, including linked specs, and adds them to the symbol table.
+func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	namespace := ld.namespace
+	namespace := l.namespace
 	nexts := []any{id}
 
 	for len(nexts) > 0 {
@@ -69,7 +67,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 			filter = filter.And(store.Where[string](spec.KeyNamespace).EQ(namespace))
 		}
 
-		specs, err := ld.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
+		specs, err := l.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +82,7 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 				namespace = spec.GetNamespace()
 			}
 
-			if sym, err := ld.table.Insert(spec); err != nil {
+			if sym, err := l.table.Insert(spec); err != nil {
 				return nil, err
 			} else if sym == nil {
 				continue
@@ -106,14 +104,14 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 				id, ok := key.(uuid.UUID)
 				if !ok {
 					if name, ok := key.(string); ok {
-						if sym, ok := ld.table.LookupByName(namespace, name); ok {
+						if sym, ok := l.table.LookupByName(namespace, name); ok {
 							id = sym.ID()
 						}
 					}
 				}
 
 				if id != (uuid.UUID{}) {
-					if _, err := ld.table.Free(id); err != nil {
+					if _, err := l.table.Free(id); err != nil {
 						return nil, err
 					}
 				}
@@ -121,24 +119,22 @@ func (ld *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, er
 		}
 	}
 
-	if sym, ok := ld.table.LookupByID(id); !ok {
+	if sym, ok := l.table.LookupByID(id); !ok {
 		return nil, nil
 	} else {
 		return sym, nil
 	}
 }
 
-// LoadAll loads all spec.Spec from the store.Store.
-// It adds the retrieved spec.Spec to the symbol table for future reference.
-// If the loader is associated with a namespace, it filters the loading based on that namespace.
-func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
-	ld.mu.Lock()
-	defer ld.mu.Unlock()
+// LoadAll loads all spec.Spec from the store and adds them to the symbol table.
+func (l *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	for _, id := range ld.table.Keys() {
-		if sym, ok := ld.table.LookupByID(id); ok {
-			if ld.namespace == "" || sym.Namespace() == ld.namespace {
-				if _, err := ld.table.Free(sym.ID()); err != nil {
+	for _, id := range l.table.Keys() {
+		if sym, ok := l.table.LookupByID(id); ok {
+			if l.namespace == "" || sym.Namespace() == l.namespace {
+				if _, err := l.table.Free(sym.ID()); err != nil {
 					return nil, err
 				}
 			}
@@ -146,25 +142,108 @@ func (ld *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 	}
 
 	var filter *store.Filter
-	if ld.namespace != "" {
-		filter = filter.And(store.Where[string](spec.KeyNamespace).EQ(ld.namespace))
+	if l.namespace != "" {
+		filter = store.Where[string](spec.KeyNamespace).EQ(l.namespace)
 	}
 
-	specs, err := ld.store.FindMany(ctx, filter)
+	specs, err := l.store.FindMany(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	var symbols []*symbol.Symbol
 	for _, spec := range specs {
-		if sym, err := ld.table.Insert(spec); err != nil {
+		if sym, err := l.table.Insert(spec); err != nil {
 			return nil, err
 		} else if sym != nil {
 			symbols = append(symbols, sym)
-		} else if sym, ok := ld.table.LookupByID(spec.GetID()); ok {
+		} else if sym, ok := l.table.LookupByID(spec.GetID()); ok {
 			symbols = append(symbols, sym)
 		}
 	}
 
 	return symbols, nil
+}
+
+// Watch starts watching for changes to spec.Spec.
+func (l *Loader) Watch(ctx context.Context) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.stream != nil {
+		return nil
+	}
+
+	var filter *store.Filter
+	if l.namespace != "" {
+		filter = store.Where[string](spec.KeyNamespace).EQ(l.namespace)
+	}
+
+	s, err := l.store.Watch(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		<-s.Done()
+
+		l.mu.Lock()
+		defer l.mu.Unlock()
+
+		if l.stream == s {
+			l.stream = nil
+		}
+	}()
+
+	l.stream = s
+	return nil
+}
+
+// Reconcile syncs changes to spec.Spec in the symbol table.
+func (l *Loader) Reconcile(ctx context.Context) error {
+	l.mu.RLock()
+	stream := l.stream
+	l.mu.RUnlock()
+
+	if stream == nil {
+		return nil
+	}
+
+	var nexts []uuid.UUID
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event, ok := <-stream.Next():
+			if !ok {
+				return nil
+			}
+
+			nexts = append(nexts, event.NodeID)
+
+			for i := len(nexts) - 1; i >= 0; i-- {
+				id := nexts[i]
+				if _, err := l.LoadOne(ctx, id); err == nil {
+					nexts = append(nexts[:i], nexts[i+1:]...)
+				}
+			}
+		}
+	}
+}
+
+// Close stops the loader and closes the associated stream.
+func (l *Loader) Close() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.stream == nil {
+		return nil
+	}
+
+	if err := l.stream.Close(); err != nil {
+		return err
+	}
+	l.stream = nil
+
+	return nil
 }

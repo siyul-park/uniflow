@@ -103,6 +103,12 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			_ = r.Close()
 		}()
 
+		if err := r.Watch(ctx); err != nil {
+			return err
+		}
+		if _, err := r.Load(ctx); err != nil {
+			return err
+		}
 		return r.Start(ctx)
 	}
 }

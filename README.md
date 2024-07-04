@@ -44,6 +44,8 @@ import (
 )
 
 func main() {
+	ctx := context.TODO()
+
 	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
 
@@ -56,14 +58,16 @@ func main() {
 
 	db := memdb.New("")
 
-	r, _ := New(context.TODO(), runtime.Config{
+	r, _ := New(ctx, runtime.Config{
 		Hook:     hk,
 		Scheme:   sc,
 		Database: db,
 	})
 	defer r.Close()
 
-	r.Start(context.TODO())
+	r.Watch(ctx)
+	r.Load(ctx)
+	r.Start(ctx)
 }
 ```
 
