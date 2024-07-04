@@ -23,6 +23,7 @@ func TestTracer_Sniff(t *testing.T) {
 	w2.Link(r2)
 
 	tr := NewTracer()
+	defer tr.Close()
 
 	pck1 := New(nil)
 	pck2 := New(nil)
@@ -63,6 +64,7 @@ func TestTracer_Transform(t *testing.T) {
 	w2.Link(r2)
 
 	tr := NewTracer()
+	defer tr.Close()
 
 	pck1 := New(nil)
 	pck2 := New(nil)
@@ -103,6 +105,7 @@ func TestTracer_ReadAndWriteAndReceive(t *testing.T) {
 	w2.Link(r2)
 
 	tr := NewTracer()
+	defer tr.Close()
 
 	pck1 := New(nil)
 	pck2 := New(nil)

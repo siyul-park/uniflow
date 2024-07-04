@@ -11,7 +11,7 @@ import (
 // OneToManyNode represents a node with one input and multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
-	tracers  *process.Local[*packet.Tracer]
+	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -24,7 +24,7 @@ var _ Node = (*OneToManyNode)(nil)
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
-		tracers:  process.NewLocal[*packet.Tracer](),
+		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: nil,
 		errPort:  port.NewOut(),
@@ -92,7 +92,7 @@ func (n *OneToManyNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.tracers.Close()
+	n.tracer.Close()
 
 	return nil
 }
@@ -100,10 +100,6 @@ func (n *OneToManyNode) Close() error {
 func (n *OneToManyNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	inReader := n.inPort.Open(proc)
 	outWriters := make([]*packet.Writer, len(n.outPorts))
@@ -117,27 +113,27 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
-		tracer.Read(inReader, inPck)
+		n.tracer.Read(inReader, inPck)
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
-			tracer.Transform(inPck, errPck)
-			tracer.Write(errWriter, errPck)
+			n.tracer.Transform(inPck, errPck)
+			n.tracer.Write(errWriter, errPck)
 		} else {
 			count := 0
 			for i, outPck := range outPcks {
 				if i < len(outWriters) && outPck != nil {
-					tracer.Transform(inPck, outPck)
+					n.tracer.Transform(inPck, outPck)
 					count++
 				}
 			}
 			if count > 0 {
 				for i, outPck := range outPcks {
 					if i < len(outWriters) && outPck != nil {
-						tracer.Write(outWriters[i], outPck)
+						n.tracer.Write(outWriters[i], outPck)
 					}
 				}
 			} else {
-				tracer.Transform(inPck, packet.None)
+				n.tracer.Transform(inPck, packet.None)
 			}
 		}
 	}
@@ -147,10 +143,6 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
-
 	outWriter := n.outPorts[index].Open(proc)
 
 	for {
@@ -159,17 +151,13 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		tracer.Receive(outWriter, backPck)
+		n.tracer.Receive(outWriter, backPck)
 	}
 }
 
 func (n *OneToManyNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	errWriter := n.errPort.Open(proc)
 
@@ -179,6 +167,6 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(errWriter, backPck)
+		n.tracer.Receive(errWriter, backPck)
 	}
 }

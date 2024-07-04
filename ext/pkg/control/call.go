@@ -14,7 +14,7 @@ import (
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
-	tracers  *process.Local[*packet.Tracer]
+	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -33,7 +33,7 @@ const KindCall = "call"
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {
 	n := &CallNode{
-		tracers:  process.NewLocal[*packet.Tracer](),
+		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -92,7 +92,7 @@ func (n *CallNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.tracers.Close()
+	n.tracer.Close()
 
 	return nil
 }
@@ -100,10 +100,6 @@ func (n *CallNode) Close() error {
 func (n *CallNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
@@ -115,28 +111,24 @@ func (n *CallNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
-		tracer.Read(inReader, inPck)
+		n.tracer.Read(inReader, inPck)
 
-		tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
-			tracer.Transform(inPck, backPck)
+		n.tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+			n.tracer.Transform(inPck, backPck)
 			if _, ok := backPck.Payload().(object.Error); ok {
-				tracer.Write(errWriter, backPck)
+				n.tracer.Write(errWriter, backPck)
 			} else {
-				tracer.Write(outWriter1, backPck)
+				n.tracer.Write(outWriter1, backPck)
 			}
 		}))
 
-		tracer.Write(outWriter0, inPck)
+		n.tracer.Write(outWriter0, inPck)
 	}
 }
 
 func (n *CallNode) backward0(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	outWriter0 := n.outPorts[0].Open(proc)
 
@@ -146,17 +138,13 @@ func (n *CallNode) backward0(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(outWriter0, backPck)
+		n.tracer.Receive(outWriter0, backPck)
 	}
 }
 
 func (n *CallNode) backward1(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	outWriter1 := n.outPorts[1].Open(proc)
 
@@ -166,17 +154,13 @@ func (n *CallNode) backward1(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(outWriter1, backPck)
+		n.tracer.Receive(outWriter1, backPck)
 	}
 }
 
 func (n *CallNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	errWriter := n.errPort.Open(proc)
 
@@ -186,7 +170,7 @@ func (n *CallNode) catch(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(errWriter, backPck)
+		n.tracer.Receive(errWriter, backPck)
 	}
 }
 

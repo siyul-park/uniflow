@@ -11,7 +11,7 @@ import (
 // OneToOneNode represents a node with one input and one output port.
 type OneToOneNode struct {
 	action  func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)
-	tracers *process.Local[*packet.Tracer]
+	tracer  *packet.Tracer
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
@@ -24,7 +24,7 @@ var _ Node = (*OneToOneNode)(nil)
 func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Packet, *packet.Packet)) *OneToOneNode {
 	n := &OneToOneNode{
 		action:  action,
-		tracers: process.NewLocal[*packet.Tracer](),
+		tracer:  packet.NewTracer(),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
@@ -77,7 +77,7 @@ func (n *OneToOneNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-	n.tracers.Close()
+	n.tracer.Close()
 
 	return nil
 }
@@ -85,10 +85,6 @@ func (n *OneToOneNode) Close() error {
 func (n *OneToOneNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
@@ -99,14 +95,14 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
-		tracer.Read(inReader, inPck)
+		n.tracer.Read(inReader, inPck)
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
-			tracer.Transform(inPck, errPck)
-			tracer.Write(errWriter, errPck)
+			n.tracer.Transform(inPck, errPck)
+			n.tracer.Write(errWriter, errPck)
 		} else {
-			tracer.Transform(inPck, outPck)
-			tracer.Write(outWriter, outPck)
+			n.tracer.Transform(inPck, outPck)
+			n.tracer.Write(outWriter, outPck)
 		}
 	}
 }
@@ -114,10 +110,6 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 func (n *OneToOneNode) backward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	outWriter := n.outPort.Open(proc)
 
@@ -127,17 +119,13 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(outWriter, backPck)
+		n.tracer.Receive(outWriter, backPck)
 	}
 }
 
 func (n *OneToOneNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	errWriter := n.errPort.Open(proc)
 
@@ -147,6 +135,6 @@ func (n *OneToOneNode) catch(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(errWriter, backPck)
+		n.tracer.Receive(errWriter, backPck)
 	}
 }

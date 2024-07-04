@@ -17,7 +17,7 @@ import (
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
 type IfNode struct {
 	when     func(any) (bool, error)
-	tracers  *process.Local[*packet.Tracer]
+	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
@@ -38,7 +38,7 @@ const KindIf = "if"
 func NewIfNode(when func(any) (bool, error)) *IfNode {
 	n := &IfNode{
 		when:     when,
-		tracers:  process.NewLocal[*packet.Tracer](),
+		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
@@ -101,7 +101,7 @@ func (n *IfNode) Close() error {
 		p.Close()
 	}
 	n.errPort.Close()
-	n.tracers.Close()
+	n.tracer.Close()
 
 	return nil
 }
@@ -109,10 +109,6 @@ func (n *IfNode) Close() error {
 func (n *IfNode) forward(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
@@ -124,19 +120,19 @@ func (n *IfNode) forward(proc *process.Process) {
 		if !ok {
 			return
 		}
-		tracer.Read(inReader, inPck)
+		n.tracer.Read(inReader, inPck)
 
 		inPayload := inPck.Payload()
 		input := object.InterfaceOf(inPayload)
 
 		if ok, err := n.when(input); err != nil {
 			errPck := packet.New(object.NewError(err))
-			tracer.Transform(inPck, errPck)
-			tracer.Write(errWriter, errPck)
+			n.tracer.Transform(inPck, errPck)
+			n.tracer.Write(errWriter, errPck)
 		} else if ok {
-			tracer.Write(outWriter0, inPck)
+			n.tracer.Write(outWriter0, inPck)
 		} else {
-			tracer.Write(outWriter1, inPck)
+			n.tracer.Write(outWriter1, inPck)
 		}
 	}
 }
@@ -144,10 +140,6 @@ func (n *IfNode) forward(proc *process.Process) {
 func (n *IfNode) backward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	outWriter := n.outPorts[index].Open(proc)
 
@@ -157,17 +149,13 @@ func (n *IfNode) backward(proc *process.Process, index int) {
 			return
 		}
 
-		tracer.Receive(outWriter, backPck)
+		n.tracer.Receive(outWriter, backPck)
 	}
 }
 
 func (n *IfNode) catch(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
-
-	tracer, _ := n.tracers.LoadOrStore(proc, func() (*packet.Tracer, error) {
-		return packet.NewTracer(), nil
-	})
 
 	errWriter := n.errPort.Open(proc)
 
@@ -177,7 +165,7 @@ func (n *IfNode) catch(proc *process.Process) {
 			return
 		}
 
-		tracer.Receive(errWriter, backPck)
+		n.tracer.Receive(errWriter, backPck)
 	}
 }
 

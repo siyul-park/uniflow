@@ -104,6 +104,23 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 	t.receive(write)
 }
 
+// Close terminates readers and clears internal resources.
+func (t *Tracer) Close() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	for _, reader := range t.reader {
+		reader.Receive(None)
+	}
+
+	t.sniffers = make(map[*Packet][]Handler)
+	t.sources = make(map[*Packet][]*Packet)
+	t.receives = make(map[*Packet][]*Packet)
+	t.reads = make(map[*Reader][]*Packet)
+	t.writes = make(map[*Writer][]*Packet)
+	t.reader = make(map[*Packet]*Reader)
+}
+
 func (t *Tracer) receive(pck *Packet) {
 	t.sniff(pck)
 
