@@ -37,8 +37,10 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	})
 
 	if typ == "" {
-		typ = detectContentType(value)
-		header.Set(HeaderContentType, typ)
+		if types := DetectTypes(value); len(types) > 0 {
+			typ = types[0]
+			header.Set(HeaderContentType, typ)
+		}
 	}
 
 	typ, params, err := mime.ParseMediaType(typ)
@@ -149,8 +151,10 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
-								typ = detectContentType(data)
-								h.Set(HeaderContentType, typ)
+								if types := DetectTypes(data); len(types) > 0 {
+									typ = types[0]
+									h.Set(HeaderContentType, typ)
+								}
 							}
 
 							typ, params, err := mime.ParseMediaType(typ)
@@ -306,17 +310,6 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		return nil, err
 	}
 	return object.NewBinary(data), nil
-}
-
-func detectContentType(value object.Object) string {
-	switch value.(type) {
-	case object.Binary:
-		return ApplicationOctetStream
-	case object.String:
-		return TextPlainCharsetUTF8
-	default:
-		return ApplicationJSONCharsetUTF8
-	}
 }
 
 func randomMultipartBoundary() string {

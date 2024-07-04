@@ -1,11 +1,39 @@
 package mime
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestDetectTypes(t *testing.T) {
+	testCases := []struct {
+		when object.Object
+	}{
+		{
+			when: object.NewBinary(nil),
+		},
+		{
+			when: object.NewString(""),
+		},
+		{
+			when: object.NewSlice(),
+		},
+		{
+			when: object.NewMap(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
+			types := DetectTypes(tc.when)
+			assert.Greater(t, len(types), 0)
+		})
+	}
+}
 
 func TestNegotiate(t *testing.T) {
 	testCases := []struct {

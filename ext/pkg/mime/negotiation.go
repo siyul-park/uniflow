@@ -6,7 +6,8 @@ import (
 	"strings"
 )
 
-// Negotiate selects the best media type from the given value based on the provided offers.
+// Negotiate determines the best media type from the given value and offers based on quality factors.
+// If offers is nil, it returns the first valid media type found in the value.
 func Negotiate(value string, offers []string) string {
 	tokens := strings.Split(value, ",")
 
@@ -19,8 +20,7 @@ func Negotiate(value string, offers []string) string {
 			continue
 		}
 
-		accept := ""
-
+		var accept string
 		if offers == nil {
 			accept = mediaType
 		} else {
@@ -41,6 +41,10 @@ func Negotiate(value string, offers []string) string {
 			if q > bestQuality {
 				bestMediaType = accept
 				bestQuality = q
+
+				if bestQuality == 1.0 {
+					break
+				}
 			}
 		}
 	}

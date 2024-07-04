@@ -1,6 +1,10 @@
 package mime
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/siyul-park/uniflow/pkg/object"
+)
 
 const (
 	ApplicationJSON                  = "application/json"
@@ -23,6 +27,22 @@ const (
 )
 
 const charsetUTF8 = "charset=utf-8"
+
+// DetectTypes determines the content types based on the type of object passed.
+func DetectTypes(value object.Object) []string {
+	switch value.(type) {
+	case object.Binary:
+		return []string{ApplicationOctetStream}
+	case object.String:
+		return []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8}
+	case object.Slice:
+		return []string{ApplicationJSONCharsetUTF8}
+	case object.Object, object.Error:
+		return []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
+	default:
+		return []string{ApplicationJSONCharsetUTF8}
+	}
+}
 
 // IsCompatible checks if two media types are compatible.
 func IsCompatible(x, y string) bool {

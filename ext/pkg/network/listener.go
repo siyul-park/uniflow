@@ -220,13 +220,16 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 	if res.Header == nil {
 		res.Header = http.Header{}
 	}
+
 	if res.Header.Get(mime.HeaderContentEncoding) == "" {
 		acceptEncoding := req.Header.Get(mime.HeaderAcceptEncoding)
 		res.Header.Set(mime.HeaderContentEncoding, mime.Negotiate(acceptEncoding, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr}))
 	}
+
 	if res.Header.Get(mime.HeaderContentType) == "" {
 		accept := req.Header.Get(mime.HeaderAccept)
-		res.Header.Set(mime.HeaderContentType, mime.Negotiate(accept, []string{mime.ApplicationJSON, mime.ApplicationFormURLEncoded, mime.ApplicationOctetStream, mime.TextPlain, mime.MultipartFormData}))
+		offers := mime.DetectTypes(res.Body)
+		res.Header.Set(mime.HeaderContentType, mime.Negotiate(accept, offers))
 	}
 }
 
@@ -281,7 +284,6 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	if _, err := io.Copy(w, buf); err != nil {
 		return err
 	}
-
 	return nil
 }
 
