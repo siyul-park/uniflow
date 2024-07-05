@@ -13,7 +13,7 @@ type tcpKeepAliveListener struct {
 
 var ErrInvalidListenerNetwork = errors.New("invalid listener network")
 
-func newTCPKeepAliveListener(address, network string) (*tcpKeepAliveListener, error) {
+func newTCPKeepAliveListener(network, address string) (*tcpKeepAliveListener, error) {
 	if network != "tcp" && network != "tcp4" && network != "tcp6" {
 		return nil, ErrInvalidListenerNetwork
 	}

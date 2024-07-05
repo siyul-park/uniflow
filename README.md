@@ -6,7 +6,7 @@
 [![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
-An ultra-fast, highly flexible, and easily customizable multipurpose workflow engine.
+An ultra fast, highly flexible, and easily customizable multipurpose workflow engine.
 
 Efficiently manage tasks of varying durations—from short-term to long-term—using this engine. It offers a declarative environment for defining data processing flows, ensuring optimal performance characterized by low latency and high throughput across a diverse spectrum of operations.
 
@@ -14,10 +14,8 @@ The built-in extensions are optimized for efficient execution of short-term proc
 
 ## Principles
 
-- **Performance:** Achieve optimal throughput, minimal latency, and maximum throughput, scaling seamlessly across diverse workloads.
-
+- **Performance:** Achieve optimal throughput, minimal latency, and maximum scalability across diverse workloads.
 - **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
-
 - **Extensibility:** Utilize the built-in extensions to efficiently execute a variety of tasks, seamlessly integrating or customizing additional functionalities as needed.
 
 ## Getting Started
@@ -49,10 +47,54 @@ For additional details, refer to the command help:
 
 Configure the environment using either `.uniflow.toml` or system environment variables.
 
-| TOML Key         | Env Key          | Example          |
-|------------------|------------------|------------------|
+| TOML Key         | Env Key          | Example               |
+|------------------|------------------|-----------------------|
 | `database.url`   | `DATABASE.URL`   | `mem://` or `mongodb://` |
-| `database.name`  | `DATABASE.NAME`  | -                |
+| `database.name`  | `DATABASE.NAME`  | -                     |
+
+## Benchmarks
+
+The benchmarking tests were conducted using a VPS S SSD (4 Core, 8 GB) from [Contabo](https://contabo.com/). Performance was measured with the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) over the loopback network adapter (127.0.0.1). The test workflow used the [ping example](/examples/ping.yaml), consisting of `linster`, `router`, and `snippet` nodes.
+
+```sh
+ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
+```
+
+Results:
+
+```
+This is ApacheBench, Version 2.3 <$Revision: 1879490 $>
+Benchmarking 127.0.0.1 (be patient)
+Server Hostname:        127.0.0.1
+Server Port:            8000
+Document Path:          /ping
+Document Length:        0 bytes
+Concurrency Level:      1024
+Time taken for tests:   14.951 seconds
+Complete requests:      102400
+Failed requests:        0
+Total transferred:      11878400 bytes
+Requests per second:    6849.06 [#/sec] (mean)
+Time per request:       149.510 [ms] (mean)
+Time per request:       0.146 [ms] (mean, across all concurrent requests)
+Transfer rate:          775.87 [Kbytes/sec] received
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    2   4.7      0      55
+Processing:     0  146  62.2    148     528
+Waiting:        0  145  62.2    147     528
+Total:          0  148  62.3    150     559
+Percentage of the requests served within a certain time (ms)
+  50%    150
+  66%    174
+  75%    188
+  80%    196
+  90%    223
+  95%    248
+  98%    282
+  99%    307
+ 100%    559 (longest request)
+```
 
 <!-- Go -->
 

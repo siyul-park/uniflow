@@ -33,6 +33,7 @@ type HTTPListenNode struct {
 type ListenNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string `map:"protocol"`
+	Host      string `map:"host,omitempty"`
 	Port      int    `map:"port"`
 }
 
@@ -100,7 +101,7 @@ func (n *HTTPListenNode) Listen() error {
 		if n.listener != nil {
 			return nil
 		}
-		if l, err := newTCPKeepAliveListener(n.server.Addr, "tcp"); err != nil {
+		if l, err := newTCPKeepAliveListener("tcp", n.server.Addr); err != nil {
 			return err
 		} else {
 			n.listener = l
@@ -222,14 +223,20 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 	}
 
 	if res.Header.Get(mime.HeaderContentEncoding) == "" {
-		acceptEncoding := req.Header.Get(mime.HeaderAcceptEncoding)
-		res.Header.Set(mime.HeaderContentEncoding, mime.Negotiate(acceptEncoding, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr}))
+		accept := req.Header.Get(mime.HeaderAcceptEncoding)
+		negotiate := mime.Negotiate(accept, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr})
+		if negotiate != "" {
+			res.Header.Set(mime.HeaderContentEncoding, negotiate)
+		}
 	}
 
 	if res.Header.Get(mime.HeaderContentType) == "" {
 		accept := req.Header.Get(mime.HeaderAccept)
 		offers := mime.DetectTypes(res.Body)
-		res.Header.Set(mime.HeaderContentType, mime.Negotiate(accept, offers))
+		negotiate := mime.Negotiate(accept, offers)
+		if negotiate != "" {
+			res.Header.Set(mime.HeaderContentType, negotiate)
+		}
 	}
 }
 
@@ -254,24 +261,22 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	if res == nil {
 		return nil
 	}
-	if res.Header == nil {
-		res.Header = http.Header{}
-	}
 
-	for key := range w.Header() {
-		w.Header().Del(key)
+	h := w.Header()
+	for key := range h {
+		h.Del(key)
 	}
 	for key, headers := range res.Header {
 		if !mime.IsResponseHeader(key) {
 			continue
 		}
 		for _, header := range headers {
-			w.Header().Add(key, header)
+			h.Add(key, header)
 		}
 	}
 
 	buf := bytes.NewBuffer(nil)
-	if err := mime.Encode(buf, res.Body, textproto.MIMEHeader(w.Header())); err != nil {
+	if err := mime.Encode(buf, res.Body, textproto.MIMEHeader(h)); err != nil {
 		return err
 	}
 
@@ -292,7 +297,7 @@ func NewListenNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *ListenNodeSpec) (node.Node, error) {
 		switch spec.Protocol {
 		case ProtocolHTTP:
-			return NewHTTPListenNode(fmt.Sprintf(":%d", spec.Port)), nil
+			return NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port)), nil
 		}
 		return nil, errors.WithStack(ErrInvalidProtocol)
 	})

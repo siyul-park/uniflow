@@ -29,13 +29,6 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
 
-	count := 0
-	var w io.Writer = WriterFunc(func(b []byte) (n int, err error) {
-		n, err = writer.Write(b)
-		count += n
-		return
-	})
-
 	if typ == "" {
 		if types := DetectTypes(value); len(types) > 0 {
 			typ = types[0]
@@ -48,30 +41,32 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 		return err
 	}
 
-	w, err = Compress(w, encode)
+	count := 0
+	var cwriter io.Writer = WriterFunc(func(p []byte) (n int, err error) {
+		n, err = writer.Write(p)
+		count += n
+		return
+	})
+	defer header.Set(HeaderContentLength, strconv.Itoa(count))
+
+	w, err := Compress(cwriter, encode)
 	if err != nil {
 		return err
+	}
+	if c, ok := w.(io.Closer); ok && w != cwriter {
+		defer c.Close()
 	}
 
 	switch typ {
 	case ApplicationJSON:
-		e := json.NewEncoder(w)
-		if err := e.Encode(object.InterfaceOf(value)); err != nil {
-			return err
-		} else {
-			header.Set(HeaderContentLength, strconv.Itoa(count))
-		}
-		return nil
+		return json.NewEncoder(w).Encode(object.InterfaceOf(value))
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
 		if err := object.Unmarshal(value, &urlValues); err != nil {
 			return err
-		} else if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
-			return err
-		} else {
-			header.Set(HeaderContentLength, strconv.Itoa(count))
 		}
-		return nil
+		_, err := w.Write([]byte(urlValues.Encode()))
+		return err
 	case MultipartFormData:
 		boundary := params["boundary"]
 		if boundary == "" {
@@ -203,32 +198,19 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			}
 		}
 
-		if err := mw.Close(); err != nil {
-			return err
-		} else {
-			header.Set(HeaderContentLength, strconv.Itoa(count))
-		}
-		return nil
+		return mw.Close()
 	}
 
-	if v, ok := value.(object.Binary); ok {
-		if _, err := w.Write(v.Bytes()); err != nil {
-			return err
-		} else {
-			header.Set(HeaderContentLength, strconv.Itoa(count))
-		}
-		return nil
+	switch v := value.(type) {
+	case object.Binary:
+		_, err := w.Write(v.Bytes())
+		return err
+	case object.String:
+		_, err := w.Write([]byte(v.String()))
+		return err
+	default:
+		return errors.WithStack(encoding.ErrUnsupportedValue)
 	}
-	if v, ok := value.(object.String); ok {
-		if _, err := w.Write([]byte(v.String())); err != nil {
-			return err
-		} else {
-			header.Set(HeaderContentLength, strconv.Itoa(count))
-		}
-		return nil
-	}
-
-	return errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
 // Decode decodes the given reader with the specified MIME headers into an object.
@@ -238,21 +220,24 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 
 	typ, params, _ := mime.ParseMediaType(typ)
 
-	reader, err := Decompress(reader, encode)
+	r, err := Decompress(reader, encode)
 	if err != nil {
 		return nil, err
+	}
+	if c, ok := r.(io.Closer); ok && r != reader {
+		defer c.Close()
 	}
 
 	switch typ {
 	case ApplicationJSON:
 		var data any
-		d := json.NewDecoder(reader)
+		d := json.NewDecoder(r)
 		if err := d.Decode(&data); err != nil {
 			return nil, err
 		}
 		return object.MarshalText(data)
 	case ApplicationFormURLEncoded:
-		data, err := io.ReadAll(reader)
+		data, err := io.ReadAll(r)
 		if err != nil {
 			return nil, err
 		}
@@ -262,13 +247,13 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		}
 		return object.MarshalText(v)
 	case TextPlain:
-		data, err := io.ReadAll(reader)
+		data, err := io.ReadAll(r)
 		if err != nil {
 			return nil, err
 		}
 		return object.NewString(string(data)), nil
 	case MultipartFormData:
-		reader := multipart.NewReader(reader, params["boundary"])
+		reader := multipart.NewReader(r, params["boundary"])
 
 		form, err := reader.ReadForm(0)
 		if err != nil {
@@ -305,7 +290,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		})
 	}
 
-	data, err := io.ReadAll(reader)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
