@@ -8,17 +8,17 @@
 
 An ultra-fast, highly flexible, and easily customizable multipurpose workflow engine.
 
-Efficiently manage tasks across all lifespans—from short-term to long-term—using this engine. It provides a declarative environment for defining data processing flows, ensuring high performance and low latency across diverse operations.
+Efficiently manage tasks of varying durations—from short-term to long-term—using this engine. It offers a declarative environment for defining data processing flows, ensuring optimal performance characterized by low latency and high throughput across a diverse spectrum of operations.
 
-The built-in extensions are designed to prioritize short-term processing tasks while also supporting a diverse range of functionalities. Additionally, you can seamlessly integrate and customize additional features into the engine as needed.
+The built-in extensions are optimized for efficient execution of short-term processing tasks, offering a wide range of functionalities. Additionally, the engine seamlessly integrates additional features, ensuring flexible expansion as needed.
 
 ## Principles
 
-- **High Performance:** Achieve optimal throughput and minimal latency, scaling seamlessly across diverse workloads.
+- **Performance:** Achieve optimal throughput, minimal latency, and maximum throughput, scaling seamlessly across diverse workloads.
 
-- **Flexibility:** Define complex data processing flows declaratively to adapt effortlessly to changing requirements, dynamically modifying and reflecting flow adjustments.
+- **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
 
-- **Extensibility:** Utilize built-in extensions for efficient execution of diverse tasks and seamlessly integrate or customize additional functionalities.
+- **Extensibility:** Utilize the built-in extensions to efficiently execute a variety of tasks, seamlessly integrating or customizing additional functionalities as needed.
 
 ## Getting Started
 
