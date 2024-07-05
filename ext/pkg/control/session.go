@@ -136,6 +136,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 				n.tracer.Transform(inPck, outPck)
 				outPcks = append(outPcks, outPck)
 			} else {
+				child.Exit(nil)
 				children = append(children[:i], children[i+1:]...)
 				i--
 			}
