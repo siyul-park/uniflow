@@ -1,10 +1,10 @@
 # Extension
 
-Maximize your system's capabilities with our diverse range of first-party extensions. Seamlessly integrate these plugins to enhance functionalities and introduce new features, enriching your system's ecosystem. Enjoy a flexible and extensible platform that empowers users to explore various possibilities and effortlessly amplify their system's capabilities.
+Enhance your system's capabilities with our diverse range of first-party extensions. Seamlessly integrate these plugins to expand functionalities and introduce new features, enriching your system's ecosystem. Enjoy a flexible and extensible platform that empowers users to explore various possibilities and effortlessly amplify their system's capabilities.
 
 ## Available Extensions
 
-- **Control**: Enhance data manipulation capabilities with this versatile tool. Execute code snippets in languages such as CEL, JavaScript, TypeScript, JSON, and YAML, enabling robust data operations.
+- **Control**: Elevate data manipulation capabilities with this versatile tool. Execute code snippets in languages such as CEL, JavaScript, TypeScript, JSON, and YAML, enabling robust data operations.
 
 - **Event**: Support event-driven architectures with seamless handling of runtime events, ensuring efficient event processing and management.
 

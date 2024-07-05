@@ -6,134 +6,53 @@
 [![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
-> Low-Code Engine for Backend Workflows
+An ultra-fast, highly flexible, and easily customizable multipurpose workflow engine.
 
-Uniflow is a low-code engine that enables fast and efficient construction and execution of backend workflows.
+Efficiently manage tasks across all lifespans—from short-term to long-term—using this engine. It provides a declarative environment for defining data processing flows, ensuring high performance and low latency across diverse operations.
+
+The built-in extensions are designed to prioritize short-term processing tasks while also supporting a diverse range of functionalities. Additionally, you can seamlessly integrate and customize additional features into the engine as needed.
+
+## Principles
+
+- **High Performance:** Achieve optimal throughput and minimal latency, scaling seamlessly across diverse workloads.
+
+- **Flexibility:** Define complex data processing flows declaratively to adapt effortlessly to changing requirements, dynamically modifying and reflecting flow adjustments.
+
+- **Extensibility:** Utilize built-in extensions for efficient execution of diverse tasks and seamlessly integrate or customize additional functionalities.
 
 ## Getting Started
 
-[Download Go][go_download_url] and install (version `1.21` or higher is required).
-
-### Installation
-
-To integrate into your project, use the following import statements:
+To run the [ping example](/examples/ping.yaml), use this command:
 
 ```shell
-go get -u github.com/siyul-park/uniflow
-go get -u github.com/siyul-park/uniflow/ext
+./uniflow start --filename example/ping.yaml
 ```
 
-### Usage Example
+The `--filename` flag automatically installs the node if it doesn't already exist in the namespace.
 
-Here's a basic example for incorporating it into your application:
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/runtime"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/ext/pkg/control"
-	"github.com/siyul-park/uniflow/ext/pkg/network"
-)
-
-func main() {
-	ctx := context.TODO()
-
-	hb := hook.NewBuilder()
-	sb := scheme.NewBuilder()
-
-	hb.Register(network.AddToHook())
-	sb.Register(control.AddToScheme())
-	sb.Register(network.AddToScheme())
-	
-	hk, _ := hb.Build()
-	sc, _ := sb.Build()
-
-	db := memdb.New("")
-
-	r, _ := New(ctx, runtime.Config{
-		Hook:     hk,
-		Scheme:   sc,
-		Database: db,
-	})
-	defer r.Close()
-
-	r.Watch(ctx)
-	r.Load(ctx)
-	r.Start(ctx)
-}
-```
-
-Customize the code according to your specific requirements.
-
-### Building
-
-To build the project, follow these steps:
-
-**Clone the Repository:**
-```shell
-git clone https://github.com/siyul-park/uniflow
-cd uniflow
-```
-
-**Initialize and Build the Project:**
-```shell
-make init
-make build
-```
-These commands initialize the project, set up dependencies, and compile the source code to generate the executable.
-
-**Verify the Result:**
-```shell
-ls /dist
-uniflow
-```
-Ensure the executable named "uniflow" is present in the `/dist` directory.
-
-Following these steps ensures that the project is properly set up, built, and the executable is available for use in the `/dist` directory.
-
-### Starting
-
-Now ready to be used. To initiate the [ping](/examples/ping.yaml) example, execute the following command:
-
-```shell
-./dist/uniflow start --filename example/ping.yaml
-```
-
-The `--filename` flag automatically installs if the node does not exist in the namespace.
-
-Check if the instance is providing an HTTP endpoint as expected:
+Check if the instance is providing the expected HTTP endpoint:
 
 ```shell
 curl localhost:8000/ping
 pong#
 ```
 
-If you want to apply nodes to a running server, utilize the `apply` command.
+To apply nodes to a running server, use the `apply` command.
 
-For additional details, run the following command:
+For additional details, refer to the command help:
 
 ```shell
 ./dist/uniflow start --help
 ```
 
-### Configuration
+## Configuration
 
-You can set environment variables before executing any command.
+Configure the environment using either `.uniflow.toml` or system environment variables.
 
-Configuration can be done using `.uniflow.toml` or system environment variables.
-
-| TOML Key | Env Key | Example |
-|---|---|---|
-| `database.url` | `DATABASE.URL` | `mem://` or `mongodb://` |
-| `database.name` | `DATABASE.NAME` | - |
+| TOML Key         | Env Key          | Example          |
+|------------------|------------------|------------------|
+| `database.url`   | `DATABASE.URL`   | `mem://` or `mongodb://` |
+| `database.name`  | `DATABASE.NAME`  | -                |
 
 <!-- Go -->
 
