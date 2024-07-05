@@ -36,6 +36,8 @@ const (
 	TopicUnload = "unload"
 )
 
+var _ node.Node = (*TriggerNode)(nil)
+
 // NewTriggerNode creates a new TriggerNode instance.
 func NewTriggerNode(producer *Producer, consumer *Consumer) *TriggerNode {
 	n := &TriggerNode{

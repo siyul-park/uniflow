@@ -33,6 +33,18 @@ func (l *Local[T]) Watch(proc *Process, watch func(T)) bool {
 	return ok
 }
 
+// Keys returns all stored processes.
+func (l *Local[T]) Keys() []*Process {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	keys := make([]*Process, 0, len(l.data))
+	for proc := range l.data {
+		keys = append(keys, proc)
+	}
+	return keys
+}
+
 // Load retrieves the value associated with a given process.
 func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()

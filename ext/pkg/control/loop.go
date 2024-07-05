@@ -28,6 +28,8 @@ type LoopNodeSpec struct {
 
 const KindLoop = "loop"
 
+var _ node.Node = (*LoopNode)(nil)
+
 // NewLoopNode creates a new LoopNode with default configurations.
 func NewLoopNode() *LoopNode {
 	n := &LoopNode{

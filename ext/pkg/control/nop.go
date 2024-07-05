@@ -22,9 +22,9 @@ type NOPNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-var _ node.Node = (*NOPNode)(nil)
-
 const KindNOP = "nop"
+
+var _ node.Node = (*NOPNode)(nil)
 
 // NewNOPNode creates a new instance of NOPNode.
 func NewNOPNode() *NOPNode {

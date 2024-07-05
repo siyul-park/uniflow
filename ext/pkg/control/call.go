@@ -26,9 +26,9 @@ type CallNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-var _ node.Node = (*CallNode)(nil)
-
 const KindCall = "call"
+
+var _ node.Node = (*CallNode)(nil)
 
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {

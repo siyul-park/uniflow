@@ -30,9 +30,9 @@ type IfNodeSpec struct {
 	When      string `map:"when"`
 }
 
-var _ node.Node = (*IfNode)(nil)
-
 const KindIf = "if"
+
+var _ node.Node = (*IfNode)(nil)
 
 // NewIfNode creates a new IfNode.
 func NewIfNode(when func(any) (bool, error)) *IfNode {

@@ -32,6 +32,21 @@ func TestLocal_Watch(t *testing.T) {
 	assert.Equal(t, 2, count)
 }
 
+func TestLocal_Keys(t *testing.T) {
+	l := NewLocal[string]()
+	defer l.Close()
+
+	proc := New()
+	defer proc.Exit(nil)
+
+	v := faker.UUIDHyphenated()
+
+	l.Store(proc, v)
+
+	keys := l.Keys()
+	assert.Contains(t, keys, proc)
+}
+
 func TestLocal_Load(t *testing.T) {
 	l := NewLocal[string]()
 	defer l.Close()

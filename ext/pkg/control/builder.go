@@ -77,6 +77,9 @@ func AddToScheme(module *language.Module, lang string) func(*scheme.Scheme) erro
 		s.AddKnownType(KindNOP, &NOPNodeSpec{})
 		s.AddCodec(KindNOP, NewNOPNodeCodec())
 
+		s.AddKnownType(KindSession, &SessionNodeSpec{})
+		s.AddCodec(KindSession, NewSessionNodeCodec())
+
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
 		s.AddCodec(KindSnippet, NewSnippetNodeCodec(module))
 
