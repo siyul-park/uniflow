@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// Symbol represents an object that binds a Node and a Spec.
+// Symbol represents an types that binds a Node and a Spec.
 type Symbol struct {
 	spec    spec.Spec
 	node    node.Node

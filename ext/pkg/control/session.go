@@ -4,17 +4,17 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // SessionNode manages session data flow and process interactions through its ports.
 type SessionNode struct {
-	values  *process.Local[object.Object]
+	values  *process.Local[types.Object]
 	tracer  *packet.Tracer
 	ioPort  *port.InPort
 	inPort  *port.InPort
@@ -34,7 +34,7 @@ var _ node.Node = (*SessionNode)(nil)
 // NewSessionNode creates and initializes a new SessionNode.
 func NewSessionNode() *SessionNode {
 	n := &SessionNode{
-		values:  process.NewLocal[object.Object](),
+		values:  process.NewLocal[types.Object](),
 		tracer:  packet.NewTracer(),
 		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),
@@ -132,7 +132,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 		for i := 0; i < len(children); i++ {
 			child := children[i]
 			if value, ok := n.values.Load(child); ok {
-				outPck := packet.New(object.NewSlice(value, inPck.Payload()))
+				outPck := packet.New(types.NewSlice(value, inPck.Payload()))
 				n.tracer.Transform(inPck, outPck)
 				outPcks = append(outPcks, outPck)
 			} else {
@@ -144,7 +144,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 
 		n.tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
 			var err error
-			if v, ok := backPck.Payload().(object.Error); ok {
+			if v, ok := backPck.Payload().(types.Error); ok {
 				err, _ = v.Interface().(error)
 			}
 

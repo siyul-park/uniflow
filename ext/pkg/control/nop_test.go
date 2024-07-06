@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestNOPNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewString(faker.UUIDHyphenated())
+	inPayload := types.NewString(faker.UUIDHyphenated())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

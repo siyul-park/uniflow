@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -166,7 +166,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 						return errors.WithStack(encoding.ErrInvalidValue)
 					}
 
-					var value object.Object
+					var value types.Object
 					if err := bsonToPrimitive(v, &value); err != nil {
 						return err
 					}
@@ -193,16 +193,16 @@ func bsonToFilter(data any, filter **database.Filter) error {
 	return nil
 }
 
-func primitiveToBson(data object.Object) (any, error) {
+func primitiveToBson(data types.Object) (any, error) {
 	if data == nil {
 		return primitive.Null{}, nil
 	}
 
-	if s, ok := data.(object.Map); ok {
+	if s, ok := data.(types.Map); ok {
 		t := make(primitive.M, s.Len())
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
-			if k, ok := k.(object.String); !ok {
+			if k, ok := k.(types.String); !ok {
 				return nil, errors.WithStack(encoding.ErrInvalidValue)
 			} else {
 				if v, err := primitiveToBson(v); err != nil {
@@ -213,7 +213,7 @@ func primitiveToBson(data object.Object) (any, error) {
 			}
 		}
 		return t, nil
-	} else if s, ok := data.(object.Slice); ok {
+	} else if s, ok := data.(types.Slice); ok {
 		t := make(primitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			if v, err := primitiveToBson(s.Get(i)); err != nil {
@@ -228,7 +228,7 @@ func primitiveToBson(data object.Object) (any, error) {
 	}
 }
 
-func bsonToPrimitive(data any, v *object.Object) error {
+func bsonToPrimitive(data any, v *types.Object) error {
 	if data == nil {
 		*v = nil
 		return nil
@@ -239,34 +239,34 @@ func bsonToPrimitive(data any, v *object.Object) error {
 		*v = nil
 		return nil
 	} else if s, ok := data.(primitive.Binary); ok {
-		*v = object.NewBinary(s.Data)
+		*v = types.NewBinary(s.Data)
 		return nil
 	} else if s, ok := data.(primitive.A); ok {
-		values := make([]object.Object, len(s))
+		values := make([]types.Object, len(s))
 		for i, e := range s {
-			var value object.Object
+			var value types.Object
 			if err := bsonToPrimitive(e, &value); err != nil {
 				return err
 			}
 			values[i] = value
 		}
-		*v = object.NewSlice(values...)
+		*v = types.NewSlice(values...)
 		return nil
 	} else if s, ok := bsonM(data); ok {
-		pairs := make([]object.Object, len(s)*2)
+		pairs := make([]types.Object, len(s)*2)
 		i := 0
 		for k, v := range s {
-			var value object.Object
+			var value types.Object
 			if err := bsonToPrimitive(v, &value); err != nil {
 				return err
 			}
-			pairs[i*2] = object.NewString(externalKey(k))
+			pairs[i*2] = types.NewString(externalKey(k))
 			pairs[i*2+1] = value
 			i += 1
 		}
-		*v = object.NewMap(pairs...)
+		*v = types.NewMap(pairs...)
 		return nil
-	} else if s, err := object.MarshalBinary(data); err == nil {
+	} else if s, err := types.MarshalBinary(data); err == nil {
 		*v = s
 		return nil
 	}

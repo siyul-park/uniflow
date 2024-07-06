@@ -3,7 +3,7 @@ package mime
 import (
 	"strings"
 
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 const (
@@ -28,16 +28,16 @@ const (
 
 const charsetUTF8 = "charset=utf-8"
 
-// DetectTypes determines the content types based on the type of object passed.
-func DetectTypes(value object.Object) []string {
+// DetectTypes determines the content types based on the type of types passed.
+func DetectTypes(value types.Object) []string {
 	switch value.(type) {
-	case object.Binary:
+	case types.Binary:
 		return []string{ApplicationOctetStream}
-	case object.String:
+	case types.String:
 		return []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8}
-	case object.Slice:
+	case types.Slice:
 		return []string{ApplicationJSONCharsetUTF8}
-	case object.Object, object.Error:
+	case types.Object, types.Error:
 		return []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
 	default:
 		return []string{ApplicationJSONCharsetUTF8}

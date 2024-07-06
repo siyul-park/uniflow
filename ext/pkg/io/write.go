@@ -7,11 +7,11 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // WriteNode represents a node responsible for writing data to an io.WriteCloser.
@@ -58,7 +58,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := object.InterfaceOf(inPayload)
+	input := types.InterfaceOf(inPayload)
 
 	var buf []byte
 	switch v := input.(type) {
@@ -72,10 +72,10 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 	length, err := n.writer.Write(buf)
 	if err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 
-	return packet.New(object.NewInt64(int64(length))), nil
+	return packet.New(types.NewInt64(int64(length))), nil
 }
 
 // NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.

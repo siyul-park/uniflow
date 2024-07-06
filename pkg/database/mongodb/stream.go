@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -48,7 +48,7 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 				return
 			}
 
-			var id object.Object
+			var id types.Object
 			if documentKey, ok := data["documentKey"]; ok {
 				if documentKey, ok := documentKey.(bson.M); ok {
 					if err := bsonToPrimitive(documentKey["_id"], &id); err != nil {

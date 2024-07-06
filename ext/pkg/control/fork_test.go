@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,7 +47,7 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
+	inPayload := types.NewMap(types.NewString("foo"), types.NewString("bar"))
 	inPck := packet.New(inPayload)
 
 	out.Accept(port.ListenFunc(func(proc *process.Process) {

@@ -10,10 +10,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,10 +65,10 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		var inPayload object.Object
-		inPayload = object.NewSlice(
-			object.NewString("INSERT INTO Foo(name) VALUES (?)"),
-			object.NewSlice(object.NewString(faker.UUIDHyphenated())),
+		var inPayload types.Object
+		inPayload = types.NewSlice(
+			types.NewString("INSERT INTO Foo(name) VALUES (?)"),
+			types.NewSlice(types.NewString(faker.UUIDHyphenated())),
 		)
 		inPck := packet.New(inPayload)
 
@@ -76,19 +76,19 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice(), outPck.Payload())
+			assert.Equal(t, types.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		inPayload = object.NewString("SELECT * FROM Foo")
+		inPayload = types.NewString("SELECT * FROM Foo")
 		inPck = packet.New(inPayload)
 
 		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-inWriter.Receive():
-			outPayload, ok := outPck.Payload().(object.Slice)
+			outPayload, ok := outPck.Payload().(types.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():
@@ -122,12 +122,12 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		var inPayload object.Object
-		inPayload = object.NewSlice(
-			object.NewString("INSERT INTO Foo(name) VALUES (:name)"),
-			object.NewMap(
-				object.NewString("name"),
-				object.NewString(faker.UUIDHyphenated()),
+		var inPayload types.Object
+		inPayload = types.NewSlice(
+			types.NewString("INSERT INTO Foo(name) VALUES (:name)"),
+			types.NewMap(
+				types.NewString("name"),
+				types.NewString(faker.UUIDHyphenated()),
 			),
 		)
 		inPck := packet.New(inPayload)
@@ -136,19 +136,19 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice(), outPck.Payload())
+			assert.Equal(t, types.NewSlice(), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
 
-		inPayload = object.NewString("SELECT * FROM Foo")
+		inPayload = types.NewString("SELECT * FROM Foo")
 		inPck = packet.New(inPayload)
 
 		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-inWriter.Receive():
-			outPayload, ok := outPck.Payload().(object.Slice)
+			outPayload, ok := outPck.Payload().(types.Slice)
 			assert.True(t, ok)
 			assert.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():
@@ -193,9 +193,9 @@ func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewSlice(
-		object.NewString("INSERT INTO Foo(name) VALUES (?)"),
-		object.NewSlice(object.NewString(faker.UUIDHyphenated())),
+	inPayload := types.NewSlice(
+		types.NewString("INSERT INTO Foo(name) VALUES (?)"),
+		types.NewSlice(types.NewString(faker.UUIDHyphenated())),
 	)
 	inPck := packet.New(inPayload)
 

@@ -9,11 +9,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // RouteNode represents a node for routing based on HTTP method, path, and port.
@@ -150,17 +150,17 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	inPayload, ok := inPck.Payload().(object.Map)
+	inPayload, ok := inPck.Payload().(types.Map)
 	if !ok {
 		return nil, nil
 	}
 
-	method, _ := object.Pick[string](inPayload, "method")
-	path, _ := object.Pick[string](inPayload, "path")
+	method, _ := types.Pick[string](inPayload, "method")
+	path, _ := types.Pick[string](inPayload, "path")
 
 	route, paramValues := n.find(method, path)
 	if route == nil {
-		outPayload, _ := object.MarshalText(NewHTTPPayload(http.StatusNotFound))
+		outPayload, _ := types.MarshalText(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
 	}
 
@@ -173,16 +173,16 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 			res = NewHTTPPayload(http.StatusMethodNotAllowed)
 		}
 		res.Header.Set(mime.HeaderAllow, route.allowHeader())
-		outPayload, _ := object.MarshalText(res)
+		outPayload, _ := types.MarshalText(res)
 		return nil, packet.New(outPayload)
 	}
 
-	params := make([]object.Object, 0, len(paramValues)*2)
+	params := make([]types.Object, 0, len(paramValues)*2)
 	for i, name := range route.paramNames {
-		params = append(params, object.NewString(name), object.NewString(paramValues[i]))
+		params = append(params, types.NewString(name), types.NewString(paramValues[i]))
 	}
 
-	outPayload := inPayload.Set(object.NewString("params"), object.NewMap(params...))
+	outPayload := inPayload.Set(types.NewString("params"), types.NewMap(params...))
 	outPck := packet.New(outPayload)
 
 	i, _ := node.IndexOfPort(node.PortOut, port)

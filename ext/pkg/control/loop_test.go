@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,9 +52,9 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload := object.NewSlice()
+		inPayload := types.NewSlice()
 		for i := 0; i < 4; i++ {
-			inPayload = inPayload.Append(object.NewString(faker.UUIDHyphenated()))
+			inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 		}
 		inPck := packet.New(inPayload)
 
@@ -100,9 +100,9 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		outReader0 := out0.Open(proc)
 		outReader1 := out1.Open(proc)
 
-		inPayload := object.NewSlice()
+		inPayload := types.NewSlice()
 		for i := 0; i < 4; i++ {
-			inPayload = inPayload.Append(object.NewString(faker.UUIDHyphenated()))
+			inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 		}
 		inPck := packet.New(inPayload)
 
@@ -151,9 +151,9 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader0 := out0.Open(proc)
 
-		inPayload := object.NewSlice()
+		inPayload := types.NewSlice()
 		for i := 0; i < 4; i++ {
-			inPayload = inPayload.Append(object.NewString(faker.UUIDHyphenated()))
+			inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 		}
 		inPck := packet.New(inPayload)
 
@@ -162,7 +162,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case <-outReader0.Read():
-				backPck := packet.New(object.NewError(errors.New(faker.Sentence())))
+				backPck := packet.New(types.NewError(errors.New(faker.Sentence())))
 				outReader0.Receive(backPck)
 			case <-ctx.Done():
 				assert.Fail(t, "timeout")
@@ -208,9 +208,9 @@ func BenchmarkLoopNode_SendAndReceive(b *testing.B) {
 	outReader0 := out0.Open(proc)
 	outReader1 := out1.Open(proc)
 
-	inPayload := object.NewSlice()
+	inPayload := types.NewSlice()
 	for i := 0; i < 4; i++ {
-		inPayload = inPayload.Append(object.NewString(faker.UUIDHyphenated()))
+		inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()

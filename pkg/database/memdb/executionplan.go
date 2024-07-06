@@ -2,13 +2,13 @@ package memdb
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 type executionPlan struct {
 	key  string
-	min  object.Object
-	max  object.Object
+	min  types.Object
+	max  types.Object
 	next *executionPlan
 }
 
@@ -28,7 +28,7 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 			plan = plan.union(newExecutionPlan(keys, child))
 		}
 	case database.IN:
-		value := filter.Value.(object.Slice)
+		value := filter.Value.(types.Slice)
 		for _, v := range value.Values() {
 			plan = plan.union(newExecutionPlan(keys, database.Where(filter.Key).Equal(v)))
 		}
@@ -72,7 +72,7 @@ func newExecutionPlan(keys []string, filter *database.Filter) *executionPlan {
 
 func (e *executionPlan) Cost() int {
 	cur := 0
-	if e.min == nil || e.max == nil || object.Compare(e.min, e.max) != 0 {
+	if e.min == nil || e.max == nil || types.Compare(e.min, e.max) != 0 {
 		cur = 1
 	}
 
@@ -101,7 +101,7 @@ func (e *executionPlan) intersect(other *executionPlan) *executionPlan {
 
 	if e.min == nil {
 		z.min = other.min
-	} else if object.Compare(e.min, other.min) < 0 {
+	} else if types.Compare(e.min, other.min) < 0 {
 		z.min = other.min
 	} else {
 		z.min = e.min
@@ -109,7 +109,7 @@ func (e *executionPlan) intersect(other *executionPlan) *executionPlan {
 
 	if e.max == nil {
 		z.max = nil
-	} else if object.Compare(e.max, other.max) > 0 {
+	} else if types.Compare(e.max, other.max) > 0 {
 		z.max = other.max
 	} else {
 		z.max = e.max
@@ -131,7 +131,7 @@ func (e *executionPlan) union(other *executionPlan) *executionPlan {
 
 	if e.min == nil || z.min == nil {
 		z.min = nil
-	} else if object.Compare(e.min, other.min) > 0 {
+	} else if types.Compare(e.min, other.min) > 0 {
 		z.min = other.min
 	} else {
 		z.min = e.min
@@ -139,7 +139,7 @@ func (e *executionPlan) union(other *executionPlan) *executionPlan {
 
 	if e.max == nil || z.max == nil {
 		z.max = nil
-	} else if object.Compare(e.max, other.max) < 0 {
+	} else if types.Compare(e.max, other.max) < 0 {
 		z.max = other.max
 	} else {
 		z.max = e.max

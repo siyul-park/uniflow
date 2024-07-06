@@ -7,9 +7,9 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Config is a configuration struct for Store.
@@ -34,7 +34,7 @@ var indexes = []database.IndexModel{
 		Name:    "namespace_name",
 		Keys:    []string{spec.KeyNamespace, spec.KeyName},
 		Unique:  true,
-		Partial: database.Where(spec.KeyName).NotEqual(object.NewString("")).And(database.Where(spec.KeyName).IsNotNull()),
+		Partial: database.Where(spec.KeyName).NotEqual(types.NewString("")).And(database.Where(spec.KeyName).IsNotNull()),
 	},
 }
 
@@ -106,7 +106,7 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 	}
 
 	var id uuid.UUID
-	if err := object.Unmarshal(pk, &id); err != nil {
+	if err := types.Unmarshal(pk, &id); err != nil {
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(spec.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
@@ -118,7 +118,7 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []object.Map
+	var docs []types.Map
 	for _, spc := range spcs {
 		if doc, err := s.specToDoc(spc); err != nil {
 			return nil, err
@@ -133,7 +133,7 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 	}
 
 	var ids []uuid.UUID
-	if err := object.Unmarshal(object.NewSlice(pks...), &ids); err != nil {
+	if err := types.Unmarshal(types.NewSlice(pks...), &ids); err != nil {
 		_, _ = s.nodes.DeleteMany(ctx, database.Where(spec.KeyID).In(pks...))
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []object.Map
+	var docs []types.Map
 	for _, spc := range spcs {
 		if doc, err := s.specToDoc(spc); err != nil {
 			return 0, err
@@ -255,12 +255,12 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 	return spcs, nil
 }
 
-func (s *Store) docToSpec(doc object.Map) (spec.Spec, error) {
+func (s *Store) docToSpec(doc types.Map) (spec.Spec, error) {
 	unstructured := spec.NewUnstructured(doc)
 	return s.scheme.Structured(unstructured)
 }
 
-func (s *Store) specToDoc(spc spec.Spec) (object.Map, error) {
+func (s *Store) specToDoc(spc spec.Spec) (types.Map, error) {
 	if n, err := s.scheme.Decode(spc); err != nil {
 		return nil, err
 	} else if err := n.Close(); err != nil {

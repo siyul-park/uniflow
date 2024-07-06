@@ -4,12 +4,12 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // ForkNode is a node that forks processes and manages packet forwarding between ports.
@@ -119,7 +119,7 @@ func (n *ForkNode) backward(proc *process.Process) {
 			return
 		}
 
-		if err, ok := backPck.Payload().(object.Error); ok {
+		if err, ok := backPck.Payload().(types.Error); ok {
 			if errWriter.Write(backPck) == 0 {
 				proc.Wait()
 				proc.Exit(err)
@@ -143,7 +143,7 @@ func (n *ForkNode) catch(proc *process.Process) {
 			return
 		}
 
-		err, _ := backPck.Payload().(object.Error)
+		err, _ := backPck.Payload().(types.Error)
 
 		proc.Wait()
 		proc.Exit(err)

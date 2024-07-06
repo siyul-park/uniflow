@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,14 +45,14 @@ func TestHTTP_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload object.Object
+	var inPayload types.Object
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		_, ok := outPck.Payload().(object.Error)
+		_, ok := outPck.Payload().(types.Error)
 		assert.False(t, ok)
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -96,9 +96,9 @@ func BenchmarkHTTPNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewMap(
-		object.NewString("method"), object.NewString(http.MethodGet),
-		object.NewString("url"), object.NewString(s.URL),
+	inPayload := types.NewMap(
+		types.NewString("method"), types.NewString(http.MethodGet),
+		types.NewString("url"), types.NewString(s.URL),
 	)
 	inPck := packet.New(inPayload)
 

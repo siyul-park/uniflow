@@ -1,4 +1,4 @@
-package object
+package types
 
 import (
 	"hash/fnv"
@@ -74,7 +74,7 @@ func (u Uint) Interface() any {
 	return u.value
 }
 
-// Equal checks if two Uint objects are equal.
+// Equal checks if two Uint typess are equal.
 func (u Uint) Equal(other Object) bool {
 	if o, ok := other.(Uint); ok {
 		return u.value == o.value
@@ -117,7 +117,7 @@ func (u Uint8) Interface() any {
 	return u.value
 }
 
-// Equal checks if two Uint8 objects are equal.
+// Equal checks if two Uint8 typess are equal.
 func (u Uint8) Equal(other Object) bool {
 	if o, ok := other.(Uint8); ok {
 		return u.value == o.value
@@ -160,7 +160,7 @@ func (u Uint16) Interface() any {
 	return u.value
 }
 
-// Equal checks if two Uint16 objects are equal.
+// Equal checks if two Uint16 typess are equal.
 func (u Uint16) Equal(other Object) bool {
 	if o, ok := other.(Uint16); ok {
 		return u.value == o.value
@@ -203,7 +203,7 @@ func (u Uint32) Interface() any {
 	return u.value
 }
 
-// Equal checks if two Uint32 objects are equal.
+// Equal checks if two Uint32 typess are equal.
 func (u Uint32) Equal(other Object) bool {
 	if o, ok := other.(Uint32); ok {
 		return u.value == o.value
@@ -246,7 +246,7 @@ func (u Uint64) Interface() any {
 	return u.value
 }
 
-// Equal checks if two Uint64 objects are equal.
+// Equal checks if two Uint64 typess are equal.
 func (u Uint64) Equal(other Object) bool {
 	if o, ok := other.(Uint64); ok {
 		return u.value == o.value

@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,9 +46,9 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []object.Object
+	var inPayloads []types.Object
 	for range inWriters {
-		inPayloads = append(inPayloads, object.NewString(faker.UUIDHyphenated()))
+		inPayloads = append(inPayloads, types.NewString(faker.UUIDHyphenated()))
 	}
 
 	for i, inWriter := range inWriters {
@@ -58,7 +58,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-outReader.Read():
-		assert.Equal(t, object.NewSlice(inPayloads...), outPck.Payload())
+		assert.Equal(t, types.NewSlice(inPayloads...), outPck.Payload())
 		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
@@ -108,9 +108,9 @@ func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []object.Object
+	var inPayloads []types.Object
 	for range inWriters {
-		inPayloads = append(inPayloads, object.NewString(faker.UUIDHyphenated()))
+		inPayloads = append(inPayloads, types.NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()

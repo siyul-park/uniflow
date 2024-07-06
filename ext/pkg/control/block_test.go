@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,7 +62,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -100,7 +100,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -127,7 +127,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 
 		n := NewBlockNode(
 			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return nil, packet.New(object.NewString(faker.UUIDHyphenated()))
+				return nil, packet.New(types.NewString(faker.UUIDHyphenated()))
 			}),
 			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil
@@ -147,7 +147,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -183,8 +183,8 @@ func TestBlockNodeCodec_Decode(t *testing.T) {
 
 	spec := &BlockNodeSpec{
 		Specs: []*spec.Unstructured{
-			spec.NewUnstructured(object.NewMap(
-				object.NewString(spec.KeyKind), object.NewString(kind),
+			spec.NewUnstructured(types.NewMap(
+				types.NewString(spec.KeyKind), types.NewString(kind),
 			)),
 		},
 	}

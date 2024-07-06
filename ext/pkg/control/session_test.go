@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +50,7 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
 
-	ioPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
+	ioPayload := types.NewMap(types.NewString("foo"), types.NewString("bar"))
 	ioPck := packet.New(ioPayload)
 
 	ioWriter.Write(ioPck)
@@ -62,7 +62,7 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload := object.NewMap(object.NewString("foo"), object.NewString("baz"))
+	inPayload := types.NewMap(types.NewString("foo"), types.NewString("baz"))
 	inPck := packet.New(inPayload)
 
 	out.Accept(port.ListenFunc(func(proc *process.Process) {
@@ -70,7 +70,7 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, object.NewSlice(ioPayload, inPayload), outPck.Payload())
+			assert.Equal(t, types.NewSlice(ioPayload, inPayload), outPck.Payload())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())

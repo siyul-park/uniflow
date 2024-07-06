@@ -6,12 +6,12 @@ import (
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // IfNode represents a node that evaluates a condition and forwards packets based on the result.
@@ -123,10 +123,10 @@ func (n *IfNode) forward(proc *process.Process) {
 		n.tracer.Read(inReader, inPck)
 
 		inPayload := inPck.Payload()
-		input := object.InterfaceOf(inPayload)
+		input := types.InterfaceOf(inPayload)
 
 		if ok, err := n.when(input); err != nil {
-			errPck := packet.New(object.NewError(err))
+			errPck := packet.New(types.NewError(err))
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else if ok {

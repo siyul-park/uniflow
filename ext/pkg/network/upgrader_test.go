@@ -10,10 +10,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -112,7 +112,7 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		ioWriter := io.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := object.NewString("invalid payload")
+		inPayload := types.NewString("invalid payload")
 		inPck := packet.New(inPayload)
 
 		ioWriter.Write(inPck)

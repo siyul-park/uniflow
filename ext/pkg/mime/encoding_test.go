@@ -6,44 +6,44 @@ import (
 	"net/textproto"
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEncode(t *testing.T) {
 	testCases := []struct {
-		whenValue object.Object
+		whenValue types.Object
 		whenType  string
 		expect    []byte
 	}{
 		{
-			whenValue: object.NewString("testtesttest"),
+			whenValue: types.NewString("testtesttest"),
 			whenType:  TextPlain,
 			expect:    []byte("testtesttest"),
 		},
 		{
-			whenValue: object.NewBinary([]byte("testtesttest")),
+			whenValue: types.NewBinary([]byte("testtesttest")),
 			whenType:  TextPlain,
 			expect:    []byte("testtesttest"),
 		},
 		{
-			whenValue: object.NewMap(
-				object.NewString("foo"), object.NewFloat64(1),
-				object.NewString("bar"), object.NewFloat64(2),
+			whenValue: types.NewMap(
+				types.NewString("foo"), types.NewFloat64(1),
+				types.NewString("bar"), types.NewFloat64(2),
 			),
 			whenType: ApplicationJSON,
 			expect:   []byte("{\"bar\":2,\"foo\":1}\n"),
 		},
 		{
-			whenValue: object.NewMap(
-				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
-				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
+			whenValue: types.NewMap(
+				types.NewString("foo"), types.NewSlice(types.NewString("foo")),
+				types.NewString("bar"), types.NewSlice(types.NewString("bar")),
 			),
 			whenType: ApplicationFormURLEncoded,
 			expect:   []byte("bar=bar&foo=foo"),
 		},
 		{
-			whenValue: object.NewMap(object.NewString("test"), object.NewString("test")),
+			whenValue: types.NewMap(types.NewString("test"), types.NewString("test")),
 			whenType:  MultipartFormData + "; boundary=MyBoundary",
 			expect: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"\r\n" +
@@ -52,33 +52,12 @@ func TestEncode(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 		{
-			whenValue: object.NewMap(
-				object.NewString("values"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewString("test")),
+			whenValue: types.NewMap(
+				types.NewString("values"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewString("test")),
 				),
-				object.NewString("files"), object.NewMap(
-					object.NewString("test"), object.NewString("test"),
-				),
-			),
-			whenType: MultipartFormData + "; boundary=MyBoundary",
-			expect: []byte("--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
-				"Content-Type: text/plain; charset=utf-8\r\n" +
-				"\r\n" +
-				"test\r\n" +
-				"--MyBoundary\r\n" +
-				"Content-Disposition: form-data; name=\"test\"\r\n" +
-				"\r\n" +
-				"test\r\n" +
-				"--MyBoundary--\r\n"),
-		},
-		{
-			whenValue: object.NewMap(
-				object.NewString("values"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewString("test")),
-				),
-				object.NewString("files"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewString("test")),
+				types.NewString("files"), types.NewMap(
+					types.NewString("test"), types.NewString("test"),
 				),
 			),
 			whenType: MultipartFormData + "; boundary=MyBoundary",
@@ -94,19 +73,40 @@ func TestEncode(t *testing.T) {
 				"--MyBoundary--\r\n"),
 		},
 		{
-			whenValue: object.NewMap(
-				object.NewString("values"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewString("test")),
+			whenValue: types.NewMap(
+				types.NewString("values"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewString("test")),
 				),
-				object.NewString("files"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewMap(
-						object.NewString("data"), object.NewBinary([]byte("test")),
-						object.NewString("filename"), object.NewString("test"),
-						object.NewString("header"), object.NewMap(
-							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
-							object.NewString("Content-Type"), object.NewSlice(object.NewString(ApplicationOctetStream)),
+				types.NewString("files"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewString("test")),
+				),
+			),
+			whenType: MultipartFormData + "; boundary=MyBoundary",
+			expect: []byte("--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
+				"Content-Type: text/plain; charset=utf-8\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary\r\n" +
+				"Content-Disposition: form-data; name=\"test\"\r\n" +
+				"\r\n" +
+				"test\r\n" +
+				"--MyBoundary--\r\n"),
+		},
+		{
+			whenValue: types.NewMap(
+				types.NewString("values"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewString("test")),
+				),
+				types.NewString("files"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewMap(
+						types.NewString("data"), types.NewBinary([]byte("test")),
+						types.NewString("filename"), types.NewString("test"),
+						types.NewString("header"), types.NewMap(
+							types.NewString("Content-Disposition"), types.NewSlice(types.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							types.NewString("Content-Type"), types.NewSlice(types.NewString(ApplicationOctetStream)),
 						),
-						object.NewString("size"), object.NewInt64(4),
+						types.NewString("size"), types.NewInt64(4),
 					)),
 				),
 			),
@@ -140,7 +140,7 @@ func TestDecode(t *testing.T) {
 	testCases := []struct {
 		whenValue []byte
 		whenType  string
-		expect    object.Object
+		expect    types.Object
 	}{
 		{
 			whenValue: []byte(`
@@ -150,23 +150,23 @@ func TestDecode(t *testing.T) {
 				}
 			`),
 			whenType: ApplicationJSON,
-			expect: object.NewMap(
-				object.NewString("foo"), object.NewFloat64(1),
-				object.NewString("bar"), object.NewFloat64(2),
+			expect: types.NewMap(
+				types.NewString("foo"), types.NewFloat64(1),
+				types.NewString("bar"), types.NewFloat64(2),
 			),
 		},
 		{
 			whenValue: []byte("foo=foo&bar=bar"),
 			whenType:  ApplicationFormURLEncoded,
-			expect: object.NewMap(
-				object.NewString("foo"), object.NewSlice(object.NewString("foo")),
-				object.NewString("bar"), object.NewSlice(object.NewString("bar")),
+			expect: types.NewMap(
+				types.NewString("foo"), types.NewSlice(types.NewString("foo")),
+				types.NewString("bar"), types.NewSlice(types.NewString("bar")),
 			),
 		},
 		{
 			whenValue: []byte("testtesttest"),
 			whenType:  TextPlain,
-			expect:    object.NewString("testtesttest"),
+			expect:    types.NewString("testtesttest"),
 		},
 		{
 			whenValue: []byte("--MyBoundary\r\n" +
@@ -180,19 +180,19 @@ func TestDecode(t *testing.T) {
 				"test\r\n" +
 				"--MyBoundary--\r\n"),
 			whenType: MultipartFormData + "; boundary=MyBoundary",
-			expect: object.NewMap(
-				object.NewString("values"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewString("test")),
+			expect: types.NewMap(
+				types.NewString("values"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewString("test")),
 				),
-				object.NewString("files"), object.NewMap(
-					object.NewString("test"), object.NewSlice(object.NewMap(
-						object.NewString("data"), object.NewBinary([]byte("test")),
-						object.NewString("filename"), object.NewString("test"),
-						object.NewString("header"), object.NewMap(
-							object.NewString("Content-Disposition"), object.NewSlice(object.NewString("form-data; name=\"test\"; filename=\"test\"")),
-							object.NewString("Content-Type"), object.NewSlice(object.NewString("application/octet-stream")),
+				types.NewString("files"), types.NewMap(
+					types.NewString("test"), types.NewSlice(types.NewMap(
+						types.NewString("data"), types.NewBinary([]byte("test")),
+						types.NewString("filename"), types.NewString("test"),
+						types.NewString("header"), types.NewMap(
+							types.NewString("Content-Disposition"), types.NewSlice(types.NewString("form-data; name=\"test\"; filename=\"test\"")),
+							types.NewString("Content-Type"), types.NewSlice(types.NewString("application/octet-stream")),
 						),
-						object.NewString("size"), object.NewInt64(4),
+						types.NewString("size"), types.NewInt64(4),
 					)),
 				),
 			),
@@ -200,7 +200,7 @@ func TestDecode(t *testing.T) {
 		{
 			whenValue: []byte("testtesttest"),
 			whenType:  ApplicationOctetStream,
-			expect:    object.NewBinary([]byte("testtesttest")),
+			expect:    types.NewBinary([]byte("testtesttest")),
 		},
 	}
 

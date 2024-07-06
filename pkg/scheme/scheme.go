@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Scheme is a registry for decoding Spec objects.
+// Scheme is a registry for decoding Spec typess.
 type Scheme struct {
 	types  map[string]reflect.Type
 	codecs map[string]Codec
@@ -76,7 +76,7 @@ func (s *Scheme) Decode(spc spec.Spec) (node.Node, error) {
 
 	if unstructured, ok := spc.(*spec.Unstructured); ok {
 		if structured, ok := s.Spec(kind); ok {
-			if err := object.Unmarshal(unstructured.Doc(), structured); err != nil {
+			if err := types.Unmarshal(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
 				spc = structured
@@ -96,19 +96,19 @@ func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc, err := object.MarshalBinary(structured)
+	doc, err := types.MarshalBinary(structured)
 	if err != nil {
 		return nil, err
 	}
-	return spec.NewUnstructured(doc.(object.Map)), nil
+	return spec.NewUnstructured(doc.(types.Map)), nil
 }
 
 // Structured converts the given Spec into a structured representation.
 func (s *Scheme) Structured(spc spec.Spec) (spec.Spec, error) {
 	if structured, ok := s.Spec(spc.GetKind()); ok {
-		if doc, err := object.MarshalBinary(spc); err != nil {
+		if doc, err := types.MarshalBinary(spc); err != nil {
 			return nil, err
-		} else if err := object.Unmarshal(doc, structured); err != nil {
+		} else if err := types.Unmarshal(doc, structured); err != nil {
 			return nil, err
 		} else {
 			return structured, nil

@@ -3,7 +3,7 @@ package store
 import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Stream is a stream to track spec.Spec changes.
@@ -27,7 +27,7 @@ func newStream(stream database.Stream) *Stream {
 				return
 			case e := <-s.stream.Next():
 				var id uuid.UUID
-				if err := object.Unmarshal(e.DocumentID, &id); err != nil {
+				if err := types.Unmarshal(e.DocumentID, &id); err != nil {
 					continue
 				}
 				var op eventOP

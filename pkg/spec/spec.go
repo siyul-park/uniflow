@@ -32,7 +32,7 @@ type Spec interface {
 	SetLinks(val map[string][]PortLocation)
 }
 
-// Meta represents metadata required by all persisted resources, including user-defined objects.
+// Meta represents metadata required by all persisted resources, including user-defined typess.
 type Meta struct {
 	ID          uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	Kind        string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`

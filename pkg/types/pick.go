@@ -1,4 +1,4 @@
-package object
+package types
 
 // Pick extracts a value from a nested structure using the provided paths.
 func Pick[T any](obj Object, paths ...any) (T, bool) {

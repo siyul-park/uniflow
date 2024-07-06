@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Collection is an interface for managing a collection in a database.
@@ -18,16 +18,16 @@ type Collection interface {
 	Watch(ctx context.Context, filter *Filter) (Stream, error)
 
 	// InsertOne inserts a single document into the collection.
-	InsertOne(ctx context.Context, doc object.Map) (object.Object, error)
+	InsertOne(ctx context.Context, doc types.Map) (types.Object, error)
 
 	// InsertMany inserts multiple documents into the collection.
-	InsertMany(ctx context.Context, docs []object.Map) ([]object.Object, error)
+	InsertMany(ctx context.Context, docs []types.Map) ([]types.Object, error)
 
 	// UpdateOne updates a single document in the collection matching the filter.
-	UpdateOne(ctx context.Context, filter *Filter, patch object.Map, options ...*UpdateOptions) (bool, error)
+	UpdateOne(ctx context.Context, filter *Filter, patch types.Map, options ...*UpdateOptions) (bool, error)
 
 	// UpdateMany updates multiple documents in the collection matching the filter.
-	UpdateMany(ctx context.Context, filter *Filter, patch object.Map, options ...*UpdateOptions) (int, error)
+	UpdateMany(ctx context.Context, filter *Filter, patch types.Map, options ...*UpdateOptions) (int, error)
 
 	// DeleteOne deletes a single document from the collection matching the filter.
 	DeleteOne(ctx context.Context, filter *Filter) (bool, error)
@@ -36,10 +36,10 @@ type Collection interface {
 	DeleteMany(ctx context.Context, filter *Filter) (int, error)
 
 	// FindOne finds a single document in the collection matching the filter.
-	FindOne(ctx context.Context, filter *Filter, options ...*FindOptions) (object.Map, error)
+	FindOne(ctx context.Context, filter *Filter, options ...*FindOptions) (types.Map, error)
 
 	// FindMany finds multiple documents in the collection matching the filter.
-	FindMany(ctx context.Context, filter *Filter, options ...*FindOptions) ([]object.Map, error)
+	FindMany(ctx context.Context, filter *Filter, options ...*FindOptions) ([]types.Map, error)
 
 	// Drop deletes the entire collection.
 	Drop(ctx context.Context) error

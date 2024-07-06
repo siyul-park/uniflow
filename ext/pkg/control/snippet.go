@@ -5,11 +5,11 @@ import (
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // SnippetNode represents a node that executes code snippets in various language.
@@ -41,12 +41,12 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := object.InterfaceOf(inPayload)
+	input := types.InterfaceOf(inPayload)
 
 	if output, err := n.fn(input); err != nil {
-		return nil, packet.New(object.NewError(err))
-	} else if outPayload, err := object.MarshalText(output); err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
+	} else if outPayload, err := types.MarshalText(output); err != nil {
+		return nil, packet.New(types.NewError(err))
 	} else {
 		return packet.New(outPayload), nil
 	}

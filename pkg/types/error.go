@@ -1,4 +1,4 @@
-package object
+package types
 
 import (
 	"hash/fnv"
@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// Error represents an error object.
+// Error represents an error types.
 
 type Error = *_error
 

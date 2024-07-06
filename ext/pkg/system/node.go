@@ -5,9 +5,9 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 const (
@@ -53,12 +53,12 @@ func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 			if patch, ok := lo.Find(specs, func(item *spec.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
-				if exist, err := object.MarshalText(exist); err != nil {
+				if exist, err := types.MarshalText(exist); err != nil {
 					return nil, err
 				} else {
-					exist := exist.(object.Map)
+					exist := exist.(types.Map)
 					patch := patch.Doc()
-					patches = append(patches, spec.NewUnstructured(object.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
+					patches = append(patches, spec.NewUnstructured(types.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
 				}
 			}
 		}

@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +38,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -68,7 +68,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -98,9 +98,9 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewSlice(
-			object.NewString(faker.UUIDHyphenated()),
-			object.NewString(faker.UUIDHyphenated()),
+		inPayload := types.NewSlice(
+			types.NewString(faker.UUIDHyphenated()),
+			types.NewString(faker.UUIDHyphenated()),
 		)
 		inPck := packet.New(inPayload)
 
@@ -131,7 +131,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -161,14 +161,14 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, object.NewSlice(inPayload, inPayload), outPck.Payload())
+			assert.Equal(t, types.NewSlice(inPayload, inPayload), outPck.Payload())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -195,7 +195,7 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		errReader := err.Open(proc)
 
-		inPayload := object.NewString(faker.UUIDHyphenated())
+		inPayload := types.NewString(faker.UUIDHyphenated())
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)

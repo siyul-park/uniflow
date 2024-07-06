@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // ReadNode represents a node responsible for reading data from an io.ReadCloser.
@@ -53,7 +53,7 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	inPayload := inPck.Payload()
 
 	var length int
-	_ = object.Unmarshal(inPayload, &length)
+	_ = types.Unmarshal(inPayload, &length)
 
 	var buf []byte
 	var err error
@@ -61,16 +61,16 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	if length <= 0 {
 		buf, err = io.ReadAll(n.reader)
 		if err != nil {
-			return nil, packet.New(object.NewError(err))
+			return nil, packet.New(types.NewError(err))
 		}
 	} else {
 		buf = make([]byte, length)
 		if _, err = n.reader.Read(buf); err != nil && err != io.EOF {
-			return nil, packet.New(object.NewError(err))
+			return nil, packet.New(types.NewError(err))
 		}
 	}
 
-	return packet.New(object.NewBinary(buf)), nil
+	return packet.New(types.NewBinary(buf)), nil
 }
 
 // NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.

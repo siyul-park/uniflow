@@ -14,18 +14,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 var (
-	keyValues = object.NewString("values")
-	keyFiles  = object.NewString("files")
+	keyValues = types.NewString("values")
+	keyFiles  = types.NewString("files")
 )
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
-// Encode encodes the given object into the writer with the specified MIME headers.
-func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) error {
+// Encode encodes the given types into the writer with the specified MIME headers.
+func Encode(writer io.Writer, value types.Object, header textproto.MIMEHeader) error {
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
 
@@ -59,10 +59,10 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 
 	switch typ {
 	case ApplicationJSON:
-		return json.NewEncoder(w).Encode(object.InterfaceOf(value))
+		return json.NewEncoder(w).Encode(types.InterfaceOf(value))
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
-		if err := object.Unmarshal(value, &urlValues); err != nil {
+		if err := types.Unmarshal(value, &urlValues); err != nil {
 			return err
 		}
 		_, err := w.Write([]byte(urlValues.Encode()))
@@ -80,15 +80,15 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			return err
 		}
 
-		writeField := func(obj object.Map, key object.Object) error {
-			if key, ok := key.(object.String); ok {
+		writeField := func(obj types.Map, key types.Object) error {
+			if key, ok := key.(types.String); ok {
 				value := obj.GetOr(key, nil)
 
-				var elements object.Slice
-				if v, ok := value.(object.Slice); ok {
+				var elements types.Slice
+				if v, ok := value.(types.Slice); ok {
 					elements = v
 				} else {
-					elements = object.NewSlice(value)
+					elements = types.NewSlice(value)
 				}
 
 				for _, element := range elements.Values() {
@@ -105,8 +105,8 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			return nil
 		}
 
-		writeFields := func(value object.Object) error {
-			if value, ok := value.(object.Map); ok {
+		writeFields := func(value types.Object) error {
+			if value, ok := value.(types.Map); ok {
 				for _, key := range value.Keys() {
 					if err := writeField(value, key); err != nil {
 						return err
@@ -116,33 +116,33 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			return nil
 		}
 
-		writeFiles := func(value object.Object) error {
-			if value, ok := value.(object.Map); ok {
+		writeFiles := func(value types.Object) error {
+			if value, ok := value.(types.Map); ok {
 				for _, key := range value.Keys() {
-					if key, ok := key.(object.String); ok {
+					if key, ok := key.(types.String); ok {
 						value := value.GetOr(key, nil)
 
-						var elements object.Slice
-						if v, ok := value.(object.Slice); ok {
+						var elements types.Slice
+						if v, ok := value.(types.Slice); ok {
 							elements = v
 						} else {
-							elements = object.NewSlice(value)
+							elements = types.NewSlice(value)
 						}
 
 						for _, element := range elements.Values() {
-							data, ok := object.Pick[object.Object](element, "data")
+							data, ok := types.Pick[types.Object](element, "data")
 							if !ok {
 								data = element
 							}
-							filename, ok := object.Pick[string](element, "filename")
+							filename, ok := types.Pick[string](element, "filename")
 							if !ok {
 								filename = key.String()
 							}
 
-							header, _ := object.Pick[object.Object](element, "header")
+							header, _ := types.Pick[types.Object](element, "header")
 
 							h := textproto.MIMEHeader{}
-							_ = object.Unmarshal(header, &h)
+							_ = types.Unmarshal(header, &h)
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
@@ -180,7 +180,7 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 			return nil
 		}
 
-		if v, ok := value.(object.Map); ok {
+		if v, ok := value.(types.Map); ok {
 			for _, key := range v.Keys() {
 				value := v.GetOr(key, nil)
 
@@ -202,10 +202,10 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	}
 
 	switch v := value.(type) {
-	case object.Binary:
+	case types.Binary:
 		_, err := w.Write(v.Bytes())
 		return err
-	case object.String:
+	case types.String:
 		_, err := w.Write([]byte(v.String()))
 		return err
 	default:
@@ -213,8 +213,8 @@ func Encode(writer io.Writer, value object.Object, header textproto.MIMEHeader) 
 	}
 }
 
-// Decode decodes the given reader with the specified MIME headers into an object.
-func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error) {
+// Decode decodes the given reader with the specified MIME headers into an types.
+func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Object, error) {
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
 
@@ -235,7 +235,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		if err := d.Decode(&data); err != nil {
 			return nil, err
 		}
-		return object.MarshalText(data)
+		return types.MarshalText(data)
 	case ApplicationFormURLEncoded:
 		data, err := io.ReadAll(r)
 		if err != nil {
@@ -245,13 +245,13 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 		if err != nil {
 			return nil, err
 		}
-		return object.MarshalText(v)
+		return types.MarshalText(v)
 	case TextPlain:
 		data, err := io.ReadAll(r)
 		if err != nil {
 			return nil, err
 		}
-		return object.NewString(string(data)), nil
+		return types.NewString(string(data)), nil
 	case MultipartFormData:
 		reader := multipart.NewReader(r, params["boundary"])
 
@@ -284,7 +284,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 			}
 		}
 
-		return object.MarshalText(map[string]any{
+		return types.MarshalText(map[string]any{
 			keyValues.String(): form.Value,
 			keyFiles.String():  files,
 		})
@@ -294,7 +294,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (object.Object, error
 	if err != nil {
 		return nil, err
 	}
-	return object.NewBinary(data), nil
+	return types.NewBinary(data), nil
 }
 
 func randomMultipartBoundary() string {

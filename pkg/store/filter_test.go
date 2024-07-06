@@ -6,8 +6,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,7 +69,7 @@ func TestFilterHelper(t *testing.T) {
 
 func TestFilter_Encode(t *testing.T) {
 	id := uuid.Must(uuid.NewV7())
-	pk := object.NewBinary(id.Bytes())
+	pk := types.NewBinary(id.Bytes())
 
 	testCases := []struct {
 		when   *Filter

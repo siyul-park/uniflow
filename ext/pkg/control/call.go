@@ -4,12 +4,12 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
@@ -115,7 +115,7 @@ func (n *CallNode) forward(proc *process.Process) {
 
 		n.tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
 			n.tracer.Transform(inPck, backPck)
-			if _, ok := backPck.Payload().(object.Error); ok {
+			if _, ok := backPck.Payload().(types.Error); ok {
 				n.tracer.Write(errWriter, backPck)
 			} else {
 				n.tracer.Write(outWriter1, backPck)

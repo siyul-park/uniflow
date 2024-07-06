@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -60,7 +60,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 }
 
 // InsertOne inserts a single document into the collection.
-func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Object, error) {
+func (c *Collection) InsertOne(ctx context.Context, doc types.Map) (types.Object, error) {
 	raw, err := primitiveToBson(doc)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Obje
 		return nil, errors.Wrap(database.ErrWrite, err.Error())
 	}
 
-	var id object.Object
+	var id types.Object
 	if err := bsonToPrimitive(res.InsertedID, &id); err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (c *Collection) InsertOne(ctx context.Context, doc object.Map) (object.Obje
 }
 
 // InsertMany inserts multiple documents into the collection.
-func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]object.Object, error) {
+func (c *Collection) InsertMany(ctx context.Context, docs []types.Map) ([]types.Object, error) {
 	var raws bson.A
 	for _, doc := range docs {
 		if raw, err := primitiveToBson(doc); err != nil {
@@ -94,9 +94,9 @@ func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]objec
 		return nil, errors.Wrap(database.ErrWrite, err.Error())
 	}
 
-	var ids []object.Object
+	var ids []types.Object
 	for _, insertedID := range res.InsertedIDs {
-		var id object.Object
+		var id types.Object
 		if err := bsonToPrimitive(insertedID, &id); err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (c *Collection) InsertMany(ctx context.Context, docs []object.Map) ([]objec
 }
 
 // UpdateOne updates a single document in the collection matching the filter with the provided patch.
-func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (bool, error) {
+func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, patch types.Map, opts ...*database.UpdateOptions) (bool, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
 		return false, err
@@ -126,7 +126,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 }
 
 // UpdateMany updates multiple documents in the collection matching the filter with the provided patch.
-func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch object.Map, opts ...*database.UpdateOptions) (int, error) {
+func (c *Collection) UpdateMany(ctx context.Context, filter *database.Filter, patch types.Map, opts ...*database.UpdateOptions) (int, error) {
 	raw, err := primitiveToBson(patch)
 	if err != nil {
 		return 0, err
@@ -175,7 +175,7 @@ func (c *Collection) DeleteMany(ctx context.Context, filter *database.Filter) (i
 }
 
 // FindOne retrieves a single document from the collection matching the filter.
-func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (object.Map, error) {
+func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) (types.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 		return nil, errors.Wrap(database.ErrRead, res.Err().Error())
 	}
 
-	var doc object.Object
+	var doc types.Object
 	var r any
 	if err := res.Decode(&r); err != nil {
 		return nil, err
@@ -197,11 +197,11 @@ func (c *Collection) FindOne(ctx context.Context, filter *database.Filter, opts 
 	if err := bsonToPrimitive(r, &doc); err != nil {
 		return nil, err
 	}
-	return doc.(object.Map), nil
+	return doc.(types.Map), nil
 }
 
 // FindMany retrieves multiple documents from the collection matching the filter.
-func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]object.Map, error) {
+func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts ...*database.FindOptions) ([]types.Map, error) {
 	f, err := filterToBson(filter)
 	if err != nil {
 		return nil, err
@@ -212,9 +212,9 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 		return nil, errors.Wrap(database.ErrRead, err.Error())
 	}
 
-	var docs []object.Map
+	var docs []types.Map
 	for cursor.Next(ctx) {
-		var doc object.Object
+		var doc types.Object
 		var r any
 		if err := cursor.Decode(&r); err != nil {
 			return nil, err
@@ -222,7 +222,7 @@ func (c *Collection) FindMany(ctx context.Context, filter *database.Filter, opts
 		if err := bsonToPrimitive(r, &doc); err != nil {
 			return nil, err
 		}
-		docs = append(docs, doc.(object.Map))
+		docs = append(docs, doc.(types.Map))
 	}
 
 	return docs, nil

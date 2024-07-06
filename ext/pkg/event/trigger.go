@@ -4,12 +4,12 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // TriggerNode represents a node that triggers events.
@@ -113,8 +113,8 @@ func (n *TriggerNode) Listen() {
 			outWriter := n.outPort.Open(proc)
 			errWriter := n.errPort.Open(proc)
 
-			if outPayload, err := object.MarshalText(e.Data()); err != nil {
-				errPck := packet.New(object.NewError(err))
+			if outPayload, err := types.MarshalText(e.Data()); err != nil {
+				errPck := packet.New(types.NewError(err))
 				packet.Call(errWriter, errPck)
 			} else {
 				outPck := packet.New(outPayload)
@@ -177,7 +177,7 @@ func (n *TriggerNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		e := New(object.InterfaceOf(inPayload))
+		e := New(types.InterfaceOf(inPayload))
 		n.producer.Produce(e)
 
 		inReader.Receive(packet.None)

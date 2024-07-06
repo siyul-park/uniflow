@@ -12,12 +12,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // HTTPListenNode represents a Node for handling HTTP requests.
@@ -164,9 +164,9 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var errPck *packet.Packet
 	req, err := n.read(r)
 	if err != nil {
-		errPck = packet.New(object.NewError(err))
-	} else if outPayload, err := object.MarshalText(req); err != nil {
-		errPck = packet.New(object.NewError(err))
+		errPck = packet.New(types.NewError(err))
+	} else if outPayload, err := types.MarshalText(req); err != nil {
+		errPck = packet.New(types.NewError(err))
 	} else {
 		outPck = packet.New(outPayload)
 	}
@@ -176,7 +176,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		backPck = packet.Call(errWriter, errPck)
 	} else {
 		backPck = packet.Call(outWriter, outPck)
-		if _, ok := backPck.Payload().(object.Error); ok {
+		if _, ok := backPck.Payload().(types.Error); ok {
 			backPck = packet.CallOrFallback(errWriter, backPck, backPck)
 		}
 	}
@@ -184,9 +184,9 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = nil
 	if backPck != packet.None {
 		var res *HTTPPayload
-		if _, ok := backPck.Payload().(object.Error); ok {
+		if _, ok := backPck.Payload().(types.Error); ok {
 			res = NewHTTPPayload(http.StatusInternalServerError)
-		} else if err := object.Unmarshal(backPck.Payload(), &res); err != nil {
+		} else if err := types.Unmarshal(backPck.Payload(), &res); err != nil {
 			res.Body = backPck.Payload()
 		}
 

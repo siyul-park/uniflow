@@ -5,25 +5,25 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDetectTypes(t *testing.T) {
 	testCases := []struct {
-		when object.Object
+		when types.Object
 	}{
 		{
-			when: object.NewBinary(nil),
+			when: types.NewBinary(nil),
 		},
 		{
-			when: object.NewString(""),
+			when: types.NewString(""),
 		},
 		{
-			when: object.NewSlice(),
+			when: types.NewSlice(),
 		},
 		{
-			when: object.NewMap(),
+			when: types.NewMap(),
 		},
 	}
 

@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/phayes/freeport"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -91,7 +91,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		}
 	}))
 
-	var inPayload object.Object
+	var inPayload types.Object
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
@@ -102,9 +102,9 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = object.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
-		Data: object.NewString(faker.UUIDHyphenated()),
+		Data: types.NewString(faker.UUIDHyphenated()),
 	})
 	inPck = packet.New(inPayload)
 
@@ -116,7 +116,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = object.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)
@@ -177,14 +177,14 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader := out.Open(proc)
 
-	var inPayload object.Object
+	var inPayload types.Object
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
 
-	inPayload, _ = object.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.MarshalText(&WebSocketPayload{
 		Type: websocket.TextMessage,
-		Data: object.NewString(faker.UUIDHyphenated()),
+		Data: types.NewString(faker.UUIDHyphenated()),
 	})
 	inPck = packet.New(inPayload)
 
@@ -196,7 +196,7 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 		outReader.Receive(outPck)
 	}
 
-	inPayload, _ = object.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.MarshalText(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)

@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,14 +42,14 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewString(faker.UUIDHyphenated())
+	inPayload := types.NewString(faker.UUIDHyphenated())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, object.NewInt64(int64(inPayload.Len())), outPck.Payload())
+		assert.Equal(t, types.NewInt64(int64(inPayload.Len())), outPck.Payload())
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

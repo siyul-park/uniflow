@@ -11,11 +11,11 @@ import (
 
 	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // HTTPNode represents a node for making HTTP client requests.
@@ -35,15 +35,15 @@ type HTTPNodeSpec struct {
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
-	Method string        `map:"method,omitempty"`
-	Scheme string        `map:"scheme,omitempty"`
-	Host   string        `map:"host,omitempty"`
-	Path   string        `map:"path,omitempty"`
-	Query  url.Values    `map:"query,omitempty"`
-	Proto  string        `map:"proto,omitempty"`
-	Header http.Header   `map:"header,omitempty"`
-	Body   object.Object `map:"body,omitempty"`
-	Status int           `map:"status"`
+	Method string       `map:"method,omitempty"`
+	Scheme string       `map:"scheme,omitempty"`
+	Host   string       `map:"host,omitempty"`
+	Path   string       `map:"path,omitempty"`
+	Query  url.Values   `map:"query,omitempty"`
+	Proto  string       `map:"proto,omitempty"`
+	Header http.Header  `map:"header,omitempty"`
+	Body   types.Object `map:"body,omitempty"`
+	Status int          `map:"status"`
 }
 
 const KindHTTP = "http"
@@ -79,7 +79,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Query:  make(url.Values),
 		Header: make(http.Header),
 	}
-	if err := object.Unmarshal(inPck.Payload(), &req); err != nil {
+	if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
 		req.Body = inPck.Payload()
 	}
 	if req.Method != "" {
@@ -112,7 +112,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 	buf := bytes.NewBuffer(nil)
 	if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 
 	u := &url.URL{
@@ -124,7 +124,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 	r, err := http.NewRequest(req.Method, u.String(), buf)
 	if err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 	r = r.WithContext(ctx)
 
@@ -132,13 +132,13 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 	w, err := client.Do(r)
 	if err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 	defer w.Body.Close()
 
 	body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header))
 	if err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 
 	res := &HTTPPayload{
@@ -146,9 +146,9 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Body:   body,
 	}
 
-	outPayload, err := object.MarshalText(res)
+	outPayload, err := types.MarshalText(res)
 	if err != nil {
-		return nil, packet.New(object.NewError(err))
+		return nil, packet.New(types.NewError(err))
 	}
 	return packet.New(outPayload), nil
 }
@@ -168,9 +168,9 @@ func NewHTTPNodeCodec() scheme.Codec {
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...object.Object) *HTTPPayload {
+func NewHTTPPayload(status int, body ...types.Object) *HTTPPayload {
 	if len(body) == 0 {
-		body = []object.Object{object.NewString(http.StatusText(status))}
+		body = []types.Object{types.NewString(http.StatusText(status))}
 	}
 	return &HTTPPayload{
 		Header: http.Header{},

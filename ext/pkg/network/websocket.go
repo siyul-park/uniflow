@@ -12,12 +12,12 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // WebSocketNode represents a node for establishing WebSocket client connections.
@@ -47,8 +47,8 @@ type WebSocketNodeSpec struct {
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
-	Type int           `map:"type"`
-	Data object.Object `map:"data,omitempty"`
+	Type int          `map:"type"`
+	Data types.Object `map:"data,omitempty"`
 }
 
 const KindWebSocket = "websocket"
@@ -82,7 +82,7 @@ func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*w
 	defer cancel()
 
 	u := &url.URL{}
-	_ = object.Unmarshal(inPck.Payload(), &u)
+	_ = types.Unmarshal(inPck.Payload(), &u)
 
 	if n.url.Scheme != "" {
 		u.Scheme = n.url.Scheme
@@ -178,7 +178,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 		}
 
 		if conn, err := n.action(proc, inPck); err != nil {
-			errPck := packet.New(object.NewError(err))
+			errPck := packet.New(types.NewError(err))
 			backPck := packet.CallOrFallback(errWriter, errPck, errPck)
 			ioReader.Receive(backPck)
 		} else {
@@ -212,9 +212,9 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 		}
 
 		var inPayload *WebSocketPayload
-		if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+		if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()
-			if _, ok := inPayload.Data.(object.Binary); !ok {
+			if _, ok := inPayload.Data.(types.Binary); !ok {
 				inPayload.Type = websocket.TextMessage
 			} else {
 				inPayload.Type = websocket.BinaryMessage
@@ -229,7 +229,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 		})
 
 		if err := mime.Encode(w, inPayload.Data, textproto.MIMEHeader{}); err != nil {
-			errPck := packet.New(object.NewError(err))
+			errPck := packet.New(types.NewError(err))
 			if errWriter.Write(errPck) > 0 {
 				<-errWriter.Receive()
 			}
@@ -263,10 +263,10 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 			mime.HeaderContentType: []string{http.DetectContentType(p)},
 		})
 		if err != nil {
-			data = object.NewString(err.Error())
+			data = types.NewString(err.Error())
 		}
 
-		outPayload, _ := object.MarshalText(&WebSocketPayload{
+		outPayload, _ := types.MarshalText(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})

@@ -7,11 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // SyscallNode represents a node for executing internal calls.
@@ -66,13 +66,13 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	if remains := len(ins) - offset; remains == 1 {
 		in := reflect.New(n.operator.Type().In(offset))
-		if err := object.Unmarshal(inPayload, in.Interface()); err != nil {
-			return nil, packet.New(object.NewError(err))
+		if err := types.Unmarshal(inPayload, in.Interface()); err != nil {
+			return nil, packet.New(types.NewError(err))
 		}
 		ins[offset] = in.Elem()
 	} else if remains > 1 {
-		var arguments []object.Object
-		if v, ok := inPayload.(object.Slice); ok {
+		var arguments []types.Object
+		if v, ok := inPayload.(types.Slice); ok {
 			arguments = v.Values()
 		} else {
 			arguments = append(arguments, v)
@@ -80,8 +80,8 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 		for i := offset; i < len(ins); i++ {
 			in := reflect.New(n.operator.Type().In(i))
-			if err := object.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
-				return nil, packet.New(object.NewError(err))
+			if err := types.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
+				return nil, packet.New(types.NewError(err))
 			}
 			ins[i] = in.Elem()
 		}
@@ -95,15 +95,15 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 		if err, ok := last.(error); ok {
 			if err != nil {
-				return nil, packet.New(object.NewError(err))
+				return nil, packet.New(types.NewError(err))
 			}
 		}
 	}
 
-	outPayloads := make([]object.Object, len(outs))
+	outPayloads := make([]types.Object, len(outs))
 	for i, out := range outs {
-		if outPayload, err := object.MarshalText(out.Interface()); err != nil {
-			return nil, packet.New(object.NewError(err))
+		if outPayload, err := types.MarshalText(out.Interface()); err != nil {
+			return nil, packet.New(types.NewError(err))
 		} else {
 			outPayloads[i] = outPayload
 		}
@@ -115,7 +115,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	if len(outPayloads) == 1 {
 		return packet.New(outPayloads[0]), nil
 	}
-	return packet.New(object.NewSlice(outPayloads...)), nil
+	return packet.New(types.NewSlice(outPayloads...)), nil
 }
 
 // NewSyscallNodeCodec creates a new codec for SyscallNodeSpec.

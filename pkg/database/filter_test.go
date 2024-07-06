@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterHelper(t *testing.T) {
 	key := faker.UUIDHyphenated()
-	value := object.NewString(faker.UUIDHyphenated())
+	value := types.NewString(faker.UUIDHyphenated())
 
 	var testCase = []struct {
 		when   *Filter
@@ -35,11 +35,11 @@ func TestFilterHelper(t *testing.T) {
 		},
 		{
 			when:   Where(key).In(value),
-			expect: &Filter{OP: IN, Key: key, Value: object.NewSlice(value)},
+			expect: &Filter{OP: IN, Key: key, Value: types.NewSlice(value)},
 		},
 		{
 			when:   Where(key).NotIn(value),
-			expect: &Filter{OP: NIN, Key: key, Value: object.NewSlice(value)},
+			expect: &Filter{OP: NIN, Key: key, Value: types.NewSlice(value)},
 		},
 		{
 			when:   Where(key).IsNull(),
@@ -72,15 +72,15 @@ func TestFilter_String(t *testing.T) {
 		expect string
 	}{
 		{
-			when:   Where("1").Equal(object.NewString("1")),
+			when:   Where("1").Equal(types.NewString("1")),
 			expect: "1 = \"1\"",
 		},
 		{
-			when:   Where("1").Equal(object.NewInt64(1)),
+			when:   Where("1").Equal(types.NewInt64(1)),
 			expect: "1 = 1",
 		},
 		{
-			when:   Where("1").Equal(object.True),
+			when:   Where("1").Equal(types.True),
 			expect: "1 = true",
 		},
 		{
@@ -89,15 +89,15 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").NotEqual(object.NewString("1")),
+			when:   Where("1").NotEqual(types.NewString("1")),
 			expect: "1 != \"1\"",
 		},
 		{
-			when:   Where("1").NotEqual(object.NewInt64(1)),
+			when:   Where("1").NotEqual(types.NewInt64(1)),
 			expect: "1 != 1",
 		},
 		{
-			when:   Where("1").NotEqual(object.True),
+			when:   Where("1").NotEqual(types.True),
 			expect: "1 != true",
 		},
 		{
@@ -106,56 +106,56 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").LessThan(object.NewString("1")),
+			when:   Where("1").LessThan(types.NewString("1")),
 			expect: "1 < \"1\"",
 		},
 		{
-			when:   Where("1").LessThan(object.NewInt64(1)),
+			when:   Where("1").LessThan(types.NewInt64(1)),
 			expect: "1 < 1",
 		},
 
 		{
-			when:   Where("1").LessThanOrEqual(object.NewString("1")),
+			when:   Where("1").LessThanOrEqual(types.NewString("1")),
 			expect: "1 <= \"1\"",
 		},
 		{
-			when:   Where("1").LessThanOrEqual(object.NewInt64(1)),
+			when:   Where("1").LessThanOrEqual(types.NewInt64(1)),
 			expect: "1 <= 1",
 		},
 
 		{
-			when:   Where("1").GreaterThan(object.NewString("1")),
+			when:   Where("1").GreaterThan(types.NewString("1")),
 			expect: "1 > \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThan(object.NewInt64(1)),
+			when:   Where("1").GreaterThan(types.NewInt64(1)),
 			expect: "1 > 1",
 		},
 
 		{
-			when:   Where("1").GreaterThanOrEqual(object.NewString("1")),
+			when:   Where("1").GreaterThanOrEqual(types.NewString("1")),
 			expect: "1 >= \"1\"",
 		},
 		{
-			when:   Where("1").GreaterThanOrEqual(object.NewInt64(1)),
+			when:   Where("1").GreaterThanOrEqual(types.NewInt64(1)),
 			expect: "1 >= 1",
 		},
 
 		{
-			when:   Where("1").In(object.NewString("1")),
+			when:   Where("1").In(types.NewString("1")),
 			expect: "1 IN [\"1\"]",
 		},
 		{
-			when:   Where("1").In(object.NewInt64(1)),
+			when:   Where("1").In(types.NewInt64(1)),
 			expect: "1 IN [1]",
 		},
 
 		{
-			when:   Where("1").NotIn(object.NewString("1")),
+			when:   Where("1").NotIn(types.NewString("1")),
 			expect: "1 NOT IN [\"1\"]",
 		},
 		{
-			when:   Where("1").NotIn(object.NewInt64(1)),
+			when:   Where("1").NotIn(types.NewInt64(1)),
 			expect: "1 NOT IN [1]",
 		},
 
@@ -169,25 +169,25 @@ func TestFilter_String(t *testing.T) {
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInt64(1)).And(Where("2").Equal(object.NewInt64(2))),
+			when:   Where("1").Equal(types.NewInt64(1)).And(Where("2").Equal(types.NewInt64(2))),
 			expect: "(1 = 1) AND (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(object.NewInt64(1)).And(Where("2").Equal(object.NewInt64(2))).And(Where("3").Equal(object.NewInt64(3))),
+			when:   Where("1").Equal(types.NewInt64(1)).And(Where("2").Equal(types.NewInt64(2))).And(Where("3").Equal(types.NewInt64(3))),
 			expect: "((1 = 1) AND (2 = 2)) AND (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInt64(1)).Or(Where("2").Equal(object.NewInt64(2))),
+			when:   Where("1").Equal(types.NewInt64(1)).Or(Where("2").Equal(types.NewInt64(2))),
 			expect: "(1 = 1) OR (2 = 2)",
 		},
 		{
-			when:   Where("1").Equal(object.NewInt64(1)).Or(Where("2").Equal(object.NewInt64(2))).Or(Where("3").Equal(object.NewInt64(3))),
+			when:   Where("1").Equal(types.NewInt64(1)).Or(Where("2").Equal(types.NewInt64(2))).Or(Where("3").Equal(types.NewInt64(3))),
 			expect: "((1 = 1) OR (2 = 2)) OR (3 = 3)",
 		},
 
 		{
-			when:   Where("1").Equal(object.NewInt64(1)).And(Where("2").Equal(object.NewInt64(2))).Or(Where("3").Equal(object.NewInt64(3))),
+			when:   Where("1").Equal(types.NewInt64(1)).And(Where("2").Equal(types.NewInt64(2))).Or(Where("3").Equal(types.NewInt64(3))),
 			expect: "((1 = 1) AND (2 = 2)) OR (3 = 3)",
 		},
 	}

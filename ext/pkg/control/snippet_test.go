@@ -9,10 +9,10 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/ext/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +39,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := object.NewString(faker.Word())
+	inPayload := types.NewString(faker.Word())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -83,7 +83,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload object.Object
+	var inPayload types.Object
 	inPck := packet.New(inPayload)
 
 	b.ResetTimer()

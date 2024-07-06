@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +21,7 @@ func TestIndexView_List(t *testing.T, indexView database.IndexView) {
 		Keys:    []string{"sub_key"},
 		Name:    faker.UUIDHyphenated(),
 		Unique:  false,
-		Partial: database.Where("type").Equal(object.NewString("any")),
+		Partial: database.Where("type").Equal(types.NewString("any")),
 	}
 
 	err := indexView.Create(ctx, model)

@@ -1,4 +1,4 @@
-package object
+package types
 
 // Object is an interface that signifies atomic data types.
 type Object interface {

@@ -12,10 +12,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -129,7 +129,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 				inPayload := inPck.Payload()
 
 				var req *HTTPPayload
-				_ = object.Unmarshal(inPayload, &req)
+				_ = types.Unmarshal(inPayload, &req)
 
 				outPck := packet.New(req.Body)
 				outReader.Receive(outPck)
@@ -165,7 +165,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.New(object.NewError(err))
+				errPck := packet.New(types.NewError(err))
 				outReader.Receive(errPck)
 			}
 		}))
@@ -200,7 +200,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 				err := errors.New(faker.Sentence())
 
-				errPck := packet.New(object.NewError(err))
+				errPck := packet.New(types.NewError(err))
 				outReader.Receive(errPck)
 			}
 		}))
@@ -213,9 +213,9 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 					return
 				}
 
-				err, _ := inPck.Payload().(object.Error)
+				err, _ := inPck.Payload().(types.Error)
 
-				outPck := packet.New(object.NewString(err.Error()))
+				outPck := packet.New(types.NewString(err.Error()))
 				errReader.Receive(outPck)
 			}
 		}))

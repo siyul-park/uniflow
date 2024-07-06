@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/tidwall/btree"
 )
 
@@ -21,16 +21,16 @@ type Constraint struct {
 	Name    string
 	Keys    []string
 	Unique  bool
-	Partial func(object.Map) bool
+	Partial func(types.Map) bool
 }
 
 type node struct {
-	key   object.Object
-	value object.Map
+	key   types.Object
+	value types.Map
 }
 
 type index struct {
-	key   object.Object
+	key   types.Object
 	value *btree.BTreeG[index]
 }
 
@@ -53,14 +53,14 @@ var (
 	ErrPKDuplicated = errors.New("primary key is duplicated")
 )
 
-var keyID = object.NewString("id")
+var keyID = types.NewString("id")
 
 var (
 	nodeComparator = func(x, y node) bool {
-		return object.Compare(x.key, y.key) < 0
+		return types.Compare(x.key, y.key) < 0
 	}
 	indexComparator = func(x, y index) bool {
-		return object.Compare(x.key, y.key) < 0
+		return types.Compare(x.key, y.key) < 0
 	}
 )
 
@@ -135,7 +135,7 @@ func (s *Section) Constraints() []Constraint {
 }
 
 // Set inserts a document into the Section with the primary key.
-func (s *Section) Set(doc object.Map) (object.Object, error) {
+func (s *Section) Set(doc types.Map) (types.Object, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -159,7 +159,7 @@ func (s *Section) Set(doc object.Map) (object.Object, error) {
 }
 
 // Delete removes a document from the Section.
-func (s *Section) Delete(doc object.Map) bool {
+func (s *Section) Delete(doc types.Map) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -181,7 +181,7 @@ func (s *Section) Delete(doc object.Map) bool {
 }
 
 // Range iterates over all documents in the Section and applies the given function.
-func (s *Section) Range(f func(doc object.Map) bool) {
+func (s *Section) Range(f func(doc types.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -191,7 +191,7 @@ func (s *Section) Range(f func(doc object.Map) bool) {
 }
 
 // Scan performs a range scan on a specific index within the Section.
-func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
+func (s *Section) Scan(name string, min, max types.Object) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -213,11 +213,11 @@ func (s *Section) Scan(name string, min, max object.Object) (*Sector, bool) {
 }
 
 // Drop clears all data and indexes in the Section and returns the deleted data.
-func (s *Section) Drop() []object.Map {
+func (s *Section) Drop() []types.Map {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var data []object.Map
+	var data []types.Map
 	s.data.Scan(func(n node) bool {
 		data = append(data, n.value)
 		return true
@@ -231,7 +231,7 @@ func (s *Section) Drop() []object.Map {
 	return data
 }
 
-func (s *Section) index(doc object.Map) error {
+func (s *Section) index(doc types.Map) error {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return errors.WithStack(ErrPKNotFound)
@@ -246,7 +246,7 @@ func (s *Section) index(doc object.Map) error {
 		cur := s.indexes[i]
 
 		for i, k := range constraint.Keys {
-			value, _ := object.Pick[object.Object](doc, k)
+			value, _ := types.Pick[types.Object](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {
@@ -269,7 +269,7 @@ func (s *Section) index(doc object.Map) error {
 	return nil
 }
 
-func (s *Section) unindex(doc object.Map) {
+func (s *Section) unindex(doc types.Map) {
 	id, ok := doc.Get(keyID)
 	if !ok {
 		return
@@ -281,7 +281,7 @@ func (s *Section) unindex(doc object.Map) {
 		paths := []index{{value: cur}}
 
 		for i, k := range constraint.Keys {
-			value, _ := object.Pick[object.Object](doc, k)
+			value, _ := types.Pick[types.Object](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {

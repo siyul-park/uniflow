@@ -1,9 +1,9 @@
 package scanner
 
 import (
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // SpecCodecOptions holds options for creating a SpecCodec.
@@ -40,12 +40,12 @@ func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 
 // Decode decodes raw data into a spec.Spec instance.
 func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
-	doc, err := object.MarshalBinary(data)
+	doc, err := types.MarshalBinary(data)
 	if err != nil {
 		return nil, err
 	}
 
-	unstructured := spec.NewUnstructured(doc.(object.Map))
+	unstructured := spec.NewUnstructured(doc.(types.Map))
 
 	if unstructured.GetNamespace() == "" {
 		if c.namespace != "" {
@@ -61,7 +61,7 @@ func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
 
 	if spec, ok := c.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
-	} else if err := object.Unmarshal(doc, spec); err != nil {
+	} else if err := types.Unmarshal(doc, spec); err != nil {
 		return nil, err
 	} else {
 		return spec, nil

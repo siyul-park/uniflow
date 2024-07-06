@@ -6,12 +6,12 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Unstructured is a data structure that implements the Spec interface and is not marshaled for structuring.
 type Unstructured struct {
-	doc object.Map
+	doc types.Map
 	mu  sync.RWMutex
 }
 
@@ -26,13 +26,13 @@ const (
 )
 
 var _ Spec = (*Unstructured)(nil)
-var _ object.Marshaler = (*Unstructured)(nil)
-var _ object.Unmarshaler = (*Unstructured)(nil)
+var _ types.Marshaler = (*Unstructured)(nil)
+var _ types.Unmarshaler = (*Unstructured)(nil)
 
-// NewUnstructured returns a new Unstructured instance with an optional object.Map.
-func NewUnstructured(doc object.Map) *Unstructured {
+// NewUnstructured returns a new Unstructured instance with an optional types.Map.
+func NewUnstructured(doc types.Map) *Unstructured {
 	if doc == nil {
-		doc = object.NewMap()
+		doc = types.NewMap()
 	}
 
 	return &Unstructured{doc: doc}
@@ -109,37 +109,37 @@ func (u *Unstructured) Get(key string) (any, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
-	v, _ := u.doc.Get(object.NewString(key))
+	v, _ := u.doc.Get(types.NewString(key))
 
 	var value any
 	var err error
 	switch key {
 	case KeyID:
 		var encoded uuid.UUID
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyKind:
 		var encoded string
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyNamespace:
 		var encoded string
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyName:
 		var encoded string
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyAnnotations:
 		var encoded map[string]string
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	case KeyLinks:
 		var encoded map[string][]PortLocation
-		err = object.Unmarshal(v, &encoded)
+		err = types.Unmarshal(v, &encoded)
 		value = encoded
 	default:
-		err = object.Unmarshal(v, &value)
+		err = types.Unmarshal(v, &value)
 	}
 	return value, err
 }
@@ -149,10 +149,10 @@ func (u *Unstructured) Set(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, err := object.MarshalBinary(val); err != nil {
+	if v, err := types.MarshalBinary(val); err != nil {
 		return err
 	} else {
-		u.doc = u.doc.Set(object.NewString(key), v)
+		u.doc = u.doc.Set(types.NewString(key), v)
 	}
 	return nil
 }
@@ -162,40 +162,40 @@ func (u *Unstructured) GetOrSet(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, ok := u.doc.Get(object.NewString(key)); ok {
-		if err := object.Unmarshal(v, val); err != nil {
+	if v, ok := u.doc.Get(types.NewString(key)); ok {
+		if err := types.Unmarshal(v, val); err != nil {
 			return err
 		}
-	} else if v, err := object.MarshalBinary(val); err != nil {
+	} else if v, err := types.MarshalBinary(val); err != nil {
 		return err
 	} else {
-		u.doc = u.doc.Set(object.NewString(key), v)
+		u.doc = u.doc.Set(types.NewString(key), v)
 	}
 	return nil
 }
 
-// Doc returns the raw object of the Unstructured.
-func (u *Unstructured) Doc() object.Map {
+// Doc returns the raw types of the Unstructured.
+func (u *Unstructured) Doc() types.Map {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.doc
 }
 
-// MarshalObject convert Unstructured to object.Value.
-func (u *Unstructured) MarshalObject() (object.Object, error) {
+// MarshalObject convert Unstructured to types.Value.
+func (u *Unstructured) MarshalObject() (types.Object, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.doc, nil
 }
 
-// UnmarshalObject convert object.Value to Unstructured.
-func (u *Unstructured) UnmarshalObject(value object.Object) error {
+// UnmarshalObject convert types.Value to Unstructured.
+func (u *Unstructured) UnmarshalObject(value types.Object) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, ok := value.(object.Map); ok {
+	if v, ok := value.(types.Map); ok {
 		u.doc = v
 		return nil
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/oliveagle/jsonpath"
-	"github.com/siyul-park/uniflow/pkg/object"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // TableColumnDefinition represents the definition of a table column.
@@ -100,16 +100,16 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 
 // Print formats and prints the provided data as a table.
 func (p *TablePrinter) Print(data any) (string, error) {
-	value, err := object.MarshalText(data)
+	value, err := types.MarshalText(data)
 	if err != nil {
 		return "", err
 	}
 
 	var elements []any
 	switch v := value.(type) {
-	case object.Slice:
+	case types.Slice:
 		elements = v.Slice()
-	case object.Map:
+	case types.Map:
 		elements = append(elements, v.Interface())
 	default:
 		return "", errors.New("unsupported data type")

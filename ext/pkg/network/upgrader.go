@@ -9,11 +9,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/object"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // WebSocketUpgradeNode is a node for upgrading an HTTP connection to a WebSocket connection.
@@ -92,7 +92,7 @@ func (n *WebSocketUpgradeNode) WriteBufferSize() int {
 
 func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	var inPayload *HTTPPayload
-	if err := object.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+	if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
 	}
 
