@@ -1,14 +1,12 @@
 package memdb
 
 import (
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/object"
 )
-
-var numberSubPath = regexp.MustCompile(`\[([0-9]+)\]`)
 
 func parseFilter(filter *database.Filter) func(object.Map) bool {
 	if filter == nil {
@@ -174,7 +172,30 @@ func extractIDByFilter(filter *database.Filter) object.Object {
 	}
 }
 
-func parsePath(key string) []string {
-	key = numberSubPath.ReplaceAllString(key, ".$1")
-	return strings.Split(key, ".")
+func parsePath(key string) []any {
+	tokens := strings.Split(key, ".")
+	paths := make([]any, 0, len(tokens))
+
+	for _, token := range tokens {
+		if strings.Contains(token, "[") && strings.Contains(token, "]") {
+			start := strings.Index(token, "[")
+			end := strings.Index(token, "]")
+
+			key1 := token[:start]
+			key2 := token[start+1 : end]
+
+			if index, err := strconv.Atoi(key2); err == nil {
+				paths = append(paths, key1, index)
+			} else if strings.HasPrefix(key2, "\"") && strings.HasSuffix(key2, "\"") {
+				key2 = key2[1 : len(key2)-1]
+				paths = append(paths, key1, key2)
+			} else {
+				paths = append(paths, key1, key2)
+			}
+		} else {
+			paths = append(paths, token)
+		}
+	}
+
+	return paths
 }

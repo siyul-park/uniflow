@@ -50,9 +50,6 @@ func NewBlockNode(nodes ...node.Node) *BlockNode {
 		inPort := port.NewIn()
 		outPort := port.NewOut()
 
-		inPort.Accept(port.ListenFunc(n.throw))
-		outPort.Accept(port.ListenFunc(n.catch))
-
 		n.inPorts[node.PortErr] = inPort
 		n.outPorts[node.PortErr] = outPort
 
@@ -61,6 +58,9 @@ func NewBlockNode(nodes ...node.Node) *BlockNode {
 				err.Link(inPort)
 			}
 		}
+
+		inPort.Accept(port.ListenFunc(n.throw))
+		outPort.Accept(port.ListenFunc(n.catch))
 	}
 
 	return n

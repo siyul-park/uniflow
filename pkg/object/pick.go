@@ -1,39 +1,42 @@
 package object
 
-import (
-	"strconv"
-)
-
-func Pick[T any](v Object, paths ...string) (T, bool) {
-	var zero T
-
-	cur := v
+// Pick extracts a value from a nested structure using the provided paths.
+func Pick[T any](obj Object, paths ...any) (T, bool) {
+	var val T
+	cur := obj
 	for _, path := range paths {
-		switch v := cur.(type) {
-		case Map:
-			child, ok := v.Get(NewString(path))
-			if !ok {
-				return zero, false
+		p, err := MarshalText(path)
+		if err != nil {
+			return val, false
+		}
+
+		switch p := p.(type) {
+		case String:
+			if v, ok := cur.(Map); ok {
+				child, ok := v.Get(p)
+				if !ok {
+					return val, false
+				}
+				cur = child
 			}
-			cur = child
-		case Slice:
-			index, err := strconv.Atoi(path)
-			if err != nil || index >= v.Len() {
-				return zero, false
+		case Integer:
+			if v, ok := cur.(Slice); ok {
+				if int(p.Int()) >= v.Len() {
+					return val, false
+				}
+				cur = v.Get(int(p.Int()))
 			}
-			cur = v.Get(index)
 		default:
-			return zero, false
+			return val, false
 		}
 	}
 
+	if cur == nil {
+		return val, false
+	}
 	if v, ok := cur.(T); ok {
 		return v, true
-	} else if cur == nil {
-		return zero, false
-	} else if err := Unmarshal(cur, &zero); err == nil {
-		return zero, true
-	} else {
-		return zero, false
 	}
+	err := Unmarshal(cur, &val)
+	return val, err == nil
 }
