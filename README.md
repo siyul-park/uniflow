@@ -18,7 +18,7 @@ The built-in extensions are optimized for efficient execution of short-term proc
 - **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
 - **Extensibility:** Utilize the built-in extensions to efficiently execute a variety of tasks, seamlessly integrating or customizing additional functionalities as needed.
 
-## Getting Started
+## Quick Start
 
 To run the [ping example](/examples/ping.yaml), use this command:
 
@@ -54,7 +54,7 @@ Configure the environment using either `.uniflow.toml` or system environment var
 
 ## Benchmarks
 
-The benchmarking tests were conducted using a VPS S SSD (4 Core, 8 GB) from [Contabo](https://contabo.com/). Performance was measured with the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) over the loopback network adapter (127.0.0.1). The test workflow used the [ping example](/examples/ping.yaml), consisting of `linster`, `router`, and `snippet` nodes.
+The benchmarking tests were conducted using a VPS S SSD (4 Core, 8 GB) from [Contabo](https://contabo.com/). Performance was measured with the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) over the loopback network adapter (127.0.0.1). The test workflow used the [ping example](/examples/ping.yaml), consisting of `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -95,6 +95,10 @@ Percentage of the requests served within a certain time (ms)
   99%    307
  100%    559 (longest request)
 ```
+
+## Links
+
+- [**Documentation**](/docs).
 
 <!-- Go -->
 
