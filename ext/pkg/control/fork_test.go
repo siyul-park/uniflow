@@ -50,7 +50,7 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 	inPayload := object.NewMap(object.NewString("foo"), object.NewString("bar"))
 	inPck := packet.New(inPayload)
 
-	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+	out.Accept(port.ListenFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		select {

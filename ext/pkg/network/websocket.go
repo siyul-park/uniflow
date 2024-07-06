@@ -112,8 +112,8 @@ func NewWebSocketConnNode(action func(*process.Process, *packet.Packet) (*websoc
 		errPort: port.NewOut(),
 	}
 
-	n.ioPort.AddInitHook(port.InitHookFunc(n.connect))
-	n.inPort.AddInitHook(port.InitHookFunc(n.consume))
+	n.ioPort.Accept(port.ListenFunc(n.connect))
+	n.inPort.Accept(port.ListenFunc(n.consume))
 
 	return n
 }

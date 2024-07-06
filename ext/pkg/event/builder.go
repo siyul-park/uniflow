@@ -12,14 +12,14 @@ func AddToHook(broker *Broker) func(*hook.Hook) error {
 	unload := broker.Producer(TopicUnload)
 
 	return func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*TriggerNode); ok {
 				n.Listen()
 			}
 			return nil
 		}))
-		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*TriggerNode); ok {
 				n.Shutdown()
@@ -27,12 +27,12 @@ func AddToHook(broker *Broker) func(*hook.Hook) error {
 			return nil
 		}))
 
-		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			e := New(sym.Spec())
 			load.Produce(e)
 			return nil
 		}))
-		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
 			e := New(sym.Spec())
 			unload.Produce(e)
 			return nil

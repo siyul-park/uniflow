@@ -9,14 +9,14 @@ import (
 // AddToHook returns a function that adds hook to the provided hook.
 func AddToHook() func(*hook.Hook) error {
 	return func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*HTTPListenNode); ok {
 				return n.Listen()
 			}
 			return nil
 		}))
-		h.AddUnloadHook(symbol.UnloadHookFunc(func(sym *symbol.Symbol) error {
+		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*HTTPListenNode); ok {
 				return n.Shutdown()

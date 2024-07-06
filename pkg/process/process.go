@@ -34,7 +34,7 @@ func New() *Process {
 		data: newData(),
 		ctx:  ctx,
 	}
-	proc.exitHooks = append(proc.exitHooks, ExitHookFunc(cancel))
+	proc.exitHooks = append(proc.exitHooks, ExitFunc(cancel))
 	return proc
 }
 
@@ -85,8 +85,8 @@ func (p *Process) Fork() *Process {
 		ctx:    ctx,
 		parent: p,
 		exitHooks: []ExitHook{
-			ExitHookFunc(cancel),
-			ExitHookFunc(func(err error) {
+			ExitFunc(cancel),
+			ExitFunc(func(err error) {
 				p.wait.Done()
 			}),
 		},

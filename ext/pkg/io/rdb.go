@@ -93,7 +93,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, err
 		}
 
-		proc.AddExitHook(process.ExitHookFunc(func(err error) {
+		proc.AddExitHook(process.ExitFunc(func(err error) {
 			if err != nil {
 				tx.Rollback()
 			} else {

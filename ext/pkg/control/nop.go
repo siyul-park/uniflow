@@ -32,7 +32,7 @@ func NewNOPNode() *NOPNode {
 		inPort: port.NewIn(),
 	}
 
-	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.inPort.Accept(port.ListenFunc(n.forward))
 
 	return n
 }

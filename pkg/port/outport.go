@@ -9,10 +9,10 @@ import (
 
 // OutPort represents an output port for sending data.
 type OutPort struct {
-	ins       []*InPort
-	writers   map[*process.Process]*packet.Writer
-	initHooks []InitHook
-	mu        sync.RWMutex
+	ins      []*InPort
+	writers  map[*process.Process]*packet.Writer
+	listners []Listener
+	mu       sync.RWMutex
 }
 
 // NewOut creates a new OutPort instance.
@@ -22,12 +22,12 @@ func NewOut() *OutPort {
 	}
 }
 
-// AddInitHook adds a handler for processing outgoing data.
-func (p *OutPort) AddInitHook(h InitHook) {
+// Accept registers a listener for processing incoming data.
+func (p *OutPort) Accept(h Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.initHooks = append(p.initHooks, h)
+	p.listners = append(p.listners, h)
 }
 
 // Links returns the number of input ports this port is connected to.
@@ -73,7 +73,7 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 			}
 
 			p.writers[proc] = writer
-			proc.AddExitHook(process.ExitHookFunc(func(_ error) {
+			proc.AddExitHook(process.ExitFunc(func(_ error) {
 				p.mu.Lock()
 				defer p.mu.Unlock()
 
@@ -93,9 +93,9 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 			writer.Link(reader)
 		}
 
-		for _, h := range p.initHooks {
+		for _, h := range p.listners {
 			h := h
-			go h.Init(proc)
+			go h.Accept(proc)
 		}
 	}
 

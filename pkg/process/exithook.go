@@ -1,13 +1,16 @@
 package process
 
+// ExitHook is an interface that defines the method to handle errors during exit.
 type ExitHook interface {
 	Exit(err error)
 }
 
-type ExitHookFunc func(err error)
+// ExitFunc is an adapter that allows the use of ordinary functions as ExitHook implementations.
+type ExitFunc func(err error)
 
-var _ ExitHook = (ExitHookFunc)(nil)
+var _ ExitHook = (ExitFunc)(nil)
 
-func (h ExitHookFunc) Exit(err error) {
+// Exit calls the underlying function for the ExitFunc.
+func (h ExitFunc) Exit(err error) {
 	h(err)
 }

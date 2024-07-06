@@ -50,8 +50,8 @@ func NewBlockNode(nodes ...node.Node) *BlockNode {
 		inPort := port.NewIn()
 		outPort := port.NewOut()
 
-		inPort.AddInitHook(port.InitHookFunc(n.throw))
-		outPort.AddInitHook(port.InitHookFunc(n.catch))
+		inPort.Accept(port.ListenFunc(n.throw))
+		outPort.Accept(port.ListenFunc(n.catch))
 
 		n.inPorts[node.PortErr] = inPort
 		n.outPorts[node.PortErr] = outPort

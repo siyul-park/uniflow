@@ -9,9 +9,9 @@ import (
 
 // InPort represents an input port for receiving data.
 type InPort struct {
-	readers   map[*process.Process]*packet.Reader
-	initHooks []InitHook
-	mu        sync.RWMutex
+	readers  map[*process.Process]*packet.Reader
+	listners []Listener
+	mu       sync.RWMutex
 }
 
 // NewIn creates a new InPort instance.
@@ -21,12 +21,12 @@ func NewIn() *InPort {
 	}
 }
 
-// AddInitHook adds a handler for processing incoming data.
-func (p *InPort) AddInitHook(h InitHook) {
+// Accept registers a listener for processing incoming data.
+func (p *InPort) Accept(h Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.initHooks = append(p.initHooks, h)
+	p.listners = append(p.listners, h)
 }
 
 // Open opens the input port for a given process and returns a reader.
@@ -43,7 +43,7 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 		}
 
 		p.readers[proc] = reader
-		proc.AddExitHook(process.ExitHookFunc(func(_ error) {
+		proc.AddExitHook(process.ExitFunc(func(_ error) {
 			p.mu.Lock()
 			defer p.mu.Unlock()
 
@@ -51,9 +51,9 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 			reader.Close()
 		}))
 
-		for _, h := range p.initHooks {
+		for _, h := range p.listners {
 			h := h
-			go h.Init(proc)
+			go h.Accept(proc)
 		}
 	}
 

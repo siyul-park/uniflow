@@ -37,9 +37,9 @@ func NewForkNode() *ForkNode {
 		errPort: port.NewOut(),
 	}
 
-	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
-	n.outPort.AddInitHook(port.InitHookFunc(n.backward))
-	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
+	n.inPort.Accept(port.ListenFunc(n.forward))
+	n.outPort.Accept(port.ListenFunc(n.backward))
+	n.errPort.Accept(port.ListenFunc(n.catch))
 
 	return n
 }

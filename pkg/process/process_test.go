@@ -30,7 +30,7 @@ func TestProcess_AddExitHook(t *testing.T) {
 	proc := New()
 
 	count := 0
-	h := ExitHookFunc(func(err error) {
+	h := ExitFunc(func(err error) {
 		count++
 	})
 	proc.AddExitHook(h)

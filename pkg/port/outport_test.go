@@ -36,7 +36,7 @@ func TestOutPort_Link(t *testing.T) {
 	assert.Equal(t, 1, out.Links())
 }
 
-func TestOutPort_AddInitHook(t *testing.T) {
+func TestOutPort_Accept(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -44,11 +44,11 @@ func TestOutPort_AddInitHook(t *testing.T) {
 	defer out.Close()
 
 	done := make(chan struct{})
-	h := InitHookFunc(func(proc *process.Process) {
+	h := ListenFunc(func(proc *process.Process) {
 		close(done)
 	})
 
-	out.AddInitHook(h)
+	out.Accept(h)
 
 	_ = out.Open(proc)
 

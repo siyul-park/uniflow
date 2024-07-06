@@ -15,7 +15,7 @@ func TestHook_LoadHook(t *testing.T) {
 	n := node.NewOneToOneNode(nil)
 
 	count := 0
-	h := symbol.LoadHookFunc(func(_ *symbol.Symbol) error {
+	h := symbol.LoadFunc(func(_ *symbol.Symbol) error {
 		count += 1
 		return nil
 	})
@@ -33,7 +33,7 @@ func TestHook_UnloadHook(t *testing.T) {
 	n := node.NewOneToOneNode(nil)
 
 	count := 0
-	h := symbol.UnloadHookFunc(func(_ *symbol.Symbol) error {
+	h := symbol.UnloadFunc(func(_ *symbol.Symbol) error {
 		count += 1
 		return nil
 	})

@@ -6,12 +6,12 @@ type UnloadHook interface {
 	Unload(*Symbol) error
 }
 
-// UnloadHookFunc is a function type that implements the UnloadHook interface.
-type UnloadHookFunc func(*Symbol) error
+// UnloadFunc is a function type that implements the UnloadHook interface.
+type UnloadFunc func(*Symbol) error
 
-var _ UnloadHook = UnloadHookFunc(nil)
+var _ UnloadHook = UnloadFunc(nil)
 
 // Unload is the implementation of the Unload method for UnloadHookFunc.
-func (f UnloadHookFunc) Unload(sym *Symbol) error {
+func (f UnloadFunc) Unload(sym *Symbol) error {
 	return f(sym)
 }

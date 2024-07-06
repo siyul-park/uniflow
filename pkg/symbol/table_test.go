@@ -474,13 +474,13 @@ func TestTable_Hook(t *testing.T) {
 
 	tb := NewTable(s, TableOptions{
 		LoadHooks: []LoadHook{
-			LoadHookFunc(func(_ *Symbol) error {
+			LoadFunc(func(_ *Symbol) error {
 				loaded += 1
 				return nil
 			}),
 		},
 		UnloadHooks: []UnloadHook{
-			UnloadHookFunc(func(_ *Symbol) error {
+			UnloadFunc(func(_ *Symbol) error {
 				unloaded += 1
 				return nil
 			}),

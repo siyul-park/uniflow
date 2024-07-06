@@ -73,7 +73,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	inWriter := in.Open(proc)
 
 	done := make(chan struct{})
-	out.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+	out.Accept(port.ListenFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		for {

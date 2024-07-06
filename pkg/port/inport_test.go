@@ -22,7 +22,7 @@ func TestInPort_Open(t *testing.T) {
 	assert.Equal(t, r1, r2)
 }
 
-func TestInPort_AddInitHook(t *testing.T) {
+func TestInPort_Accept(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -30,11 +30,11 @@ func TestInPort_AddInitHook(t *testing.T) {
 	defer in.Close()
 
 	done := make(chan struct{})
-	h := InitHookFunc(func(proc *process.Process) {
+	h := ListenFunc(func(proc *process.Process) {
 		close(done)
 	})
 
-	in.AddInitHook(h)
+	in.Accept(h)
 
 	_ = in.Open(proc)
 

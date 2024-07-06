@@ -44,14 +44,14 @@ func NewIfNode(when func(any) (bool, error)) *IfNode {
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.AddInitHook(port.InitHookFunc(n.forward))
+	n.inPort.Accept(port.ListenFunc(n.forward))
 	for i, outPort := range n.outPorts {
 		i := i
-		outPort.AddInitHook(port.InitHookFunc(func(proc *process.Process) {
+		outPort.Accept(port.ListenFunc(func(proc *process.Process) {
 			n.backward(proc, i)
 		}))
 	}
-	n.errPort.AddInitHook(port.InitHookFunc(n.catch))
+	n.errPort.Accept(port.ListenFunc(n.catch))
 
 	return n
 }
