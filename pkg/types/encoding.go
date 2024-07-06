@@ -94,7 +94,7 @@ func newShortcutEncoder() encoding.EncodeCompiler[any, Object] {
 				return s, nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -108,7 +108,7 @@ func newShortcutDecoder() encoding.DecodeCompiler[Object] {
 				return nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -122,7 +122,7 @@ func newExpandedEncoder() encoding.EncodeCompiler[any, Object] {
 				return s.MarshalObject()
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -136,7 +136,7 @@ func newExpandedDecoder() encoding.DecodeCompiler[Object] {
 				return t.UnmarshalObject(source)
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -153,7 +153,7 @@ func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.
 				return enc.Encode(s.Elem().Interface())
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -174,6 +174,6 @@ func newPointerDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.
 				return dec.Decode(source, t.Elem().UnsafePointer())
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }

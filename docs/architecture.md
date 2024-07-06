@@ -32,6 +32,124 @@ The runtime does not directly expose APIs for modifying node specifications. Ins
 
 If node specifications need to be modified, the Command-Line Interface(CLI) can be used to update the specifications in the database. Alternatively, a workflow can be defined to provide an HTTP API for modifying node specifications. Such workflows are generally defined in the `system` namespace.
 
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  links:
+    out:
+      - name: router
+        port: in
+    error:
+      - name: catch
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: POST
+      path: /v1/nodes
+      port: out[0]
+    - method: GET
+      path: /v1/nodes
+      port: out[1]
+    - method: PATCH
+      path: /v1/nodes
+      port: out[2]
+    - method: DELETE
+      path: /v1/nodes
+      port: out[3]
+  links:
+    out[0]:
+      - name: nodes_create
+        port: in
+    out[1]:
+      - name: nodes_read
+        port: in
+    out[2]:
+      - name: nodes_update
+        port: in
+    out[3]:
+      - name: nodes_delete
+        port: in
+
+- kind: block
+  name: nodes_create
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.create
+
+- kind: block
+  name: nodes_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.read
+
+- kind: block
+  name: nodes_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.update
+
+- kind: block
+  name: nodes_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.delete
+
+- kind: switch
+  name: catch
+  match:
+    - when: self == "invalid argument"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  links:
+    out[0]:
+      - name: '400'
+        port: in
+    out[1]:
+      - name: '500'
+        port: in
+
+- kind: snippet
+  name: '400'
+  language: javascript
+  code: >
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: '500'
+  language: json
+  code: >
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }
+```
+
 This approach maintains the stability of the runtime environment while allowing flexible system extensions as needed.
 
 ## Compilation Process

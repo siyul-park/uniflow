@@ -175,7 +175,7 @@ func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Object]) encoding.En
 				return NewSlice(values...), nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -190,7 +190,7 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.De
 			if target.Kind() == reflect.Slice {
 				target.Set(reflect.Append(target, v.Elem()).Convert(target.Type()))
 			} else {
-				return errors.WithStack(encoding.ErrInvalidValue)
+				return errors.WithStack(encoding.ErrInvalidArgument)
 			}
 		} else {
 			target.Index(i).Set(v.Elem().Convert(target.Type().Elem()))
@@ -219,10 +219,10 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Object, any]) encoding.De
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }

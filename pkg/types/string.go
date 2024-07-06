@@ -96,7 +96,7 @@ func newStringEncoder() encoding2.EncodeCompiler[any, Object] {
 				}
 			}), nil
 		}
-		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
 	})
 }
 
@@ -111,7 +111,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Object] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText([]byte(s.String()))
 				}
-				return errors.WithStack(encoding2.ErrUnsupportedValue)
+				return errors.WithStack(encoding2.ErrInvalidArgument)
 			}), nil
 		} else if typ.ConvertibleTo(typeBinaryUnmarshaler) {
 			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
@@ -119,7 +119,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Object] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary([]byte(s.String()))
 				}
-				return errors.WithStack(encoding2.ErrUnsupportedValue)
+				return errors.WithStack(encoding2.ErrInvalidArgument)
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
@@ -128,7 +128,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Object] {
 						*(*string)(target) = s.String()
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrUnsupportedValue)
+					return errors.WithStack(encoding2.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
@@ -136,10 +136,10 @@ func newStringDecoder() encoding2.DecodeCompiler[Object] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrUnsupportedValue)
+					return errors.WithStack(encoding2.ErrInvalidArgument)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding2.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
 	})
 }

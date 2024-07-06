@@ -305,7 +305,7 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Object] {
 				}
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -342,11 +342,11 @@ func newUintegerDecoder() encoding.DecodeCompiler[Object] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -356,6 +356,6 @@ func newUintegerDecoderWithType[T constraints.Integer | constraints.Float]() enc
 			*(*T)(target) = T(s.Uint())
 			return nil
 		}
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }

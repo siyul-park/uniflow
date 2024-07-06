@@ -6,6 +6,9 @@
     out:
       - name: router
         port: in
+    error:
+      - name: catch
+        port: in
 
 - kind: router
   name: router
@@ -41,7 +44,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: syscall
       opcode: nodes.create
 
@@ -50,7 +53,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: syscall
       opcode: nodes.read
 
@@ -59,7 +62,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: syscall
       opcode: nodes.update
 
@@ -68,7 +71,45 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: syscall
       opcode: nodes.delete
-    - kind: nop
+
+- kind: switch
+  name: catch
+  match:
+    - when: self == "invalid argument"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  links:
+    out[0]:
+      - name: '400'
+        port: in
+    out[1]:
+      - name: '500'
+        port: in
+
+- kind: snippet
+  name: '400'
+  language: javascript
+  code: >
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: '500'
+  language: json
+  code: >
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }

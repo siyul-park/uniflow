@@ -73,7 +73,7 @@ func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
 				return NewError(s), nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -87,7 +87,7 @@ func newErrorDecoder() encoding.DecodeCompiler[Object] {
 						t.Elem().Set(reflect.ValueOf(s.Interface()))
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
@@ -95,10 +95,10 @@ func newErrorDecoder() encoding.DecodeCompiler[Object] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }

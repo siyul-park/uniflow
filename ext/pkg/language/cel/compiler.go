@@ -9,7 +9,7 @@ import (
 const Language = "cel"
 
 func NewCompiler(opts ...cel.EnvOption) language.Compiler {
-	opts = append(opts, ext.Encoders(), ext.Math(), ext.Lists(), ext.Sets(), ext.Strings(), cel.Variable("self", cel.AnyType))
+	opts = append(opts, cel.CustomTypeAdapter(&adapter{}), ext.Encoders(), ext.Math(), ext.Lists(), ext.Sets(), ext.Strings(), cel.Variable("self", cel.AnyType))
 	return language.CompileFunc(func(code string) (language.Program, error) {
 		env, err := cel.NewEnv(opts...)
 		if err != nil {

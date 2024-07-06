@@ -17,7 +17,7 @@ func TestNewDecoderGroup(t *testing.T) {
 func TestDecoderGroup_Add(t *testing.T) {
 	e := NewDecoderGroup[any, any]()
 	e.Add(DecodeFunc[any, any](func(_ any, _ any) error {
-		return errors.WithStack(ErrUnsupportedValue)
+		return errors.WithStack(ErrInvalidArgument)
 	}))
 
 	assert.Equal(t, 1, e.Len())
@@ -39,7 +39,7 @@ func TestDecoderGroup_Decode(t *testing.T) {
 				}
 			}
 		}
-		return errors.WithStack(ErrUnsupportedValue)
+		return errors.WithStack(ErrInvalidArgument)
 	}))
 
 	err := e.Decode(v+suffix, &res)

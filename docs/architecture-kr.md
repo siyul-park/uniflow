@@ -32,6 +32,124 @@
 
 노드 명세를 수정해야 할 경우,  Command-Line Interface(CLI)을 사용하여 데이터베이스에 명세를 업데이트하거나, 노드 명세를 수정할 수 있는 워크플로우를 직접 정의하여 HTTP API를 제공할 수 있습니다. 일반적으로 이러한 워크플로우는 `system` 네임스페이스에 정의됩니다.
 
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  links:
+    out:
+      - name: router
+        port: in
+    error:
+      - name: catch
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: POST
+      path: /v1/nodes
+      port: out[0]
+    - method: GET
+      path: /v1/nodes
+      port: out[1]
+    - method: PATCH
+      path: /v1/nodes
+      port: out[2]
+    - method: DELETE
+      path: /v1/nodes
+      port: out[3]
+  links:
+    out[0]:
+      - name: nodes_create
+        port: in
+    out[1]:
+      - name: nodes_read
+        port: in
+    out[2]:
+      - name: nodes_update
+        port: in
+    out[3]:
+      - name: nodes_delete
+        port: in
+
+- kind: block
+  name: nodes_create
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.create
+
+- kind: block
+  name: nodes_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.read
+
+- kind: block
+  name: nodes_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.update
+
+- kind: block
+  name: nodes_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.delete
+
+- kind: switch
+  name: catch
+  match:
+    - when: self == "invalid argument"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  links:
+    out[0]:
+      - name: '400'
+        port: in
+    out[1]:
+      - name: '500'
+        port: in
+
+- kind: snippet
+  name: '400'
+  language: javascript
+  code: >
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: '500'
+  language: json
+  code: >
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }
+```
+
 이러한 접근 방식은 런타임 환경을 안정적으로 유지하면서도 필요에 따라 유연하게 시스템을 확장할 수 있도록 합니다.
 
 ## 컴파일 과정
@@ -69,7 +187,7 @@
 
 ## 런타임 과정
 
-활성화된 노드는 소켓이나 파일을 감시하고, 워크플로우를 실행합니다. 각 노드는 독립적인 프로세스를 생성하여 실행을 시작하며, 실행 흐름을 격리시키고 필요한 리소스를 효율적으로 관리하여 다른 작업에 영향을 미치지 않도록 합니다.
+활성화된 노드는 소켓이나 파일을 감시하고, 워크플로우를 실행합니다. 노드는 독립적인 프로세스를 생성하여 실행을 시작하여, 실행 흐름을 격리시키고 필요한 리소스를 효율적으로 관리하여 다른 작업에 영향을 미치지 않도록 합니다.
 
 각 노드는 프로세스를 통해 포트를 열고, 라이터를 생성하여 연결된 다른 노드에게 패킷을 전송합니다. 패킷의 페이로드는 런타임에서 사용되는 공용 타입으로 변환되어 전송됩니다.
 

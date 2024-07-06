@@ -47,26 +47,36 @@ func Encode(writer io.Writer, value types.Object, header textproto.MIMEHeader) e
 		count += n
 		return
 	})
-	defer header.Set(HeaderContentLength, strconv.Itoa(count))
 
 	w, err := Compress(cwriter, encode)
 	if err != nil {
 		return err
 	}
-	if c, ok := w.(io.Closer); ok && w != cwriter {
-		defer c.Close()
+
+	flush := func() {
+		if c, ok := w.(io.Closer); ok && w != cwriter {
+			c.Close()
+		}
+		header.Set(HeaderContentLength, strconv.Itoa(count))
 	}
 
 	switch typ {
 	case ApplicationJSON:
-		return json.NewEncoder(w).Encode(types.InterfaceOf(value))
+		if err := json.NewEncoder(w).Encode(types.InterfaceOf(value)); err != nil {
+			return err
+		}
+		flush()
+		return nil
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
 		if err := types.Unmarshal(value, &urlValues); err != nil {
 			return err
 		}
-		_, err := w.Write([]byte(urlValues.Encode()))
-		return err
+		if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
+			return err
+		}
+		flush()
+		return nil
 	case MultipartFormData:
 		boundary := params["boundary"]
 		if boundary == "" {
@@ -198,18 +208,28 @@ func Encode(writer io.Writer, value types.Object, header textproto.MIMEHeader) e
 			}
 		}
 
-		return mw.Close()
+		if err := mw.Close(); err != nil {
+			return err
+		}
+		flush()
+		return nil
 	}
 
 	switch v := value.(type) {
 	case types.Binary:
-		_, err := w.Write(v.Bytes())
-		return err
+		if _, err := w.Write(v.Bytes()); err != nil {
+			return err
+		}
+		flush()
+		return nil
 	case types.String:
-		_, err := w.Write([]byte(v.String()))
-		return err
+		if _, err := w.Write([]byte(v.String())); err != nil {
+			return err
+		}
+		flush()
+		return nil
 	default:
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return errors.WithStack(encoding.ErrInvalidArgument)
 	}
 }
 

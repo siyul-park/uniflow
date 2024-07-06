@@ -21,7 +21,7 @@ func CodecWithType[T spec.Spec](decode func(spec T) (node.Node, error)) Codec {
 		if converted, ok := spec.(T); ok {
 			return decode(converted)
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 

@@ -82,7 +82,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		query, ok = types.Pick[string](inPck.Payload(), 0)
 	}
 	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedValue))
+		return nil, packet.New(types.NewError(encoding.ErrInvalidArgument))
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {

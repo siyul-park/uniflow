@@ -199,5 +199,5 @@ func (u *Unstructured) UnmarshalObject(value types.Object) error {
 		u.doc = v
 		return nil
 	}
-	return errors.WithStack(encoding.ErrInvalidValue)
+	return errors.WithStack(encoding.ErrInvalidArgument)
 }

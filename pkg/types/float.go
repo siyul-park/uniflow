@@ -134,7 +134,7 @@ func newFloatEncoder() encoding.EncodeCompiler[any, Object] {
 				}
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -171,11 +171,11 @@ func newFloatDecoder() encoding.DecodeCompiler[Object] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }
 
@@ -185,6 +185,6 @@ func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encodi
 			*(*T)(target) = T(s.Float())
 			return nil
 		}
-		return errors.WithStack(encoding.ErrUnsupportedValue)
+		return errors.WithStack(encoding.ErrInvalidArgument)
 	})
 }

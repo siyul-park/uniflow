@@ -87,7 +87,7 @@ func (s *Scheme) Decode(spc spec.Spec) (node.Node, error) {
 	if codec, ok := s.Codec(kind); ok {
 		return codec.Decode(spc)
 	}
-	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	return nil, errors.WithStack(encoding.ErrInvalidArgument)
 }
 
 // Unstructured converts the given Spec into an Unstructured representation.

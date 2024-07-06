@@ -35,7 +35,7 @@ type Condition struct {
 	Port string `map:"port"`
 }
 
-const KindSwitch = "swtich"
+const KindSwitch = "switch"
 
 // NewSwitchNode creates a new SwitchNode with the specified language.
 func NewSwitchNode() *SwitchNode {

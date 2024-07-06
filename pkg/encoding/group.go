@@ -56,7 +56,7 @@ func (g *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	for _, enc := range g.encoders {
 		if target, err = enc.Encode(source); err == nil {
 			return target, nil
-		} else if !errors.Is(err, ErrUnsupportedValue) {
+		} else if !errors.Is(err, ErrInvalidArgument) {
 			return target, err
 		}
 	}
@@ -88,7 +88,7 @@ func (g *DecoderGroup[S, T]) Decode(source S, target T) error {
 	for _, dec := range g.decoders {
 		if err = dec.Decode(source, target); err == nil {
 			return nil
-		} else if !errors.Is(err, ErrUnsupportedValue) {
+		} else if !errors.Is(err, ErrInvalidArgument) {
 			return err
 		}
 	}

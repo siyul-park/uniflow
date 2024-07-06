@@ -72,13 +72,13 @@ func filterToBson(filter *database.Filter) (any, error) {
 		}
 	}
 
-	return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+	return nil, errors.WithStack(encoding.ErrInvalidArgument)
 }
 
 func bsonToFilter(data any, filter **database.Filter) error {
 	raw, ok := bsonMA(data)
 	if !ok {
-		return errors.WithStack(encoding.ErrInvalidValue)
+		return errors.WithStack(encoding.ErrInvalidArgument)
 	}
 
 	var children []*database.Filter
@@ -86,7 +86,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 		for key, value := range curr {
 			if key == "$and" || key == "$or" {
 				if value, ok := bsonMA(value); !ok {
-					return errors.WithStack(encoding.ErrInvalidValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				} else {
 					var values []*database.Filter
 					for _, v := range value {
@@ -127,13 +127,13 @@ func bsonToFilter(data any, filter **database.Filter) error {
 				} else if child.OP == database.NNULL {
 					child.OP = database.NULL
 				} else {
-					return errors.WithStack(encoding.ErrInvalidValue)
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}
 				children = append(children, child)
 			} else if value, ok := bsonM(value); ok {
 				for op, v := range value {
 					if !strings.HasPrefix(op, "$") {
-						return errors.WithStack(encoding.ErrInvalidValue)
+						return errors.WithStack(encoding.ErrInvalidArgument)
 					}
 					child := &database.Filter{
 						Key: externalKey(key),
@@ -163,7 +163,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 					} else if op == "$nin" {
 						child.OP = database.NIN
 					} else {
-						return errors.WithStack(encoding.ErrInvalidValue)
+						return errors.WithStack(encoding.ErrInvalidArgument)
 					}
 
 					var value types.Object
@@ -174,7 +174,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 					children = append(children, child)
 				}
 			} else {
-				return errors.WithStack(encoding.ErrInvalidValue)
+				return errors.WithStack(encoding.ErrInvalidArgument)
 			}
 		}
 	}
@@ -203,7 +203,7 @@ func primitiveToBson(data types.Object) (any, error) {
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
 			if k, ok := k.(types.String); !ok {
-				return nil, errors.WithStack(encoding.ErrInvalidValue)
+				return nil, errors.WithStack(encoding.ErrInvalidArgument)
 			} else {
 				if v, err := primitiveToBson(v); err != nil {
 					return nil, err
@@ -270,7 +270,7 @@ func bsonToPrimitive(data any, v *types.Object) error {
 		*v = s
 		return nil
 	}
-	return errors.WithStack(encoding.ErrInvalidValue)
+	return errors.WithStack(encoding.ErrInvalidArgument)
 }
 
 func sortToBson(sorts []database.Sort) bson.D {
