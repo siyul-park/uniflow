@@ -30,7 +30,7 @@ To effectively execute node specifications, the system undergoes two main proces
 
 The runtime does not directly expose APIs for modifying node specifications. Instead, it focuses on compiling, loading, and activating nodes to make them executable.
 
-If node specifications need to be modified, the Command-Line Interface(CLI) can be used to update the specifications in the database. Alternatively, a workflow can be defined to provide an HTTP API for modifying node specifications. Such workflows are generally defined in the `system` namespace.
+If node specifications need to be modified, the Command-Line Interface (CLI) can be used to update the specifications in the database. Alternatively, a workflow can be defined to provide an HTTP API for modifying node specifications. Such workflows are generally defined in the `system` namespace.
 
 ```yaml
 - kind: listener
@@ -154,7 +154,7 @@ This approach maintains the stability of the runtime environment while allowing 
 
 ## Compilation Process
 
-During the compilation process, a loader tracks real-time changes to node specifications via the database’s change stream. The loader detects added, modified, or deleted specifications and dynamically reloads them from the database. Then, using codecs defined in the schema, the specifications are compiled into executable forms. This process includes operations like optimization and caching to improve performance.
+During the compilation process, a loader tracks real-time changes to node specifications via the database’s change stream. The loader detects added, modified, or deleted specifications and dynamically reloads them from the database. Then, using codecs defined in the scheme, the specifications are compiled into executable forms. This process includes operations like optimization and caching to improve performance.
 
 Compiled nodes are combined with the specifications and converted into symbols, which are stored in the symbol table. The symbol table connects each symbol’s ports based on the port connection information defined in the node specifications.
 

@@ -6,9 +6,9 @@
 [![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
-An ultra fast, highly flexible, and easily customizable multipurpose workflow engine.
+A high-performance, extremely flexible, and seamlessly extensible multipurpose workflow engine.
 
-Efficiently manage tasks of varying durations—from short-term to long-term—using this engine. It offers a declarative environment for defining data processing flows, ensuring optimal performance characterized by low latency and high throughput across a diverse spectrum of operations.
+It efficiently manages tasks of varying durations, from short-term to long-term, offering a declarative environment for defining data processing flows. This ensures optimal performance characterized by low latency and high throughput across diverse operations.
 
 The built-in extensions are optimized for efficient execution of short-term processing tasks, offering a wide range of functionalities. Additionally, the engine seamlessly integrates additional features, ensuring flexible expansion as needed.
 
@@ -16,7 +16,7 @@ The built-in extensions are optimized for efficient execution of short-term proc
 
 - **Performance:** Achieve optimal throughput, minimal latency, and maximum scalability across diverse workloads.
 - **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
-- **Extensibility:** Utilize the built-in extensions to efficiently execute a variety of tasks, seamlessly integrating or customizing additional functionalities as needed.
+- **Extensibility:** Utilize the built-in extensions to efficiently execute various tasks, seamlessly integrating or customizing additional functionalities as needed.
 
 ## Quick Start
 
@@ -98,7 +98,7 @@ Percentage of the requests served within a certain time (ms)
 
 ## Links
 
-- [**Documentation**](/docs).
+- [**Documentation**](/docs)
 
 <!-- Go -->
 
