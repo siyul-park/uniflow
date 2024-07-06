@@ -76,8 +76,7 @@ func TestRouteNode_Add(t *testing.T) {
 
 			expectPort := node.PortWithIndex(node.PortOut, 0)
 
-			err := n.Add(http.MethodGet, tc.whenPath, expectPort)
-			assert.NoError(t, err)
+			n.Add(http.MethodGet, tc.whenPath, expectPort)
 
 			for i, expectPath := range tc.expectPaths {
 				var expectParam map[string]string
@@ -97,11 +96,11 @@ func TestRouteNode_Find(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
-	_ = n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
-	_ = n.Add(http.MethodGet, "/a/c/df", node.PortWithIndex(node.PortOut, 2))
-	_ = n.Add(http.MethodGet, "/:e/c/f", node.PortWithIndex(node.PortOut, 3))
-	_ = n.Add(http.MethodGet, "/*", node.PortWithIndex(node.PortOut, 4))
+	n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
+	n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
+	n.Add(http.MethodGet, "/a/c/df", node.PortWithIndex(node.PortOut, 2))
+	n.Add(http.MethodGet, "/:e/c/f", node.PortWithIndex(node.PortOut, 3))
+	n.Add(http.MethodGet, "/*", node.PortWithIndex(node.PortOut, 4))
 
 	testCases := []struct {
 		whenMethod   string
@@ -152,9 +151,9 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
-	_ = n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
-	_ = n.Add(http.MethodGet, "/a/*", node.PortWithIndex(node.PortOut, 2))
+	n.Add(http.MethodGet, "/a/:b/c", node.PortWithIndex(node.PortOut, 0))
+	n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
+	n.Add(http.MethodGet, "/a/*", node.PortWithIndex(node.PortOut, 2))
 
 	testCases := []struct {
 		whenMethod   string
@@ -273,7 +272,7 @@ func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	n := NewRouteNode()
 	defer n.Close()
 
-	_ = n.Add(http.MethodGet, "/a/b/c", node.PortWithIndex(node.PortOut, 0))
+	n.Add(http.MethodGet, "/a/b/c", node.PortWithIndex(node.PortOut, 0))
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))

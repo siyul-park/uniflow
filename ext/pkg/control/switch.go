@@ -4,8 +4,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -45,18 +43,17 @@ func NewSwitchNode() *SwitchNode {
 }
 
 // AddMatch adds a condition to the SwitchNode, associating it with a specific output port.
-func (n *SwitchNode) AddMatch(when func(any) (bool, error), port string) error {
+func (n *SwitchNode) AddMatch(when func(any) (bool, error), port string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
 	index, ok := node.IndexOfPort(node.PortOut, port)
 	if !ok {
-		return errors.WithStack(node.ErrUnsupportedPort)
+		return
 	}
 
 	n.whens = append(n.whens, when)
 	n.ports = append(n.ports, index)
-	return nil
 }
 
 func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
@@ -101,10 +98,7 @@ func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 
 		n := NewSwitchNode()
 		for i, condition := range spec.Match {
-			if err := n.AddMatch(whens[i], condition.Port); err != nil {
-				_ = n.Close()
-				return nil, err
-			}
+			n.AddMatch(whens[i], condition.Port)
 		}
 		return n, nil
 	})
