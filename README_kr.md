@@ -6,68 +6,68 @@
 [![codefactor][repo_codefactor_img]][repo_codefactor_url]
 [![release][repo_releases_img]][repo_releases_url]
 
-Translations:
-  - [한국어](./README_kr.md)
+번역:
+  - [English](./README.md)
 
-## Overview
+## 개요
 
-A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.
+이 엔진은 높은 성능과 극도의 유연성을 갖춘 쉽게 확장 가능한 다목적 워크플로 엔진입니다.
 
-It efficiently manages tasks of varying durations, from short-term to long-term, providing a simple environment for defining data processing flows. This ensures optimal performance with low latency and high throughput across various operations.
+다양한 기간이 걸리는 작업을 효율적으로 처리하며 데이터 처리 흐름을 선언적으로 정의하는 환경을 제공합니다. 이를 통해 다양한 작업에서 최적의 성능, 낮은 대기 시간 및 높은 처리량을 달성할 수 있습니다.
 
-The built-in extensions are crafted for efficient execution of short-term tasks, offering a wide array of functionalities. Furthermore, they facilitate seamless integration of additional features, allowing for flexible expansion as needed.
+내장된 확장 기능은 짧은 기간이 걸리는 작업을 효율적으로 실행하는 데 중점을 두고 다양한 기능을 제공합니다. 또한 필요에 따라 유연하게 기능을 확장할 수 있도록 설계되었습니다.
 
-Develop a service that integrates user personalization, with the added benefit of easily expanding functionality as needed.
+사용자에게 개인화된 경험을 제공하는 서비스를 개발하고 필요할 때 쉽게 기능을 확장해보세요.
 
-## Principles
+## 원칙
 
-- **Performance:** Achieve optimal throughput, minimal latency, and maximum scalability across diverse workloads.
-- **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
-- **Extensibility:** Utilize the built-in extensions to efficiently execute various tasks, seamlessly integrating or customizing additional functionalities as needed.
+- **성능:** 다양한 작업 부하에서 최적의 처리량, 최소 대기 시간 및 최대 확장성을 달성합니다.
+- **유연성:** 변화하는 요구 사항에 신속하게 적응할 수 있도록 복잡한 데이터 처리 흐름을 선언적으로 정의하며, 동적 수정과 실시간 조정을 가능하게 합니다.
+- **확장성:** 내장된 확장 기능을 활용하여 다양한 작업을 효율적으로 실행하고 필요에 따라 기능을 추가하거나 사용자 정의할 수 있습니다.
 
-## Quick Start
+## 빠른 시작
 
-To run the [ping example](/examples/ping.yaml), use this command:
+[ping 예제](/examples/ping.yaml)를 실행하려면 다음 명령을 사용하세요:
 
 ```shell
 ./uniflow start --filename example/ping.yaml
 ```
 
-The `--filename` flag automatically installs the node if it doesn't already exist in the namespace.
+`--filename` 플래그는 네임스페이스에 노드가 이미 존재하지 않는 경우 자동으로 설치합니다.
 
-Check if the instance is providing the expected HTTP endpoint:
+예상대로 HTTP 엔드포인트가 제공되는지 확인하세요:
 
 ```shell
 curl localhost:8000/ping
 pong#
 ```
 
-To apply nodes to a running server, use the `apply` command.
+실행 중인 서버에 노드를 적용하려면 `apply` 명령을 사용하세요.
 
-For additional details, refer to the command help:
+추가 세부 정보는 다음 명령 도움말을 참조하세요:
 
 ```shell
 ./dist/uniflow start --help
 ```
 
-## Configuration
+## 구성
 
-Configure the environment using either `.uniflow.toml` or system environment variables.
+`.uniflow.toml` 또는 시스템 환경 변수를 사용하여 환경을 구성하세요.
 
-| TOML Key         | Env Key          | Example               |
+| TOML 키         | Env 키           | 예시                   |
 |------------------|------------------|-----------------------|
-| `database.url`   | `DATABASE.URL`   | `mem://` or `mongodb://` |
+| `database.url`   | `DATABASE.URL`   | `mem://` 또는 `mongodb://` |
 | `database.name`  | `DATABASE.NAME`  | -                     |
 
-## Benchmarks
+## 벤치마크
 
-The benchmarking tests were conducted using a VPS S SSD (4 Core, 8 GB) from [Contabo](https://contabo.com/). Performance was measured with the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) over the loopback network adapter (127.0.0.1). The test workflow used the [ping example](/examples/ping.yaml), consisting of `listener`, `router`, and `snippet` nodes.
+벤치마크 테스트는 [Contabo](https://contabo.com/)의 VPS S SSD (4코어, 8GB)에서 수행되었습니다. 성능은 [Apache HTTP 서버 벤치마킹 도구](https://httpd.apache.org/docs/2.4/programs/ab.html)를 이용해 루프백 네트워크 어댑터(127.0.0.1)를 통해 측정되었습니다. 테스트 워크플로는 `listener`, `router`, `snippet` 노드로 구성된 [ping 예제](/examples/ping.yaml)를 사용했습니다.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
 ```
 
-Results:
+결과:
 
 ```
 This is ApacheBench, Version 2.3 <$Revision: 1879490 $>
@@ -103,9 +103,9 @@ Percentage of the requests served within a certain time (ms)
  100%    559 (longest request)
 ```
 
-## Links
+## 관련 자료
 
-- [**Documentation**](/docs)
+- [**문서**](/docs)
 
 <!-- Go -->
 

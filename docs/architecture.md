@@ -24,11 +24,13 @@ Node specifications define the roles of each node declaratively, and these speci
    +-------------------------------------------------+
 ```
 
+The runtime engine does not enforce specific nodes. All nodes connect to the runtime engine through extensions and can be freely added to tailor to the service needs.
+
 To effectively execute node specifications, the system undergoes two main processes: compilation and runtime. These processes help reduce complexity and optimize performance.
 
 ## Modifying Workflows
 
-The runtime does not directly expose APIs for modifying node specifications. Instead, it focuses on compiling, loading, and activating nodes to make them executable.
+The runtime engine does not directly expose APIs for modifying node specifications. Instead, it focuses on compiling, loading, and activating nodes to make them executable.
 
 If node specifications need to be modified, the Command-Line Interface (CLI) can be used to update the specifications in the database. Alternatively, a workflow can be defined to provide an HTTP API for modifying node specifications. Such workflows are generally defined in the `system` namespace.
 
@@ -159,20 +161,20 @@ During the compilation process, a loader tracks real-time changes to node specif
 Compiled nodes are combined with the specifications and converted into symbols, which are stored in the symbol table. The symbol table connects each symbol’s ports based on the port connection information defined in the node specifications.
 
 ```plantext
-   +--------------------------+             +-------------------+
-   |         Database         |             |       Loader      |
-   |  +--------------------+  |             |  +-------------+  |
-   |  | Node Specification |  |------------>|  |    Scheme   |  |
-   |  +--------------------+  |             |  |  +-------+  |  |
-   |  | Node Specification |  |             |  |  | Codec |  |  |--+
-   |  +--------------------+  |             |  |  +-------+  |  |  |
-   |  | Node Specification |  |             |  +-------------+  |  |
-   |  +--------------------+  |             +-------------------+  |
-   +--------------------------+                                    |
-   +-------------------------+                                     |
-   |      Symbol Table       |                                     |
-   |  +--------+ +--------+  |                                     |
-   |  | Symbol | | Symbol |<---------------------------------------+
+   +--------------------------+   +-------------------+
+   |         Database         |   |       Loader      |
+   |  +--------------------+  |   |  +-------------+  |
+   |  | Node Specification |  |-->|  |    Scheme   |  |
+   |  +--------------------+  |   |  |  +-------+  |  |
+   |  | Node Specification |  |   |  |  | Codec |  |  |--+
+   |  +--------------------+  |   |  |  +-------+  |  |  |
+   |  | Node Specification |  |   |  +-------------+  |  |
+   |  +--------------------+  |   +-------------------+  |
+   +--------------------------+                          |
+   +-------------------------+                           |
+   |      Symbol Table       |                           |
+   |  +--------+ +--------+  |                           |
+   |  | Symbol | | Symbol |<-----------------------------+
    |  +--------+ +--------+  |
    |           \|/           |
    |  +--------+ +--------+  |
