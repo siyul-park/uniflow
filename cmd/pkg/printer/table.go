@@ -8,6 +8,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/oliveagle/jsonpath"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -64,13 +65,13 @@ var style = table.Style{
 }
 
 // PrintTable prints tabular data to the specified writer using the provided columns.
-func PrintTable(writer io.Writer, data any, columns []TableColumnDefinition) error {
+func PrintTable(writer io.Writer, specs []spec.Spec, columns []TableColumnDefinition) error {
 	tablePrinter, err := NewTable(columns)
 	if err != nil {
 		return err
 	}
 
-	table, err := tablePrinter.Print(data)
+	table, err := tablePrinter.Print(specs)
 	if err != nil {
 		return err
 	}
@@ -99,8 +100,8 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 }
 
 // Print formats and prints the provided data as a table.
-func (p *TablePrinter) Print(data any) (string, error) {
-	value, err := types.TextEncoder.Encode(data)
+func (p *TablePrinter) Print(specs []spec.Spec) (string, error) {
+	value, err := types.TextEncoder.Encode(specs)
 	if err != nil {
 		return "", err
 	}

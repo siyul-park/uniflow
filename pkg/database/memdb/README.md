@@ -11,7 +11,7 @@ MemDB is a lightweight, in-memory database library designed for Go, offering sim
 
 ## Benchmarks
 
-The benchmarks below demonstrate the efficiency of MemDB operations across various scenarios:
+Below are benchmarks demonstrating MemDB's efficiency across various scenarios:
 
 ```bash
 goos: linux
@@ -31,4 +31,4 @@ BenchmarkCollection_FindMany/With_Index-4  304,732         3,341 ns/op         3
 BenchmarkCollection_FindMany/Without_Index-4   2,116      663,374 ns/op      65,040 B/op    5,013 allocs/op
 ```
 
-These benchmarks highlight MemDB's efficiency in handling various operations, showcasing its suitability for applications requiring fast in-memory data management and querying capabilities.
+These benchmarks underscore MemDB's efficiency in managing various operations, demonstrating its suitability for applications requiring fast in-memory data management and querying capabilities.

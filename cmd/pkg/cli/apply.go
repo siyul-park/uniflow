@@ -25,11 +25,11 @@ type ApplyConfig struct {
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Apply resources in namespace",
+		Short: "Apply node specifications to the specified namespace",
 		RunE:  runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd

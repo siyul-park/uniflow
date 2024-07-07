@@ -1,15 +1,15 @@
-# Extension
+# Built-in Extensions
 
-Enhance your system's capabilities with our diverse range of first-party extensions. Seamlessly integrate these plugins to expand functionalities and introduce new features, enriching your system's ecosystem. Enjoy a flexible and extensible platform that empowers users to explore various possibilities and effortlessly amplify their system's capabilities.
+Built-in extensions enable efficient task execution within short timeframes and implementation of various functionalities. These extensions enhance system performance, streamline workflows, and boost developer productivity.
 
 ## Available Extensions
 
-- **Control**: Elevate data manipulation capabilities with this versatile tool. Execute code snippets in languages such as CEL, JavaScript, TypeScript, JSON, and YAML, enabling robust data operations.
+- **Control**: Manage and regulate data flow precisely using control statements and loops. Execute code snippets in languages like CEL, JavaScript, TypeScript, JSON, YAML to seamlessly integrate conditional logic, loops, and decision-making.
 
-- **Event**: Support event-driven architectures with seamless handling of runtime events, ensuring efficient event processing and management.
+- **Event**: Effectively integrate and manage various system events. Support event-driven programming to develop applications that respond promptly to user interactions, system notifications, and data changes.
 
-- **IO**: Facilitate communication with external storage systems, including database access and file IO operations. This extension provides essential tools for interacting with external data sources.
+- **IO**: Support interaction with external data sources, including databases and file input/output operations. Handle data reading, writing, file management, database queries, and data exchange with remote servers efficiently.
 
-- **Network**: Strengthen your system with essential network processing functions. Efficiently manage HTTP requests, implement routing, and support seamless communication, making it invaluable for building powerful and dynamic backend workflows.
+- **Network**: Ensure smooth execution of network-related tasks with support for various protocols, including HTTP. Manage complex network requests using routing capabilities, handle API calls, facilitate data transfer, and implement communication protocols effectively.
 
-- **System**: Streamline access to internal runtime functionalities. Manage and modify system components as needed, providing users with tools to maintain and optimize their system effectively.
+- **System**: Manage and optimize system components for stability and efficiency. Tasks include system configuration adjustments, resource monitoring, and performance tuning.

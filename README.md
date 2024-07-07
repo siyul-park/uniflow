@@ -13,61 +13,49 @@ Translations:
 
 A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.
 
-It efficiently manages tasks of varying durations, from short-term to long-term, providing a simple environment for defining data processing flows. This ensures optimal performance with low latency and high throughput across various operations.
+It efficiently handles tasks of varying durations, from short-term to long-term, providing an environment where data processing flows can be declaratively defined and dynamically modified.
 
-The built-in extensions are crafted for efficient execution of short-term tasks, offering a wide array of functionalities. Furthermore, they facilitate seamless integration of additional features, allowing for flexible expansion as needed.
+Through [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to the service requirements.
 
-Develop a service that integrates user personalization, with the added benefit of easily expanding functionality as needed.
+Integrate the engine into your service to offer personalized experiences and extensively expand functionalities.
 
 ## Principles
 
-- **Performance:** Achieve optimal throughput, minimal latency, and maximum scalability across diverse workloads.
-- **Flexibility:** Define complex data processing flows declaratively to adapt seamlessly to changing requirements, enabling dynamic modifications and real-time adjustments.
-- **Extensibility:** Utilize the built-in extensions to efficiently execute various tasks, seamlessly integrating or customizing additional functionalities as needed.
+- **Performance:** Achieves maximum throughput and minimum latency across diverse environments.
+- **Flexibility:** Allows dynamic modification of specifications and real-time adjustments.
+- **Extensibility:** Supports the addition of new nodes freely, enabling extensive feature expansion.
 
 ## Quick Start
 
-To run the [ping example](/examples/ping.yaml), use this command:
+Run the [ping example](./examples/ping.yaml) using the following command:
 
 ```shell
 ./uniflow start --filename example/ping.yaml
 ```
 
-The `--filename` flag automatically installs the node if it doesn't already exist in the namespace.
-
-Check if the instance is providing the expected HTTP endpoint:
+Verify that the HTTP endpoint works as expected:
 
 ```shell
 curl localhost:8000/ping
 pong#
 ```
 
-To apply nodes to a running server, use the `apply` command.
-
-For additional details, refer to the command help:
-
-```shell
-./dist/uniflow start --help
-```
-
 ## Configuration
 
-Configure the environment using either `.uniflow.toml` or system environment variables.
+Configure the environment using the `.uniflow.toml` file or system environment variables.
 
-| TOML Key         | Env Key          | Example               |
-|------------------|------------------|-----------------------|
-| `database.url`   | `DATABASE.URL`   | `mem://` or `mongodb://` |
-| `database.name`  | `DATABASE.NAME`  | -                     |
+| TOML Key         | Environment Variable Key | Example                       |
+|------------------|--------------------------|-------------------------------|
+| `database.url`   | `DATABASE.URL`           | `mem://` or `mongodb://`      |
+| `database.name`  | `DATABASE.NAME`          | -                             |
 
-## Benchmarks
+## Benchmark
 
-The benchmarking tests were conducted using a VPS S SSD (4 Core, 8 GB) from [Contabo](https://contabo.com/). Performance was measured with the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) over the loopback network adapter (127.0.0.1). The test workflow used the [ping example](/examples/ping.yaml), consisting of `listener`, `router`, and `snippet` nodes.
+Benchmarks were conducted on a Contabo VPS S SSD (4 cores, 8GB RAM) using the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). The workflow consisted of the `listener`, `router`, and `snippet` nodes from the [ping example](./examples/ping.yaml).
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
 ```
-
-Results:
 
 ```
 This is ApacheBench, Version 2.3 <$Revision: 1879490 $>
@@ -103,9 +91,10 @@ Percentage of the requests served within a certain time (ms)
  100%    559 (longest request)
 ```
 
-## Links
+## Learn More
 
-- [**Documentation**](/docs/README.md)
+- [Getting Started](./docs/getting_started.md): Learn how to install the CLI, manage workflows, and run the engine.
+- [Architecture](./docs/architecture.md): Understand how node specifications are loaded into the engine and how workflows are executed.
 
 <!-- Go -->
 

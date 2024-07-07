@@ -19,11 +19,11 @@ type GetConfig struct {
 func NewGetCommand(config GetConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get and display resources in namespace",
+		Short: "Get node specifications from the specified namespace",
 		RunE:  runGetCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the resource's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the resource's namespace. If not set, use all namespace")
 
 	return cmd
 }

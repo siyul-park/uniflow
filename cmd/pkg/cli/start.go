@@ -29,11 +29,11 @@ type StartConfig struct {
 func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start a application",
+		Short: "Starts the workflow engine within the specified namespace",
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), "", "Set the namespace for running")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the namespace for running")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the boot file path for initializing nodes")
 
 	return cmd

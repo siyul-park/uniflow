@@ -1,6 +1,6 @@
 # Architecture
 
-Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, and each runtime engine executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
+Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime engine executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
 
 ```plantext
    +-------------------------------------------------+
@@ -24,15 +24,15 @@ Node specifications define the roles of each node declaratively, and these speci
    +-------------------------------------------------+
 ```
 
-The runtime engine does not enforce specific nodes. All nodes connect to the runtime engine through extensions and can be freely added to tailor to the service needs.
+The runtime engine does not enforce the use of specific nodes. All nodes connect to the engine via extensions and can be added or removed as needed for your service.
 
-To effectively execute node specifications, the system undergoes two main processes: compilation and runtime. These processes help reduce complexity and optimize performance.
+To effectively execute node specifications, the process is divided into two main phases: compilation and runtime. This helps reduce complexity and optimize performance.
 
 ## Modifying Workflows
 
-The runtime engine does not directly expose APIs for modifying node specifications. Instead, it focuses on compiling, loading, and activating nodes to make them executable.
+The runtime engine does not expose an API to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes for execution. 
 
-If node specifications need to be modified, the Command-Line Interface (CLI) can be used to update the specifications in the database. Alternatively, a workflow can be defined to provide an HTTP API for modifying node specifications. Such workflows are generally defined in the `system` namespace.
+To modify node specifications, use the Command-Line Interface (CLI) to update the specifications in the database. Alternatively, you can define a workflow that provides an HTTP API for modifying node specifications. These workflows are typically defined in the `system` namespace.
 
 ```yaml
 - kind: listener
@@ -152,13 +152,13 @@ If node specifications need to be modified, the Command-Line Interface (CLI) can
     }
 ```
 
-This approach maintains the stability of the runtime environment while allowing flexible system extensions as needed.
+This approach allows you to maintain a stable runtime environment while flexibly extending the system as needed.
 
 ## Compilation Process
 
-During the compilation process, a loader tracks real-time changes to node specifications via the database’s change stream. The loader detects added, modified, or deleted specifications and dynamically reloads them from the database. Then, using codecs defined in the scheme, the specifications are compiled into executable forms. This process includes operations like optimization and caching to improve performance.
+The loader tracks changes to node specifications in real-time via database change streams. When specifications are added, modified, or deleted, the loader detects these changes and dynamically reloads them from the database. Using codecs defined in the schema, these specifications are compiled into executable forms, with caching and optimization performed to enhance performance.
 
-Compiled nodes are combined with the specifications and converted into symbols, which are stored in the symbol table. The symbol table connects each symbol’s ports based on the port connection information defined in the node specifications.
+Compiled nodes are converted into symbols and stored in a symbol table, which connects the ports of each symbol based on the port connection information defined in the node specifications.
 
 ```plantext
    +--------------------------+   +-------------------+
@@ -183,17 +183,17 @@ Compiled nodes are combined with the specifications and converted into symbols, 
    +-------------------------+
 ```
 
-After all nodes belonging to a workflow are loaded into the symbol table and ports are connected, load hooks are executed sequentially from internal nodes to external nodes to activate them. If a specific node in the symbol table is removed and becomes non-executable, all nodes referencing it are deactivated by executing unload hooks in reverse order.
+When all nodes in a workflow are loaded into the symbol table and their ports are connected, the workflow activates nodes by running load hooks from internal nodes to external nodes sequentially. If a node becomes inoperative, all nodes that reference it are deactivated by running unload hooks in reverse order.
 
-When node specifications are changed in the database, this process ensures that changes are reflected across all runtime environments.
+When node specifications in the database change, this process ensures that all runtime environments reflect the updates.
 
 ## Runtime Process
 
-Activated nodes monitor sockets or files and execute workflows. Each node spawns an independent process to begin execution, isolating the execution flow and efficiently managing necessary resources to avoid impacting other tasks.
+Activated nodes monitor sockets or files and execute workflows. Each node spawns an independent process to start execution, isolating the execution flow from other processes. This efficiently manages resources without impacting other tasks.
 
-Each node opens ports through processes, creates writers, and sends packets to connected nodes. The payload of these packets is converted into common types used at runtime before transmission.
+Nodes open ports through processes and create writers to send packets to connected nodes. The payload of these packets is converted to common types used during runtime and transmitted.
 
-Connected nodes monitor whether a new process has opened the port, creating readers accordingly. These readers continuously process pending packets and deliver the processed results to the next node or return them.
+Connected nodes monitor if a new process has opened a port and create readers. These readers continuously process queued packets and forward the processed results to the next node or return them.
 
 ```plantext
    +-----------------------+          +-----------------------+
@@ -211,9 +211,9 @@ Connected nodes monitor whether a new process has opened the port, creating read
    +-----------------------+          +-----------------------+
 ```
 
-All packets in a reader must be processed and responded to sequentially, and packets sent by a writer must be returned as response packets. This ensures smooth communication between nodes and maintains data consistency and integrity.
+In a reader, every packet must be processed and responded to sequentially, with packets sent by a writer returned as response packets. This setup ensures seamless node communication and upholds data consistency and integrity.
 
-The node that executed the workflow waits for responses to all packets sent, then terminates the process and releases allocated resources. If an error occurs during packet processing, the node logs the error and terminates the process.
+After executing the workflow, the node waits for responses to all sent packets. Upon receiving all responses, it terminates the process and releases allocated resources. If any errors occur during packet processing, the node logs these errors and subsequently terminates the process.
 
 Once a process terminates, it checks and releases all resources associated with it, such as open file descriptors, allocated memory, and database transactions.
 

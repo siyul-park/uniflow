@@ -1,14 +1,14 @@
-# Command
+# Command Line Interface (CLI)
 
-Effectively manage the Command Line Interface (CLI) with a diverse set of commands tailored for workflow management. This serves as the default CLI executable with pre-installed first-party plugins.
+Effectively manage the Command Line Interface (CLI) with a versatile set of commands designed for seamless workflow management. This CLI serves as the default executable with [built-in extensions](../ext/README.md).
 
 ## Configuration Options
 
-Configure the system using environment variables before executing any command. Utilize `.uniflow.toml` or system environment variables.
+Before executing any commands, configure the system using environment variables. You can utilize `.uniflow.toml` or system environment variables.
 
-| Key | Example |
-| --- | --- |
-| `database.url` | `mem://` or `mongodb://` |
-| `database.name` | - |
+| Key             | Example              |
+|-----------------|----------------------|
+| `database.url`  | `mem://` or `mongodb://` |
+| `database.name` | -                    |
 
-Explore various commands and configurations to seamlessly adapt to your workflow needs.
+If using [MongoDB](https://www.mongodb.com/), ensure that [change streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled to track modifications in node specifications. Utilize a [replica set](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication) for change streams.

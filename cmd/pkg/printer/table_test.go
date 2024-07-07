@@ -4,46 +4,41 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTablePrintTable(t *testing.T) {
-	data := []map[string]any{
-		{
-			"foo": "foo",
-			"bar": "bar",
+	specs := []spec.Spec{
+		&spec.Meta{
+			Kind: "foo",
+			Name: "bar",
 		},
 	}
 
 	buf := new(bytes.Buffer)
 
-	expect := " FOO  BAR \n foo  bar "
+	expect := " ID     KIND  NAMESPACE  NAME  LINKS \n <nil>  foo   <nil>      bar   <nil> "
 
-	err := PrintTable(buf, data, []TableColumnDefinition{
-		{Name: "foo", Format: "$.foo"},
-		{Name: "bar", Format: "$.bar"},
-	})
+	err := PrintTable(buf, specs, SpecTableColumnDefinitions)
 	assert.NoError(t, err)
 	assert.Equal(t, expect, buf.String())
 }
 
 func TestTablePrinter_Print(t *testing.T) {
-	data := []map[string]any{
-		{
-			"foo": "foo",
-			"bar": "bar",
+	specs := []spec.Spec{
+		&spec.Meta{
+			Kind: "foo",
+			Name: "bar",
 		},
 	}
 
-	p, err := NewTable([]TableColumnDefinition{
-		{Name: "foo", Format: "$.foo"},
-		{Name: "bar", Format: "$.bar"},
-	})
+	p, err := NewTable(SpecTableColumnDefinitions)
 	assert.NoError(t, err)
 
-	expect := " FOO  BAR \n foo  bar "
+	expect := " ID     KIND  NAMESPACE  NAME  LINKS \n <nil>  foo   <nil>      bar   <nil> "
 
-	table, err := p.Print(data)
+	table, err := p.Print(specs)
 	assert.NoError(t, err)
 	assert.Equal(t, expect, table)
 }
