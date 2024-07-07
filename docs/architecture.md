@@ -1,6 +1,6 @@
 # Architecture
 
-Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, and each runtime executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
+Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, and each runtime engine executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
 
 ```plantext
    +-------------------------------------------------+

@@ -105,7 +105,7 @@ Percentage of the requests served within a certain time (ms)
 
 ## Links
 
-- [**Documentation**](/docs)
+- [**Documentation**](/docs/README.md)
 
 <!-- Go -->
 

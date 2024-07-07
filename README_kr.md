@@ -105,7 +105,7 @@ Percentage of the requests served within a certain time (ms)
 
 ## 관련 자료
 
-- [**문서**](/docs)
+- [**문서**](/docs/README_kr.md)
 
 <!-- Go -->
 
