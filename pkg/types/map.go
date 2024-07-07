@@ -140,10 +140,24 @@ func (m Map) Interface() any {
 	keys := make([]any, 0, m.value.Len())
 	values := make([]any, 0, m.value.Len())
 
+	hashable := true
 	for itr := m.value.Iterator(); !itr.Done(); {
 		k, v, _ := itr.Next()
+
 		keys = append(keys, InterfaceOf(k))
 		values = append(values, InterfaceOf(v))
+
+		kind := KindOf(k)
+		hashable = hashable && kind != KindBinary && kind != KindMap && kind != KindSlice
+	}
+
+	if !hashable {
+		t := make([][2]any, len(keys))
+		for i, key := range keys {
+			value := values[i]
+			t[i] = [2]any{key, value}
+		}
+		return t
 	}
 
 	keyType := getCommonType(keys)

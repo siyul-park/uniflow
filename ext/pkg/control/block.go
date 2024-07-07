@@ -119,13 +119,11 @@ func (n *BlockNode) Close() error {
 		}
 	}
 
-	for name, p := range n.inPorts {
+	for _, p := range n.inPorts {
 		p.Close()
-		delete(n.inPorts, name)
 	}
-	for name, p := range n.outPorts {
+	for _, p := range n.outPorts {
 		p.Close()
-		delete(n.outPorts, name)
 	}
 
 	return nil

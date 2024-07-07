@@ -108,6 +108,26 @@ func TestMap_Compare(t *testing.T) {
 	assert.Equal(t, 1, o2.Compare(o1))
 }
 
+func TestMap_Interface(t *testing.T) {
+	t.Run("Hashable", func(t *testing.T) {
+		k1 := NewString(faker.UUIDHyphenated())
+		v1 := NewString(faker.UUIDHyphenated())
+
+		o := NewMap(k1, v1)
+
+		assert.Equal(t, map[string]string{k1.String(): v1.String()}, o.Interface())
+	})
+
+	t.Run("Not Hashable", func(t *testing.T) {
+		k1 := NewSlice(NewString(faker.UUIDHyphenated()))
+		v1 := NewString(faker.UUIDHyphenated())
+
+		o := NewMap(k1, v1)
+
+		assert.Equal(t, [][2]any{{k1.Interface(), v1.Interface()}}, o.Interface())
+	})
+}
+
 func TestMap_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
