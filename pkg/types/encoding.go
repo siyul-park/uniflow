@@ -9,11 +9,11 @@ import (
 )
 
 type Marshaler interface {
-	MarshalObject() (Value, error)
+	Marshal() (Value, error)
 }
 
 type Unmarshaler interface {
-	UnmarshalObject(Value) error
+	Unmarshal(Value) error
 }
 
 var (
@@ -98,7 +98,7 @@ func newExpandedEncoder() encoding.EncodeCompiler[any, Value] {
 		if typ != nil && typ.Kind() == reflect.Pointer && typ.ConvertibleTo(typeMarshaler) {
 			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := source.(Marshaler)
-				return s.MarshalObject()
+				return s.Marshal()
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrInvalidArgument)
@@ -112,7 +112,7 @@ func newExpandedDecoder() encoding.DecodeCompiler[Value] {
 		if typ != nil && typ.ConvertibleTo(typeUnmarshaler) {
 			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(Unmarshaler)
-				return t.UnmarshalObject(source)
+				return t.Unmarshal(source)
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrInvalidArgument)

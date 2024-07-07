@@ -182,16 +182,16 @@ func (u *Unstructured) Doc() types.Map {
 	return u.doc
 }
 
-// MarshalObject convert Unstructured to types.Value.
-func (u *Unstructured) MarshalObject() (types.Value, error) {
+// Marshal convert Unstructured to types.Value.
+func (u *Unstructured) Marshal() (types.Value, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
 	return u.doc, nil
 }
 
-// UnmarshalObject convert types.Value to Unstructured.
-func (u *Unstructured) UnmarshalObject(value types.Value) error {
+// Unmarshal convert types.Value to Unstructured.
+func (u *Unstructured) Unmarshal(value types.Value) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 

@@ -63,7 +63,7 @@ func TestUnstructured_GetAndLinks(t *testing.T) {
 	assert.Equal(t, links, u.GetLinks())
 }
 
-func TestUnstructured_MarshalPrimitive(t *testing.T) {
+func TestUnstructured_Marshal(t *testing.T) {
 	spec := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
@@ -73,12 +73,12 @@ func TestUnstructured_MarshalPrimitive(t *testing.T) {
 
 	u := NewUnstructured(doc1.(types.Map))
 
-	doc2, err := u.MarshalObject()
+	doc2, err := u.Marshal()
 	assert.NoError(t, err)
 	assert.Equal(t, doc1, doc2)
 }
 
-func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
+func TestUnstructured_Unmarshal(t *testing.T) {
 	spec := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
@@ -88,7 +88,7 @@ func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
 
 	u := NewUnstructured(nil)
 
-	err := u.UnmarshalObject(doc)
+	err := u.Unmarshal(doc)
 	assert.NoError(t, err)
 	assert.Equal(t, u.GetID(), spec.GetID())
 	assert.Equal(t, u.GetKind(), spec.GetKind())
