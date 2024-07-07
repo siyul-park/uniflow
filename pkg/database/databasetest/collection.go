@@ -202,7 +202,7 @@ func TestCollection_UpdateMany(t *testing.T, collection database.Collection) {
 	})
 
 	t.Run("Upsert = false", func(t *testing.T) {
-		var ids []types.Object
+		var ids []types.Value
 		for i := 0; i < batchSize; i++ {
 			ids = append(ids, types.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 		}
@@ -264,7 +264,7 @@ func TestCollection_DeleteMany(t *testing.T, collection database.Collection) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	var ids []types.Object
+	var ids []types.Value
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, types.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
@@ -399,7 +399,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	var ids []types.Object
+	var ids []types.Value
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, types.NewBinary(uuid.Must(uuid.NewV7()).Bytes()))
 	}
@@ -515,7 +515,7 @@ func TestCollection_FindMany(t *testing.T, collection database.Collection) {
 		assert.NoError(t, err)
 		assert.Len(t, res, len(ids))
 
-		var preID types.Object
+		var preID types.Value
 		for _, doc := range res {
 			curID := doc.GetOr(types.NewString("id"), nil)
 			assert.False(t, types.Equal(preID, curID))

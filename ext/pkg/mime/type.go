@@ -29,7 +29,7 @@ const (
 const charsetUTF8 = "charset=utf-8"
 
 // DetectTypes determines the content types based on the type of types passed.
-func DetectTypes(value types.Object) []string {
+func DetectTypes(value types.Value) []string {
 	switch value.(type) {
 	case types.Binary:
 		return []string{ApplicationOctetStream}
@@ -37,7 +37,7 @@ func DetectTypes(value types.Object) []string {
 		return []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8}
 	case types.Slice:
 		return []string{ApplicationJSONCharsetUTF8}
-	case types.Object, types.Error:
+	case types.Value, types.Error:
 		return []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
 	default:
 		return []string{ApplicationJSONCharsetUTF8}

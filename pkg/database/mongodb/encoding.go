@@ -17,7 +17,7 @@ var (
 	toSnake      = changeCase(strcase.ToSnake)
 )
 
-func filterToBson(filter *database.Filter) (any, error) {
+func filterToBson(filter *database.Filter) (bson.D, error) {
 	if filter == nil {
 		return bson.D{}, nil
 	}
@@ -25,57 +25,54 @@ func filterToBson(filter *database.Filter) (any, error) {
 	switch filter.OP {
 	case database.AND, database.OR:
 		var values bson.A
-		for _, e := range filter.Children {
-			if value, err := filterToBson(e); err != nil {
+		for _, child := range filter.Children {
+			value, err := filterToBson(child)
+			if err != nil {
 				return nil, err
-			} else {
-				values = append(values, value)
 			}
+			values = append(values, value)
 		}
 
-		if filter.OP == database.AND {
-			return bson.D{{Key: "$and", Value: values}}, nil
-		} else if filter.OP == database.OR {
-			return bson.D{{Key: "$or", Value: values}}, nil
+		op := "$and"
+		if filter.OP == database.OR {
+			op = "$or"
 		}
+		return bson.D{{Key: op, Value: values}}, nil
+
 	case database.NULL, database.NNULL:
 		k := internalKey(filter.Key)
-
-		if filter.OP == database.NULL {
-			return bson.D{{Key: k, Value: bson.M{"$eq": nil}}}, nil
-		} else if filter.OP == database.NNULL {
-			return bson.D{{Key: k, Value: bson.M{"$ne": nil}}}, nil
+		op := "$eq"
+		if filter.OP == database.NNULL {
+			op = "$ne"
 		}
+		return bson.D{{Key: k, Value: bson.M{op: nil}}}, nil
+
 	default:
 		k := internalKey(filter.Key)
-		v, err := primitiveToBson(filter.Value)
+		v, err := toBson(filter.Value)
 		if err != nil {
 			return nil, err
 		}
 
-		if filter.OP == database.EQ {
-			return bson.D{{Key: k, Value: bson.M{"$eq": v}}}, nil
-		} else if filter.OP == database.NE {
-			return bson.D{{Key: k, Value: bson.M{"$ne": v}}}, nil
-		} else if filter.OP == database.LT {
-			return bson.D{{Key: k, Value: bson.M{"$lt": v}}}, nil
-		} else if filter.OP == database.LTE {
-			return bson.D{{Key: k, Value: bson.M{"$lte": v}}}, nil
-		} else if filter.OP == database.GT {
-			return bson.D{{Key: k, Value: bson.M{"$gt": v}}}, nil
-		} else if filter.OP == database.GTE {
-			return bson.D{{Key: k, Value: bson.M{"$gte": v}}}, nil
-		} else if filter.OP == database.IN {
-			return bson.D{{Key: k, Value: bson.M{"$in": v}}}, nil
-		} else if filter.OP == database.NIN {
-			return bson.D{{Key: k, Value: bson.M{"$nin": v}}}, nil
+		ops := map[database.OP]string{
+			database.EQ:  "$eq",
+			database.NE:  "$ne",
+			database.LT:  "$lt",
+			database.LTE: "$lte",
+			database.GT:  "$gt",
+			database.GTE: "$gte",
+			database.IN:  "$in",
+			database.NIN: "$nin",
 		}
+		op, ok := ops[filter.OP]
+		if !ok {
+			return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		}
+		return bson.D{{Key: k, Value: bson.M{op: v}}}, nil
 	}
-
-	return nil, errors.WithStack(encoding.ErrInvalidArgument)
 }
 
-func bsonToFilter(data any, filter **database.Filter) error {
+func bsonToFilter(data interface{}, filter **database.Filter) error {
 	raw, ok := bsonMA(data)
 	if !ok {
 		return errors.WithStack(encoding.ErrInvalidArgument)
@@ -84,106 +81,116 @@ func bsonToFilter(data any, filter **database.Filter) error {
 	var children []*database.Filter
 	for _, curr := range raw {
 		for key, value := range curr {
-			if key == "$and" || key == "$or" {
-				if value, ok := bsonMA(value); !ok {
-					return errors.WithStack(encoding.ErrInvalidArgument)
-				} else {
-					var values []*database.Filter
-					for _, v := range value {
-						var value *database.Filter
-						if err := bsonToFilter(v, &value); err != nil {
-							return err
-						}
-						values = append(values, value)
+			switch key {
+			case "$and", "$or":
+				if filters, ok := bsonMA(value); ok {
+					var op database.OP
+					if key == "$and" {
+						op = database.AND
+					} else if key == "$or" {
+						op = database.OR
 					}
 
-					if key == "$and" {
-						children = append(children, &database.Filter{
-							OP:       database.AND,
-							Children: values,
-						})
-					} else if key == "$or" {
-						children = append(children, &database.Filter{
-							OP:       database.OR,
-							Children: values,
-						})
+					var childs []*database.Filter
+					for _, filterData := range filters {
+						var child *database.Filter
+						if err := bsonToFilter(filterData, &child); err != nil {
+							return err
+						}
+						childs = append(childs, child)
 					}
+
+					children = append(children, &database.Filter{
+						OP:       op,
+						Children: childs,
+					})
+				} else {
+					return errors.WithStack(encoding.ErrInvalidArgument)
 				}
-			} else if key == "$not" {
+
+			case "$not":
 				var child *database.Filter
 				if err := bsonToFilter(value, &child); err != nil {
 					return err
 				}
-				if child.OP == database.EQ {
+				switch child.OP {
+				case database.EQ:
 					child.OP = database.NE
-				} else if child.OP == database.NE {
+				case database.NE:
 					child.OP = database.EQ
-				} else if child.OP == database.IN {
+				case database.IN:
 					child.OP = database.NIN
-				} else if child.OP == database.NIN {
+				case database.NIN:
 					child.OP = database.IN
-				} else if child.OP == database.NULL {
+				case database.NULL:
 					child.OP = database.NNULL
-				} else if child.OP == database.NNULL {
+				case database.NNULL:
 					child.OP = database.NULL
+				}
+
+				children = append(children, child)
+
+			default:
+				if value, ok := bsonM(value); ok {
+					for k, v := range value {
+						if !strings.HasPrefix(k, "$") {
+							return errors.WithStack(encoding.ErrInvalidArgument)
+						}
+
+						var op database.OP
+						switch k {
+						case "$eq":
+							if v == nil {
+								op = database.NULL
+							} else {
+								op = database.EQ
+							}
+						case "$ne":
+							if v == nil {
+								op = database.NNULL
+							} else {
+								op = database.NE
+							}
+						case "$lt":
+							op = database.LT
+						case "$lte":
+							op = database.LTE
+						case "$gt":
+							op = database.GT
+						case "$gte":
+							op = database.GTE
+						case "$in":
+							op = database.IN
+						case "$nin":
+							op = database.NIN
+						default:
+							return errors.WithStack(encoding.ErrInvalidArgument)
+						}
+
+						var value types.Value
+						if err := fromBson(v, &value); err != nil {
+							return err
+						}
+
+						children = append(children, &database.Filter{
+							Key:   externalKey(key),
+							OP:    op,
+							Value: value,
+						})
+					}
 				} else {
 					return errors.WithStack(encoding.ErrInvalidArgument)
 				}
-				children = append(children, child)
-			} else if value, ok := bsonM(value); ok {
-				for op, v := range value {
-					if !strings.HasPrefix(op, "$") {
-						return errors.WithStack(encoding.ErrInvalidArgument)
-					}
-					child := &database.Filter{
-						Key: externalKey(key),
-					}
-					if op == "$eq" {
-						if v == nil {
-							child.OP = database.NULL
-						} else {
-							child.OP = database.EQ
-						}
-					} else if op == "$ne" {
-						if v == nil {
-							child.OP = database.NNULL
-						} else {
-							child.OP = database.NE
-						}
-					} else if op == "$lt" {
-						child.OP = database.LT
-					} else if op == "$lte" {
-						child.OP = database.LTE
-					} else if op == "$gt" {
-						child.OP = database.GT
-					} else if op == "$gte" {
-						child.OP = database.GTE
-					} else if op == "$in" {
-						child.OP = database.IN
-					} else if op == "$nin" {
-						child.OP = database.NIN
-					} else {
-						return errors.WithStack(encoding.ErrInvalidArgument)
-					}
-
-					var value types.Object
-					if err := bsonToPrimitive(v, &value); err != nil {
-						return err
-					}
-					child.Value = value
-					children = append(children, child)
-				}
-			} else {
-				return errors.WithStack(encoding.ErrInvalidArgument)
 			}
 		}
 	}
 
-	if len(children) == 0 {
+	switch len(children) {
+	case 0:
 		*filter = nil
-	} else if len(children) == 1 {
+	case 1:
 		*filter = children[0]
-	} else {
+	default:
 		*filter = &database.Filter{
 			OP:       database.AND,
 			Children: children,
@@ -193,7 +200,7 @@ func bsonToFilter(data any, filter **database.Filter) error {
 	return nil
 }
 
-func primitiveToBson(data types.Object) (any, error) {
+func toBson(data types.Value) (any, error) {
 	if data == nil {
 		return primitive.Null{}, nil
 	}
@@ -205,7 +212,7 @@ func primitiveToBson(data types.Object) (any, error) {
 			if k, ok := k.(types.String); !ok {
 				return nil, errors.WithStack(encoding.ErrInvalidArgument)
 			} else {
-				if v, err := primitiveToBson(v); err != nil {
+				if v, err := toBson(v); err != nil {
 					return nil, err
 				} else {
 					t[internalKey(k.String())] = v
@@ -216,7 +223,7 @@ func primitiveToBson(data types.Object) (any, error) {
 	} else if s, ok := data.(types.Slice); ok {
 		t := make(primitive.A, s.Len())
 		for i := 0; i < s.Len(); i++ {
-			if v, err := primitiveToBson(s.Get(i)); err != nil {
+			if v, err := toBson(s.Get(i)); err != nil {
 				return nil, err
 			} else {
 				t[i] = v
@@ -228,7 +235,7 @@ func primitiveToBson(data types.Object) (any, error) {
 	}
 }
 
-func bsonToPrimitive(data any, v *types.Object) error {
+func fromBson(data any, v *types.Value) error {
 	if data == nil {
 		*v = nil
 		return nil
@@ -242,10 +249,10 @@ func bsonToPrimitive(data any, v *types.Object) error {
 		*v = types.NewBinary(s.Data)
 		return nil
 	} else if s, ok := data.(primitive.A); ok {
-		values := make([]types.Object, len(s))
+		values := make([]types.Value, len(s))
 		for i, e := range s {
-			var value types.Object
-			if err := bsonToPrimitive(e, &value); err != nil {
+			var value types.Value
+			if err := fromBson(e, &value); err != nil {
 				return err
 			}
 			values[i] = value
@@ -253,11 +260,11 @@ func bsonToPrimitive(data any, v *types.Object) error {
 		*v = types.NewSlice(values...)
 		return nil
 	} else if s, ok := bsonM(data); ok {
-		pairs := make([]types.Object, len(s)*2)
+		pairs := make([]types.Value, len(s)*2)
 		i := 0
 		for k, v := range s {
-			var value types.Object
-			if err := bsonToPrimitive(v, &value); err != nil {
+			var value types.Value
+			if err := fromBson(v, &value); err != nil {
 				return err
 			}
 			pairs[i*2] = types.NewString(externalKey(k))
@@ -266,7 +273,7 @@ func bsonToPrimitive(data any, v *types.Object) error {
 		}
 		*v = types.NewMap(pairs...)
 		return nil
-	} else if s, err := types.MarshalBinary(data); err == nil {
+	} else if s, err := types.BinaryEncoder.Encode(data); err == nil {
 		*v = s
 		return nil
 	}

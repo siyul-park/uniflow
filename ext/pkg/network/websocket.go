@@ -47,8 +47,8 @@ type WebSocketNodeSpec struct {
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
-	Type int          `map:"type"`
-	Data types.Object `map:"data,omitempty"`
+	Type int         `map:"type"`
+	Data types.Value `map:"data,omitempty"`
 }
 
 const KindWebSocket = "websocket"
@@ -82,7 +82,7 @@ func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*w
 	defer cancel()
 
 	u := &url.URL{}
-	_ = types.Unmarshal(inPck.Payload(), &u)
+	_ = types.Decoder.Decode(inPck.Payload(), &u)
 
 	if n.url.Scheme != "" {
 		u.Scheme = n.url.Scheme
@@ -212,7 +212,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 		}
 
 		var inPayload *WebSocketPayload
-		if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+		if err := types.Decoder.Decode(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()
 			if _, ok := inPayload.Data.(types.Binary); !ok {
 				inPayload.Type = websocket.TextMessage
@@ -266,7 +266,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 			data = types.NewString(err.Error())
 		}
 
-		outPayload, _ := types.MarshalText(&WebSocketPayload{
+		outPayload, _ := types.TextEncoder.Encode(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})

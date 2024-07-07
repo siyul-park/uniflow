@@ -11,7 +11,7 @@ import (
 
 func TestDetectTypes(t *testing.T) {
 	testCases := []struct {
-		when types.Object
+		when types.Value
 	}{
 		{
 			when: types.NewBinary(nil),

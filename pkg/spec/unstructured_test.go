@@ -69,7 +69,7 @@ func TestUnstructured_MarshalPrimitive(t *testing.T) {
 		Kind: faker.UUIDHyphenated(),
 	}
 
-	doc1, _ := types.MarshalBinary(spec)
+	doc1, _ := types.BinaryEncoder.Encode(spec)
 
 	u := NewUnstructured(doc1.(types.Map))
 
@@ -84,7 +84,7 @@ func TestUnstructured_UnmarshalPrimitive(t *testing.T) {
 		Kind: faker.UUIDHyphenated(),
 	}
 
-	doc, _ := types.MarshalBinary(spec)
+	doc, _ := types.BinaryEncoder.Encode(spec)
 
 	u := NewUnstructured(nil)
 

@@ -16,7 +16,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 	switch filter.OP {
 	case database.EQ:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return types.Equal(o, filter.Value)
@@ -24,7 +24,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.NE:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return !types.Equal(o, filter.Value)
@@ -32,7 +32,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.LT:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return types.Compare(o, filter.Value) < 0
@@ -40,7 +40,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.LTE:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return types.Compare(o, filter.Value) <= 0
@@ -48,7 +48,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.GT:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return types.Compare(o, filter.Value) > 0
@@ -56,7 +56,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.GTE:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return types.Compare(o, filter.Value) >= 0
@@ -64,7 +64,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.IN:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else if o == nil {
 				return false
@@ -81,7 +81,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.NIN:
 		return func(m types.Map) bool {
-			if o, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if o, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return true
 			} else if o == nil {
 				return true
@@ -98,7 +98,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.NULL:
 		return func(m types.Map) bool {
-			if v, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if v, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return v == nil
@@ -106,7 +106,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 		}
 	case database.NNULL:
 		return func(m types.Map) bool {
-			if v, ok := types.Pick[types.Object](m, parsePath(filter.Key)...); !ok {
+			if v, ok := types.Pick[types.Value](m, parsePath(filter.Key)...); !ok {
 				return false
 			} else {
 				return v != nil
@@ -145,7 +145,7 @@ func parseFilter(filter *database.Filter) func(types.Map) bool {
 	}
 }
 
-func extractIDByFilter(filter *database.Filter) types.Object {
+func extractIDByFilter(filter *database.Filter) types.Value {
 	if filter == nil {
 		return nil
 	}
@@ -157,7 +157,7 @@ func extractIDByFilter(filter *database.Filter) types.Object {
 		}
 		return nil
 	case database.AND:
-		var id types.Object
+		var id types.Value
 		for _, child := range filter.Children {
 			if childID := extractIDByFilter(child); childID != nil {
 				if id != nil {

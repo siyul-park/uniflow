@@ -25,12 +25,12 @@ type Constraint struct {
 }
 
 type node struct {
-	key   types.Object
+	key   types.Value
 	value types.Map
 }
 
 type index struct {
-	key   types.Object
+	key   types.Value
 	value *btree.BTreeG[index]
 }
 
@@ -135,7 +135,7 @@ func (s *Section) Constraints() []Constraint {
 }
 
 // Set inserts a document into the Section with the primary key.
-func (s *Section) Set(doc types.Map) (types.Object, error) {
+func (s *Section) Set(doc types.Map) (types.Value, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -191,7 +191,7 @@ func (s *Section) Range(f func(doc types.Map) bool) {
 }
 
 // Scan performs a range scan on a specific index within the Section.
-func (s *Section) Scan(name string, min, max types.Object) (*Sector, bool) {
+func (s *Section) Scan(name string, min, max types.Value) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -246,7 +246,7 @@ func (s *Section) index(doc types.Map) error {
 		cur := s.indexes[i]
 
 		for i, k := range constraint.Keys {
-			value, _ := types.Pick[types.Object](doc, k)
+			value, _ := types.Pick[types.Value](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {
@@ -281,7 +281,7 @@ func (s *Section) unindex(doc types.Map) {
 		paths := []index{{value: cur}}
 
 		for i, k := range constraint.Keys {
-			value, _ := types.Pick[types.Object](doc, k)
+			value, _ := types.Pick[types.Value](doc, k)
 
 			child, ok := cur.Get(index{key: value})
 			if !ok {

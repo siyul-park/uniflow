@@ -1,12 +1,12 @@
 package types
 
-// Object is an interface that signifies atomic data types.
-type Object interface {
-	Kind() Kind               // Kind returns the kind of the Object.
-	Hash() uint64             // Hash returns the hash code of the Object.
-	Interface() any           // Interface returns the Object as a generic interface.
-	Equal(other Object) bool  // Equal checks whether the Object is equal to another Object.
-	Compare(other Object) int // Compare compares the Object with another Object.
+// Value is an interface that signifies atomic data types.
+type Value interface {
+	Kind() Kind              // Kind returns the kind of the Object.
+	Hash() uint64            // Hash returns the hash code of the Object.
+	Interface() any          // Interface returns the Object as a generic interface.
+	Equal(other Value) bool  // Equal checks whether the Object is equal to another Object.
+	Compare(other Value) int // Compare compares the Object with another Object.
 }
 
 // Kind represents the enumeration of data types.
@@ -37,7 +37,7 @@ const (
 
 // KindOf returns the kind of the provided Object.
 // If the Object is nil, it returns KindInvalid.
-func KindOf(v Object) Kind {
+func KindOf(v Value) Kind {
 	if v == nil {
 		return KindInvalid
 	}
@@ -46,7 +46,7 @@ func KindOf(v Object) Kind {
 
 // HashOf returns the hash code of the provided Object.
 // If the Object is nil, it returns 0.
-func HashOf(v Object) uint64 {
+func HashOf(v Value) uint64 {
 	if v == nil {
 		return 0
 	}
@@ -55,7 +55,7 @@ func HashOf(v Object) uint64 {
 
 // InterfaceOf converts an Object to a generic interface.
 // Nil values are returned as a nil interface.
-func InterfaceOf(v Object) any {
+func InterfaceOf(v Value) any {
 	if v == nil {
 		return nil
 	}
@@ -65,7 +65,7 @@ func InterfaceOf(v Object) any {
 // Equal checks whether two Objects are equal.
 // If both Objects are nil, they are considered equal.
 // If their kinds differ, they are not equal.
-func Equal(x, y Object) bool {
+func Equal(x, y Value) bool {
 	if x == nil && y == nil {
 		return true
 	}
@@ -81,7 +81,7 @@ func Equal(x, y Object) bool {
 // 1 if x is greater than y.
 // If both Objects are nil, they are considered equal.
 // If their kinds differ, they are not equal.
-func Compare(x, y Object) int {
+func Compare(x, y Value) int {
 	if x == nil && y == nil {
 		return 0
 	}

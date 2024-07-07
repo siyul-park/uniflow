@@ -12,7 +12,7 @@ import (
 
 // Float is an interface representing a floating-point number.
 type Float interface {
-	Object
+	Value
 	Float() float64
 }
 
@@ -57,7 +57,7 @@ func (f Float32) Interface() any {
 }
 
 // Equal checks whether two Float32 instances are equal.
-func (f Float32) Equal(other Object) bool {
+func (f Float32) Equal(other Value) bool {
 	if o, ok := other.(Float32); ok {
 		return f.value == o.value
 	}
@@ -65,7 +65,7 @@ func (f Float32) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Float32 instance.
-func (f Float32) Compare(other Object) int {
+func (f Float32) Compare(other Value) int {
 	if o, ok := other.(Float32); ok {
 		return compare(f.value, o.value)
 	}
@@ -100,7 +100,7 @@ func (f Float64) Interface() any {
 }
 
 // Equal checks whether two Float64 instances are equal.
-func (f Float64) Equal(other Object) bool {
+func (f Float64) Equal(other Value) bool {
 	if o, ok := other.(Float64); ok {
 		return f.value == o.value
 	}
@@ -108,25 +108,25 @@ func (f Float64) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Float64 instance.
-func (f Float64) Compare(other Object) int {
+func (f Float64) Compare(other Value) int {
 	if o, ok := other.(Float64); ok {
 		return compare(f.value, o.value)
 	}
 	return compare(f.Kind(), KindOf(other))
 }
 
-func newFloatEncoder() encoding.EncodeCompiler[any, Object] {
-	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
-		if typ.Kind() == reflect.Float32 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+func newFloatEncoder() encoding.EncodeCompiler[any, Value] {
+	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+		if typ != nil && typ.Kind() == reflect.Float32 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(float32); ok {
 					return NewFloat32(s), nil
 				} else {
 					return NewFloat32(float32(reflect.ValueOf(source).Float())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Float64 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Float64 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(float64); ok {
 					return NewFloat64(s), nil
 				} else {
@@ -138,9 +138,9 @@ func newFloatEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func newFloatDecoder() encoding.DecodeCompiler[Object] {
-	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer {
+func newFloatDecoder() encoding.DecodeCompiler[Value] {
+	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return newFloatDecoderWithType[float32](), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
@@ -166,7 +166,7 @@ func newFloatDecoder() encoding.DecodeCompiler[Object] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newFloatDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Float); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -179,8 +179,8 @@ func newFloatDecoder() encoding.DecodeCompiler[Object] {
 	})
 }
 
-func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Object, unsafe.Pointer] {
-	return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
+	return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Float); ok {
 			*(*T)(target) = T(s.Float())
 			return nil

@@ -14,7 +14,7 @@ import (
 
 // SessionNode manages session data flow and process interactions through its ports.
 type SessionNode struct {
-	values  *process.Local[types.Object]
+	values  *process.Local[types.Value]
 	tracer  *packet.Tracer
 	ioPort  *port.InPort
 	inPort  *port.InPort
@@ -34,7 +34,7 @@ var _ node.Node = (*SessionNode)(nil)
 // NewSessionNode creates and initializes a new SessionNode.
 func NewSessionNode() *SessionNode {
 	n := &SessionNode{
-		values:  process.NewLocal[types.Object](),
+		values:  process.NewLocal[types.Value](),
 		tracer:  packet.NewTracer(),
 		ioPort:  port.NewIn(),
 		inPort:  port.NewIn(),

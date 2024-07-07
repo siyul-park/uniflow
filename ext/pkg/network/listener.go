@@ -165,7 +165,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req, err := n.read(r)
 	if err != nil {
 		errPck = packet.New(types.NewError(err))
-	} else if outPayload, err := types.MarshalText(req); err != nil {
+	} else if outPayload, err := types.TextEncoder.Encode(req); err != nil {
 		errPck = packet.New(types.NewError(err))
 	} else {
 		outPck = packet.New(outPayload)
@@ -186,7 +186,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var res *HTTPPayload
 		if _, ok := backPck.Payload().(types.Error); ok {
 			res = NewHTTPPayload(http.StatusInternalServerError)
-		} else if err := types.Unmarshal(backPck.Payload(), &res); err != nil {
+		} else if err := types.Decoder.Decode(backPck.Payload(), &res); err != nil {
 			res.Body = backPck.Payload()
 		}
 

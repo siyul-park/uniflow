@@ -65,7 +65,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		var inPayload types.Object
+		var inPayload types.Value
 		inPayload = types.NewSlice(
 			types.NewString("INSERT INTO Foo(name) VALUES (?)"),
 			types.NewSlice(types.NewString(faker.UUIDHyphenated())),
@@ -122,7 +122,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 
 		inWriter := in.Open(proc)
 
-		var inPayload types.Object
+		var inPayload types.Value
 		inPayload = types.NewSlice(
 			types.NewString("INSERT INTO Foo(name) VALUES (:name)"),
 			types.NewMap(

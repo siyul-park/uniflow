@@ -8,8 +8,8 @@ import (
 func parseSorts(sorts []database.Sort) func(i, j types.Map) bool {
 	return func(i, j types.Map) bool {
 		for _, s := range sorts {
-			x, _ := types.Pick[types.Object](i, parsePath(s.Key)...)
-			y, _ := types.Pick[types.Object](j, parsePath(s.Key)...)
+			x, _ := types.Pick[types.Value](i, parsePath(s.Key)...)
+			y, _ := types.Pick[types.Value](j, parsePath(s.Key)...)
 
 			e := types.Compare(x, y)
 			if e == 0 {

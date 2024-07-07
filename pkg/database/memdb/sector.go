@@ -35,7 +35,7 @@ func (s *Sector) Range(f func(doc types.Map) bool) {
 
 // Scan performs a range scan on the sector using the specified key, min, and max values.
 // It returns a new sector and a boolean indicating if the scan was successful.
-func (s *Sector) Scan(key string, min, max types.Object) (*Sector, bool) {
+func (s *Sector) Scan(key string, min, max types.Value) (*Sector, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -46,7 +46,7 @@ func (s *Sector) Scan(key string, min, max types.Object) (*Sector, bool) {
 	return s.scan(min, max)
 }
 
-func (s *Sector) scan(min, max types.Object) (*Sector, bool) {
+func (s *Sector) scan(min, max types.Value) (*Sector, bool) {
 	child := newIndexes()
 
 	if min != nil && max != nil && types.Compare(min, max) == 0 {

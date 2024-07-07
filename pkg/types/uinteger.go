@@ -12,7 +12,7 @@ import (
 
 // Uinteger is an interface representing an unsigned integer.
 type Uinteger interface {
-	Object
+	Value
 	Uint() uint64
 }
 
@@ -75,7 +75,7 @@ func (u Uint) Interface() any {
 }
 
 // Equal checks if two Uint typess are equal.
-func (u Uint) Equal(other Object) bool {
+func (u Uint) Equal(other Value) bool {
 	if o, ok := other.(Uint); ok {
 		return u.value == o.value
 	}
@@ -83,7 +83,7 @@ func (u Uint) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Uint instance.
-func (u Uint) Compare(other Object) int {
+func (u Uint) Compare(other Value) int {
 	if o, ok := other.(Uint); ok {
 		return compare(u.value, o.value)
 	}
@@ -118,7 +118,7 @@ func (u Uint8) Interface() any {
 }
 
 // Equal checks if two Uint8 typess are equal.
-func (u Uint8) Equal(other Object) bool {
+func (u Uint8) Equal(other Value) bool {
 	if o, ok := other.(Uint8); ok {
 		return u.value == o.value
 	}
@@ -126,7 +126,7 @@ func (u Uint8) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Uint8 instance.
-func (u Uint8) Compare(other Object) int {
+func (u Uint8) Compare(other Value) int {
 	if o, ok := other.(Uint8); ok {
 		return compare(u.value, o.value)
 	}
@@ -161,7 +161,7 @@ func (u Uint16) Interface() any {
 }
 
 // Equal checks if two Uint16 typess are equal.
-func (u Uint16) Equal(other Object) bool {
+func (u Uint16) Equal(other Value) bool {
 	if o, ok := other.(Uint16); ok {
 		return u.value == o.value
 	}
@@ -169,7 +169,7 @@ func (u Uint16) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Uint16 instance.
-func (u Uint16) Compare(other Object) int {
+func (u Uint16) Compare(other Value) int {
 	if o, ok := other.(Uint16); ok {
 		return compare(u.value, o.value)
 	}
@@ -204,7 +204,7 @@ func (u Uint32) Interface() any {
 }
 
 // Equal checks if two Uint32 typess are equal.
-func (u Uint32) Equal(other Object) bool {
+func (u Uint32) Equal(other Value) bool {
 	if o, ok := other.(Uint32); ok {
 		return u.value == o.value
 	}
@@ -212,7 +212,7 @@ func (u Uint32) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Uint32 instance.
-func (u Uint32) Compare(other Object) int {
+func (u Uint32) Compare(other Value) int {
 	if o, ok := other.(Uint32); ok {
 		return compare(u.value, o.value)
 	}
@@ -247,7 +247,7 @@ func (u Uint64) Interface() any {
 }
 
 // Equal checks if two Uint64 typess are equal.
-func (u Uint64) Equal(other Object) bool {
+func (u Uint64) Equal(other Value) bool {
 	if o, ok := other.(Uint64); ok {
 		return u.value == o.value
 	}
@@ -255,49 +255,49 @@ func (u Uint64) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Uint64 instance.
-func (u Uint64) Compare(other Object) int {
+func (u Uint64) Compare(other Value) int {
 	if o, ok := other.(Uint64); ok {
 		return compare(u.value, o.value)
 	}
 	return compare(u.Kind(), KindOf(other))
 }
 
-func newUintegerEncoder() encoding.EncodeCompiler[any, Object] {
-	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
-		if typ.Kind() == reflect.Uint {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
+	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+		if typ != nil && typ.Kind() == reflect.Uint {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(uint); ok {
 					return NewUint(s), nil
 				} else {
 					return NewUint(uint(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Uint8 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Uint8 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(uint8); ok {
 					return NewUint8(s), nil
 				} else {
 					return NewUint8(uint8(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Uint16 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Uint16 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(uint16); ok {
 					return NewUint16(s), nil
 				} else {
 					return NewUint16(uint16(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Uint32 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Uint32 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(uint32); ok {
 					return NewUint32(s), nil
 				} else {
 					return NewUint32(uint32(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Uint64 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Uint64 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(uint64); ok {
 					return NewUint64(s), nil
 				} else {
@@ -309,9 +309,9 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func newUintegerDecoder() encoding.DecodeCompiler[Object] {
-	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer {
+func newUintegerDecoder() encoding.DecodeCompiler[Value] {
+	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return newUintegerDecoderWithType[float32](), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
@@ -337,7 +337,7 @@ func newUintegerDecoder() encoding.DecodeCompiler[Object] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newUintegerDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Uinteger); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -350,8 +350,8 @@ func newUintegerDecoder() encoding.DecodeCompiler[Object] {
 	})
 }
 
-func newUintegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Object, unsafe.Pointer] {
-	return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+func newUintegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
+	return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Uinteger); ok {
 			*(*T)(target) = T(s.Uint())
 			return nil

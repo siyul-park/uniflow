@@ -72,7 +72,7 @@ func TestString_Compare(t *testing.T) {
 }
 
 func TestString_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 
 	t.Run("encoding.TextMarshaler", func(t *testing.T) {
@@ -95,7 +95,7 @@ func TestString_Encode(t *testing.T) {
 }
 
 func TestString_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestString_Decode(t *testing.T) {
 }
 
 func BenchmarkString_Encode(b *testing.B) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 
 	b.Run("encoding.TextMarshaler", func(b *testing.B) {

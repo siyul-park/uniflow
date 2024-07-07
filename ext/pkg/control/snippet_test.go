@@ -83,7 +83,7 @@ func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload types.Object
+	var inPayload types.Value
 	inPck := packet.New(inPayload)
 
 	b.ResetTimer()

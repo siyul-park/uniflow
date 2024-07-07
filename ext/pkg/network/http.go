@@ -35,15 +35,15 @@ type HTTPNodeSpec struct {
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
-	Method string       `map:"method,omitempty"`
-	Scheme string       `map:"scheme,omitempty"`
-	Host   string       `map:"host,omitempty"`
-	Path   string       `map:"path,omitempty"`
-	Query  url.Values   `map:"query,omitempty"`
-	Proto  string       `map:"proto,omitempty"`
-	Header http.Header  `map:"header,omitempty"`
-	Body   types.Object `map:"body,omitempty"`
-	Status int          `map:"status"`
+	Method string      `map:"method,omitempty"`
+	Scheme string      `map:"scheme,omitempty"`
+	Host   string      `map:"host,omitempty"`
+	Path   string      `map:"path,omitempty"`
+	Query  url.Values  `map:"query,omitempty"`
+	Proto  string      `map:"proto,omitempty"`
+	Header http.Header `map:"header,omitempty"`
+	Body   types.Value `map:"body,omitempty"`
+	Status int         `map:"status"`
 }
 
 const KindHTTP = "http"
@@ -79,7 +79,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Query:  make(url.Values),
 		Header: make(http.Header),
 	}
-	if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
+	if err := types.Decoder.Decode(inPck.Payload(), &req); err != nil {
 		req.Body = inPck.Payload()
 	}
 	if req.Method != "" {
@@ -146,7 +146,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Body:   body,
 	}
 
-	outPayload, err := types.MarshalText(res)
+	outPayload, err := types.TextEncoder.Encode(res)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
@@ -168,9 +168,9 @@ func NewHTTPNodeCodec() scheme.Codec {
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...types.Object) *HTTPPayload {
+func NewHTTPPayload(status int, body ...types.Value) *HTTPPayload {
 	if len(body) == 0 {
-		body = []types.Object{types.NewString(http.StatusText(status))}
+		body = []types.Value{types.NewString(http.StatusText(status))}
 	}
 	return &HTTPPayload{
 		Header: http.Header{},

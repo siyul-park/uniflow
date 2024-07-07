@@ -18,10 +18,10 @@ type Collection interface {
 	Watch(ctx context.Context, filter *Filter) (Stream, error)
 
 	// InsertOne inserts a single document into the collection.
-	InsertOne(ctx context.Context, doc types.Map) (types.Object, error)
+	InsertOne(ctx context.Context, doc types.Map) (types.Value, error)
 
 	// InsertMany inserts multiple documents into the collection.
-	InsertMany(ctx context.Context, docs []types.Map) ([]types.Object, error)
+	InsertMany(ctx context.Context, docs []types.Map) ([]types.Value, error)
 
 	// UpdateOne updates a single document in the collection matching the filter.
 	UpdateOne(ctx context.Context, filter *Filter, patch types.Map, options ...*UpdateOptions) (bool, error)

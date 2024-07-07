@@ -1,11 +1,11 @@
 package types
 
 // Pick extracts a value from a nested structure using the provided paths.
-func Pick[T any](obj Object, paths ...any) (T, bool) {
+func Pick[T any](obj Value, paths ...any) (T, bool) {
 	var val T
 	cur := obj
 	for _, path := range paths {
-		p, err := MarshalText(path)
+		p, err := TextEncoder.Encode(path)
 		if err != nil {
 			return val, false
 		}
@@ -37,6 +37,6 @@ func Pick[T any](obj Object, paths ...any) (T, bool) {
 	if v, ok := cur.(T); ok {
 		return v, true
 	}
-	err := Unmarshal(cur, &val)
+	err := Decoder.Decode(cur, &val)
 	return val, err == nil
 }

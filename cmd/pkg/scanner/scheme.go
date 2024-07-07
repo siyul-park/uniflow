@@ -40,7 +40,7 @@ func NewSpecCodec(opts ...SpecCodecOptions) *SpecCodec {
 
 // Decode decodes raw data into a spec.Spec instance.
 func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
-	doc, err := types.MarshalBinary(data)
+	doc, err := types.BinaryEncoder.Encode(data)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
 
 	if spec, ok := c.scheme.Spec(unstructured.GetKind()); !ok {
 		return unstructured, nil
-	} else if err := types.Unmarshal(doc, spec); err != nil {
+	} else if err := types.Decoder.Decode(doc, spec); err != nil {
 		return nil, err
 	} else {
 		return spec, nil

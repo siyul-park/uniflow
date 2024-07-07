@@ -17,7 +17,7 @@ type _error struct {
 	value error
 }
 
-var _ Object = (Error)(nil)
+var _ Value = (Error)(nil)
 var _ error = (Error)(nil)
 
 // NewError creates a new Error instance.
@@ -48,7 +48,7 @@ func (e Error) Interface() any {
 }
 
 // Equal checks if two Error instances are equal.
-func (e Error) Equal(other Object) bool {
+func (e Error) Equal(other Value) bool {
 	if o, ok := other.(Error); ok {
 		return e.value.Error() == o.value.Error()
 	}
@@ -56,19 +56,19 @@ func (e Error) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Error instance.
-func (e Error) Compare(other Object) int {
+func (e Error) Compare(other Value) int {
 	if o, ok := other.(Error); ok {
 		return compare(e.Error(), o.Error())
 	}
 	return compare(e.Kind(), KindOf(other))
 }
 
-func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
+func newErrorEncoder() encoding.EncodeCompiler[any, Value] {
 	typeError := reflect.TypeOf((*error)(nil)).Elem()
 
-	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
-		if typ.ConvertibleTo(typeError) {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+		if typ != nil && typ.ConvertibleTo(typeError) {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := source.(error)
 				return NewError(s), nil
 			}), nil
@@ -77,11 +77,11 @@ func newErrorEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func newErrorDecoder() encoding.DecodeCompiler[Object] {
-	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer {
+func newErrorDecoder() encoding.DecodeCompiler[Value] {
+	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().ConvertibleTo(reflect.TypeOf((*error)(nil)).Elem()) {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						t := reflect.NewAt(typ.Elem(), target)
 						t.Elem().Set(reflect.ValueOf(s.Interface()))
@@ -90,7 +90,7 @@ func newErrorDecoder() encoding.DecodeCompiler[Object] {
 					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						*(*any)(target) = s.Interface()
 						return nil

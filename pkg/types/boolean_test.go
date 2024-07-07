@@ -45,7 +45,7 @@ func TestBoolean_Compare(t *testing.T) {
 }
 
 func TestBoolean_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newBooleanEncoder())
 
 	source := true
@@ -57,7 +57,7 @@ func TestBoolean_Encode(t *testing.T) {
 }
 
 func TestBoolean_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newBooleanDecoder())
 
 	t.Run("bool", func(t *testing.T) {

@@ -66,7 +66,7 @@ func TestBinary_Compare(t *testing.T) {
 }
 
 func TestBinary_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newBinaryEncoder())
 
 	t.Run("encoding.BinaryMarshaler", func(t *testing.T) {
@@ -98,7 +98,7 @@ func TestBinary_Encode(t *testing.T) {
 }
 
 func TestBinary_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newBinaryDecoder())
 
 	t.Run("encoding.BinaryUnmarshaler", func(t *testing.T) {
@@ -143,7 +143,7 @@ func TestBinary_Decode(t *testing.T) {
 }
 
 func BenchmarkBinary_Encode(b *testing.B) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newBinaryEncoder())
 
 	b.Run("encoding.BinaryMarshaler", func(b *testing.B) {
@@ -172,7 +172,7 @@ func BenchmarkBinary_Encode(b *testing.B) {
 }
 
 func BenchmarkBinary_Decode(b *testing.B) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newBinaryDecoder())
 
 	b.Run("encoding.BinaryUnmarshaler", func(b *testing.B) {

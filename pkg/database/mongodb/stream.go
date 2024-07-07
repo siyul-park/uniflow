@@ -48,10 +48,10 @@ func newStream(ctx context.Context, stream *mongo.ChangeStream) *Stream {
 				return
 			}
 
-			var id types.Object
+			var id types.Value
 			if documentKey, ok := data["documentKey"]; ok {
 				if documentKey, ok := documentKey.(bson.M); ok {
-					if err := bsonToPrimitive(documentKey["_id"], &id); err != nil {
+					if err := fromBson(documentKey["_id"], &id); err != nil {
 						continue
 					}
 				} else {

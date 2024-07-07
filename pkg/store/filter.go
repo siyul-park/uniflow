@@ -173,7 +173,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 
 	value := ft.Value
 	if ft.OP == database.IN || ft.OP == database.NIN {
-		if v, err := types.MarshalBinary(ft.Value); err != nil {
+		if v, err := types.BinaryEncoder.Encode(ft.Value); err != nil {
 			return nil, err
 		} else if v, ok := v.(types.Slice); ok {
 			elements := make([]any, 0, v.Len())
@@ -198,7 +198,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		}
 	}
 
-	if v, err := types.MarshalBinary(value); err != nil {
+	if v, err := types.BinaryEncoder.Encode(value); err != nil {
 		return nil, err
 	} else {
 		return &database.Filter{OP: ft.OP, Key: ft.Key, Value: v}, nil

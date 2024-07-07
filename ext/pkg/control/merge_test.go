@@ -46,7 +46,7 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []types.Object
+	var inPayloads []types.Value
 	for range inWriters {
 		inPayloads = append(inPayloads, types.NewString(faker.UUIDHyphenated()))
 	}
@@ -108,7 +108,7 @@ func BenchmarkMergeNode_SendAndReceive(b *testing.B) {
 	}
 	outReader := out.Open(proc)
 
-	var inPayloads []types.Object
+	var inPayloads []types.Value
 	for range inWriters {
 		inPayloads = append(inPayloads, types.NewString(faker.UUIDHyphenated()))
 	}

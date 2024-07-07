@@ -7,8 +7,8 @@ import (
 
 type executionPlan struct {
 	key  string
-	min  types.Object
-	max  types.Object
+	min  types.Value
+	max  types.Value
 	next *executionPlan
 }
 

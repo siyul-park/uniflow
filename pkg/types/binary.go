@@ -18,7 +18,7 @@ type binary_ struct {
 	value []byte
 }
 
-var _ Object = (Binary)(nil)
+var _ Value = (Binary)(nil)
 
 // NewBinary creates a new Binary instance.
 func NewBinary(value []byte) Binary {
@@ -64,7 +64,7 @@ func (b Binary) Interface() any {
 }
 
 // Equal checks whether another Object is equal to this Binary instance.
-func (b Binary) Equal(other Object) bool {
+func (b Binary) Equal(other Value) bool {
 	if o, ok := other.(Binary); ok {
 		return bytes.Equal(b.value, o.value)
 	}
@@ -72,19 +72,19 @@ func (b Binary) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Binary instance.
-func (b Binary) Compare(other Object) int {
+func (b Binary) Compare(other Value) int {
 	if o, ok := other.(Binary); ok {
 		return bytes.Compare(b.Bytes(), o.Bytes())
 	}
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBinaryEncoder() encoding2.EncodeCompiler[any, Object] {
+func newBinaryEncoder() encoding2.EncodeCompiler[any, Value] {
 	typeBinaryMarshaler := reflect.TypeOf((*encoding.BinaryMarshaler)(nil)).Elem()
 
-	return encoding2.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding2.Encoder[any, Object], error) {
-		if typ.ConvertibleTo(typeBinaryMarshaler) {
-			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+	return encoding2.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding2.Encoder[any, Value], error) {
+		if typ != nil && typ.ConvertibleTo(typeBinaryMarshaler) {
+			return encoding2.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := source.(encoding.BinaryMarshaler)
 				if t, err := s.MarshalBinary(); err != nil {
 					return nil, err
@@ -92,13 +92,13 @@ func newBinaryEncoder() encoding2.EncodeCompiler[any, Object] {
 					return NewBinary(t), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
+			return encoding2.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := reflect.ValueOf(source)
 				return NewBinary(s.Bytes()), nil
 			}), nil
-		} else if typ.Kind() == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
-			return encoding2.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
+			return encoding2.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := reflect.ValueOf(source)
 				t := reflect.MakeSlice(reflect.SliceOf(typ.Elem()), s.Len(), s.Len())
 
@@ -111,30 +111,30 @@ func newBinaryEncoder() encoding2.EncodeCompiler[any, Object] {
 	})
 }
 
-func newBinaryDecoder() encoding2.DecodeCompiler[Object] {
+func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 	typeBinaryUnmarshaler := reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 
-	return encoding2.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding2.Decoder[Object, unsafe.Pointer], error) {
-		if typ.ConvertibleTo(typeBinaryUnmarshaler) {
-			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+	return encoding2.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding2.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.ConvertibleTo(typeBinaryUnmarshaler) {
+			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary(s.Bytes())
 				}
 				return errors.WithStack(encoding2.ErrInvalidArgument)
 			}), nil
-		} else if typ.ConvertibleTo(typeTextUnmarshaler) {
-			return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+		} else if typ != nil && typ.ConvertibleTo(typeTextUnmarshaler) {
+			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText(s.Bytes())
 				}
 				return errors.WithStack(encoding2.ErrInvalidArgument)
 			}), nil
-		} else if typ.Kind() == reflect.Pointer {
+		} else if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes()).Convert(t.Type())))
@@ -143,7 +143,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Object] {
 					return errors.WithStack(encoding2.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Array && typ.Elem().Elem().Kind() == reflect.Uint8 {
-				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
@@ -152,7 +152,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Object] {
 					return errors.WithStack(encoding2.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding2.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						*(*any)(target) = s.Interface()
 						return nil

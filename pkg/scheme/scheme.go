@@ -76,7 +76,7 @@ func (s *Scheme) Decode(spc spec.Spec) (node.Node, error) {
 
 	if unstructured, ok := spc.(*spec.Unstructured); ok {
 		if structured, ok := s.Spec(kind); ok {
-			if err := types.Unmarshal(unstructured.Doc(), structured); err != nil {
+			if err := types.Decoder.Decode(unstructured.Doc(), structured); err != nil {
 				return nil, err
 			} else {
 				spc = structured
@@ -96,7 +96,7 @@ func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc, err := types.MarshalBinary(structured)
+	doc, err := types.BinaryEncoder.Encode(structured)
 	if err != nil {
 		return nil, err
 	}
@@ -106,9 +106,9 @@ func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
 // Structured converts the given Spec into a structured representation.
 func (s *Scheme) Structured(spc spec.Spec) (spec.Spec, error) {
 	if structured, ok := s.Spec(spc.GetKind()); ok {
-		if doc, err := types.MarshalBinary(spc); err != nil {
+		if doc, err := types.BinaryEncoder.Encode(spc); err != nil {
 			return nil, err
-		} else if err := types.Unmarshal(doc, structured); err != nil {
+		} else if err := types.Decoder.Decode(doc, structured); err != nil {
 			return nil, err
 		} else {
 			return structured, nil

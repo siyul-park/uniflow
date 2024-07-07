@@ -72,7 +72,7 @@ func TestError_Compare(t *testing.T) {
 }
 
 func TestError_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newErrorEncoder())
 
 	err := errors.New("test error")
@@ -84,7 +84,7 @@ func TestError_Encode(t *testing.T) {
 }
 
 func TestError_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newErrorDecoder())
 
 	err := errors.New("test error")

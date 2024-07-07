@@ -72,7 +72,7 @@ func TestSlice_Values(t *testing.T) {
 
 	o := NewSlice(v1, v2)
 
-	assert.Equal(t, []Object{v1, v2}, o.Values())
+	assert.Equal(t, []Value{v1, v2}, o.Values())
 }
 
 func TestSlice_Len(t *testing.T) {
@@ -104,7 +104,7 @@ func TestSlice_Compare(t *testing.T) {
 }
 
 func TestSlice_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -150,7 +150,7 @@ func TestSlice_Encode(t *testing.T) {
 }
 
 func TestSlice_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
@@ -229,7 +229,7 @@ func BenchmarkSlice_Interface(b *testing.B) {
 }
 
 func BenchmarkSlice_Encode(b *testing.B) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 	enc.Add(newSliceEncoder(enc))
 
@@ -271,7 +271,7 @@ func BenchmarkSlice_Encode(b *testing.B) {
 }
 
 func BenchmarkSlice_Decode(b *testing.B) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 

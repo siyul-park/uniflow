@@ -146,7 +146,7 @@ func TestUinteger_Compare(t *testing.T) {
 }
 
 func TestUinteger_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newUintegerEncoder())
 
 	testCases := []struct {
@@ -171,7 +171,7 @@ func TestUinteger_Encode(t *testing.T) {
 }
 
 func TestUinteger_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newUintegerDecoder())
 
 	testCases := []struct {

@@ -14,7 +14,7 @@ type Boolean struct {
 	value bool
 }
 
-var _ Object = Boolean{}
+var _ Value = Boolean{}
 
 // Predefined True and False values for optimization.
 var (
@@ -59,7 +59,7 @@ func (b Boolean) Interface() any {
 }
 
 // Equal checks if the other Object is equal to this Boolean.
-func (b Boolean) Equal(other Object) bool {
+func (b Boolean) Equal(other Value) bool {
 	if o, ok := other.(Boolean); ok {
 		return b.value == o.value
 	}
@@ -67,7 +67,7 @@ func (b Boolean) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Boolean instance.
-func (b Boolean) Compare(other Object) int {
+func (b Boolean) Compare(other Value) int {
 	if o, ok := other.(Boolean); ok {
 		if b.value == o.value {
 			return 0
@@ -80,10 +80,10 @@ func (b Boolean) Compare(other Object) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-func newBooleanEncoder() encoding.EncodeCompiler[any, Object] {
-	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
-		if typ.Kind() == reflect.Bool {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+func newBooleanEncoder() encoding.EncodeCompiler[any, Value] {
+	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+		if typ != nil && typ.Kind() == reflect.Bool {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(bool); ok {
 					return NewBoolean(s), nil
 				} else {
@@ -95,11 +95,11 @@ func newBooleanEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func newBooleanDecoder() encoding.DecodeCompiler[Object] {
-	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer {
+func newBooleanDecoder() encoding.DecodeCompiler[Value] {
+	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Bool {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Boolean); ok {
 						*(*bool)(target) = s.Bool()
 						return nil
@@ -107,7 +107,7 @@ func newBooleanDecoder() encoding.DecodeCompiler[Object] {
 					return errors.WithStack(encoding.ErrInvalidArgument)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Boolean); ok {
 						*(*any)(target) = s.Interface()
 						return nil

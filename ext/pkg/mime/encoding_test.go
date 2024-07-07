@@ -12,7 +12,7 @@ import (
 
 func TestEncode(t *testing.T) {
 	testCases := []struct {
-		whenValue types.Object
+		whenValue types.Value
 		whenType  string
 		expect    []byte
 	}{
@@ -140,7 +140,7 @@ func TestDecode(t *testing.T) {
 	testCases := []struct {
 		whenValue []byte
 		whenType  string
-		expect    types.Object
+		expect    types.Value
 	}{
 		{
 			whenValue: []byte(`

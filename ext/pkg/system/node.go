@@ -53,7 +53,7 @@ func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 			if patch, ok := lo.Find(specs, func(item *spec.Unstructured) bool {
 				return item.GetID() == exist.GetID()
 			}); ok {
-				if exist, err := types.MarshalText(exist); err != nil {
+				if exist, err := types.TextEncoder.Encode(exist); err != nil {
 					return nil, err
 				} else {
 					exist := exist.(types.Map)

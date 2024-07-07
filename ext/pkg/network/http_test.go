@@ -45,7 +45,7 @@ func TestHTTP_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	var inPayload types.Object
+	var inPayload types.Value
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

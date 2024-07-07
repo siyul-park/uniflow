@@ -120,7 +120,7 @@ func TestFloat_Compare(t *testing.T) {
 }
 
 func TestFloat_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newFloatEncoder())
 
 	testCases := []struct {
@@ -142,7 +142,7 @@ func TestFloat_Encode(t *testing.T) {
 }
 
 func TestFloat_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newFloatDecoder())
 
 	testCases := []struct {

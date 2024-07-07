@@ -92,7 +92,7 @@ func (n *WebSocketUpgradeNode) WriteBufferSize() int {
 
 func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	var inPayload *HTTPPayload
-	if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+	if err := types.Decoder.Decode(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
 	}
 

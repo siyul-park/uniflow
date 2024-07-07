@@ -116,30 +116,30 @@ func (u *Unstructured) Get(key string) (any, error) {
 	switch key {
 	case KeyID:
 		var encoded uuid.UUID
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	case KeyKind:
 		var encoded string
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	case KeyNamespace:
 		var encoded string
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	case KeyName:
 		var encoded string
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	case KeyAnnotations:
 		var encoded map[string]string
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	case KeyLinks:
 		var encoded map[string][]PortLocation
-		err = types.Unmarshal(v, &encoded)
+		err = types.Decoder.Decode(v, &encoded)
 		value = encoded
 	default:
-		err = types.Unmarshal(v, &value)
+		err = types.Decoder.Decode(v, &value)
 	}
 	return value, err
 }
@@ -149,7 +149,7 @@ func (u *Unstructured) Set(key string, val any) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
-	if v, err := types.MarshalBinary(val); err != nil {
+	if v, err := types.BinaryEncoder.Encode(val); err != nil {
 		return err
 	} else {
 		u.doc = u.doc.Set(types.NewString(key), v)
@@ -163,10 +163,10 @@ func (u *Unstructured) GetOrSet(key string, val any) error {
 	defer u.mu.Unlock()
 
 	if v, ok := u.doc.Get(types.NewString(key)); ok {
-		if err := types.Unmarshal(v, val); err != nil {
+		if err := types.Decoder.Decode(v, val); err != nil {
 			return err
 		}
-	} else if v, err := types.MarshalBinary(val); err != nil {
+	} else if v, err := types.BinaryEncoder.Encode(val); err != nil {
 		return err
 	} else {
 		u.doc = u.doc.Set(types.NewString(key), v)
@@ -183,7 +183,7 @@ func (u *Unstructured) Doc() types.Map {
 }
 
 // MarshalObject convert Unstructured to types.Value.
-func (u *Unstructured) MarshalObject() (types.Object, error) {
+func (u *Unstructured) MarshalObject() (types.Value, error) {
 	u.mu.RLock()
 	defer u.mu.RUnlock()
 
@@ -191,7 +191,7 @@ func (u *Unstructured) MarshalObject() (types.Object, error) {
 }
 
 // UnmarshalObject convert types.Value to Unstructured.
-func (u *Unstructured) UnmarshalObject(value types.Object) error {
+func (u *Unstructured) UnmarshalObject(value types.Value) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 

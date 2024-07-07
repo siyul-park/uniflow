@@ -106,7 +106,7 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 	}
 
 	var id uuid.UUID
-	if err := types.Unmarshal(pk, &id); err != nil {
+	if err := types.Decoder.Decode(pk, &id); err != nil {
 		_, _ = s.nodes.DeleteOne(ctx, database.Where(spec.KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
@@ -133,7 +133,7 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 	}
 
 	var ids []uuid.UUID
-	if err := types.Unmarshal(types.NewSlice(pks...), &ids); err != nil {
+	if err := types.Decoder.Decode(types.NewSlice(pks...), &ids); err != nil {
 		_, _ = s.nodes.DeleteMany(ctx, database.Where(spec.KeyID).In(pks...))
 		return nil, err
 	}

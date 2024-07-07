@@ -10,10 +10,10 @@ import (
 
 // Filter represents a filter used to find matching primitives.
 type Filter struct {
-	OP       OP           // Comparison operator for the filter.
-	Key      string       // Key to apply the filter on.
-	Value    types.Object // Value to compare against.
-	Children []*Filter    // Child filters for logical operations.
+	OP       OP          // Comparison operator for the filter.
+	Key      string      // Key to apply the filter on.
+	Value    types.Value // Value to compare against.
+	Children []*Filter   // Child filters for logical operations.
 }
 
 // OP represents comparison operators for filters.
@@ -47,7 +47,7 @@ func Where(key string) *filterHelper {
 }
 
 // Equal creates an equality filter.
-func (fh *filterHelper) Equal(value types.Object) *Filter {
+func (fh *filterHelper) Equal(value types.Value) *Filter {
 	return &Filter{
 		OP:    EQ,
 		Key:   fh.key,
@@ -56,7 +56,7 @@ func (fh *filterHelper) Equal(value types.Object) *Filter {
 }
 
 // NotEqual creates a not-equal filter.
-func (fh *filterHelper) NotEqual(value types.Object) *Filter {
+func (fh *filterHelper) NotEqual(value types.Value) *Filter {
 	return &Filter{
 		OP:    NE,
 		Key:   fh.key,
@@ -65,7 +65,7 @@ func (fh *filterHelper) NotEqual(value types.Object) *Filter {
 }
 
 // LessThan creates a less-than filter.
-func (fh *filterHelper) LessThan(value types.Object) *Filter {
+func (fh *filterHelper) LessThan(value types.Value) *Filter {
 	return &Filter{
 		OP:    LT,
 		Key:   fh.key,
@@ -74,7 +74,7 @@ func (fh *filterHelper) LessThan(value types.Object) *Filter {
 }
 
 // LessThanOrEqual creates a less-than-or-equal filter.
-func (fh *filterHelper) LessThanOrEqual(value types.Object) *Filter {
+func (fh *filterHelper) LessThanOrEqual(value types.Value) *Filter {
 	return &Filter{
 		OP:    LTE,
 		Key:   fh.key,
@@ -83,7 +83,7 @@ func (fh *filterHelper) LessThanOrEqual(value types.Object) *Filter {
 }
 
 // GreaterThan creates a greater-than filter.
-func (fh *filterHelper) GreaterThan(value types.Object) *Filter {
+func (fh *filterHelper) GreaterThan(value types.Value) *Filter {
 	return &Filter{
 		OP:    GT,
 		Key:   fh.key,
@@ -92,7 +92,7 @@ func (fh *filterHelper) GreaterThan(value types.Object) *Filter {
 }
 
 // GreaterThanOrEqual creates a greater-than-or-equal filter.
-func (fh *filterHelper) GreaterThanOrEqual(value types.Object) *Filter {
+func (fh *filterHelper) GreaterThanOrEqual(value types.Value) *Filter {
 	return &Filter{
 		OP:    GTE,
 		Key:   fh.key,
@@ -101,7 +101,7 @@ func (fh *filterHelper) GreaterThanOrEqual(value types.Object) *Filter {
 }
 
 // In creates an in filter.
-func (fh *filterHelper) In(slice ...types.Object) *Filter {
+func (fh *filterHelper) In(slice ...types.Value) *Filter {
 	return &Filter{
 		OP:    IN,
 		Key:   fh.key,
@@ -110,7 +110,7 @@ func (fh *filterHelper) In(slice ...types.Object) *Filter {
 }
 
 // NotIn creates a not-in filter.
-func (fh *filterHelper) NotIn(slice ...types.Object) *Filter {
+func (fh *filterHelper) NotIn(slice ...types.Value) *Filter {
 	return &Filter{
 		OP:    NIN,
 		Key:   fh.key,

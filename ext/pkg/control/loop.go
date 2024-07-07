@@ -114,11 +114,11 @@ func (n *LoopNode) forward(proc *process.Process) {
 
 		inPayload := inPck.Payload()
 
-		var outPayloads []types.Object
+		var outPayloads []types.Value
 		if v, ok := inPayload.(types.Slice); ok {
 			outPayloads = v.Values()
 		} else {
-			outPayloads = []types.Object{inPayload}
+			outPayloads = []types.Value{inPayload}
 		}
 
 		outPcks := make([]*packet.Packet, len(outPayloads))

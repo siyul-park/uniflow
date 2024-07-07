@@ -109,7 +109,7 @@ func TestMap_Compare(t *testing.T) {
 }
 
 func TestMap_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -165,7 +165,7 @@ func TestMap_Encode(t *testing.T) {
 }
 
 func TestMap_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
@@ -238,7 +238,7 @@ func BenchmarkMap_Interface(b *testing.B) {
 }
 
 func BenchmarkMap_Encode(b *testing.B) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())
 	enc.Add(newMapEncoder(enc))
 
@@ -292,7 +292,7 @@ func BenchmarkMap_Encode(b *testing.B) {
 }
 
 func BenchmarkMap_Decode(b *testing.B) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 

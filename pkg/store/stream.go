@@ -27,7 +27,7 @@ func newStream(stream database.Stream) *Stream {
 				return
 			case e := <-s.stream.Next():
 				var id uuid.UUID
-				if err := types.Unmarshal(e.DocumentID, &id); err != nil {
+				if err := types.Decoder.Decode(e.DocumentID, &id); err != nil {
 					continue
 				}
 				var op eventOP

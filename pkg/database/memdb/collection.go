@@ -75,7 +75,7 @@ func (c *Collection) Watch(ctx context.Context, filter *database.Filter) (databa
 }
 
 // InsertOne inserts a single document into the collection.
-func (c *Collection) InsertOne(_ context.Context, doc types.Map) (types.Object, error) {
+func (c *Collection) InsertOne(_ context.Context, doc types.Map) (types.Value, error) {
 	id, err := c.section.Set(doc)
 	if err != nil {
 		return nil, errors.Wrap(err, database.ErrCodeWrite)
@@ -86,8 +86,8 @@ func (c *Collection) InsertOne(_ context.Context, doc types.Map) (types.Object, 
 }
 
 // InsertMany inserts multiple documents into the collection.
-func (c *Collection) InsertMany(_ context.Context, docs []types.Map) ([]types.Object, error) {
-	ids := make([]types.Object, len(docs))
+func (c *Collection) InsertMany(_ context.Context, docs []types.Map) ([]types.Value, error) {
+	ids := make([]types.Value, len(docs))
 	for i, doc := range docs {
 		id, err := c.section.Set(doc)
 		if err != nil {
@@ -123,7 +123,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter *database.Filter, pat
 		return false, nil
 	}
 
-	var id types.Object
+	var id types.Value
 	if origin != nil {
 		id = origin.GetOr(keyID, nil)
 	}

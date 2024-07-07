@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMarshalText(t *testing.T) {
+func TestTextEncoder_Encode(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Object
+		expect Value
 	}{
 		{
 			when:   nil,
@@ -61,17 +61,17 @@ func TestMarshalText(t *testing.T) {
 
 	for _, tc := range testCase {
 		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			res, err := MarshalText(tc.when)
+			res, err := TextEncoder.Encode(tc.when)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, res)
 		})
 	}
 }
 
-func TestMarshalBinary(t *testing.T) {
+func TestBinaryEncoder_Encode(t *testing.T) {
 	var testCase = []struct {
 		when   any
-		expect Object
+		expect Value
 	}{
 		{
 			when:   nil,
@@ -114,23 +114,23 @@ func TestMarshalBinary(t *testing.T) {
 			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 		},
 		{
-			when:   map[string]Object{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
+			when:   map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
 			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
 		},
 	}
 
 	for _, tc := range testCase {
 		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			res, err := MarshalBinary(tc.when)
+			res, err := BinaryEncoder.Encode(tc.when)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, res)
 		})
 	}
 }
 
-func TestUnmarshal(t *testing.T) {
+func TestDecoder_Decode(t *testing.T) {
 	var testCase = []struct {
-		when   Object
+		when   Value
 		expect any
 	}{
 		{
@@ -171,7 +171,7 @@ func TestUnmarshal(t *testing.T) {
 		},
 		{
 			when:   NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
-			expect: map[string]Object{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
+			expect: map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
 		},
 	}
 
@@ -179,7 +179,7 @@ func TestUnmarshal(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", tc.expect), func(t *testing.T) {
 			zero := reflect.New(reflect.ValueOf(tc.expect).Type())
 
-			err := Unmarshal(tc.when, zero.Interface())
+			err := Decoder.Decode(tc.when, zero.Interface())
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, zero.Elem().Interface())
 		})
@@ -187,7 +187,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestShortcut_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newShortcutEncoder())
 
 	source := True
@@ -198,19 +198,19 @@ func TestShortcut_Encode(t *testing.T) {
 }
 
 func TestShortcut_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newShortcutDecoder())
 
 	source := True
 
-	var decoded Object
+	var decoded Value
 	err := dec.Decode(source, &decoded)
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)
 }
 
 func TestPointer_Encode(t *testing.T) {
-	enc := encoding.NewEncodeAssembler[any, Object]()
+	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newPointerEncoder(enc))
 	enc.Add(newShortcutEncoder())
 
@@ -222,13 +222,13 @@ func TestPointer_Encode(t *testing.T) {
 }
 
 func TestPointer_Decode(t *testing.T) {
-	dec := encoding.NewDecodeAssembler[Object, any]()
+	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newPointerDecoder(dec))
 	dec.Add(newShortcutDecoder())
 
 	source := True
 
-	var decoded Object
+	var decoded Value
 	err := dec.Decode(source, lo.ToPtr(&decoded))
 	assert.NoError(t, err)
 	assert.Equal(t, source, decoded)

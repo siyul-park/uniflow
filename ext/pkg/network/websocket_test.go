@@ -91,7 +91,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		}
 	}))
 
-	var inPayload types.Object
+	var inPayload types.Value
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
@@ -102,7 +102,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = types.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.TextEncoder.Encode(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: types.NewString(faker.UUIDHyphenated()),
 	})
@@ -116,7 +116,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = types.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.TextEncoder.Encode(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)
@@ -177,12 +177,12 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 	inWriter := in.Open(proc)
 	outReader := out.Open(proc)
 
-	var inPayload types.Object
+	var inPayload types.Value
 	inPck := packet.New(inPayload)
 
 	ioWriter.Write(inPck)
 
-	inPayload, _ = types.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.TextEncoder.Encode(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: types.NewString(faker.UUIDHyphenated()),
 	})
@@ -196,7 +196,7 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 		outReader.Receive(outPck)
 	}
 
-	inPayload, _ = types.MarshalText(&WebSocketPayload{
+	inPayload, _ = types.TextEncoder.Encode(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)

@@ -12,7 +12,7 @@ import (
 
 // Integer is an interface representing an integer.
 type Integer interface {
-	Object
+	Value
 	Int() int64
 }
 
@@ -75,7 +75,7 @@ func (i Int) Interface() any {
 }
 
 // Equal checks whether two Int instances are equal.
-func (i Int) Equal(other Object) bool {
+func (i Int) Equal(other Value) bool {
 	if o, ok := other.(Int); ok {
 		return i.value == o.value
 	}
@@ -83,7 +83,7 @@ func (i Int) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Int instance.
-func (i Int) Compare(other Object) int {
+func (i Int) Compare(other Value) int {
 	if o, ok := other.(Int); ok {
 		return compare(i.value, o.value)
 	}
@@ -118,7 +118,7 @@ func (i Int8) Interface() any {
 }
 
 // Equal checks whether two Int8 instances are equal.
-func (i Int8) Equal(other Object) bool {
+func (i Int8) Equal(other Value) bool {
 	if o, ok := other.(Int8); ok {
 		return i.value == o.value
 	}
@@ -126,7 +126,7 @@ func (i Int8) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Int8 instance.
-func (i Int8) Compare(other Object) int {
+func (i Int8) Compare(other Value) int {
 	if o, ok := other.(Int8); ok {
 		return compare(i.value, o.value)
 	}
@@ -161,7 +161,7 @@ func (i Int16) Interface() any {
 }
 
 // Equal checks whether two Int16 instances are equal.
-func (i Int16) Equal(other Object) bool {
+func (i Int16) Equal(other Value) bool {
 	if o, ok := other.(Int16); ok {
 		return i.value == o.value
 	}
@@ -169,7 +169,7 @@ func (i Int16) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Int16 instance.
-func (i Int16) Compare(other Object) int {
+func (i Int16) Compare(other Value) int {
 	if o, ok := other.(Int16); ok {
 		return compare(i.value, o.value)
 	}
@@ -204,7 +204,7 @@ func (i Int32) Interface() any {
 }
 
 // Equal checks whether two Int32 instances are equal.
-func (i Int32) Equal(other Object) bool {
+func (i Int32) Equal(other Value) bool {
 	if o, ok := other.(Int32); ok {
 		return i.value == o.value
 	}
@@ -212,7 +212,7 @@ func (i Int32) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Int32 instance.
-func (i Int32) Compare(other Object) int {
+func (i Int32) Compare(other Value) int {
 	if o, ok := other.(Int32); ok {
 		return compare(i.value, o.value)
 	}
@@ -247,7 +247,7 @@ func (i Int64) Interface() any {
 }
 
 // Equal checks whether two Int64 instances are equal.
-func (i Int64) Equal(other Object) bool {
+func (i Int64) Equal(other Value) bool {
 	if o, ok := other.(Int64); ok {
 		return i.value == o.value
 	}
@@ -255,49 +255,49 @@ func (i Int64) Equal(other Object) bool {
 }
 
 // Compare checks whether another Object is equal to this Int64 instance.
-func (i Int64) Compare(other Object) int {
+func (i Int64) Compare(other Value) int {
 	if o, ok := other.(Int64); ok {
 		return compare(i.value, o.value)
 	}
 	return compare(i.Kind(), KindOf(other))
 }
 
-func NewIntegerEncoder() encoding.EncodeCompiler[any, Object] {
-	return encoding.EncodeCompilerFunc[any, Object](func(typ reflect.Type) (encoding.Encoder[any, Object], error) {
-		if typ.Kind() == reflect.Int {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+func NewIntegerEncoder() encoding.EncodeCompiler[any, Value] {
+	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+		if typ != nil && typ.Kind() == reflect.Int {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(int); ok {
 					return NewInt(s), nil
 				} else {
 					return NewInt(int(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Int8 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Int8 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(int8); ok {
 					return NewInt8(s), nil
 				} else {
 					return NewInt8(int8(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Int16 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Int16 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(int16); ok {
 					return NewInt16(s), nil
 				} else {
 					return NewInt16(int16(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Int32 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Int32 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(int32); ok {
 					return NewInt32(s), nil
 				} else {
 					return NewInt32(int32(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ.Kind() == reflect.Int64 {
-			return encoding.EncodeFunc[any, Object](func(source any) (Object, error) {
+		} else if typ != nil && typ.Kind() == reflect.Int64 {
+			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(int64); ok {
 					return NewInt64(s), nil
 				} else {
@@ -309,9 +309,9 @@ func NewIntegerEncoder() encoding.EncodeCompiler[any, Object] {
 	})
 }
 
-func NewIntegerDecoder() encoding.DecodeCompiler[Object] {
-	return encoding.DecodeCompilerFunc[Object](func(typ reflect.Type) (encoding.Decoder[Object, unsafe.Pointer], error) {
-		if typ.Kind() == reflect.Pointer {
+func NewIntegerDecoder() encoding.DecodeCompiler[Value] {
+	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
+		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Float32 {
 				return NewIntegerDecoderWithType[float32](), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
@@ -337,7 +337,7 @@ func NewIntegerDecoder() encoding.DecodeCompiler[Object] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return NewIntegerDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Integer); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -350,8 +350,8 @@ func NewIntegerDecoder() encoding.DecodeCompiler[Object] {
 	})
 }
 
-func NewIntegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Object, unsafe.Pointer] {
-	return encoding.DecodeFunc[Object, unsafe.Pointer](func(source Object, target unsafe.Pointer) error {
+func NewIntegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
+	return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Integer); ok {
 			*(*T)(target) = T(s.Int())
 			return nil
