@@ -19,10 +19,10 @@ import (
 
 // StartConfig holds the configuration for the uniflow command.
 type StartConfig struct {
-	Scheme   *scheme.Scheme
-	Hook     *hook.Hook
-	Database database.Database
-	FS       fs.FS
+	Scheme *scheme.Scheme
+	Hook   *hook.Hook
+	Store  *store.Store
+	FS     fs.FS
 }
 
 // NewStartCommand creates a new Cobra command for the uniflow application.
@@ -53,16 +53,8 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			st, err := store.New(ctx, store.Config{
-				Scheme:   config.Scheme,
-				Database: config.Database,
-			})
-			if err != nil {
-				return err
-			}
-
 			filter := store.Where[string](spec.KeyNamespace).EQ(namespace)
-			specs, err := st.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
+			specs, err := config.Store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 			if err != nil {
 				return err
 			}
@@ -72,7 +64,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 			specs, err = scanner.New().
 				Scheme(config.Scheme).
-				Store(st).
+				Store(config.Store).
 				Namespace(namespace).
 				FS(config.FS).
 				Filename(filename).
@@ -80,7 +72,8 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			if err != nil {
 				return err
 			}
-			if _, err = st.InsertMany(ctx, specs); err != nil {
+
+			if _, err = config.Store.InsertMany(ctx, specs); err != nil {
 				return err
 			}
 		}
@@ -89,7 +82,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			Namespace: namespace,
 			Scheme:    config.Scheme,
 			Hook:      config.Hook,
-			Database:  config.Database,
+			Store:     config.Store,
 		})
 		if err != nil {
 			return err
@@ -103,12 +96,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			_ = r.Close()
 		}()
 
-		if err := r.Watch(ctx); err != nil {
-			return err
-		}
-		if _, err := r.Load(ctx); err != nil {
-			return err
-		}
-		return r.Start(ctx)
+		return r.Listen(ctx)
 	}
 }

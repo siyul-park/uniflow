@@ -44,10 +44,11 @@ pong#
 
 Configure the environment using the `.uniflow.toml` file or system environment variables.
 
-| TOML Key         | Environment Variable Key | Example                       |
-|------------------|--------------------------|-------------------------------|
-| `database.url`   | `DATABASE.URL`           | `mem://` or `mongodb://`      |
-| `database.name`  | `DATABASE.NAME`          | -                             |
+| TOML Key           | Environment Variable Key | Example                  |
+|--------------------|--------------------------|--------------------------|
+| `database.url`     | `DATABASE.URL`           | `mem://` or `mongodb://` |
+| `database.name`    | `DATABASE.NAME`          | -                        |
+| `collection.nodes` | `COLLECTION.NODES`       | `nodes`                  |
 
 ## Benchmark
 

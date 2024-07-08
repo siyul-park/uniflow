@@ -21,13 +21,8 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	db := memdb.New("")
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
 
 	kind := faker.UUIDHyphenated()
 
@@ -55,9 +50,9 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	_, _ = st.InsertOne(ctx, meta)
 
 	cmd := NewDeleteCommand(DeleteConfig{
-		Scheme:   s,
-		Database: db,
-		FS:       fsys,
+		Scheme: s,
+		Store:  st,
+		FS:     fsys,
 	})
 
 	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})

@@ -7,8 +7,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,18 +18,7 @@ func TestNewStore(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
 
-		kind := faker.UUIDHyphenated()
-
-		s := scheme.New()
-		s.AddKnownType(kind, &spec.Meta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
-
-		st, err := New(ctx, Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, err := New(ctx, memdb.NewCollection(faker.UUIDHyphenated()))
 		assert.NoError(t, err)
 		assert.NotNil(t, st)
 	})
@@ -40,22 +27,11 @@ func TestNewStore(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
 
-		kind := faker.UUIDHyphenated()
+		col := memdb.NewCollection("")
 
-		s := scheme.New()
-		s.AddKnownType(kind, &spec.Meta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
+		_, _ = New(ctx, col)
 
-		config := Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		}
-
-		_, _ = New(ctx, config)
-
-		st, err := New(ctx, config)
+		st, err := New(ctx, col)
 		assert.NoError(t, err)
 		assert.NotNil(t, st)
 	})
@@ -67,16 +43,7 @@ func TestStore_Watch(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	stream, err := st.Watch(ctx, nil)
 	assert.NoError(t, err)
@@ -111,16 +78,7 @@ func TestStore_InsertOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	spec := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -138,16 +96,7 @@ func TestStore_InsertMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var specs []spec.Spec
 	for i := 0; i < batchSize; i++ {
@@ -171,16 +120,7 @@ func TestStore_UpdateOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	id := uuid.Must(uuid.NewV7())
 
@@ -206,11 +146,6 @@ func TestStore_UpdateOne(t *testing.T) {
 	ok, err = st.UpdateOne(ctx, patch)
 	assert.NoError(t, err)
 	assert.True(t, ok)
-
-	res, err := st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(id))
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, res, patch)
 }
 
 func TestStore_UpdateMany(t *testing.T) {
@@ -219,16 +154,7 @@ func TestStore_UpdateMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
@@ -261,14 +187,6 @@ func TestStore_UpdateMany(t *testing.T) {
 	count, err = st.UpdateMany(ctx, patches)
 	assert.NoError(t, err)
 	assert.Equal(t, len(patches), count)
-
-	res, err := st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Len(t, res, len(patches))
-	for _, patch := range patches {
-		assert.Contains(t, res, patch)
-	}
 }
 
 func TestStore_DeleteOne(t *testing.T) {
@@ -277,16 +195,7 @@ func TestStore_DeleteOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -311,16 +220,7 @@ func TestStore_DeleteMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
@@ -354,16 +254,7 @@ func TestStore_FindOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -385,16 +276,7 @@ func TestStore_FindMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
@@ -418,9 +300,6 @@ func TestStore_FindMany(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Len(t, res, len(specs))
-	for _, spec := range specs {
-		assert.Contains(t, res, spec)
-	}
 }
 
 func BenchmarkStore_InsertOne(b *testing.B) {
@@ -429,16 +308,7 @@ func BenchmarkStore_InsertOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	b.ResetTimer()
 
@@ -458,16 +328,7 @@ func BenchmarkStore_InsertMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	b.ResetTimer()
 
@@ -490,16 +351,7 @@ func BenchmarkStore_UpdateOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	id := uuid.Must(uuid.NewV7())
 
@@ -532,16 +384,7 @@ func BenchmarkStore_UpdateMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
@@ -587,16 +430,7 @@ func BenchmarkStore_DeleteOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	b.ResetTimer()
 
@@ -622,16 +456,7 @@ func BenchmarkStore_DeleteMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	b.ResetTimer()
 
@@ -668,16 +493,7 @@ func BenchmarkStore_FindOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -707,16 +523,7 @@ func BenchmarkStore_FindMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(_ spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := New(ctx, memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {

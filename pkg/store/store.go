@@ -6,23 +6,17 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Config is a configuration struct for Store.
-type Config struct {
-	Scheme   *scheme.Scheme
-	Database database.Database
-}
-
 // Store is responsible for storing spec.Spec.
 type Store struct {
-	scheme *scheme.Scheme
-	nodes  database.Collection
-	mu     sync.RWMutex
+	nodes database.Collection
+	mu    sync.RWMutex
 }
 
 var indexes = []database.IndexModel{
@@ -39,15 +33,7 @@ var indexes = []database.IndexModel{
 }
 
 // New creates a new Store instance.
-func New(ctx context.Context, config Config) (*Store, error) {
-	scheme := config.Scheme
-	db := config.Database
-
-	nodes, err := db.Collection(ctx, "nodes")
-	if err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, nodes database.Collection) (*Store, error) {
 	origins, err := nodes.Indexes().List(ctx)
 	if err != nil {
 		return nil, err
@@ -70,10 +56,7 @@ func New(ctx context.Context, config Config) (*Store, error) {
 		}
 	}
 
-	return &Store{
-		scheme: scheme,
-		nodes:  nodes,
-	}, nil
+	return &Store{nodes: nodes}, nil
 }
 
 // Watch returns a Stream to track changes based on the provided filter.
@@ -95,9 +78,21 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	doc, err := s.specToDoc(spc)
+	if spc.GetNamespace() == "" {
+		spc.SetNamespace(spec.DefaultNamespace)
+	}
+	if spc.GetID() == (uuid.UUID{}) {
+		spc.SetID(uuid.Must(uuid.NewV7()))
+	}
+
+	val, err := types.BinaryEncoder.Encode(spc)
 	if err != nil {
 		return uuid.UUID{}, err
+	}
+
+	doc, ok := val.(types.Map)
+	if !ok {
+		return uuid.UUID{}, errors.WithStack(encoding.ErrInvalidArgument)
 	}
 
 	pk, err := s.nodes.InsertOne(ctx, doc)
@@ -120,11 +115,24 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 
 	var docs []types.Map
 	for _, spc := range spcs {
-		if doc, err := s.specToDoc(spc); err != nil {
-			return nil, err
-		} else {
-			docs = append(docs, doc)
+		if spc.GetNamespace() == "" {
+			spc.SetNamespace(spec.DefaultNamespace)
 		}
+		if spc.GetID() == (uuid.UUID{}) {
+			spc.SetID(uuid.Must(uuid.NewV7()))
+		}
+
+		val, err := types.BinaryEncoder.Encode(spc)
+		if err != nil {
+			return nil, err
+		}
+
+		doc, ok := val.(types.Map)
+		if !ok {
+			return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		}
+
+		docs = append(docs, doc)
 	}
 
 	pks, err := s.nodes.InsertMany(ctx, docs)
@@ -145,12 +153,24 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
+	if spc.GetNamespace() == "" {
+		spc.SetNamespace(spec.DefaultNamespace)
+	}
+	if spc.GetID() == (uuid.UUID{}) {
+		spc.SetID(uuid.Must(uuid.NewV7()))
+	}
 
-	doc, err := s.specToDoc(spc)
+	val, err := types.BinaryEncoder.Encode(spc)
 	if err != nil {
 		return false, err
 	}
+
+	doc, ok := val.(types.Map)
+	if !ok {
+		return false, errors.WithStack(encoding.ErrInvalidArgument)
+	}
+
+	filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
 
 	return s.nodes.UpdateOne(ctx, filter, doc)
 }
@@ -162,11 +182,24 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 
 	var docs []types.Map
 	for _, spc := range spcs {
-		if doc, err := s.specToDoc(spc); err != nil {
-			return 0, err
-		} else {
-			docs = append(docs, doc)
+		if spc.GetNamespace() == "" {
+			spc.SetNamespace(spec.DefaultNamespace)
 		}
+		if spc.GetID() == (uuid.UUID{}) {
+			spc.SetID(uuid.Must(uuid.NewV7()))
+		}
+
+		val, err := types.BinaryEncoder.Encode(spc)
+		if err != nil {
+			return 0, err
+		}
+
+		doc, ok := val.(types.Map)
+		if !ok {
+			return 0, errors.WithStack(encoding.ErrInvalidArgument)
+		}
+
+		docs = append(docs, doc)
 	}
 
 	count := 0
@@ -222,7 +255,7 @@ func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*databas
 	} else if doc == nil {
 		return nil, nil
 	} else {
-		return s.docToSpec(doc)
+		return spec.NewUnstructured(doc), nil
 	}
 }
 
@@ -246,37 +279,7 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 		if doc == nil {
 			continue
 		}
-		if spc, err := s.docToSpec(doc); err != nil {
-			return nil, err
-		} else {
-			spcs = append(spcs, spc)
-		}
+		spcs = append(spcs, spec.NewUnstructured(doc))
 	}
 	return spcs, nil
-}
-
-func (s *Store) docToSpec(doc types.Map) (spec.Spec, error) {
-	unstructured := spec.NewUnstructured(doc)
-	return s.scheme.Structured(unstructured)
-}
-
-func (s *Store) specToDoc(spc spec.Spec) (types.Map, error) {
-	if n, err := s.scheme.Decode(spc); err != nil {
-		return nil, err
-	} else if err := n.Close(); err != nil {
-		return nil, err
-	}
-
-	unstructured, err := s.scheme.Unstructured(spc)
-	if err != nil {
-		return nil, err
-	}
-
-	if unstructured.GetNamespace() == "" {
-		unstructured.SetNamespace(spec.DefaultNamespace)
-	}
-	if unstructured.GetID() == (uuid.UUID{}) {
-		unstructured.SetID(uuid.Must(uuid.NewV7()))
-	}
-	return unstructured.Doc(), nil
 }

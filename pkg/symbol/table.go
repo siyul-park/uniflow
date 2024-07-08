@@ -51,11 +51,16 @@ func (t *Table) Insert(spec spec.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	spec, err := t.scheme.Decode(spec)
+	if err != nil {
+		return nil, err
+	}
+
 	if sym, ok := t.symbols[spec.GetID()]; ok && reflect.DeepEqual(sym.spec, spec) {
 		return nil, nil
 	}
 
-	n, err := t.scheme.Decode(spec)
+	n, err := t.scheme.Compile(spec)
 	if err != nil {
 		return nil, err
 	}

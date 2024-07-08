@@ -20,15 +20,10 @@ func TestScanner_Scan(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	db := memdb.New("")
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
 
 	kind := faker.UUIDHyphenated()
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
 
 	codec := scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		return node.NewOneToOneNode(nil), nil

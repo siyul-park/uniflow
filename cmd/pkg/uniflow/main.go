@@ -33,8 +33,9 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
-	flagDatabaseURL  = "database.url"
-	flagDatabaseName = "database.name"
+	flagDatabaseURL     = "database.url"
+	flagDatabaseName    = "database.name"
+	flagCollectionNodes = "collection.nodes"
 )
 
 func init() {
@@ -51,11 +52,40 @@ func main() {
 
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
+	collectionNodes := viper.GetString(flagCollectionNodes)
+
+	if collectionNodes == "" {
+		collectionNodes = "nodes"
+	}
+
+	var db database.Database
+	if strings.HasPrefix(databaseURL, "mongodb://") {
+		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
+		client, err := mongodb.Connect(ctx, opts)
+		if err != nil {
+			log.Fatal(err)
+		}
+		db, err = client.Database(ctx, databaseName)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		db = memdb.New(databaseName)
+	}
+
+	col, err := db.Collection(ctx, collectionNodes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	store, err := store.New(ctx, col)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()
-
-	stable := system.NewTable()
 
 	langs := language.NewModule()
 	langs.Store(text.Language, text.NewCompiler())
@@ -64,6 +94,12 @@ func main() {
 	langs.Store(cel.Language, cel.NewCompiler())
 	langs.Store(javascript.Language, javascript.NewCompiler())
 	langs.Store(typescript.Language, typescript.NewCompiler())
+
+	stable := system.NewTable()
+	stable.Store(system.CodeCreateNodes, system.CreateNodes(store))
+	stable.Store(system.CodeReadNodes, system.ReadNodes(store))
+	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(store))
+	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(store))
 
 	broker := event.NewBroker()
 	defer broker.Close()
@@ -87,42 +123,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var db database.Database
-	if strings.HasPrefix(databaseURL, "mongodb://") {
-		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
-		client, err := mongodb.Connect(ctx, opts)
-		if err != nil {
-			log.Fatal(err)
-		}
-		db, err = client.Database(ctx, databaseName)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		db = memdb.New(databaseName)
-	}
-
-	st, err := store.New(ctx, store.Config{
-		Scheme:   scheme,
-		Database: db,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(st))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(st))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(st))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(st))
-
 	fsys := fs.ExtFS()
 
 	cmd := cli.NewCommand(cli.Config{
-		Scheme:   scheme,
-		Hook:     hook,
-		Database: db,
-		FS:       fsys,
+		Scheme: scheme,
+		Hook:   hook,
+		Store:  store,
+		FS:     fsys,
 	})
 
 	if err := cmd.Execute(); err != nil {

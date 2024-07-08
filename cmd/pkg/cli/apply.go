@@ -16,9 +16,9 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	Scheme   *scheme.Scheme
-	Database database.Database
-	FS       fs.FS
+	Scheme *scheme.Scheme
+	Store  *store.Store
+	FS     fs.FS
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
@@ -48,17 +48,9 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		st, err := store.New(ctx, store.Config{
-			Scheme:   config.Scheme,
-			Database: config.Database,
-		})
-		if err != nil {
-			return err
-		}
-
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
-			Store(st).
+			Store(config.Store).
 			Namespace(namespace).
 			FS(config.FS).
 			Filename(filename).
@@ -72,7 +64,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := st.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := config.Store.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {
@@ -94,10 +86,10 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		if _, err := st.InsertMany(ctx, inserted); err != nil {
+		if _, err := config.Store.InsertMany(ctx, inserted); err != nil {
 			return err
 		}
-		if _, err := st.UpdateMany(ctx, updated); err != nil {
+		if _, err := config.Store.UpdateMany(ctx, updated); err != nil {
 			return err
 		}
 

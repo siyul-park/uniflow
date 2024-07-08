@@ -167,7 +167,7 @@ func TestIfNodeCodec_Decode(t *testing.T) {
 		When: "",
 	}
 
-	n, err := codec.Decode(spec)
+	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())

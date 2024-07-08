@@ -145,7 +145,7 @@ func TestUpgradeNodeCodec_Decode(t *testing.T) {
 		Timeout:  time.Second,
 		Buffer:   64,
 	}
-	n, err := codec.Decode(spec)
+	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())

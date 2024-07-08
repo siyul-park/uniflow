@@ -29,10 +29,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := store.New(ctx, store.Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, _ := store.New(ctx, memdb.NewCollection(""))
 
 		tb := symbol.NewTable(s)
 		defer tb.Clear()
@@ -98,10 +95,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st, _ := store.New(ctx, store.Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, _ := store.New(ctx, memdb.NewCollection(""))
 
 		tb := symbol.NewTable(s)
 		defer tb.Clear()
@@ -132,10 +126,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st, _ := store.New(ctx, store.Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, _ := store.New(ctx, memdb.NewCollection(""))
 
 		tb := symbol.NewTable(s)
 		defer tb.Clear()
@@ -182,10 +173,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st, _ := store.New(ctx, store.Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, _ := store.New(ctx, memdb.NewCollection(""))
 
 		tb := symbol.NewTable(s)
 		defer tb.Clear()
@@ -253,10 +241,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st, _ := store.New(ctx, store.Config{
-			Scheme:   s,
-			Database: memdb.New(faker.UUIDHyphenated()),
-		})
+		st, _ := store.New(ctx, memdb.NewCollection(""))
 
 		tb := symbol.NewTable(s)
 		defer tb.Clear()
@@ -299,10 +284,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	tb := symbol.NewTable(s)
 	defer tb.Clear()
@@ -358,10 +340,7 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	tb := symbol.NewTable(s)
 	defer tb.Clear()
@@ -407,10 +386,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	tb := symbol.NewTable(s)
 	defer tb.Clear()

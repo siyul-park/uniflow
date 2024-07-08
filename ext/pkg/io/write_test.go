@@ -62,7 +62,7 @@ func TestWriteNodeCodec_Decode(t *testing.T) {
 		Filename: "stdout",
 	}
 
-	n, err := codec.Decode(spec)
+	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())

@@ -44,10 +44,11 @@ pong#
 
 `.uniflow.toml` 파일 또는 시스템 환경 변수를 사용하여 환경을 구성하세요.
 
-| TOML 키         | 환경 변수 키        | 예시                         |
-|------------------|------------------|-----------------------------|
-| `database.url`   | `DATABASE.URL`   | `mem://` 또는 `mongodb://`  |
-| `database.name`  | `DATABASE.NAME`  | -                           |
+| TOML 키            | 환경 변수 키          | 예시                       |
+|--------------------|--------------------|---------------------------|
+| `database.url`     | `DATABASE.URL`     | `mem://` 또는 `mongodb://` |
+| `database.name`    | `DATABASE.NAME`    | -                         |
+| `collection.nodes` | `COLLECTION.NODES` | `nodes`                   |
 
 ## 벤치마크
 

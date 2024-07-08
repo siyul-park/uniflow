@@ -62,91 +62,43 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	return c, ok
 }
 
-// Decode decodes the given Spec into a node.Node.
-func (s *Scheme) Decode(spc spec.Spec) (node.Node, error) {
+// Compile decodes the given Spec into a node.Node.
+func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	kind := spc.GetKind()
-	if kind == "" {
-		if kinds := s.Kinds(spc); len(kinds) > 0 {
-			kind = kinds[0]
-		}
+	codec, ok := s.Codec(spc.GetKind())
+	if !ok {
+		return nil, errors.WithStack(encoding.ErrInvalidArgument)
 	}
-
-	if unstructured, ok := spc.(*spec.Unstructured); ok {
-		if structured, ok := s.Spec(kind); ok {
-			if err := types.Decoder.Decode(unstructured.Doc(), structured); err != nil {
-				return nil, err
-			} else {
-				spc = structured
-			}
-		}
-	}
-
-	if codec, ok := s.Codec(kind); ok {
-		return codec.Decode(spc)
-	}
-	return nil, errors.WithStack(encoding.ErrInvalidArgument)
+	return codec.Compile(spc)
 }
 
-// Unstructured converts the given Spec into an Unstructured representation.
-func (s *Scheme) Unstructured(spc spec.Spec) (*spec.Unstructured, error) {
-	structured, err := s.Structured(spc)
-	if err != nil {
-		return nil, err
-	}
-	doc, err := types.BinaryEncoder.Encode(structured)
-	if err != nil {
-		return nil, err
-	}
-	return spec.NewUnstructured(doc.(types.Map)), nil
-}
-
-// Structured converts the given Spec into a structured representation.
-func (s *Scheme) Structured(spc spec.Spec) (spec.Spec, error) {
-	if structured, ok := s.Spec(spc.GetKind()); ok {
-		if doc, err := types.BinaryEncoder.Encode(spc); err != nil {
-			return nil, err
-		} else if err := types.Decoder.Decode(doc, structured); err != nil {
-			return nil, err
-		} else {
-			return structured, nil
-		}
-	}
-	return spc, nil
-}
-
-// Spec creates a new instance of Spec with the given kind.
-func (s *Scheme) Spec(kind string) (spec.Spec, bool) {
+// Decode converts the given Spec into a structured representation.
+func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if t, ok := s.types[kind]; !ok {
-		return nil, false
+	typ, ok := s.types[spc.GetKind()]
+	if !ok {
+		return spc, nil
+	}
+
+	val := reflect.New(typ).Elem()
+	if val.Kind() == reflect.Pointer {
+		val.Set(reflect.New(typ.Elem()))
+	}
+
+	structured, ok := val.Interface().(spec.Spec)
+	if !ok {
+		return spc, nil
+	}
+
+	if doc, err := types.BinaryEncoder.Encode(spc); err != nil {
+		return nil, err
+	} else if err := types.Decoder.Decode(doc, structured); err != nil {
+		return nil, err
 	} else {
-		value := reflect.New(t).Elem()
-		if value.Kind() == reflect.Pointer {
-			value.Set(reflect.New(t.Elem()))
-		}
-		v, ok := value.Interface().(spec.Spec)
-		return v, ok
+		return structured, nil
 	}
-}
-
-// Kinds returns the kinds associated with the given Spec.
-func (s *Scheme) Kinds(spc spec.Spec) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	typ := reflect.TypeOf(spc)
-
-	var kinds []string
-	for kind, t := range s.types {
-		if t == typ {
-			kinds = append(kinds, kind)
-		}
-	}
-
-	return kinds
 }

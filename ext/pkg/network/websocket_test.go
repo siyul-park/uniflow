@@ -136,7 +136,7 @@ func TestWebSocketNodeCodec_Decode(t *testing.T) {
 	spec := &WebSocketNodeSpec{
 		URL: "ws://localhost:8080/",
 	}
-	n, err := codec.Decode(spec)
+	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())

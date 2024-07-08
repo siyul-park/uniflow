@@ -19,12 +19,7 @@ func TestGetCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	db := memdb.New("")
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	kind := faker.UUIDHyphenated()
 
@@ -46,8 +41,8 @@ func TestGetCommand_Execute(t *testing.T) {
 	output := new(bytes.Buffer)
 
 	cmd := NewGetCommand(GetConfig{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

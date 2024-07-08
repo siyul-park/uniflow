@@ -26,13 +26,8 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	db := memdb.New("")
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
 
 	kind := faker.UUIDHyphenated()
 
@@ -64,10 +59,10 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:   s,
-			Hook:     h,
-			FS:       fsys,
-			Database: db,
+			Scheme: s,
+			Hook:   h,
+			FS:     fsys,
+			Store:  st,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)

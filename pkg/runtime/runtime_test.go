@@ -27,16 +27,11 @@ func TestRuntime_LookupByID(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -65,16 +60,11 @@ func TestRuntime_LookupByName(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -104,11 +94,11 @@ func TestRuntime_Insert(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -138,11 +128,11 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -178,16 +168,11 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -205,7 +190,7 @@ func TestRuntime_Load(t *testing.T) {
 	assert.NotNil(t, n)
 }
 
-func TestRuntime_Reconcile(t *testing.T) {
+func TestRuntime_Listen(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -217,16 +202,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	r, _ := New(ctx, Config{
-		Scheme:   s,
-		Database: db,
+		Scheme: s,
+		Store:  st,
 	})
 	defer r.Close()
 
@@ -237,8 +217,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	r.Watch(ctx)
-	go r.Start(ctx)
+	go r.Listen(ctx)
 
 	func() {
 		ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
@@ -273,12 +252,12 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	db := memdb.New(faker.UUIDHyphenated())
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	for i := 0; i < b.N; i++ {
 		r, _ := New(ctx, Config{
-			Scheme:   s,
-			Database: db,
+			Scheme: s,
+			Store:  st,
 		})
 		r.Close()
 	}

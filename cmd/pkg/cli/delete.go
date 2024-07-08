@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
@@ -14,9 +13,9 @@ import (
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	Scheme   *scheme.Scheme
-	Database database.Database
-	FS       fs.FS
+	Scheme *scheme.Scheme
+	Store  *store.Store
+	FS     fs.FS
 }
 
 // NewDeleteCommand creates a new cobra.Command for the delete command.
@@ -46,17 +45,9 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		st, err := store.New(ctx, store.Config{
-			Scheme:   config.Scheme,
-			Database: config.Database,
-		})
-		if err != nil {
-			return err
-		}
-
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
-			Store(st).
+			Store(config.Store).
 			Namespace(namespace).
 			FS(config.FS).
 			Filename(filename).
@@ -71,7 +62,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 				And(store.Where[string](spec.KeyNamespace).EQ(v.GetNamespace())))
 		}
 
-		_, err = st.DeleteMany(ctx, filter)
+		_, err = config.Store.DeleteMany(ctx, filter)
 		return err
 	}
 }

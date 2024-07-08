@@ -22,13 +22,8 @@ func TestApplyCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	db := memdb.New("")
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: db,
-	})
 
 	kind := faker.UUIDHyphenated()
 
@@ -56,9 +51,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 	output := new(bytes.Buffer)
 
 	cmd := NewApplyCommand(ApplyConfig{
-		Scheme:   s,
-		Database: db,
-		FS:       fsys,
+		Scheme: s,
+		Store:  st,
+		FS:     fsys,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

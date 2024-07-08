@@ -8,25 +8,25 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // Config holds the configuration parameters for the root command.
 type Config struct {
-	Scheme   *scheme.Scheme
-	Hook     *hook.Hook
-	Database database.Database
-	FS       fs.FS
+	Scheme *scheme.Scheme
+	Hook   *hook.Hook
+	Store  *store.Store
+	FS     fs.FS
 }
 
 // NewCommand creates the root cobra command for the 'uniflow' CLI.
 func NewCommand(config Config) *cobra.Command {
 	sc := config.Scheme
 	hk := config.Hook
-	db := config.Database
+	st := config.Store
 	fsys := config.FS
 
 	var cpuprof *os.File
@@ -93,24 +93,24 @@ func NewCommand(config Config) *cobra.Command {
 	cmd.PersistentFlags().String(flagMemProfile, "", "write memory profile to `file`")
 
 	cmd.AddCommand(NewApplyCommand(ApplyConfig{
-		Scheme:   sc,
-		Database: db,
-		FS:       fsys,
+		Scheme: sc,
+		Store:  st,
+		FS:     fsys,
 	}))
 	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
-		Scheme:   sc,
-		Database: db,
-		FS:       fsys,
+		Scheme: sc,
+		Store:  st,
+		FS:     fsys,
 	}))
 	cmd.AddCommand(NewGetCommand(GetConfig{
-		Scheme:   sc,
-		Database: db,
+		Scheme: sc,
+		Store:  st,
 	}))
 	cmd.AddCommand(NewStartCommand(StartConfig{
-		Scheme:   sc,
-		Hook:     hk,
-		Database: db,
-		FS:       fsys,
+		Scheme: sc,
+		Hook:   hk,
+		Store:  st,
+		FS:     fsys,
 	}))
 
 	return cmd

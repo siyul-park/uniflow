@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gofrs/uuid"
-
 	"github.com/go-faker/faker/v4"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,52 +37,7 @@ func TestScheme_Codec(t *testing.T) {
 	assert.True(t, ok)
 }
 
-func TestScheme_Unstructured(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-
-	meta := &spec.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
-	}
-
-	unstructured, err := s.Unstructured(meta)
-	assert.NoError(t, err)
-	assert.Equal(t, unstructured.GetID(), meta.GetID())
-	assert.IsType(t, unstructured, &spec.Unstructured{})
-}
-
-func TestScheme_Structured(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-
-	meta := &spec.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
-	}
-
-	structured, err := s.Structured(meta)
-	assert.NoError(t, err)
-	assert.Equal(t, structured.GetID(), meta.GetID())
-	assert.IsType(t, structured, &spec.Meta{})
-}
-
-func TestScheme_Spec(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-
-	meta, ok := s.Spec(kind)
-	assert.True(t, ok)
-	assert.IsType(t, meta, &spec.Meta{})
-}
-
-func TestScheme_Decode(t *testing.T) {
+func TestScheme_Compile(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
 
@@ -91,18 +46,26 @@ func TestScheme_Decode(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	n, err := s.Decode(&spec.Meta{})
+	n, err := s.Compile(&spec.Meta{
+		Kind: kind,
+	})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 }
 
-func TestScheme_Kinds(t *testing.T) {
+func TestScheme_Decode(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
 
-	kinds := s.Kinds(&spec.Meta{})
-	assert.Len(t, kinds, 1)
-	assert.Equal(t, kind, kinds[0])
+	meta := spec.NewUnstructured(types.NewMap(
+		types.NewString(spec.KeyID), types.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
+		types.NewString(spec.KeyKind), types.NewString(kind),
+	))
+
+	structured, err := s.Decode(meta)
+	assert.NoError(t, err)
+	assert.Equal(t, structured.GetID(), meta.GetID())
+	assert.IsType(t, structured, &spec.Meta{})
 }

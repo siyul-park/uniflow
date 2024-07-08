@@ -31,10 +31,11 @@ After the build is complete, the executable will be available in the `dist` fold
 
 You can configure the environment using the `.uniflow.toml` file or system environment variables.
 
-| TOML Key         | Environment Variable Key | Example                       |
-|------------------|--------------------------|-------------------------------|
-| `database.url`   | `DATABASE.URL`           | `mem://` or `mongodb://`      |
-| `database.name`  | `DATABASE.NAME`          | -                             |
+| TOML Key           | Environment Variable Key | Example                  |
+|--------------------|--------------------------|--------------------------|
+| `database.url`     | `DATABASE.URL`           | `mem://` or `mongodb://` |
+| `database.name`    | `DATABASE.NAME`          | -                        |
+| `collection.nodes` | `COLLECTION.NODES`       | `nodes`                  |
 
 If you use [MongoDB](https://www.mongodb.com/), ensure that [change streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled so the runtime engine can track changes to node specifications. Use a [replica set](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication) to utilize change streams.
 

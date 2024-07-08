@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/types"
@@ -25,16 +24,7 @@ func TestCreateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(CreateNodes(st))
 	defer n.Close()
@@ -72,16 +62,7 @@ func TestReadNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(ReadNodes(st))
 	defer n.Close()
@@ -121,16 +102,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(UpdateNodes(st))
 	defer n.Close()
@@ -170,16 +142,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st, _ := store.New(ctx, store.Config{
-		Scheme:   s,
-		Database: memdb.New(faker.UUIDHyphenated()),
-	})
+	st, _ := store.New(ctx, memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(DeleteNodes(st))
 	defer n.Close()

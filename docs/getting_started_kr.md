@@ -31,10 +31,11 @@ make build
 
 환경 설정은 `.uniflow.toml` 파일이나 시스템 환경 변수를 사용하여 구성할 수 있습니다.
 
-| TOML 키         | 환경 변수 키      | 예시                     |
-|------------------|------------------|-------------------------|
-| `database.url`   | `DATABASE.URL`   | `mem://` 또는 `mongodb://` |
-| `database.name`  | `DATABASE.NAME`  | -                       |
+| TOML 키            | 환경 변수 키          | 예시                       |
+|--------------------|--------------------|---------------------------|
+| `database.url`     | `DATABASE.URL`     | `mem://` 또는 `mongodb://` |
+| `database.name`    | `DATABASE.NAME`    | -                         |
+| `collection.nodes` | `COLLECTION.NODES` | `nodes`                   |
 
 [MongoDB](https://www.mongodb.com/)를 사용할 경우 런타임 엔진이 노드 명세의 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)이 활성화되어 있어야 합니다. 변경 스트림을 이용하기 위해 [복제본 세트](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication)를 활용하세요.
 

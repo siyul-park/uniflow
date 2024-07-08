@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/loader"
@@ -14,15 +13,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Config holds the configuration options for the Runtime.
+// Config defines configuration options for the Runtime.
 type Config struct {
 	Namespace string
 	Hook      *hook.Hook
 	Scheme    *scheme.Scheme
-	Database  database.Database
+	Store     *store.Store
 }
 
-// Runtime represents an execution environment for running Flows.
+// Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace string
 	store     *store.Store
@@ -41,16 +40,12 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
 	}
-	if config.Database == nil {
-		config.Database = memdb.New("")
-	}
-
-	st, err := store.New(ctx, store.Config{
-		Scheme:   config.Scheme,
-		Database: config.Database,
-	})
-	if err != nil {
-		return nil, err
+	if config.Store == nil {
+		store, err := store.New(ctx, memdb.NewCollection(""))
+		if err != nil {
+			return nil, err
+		}
+		config.Store = store
 	}
 
 	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
@@ -60,19 +55,19 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 
 	ld := loader.New(loader.Config{
 		Namespace: config.Namespace,
-		Store:     st,
+		Store:     config.Store,
 		Table:     tb,
 	})
 
 	return &Runtime{
 		namespace: config.Namespace,
-		store:     st,
+		store:     config.Store,
 		table:     tb,
 		loader:    ld,
 	}, nil
 }
 
-// LookupByID retrieves a node from the table or loads it from the store if not found.
+// LookupByID retrieves a symbol by ID from the table or loads it from the store if not found.
 func (r *Runtime) LookupByID(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	if s, ok := r.table.LookupByID(id); ok {
 		return s, nil
@@ -122,13 +117,14 @@ func (r *Runtime) Load(ctx context.Context) ([]*symbol.Symbol, error) {
 	return r.loader.LoadAll(ctx)
 }
 
-// Watch starts the reconciler's watch process.
-func (r *Runtime) Watch(ctx context.Context) error {
-	return r.loader.Watch(ctx)
-}
-
-// Start begins the reconciliation process of the Runtime.
-func (r *Runtime) Start(ctx context.Context) error {
+// Listen starts the loader's watch process and reconciles symbols.
+func (r *Runtime) Listen(ctx context.Context) error {
+	if err := r.loader.Watch(ctx); err != nil {
+		return err
+	}
+	if _, err := r.loader.LoadAll(ctx); err != nil {
+		return err
+	}
 	return r.loader.Reconcile(ctx)
 }
 
