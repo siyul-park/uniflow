@@ -2,74 +2,80 @@ package spec
 
 import "github.com/gofrs/uuid"
 
-// Meta represents metadata required by all persisted resources, including user-defined types.
+// Meta contains metadata for node specifications.
 type Meta struct {
-	ID          uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Kind        string                    `json:"kind" yaml:"kind" map:"kind"`
-	Namespace   string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-	Name        string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	Annotations map[string]string         `json:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	Links       map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
+	// ID is the unique identifier of the node.
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	// Kind specifies the node's type.
+	Kind string `json:"kind" yaml:"kind" map:"kind"`
+	// Namespace groups nodes logically.
+	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	// Name is the human-readable name of the node.
+	Name string `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	// Annotations hold additional metadata.
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	// Links define connections to other nodes.
+	Links map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
 }
 
 var _ Spec = (*Meta)(nil)
 
-// GetID retrieves the unique identifier of the SpecMeta.
+// GetID returns the node's unique identifier.
 func (m *Meta) GetID() uuid.UUID {
 	return m.ID
 }
 
-// SetID assigns a unique identifier to the SpecMeta.
+// SetID assigns a unique identifier to the node.
 func (m *Meta) SetID(val uuid.UUID) {
 	m.ID = val
 }
 
-// GetKind fetches the type or category of the SpecMeta.
+// GetKind returns the node's type.
 func (m *Meta) GetKind() string {
 	return m.Kind
 }
 
-// SetKind assigns a type or category to the SpecMeta.
+// SetKind sets the node's type.
 func (m *Meta) SetKind(val string) {
 	m.Kind = val
 }
 
-// GetNamespace acquires the logical grouping of the SpecMeta.
+// GetNamespace returns the node's namespace.
 func (m *Meta) GetNamespace() string {
 	return m.Namespace
 }
 
-// SetNamespace assigns a logical grouping to the SpecMeta.
+// SetNamespace sets the node's namespace.
 func (m *Meta) SetNamespace(val string) {
 	m.Namespace = val
 }
 
-// GetName retrieves the human-readable name of the SpecMeta.
+// GetName returns the node's name.
 func (m *Meta) GetName() string {
 	return m.Name
 }
 
-// SetName assigns a human-readable name to the SpecMeta.
+// SetName sets the node's name.
 func (m *Meta) SetName(val string) {
 	m.Name = val
 }
 
-// GetAnnotations retrieves the annotations associated with the SpecMeta.
+// GetAnnotations returns the node's annotations.
 func (m *Meta) GetAnnotations() map[string]string {
 	return m.Annotations
 }
 
-// SetAnnotations assigns annotations to the SpecMeta.
+// SetAnnotations sets the node's annotations.
 func (m *Meta) SetAnnotations(val map[string]string) {
 	m.Annotations = val
 }
 
-// GetLinks retrieves the connections or links of the SpecMeta.
+// GetLinks returns the node's connections.
 func (m *Meta) GetLinks() map[string][]PortLocation {
 	return m.Links
 }
 
-// SetLinks assigns the connections or links of the SpecMeta.
+// SetLinks sets the node's connections.
 func (m *Meta) SetLinks(val map[string][]PortLocation) {
 	m.Links = val
 }

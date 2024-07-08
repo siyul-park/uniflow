@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-// Reader represents a packet reader.
+// Reader represents a packet reader that manages incoming packets from multiple writers.
 type Reader struct {
-	writers []*Writer
-	in      chan *Packet
-	out     chan *Packet
+	writers []*Writer   
+	in      chan *Packet 
+	out     chan *Packet 
 	done    chan struct{}
-	mu      sync.Mutex
+	mu      sync.Mutex   
 }
 
 // NewReader creates a new Reader instance and starts its processing loop.
@@ -75,7 +75,7 @@ func (r *Reader) Receive(pck *Packet) bool {
 	}
 }
 
-// Close closes the reader and releases its resources.
+// Close closes the reader and releases its resources, stopping further packet processing.
 func (r *Reader) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()

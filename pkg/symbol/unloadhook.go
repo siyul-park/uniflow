@@ -1,8 +1,8 @@
 package symbol
 
-// UnloadHook is an interface for hooks that are called when node.Node is unloaded.
+// UnloadHook is an interface for hooks that are called when a symbol is unloaded.
 type UnloadHook interface {
-	// Unload is called when node.Node is unloaded.
+	// Unload is called when a symbol is unloaded.
 	Unload(*Symbol) error
 }
 
@@ -11,7 +11,7 @@ type UnloadFunc func(*Symbol) error
 
 var _ UnloadHook = UnloadFunc(nil)
 
-// Unload is the implementation of the Unload method for UnloadHookFunc.
+// Unload implements the Unload method of the UnloadHook interface.
 func (f UnloadFunc) Unload(sym *Symbol) error {
 	return f(sym)
 }

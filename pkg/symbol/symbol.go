@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// Symbol represents an types that binds a Node and a Spec.
+// Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
 	spec    spec.Spec
 	node    node.Node
@@ -18,7 +18,7 @@ type Symbol struct {
 
 var _ node.Node = (*Symbol)(nil)
 
-// New returns a new Symbol.
+// New creates and returns a new Symbol instance.
 func New(s spec.Spec, n node.Node) *Symbol {
 	return &Symbol{
 		spec:    s,
@@ -29,52 +29,52 @@ func New(s spec.Spec, n node.Node) *Symbol {
 	}
 }
 
-// ID returns the unique identifier.
+// ID returns the unique identifier of the Symbol.
 func (s *Symbol) ID() uuid.UUID {
 	return s.spec.GetID()
 }
 
-// Kind returns the kind.
+// Kind returns the kind or type of the Symbol.
 func (s *Symbol) Kind() string {
 	return s.spec.GetKind()
 }
 
-// Namespace returns the namespace.
+// Namespace returns the namespace of the Symbol.
 func (s *Symbol) Namespace() string {
 	return s.spec.GetNamespace()
 }
 
-// Name returns the name.
+// Name returns the human-readable name of the Symbol.
 func (s *Symbol) Name() string {
 	return s.spec.GetName()
 }
 
-// Annotations returns the annotations.
+// Annotations returns the annotations associated with the Symbol.
 func (s *Symbol) Annotations() map[string]string {
 	return s.spec.GetAnnotations()
 }
 
-// Spec returns the spec.
+// Spec returns the Spec associated with the Symbol.
 func (s *Symbol) Spec() spec.Spec {
 	return s.spec
 }
 
-// Unwrap returns the node wrapped.
+// Unwrap returns the underlying Node wrapped by the Symbol.
 func (s *Symbol) Unwrap() node.Node {
 	return s.node
 }
 
-// In returns the specified InPort.
+// In returns the input port with the specified name.
 func (s *Symbol) In(name string) *port.InPort {
 	return s.node.In(name)
 }
 
-// Out returns the specified OutPort.
+// Out returns the output port with the specified name.
 func (s *Symbol) Out(name string) *port.OutPort {
 	return s.node.Out(name)
 }
 
-// Close closes the Symbol, invoking the Close method of its Node.
+// Close frees all resources held by the Symbol.
 func (s *Symbol) Close() error {
 	return s.node.Close()
 }

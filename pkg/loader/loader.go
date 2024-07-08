@@ -12,20 +12,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Config contains the configuration settings for the Loader.
+// Config contains configuration settings for the Loader.
 type Config struct {
 	Namespace string        // Namespace associated with the Loader
 	Table     *symbol.Table // Symbol table for storing loaded symbols
 	Store     *store.Store  // Store to retrieve spec.Spec from
 }
 
-// Loader loads spec.Spec into the symbol.Table.
+// Loader synchronizes with the store.Store to load spec.Spec into the symbol.Table.
 type Loader struct {
-	namespace string
-	table     *symbol.Table
-	store     *store.Store
-	stream    *store.Stream
-	mu        sync.RWMutex
+	namespace string         // Namespace for loading
+	table     *symbol.Table  // Symbol table instance
+	store     *store.Store   // Store instance
+	stream    *store.Stream  // Stream for watching changes
+	mu        sync.RWMutex   // Mutex for synchronization
 }
 
 // New creates a new Loader instance with the given configuration.
@@ -37,19 +37,19 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single spec.Spec by ID, including linked specs, and adds them to the symbol table.
+// LoadOne loads a single spec.Spec identified by ID and its linked specs into the symbol table.
 func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	namespace := l.namespace
-	nexts := []any{id}
+	nexts := []interface{}{id}
 
 	for len(nexts) > 0 {
 		keys := nexts
 		nexts = nil
 
-		exists := map[any]bool{}
+		exists := map[interface{}]bool{}
 		var filter *store.Filter
 
 		for _, key := range keys {

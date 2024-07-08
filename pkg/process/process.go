@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// Process represents a process with its state, context, and synchronization mechanisms.
+// Process represents an individual execution unit that manages its own data and handles termination.
 type Process struct {
 	parent    *Process
 	data      *Data
@@ -17,25 +17,24 @@ type Process struct {
 	mu        sync.RWMutex
 }
 
+// Status represents the current state of a process.
 type Status int
 
 const (
-	StatusRunning Status = iota
-	StatusTerminated
+	StatusRunning    Status = iota // StatusRunning indicates the process is running.
+	StatusTerminated               // StatusTerminated indicates the process has terminated.
 )
 
-// Ensure Process implements ExitHook interface.
 var _ ExitHook = (*Process)(nil)
 
-// New creates a new Process with a background context.
+// New creates a new Process instance with a background context and initializes an exit hook for cancellation.
 func New() *Process {
 	ctx, cancel := context.WithCancelCause(context.Background())
-	proc := &Process{
-		data: newData(),
-		ctx:  ctx,
+	return &Process{
+		data:      newData(),
+		ctx:       ctx,
+		exitHooks: []ExitHook{ExitFunc(cancel)},
 	}
-	proc.exitHooks = append(proc.exitHooks, ExitFunc(cancel))
-	return proc
 }
 
 // Data returns the data associated with the process.
@@ -64,51 +63,45 @@ func (p *Process) Context() context.Context {
 	return p.ctx
 }
 
-// Parent returns the parent process.
+// Parent returns the parent process, if any.
 func (p *Process) Parent() *Process {
 	return p.parent
 }
 
-// Wait waits for the process to complete.
+// Wait blocks until all child processes complete.
 func (p *Process) Wait() {
 	p.wait.Wait()
 }
 
-// Fork creates a new child process from the current process.
+// Fork creates a new child process inheriting data and context from the current process.
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
-
 	ctx, cancel := context.WithCancelCause(context.Background())
-
 	child := &Process{
 		data:   p.data.Fork(),
 		ctx:    ctx,
 		parent: p,
 		exitHooks: []ExitHook{
 			ExitFunc(cancel),
-			ExitFunc(func(err error) {
-				p.wait.Done()
-			}),
+			ExitFunc(func(err error) { p.wait.Done() }),
 		},
 	}
 	p.AddExitHook(child)
-
 	return child
 }
 
-// AddExitHook adds an exit hook to the process.
+// AddExitHook adds an exit hook to be executed upon process termination.
 func (p *Process) AddExitHook(h ExitHook) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.status == StatusTerminated {
-		return
+	if p.status != StatusTerminated {
+		p.exitHooks = append(p.exitHooks, h)
 	}
-
-	p.exitHooks = append(p.exitHooks, h)
 }
 
-// Exit terminates the process and calls all registered exit hooks.
+// Exit terminates the process with the provided error, closes data resources,
+// and executes all registered exit hooks.
 func (p *Process) Exit(err error) {
 	p.mu.Lock()
 

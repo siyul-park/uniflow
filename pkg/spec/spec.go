@@ -4,7 +4,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// Spec defines the structure and relationships of a node.
+// Spec defines the behavior and port connections of each node declaratively.
 type Spec interface {
 	// GetID retrieves the unique identifier of the node.
 	GetID() uuid.UUID
@@ -32,11 +32,14 @@ type Spec interface {
 	SetLinks(val map[string][]PortLocation)
 }
 
-// PortLocation represents the location of a port within the network.
+// PortLocation represents the location of a port within the namespace.
 type PortLocation struct {
-	ID   uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Name string    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	Port string    `json:"port" yaml:"port" map:"port"`
+	// ID is the unique identifier of the port.
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	// Name is the human-readable name of the port.
+	Name string `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	// Port is the port number or identifier within the namespace.
+	Port string `json:"port" yaml:"port" map:"port"`
 }
 
 // DefaultNamespace represents the default logical node grouping.

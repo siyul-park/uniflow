@@ -11,16 +11,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Scheme is a registry for decoding Spec typess.
+// Scheme manages type information and decodes spec.Spec implementations into node.Node objects within a workflow environment.
 type Scheme struct {
-	types  map[string]reflect.Type
-	codecs map[string]Codec
-	mu     sync.RWMutex
+	types  map[string]reflect.Type 
+	codecs map[string]Codec        
+	mu     sync.RWMutex           
 }
 
 var _ Codec = (*Scheme)(nil)
 
-// New creates a new Scheme instance.
+// New creates a new Scheme instance initialized with type and codec maps.
 func New() *Scheme {
 	return &Scheme{
 		types:  make(map[string]reflect.Type),
@@ -28,7 +28,7 @@ func New() *Scheme {
 	}
 }
 
-// AddKnownType adds a Spec type to the Scheme, associating it with a kind.
+// AddKnownType associates a Spec type with a kind in the Scheme.
 func (s *Scheme) AddKnownType(kind string, spec spec.Spec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -36,7 +36,7 @@ func (s *Scheme) AddKnownType(kind string, spec spec.Spec) {
 	s.types[kind] = reflect.TypeOf(spec)
 }
 
-// KnownType returns the reflect.Type of the Spec with the given kind.
+// KnownType retrieves the reflect.Type of the Spec associated with the given kind.
 func (s *Scheme) KnownType(kind string) (reflect.Type, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -53,7 +53,7 @@ func (s *Scheme) AddCodec(kind string, codec Codec) {
 	s.codecs[kind] = codec
 }
 
-// Codec returns a Codec associated with the given kind.
+// Codec retrieves the Codec associated with the given kind.
 func (s *Scheme) Codec(kind string) (Codec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -62,7 +62,7 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	return c, ok
 }
 
-// Compile decodes the given Spec into a node.Node.
+// Compile decodes the given spec.Spec into a node.Node using the associated Codec.
 func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -74,7 +74,7 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 	return codec.Compile(spc)
 }
 
-// Decode converts the given Spec into a structured representation.
+// Decode converts the provided spec.Spec into a structured representation using reflection and encoding utilities.
 func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -94,11 +94,14 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 		return spc, nil
 	}
 
-	if doc, err := types.BinaryEncoder.Encode(spc); err != nil {
+	doc, err := types.BinaryEncoder.Encode(spc)
+	if err != nil {
 		return nil, err
-	} else if err := types.Decoder.Decode(doc, structured); err != nil {
-		return nil, err
-	} else {
-		return structured, nil
 	}
+
+	if err := types.Decoder.Decode(doc, structured); err != nil {
+		return nil, err
+	}
+
+	return structured, nil
 }

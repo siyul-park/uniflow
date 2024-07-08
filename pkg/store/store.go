@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Store is responsible for storing and managing spec.Spec objects.
+// Store manages the storage and retrieval of spec.Spec objects.
 type Store struct {
 	nodes database.Collection
 	mu    sync.RWMutex
@@ -38,7 +38,7 @@ func New(nodes database.Collection) *Store {
 	return &Store{nodes: nodes}
 }
 
-// Index ensures the collection indexes are up-to-date.
+// Index ensures that all collection indexes are up-to-date.
 func (s *Store) Index(ctx context.Context) error {
 	origins, err := s.nodes.Indexes().List(ctx)
 	if err != nil {
@@ -63,7 +63,7 @@ func (s *Store) Index(ctx context.Context) error {
 	return nil
 }
 
-// Watch returns a Stream to track changes based on the provided filter.
+// Watch returns a Stream that monitors changes based on the provided filter.
 func (s *Store) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	f, err := filter.Encode()
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *Store) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	return newStream(stream), nil
 }
 
-// InsertOne inserts a single spec.Spec and returns its ID.
+// InsertOne inserts a single spec.Spec and returns its UUID.
 func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -112,7 +112,7 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 	return id, nil
 }
 
-// InsertMany inserts multiple spec.Spec instances and returns their IDs.
+// InsertMany inserts multiple spec.Spec instances and returns their UUIDs.
 func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

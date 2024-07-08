@@ -11,14 +11,14 @@ type Collector struct {
 	mu      sync.Mutex
 }
 
-// NewCollector creates a new Collector instance for the given readers.
+// NewCollector creates a new Collector instance initialized with the provided readers.
 func NewCollector(readers []*Reader) *Collector {
 	return &Collector{
 		readers: readers,
 	}
 }
 
-// Read records a packet read by a reader and returns a complete set of packets if all readers have provided their packets.
+// Read records a packet read by a specific reader and returns a complete set of packets if all readers have provided their packets.
 func (c *Collector) Read(reader *Reader, pck *Packet) []*Packet {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -45,7 +45,7 @@ func (c *Collector) Read(reader *Reader, pck *Packet) []*Packet {
 	return nil
 }
 
-// Close clears the stored data in the Collector.
+// Close clears the stored data in the Collector instance.
 func (c *Collector) Close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()

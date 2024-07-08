@@ -6,7 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Hook represents a collection of hook functions.
+// Hook represents a collection of hook functions that can be executed on symbols.
 type Hook struct {
 	loadHooks   []symbol.LoadHook
 	unloadHooks []symbol.UnloadHook
@@ -37,7 +37,7 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 	h.unloadHooks = append(h.unloadHooks, hook)
 }
 
-// Load executes LoadHooks on the provided node.
+// Load executes all LoadHooks registered in the Hook on the provided symbol.
 func (h *Hook) Load(sym *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -50,7 +50,7 @@ func (h *Hook) Load(sym *symbol.Symbol) error {
 	return nil
 }
 
-// Unload executes UnloadHooks on the provided node.
+// Unload executes all UnloadHooks registered in the Hook on the provided symbol.
 func (h *Hook) Unload(sym *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

@@ -6,12 +6,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Stream is a stream to track spec.Spec changes.
+// Stream represents a stream for tracking spec.Spec changes.
 type Stream struct {
 	stream  database.Stream
 	channel chan Event
 }
 
+// newStream creates a new Stream based on the provided database.Stream.
 func newStream(stream database.Stream) *Stream {
 	s := &Stream{
 		stream:  stream,
@@ -30,12 +31,14 @@ func newStream(stream database.Stream) *Stream {
 				if err := types.Decoder.Decode(e.DocumentID, &id); err != nil {
 					continue
 				}
+
 				var op eventOP
-				if e.OP == database.EventInsert {
+				switch e.OP {
+				case database.EventInsert:
 					op = EventInsert
-				} else if e.OP == database.EventUpdate {
+				case database.EventUpdate:
 					op = EventUpdate
-				} else if e.OP == database.EventDelete {
+				case database.EventDelete:
 					op = EventDelete
 				}
 
@@ -51,7 +54,7 @@ func newStream(stream database.Stream) *Stream {
 	return s
 }
 
-// Next returns a channel that receives Event.
+// Next returns a channel that receives Event notifications.
 func (s *Stream) Next() <-chan Event {
 	return s.channel
 }

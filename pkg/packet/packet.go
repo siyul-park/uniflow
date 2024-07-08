@@ -6,13 +6,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Packet represents a formalized block of data.
+// Packet represents a structured data block exchanged between ports.
 type Packet struct {
 	payload types.Value
 }
 
+// None is a special empty packet.
 var None = New(nil)
 
+// Merge combines multiple packets into one, handling errors and payloads.
 func Merge(pcks []*Packet) *Packet {
 	var errs []error
 	var payloads []types.Value
@@ -21,6 +23,7 @@ func Merge(pcks []*Packet) *Packet {
 		if pck == nil || pck == None {
 			continue
 		}
+
 		if err, ok := pck.Payload().(types.Error); ok {
 			errs = append(errs, err.Interface().(error))
 		} else {
@@ -46,14 +49,13 @@ func Merge(pcks []*Packet) *Packet {
 }
 
 // New creates a new Packet with the given payload.
-// It generates a new unique ID for the Packet.
 func New(payload types.Value) *Packet {
 	return &Packet{
 		payload: payload,
 	}
 }
 
-// Payload returns the data payload.
+// Payload returns the data payload of the packet.
 func (p *Packet) Payload() types.Value {
 	return p.payload
 }

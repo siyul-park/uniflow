@@ -2,14 +2,14 @@ package process
 
 import "sync"
 
-// Local represents a local cache for storing data associated with processes.
+// Local is a cache for storing data associated with processes, supporting concurrency.
 type Local[T any] struct {
 	data    map[*Process]T
 	watches map[*Process][]func(T)
 	mu      sync.RWMutex
 }
 
-// NewLocal creates and initializes a new Local cache.
+// NewLocal creates and initializes a new Local cache instance.
 func NewLocal[T any]() *Local[T] {
 	return &Local[T]{
 		data:    make(map[*Process]T),
@@ -21,10 +21,12 @@ func NewLocal[T any]() *Local[T] {
 // If the process is already present, the watcher is called immediately with the current value.
 func (l *Local[T]) Watch(proc *Process, watch func(T)) bool {
 	l.mu.Lock()
+
 	val, ok := l.data[proc]
 	if !ok {
 		l.watches[proc] = append(l.watches[proc], watch)
 	}
+
 	l.mu.Unlock()
 
 	if ok {
@@ -33,7 +35,7 @@ func (l *Local[T]) Watch(proc *Process, watch func(T)) bool {
 	return ok
 }
 
-// Keys returns all stored processes.
+// Keys returns all processes stored in the Local cache.
 func (l *Local[T]) Keys() []*Process {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -54,19 +56,23 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 	return val, ok
 }
 
-// Store stores a value associated with a process in the cache.
+// Store stores a value associated with a process in the Local cache.
 // If the process is not already present, it registers an exit hook to remove the process on exit.
 func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
+
 	_, ok := l.data[proc]
 	l.data[proc] = val
+
 	if !ok {
 		proc.AddExitHook(ExitFunc(func(err error) {
 			l.Delete(proc)
 		}))
 	}
+
 	watches := l.watches[proc]
 	delete(l.watches, proc)
+
 	l.mu.Unlock()
 
 	for _, watch := range watches {
@@ -74,7 +80,7 @@ func (l *Local[T]) Store(proc *Process, val T) {
 	}
 }
 
-// Delete removes the association of a process and its value from the cache.
+// Delete removes the association of a process and its value from the Local cache.
 func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()

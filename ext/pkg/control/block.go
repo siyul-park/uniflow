@@ -170,6 +170,13 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
 		nodes := make([]node.Node, 0, len(spec.Specs))
 		for _, spec := range spec.Specs {
+			spec, err := s.Decode(spec)
+			if err != nil {
+				for _, n := range nodes {
+					n.Close()
+				}
+				return nil, err
+			}
 			n, err := s.Compile(spec)
 			if err != nil {
 				for _, n := range nodes {

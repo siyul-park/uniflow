@@ -9,9 +9,9 @@ import (
 
 // InPort represents an input port for receiving data.
 type InPort struct {
-	readers  map[*process.Process]*packet.Reader
-	listners []Listener
-	mu       sync.RWMutex
+	readers   map[*process.Process]*packet.Reader
+	listeners []Listener
+	mu        sync.RWMutex
 }
 
 // NewIn creates a new InPort instance.
@@ -21,40 +21,46 @@ func NewIn() *InPort {
 	}
 }
 
-// Accept registers a listener for processing incoming data.
-func (p *InPort) Accept(h Listener) {
+// Accept registers a listener to handle incoming data.
+func (p *InPort) Accept(listener Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.listners = append(p.listners, h)
+	p.listeners = append(p.listeners, listener)
 }
 
 // Open opens the input port for a given process and returns a reader.
+// If the process already has an associated reader, it returns the existing one.
+// Otherwise, it creates a new reader and associates it with the process.
 func (p *InPort) Open(proc *process.Process) *packet.Reader {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	reader, ok := p.readers[proc]
-	if !ok {
-		reader = packet.NewReader()
-		if proc.Status() == process.StatusTerminated {
-			reader.Close()
-			return reader
-		}
+	if ok {
+		return reader
+	}
 
-		p.readers[proc] = reader
-		proc.AddExitHook(process.ExitFunc(func(_ error) {
-			p.mu.Lock()
-			defer p.mu.Unlock()
+	reader = packet.NewReader()
 
-			delete(p.readers, proc)
-			reader.Close()
-		}))
+	if proc.Status() == process.StatusTerminated {
+		reader.Close()
+		return reader
+	}
 
-		for _, h := range p.listners {
-			h := h
-			go h.Accept(proc)
-		}
+	p.readers[proc] = reader
+
+	proc.AddExitHook(process.ExitFunc(func(_ error) {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+
+		delete(p.readers, proc)
+		reader.Close()
+	}))
+
+	for _, listener := range p.listeners {
+		listener := listener
+		go listener.Accept(proc)
 	}
 
 	return reader

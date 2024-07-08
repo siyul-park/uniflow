@@ -7,8 +7,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// Codec defines the interface for decoding Spec to node.Node.
+// Codec defines the interface for decoding spec.Spec into a node.Node.
 type Codec interface {
+	// Compile compiles the given spec.Spec into a node.Node.
 	Compile(spc spec.Spec) (node.Node, error)
 }
 

@@ -11,13 +11,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// TableOptions holds options for configuring a Table.
+// TableOptions holds configurations for a Table instance.
 type TableOptions struct {
-	LoadHooks   []LoadHook   // LoadHooks define functions to be executed on symbol loading.
-	UnloadHooks []UnloadHook // UnloadHooks define functions to be executed on symbol unloading.
+	LoadHooks   []LoadHook   // LoadHooks are functions executed when symbols are loaded.
+	UnloadHooks []UnloadHook // UnloadHooks are functions executed when symbols are unloaded.
 }
 
-// Table manages the store and operations for Symbols.
+// Table manages symbols, providing storage and operations.
 type Table struct {
 	scheme      *scheme.Scheme
 	symbols     map[uuid.UUID]*Symbol
@@ -27,8 +27,8 @@ type Table struct {
 	mu          sync.RWMutex
 }
 
-// NewTable returns a new SymbolTable with the specified options.
-func NewTable(sheme *scheme.Scheme, opts ...TableOptions) *Table {
+// NewTable creates a new Table instance.
+func NewTable(scheme *scheme.Scheme, opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 
@@ -38,7 +38,7 @@ func NewTable(sheme *scheme.Scheme, opts ...TableOptions) *Table {
 	}
 
 	return &Table{
-		scheme:      sheme,
+		scheme:      scheme,
 		symbols:     make(map[uuid.UUID]*Symbol),
 		namespaces:  make(map[string]map[string]uuid.UUID),
 		loadHooks:   loadHooks,
@@ -46,7 +46,7 @@ func NewTable(sheme *scheme.Scheme, opts ...TableOptions) *Table {
 	}
 }
 
-// Insert adds a Symbol to the table.
+// Insert adds a new symbol to the table based on the provided spec.
 func (t *Table) Insert(spec spec.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -76,7 +76,7 @@ func (t *Table) Insert(spec spec.Spec) (*Symbol, error) {
 	return sym, nil
 }
 
-// Free removes a Symbol from the table.
+// Free removes a symbol from the table by its ID.
 func (t *Table) Free(id uuid.UUID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -88,7 +88,7 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 	return sym != nil, nil
 }
 
-// LookupByID retrieves a Symbol by its ID.
+// LookupByID retrieves a symbol from the table by its ID.
 func (t *Table) LookupByID(id uuid.UUID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -97,7 +97,7 @@ func (t *Table) LookupByID(id uuid.UUID) (*Symbol, bool) {
 	return sym, ok
 }
 
-// LookupByName retrieves a Symbol by its namespace and name.
+// LookupByName retrieves a symbol from the table by its namespace and name.
 func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -111,7 +111,7 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	return nil, false
 }
 
-// Keys returns all Symbol's ID.
+// Keys returns all IDs of symbols in the table.
 func (t *Table) Keys() []uuid.UUID {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -124,7 +124,7 @@ func (t *Table) Keys() []uuid.UUID {
 	return ids
 }
 
-// Clear free all associated Symbols.
+// Clear frees all symbols associated with the table.
 func (t *Table) Clear() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()

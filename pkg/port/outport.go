@@ -9,10 +9,10 @@ import (
 
 // OutPort represents an output port for sending data.
 type OutPort struct {
-	ins      []*InPort
-	writers  map[*process.Process]*packet.Writer
-	listners []Listener
-	mu       sync.RWMutex
+	ins       []*InPort
+	writers   map[*process.Process]*packet.Writer
+	listeners []Listener
+	mu        sync.RWMutex
 }
 
 // NewOut creates a new OutPort instance.
@@ -22,12 +22,12 @@ func NewOut() *OutPort {
 	}
 }
 
-// Accept registers a listener for processing incoming data.
-func (p *OutPort) Accept(h Listener) {
+// Accept registers a listener to handle incoming data.
+func (p *OutPort) Accept(listener Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.listners = append(p.listners, h)
+	p.listeners = append(p.listeners, listener)
 }
 
 // Links returns the number of input ports this port is connected to.
@@ -46,7 +46,7 @@ func (p *OutPort) Link(in *InPort) {
 	p.ins = append(p.ins, in)
 }
 
-// Unlink disconnects two pip the output port to an input port.
+// Unlink disconnects the output port from an input port.
 func (p *OutPort) Unlink(in *InPort) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -54,11 +54,15 @@ func (p *OutPort) Unlink(in *InPort) {
 	for i, cur := range p.ins {
 		if cur == in {
 			p.ins = append(p.ins[:i], p.ins[i+1:]...)
+			break
 		}
 	}
 }
 
 // Open opens the output port for a given process and returns a writer.
+// If the process already has an associated writer, it returns the existing one.
+// Otherwise, it creates a new writer and associates it with the process.
+// It also connects the writer to all linked input ports and starts data listeners.
 func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	writer, ok := func() (*packet.Writer, bool) {
 		p.mu.Lock()
@@ -93,7 +97,7 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 			writer.Link(reader)
 		}
 
-		for _, h := range p.listners {
+		for _, h := range p.listeners {
 			h := h
 			go h.Accept(proc)
 		}
@@ -102,7 +106,7 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	return writer
 }
 
-// Close closes all writers associated with the output port.
+// Close closes all writers associated with the output port and clears linked input ports.
 func (p *OutPort) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()

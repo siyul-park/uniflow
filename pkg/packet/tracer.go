@@ -2,8 +2,7 @@ package packet
 
 import "sync"
 
-// Tracer is responsible for tracking the lifecycle and transformations of packets
-// as they move through various readers and writers.
+// Tracer tracks the lifecycle and transformations of packets as they pass through readers and writers.
 type Tracer struct {
 	sniffers map[*Packet][]Handler
 	sources  map[*Packet][]*Packet
@@ -14,7 +13,7 @@ type Tracer struct {
 	mu       sync.Mutex
 }
 
-// NewTracer initializes and returns a new Tracer instance.
+// NewTracer initializes a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
 		sniffers: make(map[*Packet][]Handler),
@@ -26,7 +25,7 @@ func NewTracer() *Tracer {
 	}
 }
 
-// Sniff adds a sniff function to be called when a packet is fully processed.
+// Sniff adds a sniffer Handler to be invoked when a packet completes processing.
 func (t *Tracer) Sniff(pck *Packet, sniffer Handler) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -52,7 +51,7 @@ func (t *Tracer) Transform(source, target *Packet) {
 	}
 }
 
-// Read logs the packet being read by a specific reader.
+// Read logs a packet being read by a specific reader.
 func (t *Tracer) Read(reader *Reader, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -61,7 +60,7 @@ func (t *Tracer) Read(reader *Reader, pck *Packet) {
 	t.reader[pck] = reader
 }
 
-// Write logs the packet being written by a specific writer. If the writer's write
+// Write logs a packet being written by a specific writer. If the writer's write
 // operation is successful, it updates the tracking maps; otherwise, it processes the packet.
 func (t *Tracer) Write(writer *Writer, pck *Packet) {
 	t.mu.Lock()

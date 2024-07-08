@@ -15,10 +15,10 @@ import (
 
 // Config defines configuration options for the Runtime.
 type Config struct {
-	Namespace string
-	Hook      *hook.Hook
-	Scheme    *scheme.Scheme
-	Store     *store.Store
+	Namespace string         // Namespace defines the isolated execution environment for workflows.
+	Hook      *hook.Hook     // Hook is a collection of hook functions for managing symbols.
+	Scheme    *scheme.Scheme // Scheme defines the schema and behaviors for symbols.
+	Store     *store.Store   // Store is responsible for persisting symbols.
 }
 
 // Runtime represents an environment for executing Workflows.

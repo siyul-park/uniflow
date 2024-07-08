@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// Writer represents a packet writer.
+// Writer represents a packet writer that sends packets to linked readers.
 type Writer struct {
 	readers  []*Reader
 	receives [][]*Packet
