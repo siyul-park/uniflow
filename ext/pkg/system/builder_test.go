@@ -10,7 +10,7 @@ import (
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme(NewTable())(s)
+	err := AddToScheme(NewTable()).AddToScheme(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindSyscall}

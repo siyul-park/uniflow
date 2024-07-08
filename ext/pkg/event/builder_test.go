@@ -17,7 +17,7 @@ func TestAddToHook(t *testing.T) {
 	b := NewBroker()
 	defer b.Close()
 
-	err := AddToHook(b)(h)
+	err := AddToHook(b).AddToHooks(h)
 	assert.NoError(t, err)
 
 	n := node.NewManyToOneNode(nil)
@@ -38,7 +38,7 @@ func TestAddToScheme(t *testing.T) {
 	b := NewBroker()
 	defer b.Close()
 
-	err := AddToScheme(b, b)(s)
+	err := AddToScheme(b, b).AddToScheme(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindTrigger}

@@ -1,29 +1,31 @@
 package hook
 
-// Builder is a helper for building Hooks instances with registered hooks.
-type Builder []func(*Hook) error
+// Builder is a helper for constructing Hook instances with registered hooks.
+type Builder []Register
+
+var _ Register = (*Builder)(nil)
 
 // NewBuilder creates a new Builder with optional initial hook functions.
-func NewBuilder(funcs ...func(*Hook) error) Builder {
-	return Builder(funcs)
+func NewBuilder(registers ...Register) Builder {
+	return Builder(registers)
 }
 
 // AddToHooks adds all registered hook functions to the provided Hook instance.
 func (b Builder) AddToHooks(h *Hook) error {
 	for _, f := range b {
-		if err := f(h); err != nil {
+		if err := f.AddToHooks(h); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Register registers one or more hook functions to the Builder.
-func (b *Builder) Register(funcs ...func(*Hook) error) {
-	*b = append(*b, funcs...)
+// Register appends one or more hook functions to the Builder.
+func (b *Builder) Register(registers ...Register) {
+	*b = append(*b, registers...)
 }
 
-// Build creates a new Hook instance containing all registered hooks.
+// Build creates a new Hook instance and adds all registered hook functions to it.
 func (b Builder) Build() (*Hook, error) {
 	h := New()
 	if err := b.AddToHooks(h); err != nil {

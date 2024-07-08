@@ -15,7 +15,7 @@ import (
 func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
-	err := AddToHook()(h)
+	err := AddToHook().AddToHooks(h)
 	assert.NoError(t, err)
 
 	port, err := freeport.GetFreePort()
@@ -36,7 +36,7 @@ func TestAddToHook(t *testing.T) {
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme()(s)
+	err := AddToScheme().AddToScheme(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindHTTP, KindListener, KindRouter, KindWebSocket, KindUpgrader}

@@ -9,8 +9,8 @@ import (
 )
 
 // AddToHook returns a function that adds hook to the provided hook.
-func AddToHook() func(*hook.Hook) error {
-	return func(h *hook.Hook) error {
+func AddToHook() hook.Register {
+	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*BlockNode); ok {
@@ -45,12 +45,12 @@ func AddToHook() func(*hook.Hook) error {
 			return nil
 		}))
 		return nil
-	}
+	})
 }
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme(module *language.Module, lang string) func(*scheme.Scheme) error {
-	return func(s *scheme.Scheme) error {
+func AddToScheme(module *language.Module, lang string) scheme.Register {
+	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
 		expr, err := module.Load(lang)
 		if err != nil {
 			return err
@@ -87,5 +87,5 @@ func AddToScheme(module *language.Module, lang string) func(*scheme.Scheme) erro
 		s.AddCodec(KindSwitch, NewSwitchNodeCodec(expr))
 
 		return nil
-	}
+	})
 }

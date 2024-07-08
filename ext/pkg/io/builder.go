@@ -3,8 +3,8 @@ package io
 import "github.com/siyul-park/uniflow/pkg/scheme"
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme() func(*scheme.Scheme) error {
-	return func(s *scheme.Scheme) error {
+func AddToScheme() scheme.Register {
+	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
 		s.AddKnownType(KindRDB, &RDBNodeSpec{})
 		s.AddCodec(KindRDB, NewRDBNodeCodec())
 
@@ -15,5 +15,5 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddCodec(KindWrite, NewWriteNodeCodec())
 
 		return nil
-	}
+	})
 }

@@ -10,7 +10,7 @@ import (
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme()(s)
+	err := AddToScheme().AddToScheme(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindRDB, KindWrite}

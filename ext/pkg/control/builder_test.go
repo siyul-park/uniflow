@@ -16,7 +16,7 @@ import (
 func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
-	err := AddToHook()(h)
+	err := AddToHook().AddToHooks(h)
 	assert.NoError(t, err)
 
 	n := NewBlockNode(node.NewOneToOneNode(nil))
@@ -37,7 +37,7 @@ func TestAddToScheme(t *testing.T) {
 	m := language.NewModule()
 	m.Store(text.Language, text.NewCompiler())
 
-	err := AddToScheme(m, text.Language)(s)
+	err := AddToScheme(m, text.Language).AddToScheme(s)
 	assert.NoError(t, err)
 
 	testCase := []string{KindCall, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindSession, KindSnippet, KindSwitch}

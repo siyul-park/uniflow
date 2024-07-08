@@ -1,29 +1,31 @@
 package scheme
 
-// Builder is a collection of functions to construct a new Scheme.
-type Builder []func(*Scheme) error
+// Builder is a collection of Register functions used to construct a new Scheme.
+type Builder []Register
 
-// NewBuilder creates a new SchemeBuilder with the provided functions.
-func NewBuilder(funcs ...func(*Scheme) error) Builder {
-	return Builder(funcs)
+var _ Register = (*Builder)(nil)
+
+// NewBuilder creates a new Builder with the provided Register functions.
+func NewBuilder(registers ...Register) Builder {
+	return Builder(registers)
 }
 
-// AddToScheme integrates all registered types into the given Scheme.
+// AddToScheme applies all Register functions in the Builder to the given Scheme.
 func (b *Builder) AddToScheme(s *Scheme) error {
 	for _, f := range *b {
-		if err := f(s); err != nil {
+		if err := f.AddToScheme(s); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Register incorporates one or more functions to register Spec types.
-func (b *Builder) Register(funcs ...func(*Scheme) error) {
-	*b = append(*b, funcs...)
+// Register appends one or more Register functions to the Builder.
+func (b *Builder) Register(registers ...Register) {
+	*b = append(*b, registers...)
 }
 
-// Build yields a new Scheme containing the registered types.
+// Build creates a new Scheme and applies all Register functions to it.
 func (b *Builder) Build() (*Scheme, error) {
 	s := New()
 	if err := b.AddToScheme(s); err != nil {

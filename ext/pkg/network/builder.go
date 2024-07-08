@@ -7,8 +7,8 @@ import (
 )
 
 // AddToHook returns a function that adds hook to the provided hook.
-func AddToHook() func(*hook.Hook) error {
-	return func(h *hook.Hook) error {
+func AddToHook() hook.Register {
+	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Unwrap()
 			if n, ok := n.(*HTTPListenNode); ok {
@@ -24,12 +24,12 @@ func AddToHook() func(*hook.Hook) error {
 			return nil
 		}))
 		return nil
-	}
+	})
 }
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme() func(*scheme.Scheme) error {
-	return func(s *scheme.Scheme) error {
+func AddToScheme() scheme.Register {
+	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
 		s.AddKnownType(KindHTTP, &HTTPNodeSpec{})
 		s.AddCodec(KindHTTP, NewHTTPNodeCodec())
 
@@ -46,5 +46,5 @@ func AddToScheme() func(*scheme.Scheme) error {
 		s.AddCodec(KindUpgrader, NewUpgradeNodeCodec())
 
 		return nil
-	}
+	})
 }
