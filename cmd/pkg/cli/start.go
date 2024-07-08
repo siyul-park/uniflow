@@ -52,6 +52,10 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
+		if err := config.Store.Index(ctx); err != nil {
+			return err
+		}
+
 		if filename != "" {
 			filter := store.Where[string](spec.KeyNamespace).EQ(namespace)
 			specs, err := config.Store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
@@ -78,15 +82,12 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		r, err := runtime.New(ctx, runtime.Config{
+		r := runtime.New(runtime.Config{
 			Namespace: namespace,
 			Scheme:    config.Scheme,
 			Hook:      config.Hook,
 			Store:     config.Store,
 		})
-		if err != nil {
-			return err
-		}
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

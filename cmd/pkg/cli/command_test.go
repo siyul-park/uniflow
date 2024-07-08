@@ -20,7 +20,7 @@ func TestCommend_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
 
 	output := new(bytes.Buffer)

@@ -27,12 +27,13 @@ func TestRuntime_LookupByID(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
+
 	defer r.Close()
 
 	meta := &spec.Meta{
@@ -60,12 +61,13 @@ func TestRuntime_LookupByName(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
+
 	defer r.Close()
 
 	meta := &spec.Meta{
@@ -94,12 +96,13 @@ func TestRuntime_Insert(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
+
 	defer r.Close()
 
 	meta := &spec.Meta{
@@ -128,12 +131,13 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
+
 	defer r.Close()
 
 	meta := &spec.Meta{
@@ -168,9 +172,9 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
@@ -202,12 +206,13 @@ func TestRuntime_Listen(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
-	r, _ := New(ctx, Config{
+	r := New(Config{
 		Scheme: s,
 		Store:  st,
 	})
+
 	defer r.Close()
 
 	meta := &spec.Meta{
@@ -241,9 +246,6 @@ func TestRuntime_Listen(t *testing.T) {
 }
 
 func BenchmarkNewRuntime(b *testing.B) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
 	kind := faker.UUIDHyphenated()
 
 	s := scheme.New()
@@ -252,10 +254,10 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 
 	for i := 0; i < b.N; i++ {
-		r, _ := New(ctx, Config{
+		r := New(Config{
 			Scheme: s,
 			Store:  st,
 		})

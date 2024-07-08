@@ -178,23 +178,25 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		} else if v, ok := v.(types.Slice); ok {
 			elements := make([]any, 0, v.Len())
 			for _, v := range v.Values() {
-				unstructed := spec.NewUnstructured(nil)
-				if err := unstructed.Set(ft.Key, v); err != nil {
-					return nil, err
-				} else if v, err := unstructed.Get(ft.Key); err != nil {
+				unstructed := &spec.Unstructured{}
+				val, _ := unstructed.Get(ft.Key)
+				if err := types.Decoder.Decode(v, &val); err != nil {
 					return nil, err
 				} else {
-					elements = append(elements, v)
+					elements = append(elements, val)
 				}
 			}
 			value = elements
 		}
 	} else {
-		unstructed := spec.NewUnstructured(nil)
-		if err := unstructed.Set(ft.Key, ft.Value); err != nil {
+		unstructed := &spec.Unstructured{}
+		val, _ := unstructed.Get(ft.Key)
+		if v, err := types.BinaryEncoder.Encode(value); err != nil {
 			return nil, err
-		} else if value, err = unstructed.Get(ft.Key); err != nil {
+		} else if err := types.Decoder.Decode(v, &val); err != nil {
 			return nil, err
+		} else {
+			value = val
 		}
 	}
 

@@ -30,7 +30,7 @@ type Runtime struct {
 }
 
 // New creates a new Runtime instance with the specified configuration.
-func New(ctx context.Context, config Config) (*Runtime, error) {
+func New(config Config) *Runtime {
 	if config.Namespace == "" {
 		config.Namespace = spec.DefaultNamespace
 	}
@@ -41,11 +41,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		config.Scheme = scheme.New()
 	}
 	if config.Store == nil {
-		store, err := store.New(ctx, memdb.NewCollection(""))
-		if err != nil {
-			return nil, err
-		}
-		config.Store = store
+		config.Store = store.New(memdb.NewCollection(""))
 	}
 
 	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
@@ -64,7 +60,7 @@ func New(ctx context.Context, config Config) (*Runtime, error) {
 		store:     config.Store,
 		table:     tb,
 		loader:    ld,
-	}, nil
+	}
 }
 
 // LookupByID retrieves a symbol by ID from the table or loads it from the store if not found.

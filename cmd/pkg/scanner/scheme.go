@@ -45,7 +45,10 @@ func (c *SpecCodec) Decode(data any) (spec.Spec, error) {
 		return nil, err
 	}
 
-	unstructured := spec.NewUnstructured(doc.(types.Map))
+	unstructured := &spec.Unstructured{}
+	if err := types.Decoder.Decode(doc, unstructured); err != nil {
+		return nil, err
+	}
 
 	if unstructured.GetNamespace() == "" {
 		if c.namespace != "" {

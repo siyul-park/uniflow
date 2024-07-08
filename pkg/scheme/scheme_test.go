@@ -8,7 +8,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,10 +58,12 @@ func TestScheme_Decode(t *testing.T) {
 
 	s.AddKnownType(kind, &spec.Meta{})
 
-	meta := spec.NewUnstructured(types.NewMap(
-		types.NewString(spec.KeyID), types.NewBinary(uuid.Must(uuid.NewV7()).Bytes()),
-		types.NewString(spec.KeyKind), types.NewString(kind),
-	))
+	meta := &spec.Unstructured{
+		Meta: spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: kind,
+		},
+	}
 
 	structured, err := s.Decode(meta)
 	assert.NoError(t, err)

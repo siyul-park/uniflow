@@ -48,6 +48,10 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
+		if err := config.Store.Index(ctx); err != nil {
+			return err
+		}
+
 		specs, err := scanner.New().
 			Scheme(config.Scheme).
 			Store(config.Store).

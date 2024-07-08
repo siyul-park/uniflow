@@ -20,7 +20,7 @@ func TestScanner_Scan(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
 
 	kind := faker.UUIDHyphenated()

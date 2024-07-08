@@ -26,7 +26,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st, _ := store.New(ctx, memdb.NewCollection(""))
+	st := store.New(memdb.NewCollection(""))
 	fsys := make(fstest.MapFS)
 
 	kind := faker.UUIDHyphenated()

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -183,9 +184,12 @@ func TestBlockNodeCodec_Decode(t *testing.T) {
 
 	spec := &BlockNodeSpec{
 		Specs: []*spec.Unstructured{
-			spec.NewUnstructured(types.NewMap(
-				types.NewString(spec.KeyKind), types.NewString(kind),
-			)),
+			{
+				Meta: spec.Meta{
+					ID:   uuid.Must(uuid.NewV7()),
+					Kind: kind,
+				},
+			},
 		},
 	}
 

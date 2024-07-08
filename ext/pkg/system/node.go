@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 const (
@@ -38,35 +37,19 @@ func ReadNodes(s *store.Store) func(context.Context, *store.Filter) ([]spec.Spec
 
 func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
+		patches := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
+			return spec
+		})
+
 		ids := make([]uuid.UUID, 0, len(specs))
 		for _, spec := range specs {
 			ids = append(ids, spec.GetID())
 		}
 
-		exists, err := s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
-		if err != nil {
-			return nil, err
-		}
-
-		patches := make([]spec.Spec, 0, len(specs))
-		for _, exist := range exists {
-			if patch, ok := lo.Find(specs, func(item *spec.Unstructured) bool {
-				return item.GetID() == exist.GetID()
-			}); ok {
-				if exist, err := types.TextEncoder.Encode(exist); err != nil {
-					return nil, err
-				} else {
-					exist := exist.(types.Map)
-					patch := patch.Doc()
-					patches = append(patches, spec.NewUnstructured(types.NewMap(append(exist.Pairs(), patch.Pairs()...)...)))
-				}
-			}
-		}
-
 		if _, err := s.UpdateMany(ctx, patches); err != nil {
 			return nil, err
 		}
-		return patches, nil
+		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
 	}
 }
 

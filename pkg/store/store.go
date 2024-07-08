@@ -13,7 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Store is responsible for storing spec.Spec.
+// Store is responsible for storing and managing spec.Spec objects.
 type Store struct {
 	nodes database.Collection
 	mu    sync.RWMutex
@@ -33,30 +33,33 @@ var indexes = []database.IndexModel{
 }
 
 // New creates a new Store instance.
-func New(ctx context.Context, nodes database.Collection) (*Store, error) {
-	origins, err := nodes.Indexes().List(ctx)
+func New(nodes database.Collection) *Store {
+	return &Store{nodes: nodes}
+}
+
+// Index ensures the collection indexes are up-to-date.
+func (s *Store) Index(ctx context.Context) error {
+	origins, err := s.nodes.Indexes().List(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, index := range indexes {
-		var exists bool
 		for _, origin := range origins {
 			if origin.Name == index.Name {
 				if !reflect.DeepEqual(origin, index) {
-					nodes.Indexes().Drop(ctx, origin.Name)
-				} else {
-					exists = true
+					if err := s.nodes.Indexes().Drop(ctx, origin.Name); err != nil {
+						return err
+					}
+					if err := s.nodes.Indexes().Create(ctx, index); err != nil {
+						return err
+					}
 				}
 				break
 			}
 		}
-		if !exists {
-			nodes.Indexes().Create(ctx, index)
-		}
 	}
-
-	return &Store{nodes: nodes}, nil
+	return nil
 }
 
 // Watch returns a Stream to track changes based on the provided filter.
@@ -171,7 +174,6 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 	}
 
 	filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
-
 	return s.nodes.UpdateOne(ctx, filter, doc)
 }
 
@@ -255,7 +257,11 @@ func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*databas
 	} else if doc == nil {
 		return nil, nil
 	} else {
-		return spec.NewUnstructured(doc), nil
+		unstructurd := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
+			return nil, err
+		}
+		return unstructurd, nil
 	}
 }
 
@@ -279,7 +285,11 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 		if doc == nil {
 			continue
 		}
-		spcs = append(spcs, spec.NewUnstructured(doc))
+		unstructurd := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
+			return nil, err
+		}
+		spcs = append(spcs, unstructurd)
 	}
 	return spcs, nil
 }

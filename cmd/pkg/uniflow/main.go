@@ -79,10 +79,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store, err := store.New(ctx, col)
-	if err != nil {
-		log.Fatal(err)
-	}
+	store := store.New(col)
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()
