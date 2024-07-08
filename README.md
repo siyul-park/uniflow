@@ -30,7 +30,7 @@ Integrate the engine into your service to offer personalized experiences and ext
 Run the [ping example](./examples/ping.yaml) using the following command:
 
 ```shell
-./uniflow start --filename example/ping.yaml
+uniflow start --filename example/ping.yaml
 ```
 
 Verify that the HTTP endpoint works as expected:

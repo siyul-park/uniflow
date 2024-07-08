@@ -1,6 +1,6 @@
 # 시작하기
 
-이 가이드는 Command-Line Interface (CLI)를 사용하여 워크플로우를 관리하고 엔진을 실행하는 방법을 설명합니다. CLI 설치부터 워크플로우 제어 및 설정 구성까지의 과정을 살펴보세요.
+이 가이드는 [Command-Line Interface (CLI)](../cmd/README_kr.md)를 사용하여 워크플로우를 관리하고 엔진을 실행하는 방법을 설명합니다. CLI 설치부터 워크플로우 제어 및 설정 구성까지의 과정을 살펴보세요.
 
 ## 코드에서 설치
 
@@ -54,9 +54,9 @@ CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공�
 ```sh
 ./dist/uniflow apply --filename examples/ping.yaml
  ID                                    KIND      NAMESPACE  NAME      LINKS                                
- 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  <nil>      listener  map[out:[map[name:router port:in]]]  
- 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    <nil>      router    map[out[0]:[map[name:pong port:in]]] 
- 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   <nil>      pong      <nil>                                
+ 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  default    listener  map[out:[map[name:router port:in]]]  
+ 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    default    router    map[out[0]:[map[name:pong port:in]]] 
+ 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   default    pong      <nil>                                
 ```
 
 ### Delete
@@ -76,9 +76,9 @@ CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공�
 ```sh
 ./dist/uniflow get
  ID                                    KIND      NAMESPACE  NAME      LINKS                                
- 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  <nil>      listener  map[out:[map[name:router port:in]]]  
- 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    <nil>      router    map[out[0]:[map[name:pong port:in]]] 
- 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   <nil>      pong      <nil>                                
+ 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  default    listener  map[out:[map[name:router port:in]]]  
+ 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    default    router    map[out[0]:[map[name:pong port:in]]] 
+ 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   default    pong      <nil>                                
 ```
 
 ### Start

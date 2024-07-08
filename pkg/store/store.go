@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -163,6 +164,24 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 		spc.SetID(uuid.Must(uuid.NewV7()))
 	}
 
+	f, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
+
+	doc, err := s.nodes.FindOne(ctx, f)
+	if err != nil {
+		return false, err
+	} else if doc == nil {
+		return false, nil
+	}
+
+	unstructurd := &spec.Unstructured{}
+	if err := types.Decoder.Decode(doc, unstructurd); err != nil {
+		return false, err
+	}
+
+	if unstructurd.GetNamespace() != spc.GetNamespace() {
+		return false, nil
+	}
+
 	val, err := types.BinaryEncoder.Encode(spc)
 	if err != nil {
 		return false, err
@@ -173,8 +192,7 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 		return false, errors.WithStack(encoding.ErrInvalidArgument)
 	}
 
-	filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
-	return s.nodes.UpdateOne(ctx, filter, doc)
+	return s.nodes.UpdateOne(ctx, f, doc)
 }
 
 // UpdateMany updates multiple spec.Spec instances and returns the number of successes.
@@ -182,13 +200,40 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var docs []types.Map
+	ids := make([]uuid.UUID, len(spcs))
+	for i, spc := range spcs {
+		ids[i] = spc.GetID()
+	}
+
+	f, _ := Where[uuid.UUID](spec.KeyID).IN(ids...).Encode()
+
+	docs, err := s.nodes.FindMany(ctx, f, &database.FindOptions{
+		Limit: lo.ToPtr(len(ids)),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	unstructurds := make(map[uuid.UUID]*spec.Unstructured, len(spcs))
+	for _, doc := range docs {
+		unstructurd := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
+			return 0, err
+		}
+		unstructurds[unstructurd.ID] = unstructurd
+	}
+
+	count := 0
 	for _, spc := range spcs {
 		if spc.GetNamespace() == "" {
 			spc.SetNamespace(spec.DefaultNamespace)
 		}
 		if spc.GetID() == (uuid.UUID{}) {
 			spc.SetID(uuid.Must(uuid.NewV7()))
+		}
+
+		if unstructurd, ok := unstructurds[spc.GetID()]; !ok || unstructurd.GetNamespace() != spc.GetNamespace() {
+			continue
 		}
 
 		val, err := types.BinaryEncoder.Encode(spc)
@@ -201,13 +246,9 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 			return 0, errors.WithStack(encoding.ErrInvalidArgument)
 		}
 
-		docs = append(docs, doc)
-	}
+		f, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
 
-	count := 0
-	for i, doc := range docs {
-		filter, _ := Where[uuid.UUID](spec.KeyID).EQ(spcs[i].GetID()).Encode()
-		if ok, err := s.nodes.UpdateOne(ctx, filter, doc); err != nil {
+		if ok, err := s.nodes.UpdateOne(ctx, f, doc); err != nil {
 			return count, err
 		} else if ok {
 			count++

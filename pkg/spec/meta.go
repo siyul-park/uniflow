@@ -5,7 +5,7 @@ import "github.com/gofrs/uuid"
 // Meta represents metadata required by all persisted resources, including user-defined types.
 type Meta struct {
 	ID          uuid.UUID                 `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Kind        string                    `json:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
+	Kind        string                    `json:"kind" yaml:"kind" map:"kind"`
 	Namespace   string                    `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
 	Name        string                    `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	Annotations map[string]string         `json:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`

@@ -30,7 +30,7 @@
 아래 명령을 사용하여 [ping 예제](./examples/ping.yaml)를 실행해 보세요:
 
 ```shell
-./uniflow start --filename example/ping.yaml
+uniflow start --filename example/ping.yaml
 ```
 
 이제 HTTP 엔드포인트가 예상대로 작동하는지 확인하세요:

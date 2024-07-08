@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide explains how to manage workflows and run the engine using the Command-Line Interface (CLI). Follow the steps from installing the CLI to controlling workflows and configuring settings.
+This guide explains how to manage workflows and run the engine using the [Command-Line Interface (CLI)](../cmd/README.md) Follow the steps from installing the CLI to controlling workflows and configuring settings.
 
 ## Installation from Code
 
@@ -54,9 +54,9 @@ The `apply` command applies node specifications to a specified namespace. If the
 ```sh
 ./dist/uniflow apply --filename examples/ping.yaml
  ID                                    KIND      NAMESPACE  NAME      LINKS                                
- 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  <nil>      listener  map[out:[map[name:router port:in]]]  
- 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    <nil>      router    map[out[0]:[map[name:pong port:in]]] 
- 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   <nil>      pong      <nil>                                
+ 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  default    listener  map[out:[map[name:router port:in]]]  
+ 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    default    router    map[out[0]:[map[name:pong port:in]]] 
+ 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   default    pong      <nil>                                
 ```
 
 ### Delete
@@ -76,9 +76,9 @@ The `get` command retrieves node specifications from a namespace. If no namespac
 ```sh
 ./dist/uniflow get
  ID                                    KIND      NAMESPACE  NAME      LINKS                                
- 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  <nil>      listener  map[out:[map[name:router port:in]]]  
- 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    <nil>      router    map[out[0]:[map[name:pong port:in]]] 
- 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   <nil>      pong      <nil>                                
+ 01908c74-8b22-7cbf-a475-6b6bc871b01a  listener  default    listener  map[out:[map[name:router port:in]]]  
+ 01908c74-8b22-7cc0-ae2b-40504e7c9ff0  router    default    router    map[out[0]:[map[name:pong port:in]]] 
+ 01908c74-8b22-7cc1-ac48-83b5084a0061  snippet   default    pong      <nil>                                
 ```
 
 ### Start
