@@ -1,6 +1,6 @@
 # Architecture
 
-Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime engine executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
+Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime enviroment executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
 
 ```plantext
    +-------------------------------------------------+
@@ -24,13 +24,13 @@ Node specifications define the roles of each node declaratively, and these speci
    +-------------------------------------------------+
 ```
 
-The runtime engine does not enforce the use of specific nodes. All nodes connect to the engine via extensions and can be added or removed as needed for your service.
+The engine does not enforce the use of specific nodes. All nodes connect to the engine via extensions and can be added or removed as needed for your service.
 
 To effectively execute node specifications, the process is divided into two main phases: compilation and runtime. This helps reduce complexity and optimize performance.
 
 ## Modifying Workflows
 
-The runtime engine does not expose an API to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes for execution. 
+The engine does not expose an API to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes for execution. 
 
 To modify node specifications, use the Command-Line Interface (CLI) to update the specifications in the database. Alternatively, you can define a workflow that provides an HTTP API for modifying node specifications. These workflows are typically defined in the `system` namespace.
 

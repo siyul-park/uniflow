@@ -37,7 +37,7 @@ You can configure the environment using the `.uniflow.toml` file or system envir
 | `database.name`    | `DATABASE.NAME`          | -                        |
 | `collection.nodes` | `COLLECTION.NODES`       | `nodes`                  |
 
-If you use [MongoDB](https://www.mongodb.com/), ensure that [change streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled so the runtime engine can track changes to node specifications. Use a [replica set](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication) to utilize change streams.
+If you use [MongoDB](https://www.mongodb.com/), ensure that [change streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled so the engine can track changes to node specifications. Use a [replica set](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication) to utilize change streams.
 
 ## Commands
 
