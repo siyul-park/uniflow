@@ -106,11 +106,16 @@ func (m Map) Len() int {
 
 // Map converts the Map to a raw Go map.
 func (m Map) Map() map[any]any {
+	if m.value.Len() == 0 {
+		return nil
+	}
+
 	values := make(map[any]any, m.value.Len())
 	for itr := m.value.Iterator(); !itr.Done(); {
 		k, v, _ := itr.Next()
 		values[InterfaceOf(k)] = InterfaceOf(v)
 	}
+
 	return values
 }
 
@@ -137,6 +142,10 @@ func (m Map) Hash() uint64 {
 
 // Interface converts the Map to an interface{}.
 func (m Map) Interface() any {
+	if m.value.Len() == 0 {
+		return nil
+	}
+
 	keys := make([]any, 0, m.value.Len())
 	values := make([]any, 0, m.value.Len())
 

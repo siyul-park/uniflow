@@ -1,11 +1,13 @@
 package io
 
 import (
-	"fmt"
 	"io"
+	"net/textproto"
 	"os"
+	"strconv"
 	"sync"
 
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -25,15 +27,10 @@ type WriteNode struct {
 type WriteNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Filename  string `map:"filename"`
-}
-
-type nopWriteCloser struct {
-	io.Writer
+	Append    bool   `map:"append,omitempty"`
 }
 
 const KindWrite = "write"
-
-var _ io.WriteCloser = (*nopWriteCloser)(nil)
 
 // NewWriteNode creates a new WriteNode with the provided writer.
 func NewWriteNode(writer io.WriteCloser) *WriteNode {
@@ -58,48 +55,28 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-	input := types.InterfaceOf(inPayload)
 
-	var buf []byte
-	switch v := input.(type) {
-	case []byte:
-		buf = v
-	case string:
-		buf = []byte(v)
-	default:
-		buf = []byte(fmt.Sprintf("%v", input))
-	}
-
-	length, err := n.writer.Write(buf)
-	if err != nil {
+	header := textproto.MIMEHeader{}
+	if err := mime.Encode(n.writer, inPayload, header); err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 
+	length, _ := strconv.Atoi(header.Get(mime.HeaderContentLength))
 	return packet.New(types.NewInt64(int64(length))), nil
 }
 
 // NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
 func NewWriteNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
-		var writer io.WriteCloser
-		switch spec.Filename {
-		case "/dev/stdin", "stdin":
-			writer = &nopWriteCloser{os.Stdin}
-		case "/dev/stdout", "stdout":
-			writer = &nopWriteCloser{os.Stdout}
-		case "/dev/stderr", "stderr":
-			writer = &nopWriteCloser{os.Stderr}
-		default:
-			var err error
-			writer, err = os.OpenFile(spec.Filename, os.O_APPEND|os.O_CREATE, 0644)
-			if err != nil {
-				return nil, err
-			}
+		flag := os.O_WRONLY | os.O_CREATE
+		if spec.Append {
+			flag = flag | os.O_APPEND
+		}
+
+		writer, err := OpenFile(spec.Filename, flag, 0644)
+		if err != nil {
+			return nil, err
 		}
 		return NewWriteNode(writer), nil
 	})
-}
-
-func (*nopWriteCloser) Close() error {
-	return nil
 }

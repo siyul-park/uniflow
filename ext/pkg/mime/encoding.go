@@ -26,6 +26,10 @@ var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
 // Encode encodes the given types into the writer with the specified MIME headers.
 func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) error {
+	if header == nil {
+		header = textproto.MIMEHeader{}
+	}
+
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
 

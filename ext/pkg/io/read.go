@@ -1,10 +1,14 @@
 package io
 
 import (
+	"bytes"
 	"io"
+	"net/http"
+	"net/textproto"
 	"os"
 	"sync"
 
+	"github.com/siyul-park/uniflow/ext/pkg/mime"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -70,26 +74,21 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		}
 	}
 
-	return packet.New(types.NewBinary(buf)), nil
+	typ := http.DetectContentType(buf)
+	header := textproto.MIMEHeader{mime.HeaderContentType: []string{typ}}
+	if v, err := mime.Decode(bytes.NewBuffer(buf), header); err != nil {
+		return packet.New(types.NewBinary(buf)), nil
+	} else {
+		return packet.New(v), nil
+	}
 }
 
 // NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.
 func NewReadNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *ReadNodeSpec) (node.Node, error) {
-		var reader io.ReadCloser
-		switch spec.Filename {
-		case "/dev/stdin", "stdin":
-			reader = io.NopCloser(os.Stdin)
-		case "/dev/stdout", "stdout":
-			reader = io.NopCloser(os.Stdout)
-		case "/dev/stderr", "stderr":
-			reader = io.NopCloser(os.Stderr)
-		default:
-			var err error
-			reader, err = os.OpenFile(spec.Filename, os.O_RDONLY|os.O_CREATE, 0644)
-			if err != nil {
-				return nil, err
-			}
+		reader, err := OpenFile(spec.Filename, os.O_RDONLY|os.O_CREATE, 0644)
+		if err != nil {
+			return nil, err
 		}
 		return NewReadNode(reader), nil
 	})

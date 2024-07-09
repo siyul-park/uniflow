@@ -73,11 +73,16 @@ func (s Slice) Len() int {
 
 // Slice returns a raw representation of the slice.
 func (s Slice) Slice() []any {
+	if s.value.Len() == 0 {
+		return nil
+	}
+
 	values := make([]any, s.value.Len())
 	for itr := s.value.Iterator(); !itr.Done(); {
 		i, v := itr.Next()
 		values[i] = InterfaceOf(v)
 	}
+
 	return values
 }
 
@@ -101,14 +106,20 @@ func (s Slice) Hash() uint64 {
 
 // Interface returns the slice as a generic interface.
 func (s Slice) Interface() any {
+	if s.value.Len() == 0 {
+		return nil
+	}
+
 	elements := s.Slice()
 	elementType := getCommonType(elements)
+
 	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(elements), len(elements))
 	for i, value := range elements {
 		if value != nil {
 			t.Index(i).Set(reflect.ValueOf(value))
 		}
 	}
+
 	return t.Interface()
 }
 
