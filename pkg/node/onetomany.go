@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// OneToManyNode represents a node with one input and multiple output ports.
+// OneToManyNode processes a packet from one input port and sends it to multiple output ports.
 type OneToManyNode struct {
 	action   func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)
 	tracer   *packet.Tracer
@@ -20,7 +20,7 @@ type OneToManyNode struct {
 
 var _ Node = (*OneToManyNode)(nil)
 
-// NewOneToManyNode creates a new OneToManyNode instance with the given action function.
+// NewOneToManyNode creates a OneToManyNode with the specified action function.
 func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.Packet, *packet.Packet)) *OneToManyNode {
 	n := &OneToManyNode{
 		action:   action,
@@ -38,16 +38,14 @@ func NewOneToManyNode(action func(*process.Process, *packet.Packet) ([]*packet.P
 	return n
 }
 
-// In returns the input port.
+// In returns the input port with the specified name.
 func (n *OneToManyNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	switch name {
-	case PortIn:
+	if name == PortIn {
 		return n.inPort
 	}
-
 	return nil
 }
 
@@ -56,33 +54,30 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	switch name {
-	case PortErr:
+	if name == PortErr {
 		return n.errPort
-	default:
-		if i, ok := IndexOfPort(PortOut, name); ok {
-			for j := 0; j <= i; j++ {
-				if len(n.outPorts) <= j {
-					outPort := port.NewOut()
-					n.outPorts = append(n.outPorts, outPort)
-
-					if n.action != nil {
-						j := j
-						outPort.Accept(port.ListenFunc(func(proc *process.Process) {
-							n.backward(proc, j)
-						}))
-					}
-				}
-			}
-
-			return n.outPorts[i]
-		}
 	}
 
+	if i, ok := IndexOfPort(name); ok {
+		for j := 0; j <= i; j++ {
+			if len(n.outPorts) <= j {
+				outPort := port.NewOut()
+				n.outPorts = append(n.outPorts, outPort)
+
+				if n.action != nil {
+					j := j
+					outPort.Accept(port.ListenFunc(func(proc *process.Process) {
+						n.backward(proc, j)
+					}))
+				}
+			}
+		}
+		return n.outPorts[i]
+	}
 	return nil
 }
 
-// Close closes all ports associated with the node.
+// Close closes all ports and releases resources.
 func (n *OneToManyNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -150,7 +145,6 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 		if !ok {
 			return
 		}
-
 		n.tracer.Receive(outWriter, backPck)
 	}
 }
@@ -166,7 +160,6 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 		if !ok {
 			return
 		}
-
 		n.tracer.Receive(errWriter, backPck)
 	}
 }

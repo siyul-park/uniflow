@@ -7,11 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewMultiPortAndGetIndex(t *testing.T) {
-	port := faker.Word()
+func TestPort_Format(t *testing.T) {
+	name := faker.Word()
 	index := 0
 
-	i, ok := IndexOfPort(port, PortWithIndex(port, index))
+	port := PortWithIndex(name, index)
+
+	n := NameOfPort(port)
+	assert.Equal(t, name, n)
+
+	i, ok := IndexOfPort(port)
 	assert.True(t, ok)
 	assert.Equal(t, index, i)
 }

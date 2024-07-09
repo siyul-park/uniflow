@@ -71,7 +71,11 @@ func (n *RouteNode) Add(method, path, port string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	index, ok := node.IndexOfPort(node.PortOut, port)
+	var index int
+	var ok bool
+	if node.NameOfPort(port) == node.PortOut {
+		index, ok = node.IndexOfPort(port)
+	}
 	if !ok {
 		return
 	}

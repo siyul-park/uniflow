@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// ManyToOneNode represents a node with multiple input ports and one output port.
+// ManyToOneNode processes packets from multiple input ports and sends them to one output port.
 type ManyToOneNode struct {
 	action     func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
 	readGroups *process.Local[*packet.ReadGroup]
@@ -21,7 +21,7 @@ type ManyToOneNode struct {
 
 var _ Node = (*ManyToOneNode)(nil)
 
-// NewManyToOneNode creates a new ManyToOneNode instance with the given action function.
+// NewManyToOneNode creates a ManyToOneNode with the specified action function.
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
 		action:     action,
@@ -39,27 +39,29 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 	return n
 }
 
-// In returns the input port with the specified name.
+// Out returns the output port with the specified name.
 func (n *ManyToOneNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	if i, ok := IndexOfPort(PortIn, name); ok {
-		for j := 0; j <= i; j++ {
-			if len(n.inPorts) <= j {
-				inPort := port.NewIn()
-				n.inPorts = append(n.inPorts, inPort)
+	if NameOfPort(name) == PortIn {
+		if i, ok := IndexOfPort(name); ok {
+			for j := 0; j <= i; j++ {
+				if len(n.inPorts) <= j {
+					inPort := port.NewIn()
+					n.inPorts = append(n.inPorts, inPort)
 
-				if n.action != nil {
-					j := j
-					inPort.Accept(port.ListenFunc(func(proc *process.Process) {
-						n.forward(proc, j)
-					}))
+					if n.action != nil {
+						j := j
+						inPort.Accept(port.ListenFunc(func(proc *process.Process) {
+							n.forward(proc, j)
+						}))
+					}
 				}
 			}
-		}
 
-		return n.inPorts[i]
+			return n.inPorts[i]
+		}
 	}
 
 	return nil
@@ -80,7 +82,7 @@ func (n *ManyToOneNode) Out(name string) *port.OutPort {
 	return nil
 }
 
-// Close closes all ports associated with the node.
+// Close closes all ports and releases resources.
 func (n *ManyToOneNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()

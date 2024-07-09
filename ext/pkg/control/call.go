@@ -72,9 +72,11 @@ func (n *CallNode) Out(name string) *port.OutPort {
 	case node.PortErr:
 		return n.errPort
 	default:
-		if i, ok := node.IndexOfPort(node.PortOut, name); ok {
-			if len(n.outPorts) > i {
-				return n.outPorts[i]
+		if node.NameOfPort(name) == node.PortOut {
+			if i, ok := node.IndexOfPort(name); ok {
+				if len(n.outPorts) > i {
+					return n.outPorts[i]
+				}
 			}
 		}
 	}

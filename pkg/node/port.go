@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// Port names.
+// Commonly used port names.
 const (
 	PortIO  = "io"
 	PortIn  = "in"
@@ -14,24 +14,29 @@ const (
 	PortErr = "error"
 )
 
-var portExp = regexp.MustCompile(`\w+\[(\d+)\]`)
+var portExp = regexp.MustCompile(`(\w+)\[(\d+)\]`)
 
-// PortWithIndex returns the full port name of the given port and index.
-func PortWithIndex(source string, index int) string {
-	return fmt.Sprintf(source+"[%d]", index)
+// PortWithIndex returns the full port name formatted as "name[index]".
+func PortWithIndex(name string, index int) string {
+	return fmt.Sprintf("%s[%d]", name, index)
 }
 
-// IndexOfPort returns the index of the given port.
-func IndexOfPort(source string, target string) (int, bool) {
-	groups := portExp.FindAllStringSubmatch(target, -1)
-	if len(groups) == 0 {
+// NameOfPort extracts and returns the base name from a port name formatted as "name[index]".
+func NameOfPort(name string) string {
+	groups := portExp.FindStringSubmatch(name)
+	if groups == nil {
+		return name
+	}
+	return groups[1]
+}
+
+// IndexOfPort extracts the index from a port name formatted as "name[index]" and returns it with a boolean indicating success.
+func IndexOfPort(name string) (int, bool) {
+	groups := portExp.FindStringSubmatch(name)
+	if groups == nil || len(groups) < 2 {
 		return 0, false
 	}
 
-	index, err := strconv.Atoi(groups[0][1])
-	if err != nil {
-		return 0, false
-	}
-
-	return index, true
+	index, err := strconv.Atoi(groups[2])
+	return index, err == nil
 }
