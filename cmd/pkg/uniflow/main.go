@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
-	"github.com/siyul-park/uniflow/cmd/pkg/fs"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
 	"github.com/siyul-park/uniflow/ext/pkg/event"
 	"github.com/siyul-park/uniflow/ext/pkg/io"
@@ -26,6 +25,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -120,7 +120,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fsys := fs.ExtFS()
+	fsys := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
 		Scheme: scheme,

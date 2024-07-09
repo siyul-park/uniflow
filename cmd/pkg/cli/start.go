@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"io/fs"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ type StartConfig struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
 	Store  *store.Store
-	FS     fs.FS
+	FS     afero.Fs
 }
 
 // NewStartCommand creates a new Cobra command for the uniflow application.

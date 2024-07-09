@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"testing/fstest"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
@@ -14,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +23,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	st := store.New(memdb.NewCollection(""))
-	fsys := make(fstest.MapFS)
+	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
 
@@ -44,9 +44,8 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 	data, _ := json.Marshal(meta)
 
-	fsys[filename] = &fstest.MapFile{
-		Data: data,
-	}
+	f, _ := fsys.Create(filename)
+	f.Write(data)
 
 	output := new(bytes.Buffer)
 

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ type Config struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
 	Store  *store.Store
-	FS     fs.FS
+	FS     afero.Fs
 }
 
 // NewCommand creates the root cobra command for the 'uniflow' CLI.

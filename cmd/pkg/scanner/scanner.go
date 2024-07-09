@@ -3,12 +3,12 @@ package scanner
 import (
 	"context"
 	"io"
-	"io/fs"
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 )
 
 // Scanner is responsible for building spec.Spec instances from raw data.
@@ -16,7 +16,7 @@ type Scanner struct {
 	scheme    *scheme.Scheme
 	store     *store.Store
 	namespace string
-	fsys      fs.FS
+	fsys      afero.Fs
 	filename  string
 }
 
@@ -44,7 +44,7 @@ func (s *Scanner) Namespace(namespace string) *Scanner {
 }
 
 // FS sets the file system for the Builder.
-func (s *Scanner) FS(fsys fs.FS) *Scanner {
+func (s *Scanner) FS(fsys afero.Fs) *Scanner {
 	s.fsys = fsys
 	return s
 }

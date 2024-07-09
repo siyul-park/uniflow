@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"github.com/go-faker/faker/v4"
@@ -17,6 +16,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +27,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	h := hook.New()
 	st := store.New(memdb.NewCollection(""))
-	fsys := make(fstest.MapFS)
+	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
 
@@ -48,9 +48,8 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	data, _ := json.Marshal(meta)
 
-	fsys[filename] = &fstest.MapFile{
-		Data: data,
-	}
+	f, _ := fsys.Create(filename)
+	f.Write(data)
 
 	func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)

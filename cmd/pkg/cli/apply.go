@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"io/fs"
-
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/pkg/printer"
@@ -11,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +17,7 @@ import (
 type ApplyConfig struct {
 	Scheme *scheme.Scheme
 	Store  *store.Store
-	FS     fs.FS
+	FS     afero.Fs
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
