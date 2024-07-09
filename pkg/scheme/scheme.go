@@ -13,9 +13,9 @@ import (
 
 // Scheme manages type information and decodes spec.Spec implementations into node.Node objects within a workflow environment.
 type Scheme struct {
-	types  map[string]reflect.Type 
-	codecs map[string]Codec        
-	mu     sync.RWMutex           
+	types  map[string]reflect.Type
+	codecs map[string]Codec
+	mu     sync.RWMutex
 }
 
 var _ Codec = (*Scheme)(nil)

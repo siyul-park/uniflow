@@ -21,11 +21,11 @@ type Config struct {
 
 // Loader synchronizes with the store.Store to load spec.Spec into the symbol.Table.
 type Loader struct {
-	namespace string         // Namespace for loading
-	table     *symbol.Table  // Symbol table instance
-	store     *store.Store   // Store instance
-	stream    *store.Stream  // Stream for watching changes
-	mu        sync.RWMutex   // Mutex for synchronization
+	namespace string        // Namespace for loading
+	table     *symbol.Table // Symbol table instance
+	store     *store.Store  // Store instance
+	stream    *store.Stream // Stream for watching changes
+	mu        sync.RWMutex  // Mutex for synchronization
 }
 
 // New creates a new Loader instance with the given configuration.

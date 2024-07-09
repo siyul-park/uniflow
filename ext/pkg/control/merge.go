@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // MergeNode represents a node that Merges multiple input packets into a single output packet.
@@ -36,7 +37,13 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	return packet.Merge(inPcks), nil
+	outPck := packet.Merge(inPcks)
+
+	if _, ok := outPck.Payload().(types.Error); ok {
+		return nil, outPck
+	} else {
+		return outPck, nil
+	}
 }
 
 // NewMergeNodeCodec creates a new codec for MergeNodeSpec.

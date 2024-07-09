@@ -62,22 +62,25 @@ func (e *Error) Value() interface{} {
 
 // Is checks whether the Error instance matches the target error using errors.Is.
 func (e *Error) Is(target error) bool {
-	err := e.error
-	for {
+	errs := []error{e.error}
+	for len(errs) > 0 {
+		err := errs[0]
+		errs = errs[1:]
+
 		if err.Error() == target.Error() {
 			return true
 		}
 
 		switch x := err.(type) {
 		case interface{ Unwrap() error }:
-			err = x.Unwrap()
-			if err == nil {
-				return false
+			if err = x.Unwrap(); err != nil {
+				errs = append(errs, err)
 			}
-		default:
-			return false
+		case interface{ Unwrap() []error }:
+			errs = append(errs, x.Unwrap()...)
 		}
 	}
+	return false
 }
 
 // Unwrap returns the wrapped error instance from the Error.

@@ -6,11 +6,11 @@ import (
 
 // Reader represents a packet reader that manages incoming packets from multiple writers.
 type Reader struct {
-	writers []*Writer   
-	in      chan *Packet 
-	out     chan *Packet 
+	writers []*Writer
+	in      chan *Packet
+	out     chan *Packet
 	done    chan struct{}
-	mu      sync.Mutex   
+	mu      sync.Mutex
 }
 
 // NewReader creates a new Reader instance and starts its processing loop.
