@@ -11,7 +11,7 @@ import (
 // ManyToOneNode represents a node with multiple input ports and one output port.
 type ManyToOneNode struct {
 	action     func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)
-	collectors *process.Local[*packet.Collector]
+	readGroups *process.Local[*packet.ReadGroup]
 	tracer     *packet.Tracer
 	inPorts    []*port.InPort
 	outPort    *port.OutPort
@@ -25,7 +25,7 @@ var _ Node = (*ManyToOneNode)(nil)
 func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.Packet, *packet.Packet)) *ManyToOneNode {
 	n := &ManyToOneNode{
 		action:     action,
-		collectors: process.NewLocal[*packet.Collector](),
+		readGroups: process.NewLocal[*packet.ReadGroup](),
 		tracer:     packet.NewTracer(),
 		outPort:    port.NewOut(),
 		errPort:    port.NewOut(),
@@ -90,7 +90,7 @@ func (n *ManyToOneNode) Close() error {
 	}
 	n.outPort.Close()
 	n.errPort.Close()
-	n.collectors.Close()
+	n.readGroups.Close()
 	n.tracer.Close()
 
 	return nil
@@ -100,12 +100,12 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	collector, _ := n.collectors.LoadOrStore(proc, func() (*packet.Collector, error) {
+	readGroup, _ := n.readGroups.LoadOrStore(proc, func() (*packet.ReadGroup, error) {
 		inReaders := make([]*packet.Reader, len(n.inPorts))
 		for i, inPort := range n.inPorts {
 			inReaders[i] = inPort.Open(proc)
 		}
-		return packet.NewCollector(inReaders), nil
+		return packet.NewReadGroup(inReaders), nil
 	})
 
 	inReaders := make([]*packet.Reader, len(n.inPorts))
@@ -122,7 +122,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		}
 		n.tracer.Read(inReaders[index], inPck)
 
-		if inPcks := collector.Read(inReaders[index], inPck); len(inPcks) == len(inReaders) {
+		if inPcks := readGroup.Read(inReaders[index], inPck); len(inPcks) == len(inReaders) {
 			if outPck, errPck := n.action(proc, inPcks); errPck != nil {
 				for _, inPck := range inPcks {
 					n.tracer.Transform(inPck, errPck)
