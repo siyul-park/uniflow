@@ -109,7 +109,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 			Path:     inPayload.Path,
 			RawQuery: inPayload.Query.Encode(),
 		},
-		Proto:  inPayload.Proto,
+		Proto:  inPayload.Protocol,
 		Header: inPayload.Header,
 	}
 

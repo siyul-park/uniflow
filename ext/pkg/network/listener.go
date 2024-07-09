@@ -245,14 +245,14 @@ func (n *HTTPListenNode) read(r *http.Request) (*HTTPPayload, error) {
 		return nil, err
 	} else {
 		return &HTTPPayload{
-			Method: r.Method,
-			Scheme: r.URL.Scheme,
-			Host:   r.Host,
-			Path:   r.URL.Path,
-			Query:  r.URL.Query(),
-			Proto:  r.Proto,
-			Header: r.Header,
-			Body:   body,
+			Method:   r.Method,
+			Scheme:   r.URL.Scheme,
+			Host:     r.Host,
+			Path:     r.URL.Path,
+			Query:    r.URL.Query(),
+			Protocol: r.Proto,
+			Header:   r.Header,
+			Body:     body,
 		}, nil
 	}
 }

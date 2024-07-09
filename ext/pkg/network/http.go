@@ -35,15 +35,15 @@ type HTTPNodeSpec struct {
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
-	Method string      `map:"method,omitempty"`
-	Scheme string      `map:"scheme,omitempty"`
-	Host   string      `map:"host,omitempty"`
-	Path   string      `map:"path,omitempty"`
-	Query  url.Values  `map:"query,omitempty"`
-	Proto  string      `map:"proto,omitempty"`
-	Header http.Header `map:"header,omitempty"`
-	Body   types.Value `map:"body,omitempty"`
-	Status int         `map:"status"`
+	Method   string      `map:"method,omitempty"`
+	Scheme   string      `map:"scheme,omitempty"`
+	Host     string      `map:"host,omitempty"`
+	Path     string      `map:"path,omitempty"`
+	Query    url.Values  `map:"query,omitempty"`
+	Protocol string      `map:"protocol,omitempty"`
+	Header   http.Header `map:"header,omitempty"`
+	Body     types.Value `map:"body,omitempty"`
+	Status   int         `map:"status"`
 }
 
 const KindHTTP = "http"

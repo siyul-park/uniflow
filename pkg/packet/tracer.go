@@ -4,7 +4,7 @@ import "sync"
 
 // Tracer tracks the lifecycle and transformations of packets as they pass through readers and writers.
 type Tracer struct {
-	sniffers map[*Packet][]Handler
+	handlers map[*Packet][]Handler
 	sources  map[*Packet][]*Packet
 	receives map[*Packet][]*Packet
 	reads    map[*Reader][]*Packet
@@ -16,7 +16,7 @@ type Tracer struct {
 // NewTracer initializes a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
-		sniffers: make(map[*Packet][]Handler),
+		handlers: make(map[*Packet][]Handler),
 		sources:  make(map[*Packet][]*Packet),
 		receives: make(map[*Packet][]*Packet),
 		reads:    make(map[*Reader][]*Packet),
@@ -26,11 +26,11 @@ func NewTracer() *Tracer {
 }
 
 // Sniff adds a sniffer Handler to be invoked when a packet completes processing.
-func (t *Tracer) Sniff(pck *Packet, sniffer Handler) {
+func (t *Tracer) Sniff(pck *Packet, handler Handler) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.sniffers[pck] = append(t.sniffers[pck], sniffer)
+	t.handlers[pck] = append(t.handlers[pck], handler)
 }
 
 // Transform tracks the transformation of a source packet into a target packet.
@@ -112,7 +112,7 @@ func (t *Tracer) Close() {
 		reader.Receive(None)
 	}
 
-	t.sniffers = make(map[*Packet][]Handler)
+	t.handlers = make(map[*Packet][]Handler)
 	t.sources = make(map[*Packet][]*Packet)
 	t.receives = make(map[*Packet][]*Packet)
 	t.reads = make(map[*Reader][]*Packet)
@@ -181,15 +181,15 @@ func (t *Tracer) sniff(pck *Packet) {
 		return
 	}
 
-	if sniffers := t.sniffers[pck]; len(sniffers) > 0 {
+	if handlers := t.handlers[pck]; len(handlers) > 0 {
 		merged := Merge(receives)
 
-		delete(t.sniffers, pck)
+		delete(t.handlers, pck)
 		delete(t.receives, pck)
 
 		t.mu.Unlock()
-		for _, sniffer := range sniffers {
-			sniffer.Handle(merged)
+		for _, handler := range handlers {
+			handler.Handle(merged)
 		}
 		t.mu.Lock()
 	}
