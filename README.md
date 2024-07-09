@@ -97,6 +97,7 @@ Percentage of the requests served within a certain time (ms)
 - [Getting Started](./docs/getting_started.md): Learn how to install the CLI, manage workflows, and run the engine.
 - [Key Concepts](./docs/key_concepts.md): Explore key concepts such as nodes, their connections, ports, packets, and more.
 - [Architecture](./docs/architecture.md): Understand how node specifications are loaded into the engine and how workflows are executed.
+- [User Extension](./docs/user_extension.md): Learn how to add nodes providing new functionalities and integrate them into existing services in detail.
 
 <!-- Go -->
 

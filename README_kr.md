@@ -97,6 +97,7 @@ Percentage of the requests served within a certain time (ms)
 - [시작하기](./docs/getting_started_kr.md): CLI를 설치하고 워크플로우를 관리하며 엔진을 실행하는 방법을 살펴보세요.
 - [핵심 개념](./docs/key_concepts_kr.md): 데이터 처리 객체인 노드와 그들 간의 연결, 포트, 패킷 등 핵심 개념에 대해 확인해보세요.
 - [아키텍처](./docs/architecture_kr.md): 노드 명세가 엔진에 어떻게 로드되고 워크플로우가 어떻게 실행되는지 알아보세요.
+- [사용자 확장 기능](./docs/user_extension_kr.md): 새로운 기능을 제공하는 노드를 추가하고 기존 서비스에 통합하는 방법을 자세히 알아보세요.
 
 <!-- Go -->
 

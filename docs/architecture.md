@@ -156,7 +156,7 @@ This approach allows you to maintain a stable runtime environment while flexibly
 
 ## Compilation Process
 
-The loader tracks changes to node specifications in real-time via database change streams. When specifications are added, modified, or deleted, the loader detects these changes and dynamically reloads them from the database. Using codecs defined in the schema, these specifications are compiled into executable forms, with caching and optimization performed to enhance performance.
+The loader tracks changes to node specifications in real-time via database change streams. When specifications are added, modified, or deleted, the loader detects these changes and dynamically reloads them from the database. Using codecs defined in the scheme, these specifications are compiled into executable forms, with caching and optimization performed to enhance performance.
 
 Compiled nodes are converted into symbols and stored in a symbol table, which connects the ports of each symbol based on the port connection information defined in the node specifications.
 
