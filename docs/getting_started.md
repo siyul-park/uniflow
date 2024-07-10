@@ -104,4 +104,4 @@ kind: syscall
 opcode: nodes.create # nodes.read, nodes.update, nodes.delete
 ```
 
-Refer to the [workflow example](../examples/crud.yaml) to get started. You can include authentication and authorization processes in this workflow as needed. Typically, workflows related to runtime control are defined in the `system` namespace.
+Refer to the [workflow example](../examples/system.yaml) to get started. You can include authentication and authorization processes in this workflow as needed. Typically, workflows related to runtime control are defined in the `system` namespace.

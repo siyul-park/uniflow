@@ -104,4 +104,4 @@ kind: syscall
 opcode: nodes.create # nodes.read, nodes.update, nodes.delete
 ```
 
-[워크플로우 예시](../examples/crud.yaml)를 확인하여 시작해보세요. 필요에 따라 인증과 인가 과정을 이 워크플로우에 포함할 수 있습니다. 일반적으로 이러한 런타임 제어와 관련된 워크플로우는 `system` 네임스페이스에 정의됩니다.
+[워크플로우 예시](../examples/system.yaml)를 확인하여 시작해보세요. 필요에 따라 인증과 인가 과정을 이 워크플로우에 포함할 수 있습니다. 일반적으로 이러한 런타임 제어와 관련된 워크플로우는 `system` 네임스페이스에 정의됩니다.

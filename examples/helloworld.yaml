@@ -8,5 +8,8 @@
       topic: load
     - kind: if
       when: self.name == "init"
+    - kind: snippet
+      language: text
+      code: Hello, world!
     - kind: write
       filename: /dev/stdout
