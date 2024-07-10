@@ -192,6 +192,7 @@ func TestUinteger_Decode(t *testing.T) {
 		{"uint16", NewUint16(1), new(uint16), uint16(1)},
 		{"uint32", NewUint32(1), new(uint32), uint32(1)},
 		{"uint64", NewUint64(1), new(uint64), uint64(1)},
+		{"string", NewUint64(1), new(string), "1"},
 	}
 
 	for _, tc := range testCases {

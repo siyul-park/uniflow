@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"encoding"
+	"encoding/base64"
 	"hash/fnv"
 	"reflect"
 	"unsafe"
@@ -147,6 +148,14 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 					if s, ok := source.(Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target).Elem()
 						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
+						return nil
+					}
+					return errors.WithStack(encoding2.ErrInvalidArgument)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.String {
+				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Binary); ok {
+						*(*string)(target) = base64.StdEncoding.EncodeToString(s.Bytes())
 						return nil
 					}
 					return errors.WithStack(encoding2.ErrInvalidArgument)

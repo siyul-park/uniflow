@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"hash/fnv"
 	"reflect"
 	"unsafe"
@@ -165,6 +166,14 @@ func newFloatDecoder() encoding.DecodeCompiler[Value] {
 				return newFloatDecoderWithType[uint32](), nil
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newFloatDecoderWithType[uint64](), nil
+			} else if typ.Elem().Kind() == reflect.String {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Float); ok {
+						*(*string)(target) = fmt.Sprint(s.Interface())
+						return nil
+					}
+					return errors.WithStack(encoding.ErrInvalidArgument)
+				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Float); ok {

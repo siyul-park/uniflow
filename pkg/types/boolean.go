@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"hash/fnv"
 	"reflect"
 	"unsafe"
@@ -102,6 +103,14 @@ func newBooleanDecoder() encoding.DecodeCompiler[Value] {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Boolean); ok {
 						*(*bool)(target) = s.Bool()
+						return nil
+					}
+					return errors.WithStack(encoding.ErrInvalidArgument)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.String {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Boolean); ok {
+						*(*string)(target) = fmt.Sprint(s.Interface())
 						return nil
 					}
 					return errors.WithStack(encoding.ErrInvalidArgument)

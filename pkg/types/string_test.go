@@ -1,6 +1,7 @@
 package types
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -98,54 +99,36 @@ func TestString_Decode(t *testing.T) {
 	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newStringDecoder())
 
-	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
-		source := uuid.Must(uuid.NewV7())
-		v := NewString(source.String())
+	uid := uuid.Must(uuid.NewV7())
 
-		var decoded uuid.UUID
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
-	})
+	testCases := []struct {
+		name   string
+		source String
+		target any
+		want   any
+	}{
+		{"encoding.TextUnmarshaler", NewString(uid.String()), new(uuid.UUID), uid},
+		{"bool", NewString("true"), new(bool), true},
+		{"float32", NewString("1"), new(float32), float32(1)},
+		{"float64", NewString("1"), new(float64), float64(1)},
+		{"int", NewString("1"), new(int), 1},
+		{"int8", NewString("1"), new(int8), int8(1)},
+		{"int16", NewString("1"), new(int16), int16(1)},
+		{"int32", NewString("1"), new(int32), int32(1)},
+		{"int64", NewString("1"), new(int64), int64(1)},
+		{"uint", NewString("1"), new(uint), uint(1)},
+		{"uint8", NewString("1"), new(uint8), uint8(1)},
+		{"uint16", NewString("1"), new(uint16), uint16(1)},
+		{"uint32", NewString("1"), new(uint32), uint32(1)},
+		{"uint64", NewString("1"), new(uint64), uint64(1)},
+		{"any", NewString("foo"), new(any), "foo"},
+	}
 
-	t.Run("string", func(t *testing.T) {
-		source := faker.Word()
-		v := NewString(source)
-
-		var decoded string
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
-	})
-
-	t.Run("any", func(t *testing.T) {
-		source := faker.Word()
-		v := NewString(source)
-
-		var decoded any
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
-	})
-}
-
-func BenchmarkString_Encode(b *testing.B) {
-	enc := encoding.NewEncodeAssembler[any, Value]()
-	enc.Add(newStringEncoder())
-
-	b.Run("encoding.TextMarshaler", func(b *testing.B) {
-		source := uuid.Must(uuid.NewV7())
-
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
-	})
-
-	b.Run("string", func(b *testing.B) {
-		source := faker.Word()
-
-		for i := 0; i < b.N; i++ {
-			enc.Encode(source)
-		}
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := dec.Decode(tc.source, tc.target)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, reflect.ValueOf(tc.target).Elem().Interface())
+		})
+	}
 }

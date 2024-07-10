@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"hash/fnv"
 	"reflect"
 	"unsafe"
@@ -336,6 +337,14 @@ func NewIntegerDecoder() encoding.DecodeCompiler[Value] {
 				return NewIntegerDecoderWithType[uint32](), nil
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return NewIntegerDecoderWithType[uint64](), nil
+			} else if typ.Elem().Kind() == reflect.String {
+				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Integer); ok {
+						*(*string)(target) = fmt.Sprint(s.Interface())
+						return nil
+					}
+					return errors.WithStack(encoding.ErrInvalidArgument)
+				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Integer); ok {

@@ -69,6 +69,15 @@ func TestBoolean_Decode(t *testing.T) {
 		assert.Equal(t, true, decoded)
 	})
 
+	t.Run("string", func(t *testing.T) {
+		v := NewBoolean(true)
+
+		var decoded string
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", decoded)
+	})
+
 	t.Run("any", func(t *testing.T) {
 		v := NewBoolean(true)
 

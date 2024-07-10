@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -131,6 +132,20 @@ func TestBinary_Decode(t *testing.T) {
 		assert.EqualValues(t, source, decoded)
 	})
 
+	t.Run("string", func(t *testing.T) {
+		source := []byte{0, 1, 2}
+		v := NewBinary(source)
+
+		var decoded string
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+
+		d, err := base64.StdEncoding.DecodeString(decoded)
+		assert.NoError(t, err)
+
+		assert.Equal(t, source, d)
+	})
+
 	t.Run("any", func(t *testing.T) {
 		source := []byte{0, 1, 2}
 		v := NewBinary(source)
@@ -167,51 +182,6 @@ func BenchmarkBinary_Encode(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			enc.Encode(source)
-		}
-	})
-}
-
-func BenchmarkBinary_Decode(b *testing.B) {
-	dec := encoding.NewDecodeAssembler[Value, any]()
-	dec.Add(newBinaryDecoder())
-
-	b.Run("encoding.BinaryUnmarshaler", func(b *testing.B) {
-		source := uuid.Must(uuid.NewV7())
-		v := NewBinary(source.Bytes())
-
-		for i := 0; i < b.N; i++ {
-			var decoded uuid.UUID
-			_ = dec.Decode(v, &decoded)
-		}
-	})
-
-	b.Run("slice", func(b *testing.B) {
-		source := []byte{0, 1, 2}
-		v := NewBinary(source)
-
-		for i := 0; i < b.N; i++ {
-			var decoded []byte
-			_ = dec.Decode(v, &decoded)
-		}
-	})
-
-	b.Run("array", func(b *testing.B) {
-		source := []byte{0, 1, 2}
-		v := NewBinary(source)
-
-		for i := 0; i < b.N; i++ {
-			var decoded [3]byte
-			_ = dec.Decode(v, &decoded)
-		}
-	})
-
-	b.Run("any", func(b *testing.B) {
-		source := []byte{0, 1, 2}
-		v := NewBinary(source)
-
-		for i := 0; i < b.N; i++ {
-			var decoded any
-			_ = dec.Decode(v, &decoded)
 		}
 	})
 }
