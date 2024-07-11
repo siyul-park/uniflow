@@ -52,7 +52,6 @@ const KindHTTP = "http"
 func NewHTTPNode(url *url.URL) *HTTPNode {
 	n := &HTTPNode{url: url}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-
 	return n
 }
 
@@ -79,10 +78,10 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Query:  make(url.Values),
 		Header: make(http.Header),
 	}
-	if err := types.Decoder.Decode(inPck.Payload(), &req); err != nil {
+	if err := types.Decoder.Decode(inPck.Payload(), req); err != nil {
 		req.Body = inPck.Payload()
 	}
-	if req.Method != "" {
+	if req.Method == "" {
 		if req.Body == nil {
 			req.Method = http.MethodGet
 		} else {
@@ -98,16 +97,10 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	if n.url.Path != "" {
 		req.Path, _ = url.JoinPath(n.url.Path, req.Path)
 	}
-	if len(n.url.Query()) > 0 {
-		for k, v := range n.url.Query() {
-			for _, v := range v {
-				req.Query.Add(k, v)
-			}
+	for k, v := range n.url.Query() {
+		for _, v := range v {
+			req.Query.Add(k, v)
 		}
-	}
-
-	if req.Header == nil {
-		req.Header = http.Header{}
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -129,7 +122,6 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	r = r.WithContext(ctx)
 
 	client := &http.Client{}
-
 	w, err := client.Do(r)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
@@ -144,6 +136,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	res := &HTTPPayload{
 		Header: w.Header,
 		Body:   body,
+		Status: w.StatusCode,
 	}
 
 	outPayload, err := types.TextEncoder.Encode(res)
@@ -168,13 +161,14 @@ func NewHTTPNodeCodec() scheme.Codec {
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, body ...types.Value) *HTTPPayload {
-	if len(body) == 0 {
-		body = []types.Value{types.NewString(http.StatusText(status))}
+func NewHTTPPayload(status int, bodys ...types.Value) *HTTPPayload {
+	var body types.Value = types.NewString(http.StatusText(status))
+	if len(bodys) > 0 {
+		body = bodys[0]
 	}
 	return &HTTPPayload{
 		Header: http.Header{},
-		Body:   body[0],
+		Body:   body,
 		Status: status,
 	}
 }

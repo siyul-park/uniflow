@@ -4,9 +4,9 @@
   port: 8000
   links:
     out:
-      - name: google
+      - name: proxy
         port: in
 
 - kind: http
-  name: google
+  name: proxy
   url: https://www.google.com/

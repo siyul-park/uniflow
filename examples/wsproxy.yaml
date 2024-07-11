@@ -24,23 +24,23 @@
       port: out[0]
   links:
     out[0]:
-      - name: upgrader
+      - name: gateway
         port: io
-      - name: websocket
+      - name: proxy
         port: io
 
-- kind: upgrader
-  name: upgrader
+- kind: gateway
+  name: gateway
   protocol: websocket
   links:
     out:
-      - name: websocket
+      - name: proxy
         port: in
 
 - kind: websocket
-  name: websocket
+  name: proxy
   url: wss://echo.websocket.org/
   links:
     out:
-      - name: upgrader
+      - name: gateway
         port: in

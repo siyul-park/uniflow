@@ -137,10 +137,10 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestUpgradeNodeCodec_Decode(t *testing.T) {
-	codec := NewUpgradeNodeCodec()
+func TestGatewayNodeCodec_Decode(t *testing.T) {
+	codec := NewGatewayNodeCodec()
 
-	spec := &UpgradeNodeSpec{
+	spec := &GatewayNodeSpec{
 		Protocol: ProtocolWebsocket,
 		Timeout:  time.Second,
 		Buffer:   64,

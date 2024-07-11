@@ -121,14 +121,14 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
       port: out[1]
   links:
     out[0]:
-      - name: '400'
+      - name: status_400
         port: in
     out[1]:
-      - name: '500'
+      - name: status_500
         port: in
 
 - kind: snippet
-  name: '400'
+  name: status_400
   language: javascript
   code: >
     export default function (args) {
@@ -141,7 +141,7 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
     }
 
 - kind: snippet
-  name: '500'
+  name: status_500
   language: json
   code: >
     {

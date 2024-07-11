@@ -27,9 +27,7 @@ const KindMerge = "merge"
 // NewMergeNode creates a new MergeNode.
 func NewMergeNode() *MergeNode {
 	n := &MergeNode{}
-
 	n.ManyToOneNode = node.NewManyToOneNode(n.action)
-
 	return n
 }
 

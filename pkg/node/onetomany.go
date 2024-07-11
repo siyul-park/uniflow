@@ -58,22 +58,25 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 		return n.errPort
 	}
 
-	if i, ok := IndexOfPort(name); ok {
-		for j := 0; j <= i; j++ {
-			if len(n.outPorts) <= j {
-				outPort := port.NewOut()
-				n.outPorts = append(n.outPorts, outPort)
-
-				if n.action != nil {
-					j := j
-					outPort.Accept(port.ListenFunc(func(proc *process.Process) {
-						n.backward(proc, j)
-					}))
+	if NameOfPort(name) == PortOut {
+		index, ok := IndexOfPort(name)
+		if ok {
+			for i := 0; i <= index; i++ {
+				if len(n.outPorts) <= i {
+					outPort := port.NewOut()
+					n.outPorts = append(n.outPorts, outPort)
+					if n.action != nil {
+						i := i
+						outPort.Accept(port.ListenFunc(func(proc *process.Process) {
+							n.backward(proc, i)
+						}))
+					}
 				}
 			}
+			return n.outPorts[index]
 		}
-		return n.outPorts[i]
 	}
+
 	return nil
 }
 
@@ -83,8 +86,8 @@ func (n *OneToManyNode) Close() error {
 	defer n.mu.Unlock()
 
 	n.inPort.Close()
-	for _, p := range n.outPorts {
-		p.Close()
+	for _, outPort := range n.outPorts {
+		outPort.Close()
 	}
 	n.errPort.Close()
 	n.tracer.Close()

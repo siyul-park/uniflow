@@ -65,7 +65,6 @@ func NewWebSocketNode(url *url.URL) *WebSocketNode {
 		url: url,
 	}
 	n.WebSocketConnNode = NewWebSocketConnNode(n.connect)
-
 	return n
 }
 
@@ -164,6 +163,7 @@ func (n *WebSocketConnNode) Close() error {
 	return nil
 }
 
+// connect initiates the connection process for the WebSocketConnNode.
 func (n *WebSocketConnNode) connect(proc *process.Process) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
@@ -185,9 +185,13 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 			n.conns.Store(proc, conn)
 
 			child := proc.Fork()
-			go n.produce(child)
+			child.AddExitHook(process.ExitFunc(func(_ error) {
+				conn.Close()
+			}))
 
 			ioReader.Receive(packet.None)
+
+			go n.produce(child)
 		}
 	}
 }
@@ -207,7 +211,6 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 	for {
 		inPck, ok := <-inReader.Read()
 		if !ok {
-			_ = conn.Close()
 			return
 		}
 
@@ -251,6 +254,21 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 	for {
 		typ, p, err := conn.ReadMessage()
 		if err != nil {
+			outWriter := n.outPort.Open(proc)
+
+			var data types.Value
+			if err, ok := err.(*websocket.CloseError); ok {
+				data = types.NewBinary(websocket.FormatCloseMessage(err.Code, err.Text))
+			}
+
+			outPayload, _ := types.TextEncoder.Encode(&WebSocketPayload{
+				Type: websocket.CloseMessage,
+				Data: data,
+			})
+
+			outPck := packet.New(outPayload)
+			packet.Call(outWriter, outPck)
+
 			proc.Wait()
 			proc.Exit(nil)
 			return

@@ -32,7 +32,6 @@ const KindSnippet = "snippet"
 func NewSnippetNode(fn func(any) (any, error)) *SnippetNode {
 	n := &SnippetNode{fn: fn}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-
 	return n
 }
 

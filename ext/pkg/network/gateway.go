@@ -22,15 +22,15 @@ type WebSocketUpgradeNode struct {
 	upgrader websocket.Upgrader
 }
 
-// UpgradeNodeSpec holds the specifications for creating a UpgradeNode.
-type UpgradeNodeSpec struct {
+// GatewayNodeSpec holds the specifications for creating a GatewayNode.
+type GatewayNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string        `map:"protocol"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 	Buffer    int           `map:"buffer,omitempty"`
 }
 
-const KindUpgrader = "upgrader"
+const KindGateway = "gateway"
 
 var _ node.Node = (*WebSocketUpgradeNode)(nil)
 
@@ -38,7 +38,6 @@ var _ node.Node = (*WebSocketUpgradeNode)(nil)
 func NewWebSocketUpgradeNode() *WebSocketUpgradeNode {
 	n := &WebSocketUpgradeNode{}
 	n.WebSocketConnNode = NewWebSocketConnNode(n.upgrade)
-
 	return n
 }
 
@@ -74,20 +73,20 @@ func (n *WebSocketUpgradeNode) SetReadBufferSize(size int) {
 	n.upgrader.ReadBufferSize = size
 }
 
-// SetWriteBufferSize sets the write buffer size.
-func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.upgrader.WriteBufferSize = size
-}
-
 // WriteBufferSize returns the write buffer size.
 func (n *WebSocketUpgradeNode) WriteBufferSize() int {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.upgrader.WriteBufferSize
+}
+
+// SetWriteBufferSize sets the write buffer size.
+func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.upgrader.WriteBufferSize = size
 }
 
 func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
@@ -116,9 +115,9 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 	return n.upgrader.Upgrade(w, r, nil)
 }
 
-// NewUpgradeNodeCodec creates a new codec for UpgradeNodeSpec.
-func NewUpgradeNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *UpgradeNodeSpec) (node.Node, error) {
+// NewGatewayNodeCodec creates a new codec for GatewayNodeSpec.
+func NewGatewayNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *GatewayNodeSpec) (node.Node, error) {
 		switch spec.Protocol {
 		case ProtocolWebsocket:
 			n := NewWebSocketUpgradeNode()

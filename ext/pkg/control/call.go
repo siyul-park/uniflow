@@ -73,10 +73,9 @@ func (n *CallNode) Out(name string) *port.OutPort {
 		return n.errPort
 	default:
 		if node.NameOfPort(name) == node.PortOut {
-			if i, ok := node.IndexOfPort(name); ok {
-				if len(n.outPorts) > i {
-					return n.outPorts[i]
-				}
+			index, ok := node.IndexOfPort(name)
+			if ok && index < len(n.outPorts) {
+				return n.outPorts[index]
 			}
 		}
 	}
@@ -90,8 +89,8 @@ func (n *CallNode) Close() error {
 	defer n.mu.Unlock()
 
 	n.inPort.Close()
-	for _, p := range n.outPorts {
-		p.Close()
+	for _, outPort := range n.outPorts {
+		outPort.Close()
 	}
 	n.errPort.Close()
 	n.tracer.Close()

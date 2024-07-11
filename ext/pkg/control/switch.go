@@ -13,15 +13,15 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SwitchNode represents a switch node that directs incoming packets based on specified conditions.
+// SwitchNode directs packets to different ports based on specified conditions.
 type SwitchNode struct {
 	*node.OneToManyNode
-	whens []func(any) (bool, error)
-	ports []int
-	mu    sync.RWMutex
+	conditions []func(any) (bool, error)
+	ports      []int
+	mu         sync.RWMutex
 }
 
-// SwitchNodeSpec holds the specifications for creating a SwitchNode.
+// SwitchNodeSpec holds specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Match     []Condition `map:"match"`
@@ -35,28 +35,24 @@ type Condition struct {
 
 const KindSwitch = "switch"
 
-// NewSwitchNode creates a new SwitchNode with the specified language.
+// NewSwitchNode creates a new SwitchNode instance.
 func NewSwitchNode() *SwitchNode {
 	n := &SwitchNode{}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
 
-// AddMatch adds a condition to the SwitchNode, associating it with a specific output port.
-func (n *SwitchNode) AddMatch(when func(any) (bool, error), port string) {
+// Match associates a condition with a specific output port in the SwitchNode.
+func (n *SwitchNode) Match(condition func(any) (bool, error), port string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	var index int
-	var ok bool
-	if node.NameOfPort(port) == node.PortOut {
-		index, ok = node.IndexOfPort(port)
-	}
-	if !ok {
+	index, ok := node.IndexOfPort(port)
+	if !ok || node.NameOfPort(port) != node.PortOut {
 		return
 	}
 
-	n.whens = append(n.whens, when)
+	n.conditions = append(n.conditions, condition)
 	n.ports = append(n.ports, index)
 }
 
@@ -67,10 +63,10 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 
-	outPcks := make([]*packet.Packet, len(n.whens))
-	for i, when := range n.whens {
+	outPcks := make([]*packet.Packet, len(n.conditions))
+	for i, condition := range n.conditions {
 		port := n.ports[i]
-		if ok, err := when(input); err != nil {
+		if ok, err := condition(input); err != nil {
 			return nil, packet.New(types.NewError(err))
 		} else if ok {
 			outPcks[port] = inPck
@@ -84,14 +80,14 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
-		whens := make([]func(any) (bool, error), len(spec.Match))
+		conditions := make([]func(any) (bool, error), len(spec.Match))
 		for i, condition := range spec.Match {
 			program, err := compiler.Compile(condition.When)
 			if err != nil {
 				return nil, err
 			}
 
-			whens[i] = func(env any) (bool, error) {
+			conditions[i] = func(env any) (bool, error) {
 				res, err := program.Run(env)
 				if err != nil {
 					return false, err
@@ -102,7 +98,7 @@ func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 
 		n := NewSwitchNode()
 		for i, condition := range spec.Match {
-			n.AddMatch(whens[i], condition.Port)
+			n.Match(conditions[i], condition.Port)
 		}
 		return n, nil
 	})

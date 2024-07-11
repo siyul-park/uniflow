@@ -39,8 +39,10 @@ type ListenNodeSpec struct {
 
 const KindListener = "listener"
 
-const KeyHTTPRequest = "http.Request"
-const KeyHTTPResponseWriter = "http.ResponseWriter"
+const (
+	KeyHTTPRequest        = "http.Request"
+	KeyHTTPResponseWriter = "http.ResponseWriter"
+)
 
 var _ node.Node = (*HTTPListenNode)(nil)
 var _ http.Handler = (*HTTPListenNode)(nil)
@@ -51,12 +53,10 @@ func NewHTTPListenNode(address string) *HTTPListenNode {
 		outPort: port.NewOut(),
 		errPort: port.NewOut(),
 	}
-
-	s := new(http.Server)
-	s.Addr = address
-	s.Handler = n
-	n.server = s
-
+	n.server = &http.Server{
+		Addr:    address,
+		Handler: n,
+	}
 	return n
 }
 
@@ -94,32 +94,6 @@ func (n *HTTPListenNode) Address() net.Addr {
 
 // Listen starts the HTTP server.
 func (n *HTTPListenNode) Listen() error {
-	if err := func() error {
-		n.mu.Lock()
-		defer n.mu.Unlock()
-
-		if n.listener != nil {
-			return nil
-		}
-		if l, err := newTCPKeepAliveListener("tcp", n.server.Addr); err != nil {
-			return err
-		} else {
-			n.listener = l
-		}
-		return nil
-	}(); err != nil {
-		return err
-	}
-
-	go n.server.Serve(n.listener)
-
-	return nil
-}
-
-// Shutdown shuts down the HTTPListenNode by closing the server and its associated listener.
-// It locks the mutex to ensure safe concurrent access to the server and listener.
-// If an error occurs during the shutdown process, it returns the error.
-func (n *HTTPListenNode) Shutdown() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -127,17 +101,36 @@ func (n *HTTPListenNode) Shutdown() error {
 		return nil
 	}
 
-	if err := n.server.Close(); err != nil {
+	listener, err := net.Listen("tcp", n.server.Addr)
+	if err != nil {
 		return err
 	}
-	s := new(http.Server)
-	s.Addr = n.server.Addr
-	n.server = s
+	n.listener = listener
 
-	_ = n.listener.Close()
-	n.listener = nil
+	go n.server.Serve(n.listener)
 
 	return nil
+}
+
+// Shutdown shuts down the HTTPListenNode by closing the server and its associated listener.
+func (n *HTTPListenNode) Shutdown() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.listener == nil {
+		return nil
+	}
+
+	err := n.server.Close()
+	n.listener.Close()
+
+	n.server = &http.Server{
+		Addr:    n.server.Addr,
+		Handler: n.server.Handler,
+	}
+	n.listener = nil
+
+	return err
 }
 
 // ServeHTTP handles HTTP requests.
@@ -160,8 +153,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	var outPck *packet.Packet
-	var errPck *packet.Packet
+	var outPck, errPck *packet.Packet
 	req, err := n.read(r)
 	if err != nil {
 		errPck = packet.New(types.NewError(err))
@@ -181,7 +173,6 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = nil
 	if backPck != packet.None {
 		var res *HTTPPayload
 		if _, ok := backPck.Payload().(types.Error); ok {
@@ -224,37 +215,37 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 
 	if res.Header.Get(mime.HeaderContentEncoding) == "" {
 		accept := req.Header.Get(mime.HeaderAcceptEncoding)
-		negotiate := mime.Negotiate(accept, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr})
-		if negotiate != "" {
-			res.Header.Set(mime.HeaderContentEncoding, negotiate)
+		encoding := mime.Negotiate(accept, []string{mime.EncodingIdentity, mime.EncodingGzip, mime.EncodingDeflate, mime.EncodingBr})
+		if encoding != "" {
+			res.Header.Set(mime.HeaderContentEncoding, encoding)
 		}
 	}
 
 	if res.Header.Get(mime.HeaderContentType) == "" {
 		accept := req.Header.Get(mime.HeaderAccept)
 		offers := mime.DetectTypes(res.Body)
-		negotiate := mime.Negotiate(accept, offers)
-		if negotiate != "" {
-			res.Header.Set(mime.HeaderContentType, negotiate)
+		contentType := mime.Negotiate(accept, offers)
+		if contentType != "" {
+			res.Header.Set(mime.HeaderContentType, contentType)
 		}
 	}
 }
 
 func (n *HTTPListenNode) read(r *http.Request) (*HTTPPayload, error) {
-	if body, err := mime.Decode(r.Body, textproto.MIMEHeader(r.Header)); err != nil {
+	body, err := mime.Decode(r.Body, textproto.MIMEHeader(r.Header))
+	if err != nil {
 		return nil, err
-	} else {
-		return &HTTPPayload{
-			Method:   r.Method,
-			Scheme:   r.URL.Scheme,
-			Host:     r.Host,
-			Path:     r.URL.Path,
-			Query:    r.URL.Query(),
-			Protocol: r.Proto,
-			Header:   r.Header,
-			Body:     body,
-		}, nil
 	}
+	return &HTTPPayload{
+		Method:   r.Method,
+		Scheme:   r.URL.Scheme,
+		Host:     r.Host,
+		Path:     r.URL.Path,
+		Query:    r.URL.Query(),
+		Protocol: r.Proto,
+		Header:   r.Header,
+		Body:     body,
+	}, nil
 }
 
 func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {

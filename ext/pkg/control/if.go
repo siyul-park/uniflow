@@ -14,17 +14,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// IfNode represents a node that evaluates a condition and forwards packets based on the result.
+// IfNode represents a node that evaluates a condition and routes packets based on the result.
 type IfNode struct {
-	when     func(any) (bool, error)
-	tracer   *packet.Tracer
-	inPort   *port.InPort
-	outPorts []*port.OutPort
-	errPort  *port.OutPort
-	mu       sync.RWMutex
+	condition func(any) (bool, error)
+	tracer    *packet.Tracer
+	inPort    *port.InPort
+	outPorts  []*port.OutPort
+	errPort   *port.OutPort
+	mu        sync.RWMutex
 }
 
-// IfNodeSpec holds the specifications for creating a IfNode.
+// IfNodeSpec holds specifications for creating an IfNode.
 type IfNodeSpec struct {
 	spec.Meta `map:",inline"`
 	When      string `map:"when"`
@@ -32,25 +32,25 @@ type IfNodeSpec struct {
 
 const KindIf = "if"
 
-var _ node.Node = (*IfNode)(nil)
-
-// NewIfNode creates a new IfNode.
-func NewIfNode(when func(any) (bool, error)) *IfNode {
+// NewIfNode creates a new IfNode instance.
+func NewIfNode(condition func(any) (bool, error)) *IfNode {
 	n := &IfNode{
-		when:     when,
-		tracer:   packet.NewTracer(),
-		inPort:   port.NewIn(),
-		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
-		errPort:  port.NewOut(),
+		condition: condition,
+		tracer:    packet.NewTracer(),
+		inPort:    port.NewIn(),
+		outPorts:  []*port.OutPort{port.NewOut(), port.NewOut()},
+		errPort:   port.NewOut(),
 	}
 
 	n.inPort.Accept(port.ListenFunc(n.forward))
+
 	for i, outPort := range n.outPorts {
 		i := i
 		outPort.Accept(port.ListenFunc(func(proc *process.Process) {
 			n.backward(proc, i)
 		}))
 	}
+
 	n.errPort.Accept(port.ListenFunc(n.catch))
 
 	return n
@@ -82,14 +82,12 @@ func (n *IfNode) Out(name string) *port.OutPort {
 		return n.errPort
 	default:
 		if node.NameOfPort(name) == node.PortOut {
-			if i, ok := node.IndexOfPort(name); ok {
-				if len(n.outPorts) > i {
-					return n.outPorts[i]
-				}
+			index, ok := node.IndexOfPort(name)
+			if ok && index < len(n.outPorts) {
+				return n.outPorts[index]
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -99,8 +97,8 @@ func (n *IfNode) Close() error {
 	defer n.mu.Unlock()
 
 	n.inPort.Close()
-	for _, p := range n.outPorts {
-		p.Close()
+	for _, outPort := range n.outPorts {
+		outPort.Close()
 	}
 	n.errPort.Close()
 	n.tracer.Close()
@@ -127,7 +125,7 @@ func (n *IfNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 		input := types.InterfaceOf(inPayload)
 
-		if ok, err := n.when(input); err != nil {
+		if ok, err := n.condition(input); err != nil {
 			errPck := packet.New(types.NewError(err))
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)

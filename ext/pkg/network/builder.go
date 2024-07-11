@@ -42,8 +42,8 @@ func AddToScheme() scheme.Register {
 		s.AddKnownType(KindWebSocket, &WebSocketNodeSpec{})
 		s.AddCodec(KindWebSocket, NewWebSocketNodeCodec())
 
-		s.AddKnownType(KindUpgrader, &UpgradeNodeSpec{})
-		s.AddCodec(KindUpgrader, NewUpgradeNodeCodec())
+		s.AddKnownType(KindGateway, &GatewayNodeSpec{})
+		s.AddCodec(KindGateway, NewGatewayNodeCodec())
 
 		return nil
 	})
