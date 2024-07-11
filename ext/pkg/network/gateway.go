@@ -3,6 +3,7 @@ package network
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -20,6 +21,7 @@ import (
 type WebSocketUpgradeNode struct {
 	*WebSocketConnNode
 	upgrader websocket.Upgrader
+	mu       sync.RWMutex
 }
 
 // GatewayNodeSpec holds the specifications for creating a GatewayNode.
@@ -90,6 +92,9 @@ func (n *WebSocketUpgradeNode) SetWriteBufferSize(size int) {
 }
 
 func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
 	var inPayload *HTTPPayload
 	if err := types.Decoder.Decode(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
@@ -97,7 +102,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 
 	w, ok := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter)
 	if !ok {
-		return nil, encoding.ErrInvalidArgument
+		return nil, encoding.ErrUnsupportedValue
 	}
 
 	r := &http.Request{

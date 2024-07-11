@@ -79,13 +79,13 @@ func (n *BlockNode) In(name string) *port.InPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if p, ok := n.inPorts[name]; ok {
-		return p
+	if inPort, ok := n.inPorts[name]; ok {
+		return inPort
 	}
 	if len(n.nodes) > 0 {
-		if p := n.nodes[0].In(name); p != nil {
-			n.inPorts[name] = p
-			return p
+		if inPort := n.nodes[0].In(name); inPort != nil {
+			n.inPorts[name] = inPort
+			return inPort
 		}
 	}
 	return nil
@@ -96,13 +96,13 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if p, ok := n.outPorts[name]; ok {
-		return p
+	if outPort, ok := n.outPorts[name]; ok {
+		return outPort
 	}
 	if len(n.nodes) > 0 {
-		if p := n.nodes[len(n.nodes)-1].Out(name); p != nil {
-			n.outPorts[name] = p
-			return p
+		if outPort := n.nodes[len(n.nodes)-1].Out(name); outPort != nil {
+			n.outPorts[name] = outPort
+			return outPort
 		}
 	}
 	return nil
@@ -110,20 +110,20 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 
 // Close closes all ports associated with the node.
 func (n *BlockNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
-	for _, n := range n.nodes {
-		if err := n.Close(); err != nil {
+	for _, node := range n.nodes {
+		if err := node.Close(); err != nil {
 			return err
 		}
 	}
 
-	for _, p := range n.inPorts {
-		p.Close()
+	for _, inPort := range n.inPorts {
+		inPort.Close()
 	}
-	for _, p := range n.outPorts {
-		p.Close()
+	for _, outPort := range n.outPorts {
+		outPort.Close()
 	}
 
 	return nil

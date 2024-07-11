@@ -96,7 +96,7 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 
 	doc, ok := val.(types.Map)
 	if !ok {
-		return uuid.UUID{}, errors.WithStack(encoding.ErrInvalidArgument)
+		return uuid.UUID{}, errors.WithStack(encoding.ErrUnsupportedValue)
 	}
 
 	pk, err := s.nodes.InsertOne(ctx, doc)
@@ -133,7 +133,7 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 
 		doc, ok := val.(types.Map)
 		if !ok {
-			return nil, errors.WithStack(encoding.ErrInvalidArgument)
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
 		docs = append(docs, doc)
@@ -189,7 +189,7 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 
 	doc, ok := val.(types.Map)
 	if !ok {
-		return false, errors.WithStack(encoding.ErrInvalidArgument)
+		return false, errors.WithStack(encoding.ErrUnsupportedValue)
 	}
 
 	return s.nodes.UpdateOne(ctx, f, doc)
@@ -243,7 +243,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 
 		doc, ok := val.(types.Map)
 		if !ok {
-			return 0, errors.WithStack(encoding.ErrInvalidArgument)
+			return 0, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
 		f, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()

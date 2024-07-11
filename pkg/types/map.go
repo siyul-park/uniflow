@@ -292,7 +292,7 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 						if target, err := valueEncoder.Encode(elem.Interface()); err != nil {
 							return nil, err
 						} else if t, ok := target.(Map); !ok {
-							return nil, errors.WithStack(encoding.ErrInvalidArgument)
+							return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 						} else {
 							pairs = append(pairs, t.Pairs()...)
 						}
@@ -312,7 +312,7 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 				return NewMap(pairs...), nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }
 
@@ -358,7 +358,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						}
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {
 				var decoders []encoding.Decoder[Map, unsafe.Pointer]
@@ -388,7 +388,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 							value, ok := source.Get(alias)
 							if !ok {
 								if !tag.omitempty {
-									return errors.WithMessage(encoding.ErrInvalidArgument, fmt.Sprintf("key(%v) is zero value", field.Name))
+									return errors.WithMessage(encoding.ErrUnsupportedValue, fmt.Sprintf("%v is zero value", field.Name))
 								}
 								return nil
 							}
@@ -411,7 +411,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						}
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -419,11 +419,11 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }
 

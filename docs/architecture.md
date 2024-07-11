@@ -114,8 +114,8 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
 
 - kind: switch
   name: catch
-  match:
-    - when: self == "invalid argument"
+  matches:
+    - when: self == "unsupported type" || self == "unsupported value"
       port: out[0]
     - when: 'true'
       port: out[1]
@@ -164,9 +164,9 @@ Compiled nodes are converted into symbols and stored in a symbol table, which co
    +--------------------------+   +-------------------+
    |         Database         |   |       Loader      |
    |  +--------------------+  |   |  +-------------+  |
-   |  | Node Specification |  |-->|  |    Scheme   |  |
+   |  | Node Specification |  |   |  |    Scheme   |  |
    |  +--------------------+  |   |  |  +-------+  |  |
-   |  | Node Specification |  |   |  |  | Codec |  |  |--+
+   |  | Node Specification |  |-->|  |  | Codec |  |  |--+
    |  +--------------------+  |   |  |  +-------+  |  |  |
    |  | Node Specification |  |   |  +-------------+  |  |
    |  +--------------------+  |   +-------------------+  |

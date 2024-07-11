@@ -69,7 +69,7 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 
 	codec, ok := s.Codec(spc.GetKind())
 	if !ok {
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	}
 	return codec.Compile(spc)
 }

@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -14,7 +12,6 @@ import (
 // MergeNode represents a node that Merges multiple input packets into a single output packet.
 type MergeNode struct {
 	*node.ManyToOneNode
-	mu sync.RWMutex
 }
 
 // MergeNodeSpec holds the specifications for creating a MergeNode.
@@ -32,9 +29,6 @@ func NewMergeNode() *MergeNode {
 }
 
 func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outPck := packet.Merge(inPcks)
 
 	if _, ok := outPck.Payload().(types.Error); ok {

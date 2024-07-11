@@ -97,7 +97,7 @@ func newStringEncoder() encoding2.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		}
-		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }
 
@@ -112,7 +112,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText([]byte(s.String()))
 				}
-				return errors.WithStack(encoding2.ErrInvalidArgument)
+				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
 		} else if typ != nil && typ.ConvertibleTo(typeBinaryUnmarshaler) {
 			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -120,7 +120,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary([]byte(s.String()))
 				}
-				return errors.WithStack(encoding2.ErrInvalidArgument)
+				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
@@ -129,163 +129,163 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						*(*string)(target) = s.String()
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Bool {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseBool(s.String()); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*bool)(target) = bool(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Float32 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseFloat(s.String(), 32); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*float32)(target) = float32(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Float64 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseFloat(s.String(), 64); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*float64)(target) = float64(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.Atoi(s.String()); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*int)(target) = int(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int8 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.Atoi(s.String()); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*int8)(target) = int8(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int16 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.Atoi(s.String()); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*int16)(target) = int16(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int32 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.Atoi(s.String()); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*int32)(target) = int32(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Int64 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseInt(s.String(), 10, 64); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*int64)(target) = int64(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseUint(s.String(), 10, 64); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*uint)(target) = uint(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint8 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseUint(s.String(), 10, 8); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*uint8)(target) = uint8(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint16 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseUint(s.String(), 10, 16); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*uint16)(target) = uint16(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint32 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseUint(s.String(), 10, 32); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*uint32)(target) = uint32(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
 						if v, err := strconv.ParseUint(s.String(), 10, 64); err != nil {
-							return errors.WithMessage(encoding2.ErrInvalidArgument, err.Error())
+							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
 							*(*uint64)(target) = uint64(v)
 							return nil
 						}
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -293,10 +293,10 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }

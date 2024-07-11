@@ -92,7 +92,7 @@ func newBooleanEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }
 
@@ -105,7 +105,7 @@ func newBooleanDecoder() encoding.DecodeCompiler[Value] {
 						*(*bool)(target) = s.Bool()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.String {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -113,7 +113,7 @@ func newBooleanDecoder() encoding.DecodeCompiler[Value] {
 						*(*string)(target) = fmt.Sprint(s.Interface())
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -121,10 +121,10 @@ func newBooleanDecoder() encoding.DecodeCompiler[Value] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }

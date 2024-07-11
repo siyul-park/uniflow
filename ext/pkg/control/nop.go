@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -14,7 +12,6 @@ import (
 // NOPNode represents a node that performs no operation and simply forwards incoming packets.
 type NOPNode struct {
 	inPort *port.InPort
-	mu     sync.RWMutex
 }
 
 // NOPNodeSpec defines the specification for creating a NOPNode.
@@ -39,15 +36,11 @@ func NewNOPNode() *NOPNode {
 
 // In returns the input port with the specified name.
 func (n *NOPNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIn:
 		return n.inPort
 	default:
 	}
-
 	return nil
 }
 
@@ -58,9 +51,6 @@ func (n *NOPNode) Out(name string) *port.OutPort {
 
 // Close closes all ports associated with the node.
 func (n *NOPNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.inPort.Close()
 
 	return nil
@@ -68,9 +58,6 @@ func (n *NOPNode) Close() error {
 
 // forward forwards incoming packets.
 func (n *NOPNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 
 	for {

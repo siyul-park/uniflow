@@ -122,7 +122,6 @@ func (n *HTTPListenNode) Shutdown() error {
 	}
 
 	err := n.server.Close()
-	n.listener.Close()
 
 	n.server = &http.Server{
 		Addr:    n.server.Addr,
@@ -199,8 +198,8 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Close closes all ports and stops the HTTP server.
 func (n *HTTPListenNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	n.outPort.Close()
 	n.errPort.Close()

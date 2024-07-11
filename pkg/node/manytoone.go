@@ -41,8 +41,8 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 
 // Out returns the output port with the specified name.
 func (n *ManyToOneNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
 	if NameOfPort(name) == PortIn {
 		index, ok := IndexOfPort(name)
@@ -83,8 +83,8 @@ func (n *ManyToOneNode) Out(name string) *port.OutPort {
 
 // Close closes all ports and releases resources.
 func (n *ManyToOneNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	for _, inPort := range n.inPorts {
 		inPort.Close()

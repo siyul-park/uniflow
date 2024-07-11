@@ -24,7 +24,7 @@ type SwitchNode struct {
 // SwitchNodeSpec holds specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Match     []Condition `map:"match"`
+	Matches   []Condition `map:"matches"`
 }
 
 // Condition represents a condition for directing packets to specific ports.
@@ -80,8 +80,8 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 // NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
 func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
-		conditions := make([]func(any) (bool, error), len(spec.Match))
-		for i, condition := range spec.Match {
+		conditions := make([]func(any) (bool, error), len(spec.Matches))
+		for i, condition := range spec.Matches {
 			program, err := compiler.Compile(condition.When)
 			if err != nil {
 				return nil, err
@@ -97,7 +97,7 @@ func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
 		}
 
 		n := NewSwitchNode()
-		for i, condition := range spec.Match {
+		for i, condition := range spec.Matches {
 			n.Match(conditions[i], condition.Port)
 		}
 		return n, nil

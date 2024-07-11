@@ -2,6 +2,8 @@ package packet
 
 import (
 	"sync"
+
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Writer represents a packet writer that sends packets to linked readers.
@@ -60,7 +62,7 @@ func NewWriter() *Writer {
 				w.mu.Unlock()
 
 				for range receives {
-					w.out <- None
+					w.out <- New(types.NewError(ErrDroppedPacket))
 				}
 				return
 			}

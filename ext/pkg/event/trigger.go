@@ -130,8 +130,8 @@ func (n *TriggerNode) Listen() {
 
 // Shutdown shuts down the trigger node.
 func (n *TriggerNode) Shutdown() {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	select {
 	case <-n.done:
@@ -142,8 +142,8 @@ func (n *TriggerNode) Shutdown() {
 
 // Close closes all ports associated with the node.
 func (n *TriggerNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	select {
 	case <-n.done:

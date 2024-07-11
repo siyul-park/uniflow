@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -19,7 +17,6 @@ type SessionNode struct {
 	ioPort  *port.InPort
 	inPort  *port.InPort
 	outPort *port.OutPort
-	mu      sync.RWMutex
 }
 
 // SessionNodeSpec defines the specification for creating a NOPNode.
@@ -50,9 +47,6 @@ func NewSessionNode() *SessionNode {
 
 // In returns the input port with the specified name.
 func (n *SessionNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIO:
 		return n.ioPort
@@ -66,9 +60,6 @@ func (n *SessionNode) In(name string) *port.InPort {
 
 // Out returns the output port with the specified name.
 func (n *SessionNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortOut:
 		return n.outPort
@@ -80,9 +71,6 @@ func (n *SessionNode) Out(name string) *port.OutPort {
 
 // Close closes all ports and associated resources of the node.
 func (n *SessionNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.ioPort.Close()
 	n.inPort.Close()
 	n.outPort.Close()
@@ -93,9 +81,6 @@ func (n *SessionNode) Close() error {
 }
 
 func (n *SessionNode) session(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	ioReader := n.ioPort.Open(proc)
 
 	for {
@@ -110,9 +95,6 @@ func (n *SessionNode) session(proc *process.Process) {
 }
 
 func (n *SessionNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 
 	for {
@@ -165,9 +147,6 @@ func (n *SessionNode) forward(proc *process.Process) {
 }
 
 func (n *SessionNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter := n.outPort.Open(proc)
 
 	for {

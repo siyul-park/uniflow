@@ -20,6 +20,9 @@ type DecoderGroup[S, T any] struct {
 var _ Encoder[any, any] = (*EncoderGroup[any, any])(nil)
 var _ Decoder[any, any] = (*DecoderGroup[any, any])(nil)
 
+var ErrUnsupportedType = errors.New("unsupported type")
+var ErrUnsupportedValue = errors.New("unsupported value")
+
 // NewDecoderGroup creates a new DecoderGroup.
 func NewDecoderGroup[S, T any]() *DecoderGroup[S, T] {
 	return &DecoderGroup[S, T]{}
@@ -56,7 +59,7 @@ func (g *EncoderGroup[S, T]) Encode(source S) (T, error) {
 	for _, enc := range g.encoders {
 		if target, err = enc.Encode(source); err == nil {
 			return target, nil
-		} else if !errors.Is(err, ErrInvalidArgument) {
+		} else if !errors.Is(err, ErrUnsupportedType) {
 			return target, err
 		}
 	}
@@ -88,7 +91,7 @@ func (g *DecoderGroup[S, T]) Decode(source S, target T) error {
 	for _, dec := range g.decoders {
 		if err = dec.Decode(source, target); err == nil {
 			return nil
-		} else if !errors.Is(err, ErrInvalidArgument) {
+		} else if !errors.Is(err, ErrUnsupportedType) {
 			return err
 		}
 	}

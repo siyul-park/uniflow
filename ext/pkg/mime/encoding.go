@@ -233,7 +233,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		flush()
 		return nil
 	default:
-		return errors.WithStack(encoding.ErrInvalidArgument)
+		return errors.WithStack(encoding.ErrUnsupportedType)
 	}
 }
 

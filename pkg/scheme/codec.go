@@ -22,7 +22,7 @@ func CodecWithType[T spec.Spec](compile func(spec T) (node.Node, error)) Codec {
 		if converted, ok := spec.(T); ok {
 			return compile(converted)
 		}
-		return nil, errors.WithStack(encoding.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }
 

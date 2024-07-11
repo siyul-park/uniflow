@@ -79,7 +79,7 @@ func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[S, T], error)
 
 	if encoderGroup.Len() == 0 {
 		a.encoders.Delete(typ)
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
 	return encoderGroup, nil
@@ -134,7 +134,7 @@ func (a *DecodeAssembler[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 		}
 	}
 	if len(decoders) == 0 {
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
 	decoderGroup := NewDecoderGroup[S, unsafe.Pointer]()

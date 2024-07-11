@@ -2,7 +2,6 @@ package control
 
 import (
 	"reflect"
-	"sync"
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -21,7 +20,6 @@ type IfNode struct {
 	inPort    *port.InPort
 	outPorts  []*port.OutPort
 	errPort   *port.OutPort
-	mu        sync.RWMutex
 }
 
 // IfNodeSpec holds specifications for creating an IfNode.
@@ -58,9 +56,6 @@ func NewIfNode(condition func(any) (bool, error)) *IfNode {
 
 // In returns the input port with the specified name.
 func (n *IfNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIn:
 		return n.inPort
@@ -72,9 +67,6 @@ func (n *IfNode) In(name string) *port.InPort {
 
 // Out returns the output port with the specified name.
 func (n *IfNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
@@ -93,9 +85,6 @@ func (n *IfNode) Out(name string) *port.OutPort {
 
 // Close closes all ports associated with the node.
 func (n *IfNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.inPort.Close()
 	for _, outPort := range n.outPorts {
 		outPort.Close()
@@ -107,9 +96,6 @@ func (n *IfNode) Close() error {
 }
 
 func (n *IfNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
@@ -138,9 +124,6 @@ func (n *IfNode) forward(proc *process.Process) {
 }
 
 func (n *IfNode) backward(proc *process.Process, index int) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter := n.outPorts[index].Open(proc)
 
 	for {
@@ -154,9 +137,6 @@ func (n *IfNode) backward(proc *process.Process, index int) {
 }
 
 func (n *IfNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errWriter := n.errPort.Open(proc)
 
 	for {

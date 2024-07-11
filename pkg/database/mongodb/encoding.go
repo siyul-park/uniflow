@@ -66,7 +66,7 @@ func filterToBson(filter *database.Filter) (bson.D, error) {
 		}
 		op, ok := ops[filter.OP]
 		if !ok {
-			return nil, errors.WithStack(encoding.ErrInvalidArgument)
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 		return bson.D{{Key: k, Value: bson.M{op: v}}}, nil
 	}
@@ -75,7 +75,7 @@ func filterToBson(filter *database.Filter) (bson.D, error) {
 func bsonToFilter(data interface{}, filter **database.Filter) error {
 	raw, ok := bsonMA(data)
 	if !ok {
-		return errors.WithStack(encoding.ErrInvalidArgument)
+		return errors.WithStack(encoding.ErrUnsupportedValue)
 	}
 
 	var children []*database.Filter
@@ -105,7 +105,7 @@ func bsonToFilter(data interface{}, filter **database.Filter) error {
 						Children: childs,
 					})
 				} else {
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}
 
 			case "$not":
@@ -134,7 +134,7 @@ func bsonToFilter(data interface{}, filter **database.Filter) error {
 				if value, ok := bsonM(value); ok {
 					for k, v := range value {
 						if !strings.HasPrefix(k, "$") {
-							return errors.WithStack(encoding.ErrInvalidArgument)
+							return errors.WithStack(encoding.ErrUnsupportedValue)
 						}
 
 						var op database.OP
@@ -164,7 +164,7 @@ func bsonToFilter(data interface{}, filter **database.Filter) error {
 						case "$nin":
 							op = database.NIN
 						default:
-							return errors.WithStack(encoding.ErrInvalidArgument)
+							return errors.WithStack(encoding.ErrUnsupportedValue)
 						}
 
 						var value types.Value
@@ -179,7 +179,7 @@ func bsonToFilter(data interface{}, filter **database.Filter) error {
 						})
 					}
 				} else {
-					return errors.WithStack(encoding.ErrInvalidArgument)
+					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}
 			}
 		}
@@ -210,7 +210,7 @@ func toBson(data types.Value) (any, error) {
 		for _, k := range s.Keys() {
 			v, _ := s.Get(k)
 			if k, ok := k.(types.String); !ok {
-				return nil, errors.WithStack(encoding.ErrInvalidArgument)
+				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 			} else {
 				if v, err := toBson(v); err != nil {
 					return nil, err
@@ -277,7 +277,7 @@ func fromBson(data any, v *types.Value) error {
 		*v = s
 		return nil
 	}
-	return errors.WithStack(encoding.ErrInvalidArgument)
+	return errors.WithStack(encoding.ErrUnsupportedValue)
 }
 
 func sortToBson(sorts []database.Sort) bson.D {

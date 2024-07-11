@@ -66,7 +66,7 @@ func TestSwitchNodeCodec_Decode(t *testing.T) {
 	codec := NewSwitchNodeCodec(text.NewCompiler())
 
 	spec := &SwitchNodeSpec{
-		Match: []Condition{
+		Matches: []Condition{
 			{
 				When: "",
 				Port: node.PortWithIndex(node.PortOut, 0),

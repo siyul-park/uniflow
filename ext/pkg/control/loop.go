@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -18,7 +16,6 @@ type LoopNode struct {
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
-	mu       sync.RWMutex
 }
 
 // LoopNodeSpec holds the specifications for creating a LoopNode.
@@ -49,22 +46,15 @@ func NewLoopNode() *LoopNode {
 
 // In returns the input port with the specified name.
 func (n *LoopNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIn:
 		return n.inPort
 	}
-
 	return nil
 }
 
 // Out returns the output port with the specified name.
 func (n *LoopNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
@@ -78,15 +68,11 @@ func (n *LoopNode) Out(name string) *port.OutPort {
 			}
 		}
 	}
-
 	return nil
 }
 
 // Close closes all ports associated with the node.
 func (n *LoopNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.inPort.Close()
 	for _, outPort := range n.outPorts {
 		outPort.Close()
@@ -98,9 +84,6 @@ func (n *LoopNode) Close() error {
 }
 
 func (n *LoopNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
@@ -145,9 +128,6 @@ func (n *LoopNode) forward(proc *process.Process) {
 }
 
 func (n *LoopNode) backward0(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter0 := n.outPorts[0].Open(proc)
 
 	for {
@@ -161,9 +141,6 @@ func (n *LoopNode) backward0(proc *process.Process) {
 }
 
 func (n *LoopNode) backward1(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter1 := n.outPorts[1].Open(proc)
 
 	for {
@@ -177,9 +154,6 @@ func (n *LoopNode) backward1(proc *process.Process) {
 }
 
 func (n *LoopNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errWriter := n.errPort.Open(proc)
 
 	for {

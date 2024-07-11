@@ -27,7 +27,7 @@ func TestEncodeAssembler_Compile(t *testing.T) {
 				return source, nil
 			}), nil
 		}
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}))
 
 	source := "test"
@@ -44,7 +44,7 @@ func TestEncodeAssembler_Encode(t *testing.T) {
 				return source, nil
 			}), nil
 		}
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}))
 
 	source := "test"
@@ -70,7 +70,7 @@ func TestDecodeAssembler_Compile(t *testing.T) {
 				return nil
 			}), nil
 		}
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}))
 
 	source := "test"
@@ -88,10 +88,10 @@ func TestDecodeAssembler_Decode(t *testing.T) {
 					*(*string)(target) = *s
 					return nil
 				}
-				return errors.WithStack(ErrInvalidArgument)
+				return errors.WithStack(ErrUnsupportedType)
 			}), nil
 		}
-		return nil, errors.WithStack(ErrInvalidArgument)
+		return nil, errors.WithStack(ErrUnsupportedType)
 	}))
 
 	source := faker.UUIDHyphenated()

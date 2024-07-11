@@ -25,6 +25,7 @@ type WebSocketNode struct {
 	*WebSocketConnNode
 	dialer *websocket.Dialer
 	url    *url.URL
+	mu     sync.RWMutex
 }
 
 // WebSocketConnNode represents a node for handling WebSocket connections.
@@ -35,7 +36,6 @@ type WebSocketConnNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
-	mu      sync.RWMutex
 }
 
 // WebSocketNodeSpec holds the specifications for creating a WebSocketNode.
@@ -77,6 +77,9 @@ func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
 }
 
 func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -119,9 +122,6 @@ func NewWebSocketConnNode(action func(*process.Process, *packet.Packet) (*websoc
 
 // In returns the input port with the specified name.
 func (n *WebSocketConnNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIO:
 		return n.ioPort
@@ -135,9 +135,6 @@ func (n *WebSocketConnNode) In(name string) *port.InPort {
 
 // Out returns the output port with the specified name.
 func (n *WebSocketConnNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortOut:
 		return n.outPort
@@ -151,9 +148,6 @@ func (n *WebSocketConnNode) Out(name string) *port.OutPort {
 
 // Close closes all ports of the WebSocketConnNode.
 func (n *WebSocketConnNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.ioPort.Close()
 	n.inPort.Close()
 	n.outPort.Close()
@@ -163,11 +157,7 @@ func (n *WebSocketConnNode) Close() error {
 	return nil
 }
 
-// connect initiates the connection process for the WebSocketConnNode.
 func (n *WebSocketConnNode) connect(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	ioReader := n.ioPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
@@ -197,9 +187,6 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 }
 
 func (n *WebSocketConnNode) consume(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
@@ -243,9 +230,6 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 }
 
 func (n *WebSocketConnNode) produce(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	conn, ok := n.conn(proc)
 	if !ok {
 		return

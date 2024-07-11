@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -16,7 +14,6 @@ import (
 type SnippetNode struct {
 	*node.OneToOneNode
 	fn func(any) (any, error)
-	mu sync.RWMutex
 }
 
 // SnippetNodeSpec holds the specifications for creating a SnippetNode.
@@ -36,9 +33,6 @@ func NewSnippetNode(fn func(any) (any, error)) *SnippetNode {
 }
 
 func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 

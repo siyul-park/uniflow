@@ -1,8 +1,6 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -17,7 +15,6 @@ type ForkNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
-	mu      sync.RWMutex
 }
 
 // ForkNodeSpec holds the specifications for creating a ForkNode.
@@ -46,23 +43,16 @@ func NewForkNode() *ForkNode {
 
 // In returns the input port with the specified name.
 func (n *ForkNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortIn:
 		return n.inPort
 	default:
 	}
-
 	return nil
 }
 
 // Out returns the output port with the specified name.
 func (n *ForkNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case node.PortOut:
 		return n.outPort
@@ -70,15 +60,11 @@ func (n *ForkNode) Out(name string) *port.OutPort {
 		return n.errPort
 	default:
 	}
-
 	return nil
 }
 
 // Close closes all ports associated with the node.
 func (n *ForkNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
@@ -87,9 +73,6 @@ func (n *ForkNode) Close() error {
 }
 
 func (n *ForkNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 
 	for {
@@ -107,9 +90,6 @@ func (n *ForkNode) forward(proc *process.Process) {
 }
 
 func (n *ForkNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
@@ -132,9 +112,6 @@ func (n *ForkNode) backward(proc *process.Process) {
 }
 
 func (n *ForkNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errWriter := n.errPort.Open(proc)
 
 	for {

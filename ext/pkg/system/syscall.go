@@ -3,7 +3,6 @@ package system
 import (
 	"context"
 	"reflect"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -18,7 +17,6 @@ import (
 type SyscallNode struct {
 	*node.OneToOneNode
 	operator reflect.Value
-	mu       sync.RWMutex
 }
 
 // SyscallNodeSpec holds the specifications for creating a SyscallNode.
@@ -47,9 +45,6 @@ func NewSyscallNode(operator any) (*SyscallNode, error) {
 }
 
 func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	ctx := proc.Context()
 
 	inPayload := inPck.Payload()

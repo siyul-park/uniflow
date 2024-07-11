@@ -1,8 +1,6 @@
 package node
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -15,7 +13,6 @@ type OneToOneNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
 	errPort *port.OutPort
-	mu      sync.RWMutex
 }
 
 var _ Node = (*OneToOneNode)(nil)
@@ -41,37 +38,28 @@ func NewOneToOneNode(action func(*process.Process, *packet.Packet) (*packet.Pack
 
 // In returns the input port with the specified name.
 func (n *OneToOneNode) In(name string) *port.InPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case PortIn:
 		return n.inPort
 	default:
-		return nil
 	}
+	return nil
 }
 
 // Out returns the output port for the specified name.
 func (n *OneToOneNode) Out(name string) *port.OutPort {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	switch name {
 	case PortOut:
 		return n.outPort
 	case PortErr:
 		return n.errPort
 	default:
-		return nil
 	}
+	return nil
 }
 
 // Close closes all ports and releases resources.
 func (n *OneToOneNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
@@ -81,9 +69,6 @@ func (n *OneToOneNode) Close() error {
 }
 
 func (n *OneToOneNode) forward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
@@ -106,9 +91,6 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 }
 
 func (n *OneToOneNode) backward(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	outWriter := n.outPort.Open(proc)
 
 	for {
@@ -122,9 +104,6 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 }
 
 func (n *OneToOneNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errWriter := n.errPort.Open(proc)
 
 	for {

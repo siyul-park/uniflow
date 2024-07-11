@@ -108,7 +108,7 @@ func newBinaryEncoder() encoding2.EncodeCompiler[any, Value] {
 				return NewBinary(t.Bytes()), nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }
 
@@ -123,7 +123,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
 					return t.UnmarshalBinary(s.Bytes())
 				}
-				return errors.WithStack(encoding2.ErrInvalidArgument)
+				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
 		} else if typ != nil && typ.ConvertibleTo(typeTextUnmarshaler) {
 			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -131,7 +131,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
 					return t.UnmarshalText(s.Bytes())
 				}
-				return errors.WithStack(encoding2.ErrInvalidArgument)
+				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
@@ -141,7 +141,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 						t.Set(reflect.AppendSlice(t, reflect.ValueOf(s.Bytes()).Convert(t.Type())))
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Array && typ.Elem().Elem().Kind() == reflect.Uint8 {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -150,7 +150,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 						reflect.Copy(t, reflect.ValueOf(s.Bytes()).Convert(t.Type()))
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.String {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -158,7 +158,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 						*(*string)(target) = base64.StdEncoding.EncodeToString(s.Bytes())
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
@@ -166,10 +166,10 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding2.ErrInvalidArgument)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding2.ErrInvalidArgument)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }

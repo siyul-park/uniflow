@@ -43,8 +43,10 @@ func (n *OneToManyNode) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	if name == PortIn {
+	switch name {
+	case PortIn:
 		return n.inPort
+	default:
 	}
 	return nil
 }
@@ -82,8 +84,8 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 
 // Close closes all ports and releases resources.
 func (n *OneToManyNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	n.inPort.Close()
 	for _, outPort := range n.outPorts {

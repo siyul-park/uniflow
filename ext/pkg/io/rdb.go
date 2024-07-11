@@ -62,8 +62,8 @@ func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
 
 // Close closes resource associated with the node.
 func (n *RDBNode) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+	n.mu.RLock()
+	defer n.mu.RUnlock()
 
 	if err := n.OneToOneNode.Close(); err != nil {
 		return err
@@ -82,7 +82,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		query, ok = types.Pick[string](inPck.Payload(), 0)
 	}
 	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrInvalidArgument))
+		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
