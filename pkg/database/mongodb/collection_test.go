@@ -133,26 +133,6 @@ func TestCollection_Drop(t *testing.T) {
 	databasetest.TestCollection_Drop(t, coll)
 }
 
-func BenchmarkCollection_InsertOne(b *testing.B) {
-	server := Server()
-	defer ReleaseServer(server)
-
-	coll, err := testCollection(server)
-	assert.NoError(b, err)
-
-	databasetest.BenchmarkCollection_InsertOne(b, coll)
-}
-
-func BenchmarkCollection_InsertMany(b *testing.B) {
-	server := Server()
-	defer ReleaseServer(server)
-
-	coll, err := testCollection(server)
-	assert.NoError(b, err)
-
-	databasetest.BenchmarkCollection_InsertMany(b, coll)
-}
-
 func BenchmarkCollection_UpdateOne(b *testing.B) {
 	server := Server()
 	defer ReleaseServer(server)
