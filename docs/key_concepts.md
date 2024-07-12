@@ -4,7 +4,7 @@ This guide explains key terms and concepts in detail.
 
 ## Node Specification
 
-A node specification defines the behavior and port connections of each node declaratively. The engine compiles this specification into an executable node.
+A node specification declaratively defines how each node operates and connects to ports. This specification is compiled into executable nodes by the engine.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01a
@@ -24,71 +24,69 @@ links:
       port: in
 ```
 
-- `id`: A UUID, with UUID V7 recommended.
-- `kind`: Specifies the type of node, with different specifications depending on the type.
-- `namespace`: Specifies the namespace the node belongs to, defaulting to `default`.
+- `id`: A UUID, preferably in UUID V7 format.
+- `kind`: Specifies the type of node, with different specifications depending on the kind.
+- `namespace`: Specifies the namespace the node belongs to, with `default` as the default.
 - `name`: Specifies the name of the node, which must be unique within the same namespace.
-- `annotations`: Contains additional metadata for the node specification. These values are not used by the engine but are useful for providing extended functionalities or integrating with external services. Keys and values are in string format.
-- `language`, `code`: Additional fields required for nodes of type `snippet`. Required fields may vary based on the node type.
+- `annotations`: Includes additional metadata for the node specification. These values are not used by the engine but are useful for providing extensions or integrating with external services. Both keys and values are strings.
+- `language`, `code`: Additional fields required for `snippet` type nodes. Required fields may vary depending on the node type.
 - `links`: Defines how ports are connected. Each port is identified by the ID or name and port name of another node.
 
 ## Node
 
-A node is a data processing object that executes workflows by sending and receiving packets through connected ports. Each node operates in an independent processing loop, communicating asynchronously with other nodes.
+Nodes are data processing objects that execute workflows by sending and receiving packets through interconnected ports. Each node has an independent processing loop, allowing asynchronous communication with other nodes.
 
-Nodes are classified into five types based on packet processing methods:
-- `ZeroToOne`: Nodes that generate packets to start the workflow.
-- `OneToOne`: Nodes that receive a packet from one input port, process it, and send it to one output port.
-- `OneToMany`: Nodes that receive a packet from one input port, process it, and send it to multiple output ports.
-- `ManyToOne`: Nodes that receive packets from multiple input ports, aggregate them, and send them to one output port.
-- `Other`: Nodes that involve more than simple packet forwarding, including state management and interaction.
+Nodes are classified into five types based on packet processing:
+- `ZeroToOne`: Generates the first packet to start the workflow.
+- `OneToOne`: Receives a packet from one input port, processes it, and sends it to one output port.
+- `OneToMany`: Receives a packet from one input port, processes it, and sends it to multiple output ports.
+- `ManyToOne`: Receives packets from multiple input ports, aggregates them, processes them, and sends them to one output port.
+- `Other`: Includes nodes that manage state and interactions beyond simple packet forwarding.
 
 ## Port
 
-A port is a connection point where nodes send and receive packets. There are two types of ports: `InPort` and `OutPort`, which are connected to transmit packets. A packet sent to one port is delivered to all connected ports.
+Ports are connection points where nodes send and receive packets. There are two types of ports, `InPort` and `OutPort`, which are connected to transmit packets. Packets sent to one port are delivered to all connected ports.
 
-Commonly used port names include:
-- `io`: Processes the packet and returns it immediately.
-- `in`: Receives a packet, processes it, and sends the result to either `out` or `error`. If no `out` or `error` ports are connected, it returns the result.
-- `out`: Sends the processed packet. The result can be sent back to an `in` port.
-- `error`: Sends errors that occur during packet processing. The error handling result can be sent back to an `in` port.
+Common port names include:
+- `io`: Processes and immediately returns packets.
+- `in`: Receives packets, processes them, and sends the result to `out` or `error`. If no `out` or `error` ports are connected, it returns the result.
+- `out`: Sends processed packets. The results sent may be returned to `in`.
+- `error`: Sends errors that occur during packet processing. Error handling results may be returned to `in`.
 
-When multiple ports with the same function are needed, they are denoted as `in[0]`, `out[1]`, etc.
+When multiple ports with the same role are needed, they are expressed as `in[0]` or `out[1]`.
 
 ## Packet
 
-A packet is the data exchanged between ports, containing a payload.
+A packet is the data exchanged between ports, and each packet includes a payload.
 
-Nodes must return the corresponding response packet in the order the request packets were sent. If connected to multiple ports, all response packets are aggregated into a single new response packet returned to the node.
+Nodes must return the corresponding response packet according to the transmission order of the request packets. When connected to multiple ports, all response packets are aggregated into a single new response packet and returned to the node.
 
-There is also a special `None` packet, indicating no response.
+A special `None` packet indicates that the packet was simply accepted, showing that there is no response.
 
-Packets are transmitted and processed along the connections between nodes. Forward propagation is when the packet follows the initially connected port, while back propagation occurs when the packet is returned in the opposite direction after processing is complete.
+Packets are transmitted along node connections for processing. Forward propagation occurs when packets follow the connected ports, and backpropagation occurs when responses are returned after all processing is complete.
 
 ## Process
 
-A process is the basic unit of execution, managed independently. A process can have a parent process, and if the parent process terminates, so does the child process.
+A process is the basic unit of execution and is managed independently. Processes can have parent processes, and child processes terminate when the parent process terminates.
 
-Processes have their own storage to hold values that are difficult to transmit via packets, operating with Copy-On-Write (COW) to efficiently share data from the parent process.
+Each process has its own storage to save values that are difficult to transmit via packets, and operates using a Copy-On-Write (COW) method to efficiently share the parent process's data.
 
-A process is created to start a new workflow, and all resources used are released when the process terminates.
+A new process is created to start a new workflow, and all resources used are released when the process terminates.
 
-A process can have more than one root packet, but root packets must be generated from the same node. If they are generated from different nodes, a new child process is created to handle the flow.
+Processes can have more than one root packet, but root packets must be generated from the same node. If they are generated from different nodes, a new child process must be created to handle the flow.
 
 ## Workflow
 
-A workflow is defined as a directed graph with multiple connected nodes.
+A workflow is defined as a directed graph where multiple nodes are connected. In this graph, each node is responsible for data processing, and packets are transmitted between nodes.
 
-In this graph, each node handles data processing, and packets are transmitted between these nodes.
+Workflows consist of a series of steps where data is processed and transmitted according to defined rules. Data can be processed sequentially or in parallel during this process.
 
-A workflow consists of a series of steps, where data is processed and transmitted according to defined rules. Data can be processed sequentially or in parallel.
-
-For example, given initial data, it is processed by the first node and then passed to the next node. Each node receives input, processes it, and sends the processed result to the next step.
+For example, given initial data, the first node processes it and then passes it to the next node. Each node receives input, processes it, and sends the processed result to the next step.
 
 ## Namespace
 
-A namespace manages workflows in isolation, providing an independent execution environment. Each namespace can include multiple workflows, and nodes within a namespace cannot reference nodes in other namespaces. Each namespace independently manages its own data and resources.
+Namespaces isolate and manage workflows, providing independent execution environments. Each namespace can include multiple workflows, and nodes within a namespace cannot reference nodes from other namespaces. Each namespace manages its data and resources independently.
 
 ## Runtime Environment
 
-The runtime environment is an independent space where each namespace runs. The engine loads all nodes belonging to a namespace, constructs the environment, and executes the workflows. This prevents potential conflicts during workflow execution and ensures a stable execution environment.
+A runtime environment is an independent space where each namespace is executed. The engine loads all nodes belonging to a namespace to build the environment and execute the workflow. This prevents conflicts that might occur during workflow execution and ensures a stable execution environment.

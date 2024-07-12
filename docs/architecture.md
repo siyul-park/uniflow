@@ -1,6 +1,6 @@
 # Architecture
 
-Node specifications define the roles of each node declaratively, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime enviroment executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
+Node specifications declaratively define the roles of each node, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime environment executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
 
 ```plantext
    +-------------------------------------------------+
@@ -30,7 +30,7 @@ To effectively execute node specifications, the process is divided into two main
 
 ## Modifying Workflows
 
-The engine does not expose an API to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes for execution. 
+The engine does not expose an API to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes for execution.
 
 To modify node specifications, use the Command-Line Interface (CLI) to update the specifications in the database. Alternatively, you can define a workflow that provides an HTTP API for modifying node specifications. These workflows are typically defined in the `system` namespace.
 
@@ -169,7 +169,6 @@ Compiled nodes are converted into symbols and stored in a symbol table, which co
    |  | Node Specification |  |-->|  |  | Codec |  |  |--+
    |  +--------------------+  |   |  |  +-------+  |  |  |
    |  | Node Specification |  |   |  +-------------+  |  |
-   |  +--------------------+  |   +-------------------+  |
    +--------------------------+                          |
    +-------------------------+                           |
    |      Symbol Table       |                           |

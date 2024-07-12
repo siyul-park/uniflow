@@ -1,12 +1,12 @@
 # 시작하기
 
-이 가이드는 [Command-Line Interface (CLI)](../cmd/README_kr.md)를 사용하여 워크플로우를 관리하고 엔진을 실행하는 방법을 설명합니다. CLI 설치부터 워크플로우 제어 및 설정 구성까지의 과정을 살펴보세요.
+이 가이드는 [Command-Line Interface (CLI)](../cmd/README_kr.md)를 사용하여 워크플로우를 관리하고 엔진을 실행하는 방법을 설명합니다. CLI 설치부터 워크플로우 제어 및 설정 구성까지의 과정을 다룹니다.
 
 ## 코드에서 설치
 
 [내장된 확장 기능](../ext/README_kr.md)과 함께 워크플로우를 제어할 수 있는 CLI를 설치합니다. 코드를 빌드하려면 [Go 1.22](https://go.dev/doc/install) 이상이 필요합니다.
 
-먼저, 레포지토리에서 코드를 클론하세요.
+먼저, 레포지토리에서 코드를 클론합니다.
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -37,11 +37,11 @@ make build
 | `database.name`    | `DATABASE.NAME`    | -                         |
 | `collection.nodes` | `COLLECTION.NODES` | `nodes`                   |
 
-[MongoDB](https://www.mongodb.com/)를 사용할 경우 엔진이 노드 명세의 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)이 활성화되어 있어야 합니다. 변경 스트림을 이용하기 위해 [복제본 세트](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication)를 활용하세요.
+[MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 노드 명세의 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)이 활성화되어 있어야 합니다. 이를 위해 [복제본 세트](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication)를 설정하세요.
 
 ## 명령어
 
-CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공합니다. 전체 명령어 목록을 확인하려면 다음 도움말 명령어를 참조하세요:
+CLI는 워크플로우를 제어하기 위해 다양한 명령어를 제공합니다. 전체 명령어 목록을 확인하려면 다음 도움말 명령어를 사용하세요:
 
 ```sh
 ./dist/uniflow --help
@@ -49,7 +49,7 @@ CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공�
 
 ### Apply
 
-`apply` 명령어는 노드 명세들을 특정 네임스페이스에 적용합니다. 노드 명세가 이미 네임스페이스에 존재한다면 기존 명세를 업데이트하고, 존재하지 않으면 새로 생성합니다. 명세가 적용된 결과를 출력합니다. 네임스페이스를 명시하지 않으면 기본적으로 `default` 네임스페이스에 적용됩니다.
+`apply` 명령어는 노드 명세를 특정 네임스페이스에 적용합니다. 노드 명세가 이미 존재하면 업데이트하고, 그렇지 않으면 새로 생성합니다. 결과를 출력하며, 네임스페이스를 명시하지 않으면 기본적으로 `default` 네임스페이스에 적용됩니다.
 
 ```sh
 ./dist/uniflow apply --filename examples/ping.yaml
@@ -61,7 +61,7 @@ CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공�
 
 ### Delete
 
-`delete` 명령어는 네임스페이스에 존재하는 노드 명세들을 제거합니다. 이는 특정 워크플로우의 노드를 삭제할 때 유용합니다. 네임스페이스를 명시하지 않으면 `default` 네임스페이스에서 삭제됩니다.
+`delete` 명령어는 네임스페이스에 존재하는 노드 명세를 제거합니다. 이는 특정 워크플로우의 노드를 삭제할 때 유용합니다. 네임스페이스를 명시하지 않으면 `default` 네임스페이스에서 삭제됩니다.
 
 ```sh
 ./dist/uniflow delete --filename examples/ping.yaml
@@ -71,7 +71,7 @@ CLI는 워크플로우를 제어하기 위해 여러 가지 명령어를 제공�
 
 ### Get
 
-`get` 명령어는 네임스페이스에 존재하는 노드 명세들을 조회합니다. 네임스페이스를 명시하지 않으면 `default` 네임스페이스를 조회합니다.
+`get` 명령어는 네임스페이스에 존재하는 노드 명세를 조회합니다. 네임스페이스를 명시하지 않으면 `default` 네임스페이스를 조회합니다.
 
 ```sh
 ./dist/uniflow get

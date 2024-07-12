@@ -15,11 +15,11 @@ A high-performance, extremely flexible, and easily extensible multipurpose workf
 
 It efficiently handles tasks of varying durations, from short-term to long-term, providing an environment where data processing flows can be declaratively defined and dynamically modified.
 
-Through [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to the service requirements.
+With [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to the service requirements.
 
 Integrate the engine into your service to offer personalized experiences and extensively expand functionalities.
 
-## Principles
+## Core Values
 
 - **Performance:** Achieves maximum throughput and minimum latency across diverse environments.
 - **Flexibility:** Allows dynamic modification of specifications and real-time adjustments.
@@ -95,9 +95,9 @@ Percentage of the requests served within a certain time (ms)
 ## Learn More
 
 - [Getting Started](./docs/getting_started.md): Learn how to install the CLI, manage workflows, and run the engine.
-- [Key Concepts](./docs/key_concepts.md): Explore key concepts such as nodes, their connections, ports, packets, and more.
-- [Architecture](./docs/architecture.md): Understand how node specifications are loaded into the engine and how workflows are executed.
-- [User Extension](./docs/user_extension.md): Learn how to add nodes that provide new features and integrate them into existing services in detail.
+- [Key Concepts](./docs/key_concepts.md): Understand essential concepts such as nodes, their connections, ports, packets, and more.
+- [Architecture](./docs/architecture.md): See how node specifications are loaded into the engine and how workflows are executed.
+- [User Extension](./docs/user_extension.md): Find out how to add new nodes and seamlessly integrate them into your existing services.
 
 <!-- Go -->
 

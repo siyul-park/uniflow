@@ -1,6 +1,6 @@
 # User Extension
 
-This guide details how to extend your services and integrate them into the runtime environment.
+This guide explains how to extend your services and integrate them into the runtime environment.
 
 ## Setting Up the Development Environment
 
@@ -12,7 +12,7 @@ go get github.com/siyul-park/uniflow
 
 ## Adding a New Node
 
-To support new functionality, define a node specification and register a codec to convert this specification into a node.
+To introduce new functionality, define a node specification and register a codec to convert this specification into a node.
 
 The node specification implements the `spec.Spec` interface and can be defined using `spec.Meta`:
 
@@ -29,7 +29,7 @@ Define the new node type:
 const KindText = "text"
 ```
 
-Now, implement a node that can actually function. Using the provided `OneToOneNode` template, the node will receive input packets, process them, and send out output packets:
+Next, implement a node that performs the desired functionality. Using the provided `OneToOneNode` template, the node will receive input packets, process them, and emit output packets:
 
 ```go
 type TextNode struct {
@@ -38,7 +38,7 @@ type TextNode struct {
 }
 ```
 
-Define a function to create the node. This function sets up packet processing by passing a handler function to the `OneToOneNode` constructor:
+Create a function to instantiate the node. This function configures packet processing by passing a handler function to the `OneToOneNode` constructor:
 
 ```go
 func NewTextNode(contents string) *TextNode {
@@ -49,13 +49,13 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-Implement the function with the following signature. This function uses the first return value for normal processing and the second for error handling:
+Implement the function with the following signature. This function uses the first return value for normal operation and the second for error handling:
 
 ```go
 func (proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet)
 ```
 
-Here, the input packet is converted to a packet containing the `contents` and sent out:
+In this function, convert the input packet into a new packet containing the `contents` and send it out:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -64,7 +64,7 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 ```
 
-To verify the node specification works as intended, write tests. Send an input packet to the `in` port and check if the output packet contains the `contents`:
+To ensure the node specification functions correctly, write tests. Send an input packet to the `in` port and verify that the output packet contains the expected `contents`:
 
 ```go
 func TestTextNode_SendAndReceive(t *testing.T) {
@@ -98,6 +98,8 @@ func TestTextNode_SendAndReceive(t *testing.T) {
 }
 ```
 
+### Registering Schema and Codec
+
 Create a codec to convert the node specification to a node and register it with the scheme:
 
 ```go
@@ -116,7 +118,7 @@ func AddToScheme() scheme.Register {
 }
 ```
 
-Then use `scheme.Builder` to build the scheme:
+Then use `scheme.Builder` to construct the scheme:
 
 ```go
 builder := scheme.NewBuilder()
@@ -124,6 +126,8 @@ builder.Register(AddToScheme())
 
 scheme, _ := builder.Build()
 ```
+
+### Running the Runtime Environment
 
 Pass this scheme to the runtime environment to execute workflows with the extended node:
 
@@ -139,7 +143,7 @@ defer r.Close()
 r.Listen(ctx)
 ```
 
-## Service Integration
+## Integrating with Your Service
 
 Integrate the runtime environment into your service in two ways.
 

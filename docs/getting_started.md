@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide explains how to manage workflows and run the engine using the [Command-Line Interface (CLI)](../cmd/README.md) Follow the steps from installing the CLI to controlling workflows and configuring settings.
+This guide explains how to manage workflows and run the engine using the [Command-Line Interface (CLI)](../cmd/README.md). Follow the steps from installing the CLI to controlling workflows and configuring settings.
 
 ## Installation from Code
 
