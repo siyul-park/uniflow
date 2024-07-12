@@ -9,5 +9,5 @@ use (
 replace (
 	github.com/siyul-park/uniflow v0.8.0 => ./
 	github.com/siyul-park/uniflow/cmd v0.0.0 => ./cmd/
-	github.com/siyul-park/uniflow/ext v0.7.0 => ./ext/
+	github.com/siyul-park/uniflow/ext v0.8.0 => ./ext/
 )
