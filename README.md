@@ -1,25 +1,22 @@
 # Uniflow
 
+[![go report][go_report_img]][go_report_url]
+[![go doc][go_doc_img]][go_doc_url]
+[![release][repo_releases_img]][repo_releases_url]
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
-[![go report][go_report_img]][go_report_url]
-[![codefactor][repo_codefactor_img]][repo_codefactor_url]
-[![release][repo_releases_img]][repo_releases_url]
-
-Translations:
-  - [한국어](./README_kr.md)
-
-## Overview
 
 A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.
 
-It efficiently handles tasks of varying durations, from short-term to long-term, providing an environment where data processing flows can be declaratively defined and dynamically modified.
+## Overview
 
-With [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to the service requirements.
+Uniflow efficiently handles tasks of varying durations, from short-term to long-term, providing an environment where data processing flows can be declaratively defined and dynamically modified.
+
+With [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to service requirements.
 
 Integrate the engine into your service to offer personalized experiences and extensively expand functionalities.
 
-## Core Values
+## Principles
 
 - **Performance:** Achieves maximum throughput and minimum latency across diverse environments.
 - **Flexibility:** Allows dynamic modification of specifications and real-time adjustments.
@@ -107,6 +104,8 @@ Percentage of the requests served within a certain time (ms)
 [go_code_coverage_url]: https://codecov.io/gh/siyul-park/uniflow
 [go_report_img]: https://goreportcard.com/badge/github.com/siyul-park/uniflow
 [go_report_url]: https://goreportcard.com/report/github.com/siyul-park/uniflow
+[go_doc_img]: https://godoc.org/github.com/siyul-park/uniflow?status.svg
+[go_doc_url]: https://godoc.org/github.com/siyul-park/uniflow
 
 <!-- Repository -->
 
@@ -121,5 +120,3 @@ Percentage of the requests served within a certain time (ms)
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
 [repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
 [repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
-[repo_codefactor_img]: https://www.codefactor.io/repository/github/siyul-park/uniflow/badge
-[repo_codefactor_url]: https://www.codefactor.io/repository/github/siyul-park/uniflow

@@ -169,7 +169,7 @@ Compiled nodes are converted into symbols and stored in a symbol table, which co
    |  | Node Specification |  |-->|  |  | Codec |  |  |--+
    |  +--------------------+  |   |  |  +-------+  |  |  |
    |  | Node Specification |  |   |  +-------------+  |  |
-   +--------------------------+                          |
+   +--------------------------+   +-------------------+  |
    +-------------------------+                           |
    |      Symbol Table       |                           |
    |  +--------+ +--------+  |                           |

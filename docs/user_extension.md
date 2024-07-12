@@ -4,7 +4,7 @@ This guide explains how to extend your services and integrate them into the runt
 
 ## Setting Up the Development Environment
 
-First, initialize the [Go](https://go.dev) module and download the necessary dependencies.
+First, initialize the [Go](https://go.dev) module and download the necessary dependencies:
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -14,7 +14,7 @@ go get github.com/siyul-park/uniflow
 
 To introduce new functionality, define a node specification and register a codec to convert this specification into a node.
 
-The node specification implements the `spec.Spec` interface and can be defined using `spec.Meta`:
+Define the node specification using `spec.Meta`:
 
 ```go
 type TextNodeSpec struct {
@@ -23,13 +23,13 @@ type TextNodeSpec struct {
 }
 ```
 
-Define the new node type:
+Specify the new node type:
 
 ```go
 const KindText = "text"
 ```
 
-Next, implement a node that performs the desired functionality. Using the provided `OneToOneNode` template, the node will receive input packets, process them, and emit output packets:
+Implement a node that performs the desired functionality. Use the `OneToOneNode` template, which receives input packets, processes them, and emits output packets:
 
 ```go
 type TextNode struct {
@@ -38,7 +38,7 @@ type TextNode struct {
 }
 ```
 
-Create a function to instantiate the node. This function configures packet processing by passing a handler function to the `OneToOneNode` constructor:
+Create a function to instantiate the node, configuring packet processing by passing a handler function to the `OneToOneNode` constructor:
 
 ```go
 func NewTextNode(contents string) *TextNode {
@@ -49,13 +49,13 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-Implement the function with the following signature. This function uses the first return value for normal operation and the second for error handling:
+Implement the function with the following signature to handle normal operation and error processing:
 
 ```go
 func (proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet)
 ```
 
-In this function, convert the input packet into a new packet containing the `contents` and send it out:
+Convert the input packet into a new packet containing the `contents` and send it out:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -118,7 +118,7 @@ func AddToScheme() scheme.Register {
 }
 ```
 
-Then use `scheme.Builder` to construct the scheme:
+Then, use `scheme.Builder` to construct the scheme:
 
 ```go
 builder := scheme.NewBuilder()
@@ -145,14 +145,15 @@ r.Listen(ctx)
 
 ## Integrating with Your Service
 
-Integrate the runtime environment into your service in two ways.
+Integrate the runtime environment into your service in two ways:
 
-**Continuous Integration**: Maintain the runtime environment to respond quickly to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution. Configure the runtime environment with built-in extensions:
+### Continuous Integration
+
+Maintain the runtime environment to respond quickly to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution. Configure the runtime environment with built-in extensions:
 
 ```go
 func main() {
 	col := memdb.NewCollection("")
-
 	store := store.New(col)
 
 	sbuilder := scheme.NewBuilder()
@@ -214,7 +215,9 @@ func main() {
 }
 ```
 
-**Temporary Execution**: Execute a workflow temporarily and then remove the execution environment. This approach is suitable for running workflows in temporary environments.
+### Temporary Execution
+
+Execute a workflow temporarily and then remove the execution environment. This approach is suitable for running workflows in temporary environments:
 
 ```go
 r := runtime.New(runtime.Config{
