@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/ext
 
-go 1.22.4
+go 1.22.5
 
 require (
 	github.com/andybalholm/brotli v1.1.0
