@@ -20,7 +20,7 @@ import (
 // WriteNode represents a node responsible for writing data to an io.WriteCloser.
 type WriteNode struct {
 	*node.OneToOneNode
-	fs     FS
+	fs     FileSystem
 	flag   int
 	perm   os.FileMode
 	writer io.WriteCloser
@@ -37,7 +37,7 @@ type WriteNodeSpec struct {
 const KindWrite = "write"
 
 // NewWriteNode creates a new WriteNode with the provided writer.
-func NewWriteNode(fs FS) *WriteNode {
+func NewWriteNode(fs FileSystem) *WriteNode {
 	n := &WriteNode{
 		fs:   fs,
 		flag: os.O_WRONLY,
@@ -132,7 +132,7 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 // NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
 func NewWriteNodeCodec() scheme.Codec {
-	fs := NewOsFs()
+	fs := NewOSFileSystem()
 	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
 		n := NewWriteNode(fs)
 		flag := os.O_WRONLY | os.O_CREATE

@@ -21,7 +21,7 @@ import (
 // ReadNode represents a node responsible for reading data from an io.ReadCloser.
 type ReadNode struct {
 	*node.OneToOneNode
-	fs     FS
+	fs     FileSystem
 	flag   int
 	perm   os.FileMode
 	reader io.ReadCloser
@@ -37,7 +37,7 @@ type ReadNodeSpec struct {
 const KindRead = "read"
 
 // NewReadNode creates a new ReadNode with the provided file system.
-func NewReadNode(fs FS) *ReadNode {
+func NewReadNode(fs FileSystem) *ReadNode {
 	n := &ReadNode{
 		fs:   fs,
 		flag: os.O_RDONLY,
@@ -135,7 +135,7 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 // NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.
 func NewReadNodeCodec() scheme.Codec {
-	fs := NewOsFs()
+	fs := NewOSFileSystem()
 	return scheme.CodecWithType(func(spec *ReadNodeSpec) (node.Node, error) {
 		n := NewReadNode(fs)
 		if spec.Filename != "" {

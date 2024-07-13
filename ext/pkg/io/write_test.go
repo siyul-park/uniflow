@@ -18,7 +18,7 @@ import (
 )
 
 func TestNewWriteNode(t *testing.T) {
-	n := NewWriteNode(NewOsFs())
+	n := NewWriteNode(NewOSFileSystem())
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
@@ -29,7 +29,7 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		buf := bytes.NewBuffer(nil)
-		fs := OpenFileFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+		fs := FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
 			return &nopReadWriteCloser{buf}, nil
 		})
 
@@ -68,7 +68,7 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		buf := bytes.NewBuffer(nil)
-		fs := OpenFileFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+		fs := FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
 			return &nopReadWriteCloser{buf}, nil
 		})
 

@@ -5,20 +5,23 @@ import (
 	"os"
 )
 
-type FS interface {
+// FileSystem interface abstracts the file operations.
+type FileSystem interface {
 	OpenFile(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
 }
 
-type OpenFileFunc func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
+// FileOpenFunc is a function type that matches the signature of os.OpenFile.
+type FileOpenFunc func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
 
 type nopReadWriteCloser struct {
 	io.ReadWriter
 }
 
-var _ FS = (OpenFileFunc)(nil)
+var _ FileSystem = (FileOpenFunc)(nil)
 
-func NewOsFs() FS {
-	return OpenFileFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+// NewOSFileSystem creates a new FileSystem that wraps os.OpenFile with special cases for stdin, stdout, and stderr.
+func NewOSFileSystem() FileSystem {
+	return FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
 		switch name {
 		case "/dev/stdin", "stdin":
 			return &nopReadWriteCloser{os.Stdin}, nil
@@ -32,10 +35,12 @@ func NewOsFs() FS {
 	})
 }
 
-func (f OpenFileFunc) OpenFile(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+// OpenFile opens a file with the given name, flag, and permissions.
+func (f FileOpenFunc) OpenFile(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
 	return f(name, flag, perm)
 }
 
+// Close is a no-op for ReadWriteCloserWrapper since stdin, stdout, and stderr shouldn't be closed.
 func (c *nopReadWriteCloser) Close() error {
 	return nil
 }
