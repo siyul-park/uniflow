@@ -14,7 +14,7 @@ func TestSymbol_Getter(t *testing.T) {
 	n := node.NewOneToOneNode(nil)
 	defer n.Close()
 
-	spec := &spec.Meta{
+	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      faker.UUIDHyphenated(),
 		Namespace: spec.DefaultNamespace,
@@ -32,15 +32,16 @@ func TestSymbol_Getter(t *testing.T) {
 		},
 	}
 
-	sym := New(spec, n)
+	sym := &Symbol{
+		Spec: meta,
+		Node: n,
+	}
 
-	assert.Equal(t, spec.GetID(), sym.ID())
-	assert.Equal(t, spec.GetKind(), sym.Kind())
-	assert.Equal(t, spec.GetNamespace(), sym.Namespace())
-	assert.Equal(t, spec.GetName(), sym.Name())
-	assert.Equal(t, spec.GetAnnotations(), sym.Annotations())
-	assert.Equal(t, spec, sym.Spec())
-	assert.Equal(t, n, sym.Unwrap())
+	assert.Equal(t, meta.GetID(), sym.ID())
+	assert.Equal(t, meta.GetKind(), sym.Kind())
+	assert.Equal(t, meta.GetNamespace(), sym.Namespace())
+	assert.Equal(t, meta.GetName(), sym.Name())
+	assert.Equal(t, meta.GetAnnotations(), sym.Annotations())
 
 	p1 := n.In(node.PortIn)
 	p2 := sym.In(node.PortIn)

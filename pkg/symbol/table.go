@@ -1,7 +1,6 @@
 package symbol
 
 import (
-	"reflect"
 	"slices"
 	"sync"
 
@@ -47,25 +46,25 @@ func NewTable(scheme *scheme.Scheme, opts ...TableOptions) *Table {
 }
 
 // Insert adds a new symbol to the table based on the provided spec.
-func (t *Table) Insert(spec spec.Spec) (*Symbol, error) {
+func (t *Table) Insert(s spec.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	spec, err := t.scheme.Decode(spec)
+	s, err := t.scheme.Decode(s)
 	if err != nil {
 		return nil, err
 	}
 
-	if sym, ok := t.symbols[spec.GetID()]; ok && reflect.DeepEqual(sym.spec, spec) {
-		return nil, nil
-	}
-
-	n, err := t.scheme.Compile(spec)
+	n, err := t.scheme.Compile(s)
 	if err != nil {
 		return nil, err
 	}
 
-	sym := New(spec, n)
+	sym := &Symbol{
+		Spec:   s,
+		Node:   n,
+		linked: make(map[string][]spec.PortLocation),
+	}
 
 	if _, err := t.free(sym.ID()); err != nil {
 		return nil, err
@@ -178,10 +177,9 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 }
 
 func (t *Table) links(sym *Symbol) error {
-	for name, locations := range sym.links {
+	for name, locations := range sym.Links() {
 		out := sym.Out(name)
 		if out == nil {
-			sym.unlinks[name] = locations
 			continue
 		}
 
@@ -193,24 +191,19 @@ func (t *Table) links(sym *Symbol) error {
 				}
 			}
 
-			if id != (uuid.UUID{}) {
-				if ref, ok := t.symbols[id]; ok {
-					if ref.Namespace() == sym.Namespace() {
-						if in := ref.In(location.Port); in != nil {
-							out.Link(in)
+			if ref, ok := t.symbols[id]; ok {
+				if ref.Namespace() == sym.Namespace() {
+					if in := ref.In(location.Port); in != nil {
+						out.Link(in)
 
-							ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
-								ID:   sym.ID(),
-								Name: location.Name,
-								Port: name,
-							})
-							continue
-						}
+						ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
+							ID:   sym.ID(),
+							Name: location.Name,
+							Port: name,
+						})
 					}
 				}
 			}
-
-			sym.unlinks[name] = append(sym.unlinks[name], location)
 		}
 	}
 
@@ -219,13 +212,13 @@ func (t *Table) links(sym *Symbol) error {
 			continue
 		}
 
-		for name, locations := range ref.unlinks {
+		for name, locations := range ref.Links() {
 			out := ref.Out(name)
 			if out == nil {
 				continue
 			}
 
-			for i, location := range locations {
+			for _, location := range locations {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
 					if in := sym.In(location.Port); in != nil {
 						out.Link(in)
@@ -235,11 +228,6 @@ func (t *Table) links(sym *Symbol) error {
 							Name: location.Name,
 							Port: name,
 						})
-
-						ref.unlinks[name] = append(locations[:i], locations[i+1:]...)
-						if len(ref.unlinks[name]) == 0 {
-							delete(ref.unlinks, name)
-						}
 					}
 				}
 			}
@@ -254,17 +242,13 @@ func (t *Table) unlinks(sym *Symbol) error {
 		return err
 	}
 
-	for name, locations := range sym.links {
+	for name, locations := range sym.Links() {
 		for _, location := range locations {
 			id := location.ID
 			if location.Name != "" {
 				if namespace, ok := t.namespaces[sym.Namespace()]; ok {
 					id = namespace[location.Name]
 				}
-			}
-
-			if id == (uuid.UUID{}) {
-				continue
 			}
 
 			ref, ok := t.symbols[id]
@@ -284,28 +268,6 @@ func (t *Table) unlinks(sym *Symbol) error {
 			} else {
 				delete(ref.linked, location.Port)
 			}
-		}
-	}
-
-	for name, locations := range sym.linked {
-		for i, location := range locations {
-			ref := t.symbols[location.ID]
-
-			var unlink spec.PortLocation
-			if location.Name == "" {
-				unlink = spec.PortLocation{
-					ID:   sym.ID(),
-					Port: name,
-				}
-			} else {
-				unlink = spec.PortLocation{
-					Name: location.Name,
-					Port: name,
-				}
-			}
-
-			sym.linked[name] = append(locations[:i], locations[i+1:]...)
-			ref.unlinks[location.Port] = append(ref.unlinks[location.Port], unlink)
 		}
 	}
 
@@ -394,11 +356,7 @@ func (t *Table) active(sym *Symbol) bool {
 		}
 		visits[sym] = struct{}{}
 
-		if len(sym.unlinks) > 0 {
-			return false
-		}
-
-		for _, locations := range sym.links {
+		for _, locations := range sym.Links() {
 			for _, location := range locations {
 				id := location.ID
 				if location.Name != "" {
@@ -407,7 +365,11 @@ func (t *Table) active(sym *Symbol) bool {
 					}
 				}
 
-				next := t.symbols[id]
+				next, ok := t.symbols[id]
+				if !ok {
+					return false
+				}
+
 				nexts = append(nexts, next)
 			}
 		}

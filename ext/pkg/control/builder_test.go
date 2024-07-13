@@ -22,7 +22,10 @@ func TestAddToHook(t *testing.T) {
 	n := NewBlockNode(node.NewOneToOneNode(nil))
 	defer n.Close()
 
-	sym := symbol.New(&spec.Meta{}, n)
+	sym := &symbol.Symbol{
+		Spec: &spec.Meta{},
+		Node: n,
+	}
 
 	err = h.Load(sym)
 	assert.NoError(t, err)

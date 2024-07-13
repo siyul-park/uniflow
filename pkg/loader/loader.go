@@ -2,6 +2,7 @@ package loader
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -82,10 +83,12 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 				namespace = spec.GetNamespace()
 			}
 
-			if sym, err := l.table.Insert(spec); err != nil {
-				return nil, err
-			} else if sym == nil {
+			if sym, ok := l.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
 				continue
+			}
+
+			if _, err := l.table.Insert(spec); err != nil {
+				return nil, err
 			}
 
 			for _, locations := range spec.GetLinks() {
@@ -156,8 +159,6 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 		if sym, err := l.table.Insert(spec); err != nil {
 			return nil, err
 		} else if sym != nil {
-			symbols = append(symbols, sym)
-		} else if sym, ok := l.table.LookupByID(spec.GetID()); ok {
 			symbols = append(symbols, sym)
 		}
 	}

@@ -10,14 +10,14 @@ import (
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*HTTPListenNode); ok {
 				return n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*HTTPListenNode); ok {
 				return n.Shutdown()
 			}

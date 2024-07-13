@@ -184,7 +184,10 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				}
 				return nil, err
 			}
-			nodes = append(nodes, symbol.New(spec, n))
+			nodes = append(nodes, &symbol.Symbol{
+				Spec: spec,
+				Node: n,
+			})
 		}
 		return NewBlockNode(nodes...), nil
 	})

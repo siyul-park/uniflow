@@ -22,7 +22,10 @@ func TestHook_LoadHook(t *testing.T) {
 
 	hooks.AddLoadHook(h)
 
-	err := hooks.Load(symbol.New(&spec.Meta{}, n))
+	err := hooks.Load(&symbol.Symbol{
+		Spec: &spec.Meta{},
+		Node: n,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }
@@ -40,7 +43,10 @@ func TestHook_UnloadHook(t *testing.T) {
 
 	hooks.AddUnloadHook(h)
 
-	err := hooks.Unload(symbol.New(&spec.Meta{}, n))
+	err := hooks.Unload(&symbol.Symbol{
+		Spec: &spec.Meta{},
+		Node: n,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, count)
 }

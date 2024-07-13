@@ -12,14 +12,17 @@ import (
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*BlockNode); ok {
 				nodes := n.Nodes()
 				for i := len(nodes) - 1; i >= 0; i-- {
 					n := nodes[i]
 					sym, ok := n.(*symbol.Symbol)
 					if !ok {
-						sym = symbol.New(&spec.Meta{}, n)
+						sym = &symbol.Symbol{
+							Spec: &spec.Meta{},
+							Node: n,
+						}
 					}
 					if err := h.Load(sym); err != nil {
 						return err
@@ -29,13 +32,16 @@ func AddToHook() hook.Register {
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*BlockNode); ok {
 				nodes := n.Nodes()
 				for _, n := range nodes {
 					sym, ok := n.(*symbol.Symbol)
 					if !ok {
-						sym = symbol.New(&spec.Meta{}, n)
+						sym = &symbol.Symbol{
+							Spec: &spec.Meta{},
+							Node: n,
+						}
 					}
 					if err := h.Unload(sym); err != nil {
 						return err

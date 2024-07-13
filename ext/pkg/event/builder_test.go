@@ -23,7 +23,10 @@ func TestAddToHook(t *testing.T) {
 	n := node.NewManyToOneNode(nil)
 	defer n.Close()
 
-	sym := symbol.New(&spec.Meta{}, n)
+	sym := &symbol.Symbol{
+		Spec: &spec.Meta{},
+		Node: n,
+	}
 
 	err = h.Load(sym)
 	assert.NoError(t, err)

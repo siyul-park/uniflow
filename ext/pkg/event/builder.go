@@ -13,14 +13,14 @@ func AddToHook(broker *Broker) hook.Register {
 
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*TriggerNode); ok {
 				n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
-			n := sym.Unwrap()
+			n := sym.Node
 			if n, ok := n.(*TriggerNode); ok {
 				n.Shutdown()
 			}
@@ -28,12 +28,12 @@ func AddToHook(broker *Broker) hook.Register {
 		}))
 
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
-			e := New(sym.Spec())
+			e := New(sym.Spec)
 			load.Produce(e)
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
-			e := New(sym.Spec())
+			e := New(sym.Spec)
 			unload.Produce(e)
 			return nil
 		}))

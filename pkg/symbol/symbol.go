@@ -9,72 +9,54 @@ import (
 
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
-	spec    spec.Spec
-	node    node.Node
-	links   map[string][]spec.PortLocation
-	unlinks map[string][]spec.PortLocation
-	linked  map[string][]spec.PortLocation
+	Spec   spec.Spec
+	Node   node.Node
+	linked map[string][]spec.PortLocation
 }
 
 var _ node.Node = (*Symbol)(nil)
 
-// New creates and returns a new Symbol instance.
-func New(s spec.Spec, n node.Node) *Symbol {
-	return &Symbol{
-		spec:    s,
-		node:    n,
-		links:   s.GetLinks(),
-		unlinks: make(map[string][]spec.PortLocation),
-		linked:  make(map[string][]spec.PortLocation),
-	}
-}
-
 // ID returns the unique identifier of the Symbol.
 func (s *Symbol) ID() uuid.UUID {
-	return s.spec.GetID()
+	return s.Spec.GetID()
 }
 
 // Kind returns the kind or type of the Symbol.
 func (s *Symbol) Kind() string {
-	return s.spec.GetKind()
+	return s.Spec.GetKind()
 }
 
 // Namespace returns the namespace of the Symbol.
 func (s *Symbol) Namespace() string {
-	return s.spec.GetNamespace()
+	return s.Spec.GetNamespace()
 }
 
 // Name returns the human-readable name of the Symbol.
 func (s *Symbol) Name() string {
-	return s.spec.GetName()
+	return s.Spec.GetName()
 }
 
 // Annotations returns the annotations associated with the Symbol.
 func (s *Symbol) Annotations() map[string]string {
-	return s.spec.GetAnnotations()
+	return s.Spec.GetAnnotations()
 }
 
-// Spec returns the Spec associated with the Symbol.
-func (s *Symbol) Spec() spec.Spec {
-	return s.spec
-}
-
-// Unwrap returns the underlying Node wrapped by the Symbol.
-func (s *Symbol) Unwrap() node.Node {
-	return s.node
+// Links returns the links associated with the Symbol.
+func (s *Symbol) Links() map[string][]spec.PortLocation {
+	return s.Spec.GetLinks()
 }
 
 // In returns the input port with the specified name.
 func (s *Symbol) In(name string) *port.InPort {
-	return s.node.In(name)
+	return s.Node.In(name)
 }
 
 // Out returns the output port with the specified name.
 func (s *Symbol) Out(name string) *port.OutPort {
-	return s.node.Out(name)
+	return s.Node.Out(name)
 }
 
 // Close frees all resources held by the Symbol.
 func (s *Symbol) Close() error {
-	return s.node.Close()
+	return s.Node.Close()
 }
