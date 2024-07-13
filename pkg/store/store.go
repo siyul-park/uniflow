@@ -164,7 +164,7 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 		spc.SetID(uuid.Must(uuid.NewV7()))
 	}
 
-	f, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
+	f, _ := Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()).Encode()
 
 	doc, err := s.nodes.FindOne(ctx, f)
 	if err != nil {
@@ -205,7 +205,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 		ids[i] = spc.GetID()
 	}
 
-	f, _ := Where[uuid.UUID](spec.KeyID).IN(ids...).Encode()
+	f, _ := Where[uuid.UUID](spec.KeyID).In(ids...).Encode()
 
 	docs, err := s.nodes.FindMany(ctx, f, &database.FindOptions{
 		Limit: lo.ToPtr(len(ids)),
@@ -246,7 +246,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 			return 0, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
-		f, _ := Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()).Encode()
+		f, _ := Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()).Encode()
 
 		if ok, err := s.nodes.UpdateOne(ctx, f, doc); err != nil {
 			return count, err

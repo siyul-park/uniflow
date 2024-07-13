@@ -57,8 +57,8 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 		var filter *store.Filter
 		for _, v := range specs {
-			filter = filter.And(store.Where[uuid.UUID](spec.KeyID).EQ(v.GetID()).
-				And(store.Where[string](spec.KeyNamespace).EQ(v.GetNamespace())))
+			filter = filter.And(store.Where[uuid.UUID](spec.KeyID).Equal(v.GetID()).
+				And(store.Where[string](spec.KeyNamespace).Equal(v.GetNamespace())))
 		}
 
 		_, err = config.Store.DeleteMany(ctx, filter)

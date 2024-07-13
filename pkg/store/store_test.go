@@ -58,7 +58,7 @@ func TestStore_Watch(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, meta)
 	_, _ = st.UpdateOne(ctx, meta)
-	_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+	_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 }
 
 func TestStore_InsertOne(t *testing.T) {
@@ -192,13 +192,13 @@ func TestStore_DeleteOne(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	ok, err := st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+	ok, err := st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	ok, err = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+	ok, err = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.True(t, ok)
 }
@@ -226,13 +226,13 @@ func TestStore_DeleteMany(t *testing.T) {
 		})
 	}
 
-	count, err := st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
+	count, err := st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 
 	_, _ = st.InsertMany(ctx, spcs)
 
-	count, err = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
+	count, err = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, len(spcs), count)
 }
@@ -253,7 +253,7 @@ func TestStore_FindOne(t *testing.T) {
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	def, err := st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+	def, err := st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.NotNil(t, def)
 	assert.Equal(t, meta.GetID(), def.GetID())
@@ -284,7 +284,7 @@ func TestStore_FindMany(t *testing.T) {
 
 	_, _ = st.InsertMany(ctx, specs)
 
-	res, err := st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
+	res, err := st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
@@ -435,7 +435,7 @@ func BenchmarkStore_DeleteOne(b *testing.B) {
 
 		b.StartTimer()
 
-		_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+		_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 	}
 }
 
@@ -471,7 +471,7 @@ func BenchmarkStore_DeleteMany(b *testing.B) {
 
 		b.StartTimer()
 
-		_, _ = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
+		_, _ = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 
 }
@@ -502,7 +502,7 @@ func BenchmarkStore_FindOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+		_, _ = st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 	}
 }
 
@@ -534,6 +534,6 @@ func BenchmarkStore_FindMany(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).IN(ids...))
+		_, _ = st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 }

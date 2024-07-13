@@ -67,7 +67,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := config.Store.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...), &database.FindOptions{
+		origins, err := config.Store.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {

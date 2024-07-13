@@ -57,7 +57,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			filter := store.Where[string](spec.KeyNamespace).EQ(namespace)
+			filter := store.Where[string](spec.KeyNamespace).Equal(namespace)
 			specs, err := config.Store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 			if err != nil {
 				return err

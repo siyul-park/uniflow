@@ -25,7 +25,7 @@ func CreateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 		if err != nil {
 			return nil, err
 		}
-		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
+		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 }
 
@@ -49,7 +49,7 @@ func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 		if _, err := s.UpdateMany(ctx, patches); err != nil {
 			return nil, err
 		}
-		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...))
+		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 }
 
@@ -65,7 +65,7 @@ func DeleteNodes(s *store.Store) func(context.Context, *store.Filter) ([]spec.Sp
 			ids = append(ids, exist.GetID())
 		}
 
-		if _, err := s.DeleteMany(ctx, store.Where[uuid.UUID](spec.KeyID).IN(ids...)); err != nil {
+		if _, err := s.DeleteMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...)); err != nil {
 			return nil, err
 		}
 		return exists, nil

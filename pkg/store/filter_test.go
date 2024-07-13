@@ -19,27 +19,27 @@ func TestFilterHelper(t *testing.T) {
 		expect *Filter
 	}{
 		{
-			when:   Where[uuid.UUID](spec.KeyID).EQ(id),
+			when:   Where[uuid.UUID](spec.KeyID).Equal(id),
 			expect: &Filter{OP: database.EQ, Key: spec.KeyID, Value: id},
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).NE(id),
+			when:   Where[uuid.UUID](spec.KeyID).NotEqual(id),
 			expect: &Filter{OP: database.NE, Key: spec.KeyID, Value: id},
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).LT(id),
+			when:   Where[uuid.UUID](spec.KeyID).LessThan(id),
 			expect: &Filter{OP: database.LT, Key: spec.KeyID, Value: id},
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).LTE(id),
+			when:   Where[uuid.UUID](spec.KeyID).LessThanOrEqual(id),
 			expect: &Filter{OP: database.LTE, Key: spec.KeyID, Value: id},
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).IN(id),
+			when:   Where[uuid.UUID](spec.KeyID).In(id),
 			expect: &Filter{OP: database.IN, Key: spec.KeyID, Value: []any{id}},
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).NotIN(id),
+			when:   Where[uuid.UUID](spec.KeyID).NotIn(id),
 			expect: &Filter{OP: database.NIN, Key: spec.KeyID, Value: []any{id}},
 		},
 		{
@@ -76,27 +76,27 @@ func TestFilter_Encode(t *testing.T) {
 		expect *database.Filter
 	}{
 		{
-			when:   Where[uuid.UUID](spec.KeyID).EQ(id),
+			when:   Where[uuid.UUID](spec.KeyID).Equal(id),
 			expect: database.Where(spec.KeyID).Equal(pk),
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).NE(id),
+			when:   Where[uuid.UUID](spec.KeyID).NotEqual(id),
 			expect: database.Where(spec.KeyID).NotEqual(pk),
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).LT(id),
+			when:   Where[uuid.UUID](spec.KeyID).LessThan(id),
 			expect: database.Where(spec.KeyID).LessThan(pk),
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).LTE(id),
+			when:   Where[uuid.UUID](spec.KeyID).LessThanOrEqual(id),
 			expect: database.Where(spec.KeyID).LessThanOrEqual(pk),
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).IN(id),
+			when:   Where[uuid.UUID](spec.KeyID).In(id),
 			expect: database.Where(spec.KeyID).In(pk),
 		},
 		{
-			when:   Where[uuid.UUID](spec.KeyID).NotIN(id),
+			when:   Where[uuid.UUID](spec.KeyID).NotIn(id),
 			expect: database.Where(spec.KeyID).NotIn(pk),
 		},
 		{

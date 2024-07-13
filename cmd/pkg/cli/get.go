@@ -38,7 +38,7 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 
 		var filter *store.Filter
 		if namespace != "" {
-			filter = store.Where[string](spec.KeyNamespace).EQ(namespace)
+			filter = store.Where[string](spec.KeyNamespace).Equal(namespace)
 		}
 
 		specs, err := config.Store.FindMany(ctx, filter)

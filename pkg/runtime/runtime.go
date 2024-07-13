@@ -77,8 +77,8 @@ func (r *Runtime) LookupByName(ctx context.Context, name string) (*symbol.Symbol
 		return s, nil
 	}
 
-	filter := store.Where[string](spec.KeyNamespace).EQ(r.namespace).
-		And(store.Where[string](spec.KeyName).EQ(name))
+	filter := store.Where[string](spec.KeyNamespace).Equal(r.namespace).
+		And(store.Where[string](spec.KeyName).Equal(name))
 
 	s, err := r.store.FindOne(ctx, filter)
 	if err != nil || s == nil {
@@ -98,7 +98,7 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 
 // Free removes a spec from the Runtime and returns whether it was successfully deleted.
 func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
-	ok, err := r.store.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).EQ(spc.GetID()))
+	ok, err := r.store.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()))
 	if err != nil {
 		return false, err
 	}

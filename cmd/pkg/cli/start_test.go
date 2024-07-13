@@ -79,7 +79,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				if r, _ := st.FindOne(ctx, store.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID())); r != nil {
+				if r, _ := st.FindOne(ctx, store.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID())); r != nil {
 					return
 				}
 			}

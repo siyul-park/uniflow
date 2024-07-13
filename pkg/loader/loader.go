@@ -57,14 +57,14 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 
 			switch k := key.(type) {
 			case uuid.UUID:
-				filter = filter.Or(store.Where[uuid.UUID](spec.KeyID).EQ(k))
+				filter = filter.Or(store.Where[uuid.UUID](spec.KeyID).Equal(k))
 			case string:
-				filter = filter.Or(store.Where[string](spec.KeyName).EQ(k))
+				filter = filter.Or(store.Where[string](spec.KeyName).Equal(k))
 			}
 		}
 
 		if namespace != "" {
-			filter = filter.And(store.Where[string](spec.KeyNamespace).EQ(namespace))
+			filter = filter.And(store.Where[string](spec.KeyNamespace).Equal(namespace))
 		}
 
 		specs, err := l.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
@@ -143,7 +143,7 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 
 	var filter *store.Filter
 	if l.namespace != "" {
-		filter = store.Where[string](spec.KeyNamespace).EQ(l.namespace)
+		filter = store.Where[string](spec.KeyNamespace).Equal(l.namespace)
 	}
 
 	specs, err := l.store.FindMany(ctx, filter)
@@ -176,7 +176,7 @@ func (l *Loader) Watch(ctx context.Context) error {
 
 	var filter *store.Filter
 	if l.namespace != "" {
-		filter = store.Where[string](spec.KeyNamespace).EQ(l.namespace)
+		filter = store.Where[string](spec.KeyNamespace).Equal(l.namespace)
 	}
 
 	s, err := l.store.Watch(ctx, filter)

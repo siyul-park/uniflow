@@ -149,7 +149,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).EQ(meta.GetID()))
+		st.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 
 		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)

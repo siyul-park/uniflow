@@ -82,7 +82,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").Equal(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -162,7 +162,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").EQ(id))
+	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").Equal(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

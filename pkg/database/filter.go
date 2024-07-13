@@ -126,7 +126,7 @@ func (fh *filterHelper) IsNull() *Filter {
 	}
 }
 
-// IsNotNull creates an is-no-null filter.
+// IsNotNull creates an is-not-null filter.
 func (fh *filterHelper) IsNotNull() *Filter {
 	return &Filter{
 		OP:  NNULL,

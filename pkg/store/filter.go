@@ -23,8 +23,8 @@ func Where[T any](key string) *filterHelper[T] {
 	return &filterHelper[T]{key: key}
 }
 
-// EQ creates an equality filter.
-func (fh *filterHelper[T]) EQ(value T) *Filter {
+// Equal creates an equality filter.
+func (fh *filterHelper[T]) Equal(value T) *Filter {
 	return &Filter{
 		OP:    database.EQ,
 		Key:   fh.key,
@@ -32,8 +32,8 @@ func (fh *filterHelper[T]) EQ(value T) *Filter {
 	}
 }
 
-// NE creates a not-equal filter.
-func (fh *filterHelper[T]) NE(value T) *Filter {
+// NotEqual creates a not-equal filter.
+func (fh *filterHelper[T]) NotEqual(value T) *Filter {
 	return &Filter{
 		OP:    database.NE,
 		Key:   fh.key,
@@ -41,8 +41,8 @@ func (fh *filterHelper[T]) NE(value T) *Filter {
 	}
 }
 
-// LT creates a less-than filter.
-func (fh *filterHelper[T]) LT(value T) *Filter {
+// LessThan creates a less-than filter.
+func (fh *filterHelper[T]) LessThan(value T) *Filter {
 	return &Filter{
 		OP:    database.LT,
 		Key:   fh.key,
@@ -50,8 +50,8 @@ func (fh *filterHelper[T]) LT(value T) *Filter {
 	}
 }
 
-// LTE creates a less-than-or-equal filter.
-func (fh *filterHelper[T]) LTE(value T) *Filter {
+// LessThanOrEqual creates a less-than-or-equal filter.
+func (fh *filterHelper[T]) LessThanOrEqual(value T) *Filter {
 	return &Filter{
 		OP:    database.LTE,
 		Key:   fh.key,
@@ -59,8 +59,8 @@ func (fh *filterHelper[T]) LTE(value T) *Filter {
 	}
 }
 
-// GT creates a greater-than filter.
-func (fh *filterHelper[T]) GT(value T) *Filter {
+// GreaterThan creates a greater-than filter.
+func (fh *filterHelper[T]) GreaterThan(value T) *Filter {
 	return &Filter{
 		OP:    database.GT,
 		Key:   fh.key,
@@ -68,8 +68,8 @@ func (fh *filterHelper[T]) GT(value T) *Filter {
 	}
 }
 
-// GTE creates a greater-than-or-equal filter.
-func (fh *filterHelper[T]) GTE(value T) *Filter {
+// GreaterThanOrEqual creates a greater-than-or-equal filter.
+func (fh *filterHelper[T]) GreaterThanOrEqual(value T) *Filter {
 	return &Filter{
 		OP:    database.GTE,
 		Key:   fh.key,
@@ -77,8 +77,8 @@ func (fh *filterHelper[T]) GTE(value T) *Filter {
 	}
 }
 
-// IN creates an "in" filter.
-func (fh *filterHelper[T]) IN(slice ...T) *Filter {
+// In creates an in filter.
+func (fh *filterHelper[T]) In(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
 		value[i] = e
@@ -90,8 +90,8 @@ func (fh *filterHelper[T]) IN(slice ...T) *Filter {
 	}
 }
 
-// NotIN creates a "not in" filter.
-func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
+// NotIn creates a not-in filter.
+func (fh *filterHelper[T]) NotIn(slice ...T) *Filter {
 	value := make([]any, len(slice))
 	for i, e := range slice {
 		value[i] = e
@@ -103,7 +103,7 @@ func (fh *filterHelper[T]) NotIN(slice ...T) *Filter {
 	}
 }
 
-// IsNull creates an "is null" filter.
+// IsNull creates an is-null filter.
 func (fh *filterHelper[T]) IsNull() *Filter {
 	return &Filter{
 		OP:  database.NULL,
@@ -111,7 +111,7 @@ func (fh *filterHelper[T]) IsNull() *Filter {
 	}
 }
 
-// IsNotNull creates an "is not null" filter.
+// IsNotNull creates an is-not-null filter.
 func (fh *filterHelper[T]) IsNotNull() *Filter {
 	return &Filter{
 		OP:  database.NNULL,
@@ -119,7 +119,7 @@ func (fh *filterHelper[T]) IsNotNull() *Filter {
 	}
 }
 
-// And creates an "and" filter.
+// Or creates an or filter.
 func (ft *Filter) And(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
@@ -134,7 +134,7 @@ func (ft *Filter) And(x ...*Filter) *Filter {
 	}
 }
 
-// Or creates an "or" filter.
+// Or creates an or filter.
 func (ft *Filter) Or(x ...*Filter) *Filter {
 	var v []*Filter
 	for _, e := range append([]*Filter{ft}, x...) {
