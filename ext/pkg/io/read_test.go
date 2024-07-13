@@ -18,43 +18,87 @@ import (
 )
 
 func TestNewReadNode(t *testing.T) {
-	f, _ := os.CreateTemp("", "*")
-	defer f.Close()
-
-	n := NewReadNode(f)
+	n := NewReadNode(NewOsFs())
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestReadNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+	t.Run("Static", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	contents := []byte(faker.Sentence())
-	r := bytes.NewReader(contents)
+		data := []byte(faker.Sentence())
 
-	n := NewReadNode(io.NopCloser(r))
-	defer n.Close()
+		buf := bytes.NewBuffer(data)
+		fs := OpenFileFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+			return &nopReadWriteCloser{buf}, nil
+		})
 
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
+		n := NewReadNode(fs)
+		defer n.Close()
 
-	proc := process.New()
-	defer proc.Exit(nil)
+		err := n.Open("")
+		assert.NoError(t, err)
 
-	inWriter := in.Open(proc)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-	inPayload := types.NewInt(len(contents))
-	inPck := packet.New(inPayload)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	inWriter.Write(inPck)
+		inWriter := in.Open(proc)
 
-	select {
-	case outPck := <-inWriter.Receive():
-		assert.Equal(t, types.NewString(string(contents)), outPck.Payload())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		inPayload := types.NewInt(len(data))
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			assert.Equal(t, types.NewString(string(data)), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("Dynamic", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		data := []byte(faker.Sentence())
+
+		buf := bytes.NewBuffer(data)
+		fs := OpenFileFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+			return &nopReadWriteCloser{buf}, nil
+		})
+
+		n := NewReadNode(fs)
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+
+		inPayload := types.NewSlice(
+			types.NewString(""),
+			types.NewInt(len(data)),
+		)
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			assert.Equal(t, types.NewString(string(data)), outPck.Payload())
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
 
 func TestReadNodeCodec_Decode(t *testing.T) {
