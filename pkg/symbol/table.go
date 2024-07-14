@@ -5,8 +5,13 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // TableOptions holds configurations for a Table instance.
@@ -170,7 +175,12 @@ func (t *Table) load(sym *Symbol) error {
 	unlinkeds := map[*Symbol]map[string][]spec.PortLocation{}
 	for _, sym := range linked {
 		if sym.Node == nil {
-			s, err := t.scheme.Decode(sym.Spec)
+			value, err := t.init(sym)
+			if err != nil {
+				return err
+			}
+
+			s, err := t.scheme.Decode(sym.Spec, value)
 			if err != nil {
 				return err
 			}
@@ -191,7 +201,7 @@ func (t *Table) load(sym *Symbol) error {
 			for _, location := range locations {
 				id := location.ID
 				if id == (uuid.UUID{}) {
-					id = t.loopup(sym.Namespace(), location.Name)
+					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
 				if ref, ok := t.symbols[id]; ok {
@@ -218,7 +228,7 @@ func (t *Table) load(sym *Symbol) error {
 			for _, location := range locations {
 				id := location.ID
 				if id == (uuid.UUID{}) {
-					id = t.loopup(sym.Namespace(), location.Name)
+					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
 				if ref, ok := t.symbols[id]; ok {
@@ -275,6 +285,50 @@ func (t *Table) unload(sym *Symbol) error {
 	}
 
 	return nil
+}
+
+func (t *Table) init(sym *Symbol) (any, error) {
+	out := port.NewOut()
+	defer out.Close()
+
+	links := sym.Links()
+	for _, location := range links[node.PortInit] {
+		id := location.ID
+		if id == (uuid.UUID{}) {
+			id = t.lookup(sym.Namespace(), location.Name)
+		}
+
+		if ref, ok := t.symbols[id]; ok {
+			if ref.Namespace() == sym.Namespace() {
+				if in := ref.In(location.Port); in != nil {
+					out.Link(in)
+				}
+			}
+		}
+	}
+
+	proc := process.New()
+
+	writer := out.Open(proc)
+	defer writer.Close()
+
+	outPayload, err := types.TextEncoder.Encode(sym.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	outPck := packet.New(outPayload)
+	backPck := packet.Call(writer, outPck)
+
+	backPayload := backPck.Payload()
+
+	if _, ok := backPayload.(types.Error); ok {
+		err = backPayload.Interface().(error)
+	}
+
+	proc.Exit(err)
+
+	return types.InterfaceOf(backPayload), nil
 }
 
 func (t *Table) links(sym *Symbol) {

@@ -28,7 +28,7 @@ func TestTemplate_ParseAndExecute(t *testing.T) {
 	})
 
 	t.Run("map", func(t *testing.T) {
-		tmlp, err := tmpl.Parse(map[any]any{"key1": "{{.Value}}","key2": 456,})
+		tmlp, err := tmpl.Parse(map[any]any{"key1": "{{.Value}}", "key2": 456})
 		assert.NoError(t, err)
 
 		value, err := tmlp.Execute(map[string]any{"Value": "map value"})
