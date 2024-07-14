@@ -3,6 +3,7 @@ package io
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -17,43 +18,89 @@ import (
 )
 
 func TestNewWriteNode(t *testing.T) {
-	f, _ := os.CreateTemp("", "*")
-	defer f.Close()
-
-	n := NewWriteNode(f)
+	n := NewWriteNode(NewOSFileSystem())
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestWriteNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+	t.Run("Static", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	buf := bytes.NewBuffer(nil)
+		buf := bytes.NewBuffer(nil)
+		fs := FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+			return &nopReadWriteCloser{buf}, nil
+		})
 
-	n := NewWriteNode(&nopReadWriteCloser{buf})
-	defer n.Close()
+		n := NewWriteNode(fs)
+		defer n.Close()
 
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
+		err := n.Open("")
+		assert.NoError(t, err)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-	inWriter := in.Open(proc)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	inPayload := types.NewString(faker.UUIDHyphenated())
-	inPck := packet.New(inPayload)
+		inWriter := in.Open(proc)
 
-	inWriter.Write(inPck)
+		data := faker.UUIDHyphenated()
 
-	select {
-	case outPck := <-inWriter.Receive():
-		assert.Equal(t, types.NewInt64(int64(inPayload.Len())), outPck.Payload())
-		assert.Equal(t, types.NewString(buf.String()), inPayload)
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		inPayload := types.NewString(data)
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			assert.Equal(t, types.NewInt64(int64(len(data))), outPck.Payload())
+			assert.Equal(t, buf.String(), data)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("Dynamic", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		buf := bytes.NewBuffer(nil)
+		fs := FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+			return &nopReadWriteCloser{buf}, nil
+		})
+
+		n := NewWriteNode(fs)
+		defer n.Close()
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+
+		data := faker.UUIDHyphenated()
+
+		inPayload := types.NewSlice(
+			types.NewString(""),
+			types.NewString(data),
+		)
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			assert.Equal(t, types.NewInt64(int64(len(data))), outPck.Payload())
+			assert.Equal(t, buf.String(), data)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
 
 func TestWriteNodeCodec_Decode(t *testing.T) {
