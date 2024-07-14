@@ -48,15 +48,24 @@ func (s *Symbol) Links() map[string][]spec.PortLocation {
 
 // In returns the input port with the specified name.
 func (s *Symbol) In(name string) *port.InPort {
+	if s.Node == nil {
+		return nil
+	}
 	return s.Node.In(name)
 }
 
 // Out returns the output port with the specified name.
 func (s *Symbol) Out(name string) *port.OutPort {
+	if s.Node == nil {
+		return nil
+	}
 	return s.Node.Out(name)
 }
 
 // Close frees all resources held by the Symbol.
 func (s *Symbol) Close() error {
+	if s.Node == nil {
+		return nil
+	}
 	return s.Node.Close()
 }
