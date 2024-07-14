@@ -16,6 +16,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHTTPNodeCodec_Decode(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	}))
+	defer s.Close()
+
+	codec := NewHTTPNodeCodec()
+
+	spec := &HTTPNodeSpec{
+		URL: "http://localhost:3000/",
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewHTTPNode(t *testing.T) {
 	n := NewHTTPNode(&url.URL{})
 	assert.NotNil(t, n)
@@ -57,23 +74,6 @@ func TestHTTP_SendAndReceive(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
-}
-
-func TestHTTPNodeCodec_Decode(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-	}))
-	defer s.Close()
-
-	codec := NewHTTPNodeCodec()
-
-	spec := &HTTPNodeSpec{
-		URL: "http://localhost:3000/",
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkHTTPNode_SendAndReceive(b *testing.B) {

@@ -10,6 +10,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// LoopNodeSpec holds the specifications for creating a LoopNode.
+type LoopNodeSpec struct {
+	spec.Meta `map:",inline"`
+}
+
 // LoopNode represents a node that Loops over input data in batches.
 type LoopNode struct {
 	tracer   *packet.Tracer
@@ -18,14 +23,16 @@ type LoopNode struct {
 	errPort  *port.OutPort
 }
 
-// LoopNodeSpec holds the specifications for creating a LoopNode.
-type LoopNodeSpec struct {
-	spec.Meta `map:",inline"`
-}
-
 const KindLoop = "loop"
 
 var _ node.Node = (*LoopNode)(nil)
+
+// NewLoopNodeCodec creates a new codec for LoopNodeSpec.
+func NewLoopNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
+		return NewLoopNode(), nil
+	})
+}
 
 // NewLoopNode creates a new LoopNode with default configurations.
 func NewLoopNode() *LoopNode {
@@ -164,11 +171,4 @@ func (n *LoopNode) catch(proc *process.Process) {
 
 		n.tracer.Receive(errWriter, backPck)
 	}
-}
-
-// NewLoopNodeCodec creates a new codec for LoopNodeSpec.
-func NewLoopNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
-		return NewLoopNode(), nil
-	})
 }

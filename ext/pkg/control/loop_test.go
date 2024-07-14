@@ -15,6 +15,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLoopNodeCodec_Decode(t *testing.T) {
+	codec := NewLoopNodeCodec()
+
+	spec := &LoopNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewLoopNode(t *testing.T) {
 	n := NewLoopNode()
 	assert.NotNil(t, n)
@@ -175,17 +186,6 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
-}
-
-func TestLoopNodeCodec_Decode(t *testing.T) {
-	codec := NewLoopNodeCodec()
-
-	spec := &LoopNodeSpec{}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkLoopNode_SendAndReceive(b *testing.B) {

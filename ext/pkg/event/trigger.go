@@ -12,6 +12,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// TriggerNodeSpec holds the specifications for creating a TriggerNode.
+type TriggerNodeSpec struct {
+	spec.Meta `map:",inline"`
+	Topic     string `map:"topic"`
+}
+
 // TriggerNode represents a node that triggers events.
 type TriggerNode struct {
 	producer *Producer
@@ -23,12 +29,6 @@ type TriggerNode struct {
 	mu       sync.RWMutex
 }
 
-// TriggerNodeSpec holds the specifications for creating a TriggerNode.
-type TriggerNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Topic     string `map:"topic"`
-}
-
 const KindTrigger = "trigger"
 
 const (
@@ -37,6 +37,16 @@ const (
 )
 
 var _ node.Node = (*TriggerNode)(nil)
+
+// NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
+func NewTriggerNodeCodec(upsteam, downsteam *Broker) scheme.Codec {
+	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
+		p := upsteam.Producer(spec.Topic)
+		c := downsteam.Consumer(spec.Topic)
+
+		return NewTriggerNode(p, c), nil
+	})
+}
 
 // NewTriggerNode creates a new TriggerNode instance.
 func NewTriggerNode(producer *Producer, consumer *Consumer) *TriggerNode {
@@ -182,14 +192,4 @@ func (n *TriggerNode) forward(proc *process.Process) {
 
 		inReader.Receive(packet.None)
 	}
-}
-
-// NewTriggerNodeCodec creates a new codec for TriggerNodeSpec.
-func NewTriggerNodeCodec(upsteam, downsteam *Broker) scheme.Codec {
-	return scheme.CodecWithType(func(spec *TriggerNodeSpec) (node.Node, error) {
-		p := upsteam.Producer(spec.Topic)
-		c := downsteam.Consumer(spec.Topic)
-
-		return NewTriggerNode(p, c), nil
-	})
 }

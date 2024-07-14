@@ -19,6 +19,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestListenNodeCodec_Decode(t *testing.T) {
+	port, err := freeport.GetFreePort()
+	assert.NoError(t, err)
+
+	codec := NewListenNodeCodec()
+
+	spec := &ListenNodeSpec{
+		Protocol: ProtocolHTTP,
+		Port:     port,
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewHTTPListenNode(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
@@ -233,22 +250,6 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 	})
 }
 
-func TestListenNodeCodec_Decode(t *testing.T) {
-	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
-
-	codec := NewListenNodeCodec()
-
-	spec := &ListenNodeSpec{
-		Protocol: ProtocolHTTP,
-		Port:     port,
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
 
 func BenchmarkHTTPListenNode_ServeHTTP(b *testing.B) {
 	n := NewHTTPListenNode("")

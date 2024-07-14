@@ -14,6 +14,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSwitchNodeCodec_Decode(t *testing.T) {
+	codec := NewSwitchNodeCodec(text.NewCompiler())
+
+	spec := &SwitchNodeSpec{
+		Matches: []Condition{
+			{
+				When: "",
+				Port: node.PortWithIndex(node.PortOut, 0),
+			},
+		},
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewSwitchNode(t *testing.T) {
 	n := NewSwitchNode()
 	assert.NotNil(t, n)
@@ -60,24 +78,6 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}
-}
-
-func TestSwitchNodeCodec_Decode(t *testing.T) {
-	codec := NewSwitchNodeCodec(text.NewCompiler())
-
-	spec := &SwitchNodeSpec{
-		Matches: []Condition{
-			{
-				When: "",
-				Port: node.PortWithIndex(node.PortOut, 0),
-			},
-		},
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkSwitchNode_SendAndReceive(b *testing.B) {

@@ -4,7 +4,6 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -14,19 +13,8 @@ func AddToHook() hook.Register {
 		h.AddLoadHook(symbol.LoadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Node
 			if n, ok := n.(*BlockNode); ok {
-				nodes := n.Nodes()
-				for i := len(nodes) - 1; i >= 0; i-- {
-					n := nodes[i]
-					sym, ok := n.(*symbol.Symbol)
-					if !ok {
-						sym = &symbol.Symbol{
-							Spec: &spec.Meta{},
-							Node: n,
-						}
-					}
-					if err := h.Load(sym); err != nil {
-						return err
-					}
+				if err := n.Load(h); err != nil {
+					return err
 				}
 			}
 			return nil
@@ -34,18 +22,8 @@ func AddToHook() hook.Register {
 		h.AddUnloadHook(symbol.UnloadFunc(func(sym *symbol.Symbol) error {
 			n := sym.Node
 			if n, ok := n.(*BlockNode); ok {
-				nodes := n.Nodes()
-				for _, n := range nodes {
-					sym, ok := n.(*symbol.Symbol)
-					if !ok {
-						sym = &symbol.Symbol{
-							Spec: &spec.Meta{},
-							Node: n,
-						}
-					}
-					if err := h.Unload(sym); err != nil {
-						return err
-					}
+				if err := n.Unload(h); err != nil {
+					return err
 				}
 			}
 			return nil

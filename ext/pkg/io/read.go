@@ -18,6 +18,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+
+// ReadNodeSpec holds the specifications for creating a ReadNode.
+type ReadNodeSpec struct {
+	spec.Meta `map:",inline"`
+	Filename  string `map:"filename,omitempty"`
+}
+
 // ReadNode represents a node responsible for reading data from an io.ReadCloser.
 type ReadNode struct {
 	*node.OneToOneNode
@@ -28,13 +35,22 @@ type ReadNode struct {
 	mu     sync.RWMutex
 }
 
-// ReadNodeSpec holds the specifications for creating a ReadNode.
-type ReadNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Filename  string `map:"filename,omitempty"`
-}
-
 const KindRead = "read"
+
+// NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.
+func NewReadNodeCodec() scheme.Codec {
+	fs := NewOSFileSystem()
+	return scheme.CodecWithType(func(spec *ReadNodeSpec) (node.Node, error) {
+		n := NewReadNode(fs)
+		if spec.Filename != "" {
+			if err := n.Open(spec.Filename); err != nil {
+				n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
+}
 
 // NewReadNode creates a new ReadNode with the provided file system.
 func NewReadNode(fs FileSystem) *ReadNode {
@@ -131,19 +147,4 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	} else {
 		return packet.New(v), nil
 	}
-}
-
-// NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.
-func NewReadNodeCodec() scheme.Codec {
-	fs := NewOSFileSystem()
-	return scheme.CodecWithType(func(spec *ReadNodeSpec) (node.Node, error) {
-		n := NewReadNode(fs)
-		if spec.Filename != "" {
-			if err := n.Open(spec.Filename); err != nil {
-				n.Close()
-				return nil, err
-			}
-		}
-		return n, nil
-	})
 }

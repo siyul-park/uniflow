@@ -20,6 +20,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// WebSocketNodeSpec holds the specifications for creating a WebSocketNode.
+type WebSocketNodeSpec struct {
+	spec.Meta `map:",inline"`
+	URL       string        `map:"url"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
+}
+
 // WebSocketNode represents a node for establishing WebSocket client connections.
 type WebSocketNode struct {
 	*WebSocketConnNode
@@ -38,13 +45,6 @@ type WebSocketConnNode struct {
 	errPort *port.OutPort
 }
 
-// WebSocketNodeSpec holds the specifications for creating a WebSocketNode.
-type WebSocketNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URL       string        `map:"url"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
-}
-
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
 	Type int         `map:"type"`
@@ -54,6 +54,20 @@ type WebSocketPayload struct {
 const KindWebSocket = "websocket"
 
 var _ node.Node = (*WebSocketConnNode)(nil)
+
+// NewWebSocketNodeCodec creates a new codec for WebSocketNodeSpec.
+func NewWebSocketNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *WebSocketNodeSpec) (node.Node, error) {
+		url, err := url.Parse(spec.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		n := NewWebSocketNode(url)
+		n.SetTimeout(spec.Timeout)
+		return n, nil
+	})
+}
 
 // NewWebSocketNode creates a new WebSocketNode.
 func NewWebSocketNode(url *url.URL) *WebSocketNode {
@@ -298,18 +312,4 @@ func (n *WebSocketConnNode) conn(proc *process.Process) (*websocket.Conn, bool) 
 	case <-proc.Context().Done():
 		return nil, false
 	}
-}
-
-// NewWebSocketNodeCodec creates a new codec for WebSocketNodeSpec.
-func NewWebSocketNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *WebSocketNodeSpec) (node.Node, error) {
-		url, err := url.Parse(spec.URL)
-		if err != nil {
-			return nil, err
-		}
-
-		n := NewWebSocketNode(url)
-		n.SetTimeout(spec.Timeout)
-		return n, nil
-	})
 }

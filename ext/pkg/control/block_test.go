@@ -13,9 +13,39 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestBlockNodeCodec_Decode(t *testing.T) {
+	s := scheme.New()
+	kind := faker.UUIDHyphenated()
+
+	c := scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	})
+
+	s.AddCodec(kind, c)
+
+	codec := NewBlockNodeCodec(s)
+
+	spec := &BlockNodeSpec{
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					ID:   uuid.Must(uuid.NewV7()),
+					Kind: kind,
+				},
+			},
+		},
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
 
 func TestNewBlockNode(t *testing.T) {
 	n := NewBlockNode()
@@ -23,16 +53,48 @@ func TestNewBlockNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestBlockNode_Nodes(t *testing.T) {
-	c := node.NewOneToOneNode(nil)
-	n := NewBlockNode(c)
+func TestBlockNode_Load(t *testing.T) {
+	sym := &symbol.Symbol{
+		Node: node.NewOneToOneNode(nil),
+	}
+
+	n := NewBlockNode(sym)
 	defer n.Close()
 
-	assert.Contains(t, n.Nodes(), c)
+	count := 0
+	h := symbol.LoadFunc(func(s *symbol.Symbol) error {
+		count++
+		return nil
+	})
+
+	err := n.Load(h)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
+}
+
+func TestBlockNode_Unload(t *testing.T) {
+	sym := &symbol.Symbol{
+		Node: node.NewOneToOneNode(nil),
+	}
+
+	n := NewBlockNode(sym)
+	defer n.Close()
+
+	count := 0
+	h := symbol.UnloadFunc(func(s *symbol.Symbol) error {
+		count++
+		return nil
+	})
+
+	err := n.Unload(h)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
 }
 
 func TestBlockNode_Port(t *testing.T) {
-	n := NewBlockNode(node.NewOneToOneNode(nil))
+	n := NewBlockNode(&symbol.Symbol{
+		Node: node.NewOneToOneNode(nil),
+	})
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -46,12 +108,16 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		n := NewBlockNode(
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return inPck, nil
+				}),
+			},
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return inPck, nil
+				}),
+			},
 		)
 		defer n.Close()
 
@@ -80,12 +146,16 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		n := NewBlockNode(
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return inPck, nil
+				}),
+			},
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return inPck, nil
+				}),
+			},
 		)
 		defer n.Close()
 
@@ -127,12 +197,16 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		n := NewBlockNode(
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return nil, packet.New(types.NewString(faker.UUIDHyphenated()))
-			}),
-			node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return nil, packet.New(types.NewString(faker.UUIDHyphenated()))
+				}),
+			},
+			&symbol.Symbol{
+				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+					return inPck, nil
+				}),
+			},
 		)
 		defer n.Close()
 
@@ -170,31 +244,39 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestBlockNodeCodec_Decode(t *testing.T) {
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	c := scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	})
-
-	s.AddCodec(kind, c)
-
-	codec := NewBlockNodeCodec(s)
-
-	spec := &BlockNodeSpec{
-		Specs: []*spec.Unstructured{
-			{
-				Meta: spec.Meta{
-					ID:   uuid.Must(uuid.NewV7()),
-					Kind: kind,
-				},
-			},
+func BenchmarkBlockNode_SendAndReceive(b *testing.B) {
+	n := NewBlockNode(
+		&symbol.Symbol{
+			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
+			}),
 		},
-	}
+	)
+	defer n.Close()
 
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+	outReader := out.Open(proc)
+
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+
+		outPck := <-outReader.Read()
+		outReader.Receive(outPck)
+
+		<-inWriter.Receive()
+	}
 }

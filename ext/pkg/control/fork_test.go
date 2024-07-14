@@ -13,6 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestForkNodeCodec_Decode(t *testing.T) {
+	codec := NewForkNodeCodec()
+
+	spec := &ForkNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewForkNode(t *testing.T) {
 	n := NewForkNode()
 	assert.NotNil(t, n)
@@ -69,5 +80,45 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 		assert.NotNil(t, backPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
+	}
+}
+
+func BenchmarkForkNode_SendAndReceive(b *testing.B) {
+	n := NewForkNode()
+	defer n.Close()
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+	defer proc.Wait()
+
+	inWriter := in.Open(proc)
+
+	inPayload := types.NewMap(types.NewString("foo"), types.NewString("bar"))
+	inPck := packet.New(inPayload)
+
+	out.Accept(port.ListenFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			outPck, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(outPck)
+		}
+	}))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
 }

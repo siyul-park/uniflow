@@ -17,6 +17,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
+func TestGatewayNodeCodec_Decode(t *testing.T) {
+	codec := NewGatewayNodeCodec()
+
+	spec := &GatewayNodeSpec{
+		Protocol: ProtocolWebsocket,
+		Timeout:  time.Second,
+		Buffer:   64,
+	}
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewWebSocketUpgradeNode(t *testing.T) {
 	n := NewWebSocketUpgradeNode()
 	assert.NotNil(t, n)
@@ -135,20 +150,6 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
-}
-
-func TestGatewayNodeCodec_Decode(t *testing.T) {
-	codec := NewGatewayNodeCodec()
-
-	spec := &GatewayNodeSpec{
-		Protocol: ProtocolWebsocket,
-		Timeout:  time.Second,
-		Buffer:   64,
-	}
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkWebSocketUpgradeNode_SendAndReceive(b *testing.B) {

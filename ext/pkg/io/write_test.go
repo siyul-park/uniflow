@@ -17,6 +17,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWriteNodeCodec_Decode(t *testing.T) {
+	codec := NewWriteNodeCodec()
+
+	spec := &WriteNodeSpec{
+		Filename: "stdout",
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewWriteNode(t *testing.T) {
 	n := NewWriteNode(NewOSFileSystem())
 	assert.NotNil(t, n)
@@ -103,15 +116,34 @@ func TestWriteNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestWriteNodeCodec_Decode(t *testing.T) {
-	codec := NewWriteNodeCodec()
+func BenchmarkWriteNode_SendAndReceive(b *testing.B) {
+	buf := bytes.NewBuffer(nil)
+	fs := FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+		return &nopReadWriteCloser{buf}, nil
+	})
 
-	spec := &WriteNodeSpec{
-		Filename: "stdout",
+	n := NewWriteNode(fs)
+	defer n.Close()
+
+	n.Open("")
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	data := faker.UUIDHyphenated()
+
+	inPayload := types.NewString(data)
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }

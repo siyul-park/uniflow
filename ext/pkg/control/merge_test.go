@@ -14,6 +14,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
+func TestMergeNodeCodec_Decode(t *testing.T) {
+	codec := NewMergeNodeCodec()
+
+	spec := &MergeNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewMergeNode(t *testing.T) {
 	n := NewMergeNode()
 	assert.NotNil(t, n)
@@ -72,17 +84,6 @@ func TestMergeNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	}
-}
-
-func TestMergeNodeCodec_Decode(t *testing.T) {
-	codec := NewMergeNodeCodec()
-
-	spec := &MergeNodeSpec{}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkMergeNode_SendAndReceive(b *testing.B) {

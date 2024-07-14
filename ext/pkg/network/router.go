@@ -15,13 +15,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// RouteNode represents a node for routing based on HTTP method, path, and port.
-type RouteNode struct {
-	*node.OneToManyNode
-	tree *route
-	mu   sync.RWMutex
-}
-
 // RouteNodeSpec defines the specification for configuring a RouteNode.
 type RouteNodeSpec struct {
 	spec.Meta `map:",inline"`
@@ -33,6 +26,13 @@ type Route struct {
 	Method string `map:"method"`
 	Path   string `map:"path"`
 	Port   string `map:"port"`
+}
+
+// RouteNode represents a node for routing based on HTTP method, path, and port.
+type RouteNode struct {
+	*node.OneToManyNode
+	tree *route
+	mu   sync.RWMutex
 }
 
 type route struct {
@@ -58,6 +58,17 @@ const (
 	paramLabel = byte(':')
 	anyLabel   = byte('*')
 )
+
+// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
+func NewRouteNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
+		n := NewRouteNode()
+		for _, route := range spec.Routes {
+			n.Add(route.Method, route.Path, route.Port)
+		}
+		return n, nil
+	})
+}
 
 // NewRouteNode creates a new RouteNode.
 func NewRouteNode() *RouteNode {
@@ -500,15 +511,4 @@ func (r *route) allowHeader() string {
 
 func (r *route) label() byte {
 	return r.prefix[0]
-}
-
-// NewRouteNodeCodec creates a new codec for RouteNodeSpec.
-func NewRouteNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RouteNodeSpec) (node.Node, error) {
-		n := NewRouteNode()
-		for _, route := range spec.Routes {
-			n.Add(route.Method, route.Path, route.Port)
-		}
-		return n, nil
-	})
 }

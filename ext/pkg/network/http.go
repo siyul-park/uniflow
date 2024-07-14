@@ -18,19 +18,19 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// HTTPNodeSpec holds the specifications for creating an HTTPNode.
+type HTTPNodeSpec struct {
+	spec.Meta `map:",inline"`
+	URL       string        `map:"url"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
+}
+
 // HTTPNode represents a node for making HTTP client requests.
 type HTTPNode struct {
 	*node.OneToOneNode
 	url     *url.URL
 	timeout time.Duration
 	mu      sync.RWMutex
-}
-
-// HTTPNodeSpec holds the specifications for creating an HTTPNode.
-type HTTPNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URL       string        `map:"url"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
@@ -47,6 +47,20 @@ type HTTPPayload struct {
 }
 
 const KindHTTP = "http"
+
+// NewHTTPNodeCodec creates a new codec for HTTPNode.
+func NewHTTPNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *HTTPNodeSpec) (node.Node, error) {
+		url, err := url.Parse(spec.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		n := NewHTTPNode(url)
+		n.SetTimeout(spec.Timeout)
+		return n, nil
+	})
+}
 
 // NewHTTPNode creates a new HTTPNode instance.
 func NewHTTPNode(url *url.URL) *HTTPNode {
@@ -144,20 +158,6 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		return nil, packet.New(types.NewError(err))
 	}
 	return packet.New(outPayload), nil
-}
-
-// NewHTTPNodeCodec creates a new codec for HTTPNode.
-func NewHTTPNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *HTTPNodeSpec) (node.Node, error) {
-		url, err := url.Parse(spec.URL)
-		if err != nil {
-			return nil, err
-		}
-
-		n := NewHTTPNode(url)
-		n.SetTimeout(spec.Timeout)
-		return n, nil
-	})
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.

@@ -13,6 +13,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// IfNodeSpec holds specifications for creating an IfNode.
+type IfNodeSpec struct {
+	spec.Meta `map:",inline"`
+	When      string `map:"when"`
+}
+
 // IfNode represents a node that evaluates a condition and routes packets based on the result.
 type IfNode struct {
 	condition func(any) (bool, error)
@@ -22,13 +28,24 @@ type IfNode struct {
 	errPort   *port.OutPort
 }
 
-// IfNodeSpec holds specifications for creating an IfNode.
-type IfNodeSpec struct {
-	spec.Meta `map:",inline"`
-	When      string `map:"when"`
-}
-
 const KindIf = "if"
+
+// NewIfNodeCodec creates a new codec for IfNodeSpec.
+func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
+	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
+		program, err := compiler.Compile(spec.When)
+		if err != nil {
+			return nil, err
+		}
+		return NewIfNode(func(env any) (bool, error) {
+			res, err := program.Run(env)
+			if err != nil {
+				return false, err
+			}
+			return !reflect.ValueOf(res).IsZero(), nil
+		}), nil
+	})
+}
 
 // NewIfNode creates a new IfNode instance.
 func NewIfNode(condition func(any) (bool, error)) *IfNode {
@@ -147,21 +164,4 @@ func (n *IfNode) catch(proc *process.Process) {
 
 		n.tracer.Receive(errWriter, backPck)
 	}
-}
-
-// NewIfNodeCodec creates a new codec for IfNodeSpec.
-func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
-	return scheme.CodecWithType(func(spec *IfNodeSpec) (node.Node, error) {
-		program, err := compiler.Compile(spec.When)
-		if err != nil {
-			return nil, err
-		}
-		return NewIfNode(func(env any) (bool, error) {
-			res, err := program.Run(env)
-			if err != nil {
-				return false, err
-			}
-			return !reflect.ValueOf(res).IsZero(), nil
-		}), nil
-	})
 }

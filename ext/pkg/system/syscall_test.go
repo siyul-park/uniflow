@@ -15,6 +15,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSyscallNodeCodec_Decode(t *testing.T) {
+	table := NewTable()
+
+	operation := faker.UUIDHyphenated()
+
+	table.Store(operation, func(arg any) any {
+		return arg
+	})
+
+	codec := NewSyscallNodeCodec(table)
+
+	spec := &SyscallNodeSpec{
+		OPCode: operation,
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewSyscallNode(t *testing.T) {
 	n, err := NewSyscallNode(func() {})
 	assert.NoError(t, err)
@@ -217,23 +238,27 @@ func TestSyscallNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestSyscallNodeCodec_Decode(t *testing.T) {
-	table := NewTable()
-
-	operation := faker.UUIDHyphenated()
-
-	table.Store(operation, func(arg any) any {
+func BenchmarkSyscallNode_SendAndReceive(b *testing.B) {
+	n, _ := NewSyscallNode(func(arg any) any {
 		return arg
 	})
+	defer n.Close()
 
-	codec := NewSyscallNodeCodec(table)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	spec := &SyscallNodeSpec{
-		OPCode: operation,
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }

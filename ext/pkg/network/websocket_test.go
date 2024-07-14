@@ -18,6 +18,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWebSocketNodeCodec_Decode(t *testing.T) {
+	codec := NewWebSocketNodeCodec()
+
+	spec := &WebSocketNodeSpec{
+		URL: "ws://localhost:8080/",
+	}
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewWebSocketClient(t *testing.T) {
 	n := NewWebSocketNode(&url.URL{})
 	assert.NotNil(t, n)
@@ -130,17 +142,6 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestWebSocketNodeCodec_Decode(t *testing.T) {
-	codec := NewWebSocketNodeCodec()
-
-	spec := &WebSocketNodeSpec{
-		URL: "ws://localhost:8080/",
-	}
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
 
 func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 	p, _ := freeport.GetFreePort()

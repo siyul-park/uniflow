@@ -17,6 +17,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// WriteNodeSpec holds the specifications for creating a WriteNode.
+type WriteNodeSpec struct {
+	spec.Meta `map:",inline"`
+	Filename  string `map:"filename,omitempty"`
+	Append    bool   `map:"append,omitempty"`
+}
+
 // WriteNode represents a node responsible for writing data to an io.WriteCloser.
 type WriteNode struct {
 	*node.OneToOneNode
@@ -27,14 +34,27 @@ type WriteNode struct {
 	mu     sync.RWMutex
 }
 
-// WriteNodeSpec holds the specifications for creating a WriteNode.
-type WriteNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Filename  string `map:"filename,omitempty"`
-	Append    bool   `map:"append,omitempty"`
-}
-
 const KindWrite = "write"
+
+// NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
+func NewWriteNodeCodec() scheme.Codec {
+	fs := NewOSFileSystem()
+	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
+		n := NewWriteNode(fs)
+		flag := os.O_WRONLY | os.O_CREATE
+		if spec.Append {
+			flag |= os.O_APPEND
+		}
+		n.SetFlag(flag)
+		if spec.Filename != "" {
+			if err := n.Open(spec.Filename); err != nil {
+				n.Close()
+				return nil, err
+			}
+		}
+		return n, nil
+	})
+}
 
 // NewWriteNode creates a new WriteNode with the provided writer.
 func NewWriteNode(fs FileSystem) *WriteNode {
@@ -128,24 +148,4 @@ func (n *WriteNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 	length, _ := strconv.Atoi(header.Get(mime.HeaderContentLength))
 	return packet.New(types.NewInt64(int64(length))), nil
-}
-
-// NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
-func NewWriteNodeCodec() scheme.Codec {
-	fs := NewOSFileSystem()
-	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
-		n := NewWriteNode(fs)
-		flag := os.O_WRONLY | os.O_CREATE
-		if spec.Append {
-			flag |= os.O_APPEND
-		}
-		n.SetFlag(flag)
-		if spec.Filename != "" {
-			if err := n.Open(spec.Filename); err != nil {
-				n.Close()
-				return nil, err
-			}
-		}
-		return n, nil
-	})
 }

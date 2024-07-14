@@ -10,6 +10,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// CallNodeSpec holds the specifications for creating a CallNode.
+type CallNodeSpec struct {
+	spec.Meta `map:",inline"`
+}
+
 // CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
 type CallNode struct {
 	tracer   *packet.Tracer
@@ -18,14 +23,16 @@ type CallNode struct {
 	errPort  *port.OutPort
 }
 
-// CallNodeSpec holds the specifications for creating a CallNode.
-type CallNodeSpec struct {
-	spec.Meta `map:",inline"`
-}
-
 const KindCall = "call"
 
 var _ node.Node = (*CallNode)(nil)
+
+// NewCallNodeCodec creates a new codec for CallNodeSpec.
+func NewCallNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
+		return NewCallNode(), nil
+	})
+}
 
 // NewCallNode creates a new CallNode.
 func NewCallNode() *CallNode {
@@ -147,13 +154,4 @@ func (n *CallNode) catch(proc *process.Process) {
 
 		n.tracer.Receive(errWriter, backPck)
 	}
-}
-
-// NewCallNodeCodec creates a new codec for CallNodeSpec.
-func NewCallNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
-		n := NewCallNode()
-
-		return n, nil
-	})
 }

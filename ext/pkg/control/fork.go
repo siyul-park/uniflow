@@ -10,6 +10,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// ForkNodeSpec holds the specifications for creating a ForkNode.
+type ForkNodeSpec struct {
+	spec.Meta `map:",inline"`
+}
+
 // ForkNode is a node that forks processes and manages packet forwarding between ports.
 type ForkNode struct {
 	inPort  *port.InPort
@@ -17,14 +22,16 @@ type ForkNode struct {
 	errPort *port.OutPort
 }
 
-// ForkNodeSpec holds the specifications for creating a ForkNode.
-type ForkNodeSpec struct {
-	spec.Meta `map:",inline"`
-}
-
 const KindFork = "fork"
 
 var _ node.Node = (*ForkNode)(nil)
+
+// NewForkNodeCodec creates a new codec for ForkNodeSpec.
+func NewForkNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(_ *ForkNodeSpec) (node.Node, error) {
+		return NewForkNode(), nil
+	})
+}
 
 // NewForkNode creates a new ForkNode.
 func NewForkNode() *ForkNode {
@@ -125,11 +132,4 @@ func (n *ForkNode) catch(proc *process.Process) {
 		proc.Wait()
 		proc.Exit(err)
 	}
-}
-
-// NewForkNodeCodec creates a new codec for ForkNodeSpec.
-func NewForkNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(_ *ForkNodeSpec) (node.Node, error) {
-		return NewForkNode(), nil
-	})
 }

@@ -11,67 +11,120 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// BlockNode is a node that handles multiple sub-nodes.
-type BlockNode struct {
-	nodes    []node.Node
-	inPorts  map[string]*port.InPort
-	outPorts map[string]*port.OutPort
-	mu       sync.RWMutex
-}
-
 // BlockNodeSpec defines the specification for creating a BlockNode.
 type BlockNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Specs     []*spec.Unstructured `map:"specs"`
 }
 
+// BlockNode is a node that handles multiple sub-nodes.
+type BlockNode struct {
+	symbols   []*symbol.Symbol
+	inPorts   map[string]*port.InPort
+	outPorts  map[string]*port.OutPort
+	_inPorts  map[string]*port.InPort
+	_outPorts map[string]*port.OutPort
+	mu        sync.RWMutex
+}
+
 const KindBlock = "block"
 
 var _ node.Node = (*BlockNode)(nil)
 
+// NewBlockNodeCodec creates a new codec for BlockNodeSpec.
+func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
+	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
+		symbols := make([]*symbol.Symbol, 0, len(spec.Specs))
+		for _, spec := range spec.Specs {
+			spec, err := s.Decode(spec)
+			if err != nil {
+				for _, n := range symbols {
+					n.Close()
+				}
+				return nil, err
+			}
+			n, err := s.Compile(spec)
+			if err != nil {
+				for _, n := range symbols {
+					n.Close()
+				}
+				return nil, err
+			}
+			symbols = append(symbols, &symbol.Symbol{
+				Spec: spec,
+				Node: n,
+			})
+		}
+		return NewBlockNode(symbols...), nil
+	})
+}
+
 // BlockNodeSpec defines the specification for creating a BlockNode.
-func NewBlockNode(nodes ...node.Node) *BlockNode {
+func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 	n := &BlockNode{
-		nodes:    nodes,
-		inPorts:  make(map[string]*port.InPort),
-		outPorts: make(map[string]*port.OutPort),
+		symbols:   nodes,
+		inPorts:   make(map[string]*port.InPort),
+		outPorts:  make(map[string]*port.OutPort),
+		_inPorts:  make(map[string]*port.InPort),
+		_outPorts: make(map[string]*port.OutPort),
 	}
 
-	for i := 1; i < len(n.nodes); i++ {
-		out := n.nodes[i-1].Out(node.PortOut)
-		in := n.nodes[i].In(node.PortIn)
+	for i := 1; i < len(n.symbols); i++ {
+		out := n.symbols[i-1].Out(node.PortOut)
+		in := n.symbols[i].In(node.PortIn)
 		if out == nil || in == nil {
 			break
 		}
 		out.Link(in)
 	}
 
-	if len(n.nodes) > 1 {
+	if len(n.symbols) > 1 {
 		inPort := port.NewIn()
 		outPort := port.NewOut()
 
-		n.inPorts[node.PortErr] = inPort
+		n._inPorts[node.PortErr] = inPort
 		n.outPorts[node.PortErr] = outPort
 
-		for _, cur := range n.nodes {
+		for _, cur := range n.symbols {
 			if err := cur.Out(node.PortErr); err != nil {
 				err.Link(inPort)
 			}
 		}
 
-		inPort.Accept(port.ListenFunc(n.throw))
-		outPort.Accept(port.ListenFunc(n.catch))
+		inPort.Accept(n.forward(inPort, outPort))
+		outPort.Accept(n.backward(inPort, outPort))
 	}
 
 	return n
 }
 
-// Nodes returns the sub-nodes.
-func (n *BlockNode) Nodes() []node.Node {
+// Load iterates over nodes in reverse order, invoking hook.Load for each node.
+func (n *BlockNode) Load(hook symbol.LoadHook) error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	return n.nodes
+	for i := len(n.symbols) - 1; i >= 0; i-- {
+		sym := n.symbols[i]
+		if err := hook.Load(sym); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Unload iterates over nodes, invoking hook.Unload for each node.
+func (n *BlockNode) Unload(hook symbol.UnloadHook) error {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	for _, sym := range n.symbols {
+		if err := hook.Unload(sym); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // In returns the input port with the specified name.
@@ -82,8 +135,8 @@ func (n *BlockNode) In(name string) *port.InPort {
 	if inPort, ok := n.inPorts[name]; ok {
 		return inPort
 	}
-	if len(n.nodes) > 0 {
-		if inPort := n.nodes[0].In(name); inPort != nil {
+	if len(n.symbols) > 0 {
+		if inPort := n.symbols[0].In(name); inPort != nil {
 			n.inPorts[name] = inPort
 			return inPort
 		}
@@ -99,8 +152,8 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 	if outPort, ok := n.outPorts[name]; ok {
 		return outPort
 	}
-	if len(n.nodes) > 0 {
-		if outPort := n.nodes[len(n.nodes)-1].Out(name); outPort != nil {
+	if len(n.symbols) > 0 {
+		if outPort := n.symbols[len(n.symbols)-1].Out(name); outPort != nil {
 			n.outPorts[name] = outPort
 			return outPort
 		}
@@ -113,8 +166,8 @@ func (n *BlockNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	for _, node := range n.nodes {
-		if err := node.Close(); err != nil {
+	for _, sym := range n.symbols {
+		if err := sym.Close(); err != nil {
 			return err
 		}
 	}
@@ -122,73 +175,49 @@ func (n *BlockNode) Close() error {
 	for _, inPort := range n.inPorts {
 		inPort.Close()
 	}
+	for _, inPort := range n._inPorts {
+		inPort.Close()
+	}
 	for _, outPort := range n.outPorts {
+		outPort.Close()
+	}
+	for _, outPort := range n._outPorts {
 		outPort.Close()
 	}
 
 	return nil
 }
 
-func (n *BlockNode) throw(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+func (n *BlockNode) forward(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+	return port.ListenFunc(func(proc *process.Process) {
+		reader := inPort.Open(proc)
+		writer := outPort.Open(proc)
 
-	errWriter := n.outPorts[node.PortErr].Open(proc)
-	errReader := n.inPorts[node.PortErr].Open(proc)
+		for {
+			inPck, ok := <-reader.Read()
+			if !ok {
+				return
+			}
 
-	for {
-		inPck, ok := <-errReader.Read()
-		if !ok {
-			return
+			if writer.Write(inPck) == 0 {
+				reader.Receive(inPck)
+			}
 		}
-
-		if errWriter.Write(inPck) == 0 {
-			errReader.Receive(inPck)
-		}
-	}
+	})
 }
 
-func (n *BlockNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+func (n *BlockNode) backward(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+	return port.ListenFunc(func(proc *process.Process) {
+		reader := inPort.Open(proc)
+		writer := outPort.Open(proc)
 
-	errWriter := n.outPorts[node.PortErr].Open(proc)
-	errReader := n.inPorts[node.PortErr].Open(proc)
-
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
-		errReader.Receive(backPck)
-	}
-}
-
-// NewBlockNodeCodec creates a new codec for IfNodeSpec.
-func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
-		nodes := make([]node.Node, 0, len(spec.Specs))
-		for _, spec := range spec.Specs {
-			spec, err := s.Decode(spec)
-			if err != nil {
-				for _, n := range nodes {
-					n.Close()
-				}
-				return nil, err
+		for {
+			backPck, ok := <-writer.Receive()
+			if !ok {
+				return
 			}
-			n, err := s.Compile(spec)
-			if err != nil {
-				for _, n := range nodes {
-					n.Close()
-				}
-				return nil, err
-			}
-			nodes = append(nodes, &symbol.Symbol{
-				Spec: spec,
-				Node: n,
-			})
+
+			reader.Receive(backPck)
 		}
-		return NewBlockNode(nodes...), nil
 	})
 }

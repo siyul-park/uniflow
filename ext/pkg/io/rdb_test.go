@@ -17,6 +17,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRDBNodeCodec_Decode(t *testing.T) {
+	codec := NewRDBNodeCodec()
+
+	spec := &RDBNodeSpec{
+		Driver: "sqlite3",
+		Source: ":memory:",
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewRDBNode(t *testing.T) {
 	db, _ := sqlx.Connect("sqlite3", ":memory:")
 	defer db.Close()
@@ -157,19 +171,6 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func TestRDBNodeCodec_Decode(t *testing.T) {
-	codec := NewRDBNodeCodec()
-
-	spec := &RDBNodeSpec{
-		Driver: "sqlite3",
-		Source: ":memory:",
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
 
 func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 	db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")

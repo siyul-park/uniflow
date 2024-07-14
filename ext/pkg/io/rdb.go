@@ -14,6 +14,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// RDBNodeSpec holds the specifications for creating a RDBNode.
+type RDBNodeSpec struct {
+	spec.Meta `map:",inline"`
+	Driver    string             `map:"driver"`
+	Source    string             `map:"source"`
+	Isolation sql.IsolationLevel `map:"isolation"`
+}
+
 // RDBNode represents a node for interacting with a relational database.
 type RDBNode struct {
 	*node.OneToOneNode
@@ -23,15 +31,21 @@ type RDBNode struct {
 	mu        sync.RWMutex
 }
 
-// RDBNodeSpec holds the specifications for creating a RDBNode.
-type RDBNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Driver    string             `map:"driver"`
-	Source    string             `map:"source"`
-	Isolation sql.IsolationLevel `map:"isolation"`
-}
-
 const KindRDB = "rdb"
+
+// NewRDBNodeCodec creates a new codec for RDBNodeSpec.
+func NewRDBNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
+		db, err := sqlx.Connect(spec.Driver, spec.Source)
+		if err != nil {
+			return nil, err
+		}
+
+		n := NewRDBNode(db)
+		n.SetIsolation(spec.Isolation)
+		return n, nil
+	})
+}
 
 // NewRDBNode creates a new RDBNode.
 func NewRDBNode(db *sqlx.DB) *RDBNode {
@@ -147,19 +161,4 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	}
 
 	return packet.New(outPayload), nil
-}
-
-// NewRDBNodeCodec creates a new codec for RDBNodeSpec.
-func NewRDBNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
-		db, err := sqlx.Connect(spec.Driver, spec.Source)
-		if err != nil {
-			return nil, err
-		}
-
-		n := NewRDBNode(db)
-		n.SetIsolation(spec.Isolation)
-
-		return n, nil
-	})
 }

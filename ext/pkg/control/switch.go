@@ -13,14 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SwitchNode directs packets to different ports based on specified conditions.
-type SwitchNode struct {
-	*node.OneToManyNode
-	conditions []func(any) (bool, error)
-	ports      []int
-	mu         sync.RWMutex
-}
-
 // SwitchNodeSpec holds specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	spec.Meta `map:",inline"`
@@ -33,7 +25,42 @@ type Condition struct {
 	Port string `map:"port"`
 }
 
+// SwitchNode directs packets to different ports based on specified conditions.
+type SwitchNode struct {
+	*node.OneToManyNode
+	conditions []func(any) (bool, error)
+	ports      []int
+	mu         sync.RWMutex
+}
+
 const KindSwitch = "switch"
+
+// NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
+func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
+	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
+		conditions := make([]func(any) (bool, error), len(spec.Matches))
+		for i, condition := range spec.Matches {
+			program, err := compiler.Compile(condition.When)
+			if err != nil {
+				return nil, err
+			}
+
+			conditions[i] = func(env any) (bool, error) {
+				res, err := program.Run(env)
+				if err != nil {
+					return false, err
+				}
+				return !reflect.ValueOf(res).IsZero(), nil
+			}
+		}
+
+		n := NewSwitchNode()
+		for i, condition := range spec.Matches {
+			n.Match(conditions[i], condition.Port)
+		}
+		return n, nil
+	})
+}
 
 // NewSwitchNode creates a new SwitchNode instance.
 func NewSwitchNode() *SwitchNode {
@@ -75,31 +102,4 @@ func (n *SwitchNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet
 	}
 
 	return outPcks, nil
-}
-
-// NewSwitchNodeCodec creates a new codec for SwitchNodeSpec.
-func NewSwitchNodeCodec(compiler language.Compiler) scheme.Codec {
-	return scheme.CodecWithType(func(spec *SwitchNodeSpec) (node.Node, error) {
-		conditions := make([]func(any) (bool, error), len(spec.Matches))
-		for i, condition := range spec.Matches {
-			program, err := compiler.Compile(condition.When)
-			if err != nil {
-				return nil, err
-			}
-
-			conditions[i] = func(env any) (bool, error) {
-				res, err := program.Run(env)
-				if err != nil {
-					return false, err
-				}
-				return !reflect.ValueOf(res).IsZero(), nil
-			}
-		}
-
-		n := NewSwitchNode()
-		for i, condition := range spec.Matches {
-			n.Match(conditions[i], condition.Port)
-		}
-		return n, nil
-	})
 }

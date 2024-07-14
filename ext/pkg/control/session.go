@@ -10,6 +10,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+
+// SessionNodeSpec defines the specification for creating a NOPNode.
+type SessionNodeSpec struct {
+	spec.Meta `map:",inline"`
+}
+
 // SessionNode manages session data flow and process interactions through its ports.
 type SessionNode struct {
 	values  *process.Local[types.Value]
@@ -19,14 +25,16 @@ type SessionNode struct {
 	outPort *port.OutPort
 }
 
-// SessionNodeSpec defines the specification for creating a NOPNode.
-type SessionNodeSpec struct {
-	spec.Meta `map:",inline"`
-}
-
 const KindSession = "session"
 
 var _ node.Node = (*SessionNode)(nil)
+
+// NewSessionNodeCodec creates a codec for decoding NewSessionNodeCodec.
+func NewSessionNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(_ *SessionNodeSpec) (node.Node, error) {
+		return NewSessionNode(), nil
+	})
+}
 
 // NewSessionNode creates and initializes a new SessionNode.
 func NewSessionNode() *SessionNode {
@@ -157,11 +165,4 @@ func (n *SessionNode) backward(proc *process.Process) {
 
 		n.tracer.Receive(outWriter, backPck)
 	}
-}
-
-// NewSessionNodeCodec creates a codec for decoding NewSessionNodeCodec.
-func NewSessionNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(_ *SessionNodeSpec) (node.Node, error) {
-		return NewSessionNode(), nil
-	})
 }

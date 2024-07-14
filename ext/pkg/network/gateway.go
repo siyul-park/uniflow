@@ -17,13 +17,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// WebSocketUpgradeNode is a node for upgrading an HTTP connection to a WebSocket connection.
-type WebSocketUpgradeNode struct {
-	*WebSocketConnNode
-	upgrader websocket.Upgrader
-	mu       sync.RWMutex
-}
-
 // GatewayNodeSpec holds the specifications for creating a GatewayNode.
 type GatewayNodeSpec struct {
 	spec.Meta `map:",inline"`
@@ -32,9 +25,31 @@ type GatewayNodeSpec struct {
 	Buffer    int           `map:"buffer,omitempty"`
 }
 
+// WebSocketUpgradeNode is a node for upgrading an HTTP connection to a WebSocket connection.
+type WebSocketUpgradeNode struct {
+	*WebSocketConnNode
+	upgrader websocket.Upgrader
+	mu       sync.RWMutex
+}
+
 const KindGateway = "gateway"
 
 var _ node.Node = (*WebSocketUpgradeNode)(nil)
+
+// NewGatewayNodeCodec creates a new codec for GatewayNodeSpec.
+func NewGatewayNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *GatewayNodeSpec) (node.Node, error) {
+		switch spec.Protocol {
+		case ProtocolWebsocket:
+			n := NewWebSocketUpgradeNode()
+			n.SetTimeout(spec.Timeout)
+			n.SetReadBufferSize(spec.Buffer)
+			n.SetWriteBufferSize(spec.Buffer)
+			return n, nil
+		}
+		return nil, errors.WithStack(ErrInvalidProtocol)
+	})
+}
 
 // NewWebSocketUpgradeNode creates a new WebSocketUpgradeNode.
 func NewWebSocketUpgradeNode() *WebSocketUpgradeNode {
@@ -118,19 +133,4 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 	}
 
 	return n.upgrader.Upgrade(w, r, nil)
-}
-
-// NewGatewayNodeCodec creates a new codec for GatewayNodeSpec.
-func NewGatewayNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *GatewayNodeSpec) (node.Node, error) {
-		switch spec.Protocol {
-		case ProtocolWebsocket:
-			n := NewWebSocketUpgradeNode()
-			n.SetTimeout(spec.Timeout)
-			n.SetReadBufferSize(spec.Buffer)
-			n.SetWriteBufferSize(spec.Buffer)
-			return n, nil
-		}
-		return nil, errors.WithStack(ErrInvalidProtocol)
-	})
 }

@@ -15,6 +15,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCallNodeCodec_Decode(t *testing.T) {
+	codec := NewCallNodeCodec()
+
+	spec := &CallNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewCallNode(t *testing.T) {
 	n := NewCallNode()
 	assert.NotNil(t, n)
@@ -126,17 +137,6 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, "timeout")
 		}
 	})
-}
-
-func TestCallNodeCodec_Decode(t *testing.T) {
-	codec := NewCallNodeCodec()
-
-	spec := &CallNodeSpec{}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkCallNode_SendAndReceive(b *testing.B) {

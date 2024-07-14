@@ -13,6 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSessionNodeCodec_Decode(t *testing.T) {
+	codec := NewSessionNodeCodec()
+
+	spec := &SessionNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewSessionNode(t *testing.T) {
 	n := NewSessionNode()
 	assert.NotNil(t, n)
@@ -84,5 +95,54 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 		assert.NotNil(t, backPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
+	}
+}
+
+func BenchmarkSessionNode_SendAndReceive(b *testing.B) {
+	n := NewSessionNode()
+	defer n.Close()
+
+	io := port.NewOut()
+	io.Link(n.In(node.PortIO))
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	out := port.NewIn()
+	n.Out(node.PortOut).Link(out)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	ioWriter := io.Open(proc)
+	inWriter := in.Open(proc)
+
+	ioPayload := types.NewMap(types.NewString("foo"), types.NewString("bar"))
+	ioPck := packet.New(ioPayload)
+
+	ioWriter.Write(ioPck)
+	<-ioWriter.Receive()
+
+	inPayload := types.NewMap(types.NewString("foo"), types.NewString("baz"))
+	inPck := packet.New(inPayload)
+
+	out.Accept(port.ListenFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			outPck, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(outPck)
+		}
+	}))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
 }

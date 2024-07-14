@@ -20,6 +20,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// ListenNodeSpec holds the specifications for creating a ListenNode.
+type ListenNodeSpec struct {
+	spec.Meta `map:",inline"`
+	Protocol  string `map:"protocol"`
+	Host      string `map:"host,omitempty"`
+	Port      int    `map:"port"`
+}
+
 // HTTPListenNode represents a Node for handling HTTP requests.
 type HTTPListenNode struct {
 	server   *http.Server
@@ -27,14 +35,6 @@ type HTTPListenNode struct {
 	outPort  *port.OutPort
 	errPort  *port.OutPort
 	mu       sync.RWMutex
-}
-
-// ListenNodeSpec holds the specifications for creating a ListenNode.
-type ListenNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Protocol  string `map:"protocol"`
-	Host      string `map:"host,omitempty"`
-	Port      int    `map:"port"`
 }
 
 const KindListener = "listener"
@@ -46,6 +46,17 @@ const (
 
 var _ node.Node = (*HTTPListenNode)(nil)
 var _ http.Handler = (*HTTPListenNode)(nil)
+
+// NewListenNodeCodec creates a new codec for ListenNodeSpec.
+func NewListenNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *ListenNodeSpec) (node.Node, error) {
+		switch spec.Protocol {
+		case ProtocolHTTP:
+			return NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port)), nil
+		}
+		return nil, errors.WithStack(ErrInvalidProtocol)
+	})
+}
 
 // NewHTTPListenNode creates a new HTTPListenNode with the specified address.
 func NewHTTPListenNode(address string) *HTTPListenNode {
@@ -280,15 +291,4 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 		return err
 	}
 	return nil
-}
-
-// NewListenNodeCodec creates a new codec for ListenNodeSpec.
-func NewListenNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *ListenNodeSpec) (node.Node, error) {
-		switch spec.Protocol {
-		case ProtocolHTTP:
-			return NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port)), nil
-		}
-		return nil, errors.WithStack(ErrInvalidProtocol)
-	})
 }

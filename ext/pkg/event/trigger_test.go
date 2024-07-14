@@ -14,6 +14,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
+func TestTriggerNodeCodec_Decode(t *testing.T) {
+	broker := NewBroker()
+
+	topic := faker.UUIDHyphenated()
+
+	codec := NewTriggerNodeCodec(broker, broker)
+
+	spec := &TriggerNodeSpec{
+		Topic: topic,
+	}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewTriggerNode(t *testing.T) {
 	q := NewQueue(0)
 	c := NewConsumer(q)
@@ -117,23 +135,6 @@ func TestTriggerNode_SendAndReceive(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 		}
 	})
-}
-
-func TestTriggerNodeCodec_Decode(t *testing.T) {
-	broker := NewBroker()
-
-	topic := faker.UUIDHyphenated()
-
-	codec := NewTriggerNodeCodec(broker, broker)
-
-	spec := &TriggerNodeSpec{
-		Topic: topic,
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
 }
 
 func BenchmarkTriggerNode_SendAndReceive(b *testing.B) {

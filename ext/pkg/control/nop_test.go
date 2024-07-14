@@ -14,6 +14,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNOPNodeCodec_Decode(t *testing.T) {
+	codec := NewNOPNodeCodec()
+
+	spec := &NOPNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
 func TestNewNOPNode(t *testing.T) {
 	n := NewNOPNode()
 	assert.NotNil(t, n)
@@ -55,13 +66,27 @@ func TestNOPNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-func TestNOPNodeCodec_Decode(t *testing.T) {
-	codec := NewNOPNodeCodec()
+func BenchmarkNOPNode_SendAndReceive(b *testing.B) {
+	n := NewNOPNode()
+	defer n.Close()
 
-	spec := &NOPNodeSpec{}
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
+	}
 }
