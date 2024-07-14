@@ -6,7 +6,7 @@
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-**A high-performance, highly flexible, and easily extensible multipurpose workflow engine.**
+**A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.**
 
 ## 📝 Overview
 
