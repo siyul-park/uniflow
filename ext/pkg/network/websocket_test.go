@@ -142,7 +142,6 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-
 func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 	p, _ := freeport.GetFreePort()
 

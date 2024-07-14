@@ -268,7 +268,6 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-
 func BenchmarkRouteNode_SendAndReceive(b *testing.B) {
 	n := NewRouteNode()
 	defer n.Close()

@@ -18,7 +18,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-
 // ReadNodeSpec holds the specifications for creating a ReadNode.
 type ReadNodeSpec struct {
 	spec.Meta `map:",inline"`

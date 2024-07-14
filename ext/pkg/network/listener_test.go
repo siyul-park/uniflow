@@ -250,7 +250,6 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 	})
 }
 
-
 func BenchmarkHTTPListenNode_ServeHTTP(b *testing.B) {
 	n := NewHTTPListenNode("")
 	defer n.Close()

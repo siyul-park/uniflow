@@ -10,7 +10,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-
 // SessionNodeSpec defines the specification for creating a NOPNode.
 type SessionNodeSpec struct {
 	spec.Meta `map:",inline"`

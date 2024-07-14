@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-
 // MergeNodeSpec holds the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
 	spec.Meta `map:",inline"`
@@ -45,4 +44,3 @@ func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*pac
 		return outPck, nil
 	}
 }
-

@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestGatewayNodeCodec_Decode(t *testing.T) {
 	codec := NewGatewayNodeCodec()
 

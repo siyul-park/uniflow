@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-
 // NOPNodeSpec defines the specification for creating a NOPNode.
 type NOPNodeSpec struct {
 	spec.Meta `map:",inline"`
@@ -30,7 +29,6 @@ func NewNOPNodeCodec() scheme.Codec {
 		return NewNOPNode(), nil
 	})
 }
-
 
 // NewNOPNode creates a new instance of NOPNode.
 func NewNOPNode() *NOPNode {
@@ -78,4 +76,3 @@ func (n *NOPNode) forward(proc *process.Process) {
 		inReader.Receive(packet.None)
 	}
 }
-

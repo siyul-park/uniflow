@@ -171,7 +171,6 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-
 func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 	db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
 	defer db.Close()

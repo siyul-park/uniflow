@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestTriggerNodeCodec_Decode(t *testing.T) {
 	broker := NewBroker()
 
