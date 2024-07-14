@@ -1,4 +1,4 @@
-# User Extension
+# 🔧 User Extension
 
 This guide explains how to extend your services and integrate them into the runtime environment.
 

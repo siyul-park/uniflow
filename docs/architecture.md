@@ -1,4 +1,4 @@
-# Architecture
+# 🏗️ Architecture
 
 Node specifications declaratively define the roles of each node, and these specifications are interconnected to form workflows. Each workflow is defined within a specific namespace, with each runtime environment executing a single namespace. Namespaces are isolated from each other, meaning nodes in one namespace cannot reference nodes in another namespace.
 

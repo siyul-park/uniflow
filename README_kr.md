@@ -10,7 +10,7 @@
 
 ## 📝 개요
 
-다양한 작업 시간을 효율적으로 처리하며 데이터 처리 흐름을 선언적으로 정의하고 동적으로 수정할 수 있는 환경을 제공합니다. [내장된 확장 기능](./ext/README_kr.md)을 통해 작업을 효율적으로 실행하며, 필요에 따라 노드를 자유롭게 추가하거나 제거할 수 있습니다.
+**Uniflow**는 다양한 작업 시간을 효율적으로 처리하며 데이터 처리 흐름을 선언적으로 정의하고 동적으로 수정할 수 있는 환경을 제공합니다. [내장된 확장 기능](./ext/README_kr.md)을 통해 작업을 효율적으로 실행하며, 필요에 따라 노드를 자유롭게 추가하거나 제거할 수 있습니다.
 
 당신의 서비스에 맞춤형 경험을 제공하고, 기능을 무한히 확장하세요.
 
@@ -28,7 +28,9 @@
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
+
 cd uniflow
+
 make init
 make build
 ```
@@ -91,7 +93,7 @@ pong#
 
 ## 📊 벤치마크
 
-**[Contabo](https://contabo.com/)**의 VPS S SSD (4코어, 8GB)에서 수행된 벤치마크 결과입니다. [ApacheBench](https://httpd.apache.org/docs/2.4/programs/ab.html)를 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 측정했습니다.
+**[Contabo](https://contabo.com/)**의 VPS S SSD (4코어, 8GB)에서 수행된 벤치마크 결과입니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)를 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 측정했습니다.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
