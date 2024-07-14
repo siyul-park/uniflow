@@ -138,7 +138,7 @@ Percentage of the requests served within a certain time (ms)
 - [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 살펴보세요.
 - [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등의 핵심 개념을 이해하세요.
 - [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 자세히 알아보세요.
-- [사용자 확장 기능](./docs/user_extension_kr.md): 새로운 기능 추가 및 기존 서비스 통합 방법을 익히세요.
+- [사용자 기능 확장](./docs/user_extensions_kr.md): 새로운 기능 추가 및 기존 서비스 통합 방법을 익히세요.
 
 ## 🌐 커뮤니티 & 지원
 
