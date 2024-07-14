@@ -10,7 +10,7 @@
 
 ## 📝 Overview
 
-**Uniflow** excels at managing tasks of varying durations, offering an environment where data processing flows can be defined declaratively and modified dynamically. With [built-in extensions](./ext/README_kr.md), it executes tasks efficiently, allowing you to freely add or remove nodes as needed.
+**Uniflow** excels at managing tasks of varying durations, offering an environment where data processing flows can be defined declaratively and modified dynamically. With [built-in extensions](./ext/README.md), it executes tasks efficiently, allowing you to freely add or remove nodes as needed.
 
 Deliver a personalized experience for your service and expand functionality without limits.
 
