@@ -1,4 +1,4 @@
-# Uniflow
+# 🪐 Uniflow
 
 [![go report][go_report_img]][go_report_url]
 [![go doc][go_doc_img]][go_doc_url]
@@ -6,40 +6,82 @@
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-높은 성능과 극도의 유연성을 갖춘 쉽게 확장할 수 있는 다목적 워크플로우 엔진.
+**높은 성능과 극도의 유연성을 갖춘 쉽게 확장할 수 있는 다목적 워크플로우 엔진.**
 
-## 개요
+## 📝 개요
 
-짧은 기간이 걸리는 작업부터 긴 기간이 걸리는 작업까지 다양한 기간이 소요되는 작업을 효율적으로 처리하며, 데이터 처리 흐름을 선언적으로 정의하고 동적으로 수정할 수 있는 환경을 제공합니다.
+다양한 작업 시간을 효율적으로 처리하며 데이터 처리 흐름을 선언적으로 정의하고 동적으로 수정할 수 있는 환경을 제공합니다. [내장된 확장 기능](./ext/README_kr.md)을 통해 작업을 효율적으로 실행하며, 필요에 따라 노드를 자유롭게 추가하거나 제거할 수 있습니다.
 
-[내장된 확장 기능](./ext/README_kr.md)을 통해 짧은 기간이 걸리는 작업을 효율적으로 실행하고 다양한 기능을 구현할 수 있습니다. 하지만 엔진은 특정 노드의 사용을 강제하지 않으며, 모든 노드는 서비스에 맞게 자유롭게 추가되거나 제거될 수 있습니다.
+당신의 서비스에 맞춤형 경험을 제공하고, 기능을 무한히 확장하세요.
 
-엔진을 서비스에 통합하여 사용자에게 개인화된 경험을 제공하고 기능을 풍부하게 확장해보세요.
-
-## 핵심 가치
+## 🎯 핵심 가치
 
 - **성능:** 다양한 환경에서 최대 처리량과 최소 대기 시간을 달성합니다.
 - **유연성:** 명세를 동적으로 수정하고 실시간으로 조정할 수 있습니다.
-- **확장성:** 새로운 노드를 자유롭게 지원하여 기능을 확장할 수 있습니다.
+- **확장성:** 새로운 노드를 자유롭게 추가하여 기능을 확장할 수 있습니다.
 
-## 빠른 시작
+## 🚀 빠른 시작
 
-아래 명령을 사용하여 [ping 예제](./examples/ping.yaml)를 실행해 보세요:
+### 🛠️ 빌드 및 설치
 
-```shell
+**[Go 1.22](https://go.dev/doc/install)** 이상이 필요합니다. 코드를 빌드하려면 다음 단계를 따르세요:
+
+```sh
+git clone https://github.com/siyul-park/uniflow
+cd uniflow
+make init
+make build
+```
+
+빌드가 완료되면 `dist` 폴더에 실행 파일이 생성됩니다.
+
+### ⚡ 예제 실행
+
+간단한 HTTP 요청 처리 예제인 [ping.yaml](./examples/ping.yaml)를 실행해 보겠습니다:
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  links:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  links:
+    out[0]:
+      - name: pong
+        port: in
+
+- kind: snippet
+  name: pong
+  language: text
+  code: pong
+```
+
+워크플로우를 실행하려면 다음 명령어를 사용하세요:
+
+```sh
 uniflow start --filename example/ping.yaml
 ```
 
-이제 HTTP 엔드포인트가 예상대로 작동하는지 확인하세요:
+예상대로 작동하는지 확인하기 위해 HTTP 엔드포인트를 호출하세요:
 
-```shell
+```sh
 curl localhost:8000/ping
 pong#
 ```
 
-## 구성
+## ⚙️ 구성
 
-`.uniflow.toml` 파일 또는 시스템 환경 변수를 사용하여 환경을 구성하세요.
+환경 설정은 `.uniflow.toml` 파일이나 시스템 환경 변수를 통해 설정할 수 있습니다.
 
 | TOML 키            | 환경 변수 키          | 예시                       |
 |--------------------|--------------------|---------------------------|
@@ -47,9 +89,9 @@ pong#
 | `database.name`    | `DATABASE.NAME`    | -                         |
 | `collection.nodes` | `COLLECTION.NODES` | `nodes`                   |
 
-## 벤치마크
+## 📊 벤치마크
 
-벤치마크는 [Contabo](https://contabo.com/)의 VPS S SSD (4코어, 8GB)에서 수행되었으며, [아파치 웹서버 성능검사 도구](https://httpd.apache.org/docs/2.4/programs/ab.html)를 이용해 측정되었습니다. 워크플로우는 `listener`, `router`, `snippet` 노드로 구성된 [ping 예제](./examples/ping.yaml)를 사용했습니다.
+**[Contabo](https://contabo.com/)**의 VPS S SSD (4코어, 8GB)에서 수행된 벤치마크 결과입니다. [ApacheBench](https://httpd.apache.org/docs/2.4/programs/ab.html)를 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 측정했습니다.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -89,12 +131,23 @@ Percentage of the requests served within a certain time (ms)
  100%    559 (longest request)
 ```
 
-## 자세히 알아보기
+## 📚 자세히 알아보기
 
-- [시작하기](./docs/getting_started_kr.md): CLI를 설치하고 워크플로우를 관리하며 엔진을 실행하는 방법을 살펴보세요.
-- [핵심 개념](./docs/key_concepts_kr.md): 데이터 처리 객체인 노드와 그들 간의 연결, 포트, 패킷 등 핵심 개념에 대해 확인해보세요.
-- [아키텍처](./docs/architecture_kr.md): 노드 명세가 엔진에 어떻게 로드되고 워크플로우가 어떻게 실행되는지 알아보세요.
-- [사용자 확장 기능](./docs/user_extension_kr.md): 새로운 기능을 제공하는 노드를 추가하고 기존 서비스에 통합하는 방법을 자세히 알아보세요.
+- [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 살펴보세요.
+- [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등의 핵심 개념을 이해하세요.
+- [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 자세히 알아보세요.
+- [사용자 확장 기능](./docs/user_extension_kr.md): 새로운 기능 추가 및 기존 서비스 통합 방법을 익히세요.
+
+## 🌐 커뮤니티 & 지원
+
+프로젝트에 대한 질문이나 지원이 필요하신 경우, 다음 채널을 통해 참여해보세요:
+
+- [토론](https://github.com/siyul-park/uniflow/discussions): 질문 및 피드백을 공유하세요.
+- [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그 보고 및 기능 요청을 남겨주세요.
+
+## 📜 라이센스
+
+이 프로젝트는 [MIT 라이센스](./LICENSE) 하에 배포됩니다. 자유롭게 수정 및 재배포가 가능합니다.
 
 <!-- Go -->
 
