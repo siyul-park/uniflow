@@ -6,25 +6,25 @@
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-**A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.**
+**A high-performance, extremely flexible, and easily extensible universal workflow engine.**
 
 ## 📝 Overview
 
-**Uniflow** excels at managing tasks of varying durations, offering an environment where data processing flows can be defined declaratively and modified dynamically. With [built-in extensions](./ext/README.md), it executes tasks efficiently, allowing you to freely add or remove nodes as needed.
+**Uniflow** efficiently handles a wide range of tasks from short-term jobs to long-term processes. It allows for declarative definition and dynamic modification of data flows, leveraging [built-in extension capabilities](./ext/README.md) to easily implement complex workflows. Moreover, it offers flexibility to expand functionality by adding new nodes or removing existing ones as needed.
 
-Deliver a personalized experience for your service and expand functionality without limits.
+Provide a personalized experience through your service and consistently expand its capabilities.
 
 ## 🎯 Core Values
 
-- **Performance:** Achieve maximum throughput and minimal latency across diverse environments.
-- **Flexibility:** Dynamically modify specifications and make real-time adjustments.
-- **Extensibility:** Seamlessly add new nodes to enhance functionality.
+- **Performance:** Achieve optimal throughput and minimal latency across various environments.
+- **Flexibility:** Dynamically modify and adjust workflows in real-time.
+- **Extensibility:** Extend system functionality through new components.
 
 ## 🚀 Quick Start
 
 ### 🛠️ Build and Install
 
-**[Go 1.22](https://go.dev/doc/install)** or later is required. Follow these steps to build the code:
+**[Go 1.22](https://go.dev/doc/install)** or higher is required. Follow these steps to build from source:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -35,11 +35,11 @@ make init
 make build
 ```
 
-Upon completion, the executable will be located in the `dist` folder.
+After building, the executable will be located in the `dist` directory.
 
-### ⚡ Example Run
+### ⚡ Run an Example
 
-Let's run a simple HTTP request example using [ping.yaml](./examples/ping.yaml):
+Let's run a basic HTTP request handling example, [ping.yaml](./examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -68,13 +68,13 @@ Let's run a simple HTTP request example using [ping.yaml](./examples/ping.yaml):
   code: pong
 ```
 
-To execute the workflow, use the following command:
+To run the workflow, use the following command:
 
 ```sh
 uniflow start --filename example/ping.yaml
 ```
 
-Verify it works by calling the HTTP endpoint:
+To verify it's working, call the HTTP endpoint:
 
 ```sh
 curl localhost:8000/ping
@@ -83,17 +83,17 @@ pong#
 
 ## ⚙️ Configuration
 
-Environment settings can be configured via the `.uniflow.toml` file or system environment variables.
+You can configure settings through the `.uniflow.toml` file or system environment variables.
 
-| TOML Key            | Environment Variable Key | Example                    |
-|---------------------|--------------------------|----------------------------|
-| `database.url`      | `DATABASE.URL`           | `mem://` or `mongodb://`   |
-| `database.name`     | `DATABASE.NAME`          | -                          |
-| `collection.nodes`  | `COLLECTION.NODES`       | `nodes`                    |
+| TOML Key           | Environment Variable | Example                   |
+|--------------------|----------------------|---------------------------|
+| `database.url`     | `DATABASE.URL`       | `mem://` or `mongodb://`  |
+| `database.name`    | `DATABASE.NAME`      | -                         |
+| `collection.nodes` | `COLLECTION.NODES`   | `nodes`                   |
 
 ## 📊 Benchmark
 
-Benchmark results performed on **[Contabo](https://contabo.com/)**'s VPS S SSD (4 cores, 8GB). The [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) was used to measure the [ping.yaml](./examples/ping.yaml) workflow consisting of `listener`, `router`, and `snippet` nodes.
+Below are benchmark results performed on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) environment. We used the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the [ping.yaml](./examples/ping.yaml) workflow consisting of `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -135,21 +135,21 @@ Percentage of the requests served within a certain time (ms)
 
 ## 📚 Learn More
 
-- [Getting Started](./docs/getting_started.md): Learn how to install the CLI and manage workflows.
-- [Key Concepts](./docs/key_concepts.md): Understand core concepts such as nodes, connections, ports, and packets.
-- [Architecture](./docs/architecture.md): Dive deep into node specification loading and workflow execution processes.
-- [User Extensions](./docs/user_extensions.md): Learn how to add new features and integrate with existing services.
+- [Getting Started](./docs/getting_started.md): Introduction to CLI installation and workflow management.
+- [Key Concepts](./docs/key_concepts.md): Explanation of basic concepts such as nodes, connections, ports, and packets.
+- [Architecture](./docs/architecture.md): Detailed explanation of node specification loading and workflow execution process.
+- [User Extensions](./docs/user_extensions.md): Guide on adding new features and integrating existing services.
 
-## 🌐 Community & Support
+## 🌐 Community and Support
 
-If you have questions or need support, join us through the following channels:
+For questions about the project or if you need support, please use the following channels:
 
-- [Discussions](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
-- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Report bugs and request features.
+- [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
+- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bug reports and feature requests.
 
 ## 📜 License
 
-This project is distributed under the [MIT License](./LICENSE). Feel free to modify and redistribute it.
+This project is distributed under the [MIT License](./LICENSE). You are free to use, modify, and distribute it according to the license terms.
 
 <!-- Go -->
 
