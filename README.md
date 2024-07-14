@@ -18,9 +18,9 @@ Deliver a personalized experience for your service and expand functionality with
 
 - **Performance:** Achieve maximum throughput and minimal latency across diverse environments.
 - **Flexibility:** Dynamically modify specifications and make real-time adjustments.
-- **Scalability:** Seamlessly add new nodes to enhance functionality.
+- **Extensibility:** Seamlessly add new nodes to enhance functionality.
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### 🛠️ Build and Install
 
