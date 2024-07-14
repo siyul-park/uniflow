@@ -1,4 +1,4 @@
-# Uniflow
+# 🪐 Uniflow
 
 [![go report][go_report_img]][go_report_url]
 [![go doc][go_doc_img]][go_doc_url]
@@ -6,50 +6,94 @@
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.
+**A high-performance, extremely flexible, and easily extensible multipurpose workflow engine.**
 
-## Overview
+## 📝 Overview
 
-Uniflow efficiently handles tasks of varying durations, from short-term to long-term, providing an environment where data processing flows can be declaratively defined and dynamically modified.
+**Uniflow** excels at managing tasks of varying durations, offering an environment where data processing flows can be defined declaratively and modified dynamically. With [built-in extensions](./ext/README.md), it executes tasks efficiently, allowing you to freely add or remove nodes as needed.
 
-With [built-in extensions](./ext/README.md), it efficiently executes short-term tasks and implements a wide range of features. However, the engine does not enforce the use of specific nodes; all nodes can be freely added or removed according to service requirements.
+Deliver a personalized experience for your service and expand functionality without limits.
 
-Integrate the engine into your service to offer personalized experiences and extensively expand functionalities.
+## 🎯 Core Values
 
-## Principles
+- **Performance:** Achieve maximum throughput and minimal latency across diverse environments.
+- **Flexibility:** Dynamically modify specifications and make real-time adjustments.
+- **Scalability:** Seamlessly add new nodes to enhance functionality.
 
-- **Performance:** Achieves maximum throughput and minimum latency across diverse environments.
-- **Flexibility:** Allows dynamic modification of specifications and real-time adjustments.
-- **Extensibility:** Supports the addition of new nodes freely, enabling extensive feature expansion.
+## 🚀 Getting Started
 
-## Quick Start
+### 🛠️ Build and Install
 
-Run the [ping example](./examples/ping.yaml) using the following command:
+**[Go 1.22](https://go.dev/doc/install)** or later is required. Follow these steps to build the code:
 
-```shell
+```sh
+git clone https://github.com/siyul-park/uniflow
+
+cd uniflow
+
+make init
+make build
+```
+
+Upon completion, the executable will be located in the `dist` folder.
+
+### ⚡ Example Run
+
+Let's run a simple HTTP request example using [ping.yaml](./examples/ping.yaml):
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  links:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  links:
+    out[0]:
+      - name: pong
+        port: in
+
+- kind: snippet
+  name: pong
+  language: text
+  code: pong
+```
+
+To execute the workflow, use the following command:
+
+```sh
 uniflow start --filename example/ping.yaml
 ```
 
-Verify that the HTTP endpoint works as expected:
+Verify it works by calling the HTTP endpoint:
 
-```shell
+```sh
 curl localhost:8000/ping
 pong#
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-Configure the environment using the `.uniflow.toml` file or system environment variables.
+Environment settings can be configured via the `.uniflow.toml` file or system environment variables.
 
-| TOML Key           | Environment Variable Key | Example                  |
-|--------------------|--------------------------|--------------------------|
-| `database.url`     | `DATABASE.URL`           | `mem://` or `mongodb://` |
-| `database.name`    | `DATABASE.NAME`          | -                        |
-| `collection.nodes` | `COLLECTION.NODES`       | `nodes`                  |
+| TOML Key            | Environment Variable Key | Example                    |
+|---------------------|--------------------------|----------------------------|
+| `database.url`      | `DATABASE.URL`           | `mem://` or `mongodb://`   |
+| `database.name`     | `DATABASE.NAME`          | -                          |
+| `collection.nodes`  | `COLLECTION.NODES`       | `nodes`                    |
 
-## Benchmark
+## 📊 Benchmark
 
-Benchmarks were conducted on a Contabo VPS S SSD (4 cores, 8GB RAM) using the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). The workflow consisted of the `listener`, `router`, and `snippet` nodes from the [ping example](./examples/ping.yaml).
+Benchmark results performed on **[Contabo](https://contabo.com/)**'s VPS S SSD (4 cores, 8GB). The [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) was used to measure the [ping.yaml](./examples/ping.yaml) workflow consisting of `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -89,12 +133,23 @@ Percentage of the requests served within a certain time (ms)
  100%    559 (longest request)
 ```
 
-## Learn More
+## 📚 Learn More
 
-- [Getting Started](./docs/getting_started.md): Learn how to install the CLI, manage workflows, and run the engine.
-- [Key Concepts](./docs/key_concepts.md): Understand essential concepts such as nodes, their connections, ports, packets, and more.
-- [Architecture](./docs/architecture.md): See how node specifications are loaded into the engine and how workflows are executed.
-- [User Extension](./docs/user_extension.md): Find out how to add new nodes and seamlessly integrate them into your existing services.
+- [Getting Started](./docs/getting_started.md): Learn how to install the CLI and manage workflows.
+- [Key Concepts](./docs/key_concepts.md): Understand core concepts such as nodes, connections, ports, and packets.
+- [Architecture](./docs/architecture.md): Dive deep into node specification loading and workflow execution processes.
+- [User Extensions](./docs/user_extensions.md): Learn how to add new features and integrate with existing services.
+
+## 🌐 Community & Support
+
+If you have questions or need support, join us through the following channels:
+
+- [Discussions](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
+- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Report bugs and request features.
+
+## 📜 License
+
+This project is distributed under the [MIT License](./LICENSE). Feel free to modify and redistribute it.
 
 <!-- Go -->
 

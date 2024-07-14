@@ -1,4 +1,4 @@
-# Key Concepts
+# 📚 Key Concepts
 
 This guide explains key terms and concepts in detail.
 

@@ -1,42 +1,42 @@
 package types
 
-// Value is an interface that signifies atomic data types.
+// Value is an interface representing atomic data types.
 type Value interface {
-	Kind() Kind              // Kind returns the kind of the Object.
-	Hash() uint64            // Hash returns the hash code of the Object.
-	Interface() any          // Interface returns the Object as a generic interface.
-	Equal(other Value) bool  // Equal checks whether the Object is equal to another Object.
-	Compare(other Value) int // Compare compares the Object with another Object.
+	Kind() Kind              // Kind returns the type of the Value.
+	Hash() uint64            // Hash returns the hash code of the Value.
+	Interface() any          // Interface returns the Value as a generic interface.
+	Equal(other Value) bool  // Equal checks if this Value equals another Value.
+	Compare(other Value) int // Compare compares this Value with another Value.
 }
 
-// Kind represents the enumeration of data types.
+// Kind represents enumerated data types.
 type Kind byte
 
 // Constants representing various data types.
 const (
-	KindInvalid Kind = iota // Represents an invalid or nil type.
-	KindBinary              // Represents binary data.
-	KindBoolean             // Represents a boolean value.
-	KindError               // Represents a error value.
-	KindInt                 // Represents an integer value.
-	KindInt8                // Represents an integer value.
-	KindInt16               // Represents an integer value.
-	KindInt32               // Represents an integer value.
-	KindInt64               // Represents an integer value.
-	KindUint                // Represents an unsigned integer value.
-	KindUint8               // Represents an unsigned integer value.
-	KindUint16              // Represents an unsigned integer value.
-	KindUint32              // Represents an unsigned integer value.
-	KindUint64              // Represents an unsigned integer value.
-	KindFloat32             // Represents a floating-point number.
-	KindFloat64             // Represents a floating-point number.
-	KindMap                 // Represents a map.
-	KindSlice               // Represents a slice.
-	KindString              // Represents a string.
+	KindInvalid Kind = iota
+	KindBinary
+	KindBoolean
+	KindError
+	KindInt
+	KindInt8
+	KindInt16
+	KindInt32
+	KindInt64
+	KindUint
+	KindUint8
+	KindUint16
+	KindUint32
+	KindUint64
+	KindFloat32
+	KindFloat64
+	KindMap
+	KindSlice
+	KindString
 )
 
-// KindOf returns the kind of the provided Object.
-// If the Object is nil, it returns KindInvalid.
+// KindOf returns the Kind of the provided Value.
+// If the Value is nil, it returns KindInvalid.
 func KindOf(v Value) Kind {
 	if v == nil {
 		return KindInvalid
@@ -44,8 +44,8 @@ func KindOf(v Value) Kind {
 	return v.Kind()
 }
 
-// HashOf returns the hash code of the provided Object.
-// If the Object is nil, it returns 0.
+// HashOf returns the hash code of the provided Value.
+// If the Value is nil, it returns 0.
 func HashOf(v Value) uint64 {
 	if v == nil {
 		return 0
@@ -53,8 +53,8 @@ func HashOf(v Value) uint64 {
 	return v.Hash()
 }
 
-// InterfaceOf converts an Object to a generic interface.
-// Nil values are returned as a nil interface.
+// InterfaceOf converts a Value to a generic interface.
+// Nil Values are converted to nil interfaces.
 func InterfaceOf(v Value) any {
 	if v == nil {
 		return nil
@@ -62,9 +62,8 @@ func InterfaceOf(v Value) any {
 	return v.Interface()
 }
 
-// Equal checks whether two Objects are equal.
-// If both Objects are nil, they are considered equal.
-// If their kinds differ, they are not equal.
+// Equal checks equality between two Values.
+// It returns true if both Values are nil or equal; otherwise, false.
 func Equal(x, y Value) bool {
 	if x == nil && y == nil {
 		return true
@@ -75,12 +74,11 @@ func Equal(x, y Value) bool {
 	return x.Equal(y)
 }
 
-// Compare compares two Objects and returns:
+// Compare compares two Values and returns:
 // -1 if x is less than y,
-// 0 if they are equal,
+// 0 if x equals y,
 // 1 if x is greater than y.
-// If both Objects are nil, they are considered equal.
-// If their kinds differ, they are not equal.
+// Nil Values are considered equal to each other.
 func Compare(x, y Value) int {
 	if x == nil && y == nil {
 		return 0
