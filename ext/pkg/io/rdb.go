@@ -19,7 +19,7 @@ type RDBNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Driver    string             `map:"driver"`
 	Source    string             `map:"source"`
-	Isolation sql.IsolationLevel `map:"isolation"`
+	Isolation sql.IsolationLevel `map:"isolation,omitempty"`
 }
 
 // RDBNode represents a node for interacting with a relational database.
@@ -143,7 +143,6 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, packet.New(types.NewError(err))
 		}
 	}
-
 	defer rows.Close()
 
 	var results []map[string]any

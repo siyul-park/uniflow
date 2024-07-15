@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
 	"github.com/siyul-park/uniflow/ext/pkg/event"

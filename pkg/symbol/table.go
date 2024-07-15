@@ -114,7 +114,6 @@ func (t *Table) Keys() []uuid.UUID {
 	for id := range t.symbols {
 		ids = append(ids, id)
 	}
-
 	return ids
 }
 
@@ -128,7 +127,6 @@ func (t *Table) Clear() error {
 			return err
 		}
 	}
-
 	return nil
 }
 
