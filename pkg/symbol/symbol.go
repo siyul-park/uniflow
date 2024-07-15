@@ -10,6 +10,7 @@ import (
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
 	Spec   spec.Spec
+	Value  any
 	Node   node.Node
 	linked map[string][]spec.PortLocation
 }
