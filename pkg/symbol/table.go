@@ -101,13 +101,8 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if namespace, ok := t.namespaces[namespace]; ok {
-		if id, ok := namespace[name]; ok {
-			sym, ok := t.symbols[id]
-			return sym, ok
-		}
-	}
-	return nil, false
+	sym, ok := t.symbols[t.loopup(namespace, name)]
+	return sym, ok
 }
 
 // Keys returns all IDs of symbols in the table.
@@ -143,11 +138,8 @@ func (t *Table) insert(sym *Symbol) error {
 		t.namespaces[sym.Namespace()] = lo.Assign(t.namespaces[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
 	}
 
-	if err := t.links(sym); err != nil {
-		return err
-	}
-
-	return nil
+	t.links(sym)
+	return t.load(sym)
 }
 
 func (t *Table) free(id uuid.UUID) (*Symbol, error) {
@@ -156,9 +148,11 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 		return nil, nil
 	}
 
-	if err := t.unlinks(sym); err != nil {
+	if err := t.unload(sym); err != nil {
 		return nil, err
 	}
+	t.unlinks(sym)
+
 	if err := sym.Close(); err != nil {
 		return nil, err
 	}
@@ -176,7 +170,37 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 	return sym, nil
 }
 
-func (t *Table) links(sym *Symbol) error {
+func (t *Table) load(sym *Symbol) error {
+	linked := t.linked(sym)
+	for _, sym := range linked {
+		if t.active(sym) {
+			for _, hook := range t.loadHooks {
+				if err := hook.Load(sym); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (t *Table) unload(sym *Symbol) error {
+	linked := t.linked(sym)
+	for i := len(linked) - 1; i >= 0; i-- {
+		sym := linked[i]
+		if t.active(sym) {
+			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
+				hook := t.unloadHooks[j]
+				if err := hook.Unload(sym); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (t *Table) links(sym *Symbol) {
 	for name, locations := range sym.Links() {
 		out := sym.Out(name)
 		if out == nil {
@@ -185,10 +209,8 @@ func (t *Table) links(sym *Symbol) error {
 
 		for _, location := range locations {
 			id := location.ID
-			if location.Name != "" {
-				if namespace, ok := t.namespaces[sym.Namespace()]; ok {
-					id = namespace[location.Name]
-				}
+			if id == (uuid.UUID{}) {
+				id = t.loopup(sym.Namespace(), location.Name)
 			}
 
 			if ref, ok := t.symbols[id]; ok {
@@ -233,22 +255,14 @@ func (t *Table) links(sym *Symbol) error {
 			}
 		}
 	}
-
-	return t.load(sym)
 }
 
-func (t *Table) unlinks(sym *Symbol) error {
-	if err := t.unload(sym); err != nil {
-		return err
-	}
-
+func (t *Table) unlinks(sym *Symbol) {
 	for name, locations := range sym.Links() {
 		for _, location := range locations {
 			id := location.ID
-			if location.Name != "" {
-				if namespace, ok := t.namespaces[sym.Namespace()]; ok {
-					id = namespace[location.Name]
-				}
+			if id == (uuid.UUID{}) {
+				id = t.loopup(sym.Namespace(), location.Name)
 			}
 
 			ref, ok := t.symbols[id]
@@ -270,38 +284,6 @@ func (t *Table) unlinks(sym *Symbol) error {
 			}
 		}
 	}
-
-	return nil
-}
-
-func (t *Table) load(sym *Symbol) error {
-	linked := t.linked(sym)
-	for _, sym := range linked {
-		if t.active(sym) {
-			for _, hook := range t.loadHooks {
-				if err := hook.Load(sym); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (t *Table) unload(sym *Symbol) error {
-	linked := t.linked(sym)
-	for i := len(linked) - 1; i >= 0; i-- {
-		sym := linked[i]
-		if t.active(sym) {
-			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
-				hook := t.unloadHooks[j]
-				if err := hook.Unload(sym); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }
 
 func (t *Table) linked(sym *Symbol) []*Symbol {
@@ -359,10 +341,8 @@ func (t *Table) active(sym *Symbol) bool {
 		for _, locations := range sym.Links() {
 			for _, location := range locations {
 				id := location.ID
-				if location.Name != "" {
-					if namespace, ok := t.namespaces[sym.Namespace()]; ok {
-						id = namespace[location.Name]
-					}
+				if id == (uuid.UUID{}) {
+					id = t.loopup(sym.Namespace(), location.Name)
 				}
 
 				next, ok := t.symbols[id]
@@ -375,4 +355,11 @@ func (t *Table) active(sym *Symbol) bool {
 		}
 	}
 	return true
+}
+
+func (t *Table) loopup(namespace, name string) uuid.UUID {
+	if namespace, ok := t.namespaces[namespace]; ok {
+		return namespace[name]
+	}
+	return uuid.UUID{}
 }
