@@ -80,22 +80,20 @@ func (s *Scheme) Decode(spc spec.Spec, values ...any) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var value any
-	if len(values) > 0 {
-		value = values[len(values)-1]
-	}
-
 	doc, err := types.BinaryEncoder.Encode(spc)
 	if err != nil {
 		return nil, err
 	}
 
-	if tmpl, err := template.New("").Parse(doc.Interface()); err != nil {
-		return nil, err
-	} else if data, err := tmpl.Execute(value); err != nil {
-		return nil, err
-	} else if doc, err = types.BinaryEncoder.Encode(data); err != nil {
-		return nil, err
+	if len(values) > 0 {
+		value := values[len(values)-1]
+		if tmpl, err := template.New("").Parse(doc.Interface()); err != nil {
+			return nil, err
+		} else if data, err := tmpl.Execute(value); err != nil {
+			return nil, err
+		} else if doc, err = types.BinaryEncoder.Encode(data); err != nil {
+			return nil, err
+		}
 	}
 
 	typ, ok := s.types[spc.GetKind()]
