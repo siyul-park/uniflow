@@ -125,10 +125,10 @@ func (n *TriggerNode) Listen() {
 
 			if outPayload, err := types.TextEncoder.Encode(e.Data()); err != nil {
 				errPck := packet.New(types.NewError(err))
-				packet.Call(errWriter, errPck)
+				packet.Write(errWriter, errPck)
 			} else {
 				outPck := packet.New(outPayload)
-				packet.Call(outWriter, outPck)
+				packet.Write(outWriter, outPck)
 			}
 
 			proc.Wait()

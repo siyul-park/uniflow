@@ -1,0 +1,166 @@
+- kind: listener
+  name: http
+  protocol: http
+  port: 8000
+  links:
+    init:
+      - name: table_create
+        port: in
+    out:
+      - name: router
+        port: in
+    error:
+      - name: catch
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: POST
+      path: /users
+      port: out[0]
+    - method: GET
+      path: /users
+      port: out[1]
+    - method: PUT
+      path: /users/:id
+      port: out[2]
+    - method: DELETE
+      path: /users/:id
+      port: out[3]
+  links:
+    out[0]:
+      - name: user_create
+        port: in
+    out[1]:
+      - name: users_read
+        port: in
+    out[2]:
+      - name: user_update
+        port: in
+    out[3]:
+      - name: user_delete
+        port: in
+
+- kind: snippet
+  name: table_create
+  language: text
+  code: >
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      name VARCHAR(255) NOT NULL
+    )
+  links:
+    out:
+      - name: sqlite
+        port: in
+
+- kind: snippet
+  name: user_create
+  language: javascript
+  code: >
+    export default function (args) {
+      return [
+        "INSERT INTO users(name) VALUES (:name) RETURNING *",
+        args.body
+      ];
+    }
+  links:
+    out:
+      - name: sqlite
+        port: in
+
+- kind: snippet
+  name: users_read
+  language: text
+  code: SELECT * FROM users
+  links:
+    out:
+      - name: sqlite
+        port: in
+
+- kind: snippet
+  name: user_update
+  language: javascript
+  code: >
+    export default function (args) {
+      return [
+        "UPDATE users SET name = :name WHERE id = :id",
+        args.params
+      ];
+    }
+  links:
+    out:
+      - name: sqlite
+        port: in
+
+- kind: snippet
+  name: user_delete
+  language: javascript
+  code: >
+    export default function (args) {
+      return [
+        "DELETE FROM users WHERE id = :id",
+        args.params
+      ];
+    }
+  links:
+    out:
+      - name: sqlite
+        port: in
+
+- kind: rdb
+  name: sqlite
+  driver: sqlite3
+  source: '{{ .SQLITE_URI }}'
+  links:
+    init:
+      - name: enviroment
+        port: in
+
+- kind: switch
+  name: catch
+  matches:
+    - when: self == "unsupported type" || self == "unsupported value"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  links:
+    out[0]:
+      - name: status_400
+        port: in
+    out[1]:
+      - name: status_500
+        port: in
+
+- kind: snippet
+  name: status_400
+  language: javascript
+  code: >
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: status_500
+  language: json
+  code: >
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }
+
+- kind: snippet
+  name: enviroment
+  language: json
+  code: >
+    {
+      "SQLITE_URI": "file::memory:?cache=shared"
+    }

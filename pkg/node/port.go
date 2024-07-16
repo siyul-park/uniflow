@@ -8,10 +8,11 @@ import (
 
 // Commonly used port names.
 const (
-	PortIO  = "io"
-	PortIn  = "in"
-	PortOut = "out"
-	PortErr = "error"
+	PortInit = "init"
+	PortIO   = "io"
+	PortIn   = "in"
+	PortOut  = "out"
+	PortErr  = "error"
 )
 
 var portExp = regexp.MustCompile(`(\w+)\[(\d+)\]`)

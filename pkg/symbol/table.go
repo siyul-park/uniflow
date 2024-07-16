@@ -1,12 +1,16 @@
 package symbol
 
 import (
+	"reflect"
 	"slices"
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // TableOptions holds configurations for a Table instance.
@@ -49,19 +53,8 @@ func (t *Table) Insert(s spec.Spec) (*Symbol, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	s, err := t.scheme.Decode(s)
-	if err != nil {
-		return nil, err
-	}
-
-	n, err := t.scheme.Compile(s)
-	if err != nil {
-		return nil, err
-	}
-
 	sym := &Symbol{
 		Spec:   s,
-		Node:   n,
 		linked: make(map[string][]spec.PortLocation),
 	}
 
@@ -174,15 +167,93 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 
 func (t *Table) load(sym *Symbol) error {
 	linked := t.linked(sym)
+	for i := 0; i < len(linked); i++ {
+		sym := linked[i]
+		if !t.active(sym) {
+			linked = append(linked[:i], linked[i+1:]...)
+			i--
+		}
+	}
+
 	for _, sym := range linked {
-		if t.active(sym) {
-			for _, hook := range t.loadHooks {
-				if err := hook.Load(sym); err != nil {
-					return err
+		value, err := t.init(sym)
+		if err != nil {
+			return err
+		}
+
+		if sym.Node != nil && reflect.DeepEqual(sym.Value, value) {
+			continue
+		}
+
+		if err := sym.Close(); err != nil {
+			return err
+		}
+
+		sym.Value = value
+
+		s, err := t.scheme.Decode(sym.Spec, value)
+		if err != nil {
+			return err
+		}
+
+		sym.Node, err = t.scheme.Compile(s)
+		if err != nil {
+			return err
+		}
+
+		for name, locations := range sym.Links() {
+			out := sym.Out(name)
+			if out == nil {
+				continue
+			}
+
+			for _, location := range locations {
+				id := location.ID
+				if id == (uuid.UUID{}) {
+					id = t.lookup(sym.Namespace(), location.Name)
+				}
+
+				if ref, ok := t.symbols[id]; ok {
+					if ref.Namespace() == sym.Namespace() {
+						if in := ref.In(location.Port); in != nil {
+							out.Link(in)
+						}
+					}
+				}
+			}
+		}
+
+		for name, locations := range sym.linked {
+			in := sym.In(name)
+			if in == nil {
+				continue
+			}
+
+			for _, location := range locations {
+				id := location.ID
+				if id == (uuid.UUID{}) {
+					id = t.lookup(sym.Namespace(), location.Name)
+				}
+
+				if ref, ok := t.symbols[id]; ok {
+					if ref.Namespace() == sym.Namespace() {
+						if out := ref.Out(location.Port); out != nil {
+							out.Link(in)
+						}
+					}
 				}
 			}
 		}
 	}
+
+	for _, sym := range linked {
+		for _, hook := range t.loadHooks {
+			if err := hook.Load(sym); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -204,11 +275,6 @@ func (t *Table) unload(sym *Symbol) error {
 
 func (t *Table) links(sym *Symbol) {
 	for name, locations := range sym.Links() {
-		out := sym.Out(name)
-		if out == nil {
-			continue
-		}
-
 		for _, location := range locations {
 			id := location.ID
 			if id == (uuid.UUID{}) {
@@ -217,15 +283,11 @@ func (t *Table) links(sym *Symbol) {
 
 			if ref, ok := t.symbols[id]; ok {
 				if ref.Namespace() == sym.Namespace() {
-					if in := ref.In(location.Port); in != nil {
-						out.Link(in)
-
-						ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
-							ID:   sym.ID(),
-							Name: location.Name,
-							Port: name,
-						})
-					}
+					ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
+						ID:   sym.ID(),
+						Name: location.Name,
+						Port: name,
+					})
 				}
 			}
 		}
@@ -237,22 +299,13 @@ func (t *Table) links(sym *Symbol) {
 		}
 
 		for name, locations := range ref.Links() {
-			out := ref.Out(name)
-			if out == nil {
-				continue
-			}
-
 			for _, location := range locations {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					if in := sym.In(location.Port); in != nil {
-						out.Link(in)
-
-						sym.linked[location.Port] = append(sym.linked[location.Port], spec.PortLocation{
-							ID:   ref.ID(),
-							Name: location.Name,
-							Port: name,
-						})
-					}
+					sym.linked[location.Port] = append(sym.linked[location.Port], spec.PortLocation{
+						ID:   ref.ID(),
+						Name: location.Name,
+						Port: name,
+					})
 				}
 			}
 		}
@@ -336,16 +389,47 @@ func (t *Table) active(sym *Symbol) bool {
 					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
-				next, ok := t.symbols[id]
-				if !ok {
+				ref, ok := t.symbols[id]
+				if !ok || ref.Namespace() != sym.Namespace() {
 					return false
 				}
 
-				nexts = append(nexts, next)
+				nexts = append(nexts, ref)
 			}
 		}
 	}
 	return true
+}
+
+func (t *Table) init(sym *Symbol) (any, error) {
+	out := port.NewOut()
+	defer out.Close()
+
+	links := sym.Links()
+	for _, location := range links[node.PortInit] {
+		id := location.ID
+		if id == (uuid.UUID{}) {
+			id = t.lookup(sym.Namespace(), location.Name)
+		}
+
+		if ref, ok := t.symbols[id]; ok {
+			if ref.Namespace() == sym.Namespace() {
+				if in := ref.In(location.Port); in != nil {
+					out.Link(in)
+				}
+			}
+		}
+	}
+
+	payload, err := types.TextEncoder.Encode(sym.Spec)
+	if err != nil {
+		return nil, err
+	}
+	payload, err = port.Write(out, payload)
+	if err != nil {
+		return nil, err
+	}
+	return types.InterfaceOf(payload), nil
 }
 
 func (t *Table) lookup(namespace, name string) uuid.UUID {
