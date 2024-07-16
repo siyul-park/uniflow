@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -125,6 +126,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
+	defer stmt.Close()
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
@@ -133,13 +135,19 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, packet.New(types.NewError(err))
 		}
 	} else {
-		var args any
+		var arg any
 		var ok bool
-		args, ok = types.Pick[map[string]any](inPck.Payload(), 1)
+		arg, ok = types.Pick[map[string]any](inPck.Payload(), 1)
 		if !ok {
-			args, _ = types.Pick[[]map[string]any](inPck.Payload(), 1)
+			arg, _ = types.Pick[[]map[string]any](inPck.Payload(), 1)
 		}
-		if rows, err = stmt.QueryxContext(ctx, args); err != nil {
+
+		query, args, err := tx.BindNamed(query, arg)
+		if err != nil {
+			return nil, packet.New(types.NewError(errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())))
+		}
+
+		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 	}
