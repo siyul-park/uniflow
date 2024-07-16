@@ -5,6 +5,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // OutPort represents an output port for sending data.
@@ -13,6 +14,31 @@ type OutPort struct {
 	writers   map[*process.Process]*packet.Writer
 	listeners []Listener
 	mu        sync.RWMutex
+}
+
+// Write sends the payload through OutPort, handles errors, and returns the processed result or any encountered error.
+func Write(out *OutPort, payload types.Value) (types.Value, error) {
+	var err error
+
+	proc := process.New()
+	defer proc.Exit(err)
+
+	writer := out.Open(proc)
+	defer writer.Close()
+
+	outPck := packet.New(payload)
+	backPck := packet.Write(writer, outPck)
+
+	payload = backPck.Payload()
+
+	if v, ok := payload.(types.Error); ok {
+		err = v.Unwrap()
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return payload, nil
 }
 
 // NewOut creates a new OutPort instance.

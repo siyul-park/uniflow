@@ -7,9 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
@@ -422,28 +420,15 @@ func (t *Table) init(sym *Symbol) (any, error) {
 		}
 	}
 
-	proc := process.New()
-
-	writer := out.Open(proc)
-	defer writer.Close()
-
-	outPayload, err := types.TextEncoder.Encode(sym.Spec)
+	payload, err := types.TextEncoder.Encode(sym.Spec)
 	if err != nil {
 		return nil, err
 	}
-
-	outPck := packet.New(outPayload)
-	backPck := packet.Write(writer, outPck)
-
-	backPayload := backPck.Payload()
-
-	if v, ok := backPayload.(types.Error); ok {
-		err = v.Unwrap()
+	payload, err = port.Write(out, payload)
+	if err != nil {
+		return nil, err
 	}
-
-	proc.Exit(err)
-
-	return types.InterfaceOf(backPayload), nil
+	return types.InterfaceOf(payload), nil
 }
 
 func (t *Table) lookup(namespace, name string) uuid.UUID {
