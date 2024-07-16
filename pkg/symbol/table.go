@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
@@ -101,7 +100,7 @@ func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	sym, ok := t.symbols[t.loopup(namespace, name)]
+	sym, ok := t.symbols[t.lookup(namespace, name)]
 	return sym, ok
 }
 
@@ -133,7 +132,12 @@ func (t *Table) Clear() error {
 func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
-		t.namespaces[sym.Namespace()] = lo.Assign(t.namespaces[sym.Namespace()], map[string]uuid.UUID{sym.Name(): sym.ID()})
+		namespace, ok := t.namespaces[sym.Namespace()]
+		if !ok {
+			namespace = make(map[string]uuid.UUID)
+			t.namespaces[sym.Namespace()] = namespace
+		}
+		namespace[sym.Name()] = sym.ID()
 	}
 
 	t.links(sym)
@@ -208,7 +212,7 @@ func (t *Table) links(sym *Symbol) {
 		for _, location := range locations {
 			id := location.ID
 			if id == (uuid.UUID{}) {
-				id = t.loopup(sym.Namespace(), location.Name)
+				id = t.lookup(sym.Namespace(), location.Name)
 			}
 
 			if ref, ok := t.symbols[id]; ok {
@@ -260,7 +264,7 @@ func (t *Table) unlinks(sym *Symbol) {
 		for _, location := range locations {
 			id := location.ID
 			if id == (uuid.UUID{}) {
-				id = t.loopup(sym.Namespace(), location.Name)
+				id = t.lookup(sym.Namespace(), location.Name)
 			}
 
 			ref, ok := t.symbols[id]
@@ -294,18 +298,7 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 		for _, locations := range sym.linked {
 			for _, location := range locations {
 				next := t.symbols[location.ID]
-				ok = false
-				for _, cur := range nexts {
-					if ok = ok || cur == next; ok {
-						break
-					}
-				}
-				for _, cur := range linked {
-					if ok = ok || cur == next; ok {
-						break
-					}
-				}
-				if !ok {
+				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {
 					nexts = append(nexts, next)
 					break
 				}
@@ -340,7 +333,7 @@ func (t *Table) active(sym *Symbol) bool {
 			for _, location := range locations {
 				id := location.ID
 				if id == (uuid.UUID{}) {
-					id = t.loopup(sym.Namespace(), location.Name)
+					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
 				next, ok := t.symbols[id]
@@ -355,7 +348,7 @@ func (t *Table) active(sym *Symbol) bool {
 	return true
 }
 
-func (t *Table) loopup(namespace, name string) uuid.UUID {
+func (t *Table) lookup(namespace, name string) uuid.UUID {
 	if namespace, ok := t.namespaces[namespace]; ok {
 		return namespace[name]
 	}

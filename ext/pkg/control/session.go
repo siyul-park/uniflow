@@ -134,7 +134,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 		n.tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
 			var err error
 			if v, ok := backPck.Payload().(types.Error); ok {
-				err, _ = v.Interface().(error)
+				err = v.Unwrap()
 			}
 
 			for _, child := range children {

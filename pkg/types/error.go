@@ -10,7 +10,6 @@ import (
 )
 
 // Error represents an error types.
-
 type Error = *_error
 
 type _error struct {
@@ -28,6 +27,11 @@ func NewError(value error) Error {
 // String returns the error message as a string.
 func (e Error) Error() string {
 	return e.value.Error()
+}
+
+// Unwrap returns its underlying error.
+func (e Error) Unwrap() error {
+	return e.value
 }
 
 // Kind returns the kind of the value.

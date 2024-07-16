@@ -78,7 +78,6 @@ func (n *IfNode) In(name string) *port.InPort {
 		return n.inPort
 	default:
 	}
-
 	return nil
 }
 

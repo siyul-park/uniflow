@@ -109,7 +109,7 @@ func (n *ForkNode) backward(proc *process.Process) {
 		if err, ok := backPck.Payload().(types.Error); ok {
 			if errWriter.Write(backPck) == 0 {
 				proc.Wait()
-				proc.Exit(err)
+				proc.Exit(err.Unwrap())
 			}
 		} else {
 			proc.Wait()

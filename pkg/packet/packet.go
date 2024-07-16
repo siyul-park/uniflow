@@ -29,7 +29,7 @@ func Merge(pcks []*Packet) *Packet {
 
 		switch payload := pck.Payload().(type) {
 		case types.Error:
-			errs = append(errs, payload.Interface().(error))
+			errs = append(errs, payload.Unwrap())
 		default:
 			payloads = append(payloads, payload)
 		}
