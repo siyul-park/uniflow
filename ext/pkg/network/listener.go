@@ -175,11 +175,11 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var backPck *packet.Packet
 	if errPck != nil {
-		backPck = packet.Call(errWriter, errPck)
+		backPck = packet.Write(errWriter, errPck)
 	} else {
-		backPck = packet.Call(outWriter, outPck)
+		backPck = packet.Write(outWriter, outPck)
 		if _, ok := backPck.Payload().(types.Error); ok {
-			backPck = packet.CallOrFallback(errWriter, backPck, backPck)
+			backPck = packet.WriteOrFallback(errWriter, backPck, backPck)
 		}
 	}
 

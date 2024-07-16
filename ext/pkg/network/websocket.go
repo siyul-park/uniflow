@@ -183,7 +183,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 
 		if conn, err := n.action(proc, inPck); err != nil {
 			errPck := packet.New(types.NewError(err))
-			backPck := packet.CallOrFallback(errWriter, errPck, errPck)
+			backPck := packet.WriteOrFallback(errWriter, errPck, errPck)
 			ioReader.Receive(backPck)
 		} else {
 			n.conns.Store(proc, conn)
@@ -265,7 +265,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 			})
 
 			outPck := packet.New(outPayload)
-			packet.Call(outWriter, outPck)
+			packet.Write(outWriter, outPck)
 
 			proc.Wait()
 			proc.Exit(nil)
@@ -288,7 +288,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 		})
 
 		outPck := packet.New(outPayload)
-		packet.Call(outWriter, outPck)
+		packet.Write(outWriter, outPck)
 
 		child.Wait()
 		child.Exit(nil)

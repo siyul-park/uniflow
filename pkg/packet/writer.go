@@ -16,13 +16,13 @@ type Writer struct {
 	mu       sync.Mutex
 }
 
-// Call sends a packet to the writer and returns the received packet or None if the write fails.
-func Call(writer *Writer, pck *Packet) *Packet {
-	return CallOrFallback(writer, pck, None)
+// Write sends a packet to the writer and returns the received packet or None if the write fails.
+func Write(writer *Writer, pck *Packet) *Packet {
+	return WriteOrFallback(writer, pck, None)
 }
 
-// CallOrFallback sends a packet to the writer and returns the received packet or a backup packet if the write fails.
-func CallOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
+// WriteOrFallback sends a packet to the writer and returns the received packet or a backup packet if the write fails.
+func WriteOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
 	if writer.Write(outPck) == 0 {
 		return backPck
 	}

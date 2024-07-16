@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCall(t *testing.T) {
+func TestWrite(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
 
@@ -27,7 +27,7 @@ func TestCall(t *testing.T) {
 
 	outPck := New(nil)
 
-	backPck := Call(w, outPck)
+	backPck := Write(w, outPck)
 	assert.Equal(t, outPck, backPck)
 }
 
@@ -53,7 +53,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := New(nil)
 
-		backPck := CallOrFallback(w, outPck, None)
+		backPck := WriteOrFallback(w, outPck, None)
 		assert.Equal(t, outPck, backPck)
 	})
 
@@ -63,7 +63,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := New(nil)
 
-		backPck := CallOrFallback(w, outPck, None)
+		backPck := WriteOrFallback(w, outPck, None)
 		assert.Equal(t, None, backPck)
 	})
 }
