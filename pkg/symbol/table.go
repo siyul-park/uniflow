@@ -259,7 +259,8 @@ func (t *Table) load(sym *Symbol) error {
 
 func (t *Table) unload(sym *Symbol) error {
 	linked := t.linked(sym)
-	for _, sym := range linked {
+	for i := len(linked) - 1; i >= 0; i-- {
+		sym := linked[i]
 		if t.active(sym) {
 			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
 				hook := t.unloadHooks[j]
