@@ -166,81 +166,88 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 
 func (t *Table) load(sym *Symbol) error {
 	linked := t.linked(sym)
-	for _, sym := range linked {
-		if t.active(sym) {
-			value, err := t.init(sym)
-			if err != nil {
-				return err
-			}
+	for i := 0; i < len(linked); i++ {
+		sym := linked[i]
+		if !t.active(sym) {
+			linked = append(linked[:i], linked[i+1:]...)
+		}
+	}
 
-			if sym.Node != nil && reflect.DeepEqual(sym.Value, value) {
+	for _, sym := range linked {
+		value, err := t.init(sym)
+		if err != nil {
+			return err
+		}
+
+		if sym.Node != nil && reflect.DeepEqual(sym.Value, value) {
+			continue
+		}
+
+		if err := sym.Close(); err != nil {
+			return err
+		}
+
+		sym.Value = value
+
+		s, err := t.scheme.Decode(sym.Spec, value)
+		if err != nil {
+			return err
+		}
+
+		sym.Node, err = t.scheme.Compile(s)
+		if err != nil {
+			return err
+		}
+
+		for name, locations := range sym.Links() {
+			out := sym.Out(name)
+			if out == nil {
 				continue
 			}
 
-			if err := sym.Close(); err != nil {
-				return err
-			}
-
-			sym.Value = value
-
-			s, err := t.scheme.Decode(sym.Spec, value)
-			if err != nil {
-				return err
-			}
-
-			sym.Node, err = t.scheme.Compile(s)
-			if err != nil {
-				return err
-			}
-
-			for name, locations := range sym.Links() {
-				out := sym.Out(name)
-				if out == nil {
-					continue
+			for _, location := range locations {
+				id := location.ID
+				if id == (uuid.UUID{}) {
+					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
-				for _, location := range locations {
-					id := location.ID
-					if id == (uuid.UUID{}) {
-						id = t.lookup(sym.Namespace(), location.Name)
-					}
-
-					if ref, ok := t.symbols[id]; ok {
-						if ref.Namespace() == sym.Namespace() {
-							if in := ref.In(location.Port); in != nil {
-								out.Link(in)
-							}
+				if ref, ok := t.symbols[id]; ok {
+					if ref.Namespace() == sym.Namespace() {
+						if in := ref.In(location.Port); in != nil {
+							out.Link(in)
 						}
 					}
 				}
 			}
+		}
 
-			for name, locations := range sym.refs {
-				in := sym.In(name)
-				if in == nil {
-					continue
+		for name, locations := range sym.refs {
+			in := sym.In(name)
+			if in == nil {
+				continue
+			}
+
+			for _, location := range locations {
+				id := location.ID
+				if id == (uuid.UUID{}) {
+					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
-				for _, location := range locations {
-					id := location.ID
-					if id == (uuid.UUID{}) {
-						id = t.lookup(sym.Namespace(), location.Name)
-					}
-
-					if ref, ok := t.symbols[id]; ok {
-						if ref.Namespace() == sym.Namespace() {
-							if out := ref.Out(location.Port); out != nil {
-								out.Link(in)
-							}
+				if ref, ok := t.symbols[id]; ok {
+					if ref.Namespace() == sym.Namespace() {
+						if out := ref.Out(location.Port); out != nil {
+							out.Link(in)
 						}
 					}
 				}
 			}
+		}
+	}
 
-			for _, hook := range t.loadHooks {
-				if err := hook.Load(sym); err != nil {
-					return err
-				}
+	for _, sym := range linked {
+		for _, hook := range t.loadHooks {
+			if err := hook.Load(sym); err != nil {
+				return err
 			}
 		}
 	}
