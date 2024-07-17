@@ -12,23 +12,23 @@ import (
 	"github.com/siyul-park/uniflow/pkg/store"
 )
 
-// LoaderConfig contains configuration settings for the Loader.
+// LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Namespace string       // Namespace associated with the Loader
+	Namespace string       // Namespace for the Loader
 	Table     *Table       // Symbol table for storing loaded symbols
-	Store     *store.Store // Store to retrieve spec.Spec from
+	Store     *store.Store // Store to retrieve specs from
 }
 
-// Loader synchronizes with the store.Store to load spec.Spec into the Table.
+// Loader synchronizes with store.Store to load spec.Spec into the Table.
 type Loader struct {
-	namespace string        // Namespace for loading
-	table     *Table        // Symbol table instance
-	store     *store.Store  // Store instance
-	stream    *store.Stream // Stream for watching changes
-	mu        sync.RWMutex  // Mutex for synchronization
+	namespace string
+	table     *Table
+	store     *store.Store
+	stream    *store.Stream
+	mu        sync.RWMutex
 }
 
-// NewLoader creates a new Loader instance with the given configuration.
+// NewLoader creates a new Loader instance with the provided configuration.
 func NewLoader(config LoaderConfig) *Loader {
 	return &Loader{
 		namespace: config.Namespace,
@@ -37,7 +37,7 @@ func NewLoader(config LoaderConfig) *Loader {
 	}
 }
 
-// LoadOne loads a single spec.Spec identified by ID and its linked specs into the symbol table.
+// LoadOne loads a spec.Spec by ID and its linked specs into the symbol table.
 func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -129,7 +129,7 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 	}
 }
 
-// LoadAll loads all spec.Spec from the store and adds them to the symbol table.
+// LoadAll loads all spec.Spec from the store into the symbol table.
 func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
