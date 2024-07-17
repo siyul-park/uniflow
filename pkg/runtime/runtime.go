@@ -6,7 +6,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/loader"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
@@ -26,7 +25,7 @@ type Runtime struct {
 	namespace string
 	store     *store.Store
 	table     *symbol.Table
-	loader    *loader.Loader
+	loader    *symbol.Loader
 }
 
 // New creates a new Runtime instance with the specified configuration.
@@ -49,7 +48,7 @@ func New(config Config) *Runtime {
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 
-	ld := loader.New(loader.Config{
+	ld := symbol.NewLoader(symbol.LoaderConfig{
 		Namespace: config.Namespace,
 		Store:     config.Store,
 		Table:     tb,
