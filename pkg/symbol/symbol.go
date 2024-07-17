@@ -9,10 +9,10 @@ import (
 
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
-	Spec   spec.Spec
-	Value  any
-	Node   node.Node
-	linked map[string][]spec.PortLocation
+	Spec  spec.Spec
+	Value any
+	Node  node.Node
+	refs  map[string][]spec.PortLocation
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -45,6 +45,11 @@ func (s *Symbol) Annotations() map[string]string {
 // Links returns the links associated with the Symbol.
 func (s *Symbol) Links() map[string][]spec.PortLocation {
 	return s.Spec.GetLinks()
+}
+
+// Refs returns the refs associated with the Symbol.
+func (s *Symbol) Refs() map[string][]spec.PortLocation {
+	return s.refs
 }
 
 // In returns the input port with the specified name.

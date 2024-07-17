@@ -1,4 +1,4 @@
-package loader
+package symbol
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,10 +30,10 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		st := store.New(memdb.NewCollection(""))
 
-		tb := symbol.NewTable(s)
+		tb := NewTable(s)
 		defer tb.Clear()
 
-		ld := New(Config{
+		ld := NewLoader(LoaderConfig{
 			Store: st,
 			Table: tb,
 		})
@@ -97,10 +96,10 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Reload Same ID", func(t *testing.T) {
 		st := store.New(memdb.NewCollection(""))
 
-		tb := symbol.NewTable(s)
+		tb := NewTable(s)
 		defer tb.Clear()
 
-		ld := New(Config{
+		ld := NewLoader(LoaderConfig{
 			Store: st,
 			Table: tb,
 		})
@@ -128,10 +127,10 @@ func TestLoader_LoadOne(t *testing.T) {
 	t.Run("Reload After Delete", func(t *testing.T) {
 		st := store.New(memdb.NewCollection(""))
 
-		tb := symbol.NewTable(s)
+		tb := NewTable(s)
 		defer tb.Clear()
 
-		ld := New(Config{
+		ld := NewLoader(LoaderConfig{
 			Store: st,
 			Table: tb,
 		})
@@ -175,10 +174,10 @@ func TestLoader_LoadAll(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		st := store.New(memdb.NewCollection(""))
 
-		tb := symbol.NewTable(s)
+		tb := NewTable(s)
 		defer tb.Clear()
 
-		ld := New(Config{
+		ld := NewLoader(LoaderConfig{
 			Store: st,
 			Table: tb,
 		})
@@ -243,10 +242,10 @@ func TestLoader_LoadAll(t *testing.T) {
 	t.Run("Reload", func(t *testing.T) {
 		st := store.New(memdb.NewCollection(""))
 
-		tb := symbol.NewTable(s)
+		tb := NewTable(s)
 		defer tb.Clear()
 
-		ld := New(Config{
+		ld := NewLoader(LoaderConfig{
 			Store: st,
 			Table: tb,
 		})
@@ -286,10 +285,10 @@ func TestLoader_Reconcile(t *testing.T) {
 
 	st := store.New(memdb.NewCollection(""))
 
-	tb := symbol.NewTable(s)
+	tb := NewTable(s)
 	defer tb.Clear()
 
-	ld := New(Config{
+	ld := NewLoader(LoaderConfig{
 		Namespace: spec.DefaultNamespace,
 		Store:     st,
 		Table:     tb,
@@ -342,10 +341,10 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 
 	st := store.New(memdb.NewCollection(""))
 
-	tb := symbol.NewTable(s)
+	tb := NewTable(s)
 	defer tb.Clear()
 
-	ld := New(Config{
+	ld := NewLoader(LoaderConfig{
 		Store: st,
 		Table: tb,
 	})
@@ -388,10 +387,10 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 
 	st := store.New(memdb.NewCollection(""))
 
-	tb := symbol.NewTable(s)
+	tb := NewTable(s)
 	defer tb.Clear()
 
-	ld := New(Config{
+	ld := NewLoader(LoaderConfig{
 		Store: st,
 		Table: tb,
 	})

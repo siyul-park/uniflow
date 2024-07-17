@@ -1,4 +1,4 @@
-package loader
+package symbol
 
 import (
 	"context"
@@ -10,27 +10,26 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Config contains configuration settings for the Loader.
-type Config struct {
-	Namespace string        // Namespace associated with the Loader
-	Table     *symbol.Table // Symbol table for storing loaded symbols
-	Store     *store.Store  // Store to retrieve spec.Spec from
+// LoaderConfig holds configuration for the Loader.
+type LoaderConfig struct {
+	Namespace string       // Namespace for the Loader
+	Table     *Table       // Symbol table for storing loaded symbols
+	Store     *store.Store // Store to retrieve specs from
 }
 
-// Loader synchronizes with the store.Store to load spec.Spec into the symbol.Table.
+// Loader synchronizes with store.Store to load spec.Spec into the Table.
 type Loader struct {
-	namespace string        // Namespace for loading
-	table     *symbol.Table // Symbol table instance
-	store     *store.Store  // Store instance
-	stream    *store.Stream // Stream for watching changes
-	mu        sync.RWMutex  // Mutex for synchronization
+	namespace string
+	table     *Table
+	store     *store.Store
+	stream    *store.Stream
+	mu        sync.RWMutex
 }
 
-// New creates a new Loader instance with the given configuration.
-func New(config Config) *Loader {
+// NewLoader creates a new Loader instance with the provided configuration.
+func NewLoader(config LoaderConfig) *Loader {
 	return &Loader{
 		namespace: config.Namespace,
 		table:     config.Table,
@@ -38,8 +37,8 @@ func New(config Config) *Loader {
 	}
 }
 
-// LoadOne loads a single spec.Spec identified by ID and its linked specs into the symbol table.
-func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
+// LoadOne loads a spec.Spec by ID and its linked specs into the symbol table.
+func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -87,11 +86,12 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 				continue
 			}
 
-			if _, err := l.table.Insert(spec); err != nil {
+			sym := &Symbol{Spec: spec}
+			if err := l.table.Insert(sym); err != nil {
 				return nil, err
 			}
 
-			for _, locations := range spec.GetLinks() {
+			for _, locations := range sym.Links() {
 				for _, location := range locations {
 					if location.ID != (uuid.UUID{}) {
 						nexts = append(nexts, location.ID)
@@ -129,8 +129,8 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*symbol.Symbol, err
 	}
 }
 
-// LoadAll loads all spec.Spec from the store and adds them to the symbol table.
-func (l *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
+// LoadAll loads all spec.Spec from the store into the symbol table.
+func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -154,11 +154,12 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*symbol.Symbol, error) {
 		return nil, err
 	}
 
-	var symbols []*symbol.Symbol
+	var symbols []*Symbol
 	for _, spec := range specs {
-		if sym, err := l.table.Insert(spec); err != nil {
+		sym := &Symbol{Spec: spec}
+		if err := l.table.Insert(sym); err != nil {
 			return nil, err
-		} else if sym != nil {
+		} else {
 			symbols = append(symbols, sym)
 		}
 	}
