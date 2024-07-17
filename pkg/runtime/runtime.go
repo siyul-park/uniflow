@@ -94,7 +94,7 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 	}
 
 	sym := &symbol.Symbol{Spec: spc}
-	if err :=  r.table.Insert(sym); err != nil {
+	if err := r.table.Insert(sym); err != nil {
 		return nil, err
 	}
 	return sym, nil

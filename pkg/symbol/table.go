@@ -170,6 +170,7 @@ func (t *Table) load(sym *Symbol) error {
 		sym := linked[i]
 		if !t.active(sym) {
 			linked = append(linked[:i], linked[i+1:]...)
+			i--
 		}
 	}
 
