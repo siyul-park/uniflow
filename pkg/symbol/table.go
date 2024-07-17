@@ -49,22 +49,21 @@ func NewTable(scheme *scheme.Scheme, opts ...TableOptions) *Table {
 }
 
 // Insert adds a new symbol to the table based on the provided spec.
-func (t *Table) Insert(s spec.Spec) (*Symbol, error) {
+func (t *Table) Insert(sym *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	sym := &Symbol{
-		Spec:   s,
-		linked: make(map[string][]spec.PortLocation),
+	if sym.refs == nil {
+		sym.refs = make(map[string][]spec.PortLocation)
 	}
 
 	if _, err := t.free(sym.ID()); err != nil {
-		return nil, err
+		return err
 	}
 	if err := t.insert(sym); err != nil {
-		return nil, err
+		return err
 	}
-	return sym, nil
+	return nil
 }
 
 // Free removes a symbol from the table by its ID.
@@ -216,7 +215,7 @@ func (t *Table) load(sym *Symbol) error {
 				}
 			}
 
-			for name, locations := range sym.linked {
+			for name, locations := range sym.refs {
 				in := sym.In(name)
 				if in == nil {
 					continue
@@ -275,7 +274,7 @@ func (t *Table) links(sym *Symbol) {
 
 			if ref, ok := t.symbols[id]; ok {
 				if ref.Namespace() == sym.Namespace() {
-					ref.linked[location.Port] = append(ref.linked[location.Port], spec.PortLocation{
+					ref.refs[location.Port] = append(ref.refs[location.Port], spec.PortLocation{
 						ID:   sym.ID(),
 						Name: location.Name,
 						Port: name,
@@ -293,7 +292,7 @@ func (t *Table) links(sym *Symbol) {
 		for name, locations := range ref.Links() {
 			for _, location := range locations {
 				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					sym.linked[location.Port] = append(sym.linked[location.Port], spec.PortLocation{
+					sym.refs[location.Port] = append(sym.refs[location.Port], spec.PortLocation{
 						ID:   ref.ID(),
 						Name: location.Name,
 						Port: name,
@@ -318,16 +317,16 @@ func (t *Table) unlinks(sym *Symbol) {
 			}
 
 			var locations []spec.PortLocation
-			for _, location := range ref.linked[location.Port] {
+			for _, location := range ref.refs[location.Port] {
 				if location.ID != sym.ID() && location.Port != name {
 					locations = append(locations, location)
 				}
 			}
 
 			if len(locations) > 0 {
-				ref.linked[location.Port] = locations
+				ref.refs[location.Port] = locations
 			} else {
-				delete(ref.linked, location.Port)
+				delete(ref.refs, location.Port)
 			}
 		}
 	}
@@ -340,7 +339,7 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 	for len(nexts) > 0 {
 		sym := nexts[len(nexts)-1]
 		ok := true
-		for _, locations := range sym.linked {
+		for _, locations := range sym.refs {
 			for _, location := range locations {
 				next := t.symbols[location.ID]
 				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {

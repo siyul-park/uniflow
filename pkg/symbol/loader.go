@@ -86,11 +86,12 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 				continue
 			}
 
-			if _, err := l.table.Insert(spec); err != nil {
+			sym := &Symbol{Spec: spec}
+			if err := l.table.Insert(sym); err != nil {
 				return nil, err
 			}
 
-			for _, locations := range spec.GetLinks() {
+			for _, locations := range sym.Links() {
 				for _, location := range locations {
 					if location.ID != (uuid.UUID{}) {
 						nexts = append(nexts, location.ID)
@@ -155,9 +156,10 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 
 	var symbols []*Symbol
 	for _, spec := range specs {
-		if sym, err := l.table.Insert(spec); err != nil {
+		sym := &Symbol{Spec: spec}
+		if err := l.table.Insert(sym); err != nil {
 			return nil, err
-		} else if sym != nil {
+		} else {
 			symbols = append(symbols, sym)
 		}
 	}

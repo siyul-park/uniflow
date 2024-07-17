@@ -92,7 +92,12 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 	if _, err := r.store.InsertOne(ctx, spc); err != nil {
 		return nil, err
 	}
-	return r.table.Insert(spc)
+
+	sym := &symbol.Symbol{Spec: spc}
+	if err :=  r.table.Insert(sym); err != nil {
+		return nil, err
+	}
+	return sym, nil
 }
 
 // Free removes a spec from the Runtime and returns whether it was successfully deleted.
