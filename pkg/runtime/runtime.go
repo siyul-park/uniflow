@@ -22,6 +22,7 @@ type Config struct {
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace string
+	scheme    *scheme.Scheme
 	store     *spec.Store
 	table     *symbol.Table
 	loader    *symbol.Loader
@@ -42,19 +43,21 @@ func New(config Config) *Runtime {
 		config.Store = spec.NewStore(memdb.NewCollection(""))
 	}
 
-	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
+	tb := symbol.NewTable(symbol.TableOptions{
 		LoadHooks:   []symbol.LoadHook{config.Hook},
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 
 	ld := symbol.NewLoader(symbol.LoaderConfig{
 		Namespace: config.Namespace,
+		Scheme:    config.Scheme,
 		Store:     config.Store,
 		Table:     tb,
 	})
 
 	return &Runtime{
 		namespace: config.Namespace,
+		scheme:    config.Scheme,
 		store:     config.Store,
 		table:     tb,
 		loader:    ld,
@@ -92,7 +95,16 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 		return nil, err
 	}
 
-	sym := &symbol.Symbol{Spec: spc}
+	spc, err := r.scheme.Decode(spc)
+	if err != nil {
+		return nil, err
+	}
+	n, err := r.scheme.Compile(spc)
+	if err != nil {
+		return nil, err
+	}
+
+	sym := &symbol.Symbol{Spec: spc, Node: n}
 	if err := r.table.Insert(sym); err != nil {
 		return nil, err
 	}

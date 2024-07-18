@@ -8,7 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -76,24 +75,13 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 }
 
 // Decode converts the provided spec.Spec into a structured representation using reflection and encoding utilities.
-func (s *Scheme) Decode(spc spec.Spec, values ...any) (spec.Spec, error) {
+func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	doc, err := types.BinaryEncoder.Encode(spc)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(values) > 0 {
-		value := values[len(values)-1]
-		if tmpl, err := template.New("").Parse(doc.Interface()); err != nil {
-			return nil, err
-		} else if data, err := tmpl.Execute(value); err != nil {
-			return nil, err
-		} else if doc, err = types.BinaryEncoder.Encode(data); err != nil {
-			return nil, err
-		}
 	}
 
 	typ, ok := s.types[spc.GetKind()]

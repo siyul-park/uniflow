@@ -8,20 +8,23 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Namespace string      // Namespace for the Loader
-	Table     *Table      // Symbol table for storing loaded symbols
-	Store     *spec.Store // Store to retrieve specs from
+	Namespace string         // Namespace for the Loader
+	Table     *Table         // Symbol table for storing loaded symbols
+	Scheme    *scheme.Scheme // Scheme for decoding and compiling specs
+	Store     *spec.Store    // Store to retrieve specs from
 }
 
 // Loader synchronizes with spec.Store to load spec.Spec into the Table.
 type Loader struct {
 	namespace string
 	table     *Table
+	scheme    *scheme.Scheme
 	store     *spec.Store
 	stream    *spec.Stream
 	mu        sync.RWMutex
@@ -32,6 +35,7 @@ func NewLoader(config LoaderConfig) *Loader {
 	return &Loader{
 		namespace: config.Namespace,
 		table:     config.Table,
+		scheme:    config.Scheme,
 		store:     config.Store,
 	}
 }
@@ -85,7 +89,16 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 				continue
 			}
 
-			sym := &Symbol{Spec: spec}
+			spec, err := l.scheme.Decode(spec)
+			if err != nil {
+				return nil, err
+			}
+			n, err := l.scheme.Compile(spec)
+			if err != nil {
+				return nil, err
+			}
+
+			sym := &Symbol{Spec: spec, Node: n}
 			if err := l.table.Insert(sym); err != nil {
 				return nil, err
 			}
@@ -155,7 +168,16 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 
 	var symbols []*Symbol
 	for _, spec := range specs {
-		sym := &Symbol{Spec: spec}
+		spec, err := l.scheme.Decode(spec)
+		if err != nil {
+			return nil, err
+		}
+		n, err := l.scheme.Compile(spec)
+		if err != nil {
+			return nil, err
+		}
+
+		sym := &Symbol{Spec: spec, Node: n}
 		if err := l.table.Insert(sym); err != nil {
 			return nil, err
 		} else {

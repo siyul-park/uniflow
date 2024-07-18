@@ -6,24 +6,16 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_Insert(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
 
 	t.Run("Link By ID", func(t *testing.T) {
 		t.Run("Unlinked", func(t *testing.T) {
-			tb := NewTable(s)
+			tb := NewTable()
 			defer tb.Clear()
 
 			meta1 := &spec.Meta{
@@ -67,15 +59,15 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			sym1 := &Symbol{Spec: meta1}
+			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 			err := tb.Insert(sym1)
 			assert.NoError(t, err)
 
-			sym2 := &Symbol{Spec: meta2}
+			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym2)
 			assert.NoError(t, err)
 
-			sym3 := &Symbol{Spec: meta3}
+			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym3)
 			assert.NoError(t, err)
 
@@ -89,7 +81,7 @@ func TestTable_Insert(t *testing.T) {
 		})
 
 		t.Run("Linked", func(t *testing.T) {
-			tb := NewTable(s)
+			tb := NewTable()
 			defer tb.Clear()
 
 			id := uuid.Must(uuid.NewV7())
@@ -134,22 +126,22 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			sym3 := &Symbol{Spec: meta3}
+			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 			err := tb.Insert(sym3)
 			assert.NoError(t, err)
 
-			sym4 := &Symbol{Spec: meta4}
+			sym4 := &Symbol{Spec: meta4, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym4)
 			assert.NoError(t, err)
 
-			sym1 := &Symbol{Spec: meta1}
+			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym1)
 			assert.NoError(t, err)
 
 			p1 := sym1.Out(node.PortOut)
 			assert.Equal(t, 1, p1.Links())
 
-			sym2 := &Symbol{Spec: meta2}
+			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym2)
 			assert.NoError(t, err)
 
@@ -160,7 +152,7 @@ func TestTable_Insert(t *testing.T) {
 
 	t.Run("Link By Name", func(t *testing.T) {
 		t.Run("Unlinked", func(t *testing.T) {
-			tb := NewTable(s)
+			tb := NewTable()
 			defer tb.Clear()
 
 			meta1 := &spec.Meta{
@@ -207,15 +199,15 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			sym1 := &Symbol{Spec: meta1}
+			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 			err := tb.Insert(sym1)
 			assert.NoError(t, err)
 
-			sym2 := &Symbol{Spec: meta2}
+			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym2)
 			assert.NoError(t, err)
 
-			sym3 := &Symbol{Spec: meta3}
+			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym3)
 			assert.NoError(t, err)
 
@@ -229,7 +221,7 @@ func TestTable_Insert(t *testing.T) {
 		})
 
 		t.Run("Linked", func(t *testing.T) {
-			tb := NewTable(s)
+			tb := NewTable()
 			defer tb.Clear()
 
 			id := uuid.Must(uuid.NewV7())
@@ -276,22 +268,22 @@ func TestTable_Insert(t *testing.T) {
 				},
 			}
 
-			sym3 := &Symbol{Spec: meta3}
+			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 			err := tb.Insert(sym3)
 			assert.NoError(t, err)
 
-			sym4 := &Symbol{Spec: meta4}
+			sym4 := &Symbol{Spec: meta4, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym4)
 			assert.NoError(t, err)
 
-			sym1 := &Symbol{Spec: meta1}
+			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym1)
 			assert.NoError(t, err)
 
 			p1 := sym1.Out(node.PortOut)
 			assert.Equal(t, 1, p1.Links())
 
-			sym2 := &Symbol{Spec: meta2}
+			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 			err = tb.Insert(sym2)
 			assert.NoError(t, err)
 
@@ -302,16 +294,9 @@ func TestTable_Insert(t *testing.T) {
 }
 
 func TestTable_Free(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	meta1 := &spec.Meta{
@@ -355,15 +340,15 @@ func TestTable_Free(t *testing.T) {
 		},
 	}
 
-	sym1 := &Symbol{Spec: meta1}
+	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 	err := tb.Insert(sym1)
 	assert.NoError(t, err)
 
-	sym2 := &Symbol{Spec: meta2}
+	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym2)
 	assert.NoError(t, err)
 
-	sym3 := &Symbol{Spec: meta3}
+	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym3)
 	assert.NoError(t, err)
 
@@ -398,16 +383,9 @@ func TestTable_Free(t *testing.T) {
 }
 
 func TestTable_LookupByID(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	meta := &spec.Meta{
@@ -416,7 +394,7 @@ func TestTable_LookupByID(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	sym := &Symbol{Spec: meta}
+	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 	err := tb.Insert(sym)
 	assert.NoError(t, err)
 
@@ -426,16 +404,9 @@ func TestTable_LookupByID(t *testing.T) {
 }
 
 func TestTable_LookupByName(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	meta := &spec.Meta{
@@ -445,7 +416,7 @@ func TestTable_LookupByName(t *testing.T) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	sym := &Symbol{Spec: meta}
+	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 	err := tb.Insert(sym)
 	assert.NoError(t, err)
 
@@ -455,16 +426,9 @@ func TestTable_LookupByName(t *testing.T) {
 }
 
 func TestTable_Keys(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	meta := &spec.Meta{
@@ -474,7 +438,7 @@ func TestTable_Keys(t *testing.T) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	sym := &Symbol{Spec: meta}
+	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 	err := tb.Insert(sym)
 	assert.NoError(t, err)
 
@@ -483,19 +447,12 @@ func TestTable_Keys(t *testing.T) {
 }
 
 func TestTable_Hook(t *testing.T) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
 
 	loaded := 0
 	unloaded := 0
 
-	tb := NewTable(s, TableOptions{
+	tb := NewTable(TableOptions{
 		LoadHooks: []LoadHook{
 			LoadFunc(func(_ *Symbol) error {
 				loaded += 1
@@ -551,19 +508,19 @@ func TestTable_Hook(t *testing.T) {
 			},
 		},
 	}
-	sym1 := &Symbol{Spec: meta1}
+	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
 	err := tb.Insert(sym1)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, loaded)
 	assert.Equal(t, 0, unloaded)
 
-	sym2 := &Symbol{Spec: meta2}
+	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym2)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, loaded)
 	assert.Equal(t, 0, unloaded)
 
-	sym3 := &Symbol{Spec: meta3}
+	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym3)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, loaded)
@@ -586,16 +543,9 @@ func TestTable_Hook(t *testing.T) {
 }
 
 func BenchmarkTable_Insert(b *testing.B) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	for i := 0; i < b.N; i++ {
@@ -611,16 +561,9 @@ func BenchmarkTable_Insert(b *testing.B) {
 }
 
 func BenchmarkTable_Free(b *testing.B) {
-	s := scheme.New()
-
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	for i := 0; i < b.N; i++ {
