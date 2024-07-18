@@ -11,7 +11,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,14 +27,15 @@ func TestLoader_LoadOne(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st := store.New(memdb.NewCollection(""))
+		st := spec.NewStore(memdb.NewCollection(""))
 
-		tb := NewTable(s)
+		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Store: st,
-			Table: tb,
+			Table:  tb,
+			Scheme: s,
+			Store:  st,
 		})
 		defer ld.Close()
 
@@ -94,14 +94,15 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st := store.New(memdb.NewCollection(""))
+		st := spec.NewStore(memdb.NewCollection(""))
 
-		tb := NewTable(s)
+		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Store: st,
-			Table: tb,
+			Table:  tb,
+			Scheme: s,
+			Store:  st,
 		})
 		defer ld.Close()
 
@@ -125,14 +126,15 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st := store.New(memdb.NewCollection(""))
+		st := spec.NewStore(memdb.NewCollection(""))
 
-		tb := NewTable(s)
+		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Store: st,
-			Table: tb,
+			Table:  tb,
+			Scheme: s,
+			Store:  st,
 		})
 		defer ld.Close()
 
@@ -148,7 +150,7 @@ func TestLoader_LoadOne(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+		st.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
 
 		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
@@ -172,14 +174,15 @@ func TestLoader_LoadAll(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st := store.New(memdb.NewCollection(""))
+		st := spec.NewStore(memdb.NewCollection(""))
 
-		tb := NewTable(s)
+		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Store: st,
-			Table: tb,
+			Table:  tb,
+			Scheme: s,
+			Store:  st,
 		})
 		defer ld.Close()
 
@@ -240,14 +243,15 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st := store.New(memdb.NewCollection(""))
+		st := spec.NewStore(memdb.NewCollection(""))
 
-		tb := NewTable(s)
+		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Store: st,
-			Table: tb,
+			Table:  tb,
+			Scheme: s,
+			Store:  st,
 		})
 		defer ld.Close()
 
@@ -283,15 +287,15 @@ func TestLoader_Reconcile(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	ld := NewLoader(LoaderConfig{
-		Namespace: spec.DefaultNamespace,
-		Store:     st,
-		Table:     tb,
+		Table:  tb,
+		Scheme: s,
+		Store:  st,
 	})
 	defer ld.Close()
 
@@ -339,15 +343,17 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	ld := NewLoader(LoaderConfig{
-		Store: st,
-		Table: tb,
+		Store:  st,
+		Table:  tb,
+		Scheme: s,
 	})
+	defer ld.Close()
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -385,15 +391,17 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
-	tb := NewTable(s)
+	tb := NewTable()
 	defer tb.Clear()
 
 	ld := NewLoader(LoaderConfig{
-		Store: st,
-		Table: tb,
+		Store:  st,
+		Table:  tb,
+		Scheme: s,
 	})
+	defer ld.Close()
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),

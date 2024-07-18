@@ -9,7 +9,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
-	Store  *store.Store
+	Store  *spec.Store
 	FS     afero.Fs
 }
 

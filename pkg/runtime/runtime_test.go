@@ -11,7 +11,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +26,7 @@ func TestRuntime_LookupByID(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -61,7 +60,7 @@ func TestRuntime_LookupByName(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -96,7 +95,7 @@ func TestRuntime_Insert(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -131,7 +130,7 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -172,7 +171,7 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -206,7 +205,7 @@ func TestRuntime_Listen(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	r := New(Config{
 		Scheme: s,
@@ -254,7 +253,7 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	for i := 0; i < b.N; i++ {
 		r := New(Config{

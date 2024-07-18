@@ -7,14 +7,13 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 )
 
 // Scanner is responsible for building spec.Spec instances from raw data.
 type Scanner struct {
 	scheme    *scheme.Scheme
-	store     *store.Store
+	store     *spec.Store
 	namespace string
 	fsys      afero.Fs
 	filename  string
@@ -32,7 +31,7 @@ func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
 }
 
 // Store sets the store for the Builder.
-func (s *Scanner) Store(store *store.Store) *Scanner {
+func (s *Scanner) Store(store *spec.Store) *Scanner {
 	s.store = store
 	return s
 }
@@ -99,7 +98,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		for _, v := range specs {
 			if v.GetID() == (uuid.UUID{}) {
 				if v.GetName() != "" {
-					filter := store.Where[string](spec.KeyName).Equal(v.GetName()).And(store.Where[string](spec.KeyNamespace).Equal(v.GetNamespace()))
+					filter := spec.Where[string](spec.KeyName).Equal(v.GetName()).And(spec.Where[string](spec.KeyNamespace).Equal(v.GetNamespace()))
 					if exist, err := s.store.FindOne(ctx, filter); err != nil {
 						return nil, err
 					} else if exist != nil {

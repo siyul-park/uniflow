@@ -1,4 +1,4 @@
-package store
+package spec
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ func TestStore_Index(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	err := st.Index(ctx)
 	assert.NoError(t, err)
@@ -32,7 +31,7 @@ func TestStore_Watch(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	stream, err := st.Watch(ctx, nil)
 	assert.NoError(t, err)
@@ -50,15 +49,15 @@ func TestStore_Watch(t *testing.T) {
 		}
 	}()
 
-	meta := &spec.Meta{
+	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 	}
 
 	_, _ = st.InsertOne(ctx, meta)
 	_, _ = st.UpdateOne(ctx, meta)
-	_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+	_, _ = st.DeleteOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 }
 
 func TestStore_InsertOne(t *testing.T) {
@@ -67,16 +66,16 @@ func TestStore_InsertOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
-	spec := &spec.Meta{
+	meta := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	id, err := st.InsertOne(ctx, spec)
+	id, err := st.InsertOne(ctx, meta)
 	assert.NoError(t, err)
-	assert.Equal(t, spec.GetID(), id)
+	assert.Equal(t, meta.GetID(), id)
 }
 
 func TestStore_InsertMany(t *testing.T) {
@@ -85,11 +84,11 @@ func TestStore_InsertMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
-	var specs []spec.Spec
+	var specs []Spec
 	for i := 0; i < batchSize; i++ {
-		specs = append(specs, &spec.Meta{
+		specs = append(specs, &Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
 		})
@@ -98,8 +97,8 @@ func TestStore_InsertMany(t *testing.T) {
 	ids, err := st.InsertMany(ctx, specs)
 	assert.NoError(t, err)
 	assert.Len(t, ids, len(specs))
-	for i, spec := range specs {
-		assert.Equal(t, spec.GetID(), ids[i])
+	for i, meta := range specs {
+		assert.Equal(t, meta.GetID(), ids[i])
 	}
 }
 
@@ -109,20 +108,20 @@ func TestStore_UpdateOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	id := uuid.Must(uuid.NewV7())
 
-	origin := &spec.Meta{
+	origin := &Meta{
 		ID:        id,
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
-	patch := &spec.Meta{
+	patch := &Meta{
 		ID:        id,
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
@@ -143,26 +142,26 @@ func TestStore_UpdateMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, uuid.Must(uuid.NewV7()))
 	}
 
-	var origins []spec.Spec
-	var patches []spec.Spec
+	var origins []Spec
+	var patches []Spec
 	for _, id := range ids {
-		origins = append(origins, &spec.Meta{
+		origins = append(origins, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
-		patches = append(patches, &spec.Meta{
+		patches = append(patches, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
 	}
@@ -184,21 +183,21 @@ func TestStore_DeleteOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
-	meta := &spec.Meta{
+	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 	}
 
-	ok, err := st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+	ok, err := st.DeleteOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	ok, err = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+	ok, err = st.DeleteOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.True(t, ok)
 }
@@ -209,30 +208,30 @@ func TestStore_DeleteMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, uuid.Must(uuid.NewV7()))
 	}
 
-	var spcs []spec.Spec
+	var spcs []Spec
 	for _, id := range ids {
-		spcs = append(spcs, &spec.Meta{
+		spcs = append(spcs, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
 	}
 
-	count, err := st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
+	count, err := st.DeleteMany(ctx, Where[uuid.UUID](KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, count)
 
 	_, _ = st.InsertMany(ctx, spcs)
 
-	count, err = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
+	count, err = st.DeleteMany(ctx, Where[uuid.UUID](KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.Equal(t, len(spcs), count)
 }
@@ -243,17 +242,17 @@ func TestStore_FindOne(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
-	meta := &spec.Meta{
+	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 	}
 
 	_, _ = st.InsertOne(ctx, meta)
 
-	def, err := st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+	def, err := st.FindOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 	assert.NoError(t, err)
 	assert.NotNil(t, def)
 	assert.Equal(t, meta.GetID(), def.GetID())
@@ -265,26 +264,26 @@ func TestStore_FindMany(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, uuid.Must(uuid.NewV7()))
 	}
 
-	var specs []spec.Spec
+	var specs []Spec
 	for _, id := range ids {
-		specs = append(specs, &spec.Meta{
+		specs = append(specs, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
 	}
 
 	_, _ = st.InsertMany(ctx, specs)
 
-	res, err := st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
+	res, err := st.FindMany(ctx, Where[uuid.UUID](KeyID).In(ids...))
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
@@ -297,12 +296,12 @@ func BenchmarkStore_InsertOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		spec := &spec.Meta{
+		spec := &Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
 		}
@@ -317,14 +316,14 @@ func BenchmarkStore_InsertMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var specs []spec.Spec
+		var specs []Spec
 		for j := 0; j < batchSize; j++ {
-			specs = append(specs, &spec.Meta{
+			specs = append(specs, &Meta{
 				ID:   uuid.Must(uuid.NewV7()),
 				Kind: kind,
 			})
@@ -340,14 +339,14 @@ func BenchmarkStore_UpdateOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	id := uuid.Must(uuid.NewV7())
 
-	origin := &spec.Meta{
+	origin := &Meta{
 		ID:        id,
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
@@ -356,10 +355,10 @@ func BenchmarkStore_UpdateOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		patch := &spec.Meta{
+		patch := &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
@@ -373,19 +372,19 @@ func BenchmarkStore_UpdateMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, uuid.Must(uuid.NewV7()))
 	}
 
-	var origins []spec.Spec
+	var origins []Spec
 	for _, id := range ids {
-		origins = append(origins, &spec.Meta{
+		origins = append(origins, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
 	}
@@ -397,12 +396,12 @@ func BenchmarkStore_UpdateMany(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		var patches []spec.Spec
+		var patches []Spec
 		for _, id := range ids {
-			patches = append(patches, &spec.Meta{
+			patches = append(patches, &Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			})
 		}
@@ -419,23 +418,23 @@ func BenchmarkStore_DeleteOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		meta := &spec.Meta{
+		meta := &Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 		}
 		_, _ = st.InsertOne(ctx, meta)
 
 		b.StartTimer()
 
-		_, _ = st.DeleteOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+		_, _ = st.DeleteOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 	}
 }
 
@@ -445,7 +444,7 @@ func BenchmarkStore_DeleteMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	b.ResetTimer()
 
@@ -457,12 +456,12 @@ func BenchmarkStore_DeleteMany(b *testing.B) {
 			ids = append(ids, uuid.Must(uuid.NewV7()))
 		}
 
-		var specs []spec.Spec
+		var specs []Spec
 		for _, id := range ids {
-			specs = append(specs, &spec.Meta{
+			specs = append(specs, &Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			})
 		}
@@ -471,7 +470,7 @@ func BenchmarkStore_DeleteMany(b *testing.B) {
 
 		b.StartTimer()
 
-		_, _ = st.DeleteMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
+		_, _ = st.DeleteMany(ctx, Where[uuid.UUID](KeyID).In(ids...))
 	}
 
 }
@@ -482,19 +481,19 @@ func BenchmarkStore_FindOne(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
-	meta := &spec.Meta{
+	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: DefaultNamespace,
 	}
 
 	for i := 0; i < batchSize; i++ {
-		_, _ = st.InsertOne(ctx, &spec.Meta{
+		_, _ = st.InsertOne(ctx, &Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 		})
 	}
 	_, _ = st.InsertOne(ctx, meta)
@@ -502,7 +501,7 @@ func BenchmarkStore_FindOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = st.FindOne(ctx, Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+		_, _ = st.FindOne(ctx, Where[uuid.UUID](KeyID).Equal(meta.GetID()))
 	}
 }
 
@@ -512,19 +511,19 @@ func BenchmarkStore_FindMany(b *testing.B) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := New(memdb.NewCollection(""))
+	st := NewStore(memdb.NewCollection(""))
 
 	var ids []uuid.UUID
 	for i := 0; i < batchSize; i++ {
 		ids = append(ids, uuid.Must(uuid.NewV7()))
 	}
 
-	var specs []spec.Spec
+	var specs []Spec
 	for _, id := range ids {
-		specs = append(specs, &spec.Meta{
+		specs = append(specs, &Meta{
 			ID:        id,
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		})
 	}
@@ -534,6 +533,6 @@ func BenchmarkStore_FindMany(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = st.FindMany(ctx, Where[uuid.UUID](spec.KeyID).In(ids...))
+		_, _ = st.FindMany(ctx, Where[uuid.UUID](KeyID).In(ids...))
 	}
 }

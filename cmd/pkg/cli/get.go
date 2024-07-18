@@ -4,14 +4,13 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/printer"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
 	Scheme *scheme.Scheme
-	Store  *store.Store
+	Store  *spec.Store
 }
 
 // NewGetCommand creates a new cobra.Command for the get command.
@@ -36,9 +35,9 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		var filter *store.Filter
+		var filter *spec.Filter
 		if namespace != "" {
-			filter = store.Where[string](spec.KeyNamespace).Equal(namespace)
+			filter = spec.Where[string](spec.KeyNamespace).Equal(namespace)
 		}
 
 		specs, err := config.Store.FindMany(ctx, filter)

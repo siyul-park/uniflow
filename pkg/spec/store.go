@@ -1,4 +1,4 @@
-package store
+package spec
 
 import (
 	"context"
@@ -10,11 +10,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Store manages the storage and retrieval of spec.Spec objects.
+// Store manages the storage and retrieval of Spec objects.
 type Store struct {
 	nodes database.Collection
 	mu    sync.RWMutex
@@ -23,18 +22,18 @@ type Store struct {
 var indexes = []database.IndexModel{
 	{
 		Name: "kind",
-		Keys: []string{spec.KeyKind},
+		Keys: []string{KeyKind},
 	},
 	{
 		Name:    "namespace_name",
-		Keys:    []string{spec.KeyNamespace, spec.KeyName},
+		Keys:    []string{KeyNamespace, KeyName},
 		Unique:  true,
-		Partial: database.Where(spec.KeyName).NotEqual(types.NewString("")).And(database.Where(spec.KeyName).IsNotNull()),
+		Partial: database.Where(KeyName).NotEqual(types.NewString("")).And(database.Where(KeyName).IsNotNull()),
 	},
 }
 
-// New creates a new Store instance.
-func New(nodes database.Collection) *Store {
+// NewStore creates a new Store instance.
+func NewStore(nodes database.Collection) *Store {
 	return &Store{nodes: nodes}
 }
 
@@ -77,13 +76,13 @@ func (s *Store) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
 	return newStream(stream), nil
 }
 
-// InsertOne inserts a single spec.Spec and returns its UUID.
-func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error) {
+// InsertOne inserts a single Spec and returns its UUID.
+func (s *Store) InsertOne(ctx context.Context, spc Spec) (uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if spc.GetNamespace() == "" {
-		spc.SetNamespace(spec.DefaultNamespace)
+		spc.SetNamespace(DefaultNamespace)
 	}
 	if spc.GetID() == (uuid.UUID{}) {
 		spc.SetID(uuid.Must(uuid.NewV7()))
@@ -106,21 +105,21 @@ func (s *Store) InsertOne(ctx context.Context, spc spec.Spec) (uuid.UUID, error)
 
 	var id uuid.UUID
 	if err := types.Decoder.Decode(pk, &id); err != nil {
-		_, _ = s.nodes.DeleteOne(ctx, database.Where(spec.KeyID).Equal(pk))
+		_, _ = s.nodes.DeleteOne(ctx, database.Where(KeyID).Equal(pk))
 		return uuid.UUID{}, err
 	}
 	return id, nil
 }
 
-// InsertMany inserts multiple spec.Spec instances and returns their UUIDs.
-func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, error) {
+// InsertMany inserts multiple Spec instances and returns their UUIDs.
+func (s *Store) InsertMany(ctx context.Context, spcs []Spec) ([]uuid.UUID, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var docs []types.Map
 	for _, spc := range spcs {
 		if spc.GetNamespace() == "" {
-			spc.SetNamespace(spec.DefaultNamespace)
+			spc.SetNamespace(DefaultNamespace)
 		}
 		if spc.GetID() == (uuid.UUID{}) {
 			spc.SetID(uuid.Must(uuid.NewV7()))
@@ -146,25 +145,25 @@ func (s *Store) InsertMany(ctx context.Context, spcs []spec.Spec) ([]uuid.UUID, 
 
 	var ids []uuid.UUID
 	if err := types.Decoder.Decode(types.NewSlice(pks...), &ids); err != nil {
-		_, _ = s.nodes.DeleteMany(ctx, database.Where(spec.KeyID).In(pks...))
+		_, _ = s.nodes.DeleteMany(ctx, database.Where(KeyID).In(pks...))
 		return nil, err
 	}
 	return ids, nil
 }
 
-// UpdateOne updates a single spec.Spec and returns success or failure.
-func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
+// UpdateOne updates a single Spec and returns success or failure.
+func (s *Store) UpdateOne(ctx context.Context, spc Spec) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if spc.GetNamespace() == "" {
-		spc.SetNamespace(spec.DefaultNamespace)
+		spc.SetNamespace(DefaultNamespace)
 	}
 	if spc.GetID() == (uuid.UUID{}) {
 		spc.SetID(uuid.Must(uuid.NewV7()))
 	}
 
-	f, _ := Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()).Encode()
+	f, _ := Where[uuid.UUID](KeyID).Equal(spc.GetID()).Encode()
 
 	doc, err := s.nodes.FindOne(ctx, f)
 	if err != nil {
@@ -173,7 +172,7 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 		return false, nil
 	}
 
-	unstructurd := &spec.Unstructured{}
+	unstructurd := &Unstructured{}
 	if err := types.Decoder.Decode(doc, unstructurd); err != nil {
 		return false, err
 	}
@@ -195,8 +194,8 @@ func (s *Store) UpdateOne(ctx context.Context, spc spec.Spec) (bool, error) {
 	return s.nodes.UpdateOne(ctx, f, doc)
 }
 
-// UpdateMany updates multiple spec.Spec instances and returns the number of successes.
-func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
+// UpdateMany updates multiple Spec instances and returns the number of successes.
+func (s *Store) UpdateMany(ctx context.Context, spcs []Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -205,7 +204,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 		ids[i] = spc.GetID()
 	}
 
-	f, _ := Where[uuid.UUID](spec.KeyID).In(ids...).Encode()
+	f, _ := Where[uuid.UUID](KeyID).In(ids...).Encode()
 
 	docs, err := s.nodes.FindMany(ctx, f, &database.FindOptions{
 		Limit: lo.ToPtr(len(ids)),
@@ -214,9 +213,9 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 		return 0, err
 	}
 
-	unstructurds := make(map[uuid.UUID]*spec.Unstructured, len(spcs))
+	unstructurds := make(map[uuid.UUID]*Unstructured, len(spcs))
 	for _, doc := range docs {
-		unstructurd := &spec.Unstructured{}
+		unstructurd := &Unstructured{}
 		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
 			return 0, err
 		}
@@ -226,7 +225,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	count := 0
 	for _, spc := range spcs {
 		if spc.GetNamespace() == "" {
-			spc.SetNamespace(spec.DefaultNamespace)
+			spc.SetNamespace(DefaultNamespace)
 		}
 		if spc.GetID() == (uuid.UUID{}) {
 			spc.SetID(uuid.Must(uuid.NewV7()))
@@ -246,7 +245,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 			return 0, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
-		f, _ := Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()).Encode()
+		f, _ := Where[uuid.UUID](KeyID).Equal(spc.GetID()).Encode()
 
 		if ok, err := s.nodes.UpdateOne(ctx, f, doc); err != nil {
 			return count, err
@@ -257,7 +256,7 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []spec.Spec) (int, error) {
 	return count, nil
 }
 
-// DeleteOne deletes a single spec.Spec and returns success or failure.
+// DeleteOne deletes a single Spec and returns success or failure.
 func (s *Store) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -270,7 +269,7 @@ func (s *Store) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
 	return s.nodes.DeleteOne(ctx, f)
 }
 
-// DeleteMany deletes multiple spec.Spec instances and returns the number of successes.
+// DeleteMany deletes multiple Spec instances and returns the number of successes.
 func (s *Store) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -283,8 +282,8 @@ func (s *Store) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
 	return s.nodes.DeleteMany(ctx, f)
 }
 
-// FindOne returns a single spec.Spec matched by the filter.
-func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (spec.Spec, error) {
+// FindOne returns a single Spec matched by the filter.
+func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -298,7 +297,7 @@ func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*databas
 	} else if doc == nil {
 		return nil, nil
 	} else {
-		unstructurd := &spec.Unstructured{}
+		unstructurd := &Unstructured{}
 		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
 			return nil, err
 		}
@@ -306,8 +305,8 @@ func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*databas
 	}
 }
 
-// FindMany returns multiple spec.Spec instances matched by the filter.
-func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]spec.Spec, error) {
+// FindMany returns multiple Spec instances matched by the filter.
+func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -321,12 +320,12 @@ func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*databa
 		return nil, err
 	}
 
-	var spcs []spec.Spec
+	var spcs []Spec
 	for _, doc := range docs {
 		if doc == nil {
 			continue
 		}
-		unstructurd := &spec.Unstructured{}
+		unstructurd := &Unstructured{}
 		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
 			return nil, err
 		}

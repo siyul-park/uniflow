@@ -8,7 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +15,7 @@ import (
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
 	Scheme *scheme.Scheme
-	Store  *store.Store
+	Store  *spec.Store
 	FS     afero.Fs
 }
 
@@ -67,7 +66,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			ids = append(ids, spec.GetID())
 		}
 
-		origins, err := config.Store.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...), &database.FindOptions{
+		origins, err := config.Store.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).In(ids...), &database.FindOptions{
 			Limit: lo.ToPtr[int](len(ids)),
 		})
 		if err != nil {

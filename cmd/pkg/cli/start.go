@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,7 @@ import (
 type StartConfig struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
-	Store  *store.Store
+	Store  *spec.Store
 	FS     afero.Fs
 }
 
@@ -57,7 +56,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			filter := store.Where[string](spec.KeyNamespace).Equal(namespace)
+			filter := spec.Where[string](spec.KeyNamespace).Equal(namespace)
 			specs, err := config.Store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
 			if err != nil {
 				return err

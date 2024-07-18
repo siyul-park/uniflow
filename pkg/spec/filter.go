@@ -1,8 +1,7 @@
-package store
+package spec
 
 import (
 	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -178,7 +177,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 		} else if v, ok := v.(types.Slice); ok {
 			elements := make([]any, 0, v.Len())
 			for _, v := range v.Values() {
-				unstructed := &spec.Unstructured{}
+				unstructed := &Unstructured{}
 				val, _ := unstructed.Get(ft.Key)
 				if err := types.Decoder.Decode(v, &val); err != nil {
 					return nil, err
@@ -189,7 +188,7 @@ func (ft *Filter) Encode() (*database.Filter, error) {
 			value = elements
 		}
 	} else {
-		unstructed := &spec.Unstructured{}
+		unstructed := &Unstructured{}
 		val, _ := unstructed.Get(ft.Key)
 		if v, err := types.BinaryEncoder.Encode(value); err != nil {
 			return nil, err

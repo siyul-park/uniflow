@@ -8,7 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -17,13 +16,14 @@ type Config struct {
 	Namespace string         // Namespace defines the isolated execution environment for workflows.
 	Hook      *hook.Hook     // Hook is a collection of hook functions for managing symbols.
 	Scheme    *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	Store     *store.Store   // Store is responsible for persisting symbols.
+	Store     *spec.Store    // Store is responsible for persisting symbols.
 }
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace string
-	store     *store.Store
+	scheme    *scheme.Scheme
+	store     *spec.Store
 	table     *symbol.Table
 	loader    *symbol.Loader
 }
@@ -40,22 +40,24 @@ func New(config Config) *Runtime {
 		config.Scheme = scheme.New()
 	}
 	if config.Store == nil {
-		config.Store = store.New(memdb.NewCollection(""))
+		config.Store = spec.NewStore(memdb.NewCollection(""))
 	}
 
-	tb := symbol.NewTable(config.Scheme, symbol.TableOptions{
+	tb := symbol.NewTable(symbol.TableOptions{
 		LoadHooks:   []symbol.LoadHook{config.Hook},
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 
 	ld := symbol.NewLoader(symbol.LoaderConfig{
 		Namespace: config.Namespace,
+		Scheme:    config.Scheme,
 		Store:     config.Store,
 		Table:     tb,
 	})
 
 	return &Runtime{
 		namespace: config.Namespace,
+		scheme:    config.Scheme,
 		store:     config.Store,
 		table:     tb,
 		loader:    ld,
@@ -76,8 +78,8 @@ func (r *Runtime) LookupByName(ctx context.Context, name string) (*symbol.Symbol
 		return s, nil
 	}
 
-	filter := store.Where[string](spec.KeyNamespace).Equal(r.namespace).
-		And(store.Where[string](spec.KeyName).Equal(name))
+	filter := spec.Where[string](spec.KeyNamespace).Equal(r.namespace).
+		And(spec.Where[string](spec.KeyName).Equal(name))
 
 	s, err := r.store.FindOne(ctx, filter)
 	if err != nil || s == nil {
@@ -93,7 +95,16 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 		return nil, err
 	}
 
-	sym := &symbol.Symbol{Spec: spc}
+	spc, err := r.scheme.Decode(spc)
+	if err != nil {
+		return nil, err
+	}
+	n, err := r.scheme.Compile(spc)
+	if err != nil {
+		return nil, err
+	}
+
+	sym := &symbol.Symbol{Spec: spc, Node: n}
 	if err := r.table.Insert(sym); err != nil {
 		return nil, err
 	}
@@ -102,7 +113,7 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 
 // Free removes a spec from the Runtime and returns whether it was successfully deleted.
 func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
-	ok, err := r.store.DeleteOne(ctx, store.Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()))
+	ok, err := r.store.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()))
 	if err != nil {
 		return false, err
 	}
@@ -112,7 +123,7 @@ func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
 	return ok, nil
 }
 
-// Load loads all symbols from the store.
+// Load loads all symbols from the spec.
 func (r *Runtime) Load(ctx context.Context) ([]*symbol.Symbol, error) {
 	return r.loader.LoadAll(ctx)
 }

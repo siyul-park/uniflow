@@ -5,7 +5,6 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +12,7 @@ import (
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
 	Scheme *scheme.Scheme
-	Store  *store.Store
+	Store  *spec.Store
 	FS     afero.Fs
 }
 
@@ -55,10 +54,10 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		var filter *store.Filter
+		var filter *spec.Filter
 		for _, v := range specs {
-			filter = filter.And(store.Where[uuid.UUID](spec.KeyID).Equal(v.GetID()).
-				And(store.Where[string](spec.KeyNamespace).Equal(v.GetNamespace())))
+			filter = filter.And(spec.Where[uuid.UUID](spec.KeyID).Equal(v.GetID()).
+				And(spec.Where[string](spec.KeyNamespace).Equal(v.GetNamespace())))
 		}
 
 		_, err = config.Store.DeleteMany(ctx, filter)

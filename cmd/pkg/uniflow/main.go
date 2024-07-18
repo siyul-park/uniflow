@@ -25,7 +25,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/mongodb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -80,7 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := store.New(col)
+	store := spec.NewStore(col)
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()

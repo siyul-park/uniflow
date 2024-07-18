@@ -10,7 +10,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,7 +19,7 @@ func TestScanner_Scan(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
