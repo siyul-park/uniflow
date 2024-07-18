@@ -154,7 +154,7 @@ Maintain the runtime environment to respond quickly to external requests. Each r
 ```go
 func main() {
 	col := memdb.NewCollection("")
-	store := store.New(col)
+	store := spec.New(col)
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()

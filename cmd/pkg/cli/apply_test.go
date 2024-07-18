@@ -12,7 +12,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +21,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
@@ -62,7 +61,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(ctx, store.Where[string](spec.KeyName).Equal(meta.GetName()))
+	r, err := st.FindOne(ctx, spec.Where[string](spec.KeyName).Equal(meta.GetName()))
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 

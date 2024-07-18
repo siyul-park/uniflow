@@ -13,7 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +23,7 @@ func TestCreateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(CreateNodes(st))
 	defer n.Close()
@@ -62,7 +61,7 @@ func TestReadNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(ReadNodes(st))
 	defer n.Close()
@@ -82,7 +81,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").Equal(id))
+	inPayload, _ := types.TextEncoder.Encode(spec.Where[uuid.UUID]("id").Equal(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -102,7 +101,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(UpdateNodes(st))
 	defer n.Close()
@@ -142,7 +141,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 
 	n, _ := NewSyscallNode(DeleteNodes(st))
 	defer n.Close()
@@ -162,7 +161,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(store.Where[uuid.UUID]("id").Equal(id))
+	inPayload, _ := types.TextEncoder.Encode(spec.Where[uuid.UUID]("id").Equal(id))
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

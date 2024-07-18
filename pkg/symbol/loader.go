@@ -9,22 +9,21 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 )
 
 // LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Namespace string       // Namespace for the Loader
-	Table     *Table       // Symbol table for storing loaded symbols
-	Store     *store.Store // Store to retrieve specs from
+	Namespace string      // Namespace for the Loader
+	Table     *Table      // Symbol table for storing loaded symbols
+	Store     *spec.Store // Store to retrieve specs from
 }
 
-// Loader synchronizes with store.Store to load spec.Spec into the Table.
+// Loader synchronizes with spec.Store to load spec.Spec into the Table.
 type Loader struct {
 	namespace string
 	table     *Table
-	store     *store.Store
-	stream    *store.Stream
+	store     *spec.Store
+	stream    *spec.Stream
 	mu        sync.RWMutex
 }
 
@@ -50,21 +49,21 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 		nexts = nil
 
 		exists := map[interface{}]bool{}
-		var filter *store.Filter
+		var filter *spec.Filter
 
 		for _, key := range keys {
 			exists[key] = false
 
 			switch k := key.(type) {
 			case uuid.UUID:
-				filter = filter.Or(store.Where[uuid.UUID](spec.KeyID).Equal(k))
+				filter = filter.Or(spec.Where[uuid.UUID](spec.KeyID).Equal(k))
 			case string:
-				filter = filter.Or(store.Where[string](spec.KeyName).Equal(k))
+				filter = filter.Or(spec.Where[string](spec.KeyName).Equal(k))
 			}
 		}
 
 		if namespace != "" {
-			filter = filter.And(store.Where[string](spec.KeyNamespace).Equal(namespace))
+			filter = filter.And(spec.Where[string](spec.KeyNamespace).Equal(namespace))
 		}
 
 		specs, err := l.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
@@ -144,9 +143,9 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 		}
 	}
 
-	var filter *store.Filter
+	var filter *spec.Filter
 	if l.namespace != "" {
-		filter = store.Where[string](spec.KeyNamespace).Equal(l.namespace)
+		filter = spec.Where[string](spec.KeyNamespace).Equal(l.namespace)
 	}
 
 	specs, err := l.store.FindMany(ctx, filter)
@@ -176,9 +175,9 @@ func (l *Loader) Watch(ctx context.Context) error {
 		return nil
 	}
 
-	var filter *store.Filter
+	var filter *spec.Filter
 	if l.namespace != "" {
-		filter = store.Where[string](spec.KeyNamespace).Equal(l.namespace)
+		filter = spec.Where[string](spec.KeyNamespace).Equal(l.namespace)
 	}
 
 	s, err := l.store.Watch(ctx, filter)

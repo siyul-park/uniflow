@@ -6,7 +6,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 )
 
 const (
@@ -16,7 +15,7 @@ const (
 	CodeDeleteNodes = "nodes.delete"
 )
 
-func CreateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func CreateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		patches := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
@@ -25,17 +24,17 @@ func CreateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 		if err != nil {
 			return nil, err
 		}
-		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...))
+		return s.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 }
 
-func ReadNodes(s *store.Store) func(context.Context, *store.Filter) ([]spec.Spec, error) {
-	return func(ctx context.Context, filter *store.Filter) ([]spec.Spec, error) {
+func ReadNodes(s *spec.Store) func(context.Context, *spec.Filter) ([]spec.Spec, error) {
+	return func(ctx context.Context, filter *spec.Filter) ([]spec.Spec, error) {
 		return s.FindMany(ctx, filter)
 	}
 }
 
-func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func UpdateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		patches := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
@@ -49,12 +48,12 @@ func UpdateNodes(s *store.Store) func(context.Context, []*spec.Unstructured) ([]
 		if _, err := s.UpdateMany(ctx, patches); err != nil {
 			return nil, err
 		}
-		return s.FindMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...))
+		return s.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).In(ids...))
 	}
 }
 
-func DeleteNodes(s *store.Store) func(context.Context, *store.Filter) ([]spec.Spec, error) {
-	return func(ctx context.Context, filter *store.Filter) ([]spec.Spec, error) {
+func DeleteNodes(s *spec.Store) func(context.Context, *spec.Filter) ([]spec.Spec, error) {
+	return func(ctx context.Context, filter *spec.Filter) ([]spec.Spec, error) {
 		exists, err := s.FindMany(ctx, filter)
 		if err != nil {
 			return nil, err
@@ -65,7 +64,7 @@ func DeleteNodes(s *store.Store) func(context.Context, *store.Filter) ([]spec.Sp
 			ids = append(ids, exist.GetID())
 		}
 
-		if _, err := s.DeleteMany(ctx, store.Where[uuid.UUID](spec.KeyID).In(ids...)); err != nil {
+		if _, err := s.DeleteMany(ctx, spec.Where[uuid.UUID](spec.KeyID).In(ids...)); err != nil {
 			return nil, err
 		}
 		return exists, nil

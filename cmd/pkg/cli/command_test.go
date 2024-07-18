@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,7 +20,7 @@ func TestCommend_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st := store.New(memdb.NewCollection(""))
+	st := spec.NewStore(memdb.NewCollection(""))
 	fsys := afero.NewMemMapFs()
 
 	output := new(bytes.Buffer)
