@@ -85,14 +85,15 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 				namespace = spec.GetNamespace()
 			}
 
-			if sym, ok := l.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
-				continue
-			}
-
 			spec, err := l.scheme.Decode(spec)
 			if err != nil {
 				return nil, err
 			}
+
+			if sym, ok := l.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
+				continue
+			}
+
 			n, err := l.scheme.Compile(spec)
 			if err != nil {
 				return nil, err
