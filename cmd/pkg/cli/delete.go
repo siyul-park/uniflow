@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -54,13 +53,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		var filter *spec.Filter
-		for _, v := range specs {
-			filter = filter.And(spec.Where[uuid.UUID](spec.KeyID).Equal(v.GetID()).
-				And(spec.Where[string](spec.KeyNamespace).Equal(v.GetNamespace())))
-		}
-
-		_, err = config.Store.DeleteMany(ctx, filter)
+		_, err = config.Store.Delete(ctx, specs...)
 		return err
 	}
 }

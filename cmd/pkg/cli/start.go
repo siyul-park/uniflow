@@ -5,9 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -56,12 +54,11 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			filter := spec.Where[string](spec.KeyNamespace).Equal(namespace)
-			specs, err := config.Store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr[int](1)})
+			specs, err := config.Store.Load(ctx, &spec.Meta{Namespace: namespace})
 			if err != nil {
 				return err
 			}
-			if len(specs) != 0 {
+			if len(specs) > 0 {
 				return nil
 			}
 
@@ -76,7 +73,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			if _, err = config.Store.InsertMany(ctx, specs); err != nil {
+			if _, err = config.Store.Store(ctx, specs...); err != nil {
 				return err
 			}
 		}

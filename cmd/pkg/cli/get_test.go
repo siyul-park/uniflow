@@ -35,7 +35,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	id, _ := st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	output := new(bytes.Buffer)
 
@@ -49,5 +49,5 @@ func TestGetCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	assert.Contains(t, output.String(), id.String())
+	assert.Contains(t, output.String(), meta.ID.String())
 }

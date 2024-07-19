@@ -45,7 +45,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	f, _ := fsys.Create(filename)
 	f.Write(data)
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	cmd := NewDeleteCommand(DeleteConfig{
 		Scheme: s,
@@ -58,7 +58,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(ctx, spec.Where[string](spec.KeyName).Equal(meta.GetName()))
+	r, err := st.Load(ctx, meta)
 	assert.NoError(t, err)
-	assert.Nil(t, r)
+	assert.Len(t, r, 0)
 }

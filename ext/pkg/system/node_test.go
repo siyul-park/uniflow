@@ -71,8 +71,6 @@ func TestReadNodes(t *testing.T) {
 		Kind: kind,
 	}
 
-	id, _ := st.InsertOne(ctx, meta)
-
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
@@ -81,7 +79,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(spec.Where[uuid.UUID]("id").Equal(id))
+	inPayload, _ := types.TextEncoder.Encode(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -111,7 +109,7 @@ func TestUpdateNodes(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -151,7 +149,7 @@ func TestDeleteNodes(t *testing.T) {
 		Kind: kind,
 	}
 
-	id, _ := st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -161,7 +159,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(spec.Where[uuid.UUID]("id").Equal(id))
+	inPayload, _ := types.TextEncoder.Encode(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

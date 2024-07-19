@@ -12,6 +12,23 @@ type Stream struct {
 	channel chan Event
 }
 
+// Event is an event that occurs when a spec.Spec is changed.
+type Event struct {
+	OP eventOP
+	ID uuid.UUID
+}
+
+type eventOP int
+
+const (
+	// EventInsert indicates an event for inserting a spec.Spec.
+	EventInsert eventOP = iota
+	// EventUpdate indicates an event for updating a spec.Spec.
+	EventUpdate
+	// EventDelete indicates an event for deleting a spec.Spec.
+	EventDelete
+)
+
 // newStream creates a new Stream based on the provided database.Stream.
 func newStream(stream database.Stream) *Stream {
 	s := &Stream{
@@ -45,7 +62,7 @@ func newStream(stream database.Stream) *Stream {
 				select {
 				case <-s.stream.Done():
 					return
-				case s.channel <- Event{OP: op, NodeID: id}:
+				case s.channel <- Event{OP: op, ID: id}:
 				}
 			}
 		}

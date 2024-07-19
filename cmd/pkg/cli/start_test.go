@@ -78,7 +78,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				if r, _ := st.FindOne(ctx, spec.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID())); r != nil {
+				if r, _ := st.Load(ctx, meta); len(r) > 0 {
 					return
 				}
 			}

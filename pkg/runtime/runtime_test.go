@@ -40,7 +40,7 @@ func TestRuntime_LookupByID(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	n, err := r.LookupByID(ctx, meta.GetID())
 	assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestRuntime_LookupByName(t *testing.T) {
 		Name: faker.Word(),
 	}
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	n, err := r.LookupByName(ctx, meta.GetName())
 	assert.NoError(t, err)
@@ -184,7 +184,7 @@ func TestRuntime_Load(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	r.Load(ctx)
 
@@ -219,7 +219,7 @@ func TestRuntime_Listen(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	go r.Listen(ctx)
 

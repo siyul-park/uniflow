@@ -98,11 +98,10 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		for _, v := range specs {
 			if v.GetID() == (uuid.UUID{}) {
 				if v.GetName() != "" {
-					filter := spec.Where[string](spec.KeyName).Equal(v.GetName()).And(spec.Where[string](spec.KeyNamespace).Equal(v.GetNamespace()))
-					if exist, err := s.store.FindOne(ctx, filter); err != nil {
+					if exists, err := s.store.Load(ctx, v); err != nil {
 						return nil, err
-					} else if exist != nil {
-						v.SetID(exist.GetID())
+					} else if len(exists) > 0 {
+						v.SetID(exists[0].GetID())
 					}
 				}
 			}
