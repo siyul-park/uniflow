@@ -74,9 +74,9 @@ func TestLoader_LoadOne(t *testing.T) {
 			},
 		}
 
-		st.InsertOne(ctx, meta1)
-		st.InsertOne(ctx, meta2)
-		st.InsertOne(ctx, meta3)
+		st.Store(ctx, meta1)
+		st.Store(ctx, meta2)
+		st.Store(ctx, meta3)
 
 		r, err := ld.LoadOne(ctx, meta3.GetID())
 		assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestLoader_LoadOne(t *testing.T) {
 			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, meta)
+		st.Store(ctx, meta)
 
 		r1, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
@@ -144,13 +144,13 @@ func TestLoader_LoadOne(t *testing.T) {
 			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, meta)
+		st.Store(ctx, meta)
 
 		r1, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).Equal(meta.GetID()))
+		st.Delete(ctx, meta)
 
 		r2, err := ld.LoadOne(ctx, meta.GetID())
 		assert.NoError(t, err)
@@ -221,9 +221,9 @@ func TestLoader_LoadAll(t *testing.T) {
 			},
 		}
 
-		st.InsertOne(ctx, meta1)
-		st.InsertOne(ctx, meta2)
-		st.InsertOne(ctx, meta3)
+		st.Store(ctx, meta1)
+		st.Store(ctx, meta2)
+		st.Store(ctx, meta3)
 
 		r, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
@@ -261,7 +261,7 @@ func TestLoader_LoadAll(t *testing.T) {
 			Namespace: spec.DefaultNamespace,
 		}
 
-		st.InsertOne(ctx, meta)
+		st.Store(ctx, meta)
 
 		r1, err := ld.LoadAll(ctx)
 		assert.NoError(t, err)
@@ -310,7 +310,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	st.InsertOne(ctx, meta)
+	st.Store(ctx, meta)
 
 	func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -362,7 +362,7 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	st.InsertOne(ctx, meta)
+	st.Store(ctx, meta)
 
 	b.ResetTimer()
 
@@ -410,7 +410,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	st.InsertOne(ctx, meta)
+	st.Store(ctx, meta)
 
 	b.ResetTimer()
 

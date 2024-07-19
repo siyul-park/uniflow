@@ -41,7 +41,7 @@ func TestScanner_Scan(t *testing.T) {
 
 	data, _ := json.Marshal(meta)
 
-	_, _ = st.InsertOne(ctx, meta)
+	_, _ = st.Store(ctx, meta)
 
 	f, _ := fsys.Create(filename)
 	f.Write(data)

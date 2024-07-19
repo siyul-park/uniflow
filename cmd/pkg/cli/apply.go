@@ -2,10 +2,8 @@ package cli
 
 import (
 	"github.com/gofrs/uuid"
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/cmd/pkg/printer"
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
@@ -61,14 +59,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		var ids []uuid.UUID
-		for _, spec := range specs {
-			ids = append(ids, spec.GetID())
-		}
-
-		origins, err := config.Store.FindMany(ctx, spec.Where[uuid.UUID](spec.KeyID).In(ids...), &database.FindOptions{
-			Limit: lo.ToPtr[int](len(ids)),
-		})
+		origins, err := config.Store.Load(ctx, specs...)
 		if err != nil {
 			return err
 		}
@@ -78,20 +69,20 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			exists[spec.GetID()] = struct{}{}
 		}
 
-		var inserted []spec.Spec
-		var updated []spec.Spec
+		var inserts []spec.Spec
+		var updates []spec.Spec
 		for _, spec := range specs {
 			if _, ok := exists[spec.GetID()]; ok {
-				updated = append(updated, spec)
+				updates = append(updates, spec)
 			} else {
-				inserted = append(inserted, spec)
+				inserts = append(inserts, spec)
 			}
 		}
 
-		if _, err := config.Store.InsertMany(ctx, inserted); err != nil {
+		if _, err := config.Store.Store(ctx, inserts...); err != nil {
 			return err
 		}
-		if _, err := config.Store.UpdateMany(ctx, updated); err != nil {
+		if _, err := config.Store.Swap(ctx, updates...); err != nil {
 			return err
 		}
 

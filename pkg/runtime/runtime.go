@@ -78,33 +78,44 @@ func (r *Runtime) LookupByName(ctx context.Context, name string) (*symbol.Symbol
 		return s, nil
 	}
 
-	filter := spec.Where[string](spec.KeyNamespace).Equal(r.namespace).
-		And(spec.Where[string](spec.KeyName).Equal(name))
-
-	s, err := r.store.FindOne(ctx, filter)
-	if err != nil || s == nil {
+	specs, err := r.store.Load(ctx, &spec.Meta{
+		Namespace: r.namespace,
+		Name:      name,
+	})
+	if err != nil || len(specs) == 0 {
 		return nil, err
 	}
 
-	return r.LookupByID(ctx, s.GetID())
+	return r.LookupByID(ctx, specs[0].GetID())
 }
 
 // Insert adds a spec to the Runtime and returns the corresponding symbol.
-func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, error) {
-	if _, err := r.store.InsertOne(ctx, spc); err != nil {
-		return nil, err
-	}
-
-	spc, err := r.scheme.Decode(spc)
-	if err != nil {
-		return nil, err
-	}
-	n, err := r.scheme.Compile(spc)
+func (r *Runtime) Insert(ctx context.Context, spec spec.Spec) (*symbol.Symbol, error) {
+	exists, err := r.store.Load(ctx, spec)
 	if err != nil {
 		return nil, err
 	}
 
-	sym := &symbol.Symbol{Spec: spc, Node: n}
+	if len(exists) == 0 {
+		if _, err := r.store.Store(ctx, spec); err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := r.store.Swap(ctx, spec); err != nil {
+			return nil, err
+		}
+	}
+
+	spec, err = r.scheme.Decode(spec)
+	if err != nil {
+		return nil, err
+	}
+	n, err := r.scheme.Compile(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	sym := &symbol.Symbol{Spec: spec, Node: n}
 	if err := r.table.Insert(sym); err != nil {
 		return nil, err
 	}
@@ -112,15 +123,19 @@ func (r *Runtime) Insert(ctx context.Context, spc spec.Spec) (*symbol.Symbol, er
 }
 
 // Free removes a spec from the Runtime and returns whether it was successfully deleted.
-func (r *Runtime) Free(ctx context.Context, spc spec.Spec) (bool, error) {
-	ok, err := r.store.DeleteOne(ctx, spec.Where[uuid.UUID](spec.KeyID).Equal(spc.GetID()))
+func (r *Runtime) Free(ctx context.Context, spec spec.Spec) (bool, error) {
+	if spec.GetID() == (uuid.UUID{}) {
+		spec.SetID(uuid.Must(uuid.NewV7()))
+	}
+
+	count, err := r.store.Delete(ctx, spec)
 	if err != nil {
 		return false, err
 	}
-	if _, err := r.table.Free(spc.GetID()); err != nil {
+	if _, err := r.table.Free(spec.GetID()); err != nil {
 		return false, err
 	}
-	return ok, nil
+	return count > 0, nil
 }
 
 // Load loads all symbols from the spec.

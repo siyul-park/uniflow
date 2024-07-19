@@ -7,13 +7,12 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Store manages the storage and retrieval of Spec objects.
+// Store manages storage and retrieval of Spec objects in a database.
 type Store struct {
 	nodes database.Collection
 	mu    sync.RWMutex
@@ -32,12 +31,12 @@ var indexes = []database.IndexModel{
 	},
 }
 
-// NewStore creates a new Store instance.
+// NewStore creates a new Store with the specified database collection.
 func NewStore(nodes database.Collection) *Store {
 	return &Store{nodes: nodes}
 }
 
-// Index ensures that all collection indexes are up-to-date.
+// Index ensures the collection has the required indexes and updates them if necessary.
 func (s *Store) Index(ctx context.Context) error {
 	origins, err := s.nodes.Indexes().List(ctx)
 	if err != nil {
@@ -45,8 +44,10 @@ func (s *Store) Index(ctx context.Context) error {
 	}
 
 	for _, index := range indexes {
+		found := false
 		for _, origin := range origins {
 			if origin.Name == index.Name {
+				found = true
 				if !reflect.DeepEqual(origin, index) {
 					if err := s.nodes.Indexes().Drop(ctx, origin.Name); err != nil {
 						return err
@@ -58,184 +59,65 @@ func (s *Store) Index(ctx context.Context) error {
 				break
 			}
 		}
+		if !found {
+			if err := s.nodes.Indexes().Create(ctx, index); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-// Watch returns a Stream that monitors changes based on the provided filter.
-func (s *Store) Watch(ctx context.Context, filter *Filter) (*Stream, error) {
-	f, err := filter.Encode()
-	if err != nil {
-		return nil, err
-	}
+// Watch returns a Stream that monitors changes matching the specified filter.
+func (s *Store) Watch(ctx context.Context, spec Spec) (*Stream, error) {
+	filter := s.filter(spec)
 
-	stream, err := s.nodes.Watch(ctx, f)
+	stream, err := s.nodes.Watch(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 	return newStream(stream), nil
 }
 
-// InsertOne inserts a single Spec and returns its UUID.
-func (s *Store) InsertOne(ctx context.Context, spc Spec) (uuid.UUID, error) {
+// Load retrieves Specs from the store that match the given criteria.
+func (s *Store) Load(ctx context.Context, specs ...Spec) ([]Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if spc.GetNamespace() == "" {
-		spc.SetNamespace(DefaultNamespace)
-	}
-	if spc.GetID() == (uuid.UUID{}) {
-		spc.SetID(uuid.Must(uuid.NewV7()))
-	}
+	filter := s.filter(specs...)
 
-	val, err := types.BinaryEncoder.Encode(spc)
+	docs, err := s.nodes.FindMany(ctx, filter)
 	if err != nil {
-		return uuid.UUID{}, err
+		return nil, err
 	}
 
-	doc, ok := val.(types.Map)
-	if !ok {
-		return uuid.UUID{}, errors.WithStack(encoding.ErrUnsupportedValue)
+	result := make([]Spec, 0, len(docs))
+	for _, doc := range docs {
+		spec := &Unstructured{}
+		if err := types.Decoder.Decode(doc, spec); err != nil {
+			return nil, err
+		}
+		result = append(result, spec)
 	}
 
-	pk, err := s.nodes.InsertOne(ctx, doc)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-
-	var id uuid.UUID
-	if err := types.Decoder.Decode(pk, &id); err != nil {
-		_, _ = s.nodes.DeleteOne(ctx, database.Where(KeyID).Equal(pk))
-		return uuid.UUID{}, err
-	}
-	return id, nil
+	return result, nil
 }
 
-// InsertMany inserts multiple Spec instances and returns their UUIDs.
-func (s *Store) InsertMany(ctx context.Context, spcs []Spec) ([]uuid.UUID, error) {
+// Store saves the given Specs into the database.
+func (s *Store) Store(ctx context.Context, specs ...Spec) (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var docs []types.Map
-	for _, spc := range spcs {
-		if spc.GetNamespace() == "" {
-			spc.SetNamespace(DefaultNamespace)
+	for _, spec := range specs {
+		if spec.GetNamespace() == "" {
+			spec.SetNamespace(DefaultNamespace)
 		}
-		if spc.GetID() == (uuid.UUID{}) {
-			spc.SetID(uuid.Must(uuid.NewV7()))
-		}
-
-		val, err := types.BinaryEncoder.Encode(spc)
-		if err != nil {
-			return nil, err
+		if spec.GetID() == (uuid.UUID{}) {
+			spec.SetID(uuid.Must(uuid.NewV7()))
 		}
 
-		doc, ok := val.(types.Map)
-		if !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-
-		docs = append(docs, doc)
-	}
-
-	pks, err := s.nodes.InsertMany(ctx, docs)
-	if err != nil {
-		return nil, err
-	}
-
-	var ids []uuid.UUID
-	if err := types.Decoder.Decode(types.NewSlice(pks...), &ids); err != nil {
-		_, _ = s.nodes.DeleteMany(ctx, database.Where(KeyID).In(pks...))
-		return nil, err
-	}
-	return ids, nil
-}
-
-// UpdateOne updates a single Spec and returns success or failure.
-func (s *Store) UpdateOne(ctx context.Context, spc Spec) (bool, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if spc.GetNamespace() == "" {
-		spc.SetNamespace(DefaultNamespace)
-	}
-	if spc.GetID() == (uuid.UUID{}) {
-		spc.SetID(uuid.Must(uuid.NewV7()))
-	}
-
-	f, _ := Where[uuid.UUID](KeyID).Equal(spc.GetID()).Encode()
-
-	doc, err := s.nodes.FindOne(ctx, f)
-	if err != nil {
-		return false, err
-	} else if doc == nil {
-		return false, nil
-	}
-
-	unstructurd := &Unstructured{}
-	if err := types.Decoder.Decode(doc, unstructurd); err != nil {
-		return false, err
-	}
-
-	if unstructurd.GetNamespace() != spc.GetNamespace() {
-		return false, nil
-	}
-
-	val, err := types.BinaryEncoder.Encode(spc)
-	if err != nil {
-		return false, err
-	}
-
-	doc, ok := val.(types.Map)
-	if !ok {
-		return false, errors.WithStack(encoding.ErrUnsupportedValue)
-	}
-
-	return s.nodes.UpdateOne(ctx, f, doc)
-}
-
-// UpdateMany updates multiple Spec instances and returns the number of successes.
-func (s *Store) UpdateMany(ctx context.Context, spcs []Spec) (int, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	ids := make([]uuid.UUID, len(spcs))
-	for i, spc := range spcs {
-		ids[i] = spc.GetID()
-	}
-
-	f, _ := Where[uuid.UUID](KeyID).In(ids...).Encode()
-
-	docs, err := s.nodes.FindMany(ctx, f, &database.FindOptions{
-		Limit: lo.ToPtr(len(ids)),
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	unstructurds := make(map[uuid.UUID]*Unstructured, len(spcs))
-	for _, doc := range docs {
-		unstructurd := &Unstructured{}
-		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
-			return 0, err
-		}
-		unstructurds[unstructurd.ID] = unstructurd
-	}
-
-	count := 0
-	for _, spc := range spcs {
-		if spc.GetNamespace() == "" {
-			spc.SetNamespace(DefaultNamespace)
-		}
-		if spc.GetID() == (uuid.UUID{}) {
-			spc.SetID(uuid.Must(uuid.NewV7()))
-		}
-
-		if unstructurd, ok := unstructurds[spc.GetID()]; !ok || unstructurd.GetNamespace() != spc.GetNamespace() {
-			continue
-		}
-
-		val, err := types.BinaryEncoder.Encode(spc)
+		val, err := types.BinaryEncoder.Encode(spec)
 		if err != nil {
 			return 0, err
 		}
@@ -245,91 +127,89 @@ func (s *Store) UpdateMany(ctx context.Context, spcs []Spec) (int, error) {
 			return 0, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
-		f, _ := Where[uuid.UUID](KeyID).Equal(spc.GetID()).Encode()
+		docs = append(docs, doc)
+	}
 
-		if ok, err := s.nodes.UpdateOne(ctx, f, doc); err != nil {
-			return count, err
-		} else if ok {
+	pks, err := s.nodes.InsertMany(ctx, docs)
+	return len(pks), err
+}
+
+// Swap updates existing Specs in the database with the provided data.
+func (s *Store) Swap(ctx context.Context, specs ...Spec) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, spec := range specs {
+		if spec.GetNamespace() == "" {
+			spec.SetNamespace(DefaultNamespace)
+		}
+		if spec.GetID() == (uuid.UUID{}) {
+			spec.SetID(uuid.Must(uuid.NewV7()))
+		}
+
+		val, err := types.BinaryEncoder.Encode(spec)
+		if err != nil {
+			return 0, err
+		}
+
+		doc, ok := val.(types.Map)
+		if !ok {
+			return 0, errors.WithStack(encoding.ErrUnsupportedValue)
+		}
+
+		filter := database.Where(KeyID).Equal(types.NewBinary(spec.GetID().Bytes()))
+
+		ok, err = s.nodes.UpdateOne(ctx, filter, doc)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
 			count++
 		}
 	}
+
 	return count, nil
 }
 
-// DeleteOne deletes a single Spec and returns success or failure.
-func (s *Store) DeleteOne(ctx context.Context, filter *Filter) (bool, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// Delete removes Specs from the store based on the provided criteria.
+func (s *Store) Delete(ctx context.Context, specs ...Spec) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	f, err := filter.Encode()
-	if err != nil {
-		return false, err
-	}
-
-	return s.nodes.DeleteOne(ctx, f)
+	filter := s.filter(specs...)
+	return s.nodes.DeleteMany(ctx, filter)
 }
 
-// DeleteMany deletes multiple Spec instances and returns the number of successes.
-func (s *Store) DeleteMany(ctx context.Context, filter *Filter) (int, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	f, err := filter.Encode()
-	if err != nil {
-		return 0, err
-	}
-
-	return s.nodes.DeleteMany(ctx, f)
-}
-
-// FindOne returns a single Spec matched by the filter.
-func (s *Store) FindOne(ctx context.Context, filter *Filter, options ...*database.FindOptions) (Spec, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	f, err := filter.Encode()
-	if err != nil {
-		return nil, err
-	}
-
-	if doc, err := s.nodes.FindOne(ctx, f, options...); err != nil {
-		return nil, err
-	} else if doc == nil {
-		return nil, nil
-	} else {
-		unstructurd := &Unstructured{}
-		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
-			return nil, err
+func (s *Store) filter(specs ...Spec) *database.Filter {
+	var or []*database.Filter
+	for _, spec := range specs {
+		var and []*database.Filter
+		if spec != nil {
+			if spec.GetNamespace() != "" {
+				and = append(and, database.Where(KeyNamespace).Equal(types.NewString(spec.GetNamespace())))
+			}
+			if spec.GetID() != (uuid.UUID{}) {
+				and = append(and, database.Where(KeyID).Equal(types.NewBinary(spec.GetID().Bytes())))
+			}
+			if spec.GetName() != "" {
+				and = append(and, database.Where(KeyName).Equal(types.NewString(spec.GetName())))
+			}
 		}
-		return unstructurd, nil
-	}
-}
-
-// FindMany returns multiple Spec instances matched by the filter.
-func (s *Store) FindMany(ctx context.Context, filter *Filter, options ...*database.FindOptions) ([]Spec, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	f, err := filter.Encode()
-	if err != nil {
-		return nil, err
-	}
-
-	docs, err := s.nodes.FindMany(ctx, f, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	var spcs []Spec
-	for _, doc := range docs {
-		if doc == nil {
-			continue
+		if len(and) > 0 {
+			if len(and) == 1 {
+				or = append(or, and[0])
+			} else {
+				or = append(or, &database.Filter{OP: database.AND, Children: and})
+			}
 		}
-		unstructurd := &Unstructured{}
-		if err := types.Decoder.Decode(doc, unstructurd); err != nil {
-			return nil, err
-		}
-		spcs = append(spcs, unstructurd)
 	}
-	return spcs, nil
+
+	if len(or) == 0 {
+		return nil
+	}
+	if len(or) == 1 {
+		return or[0]
+	}
+	return &database.Filter{OP: database.OR, Children: or}
 }

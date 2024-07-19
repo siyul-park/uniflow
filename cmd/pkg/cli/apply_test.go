@@ -61,9 +61,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 	err := cmd.Execute()
 	assert.NoError(t, err)
 
-	r, err := st.FindOne(ctx, spec.Where[string](spec.KeyName).Equal(meta.GetName()))
+	r, err := st.Load(ctx, meta)
 	assert.NoError(t, err)
-	assert.NotNil(t, r)
+	assert.Len(t, r, 1)
 
 	assert.Contains(t, output.String(), meta.Name)
 }

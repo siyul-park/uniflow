@@ -6,8 +6,6 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/samber/lo"
-	"github.com/siyul-park/uniflow/pkg/database"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
@@ -46,88 +44,70 @@ func (l *Loader) LoadOne(ctx context.Context, id uuid.UUID) (*Symbol, error) {
 	defer l.mu.Unlock()
 
 	namespace := l.namespace
-	nexts := []interface{}{id}
-
+	nexts := []spec.Spec{&spec.Meta{ID: id, Namespace: namespace}}
 	for len(nexts) > 0 {
-		keys := nexts
+		curr := nexts
 		nexts = nil
 
-		exists := map[interface{}]bool{}
-		var filter *spec.Filter
-
-		for _, key := range keys {
-			exists[key] = false
-
-			switch k := key.(type) {
-			case uuid.UUID:
-				filter = filter.Or(spec.Where[uuid.UUID](spec.KeyID).Equal(k))
-			case string:
-				filter = filter.Or(spec.Where[string](spec.KeyName).Equal(k))
-			}
-		}
-
-		if namespace != "" {
-			filter = filter.And(spec.Where[string](spec.KeyNamespace).Equal(namespace))
-		}
-
-		specs, err := l.store.FindMany(ctx, filter, &database.FindOptions{Limit: lo.ToPtr(len(keys))})
+		specs, err := l.store.Load(ctx, curr...)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, spec := range specs {
-			exists[spec.GetID()] = true
-			if spec.GetName() != "" {
-				exists[spec.GetName()] = true
-			}
-
+		for _, s := range specs {
 			if namespace == "" {
-				namespace = spec.GetNamespace()
+				namespace = s.GetNamespace()
 			}
 
-			spec, err := l.scheme.Decode(spec)
+			decode, err := l.scheme.Decode(s)
 			if err != nil {
 				return nil, err
 			}
 
-			if sym, ok := l.table.LookupByID(spec.GetID()); ok && reflect.DeepEqual(sym.Spec, spec) {
+			if sym, ok := l.table.LookupByID(decode.GetID()); ok && reflect.DeepEqual(sym.Spec, decode) {
 				continue
 			}
 
-			n, err := l.scheme.Compile(spec)
+			n, err := l.scheme.Compile(decode)
 			if err != nil {
 				return nil, err
 			}
 
-			sym := &Symbol{Spec: spec, Node: n}
+			sym := &Symbol{Spec: decode, Node: n}
 			if err := l.table.Insert(sym); err != nil {
 				return nil, err
 			}
 
 			for _, locations := range sym.Links() {
 				for _, location := range locations {
-					if location.ID != (uuid.UUID{}) {
-						nexts = append(nexts, location.ID)
-					} else if location.Name != "" {
-						nexts = append(nexts, location.Name)
-					}
+					nexts = append(nexts, &spec.Meta{
+						ID:        location.ID,
+						Namespace: namespace,
+						Name:      location.Name,
+					})
 				}
 			}
 		}
 
-		for key, exist := range exists {
-			if !exist {
-				id, ok := key.(uuid.UUID)
-				if !ok {
-					if name, ok := key.(string); ok {
-						if sym, ok := l.table.LookupByName(namespace, name); ok {
-							id = sym.ID()
-						}
-					}
+		for _, spec := range curr {
+			exists := false
+			for _, s := range specs {
+				if spec.GetID() == s.GetID() || (spec.GetNamespace() == s.GetNamespace() && spec.GetName() == s.GetName()) {
+					exists = true
+					break
 				}
+				if exists {
+					break
+				}
+			}
 
-				if id != (uuid.UUID{}) {
-					if _, err := l.table.Free(id); err != nil {
+			if !exists {
+				sym, ok := l.table.LookupByID(spec.GetID())
+				if !ok && spec.GetName() != "" {
+					sym, ok = l.table.LookupByName(spec.GetNamespace(), spec.GetName())
+				}
+				if ok {
+					if _, err := l.table.Free(sym.ID()); err != nil {
 						return nil, err
 					}
 				}
@@ -157,12 +137,9 @@ func (l *Loader) LoadAll(ctx context.Context) ([]*Symbol, error) {
 		}
 	}
 
-	var filter *spec.Filter
-	if l.namespace != "" {
-		filter = spec.Where[string](spec.KeyNamespace).Equal(l.namespace)
-	}
-
-	specs, err := l.store.FindMany(ctx, filter)
+	specs, err := l.store.Load(ctx, &spec.Meta{
+		Namespace: l.namespace,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -203,12 +180,9 @@ func (l *Loader) Watch(ctx context.Context) error {
 		return nil
 	}
 
-	var filter *spec.Filter
-	if l.namespace != "" {
-		filter = spec.Where[string](spec.KeyNamespace).Equal(l.namespace)
-	}
-
-	s, err := l.store.Watch(ctx, filter)
+	s, err := l.store.Watch(ctx, &spec.Meta{
+		Namespace: l.namespace,
+	})
 	if err != nil {
 		return err
 	}
@@ -248,7 +222,7 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			nexts = append(nexts, event.NodeID)
+			nexts = append(nexts, event.ID)
 
 			for i := len(nexts) - 1; i >= 0; i-- {
 				id := nexts[i]
