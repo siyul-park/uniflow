@@ -36,7 +36,7 @@ func NewMemStore() *MemStore {
 	}
 }
 
-// Watch implements the Store interface.
+// Watch implements the Store interface, creating a stream for watching events.
 func (s *MemStore) Watch(ctx context.Context, specs ...Spec) (Stream, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -71,7 +71,7 @@ func (s *MemStore) Watch(ctx context.Context, specs ...Spec) (Stream, error) {
 	return stream, nil
 }
 
-// Load implements the Store interface.
+// Load implements the Store interface, loading specs matching the criteria.
 func (s *MemStore) Load(ctx context.Context, specs ...Spec) ([]Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -85,7 +85,7 @@ func (s *MemStore) Load(ctx context.Context, specs ...Spec) ([]Spec, error) {
 	return result, nil
 }
 
-// Store implements the Store interface.
+// Store implements the Store interface, storing new specs.
 func (s *MemStore) Store(ctx context.Context, specs ...Spec) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -107,21 +107,14 @@ func (s *MemStore) Store(ctx context.Context, specs ...Spec) (int, error) {
 	count := 0
 	for _, spec := range specs {
 		if s.insert(spec) {
-			for i, stream := range s.streams {
-				if s.match(spec, s.examples[i]...) {
-					stream.Emit(Event{
-						OP: EventStore,
-						ID: spec.GetID(),
-					})
-				}
-			}
+			s.emit(EventStore, spec)
 			count++
 		}
 	}
 	return count, nil
 }
 
-// Swap implements the Store interface.
+// Swap implements the Store interface, swapping existing specs with new ones.
 func (s *MemStore) Swap(ctx context.Context, specs ...Spec) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -139,21 +132,14 @@ func (s *MemStore) Swap(ctx context.Context, specs ...Spec) (int, error) {
 	count := 0
 	for _, spec := range specs {
 		if s.free(spec.GetID()) && s.insert(spec) {
-			for i, stream := range s.streams {
-				if s.match(spec, s.examples[i]...) {
-					stream.Emit(Event{
-						OP: EventSwap,
-						ID: spec.GetID(),
-					})
-				}
-			}
+			s.emit(EventSwap, spec)
 			count++
 		}
 	}
 	return count, nil
 }
 
-// Delete implements the Store interface.
+// Delete implements the Store interface, deleting specs matching the criteria.
 func (s *MemStore) Delete(ctx context.Context, specs ...Spec) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -162,14 +148,7 @@ func (s *MemStore) Delete(ctx context.Context, specs ...Spec) (int, error) {
 	for id, spec := range s.data {
 		if s.match(spec, specs...) {
 			if s.free(id) {
-				for i, stream := range s.streams {
-					if s.match(spec, s.examples[i]...) {
-						stream.Emit(Event{
-							OP: EventDelete,
-							ID: spec.GetID(),
-						})
-					}
-				}
+				s.emit(EventDelete, spec)
 				count++
 			}
 		}
@@ -250,6 +229,17 @@ func (s *MemStore) lookup(namespace, name string) uuid.UUID {
 		return ns[name]
 	}
 	return uuid.Nil
+}
+
+func (s *MemStore) emit(op EventOP, spec Spec) {
+	for i, stream := range s.streams {
+		if s.match(spec, s.examples[i]...) {
+			stream.Emit(Event{
+				OP: op,
+				ID: spec.GetID(),
+			})
+		}
+	}
 }
 
 // newMemStream creates a new memory stream for event notifications.
