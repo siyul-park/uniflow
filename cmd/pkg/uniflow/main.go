@@ -58,6 +58,13 @@ func main() {
 		collectionNodes = "nodes"
 	}
 
+	if strings.HasPrefix(databaseURL, "memongodb://") {
+		server := mongodriver.NewServer()
+		defer mongodriver.ReleaseServer(server)
+
+		databaseURL = server.URI()
+	}
+
 	var store spec.Store
 	if strings.HasPrefix(databaseURL, "mongodb://") {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -68,7 +75,11 @@ func main() {
 		}
 		collection := client.Database(databaseName).Collection(collectionNodes)
 
-		store = mongodriver.NewStore(collection)
+		s := mongodriver.NewStore(collection)
+		if err := s.Index(ctx); err != nil {
+			log.Fatal(err)
+		}
+		store = s
 	} else {
 		store = spec.NewMemStore()
 	}
