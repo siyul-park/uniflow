@@ -84,14 +84,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		if err := types.Decoder.Decode(doc, v); err != nil {
 			return nil, err
 		}
-
-		if v.GetID() == uuid.Nil {
-			v.SetID(uuid.Must(uuid.NewV7()))
-		}
-		if v.GetNamespace() == "" {
-			v.SetNamespace(spec.DefaultNamespace)
-		}
-
+		
 		specs = append(specs, v)
 	}
 
