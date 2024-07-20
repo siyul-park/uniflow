@@ -6,7 +6,6 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFloat_Float(t *testing.T) {
@@ -135,7 +134,7 @@ func TestFloat_Encode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			decoded, err := enc.Encode(tc.source)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, tc.want, decoded)
 		})
 	}
@@ -169,7 +168,7 @@ func TestFloat_Decode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := dec.Decode(tc.source, tc.target)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, tc.want, reflect.ValueOf(tc.target).Elem().Interface())
 		})
 	}

@@ -4,7 +4,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/printer"
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -12,9 +11,8 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	Scheme *scheme.Scheme
-	Store  *spec.Store
-	FS     afero.Fs
+	Store spec.Store
+	FS    afero.Fs
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
@@ -44,12 +42,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if err := config.Store.Index(ctx); err != nil {
-			return err
-		}
-
 		specs, err := scanner.New().
-			Scheme(config.Scheme).
 			Store(config.Store).
 			Namespace(namespace).
 			FS(config.FS).

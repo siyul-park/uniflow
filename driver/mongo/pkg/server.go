@@ -1,4 +1,4 @@
-package mongodb
+package mongo
 
 import (
 	"context"
@@ -34,8 +34,8 @@ var (
 	}
 )
 
-// Server retrieves a MongoDB server instance from the serverPool.
-func Server() *memongo.Server {
+// NewServer retrieves a MongoDB server instance from the serverPool.
+func NewServer() *memongo.Server {
 	return serverPool.Get().(*memongo.Server)
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -26,7 +25,7 @@ func TestRuntime_LookupByID(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -60,7 +59,7 @@ func TestRuntime_LookupByName(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -95,7 +94,7 @@ func TestRuntime_Insert(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -130,7 +129,7 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -171,7 +170,7 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -205,7 +204,7 @@ func TestRuntime_Listen(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -253,7 +252,7 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	for i := 0; i < b.N; i++ {
 		r := New(Config{

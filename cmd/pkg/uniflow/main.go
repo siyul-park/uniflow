@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
+	mongodriver "github.com/siyul-park/uniflow/driver/mongo/pkg"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
 	"github.com/siyul-park/uniflow/ext/pkg/event"
 	"github.com/siyul-park/uniflow/ext/pkg/io"
@@ -20,14 +21,12 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/ext/pkg/network"
 	"github.com/siyul-park/uniflow/ext/pkg/system"
-	"github.com/siyul-park/uniflow/pkg/database"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
-	"github.com/siyul-park/uniflow/pkg/database/mongodb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -59,28 +58,20 @@ func main() {
 		collectionNodes = "nodes"
 	}
 
-	var db database.Database
+	var store spec.Store
 	if strings.HasPrefix(databaseURL, "mongodb://") {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
-		client, err := mongodb.Connect(ctx, opts)
+		client, err := mongo.Connect(ctx, opts)
 		if err != nil {
 			log.Fatal(err)
 		}
-		db, err = client.Database(ctx, databaseName)
-		if err != nil {
-			log.Fatal(err)
-		}
+		collection := client.Database(databaseName).Collection(collectionNodes)
+
+		store = mongodriver.NewStore(collection)
 	} else {
-		db = memdb.New(databaseName)
+		store = spec.NewMemStore()
 	}
-
-	col, err := db.Collection(ctx, collectionNodes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	store := spec.NewStore(col)
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()

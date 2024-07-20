@@ -15,7 +15,7 @@ type LoaderConfig struct {
 	Namespace string         // Namespace for the Loader
 	Table     *Table         // Symbol table for storing loaded symbols
 	Scheme    *scheme.Scheme // Scheme for decoding and compiling specs
-	Store     *spec.Store    // Store to retrieve specs from
+	Store     spec.Store     // Store to retrieve specs from
 }
 
 // Loader synchronizes with spec.Store to load spec.Spec into the Table.
@@ -23,8 +23,8 @@ type Loader struct {
 	namespace string
 	table     *Table
 	scheme    *scheme.Scheme
-	store     *spec.Store
-	stream    *spec.Stream
+	store     spec.Store
+	stream    spec.Stream
 	mu        sync.RWMutex
 }
 

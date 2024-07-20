@@ -18,7 +18,7 @@ import (
 type StartConfig struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
-	Store  *spec.Store
+	Store  spec.Store
 	FS     afero.Fs
 }
 
@@ -49,10 +49,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if err := config.Store.Index(ctx); err != nil {
-			return err
-		}
-
 		if filename != "" {
 			specs, err := config.Store.Load(ctx, &spec.Meta{Namespace: namespace})
 			if err != nil {
@@ -63,7 +59,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			}
 
 			specs, err = scanner.New().
-				Scheme(config.Scheme).
 				Store(config.Store).
 				Namespace(namespace).
 				FS(config.FS).

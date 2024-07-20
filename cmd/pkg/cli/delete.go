@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -10,9 +9,8 @@ import (
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	Scheme *scheme.Scheme
-	Store  *spec.Store
-	FS     afero.Fs
+	Store spec.Store
+	FS    afero.Fs
 }
 
 // NewDeleteCommand creates a new cobra.Command for the delete command.
@@ -43,7 +41,6 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 		}
 
 		specs, err := scanner.New().
-			Scheme(config.Scheme).
 			Store(config.Store).
 			Namespace(namespace).
 			FS(config.FS).

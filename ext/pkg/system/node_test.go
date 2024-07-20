@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -23,7 +22,7 @@ func TestCreateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	n, _ := NewSyscallNode(CreateNodes(st))
 	defer n.Close()
@@ -61,7 +60,7 @@ func TestReadNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	n, _ := NewSyscallNode(ReadNodes(st))
 	defer n.Close()
@@ -99,7 +98,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	n, _ := NewSyscallNode(UpdateNodes(st))
 	defer n.Close()
@@ -139,7 +138,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	n, _ := NewSyscallNode(DeleteNodes(st))
 	defer n.Close()

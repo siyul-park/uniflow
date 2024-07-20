@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Scheme *scheme.Scheme
 	Hook   *hook.Hook
-	Store  *spec.Store
+	Store  spec.Store
 	FS     afero.Fs
 }
 
@@ -93,18 +93,15 @@ func NewCommand(config Config) *cobra.Command {
 	cmd.PersistentFlags().String(flagMemProfile, "", "write memory profile to `file`")
 
 	cmd.AddCommand(NewApplyCommand(ApplyConfig{
-		Scheme: sc,
-		Store:  st,
-		FS:     fsys,
+		Store: st,
+		FS:    fsys,
 	}))
 	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
-		Scheme: sc,
-		Store:  st,
-		FS:     fsys,
+		Store: st,
+		FS:    fsys,
 	}))
 	cmd.AddCommand(NewGetCommand(GetConfig{
-		Scheme: sc,
-		Store:  st,
+		Store: st,
 	}))
 	cmd.AddCommand(NewStartCommand(StartConfig{
 		Scheme: sc,

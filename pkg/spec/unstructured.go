@@ -5,9 +5,9 @@ import "github.com/gofrs/uuid"
 // Unstructured is a flexible data structure implementing the Spec interface, allowing for dynamic key-value storage without strict marshaling.
 type Unstructured struct {
 	// Fields allows for flexible key-value storage.
-	Fields map[string]any `map:",inline"`
+	Fields map[string]any `json:",inline" bson:",inline" map:",inline"`
 	// Meta provides common metadata fields for the specification.
-	Meta `map:",inline"`
+	Meta `json:",inline" bson:",inline" map:",inline"`
 }
 
 // Key constants for commonly used fields in Unstructured.
