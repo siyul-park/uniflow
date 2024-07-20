@@ -84,7 +84,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		if err := types.Decoder.Decode(doc, v); err != nil {
 			return nil, err
 		}
-		
+
 		specs = append(specs, v)
 	}
 

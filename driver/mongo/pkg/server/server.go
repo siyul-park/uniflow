@@ -1,4 +1,4 @@
-package mongo
+package server
 
 import (
 	"context"
@@ -34,13 +34,13 @@ var (
 	}
 )
 
-// NewServer retrieves a MongoDB server instance from the serverPool.
-func NewServer() *memongo.Server {
+// New retrieves a MongoDB server instance from the serverPool.
+func New() *memongo.Server {
 	return serverPool.Get().(*memongo.Server)
 }
 
-// ReleaseServer releases a MongoDB server instance back to the serverPool after cleanup.
-func ReleaseServer(server *memongo.Server) {
+// Release releases a MongoDB server instance back to the serverPool after cleanup.
+func Release(server *memongo.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

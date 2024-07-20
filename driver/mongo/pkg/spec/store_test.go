@@ -1,4 +1,4 @@
-package mongo
+package spec
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,8 +19,8 @@ func TestStore_Watch(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := NewServer()
-	defer ReleaseServer(s)
+	s := server.New()
+	defer server.Release(s)
 
 	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
@@ -59,8 +60,8 @@ func TestStore_Load(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := NewServer()
-	defer ReleaseServer(s)
+	s := server.New()
+	defer server.Release(s)
 
 	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
@@ -91,8 +92,8 @@ func TestStore_Store(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := NewServer()
-	defer ReleaseServer(s)
+	s := server.New()
+	defer server.Release(s)
 
 	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
@@ -123,8 +124,8 @@ func TestStore_Swap(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := NewServer()
-	defer ReleaseServer(s)
+	s := server.New()
+	defer server.Release(s)
 
 	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
@@ -159,8 +160,8 @@ func TestMemStore_Delete(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	s := NewServer()
-	defer ReleaseServer(s)
+	s := server.New()
+	defer server.Release(s)
 
 	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)

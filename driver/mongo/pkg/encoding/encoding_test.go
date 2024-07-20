@@ -1,4 +1,4 @@
-package mongo
+package encoding
 
 import (
 	"testing"

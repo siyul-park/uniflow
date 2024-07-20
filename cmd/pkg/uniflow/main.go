@@ -8,7 +8,9 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
-	mongodriver "github.com/siyul-park/uniflow/driver/mongo/pkg"
+	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
+	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
+	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
 	"github.com/siyul-park/uniflow/ext/pkg/event"
 	"github.com/siyul-park/uniflow/ext/pkg/io"
@@ -59,8 +61,8 @@ func main() {
 	}
 
 	if strings.HasPrefix(databaseURL, "memongodb://") {
-		server := mongodriver.NewServer()
-		defer mongodriver.ReleaseServer(server)
+		server := mongoserver.New()
+		defer mongoserver.Release(server)
 
 		databaseURL = server.URI()
 	}
@@ -75,7 +77,7 @@ func main() {
 		}
 		collection := client.Database(databaseName).Collection(collectionNodes)
 
-		s := mongodriver.NewStore(collection)
+		s := mongospec.NewStore(collection)
 		if err := s.Index(ctx); err != nil {
 			log.Fatal(err)
 		}
