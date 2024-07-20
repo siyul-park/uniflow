@@ -37,24 +37,22 @@ type Stream interface {
 	Close() error
 }
 
-// Event represents an event that occurs when a Spec is changed.
+// Event represents a change event for a Spec.
 type Event struct {
-	OP EventOP
-	ID uuid.UUID
+	OP EventOP   // Operation type (Store, Swap, Delete)
+	ID uuid.UUID // ID of the changed Spec
 }
 
+// EventOP represents the type of operation that triggered an Event.
 type EventOP int
 
 const (
-	// EventStore indicates an event for inserting a Spec.
-	EventStore EventOP = iota
-	// EventSwap indicates an event for updating a Spec.
-	EventSwap
-	// EventDelete indicates an event for deleting a Spec.
-	EventDelete
+	EventStore  EventOP = iota // EventStore indicates an event for inserting a Spec.
+	EventSwap                  // EventSwap indicates an event for updating a Spec.
+	EventDelete                // EventDelete indicates an event for deleting a Spec.
 )
 
+// Common errors
 var (
-	// ErrDuplicatedKey indicates a duplicated key error.
-	ErrDuplicatedKey = errors.New("duplicated key")
+	ErrDuplicatedKey = errors.New("duplicated key") // ErrDuplicatedKey indicates a duplicated key error.
 )

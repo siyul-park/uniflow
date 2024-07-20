@@ -16,6 +16,7 @@ type Store struct {
 	collection *mongo.Collection
 }
 
+// Stream represents a MongoDB change stream for tracking Spec changes.
 type Stream struct {
 	stream *mongo.ChangeStream
 	ctx    context.Context
@@ -185,6 +186,7 @@ func (s *Store) filter(specs ...spec.Spec) bson.M {
 	}
 }
 
+// newStream creates and returns a new Stream.
 func newStream(stream *mongo.ChangeStream) *Stream {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -230,20 +232,19 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 	}()
 
 	return s
-
 }
 
-// Next implements spec.Stream.
+// Next returns a channel for receiving events from the stream.
 func (s *Stream) Next() <-chan spec.Event {
 	return s.out
 }
 
-// Done implements spec.Stream.
+// Done returns a channel that is closed when the stream is closed.
 func (s *Stream) Done() <-chan struct{} {
 	return s.ctx.Done()
 }
 
-// Close implements spec.Stream.
+// Close closes the stream and releases any resources.
 func (s *Stream) Close() error {
 	s.cancel()
 	return nil

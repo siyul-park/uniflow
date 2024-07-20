@@ -53,7 +53,6 @@ func (s *MemStore) Watch(ctx context.Context, specs ...Spec) (Stream, error) {
 
 	go func() {
 		<-stream.Done()
-
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -92,12 +91,12 @@ func (s *MemStore) Store(ctx context.Context, specs ...Spec) (int, error) {
 	defer s.mu.Unlock()
 
 	for _, spec := range specs {
-		if spec.GetNamespace() == "" {
-			spec.SetNamespace(DefaultNamespace)
-		}
-
 		if spec.GetID() == uuid.Nil {
 			spec.SetID(uuid.Must(uuid.NewV7()))
+		}
+
+		if spec.GetNamespace() == "" {
+			spec.SetNamespace(DefaultNamespace)
 		}
 
 		if spec.GetName() != "" && s.lookup(spec.GetNamespace(), spec.GetName()) != uuid.Nil {
@@ -179,15 +178,25 @@ func (s *MemStore) Delete(ctx context.Context, specs ...Spec) (int, error) {
 }
 
 func (s *MemStore) match(spec Spec, examples ...Spec) bool {
+	for i, example := range examples {
+		if example == nil {
+			examples = append(examples[:i], examples[i+1:]...)
+			i--
+		}
+	}
+
 	if len(examples) == 0 {
 		return true
 	}
 
 	for _, example := range examples {
-		if example == nil ||
-			(example.GetID() != uuid.Nil && spec.GetID() != example.GetID()) ||
-			(example.GetNamespace() != "" && spec.GetNamespace() != example.GetNamespace()) ||
-			(example.GetName() != "" && spec.GetName() != example.GetName()) {
+		if example.GetID() != uuid.Nil && spec.GetID() != example.GetID() {
+			continue
+		}
+		if example.GetNamespace() != "" && spec.GetNamespace() != example.GetNamespace() {
+			continue
+		}
+		if example.GetName() != "" && spec.GetName() != example.GetName() {
 			continue
 		}
 		return true
@@ -243,6 +252,7 @@ func (s *MemStore) lookup(namespace, name string) uuid.UUID {
 	return uuid.Nil
 }
 
+// newMemStream creates a new memory stream for event notifications.
 func newMemStream() *MemStream {
 	s := &MemStream{
 		in:   make(chan Event),
