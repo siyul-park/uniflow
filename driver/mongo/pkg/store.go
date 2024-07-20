@@ -76,8 +76,11 @@ func (s *Store) Watch(ctx context.Context, specs ...spec.Spec) (spec.Stream, err
 // Load retrieves Specs from the store that match the given criteria.
 func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, error) {
 	filter := s.filter(specs...)
+	limit := int64(s.limit(specs...))
 
-	cursor, err := s.collection.Find(ctx, filter)
+	cursor, err := s.collection.Find(ctx, filter, &options.FindOptions{
+		Limit: &limit,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +160,6 @@ func (s *Store) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 	return int(res.DeletedCount), nil
 }
 
-// filter constructs a MongoDB filter based on the provided Specs.
 func (s *Store) filter(specs ...spec.Spec) bson.M {
 	var orFilters []bson.M
 	for _, v := range specs {
@@ -184,6 +186,18 @@ func (s *Store) filter(specs ...spec.Spec) bson.M {
 	default:
 		return bson.M{"$or": orFilters}
 	}
+}
+
+func (s *Store) limit(specs ...spec.Spec) int {
+	limit := 0
+	for _, v := range specs {
+		if v.GetID() != uuid.Nil || v.GetName() != "" {
+			limit += 1
+		} else if v.GetNamespace() != "" {
+			return 0
+		}
+	}
+	return limit
 }
 
 // newStream creates and returns a new Stream.
