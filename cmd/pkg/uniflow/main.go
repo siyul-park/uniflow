@@ -8,7 +8,6 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
-	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
@@ -71,10 +70,13 @@ func main() {
 	if strings.HasPrefix(databaseURL, "mongodb://") {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
+
 		client, err := mongo.Connect(ctx, opts)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer client.Disconnect(ctx)
+
 		collection := client.Database(databaseName).Collection(collectionNodes)
 
 		s := mongospec.NewStore(collection)

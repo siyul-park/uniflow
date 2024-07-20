@@ -9,7 +9,7 @@ type adapter struct{}
 
 var _ types.Adapter = (*adapter)(nil)
 
-func (*adapter) NativeToValue(value interface{}) ref.Val {
+func (*adapter) NativeToValue(value any) ref.Val {
 	switch v := value.(type) {
 	case error:
 		return &Error{error: v}

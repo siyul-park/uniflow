@@ -28,6 +28,10 @@ type mapTag struct {
 	inline    bool
 }
 
+type mapProxy struct {
+	Map
+}
+
 type comparer struct{}
 
 const tagMap = "map"
@@ -140,7 +144,7 @@ func (m Map) Hash() uint64 {
 	return h.Sum64()
 }
 
-// Interface converts the Map to an interface{}.
+// Interface converts the Map to an any.
 func (m Map) Interface() any {
 	if m.value.Len() == 0 {
 		return nil
@@ -336,32 +340,43 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 					if source == nil {
 						return nil
 					}
-					if s, ok := source.(Map); ok {
-						t := reflect.NewAt(typ.Elem(), target).Elem()
-						if t.IsNil() {
-							t.Set(reflect.MakeMapWithSize(t.Type(), s.Len()))
-						}
 
-						for _, key := range s.Keys() {
-							value, _ := s.Get(key)
-
-							k := reflect.New(keyType)
-							v := reflect.New(valueType)
-
-							if err := keyDecoder.Decode(key, k.UnsafePointer()); err != nil {
-								return err
-							} else if err := valueDecoder.Decode(value, v.UnsafePointer()); err != nil {
-								return err
-							} else {
-								t.SetMapIndex(k.Elem(), v.Elem())
-							}
-						}
-						return nil
+					var proxy *mapProxy
+					if s, ok := source.(*mapProxy); ok {
+						proxy = s
+					} else if s, ok := source.(Map); ok {
+						proxy = &mapProxy{Map: s}
+					} else {
+						return errors.WithStack(encoding.ErrUnsupportedType)
 					}
-					return errors.WithStack(encoding.ErrUnsupportedType)
+
+					t := reflect.NewAt(typ.Elem(), target).Elem()
+					if t.IsNil() {
+						t.Set(reflect.MakeMapWithSize(t.Type(), proxy.Len()))
+					}
+
+					for _, key := range proxy.Keys() {
+						value, ok := proxy.Get(key)
+						if !ok {
+							continue
+						}
+						proxy.Delete(key)
+
+						k := reflect.New(keyType)
+						v := reflect.New(valueType)
+
+						if err := keyDecoder.Decode(key, k.UnsafePointer()); err != nil {
+							return err
+						} else if err := valueDecoder.Decode(value, v.UnsafePointer()); err != nil {
+							return err
+						} else {
+							t.SetMapIndex(k.Elem(), v.Elem())
+						}
+					}
+					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {
-				var decoders []encoding.Decoder[Map, unsafe.Pointer]
+				var decoders []encoding.Decoder[*mapProxy, unsafe.Pointer]
 				for i := 0; i < typ.Elem().NumField(); i++ {
 					field := typ.Elem().Field(i)
 					tag := getMapTag(field)
@@ -378,13 +393,13 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 					offset := field.Offset
 					alias := NewString(tag.alias)
 
-					var dec encoding.Decoder[Map, unsafe.Pointer]
+					var dec encoding.Decoder[*mapProxy, unsafe.Pointer]
 					if tag.inline {
-						dec = encoding.DecodeFunc[Map, unsafe.Pointer](func(source Map, target unsafe.Pointer) error {
+						dec = encoding.DecodeFunc[*mapProxy, unsafe.Pointer](func(source *mapProxy, target unsafe.Pointer) error {
 							return child.Decode(source, unsafe.Pointer(uintptr(target)+offset))
 						})
 					} else {
-						dec = encoding.DecodeFunc[Map, unsafe.Pointer](func(source Map, target unsafe.Pointer) error {
+						dec = encoding.DecodeFunc[*mapProxy, unsafe.Pointer](func(source *mapProxy, target unsafe.Pointer) error {
 							value, ok := source.Get(alias)
 							if !ok {
 								if !tag.omitempty {
@@ -392,6 +407,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 								}
 								return nil
 							}
+							source.Delete(alias)
 							return child.Decode(value, unsafe.Pointer(uintptr(target)+offset))
 						})
 					}
@@ -403,19 +419,29 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 					if source == nil {
 						return nil
 					}
-					if s, ok := source.(Map); ok {
-						for _, dec := range decoders {
-							if err := dec.Decode(s, target); err != nil {
-								return err
-							}
-						}
-						return nil
+
+					var proxy *mapProxy
+					if s, ok := source.(*mapProxy); ok {
+						proxy = s
+					} else if s, ok := source.(Map); ok {
+						proxy = &mapProxy{Map: s}
+					} else {
+						return errors.WithStack(encoding.ErrUnsupportedType)
 					}
-					return errors.WithStack(encoding.ErrUnsupportedType)
+
+					for _, dec := range decoders {
+						if err := dec.Decode(proxy, target); err != nil {
+							return err
+						}
+					}
+					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Map); ok {
+						*(*any)(target) = s.Interface()
+						return nil
+					} else if s, ok := source.(*mapProxy); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
@@ -456,4 +482,12 @@ func getMapTag(f reflect.StructField) mapTag {
 	}
 
 	return mapTag{alias: key}
+}
+
+func (m *mapProxy) Set(key, value Value) {
+	m.Map = m.Map.Set(key, value)
+}
+
+func (m *mapProxy) Delete(key Value) {
+	m.Map = m.Map.Delete(key)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
+	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -48,7 +49,7 @@ func (s *Store) Index(ctx context.Context) error {
 				{Key: spec.KeyName, Value: 1},
 			},
 			Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{
-				spec.KeyName: bson.M{"$exists": true, "$ne": ""},
+				spec.KeyName: bson.M{"$exists": true},
 			}),
 		},
 		{
@@ -65,12 +66,22 @@ func (s *Store) Watch(ctx context.Context, specs ...spec.Spec) (spec.Stream, err
 	filter := s.filter(specs...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)
-	stream, err := s.collection.Watch(ctx, mongo.Pipeline{bson.D{{Key: "$match", Value: filter}}}, opts)
+	changeStream, err := s.collection.Watch(ctx, mongo.Pipeline{bson.D{{Key: "$match", Value: filter}}}, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return newStream(stream), nil
+	stream := newStream(changeStream)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			stream.Close()
+		case <-stream.Done():
+		}
+	}()
+
+	return stream, nil
 }
 
 // Load retrieves Specs from the store that match the given criteria.
@@ -88,11 +99,11 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 
 	var result []spec.Spec
 	for cursor.Next(ctx) {
-		var unstructured spec.Unstructured
-		if err := cursor.Decode(&unstructured); err != nil {
+		unstructured := &spec.Unstructured{}
+		if err := cursor.Decode(unstructured); err != nil {
 			return nil, err
 		}
-		result = append(result, &unstructured)
+		result = append(result, unstructured)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -104,7 +115,7 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 
 // Store saves the given Specs into the database.
 func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
-	var docs []interface{}
+	var docs []any
 	for _, v := range specs {
 		if v.GetID() == uuid.Nil {
 			v.SetID(uuid.Must(uuid.NewV7()))
@@ -128,17 +139,46 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Swap updates existing Specs in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
-	count := 0
-	for _, v := range specs {
+
+	ids := make([]uuid.UUID, len(specs))
+	for i, v := range specs {
 		if v.GetID() == uuid.Nil {
 			v.SetID(uuid.Must(uuid.NewV7()))
 		}
 		if v.GetNamespace() == "" {
 			v.SetNamespace(spec.DefaultNamespace)
 		}
+		ids[i] = v.GetID()
+	}
 
-		filter := bson.M{"_id": v.GetID()}
-		update := bson.M{"$set": v}
+	filter := bson.M{"_id": bson.M{"$in": ids}}
+
+	cursor, err := s.collection.Find(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
+	defer cursor.Close(ctx)
+
+	exists := make(map[uuid.UUID]spec.Spec)
+	for cursor.Next(ctx) {
+		spec := &spec.Unstructured{}
+		if err := cursor.Decode(spec); err != nil {
+			return 0, err
+		}
+		exists[spec.GetID()] = spec
+	}
+
+	count := 0
+	for _, spec := range specs {
+		exist, ok := exists[spec.GetID()]
+		if !ok {
+			continue
+		}
+
+		spec.SetNamespace(exist.GetNamespace())
+
+		filter := bson.M{"_id": spec.GetID()}
+		update := bson.M{"$set": spec}
 
 		res, err := s.collection.UpdateOne(ctx, filter, update)
 		if err != nil {
@@ -146,6 +186,7 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 		}
 		count += int(res.MatchedCount)
 	}
+
 	return count, nil
 }
 

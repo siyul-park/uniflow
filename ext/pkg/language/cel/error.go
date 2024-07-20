@@ -19,7 +19,7 @@ var ErrorType = cel.ObjectType("error")
 var _ types.Error = (*Error)(nil)
 
 // ConvertToNative converts the Error instance to a native Go type as per the provided type descriptor.
-func (e *Error) ConvertToNative(typeDesc reflect.Type) (interface{}, error) {
+func (e *Error) ConvertToNative(typeDesc reflect.Type) (any, error) {
 	return nil, e.error
 }
 
@@ -56,7 +56,7 @@ func (e *Error) Type() ref.Type {
 }
 
 // Value returns the underlying value of the Error instance.
-func (e *Error) Value() interface{} {
+func (e *Error) Value() any {
 	return e.error
 }
 

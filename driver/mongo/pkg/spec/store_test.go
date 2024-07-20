@@ -13,6 +13,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func TestStore_Index(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	s := server.New()
+	defer server.Release(s)
+
+	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	defer c.Disconnect(ctx)
+
+	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
+
+	err := st.Index(ctx)
+	assert.NoError(t, err)
+}
+
 func TestStore_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
