@@ -109,7 +109,6 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
-
 	return result, nil
 }
 
@@ -139,16 +138,12 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Swap updates existing Specs in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
-
 	ids := make([]uuid.UUID, len(specs))
-	for i, v := range specs {
-		if v.GetID() == uuid.Nil {
-			v.SetID(uuid.Must(uuid.NewV7()))
+	for i, spec := range specs {
+		if spec.GetID() == uuid.Nil {
+			spec.SetID(uuid.Must(uuid.NewV7()))
 		}
-		if v.GetNamespace() == "" {
-			v.SetNamespace(spec.DefaultNamespace)
-		}
-		ids[i] = v.GetID()
+		ids[i] = spec.GetID()
 	}
 
 	filter := bson.M{"_id": bson.M{"$in": ids}}
@@ -186,7 +181,6 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 		}
 		count += int(res.MatchedCount)
 	}
-
 	return count, nil
 }
 
@@ -197,7 +191,6 @@ func (s *Store) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	return int(res.DeletedCount), nil
 }
 

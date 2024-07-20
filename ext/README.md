@@ -1,4 +1,4 @@
-# Built-in Extensions
+# 🔧 Built-in Extensions
 
 Built-in extensions efficiently execute short-term tasks and implement a wide range of features. These extensions enhance system performance, streamline workflows, and boost developer productivity.
 

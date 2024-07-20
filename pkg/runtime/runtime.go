@@ -39,7 +39,7 @@ func New(config Config) *Runtime {
 		config.Scheme = scheme.New()
 	}
 	if config.Store == nil {
-		config.Store = spec.NewMemStore()
+		config.Store = spec.NewStore()
 	}
 
 	tb := symbol.NewTable(symbol.TableOptions{

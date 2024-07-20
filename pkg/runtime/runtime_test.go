@@ -25,7 +25,7 @@ func TestRuntime_LookupByID(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -59,7 +59,7 @@ func TestRuntime_LookupByName(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -94,7 +94,7 @@ func TestRuntime_Insert(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -129,7 +129,7 @@ func TestRuntime_Free(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -170,7 +170,7 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -204,7 +204,7 @@ func TestRuntime_Listen(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	r := New(Config{
 		Scheme: s,
@@ -252,7 +252,7 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	for i := 0; i < b.N; i++ {
 		r := New(Config{

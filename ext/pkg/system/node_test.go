@@ -22,7 +22,7 @@ func TestCreateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	n, _ := NewSyscallNode(CreateNodes(st))
 	defer n.Close()
@@ -60,7 +60,7 @@ func TestReadNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	n, _ := NewSyscallNode(ReadNodes(st))
 	defer n.Close()
@@ -98,7 +98,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	n, _ := NewSyscallNode(UpdateNodes(st))
 	defer n.Close()
@@ -138,7 +138,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	kind := faker.UUIDHyphenated()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	n, _ := NewSyscallNode(DeleteNodes(st))
 	defer n.Close()

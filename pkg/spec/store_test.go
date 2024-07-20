@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMemStore_Watch(t *testing.T) {
+func TestStore_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewMemStore()
+	st := NewStore()
 
 	stream, err := st.Watch(ctx)
 	assert.NoError(t, err)
@@ -44,13 +44,13 @@ func TestMemStore_Watch(t *testing.T) {
 	_, _ = st.Delete(ctx, meta)
 }
 
-func TestMemStore_Load(t *testing.T) {
+func TestStore_Load(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewMemStore()
+	st := NewStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -70,13 +70,13 @@ func TestMemStore_Load(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestMemStore_Store(t *testing.T) {
+func TestStore_Store(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewMemStore()
+	st := NewStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -96,13 +96,13 @@ func TestMemStore_Store(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestMemStore_Swap(t *testing.T) {
+func TestStore_Swap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewMemStore()
+	st := NewStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -126,13 +126,13 @@ func TestMemStore_Swap(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestMemStore_Delete(t *testing.T) {
+func TestStore_Delete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewMemStore()
+	st := NewStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),

@@ -24,7 +24,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()

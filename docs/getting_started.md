@@ -1,12 +1,12 @@
 # 🚀 Getting Started
 
-This comprehensive walkthrough will introduce you to managing workflows and running the engine using our [Command-Line Interface (CLI)](../cmd/README.md). We'll cover everything from installation to workflow control and configuration setup.
+This comprehensive guide introduces how to manage workflows and run the engine using the [Command Line Interface (CLI)](../cmd/README.md). It covers everything from installation to workflow control and configuration settings.
 
 ## Installing from Source
 
-Let's begin by setting up the [CLI](../cmd/README.md), which allows you to control workflows with [built-in extensions](../ext/README.md). Before we start, ensure you have [Go 1.22](https://go.dev/doc/install) or later installed on your system.
+First, let's set up the [CLI](../cmd/README.md) that controls workflows along with the [built-in extensions](../ext/README.md). Ensure that you have [Go 1.22](https://go.dev/doc/install) or higher installed on your system before starting.
 
-First, clone the repository:
+Clone the repository:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -25,23 +25,23 @@ make init
 make build
 ```
 
-Once the build process completes, you'll find the executable in the `dist` folder, ready for use.
+Once the build process is complete, the executable file will be generated in the `dist` folder and will be ready for use.
 
 ## Configuration
 
-Uniflow offers flexible configuration options through either a `.uniflow.toml` file or system environment variables:
+Uniflow provides flexible configuration options via a `.uniflow.toml` file or system environment variables:
 
-| TOML Key           | Environment Variable | Example                  |
-|--------------------|----------------------|--------------------------|
-| `database.url`     | `DATABASE.URL`       | `mem://` or `mongodb://` |
-| `database.name`    | `DATABASE.NAME`      | -                        |
-| `collection.nodes` | `COLLECTION.NODES`   | `nodes`                  |
+| TOML Key           | Environment Variable | Example                   |
+|--------------------|----------------------|---------------------------|
+| `database.url`     | `DATABASE.URL`       | `mem://` or `mongodb://`  |
+| `database.name`    | `DATABASE.NAME`      | -                         |
+| `collection.nodes` | `COLLECTION.NODES`   | `nodes`                   |
 
-When using [MongoDB](https://www.mongodb.com/), enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to allow the engine to track node specification changes. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
+When using [MongoDB](https://www.mongodb.com/), you need to enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to allow the engine to track node specification changes. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 
 ## CLI Commands
 
-Uniflow's CLI provides a suite of commands for workflow control. To see all available commands, use:
+The CLI provides various commands for controlling workflows. To see all available commands, run:
 
 ```sh
 ./dist/uniflow --help
@@ -55,31 +55,31 @@ The `apply` command adds or updates node specifications in a namespace:
 ./dist/uniflow apply --filename examples/ping.yaml
 ```
 
-This command outputs the results and uses the `default` namespace if none is specified.
+This command outputs the result and uses the `default` namespace if none is specified.
 
 ### Delete
 
-Remove node specifications from a namespace with the `delete` command:
+The `delete` command removes node specifications from a namespace:
 
 ```sh
 ./dist/uniflow delete --filename examples/ping.yaml
 ```
 
-This removes all node specifications defined in `examples/ping.yaml` from the specified (or default) namespace.
+This command removes all node specifications defined in `examples/ping.yaml` from the specified namespace. If no namespace is specified, it uses the `default` namespace.
 
 ### Get
 
-Retrieve node specifications from a namespace using the `get` command:
+The `get` command retrieves node specifications from a namespace:
 
 ```sh
 ./dist/uniflow get
 ```
 
-This displays all node specifications in the default (or specified) namespace.
+This command displays all node specifications in the specified namespace. If no namespace is specified, it uses the `default` namespace.
 
 ### Start
 
-Launch the runtime with node specifications from a specific namespace using the `start` command:
+The `start` command initiates the runtime with node specifications from a specific namespace:
 
 ```sh
 ./dist/uniflow start
@@ -93,11 +93,11 @@ If the namespace is empty, you can provide initial node specifications using the
 
 ## HTTP API Integration
 
-To modify node specifications via HTTP API, you'll need to set up a workflow that exposes these capabilities. Utilize the `syscall` node included in the default extensions:
+To modify node specifications via HTTP API, you need to set up workflows that expose these functionalities. Use the `syscall` node included in the [basic extensions](../ext/README.md):
 
 ```yaml
 kind: syscall
 opcode: nodes.create # nodes.read, nodes.update, nodes.delete
 ```
 
-Explore our [workflow example](../examples/system.yaml) to get started. You can enhance this workflow with authentication and authorization processes as needed. Typically, these runtime control workflows are defined in the `system` namespace.
+To get started, refer to the [workflow example](../examples/system.yaml). You can add authentication and authorization processes to this workflow as needed. Typically, such runtime control workflows are defined in the `system` namespace.

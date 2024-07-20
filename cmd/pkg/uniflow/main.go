@@ -85,7 +85,7 @@ func main() {
 		}
 		store = s
 	} else {
-		store = spec.NewMemStore()
+		store = spec.NewStore()
 	}
 
 	sbuilder := scheme.NewBuilder()

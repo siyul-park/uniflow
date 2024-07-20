@@ -19,7 +19,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()

@@ -41,7 +41,7 @@ Uniflow는 `.uniflow.toml` 파일이나 시스템 환경 변수를 통해 유연
 
 ## CLI 명령어
 
-Uniflow의 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 사용 가능한 모든 명령어를 보려면 다음을 실행하세요:
+CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 사용 가능한 모든 명령어를 보려면 다음을 실행하세요:
 
 ```sh
 ./dist/uniflow --help
@@ -55,7 +55,7 @@ Uniflow의 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공
 ./dist/uniflow apply --filename examples/ping.yaml
 ```
 
-이 명령어는 결과를 출력하며, 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스를 사용합니다.
+이 명령어는 결과를 출력하며, 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
 
 ### Delete
 
@@ -65,7 +65,7 @@ Uniflow의 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공
 ./dist/uniflow delete --filename examples/ping.yaml
 ```
 
-이 명령어는 `examples/ping.yaml`에 정의된 모든 노드 명세를 지정된 (또는 기본) 네임스페이스에서 제거합니다.
+이 명령어는 `examples/ping.yaml`에 정의된 모든 노드 명세를 지정된 네임스페이스에서 제거합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
 
 ### Get
 
@@ -75,7 +75,7 @@ Uniflow의 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공
 ./dist/uniflow get
 ```
 
-이 명령어는 기본 (또는 지정된) 네임스페이스의 모든 노드 명세를 표시합니다.
+이 명령어는 지정된 네임스페이스의 모든 노드 명세를 표시합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
 
 ### Start
 
@@ -93,7 +93,7 @@ Uniflow의 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공
 
 ## HTTP API 통합
 
-HTTP API를 통해 노드 명세를 수정하려면 이러한 기능을 노출하는 워크플로우를 설정해야 합니다. 기본 확장에 포함된 `syscall` 노드를 활용하세요:
+HTTP API를 통해 노드 명세를 수정하려면 이러한 기능을 노출하는 워크플로우를 설정해야 합니다. [기본 확장](../ext/README_kr.md)에 포함된 `syscall` 노드를 활용하세요:
 
 ```yaml
 kind: syscall

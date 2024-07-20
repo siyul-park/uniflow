@@ -19,7 +19,7 @@ func TestCommend_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 	fsys := afero.NewMemMapFs()
 
 	output := new(bytes.Buffer)

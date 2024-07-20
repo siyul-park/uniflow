@@ -15,7 +15,7 @@ func TestScanner_Scan(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()

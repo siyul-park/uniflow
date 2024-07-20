@@ -14,7 +14,7 @@ func TestGetCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	st := spec.NewMemStore()
+	st := spec.NewStore()
 
 	kind := faker.UUIDHyphenated()
 

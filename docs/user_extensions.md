@@ -153,8 +153,7 @@ Maintain the runtime environment to respond quickly to external requests. Each r
 
 ```go
 func main() {
-	col := memdb.NewCollection("")
-	store := spec.New(col)
+	store := spec.NewStore()
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()
@@ -235,13 +234,6 @@ defer in.Close()
 
 in.Link(sym.In(node.PortIn))
 
-proc := process.New()
-defer proc.Exit(nil)
-
-inWriter := in.Open(proc)
-
-outPayload := types.NewString(faker.Word())
-outPck := packet.New(outPayload)
-
-backPck := packet.Call(inWriter, outPck)
+payload := types.NewString(faker.Word())
+payload, err := port.Call(in, payload)
 ```
