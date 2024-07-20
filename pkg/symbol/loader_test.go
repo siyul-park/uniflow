@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -27,7 +26,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st := spec.NewStore(memdb.NewCollection(""))
+		st := spec.NewMemStore()
 
 		tb := NewTable()
 		defer tb.Clear()
@@ -94,7 +93,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st := spec.NewStore(memdb.NewCollection(""))
+		st := spec.NewMemStore()
 
 		tb := NewTable()
 		defer tb.Clear()
@@ -126,7 +125,7 @@ func TestLoader_LoadOne(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st := spec.NewStore(memdb.NewCollection(""))
+		st := spec.NewMemStore()
 
 		tb := NewTable()
 		defer tb.Clear()
@@ -174,7 +173,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st := spec.NewStore(memdb.NewCollection(""))
+		st := spec.NewMemStore()
 
 		tb := NewTable()
 		defer tb.Clear()
@@ -243,7 +242,7 @@ func TestLoader_LoadAll(t *testing.T) {
 	})
 
 	t.Run("Reload", func(t *testing.T) {
-		st := spec.NewStore(memdb.NewCollection(""))
+		st := spec.NewMemStore()
 
 		tb := NewTable()
 		defer tb.Clear()
@@ -287,7 +286,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	tb := NewTable()
 	defer tb.Clear()
@@ -343,7 +342,7 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	tb := NewTable()
 	defer tb.Clear()
@@ -391,7 +390,7 @@ func BenchmarkLoader_LoadAll(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 
 	tb := NewTable()
 	defer tb.Clear()

@@ -9,6 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/siyul-park/uniflow v0.8.0
+	github.com/siyul-park/uniflow/driver/mongo v0.8.0
 	github.com/siyul-park/uniflow/ext v0.8.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
@@ -48,7 +49,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/samber/lo v1.45.0 // indirect
+	github.com/samber/lo v1.46.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -62,7 +63,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240424034433-3c2c7870ae76 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
@@ -72,4 +73,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-replace github.com/siyul-park/uniflow/ext => ../ext/
+replace github.com/siyul-park/uniflow/driver/mongo => ../driver/mongo/

@@ -14,7 +14,7 @@ const (
 	CodeDeleteNodes = "nodes.delete"
 )
 
-func CreateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func CreateNodes(s spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		examples := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
@@ -28,7 +28,7 @@ func CreateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]s
 	}
 }
 
-func ReadNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func ReadNodes(s spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		examples := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
@@ -38,7 +38,7 @@ func ReadNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spe
 	}
 }
 
-func UpdateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func UpdateNodes(s spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		examples := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec
@@ -51,7 +51,7 @@ func UpdateNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]s
 	}
 }
 
-func DeleteNodes(s *spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
+func DeleteNodes(s spec.Store) func(context.Context, []*spec.Unstructured) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []*spec.Unstructured) ([]spec.Spec, error) {
 		examples := lo.Map(specs, func(spec *spec.Unstructured, _ int) spec.Spec {
 			return spec

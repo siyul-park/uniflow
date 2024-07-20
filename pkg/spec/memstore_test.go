@@ -6,32 +6,18 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStore_Index(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
-	st := NewStore(memdb.NewCollection(""))
-
-	err := st.Index(ctx)
-	assert.NoError(t, err)
-
-	err = st.Index(ctx)
-	assert.NoError(t, err)
-}
-
-func TestStore_Watch(t *testing.T) {
+func TestMemStore_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewStore(memdb.NewCollection(""))
+	st := NewMemStore()
 
-	stream, err := st.Watch(ctx, nil)
+	stream, err := st.Watch(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, stream)
 
@@ -40,7 +26,7 @@ func TestStore_Watch(t *testing.T) {
 	go func() {
 		for {
 			if event, ok := <-stream.Next(); ok {
-				assert.NotNil(t, event.ID)
+				assert.NotZero(t, event.ID)
 			} else {
 				return
 			}
@@ -58,13 +44,13 @@ func TestStore_Watch(t *testing.T) {
 	_, _ = st.Delete(ctx, meta)
 }
 
-func TestStore_Load(t *testing.T) {
+func TestMemStore_Load(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewStore(memdb.NewCollection(""))
+	st := NewMemStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -84,13 +70,13 @@ func TestStore_Load(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestStore_Store(t *testing.T) {
+func TestMemStore_Store(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewStore(memdb.NewCollection(""))
+	st := NewMemStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -110,13 +96,13 @@ func TestStore_Store(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestStore_Swap(t *testing.T) {
+func TestMemStore_Swap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewStore(memdb.NewCollection(""))
+	st := NewMemStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
@@ -140,13 +126,13 @@ func TestStore_Swap(t *testing.T) {
 	assert.Len(t, loaded, 2)
 }
 
-func TestStore_Delete(t *testing.T) {
+func TestMemStore_Delete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	kind := faker.UUIDHyphenated()
 
-	st := NewStore(memdb.NewCollection(""))
+	st := NewMemStore()
 
 	meta1 := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -16,14 +15,14 @@ type Config struct {
 	Namespace string         // Namespace defines the isolated execution environment for workflows.
 	Hook      *hook.Hook     // Hook is a collection of hook functions for managing symbols.
 	Scheme    *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	Store     *spec.Store    // Store is responsible for persisting symbols.
+	Store     spec.Store     // Store is responsible for persisting symbols.
 }
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace string
 	scheme    *scheme.Scheme
-	store     *spec.Store
+	store     spec.Store
 	table     *symbol.Table
 	loader    *symbol.Loader
 }
@@ -40,7 +39,7 @@ func New(config Config) *Runtime {
 		config.Scheme = scheme.New()
 	}
 	if config.Store == nil {
-		config.Store = spec.NewStore(memdb.NewCollection(""))
+		config.Store = spec.NewMemStore()
 	}
 
 	tb := symbol.NewTable(symbol.TableOptions{
@@ -124,7 +123,7 @@ func (r *Runtime) Insert(ctx context.Context, spec spec.Spec) (*symbol.Symbol, e
 
 // Free removes a spec from the Runtime and returns whether it was successfully deleted.
 func (r *Runtime) Free(ctx context.Context, spec spec.Spec) (bool, error) {
-	if spec.GetID() == (uuid.UUID{}) {
+	if spec.GetID() == uuid.Nil {
 		spec.SetID(uuid.Must(uuid.NewV7()))
 	}
 

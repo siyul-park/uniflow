@@ -35,11 +35,11 @@ type Spec interface {
 // PortLocation represents the location of a port within the namespace.
 type PortLocation struct {
 	// ID is the unique identifier of the port.
-	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Name is the human-readable name of the port.
-	Name string `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Port is the port number or identifier within the namespace.
-	Port string `json:"port" yaml:"port" map:"port"`
+	Port string `json:"port" bson:"port,omitempty" yaml:"port" map:"port"`
 }
 
 // DefaultNamespace represents the default logical node grouping.

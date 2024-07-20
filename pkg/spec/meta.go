@@ -5,17 +5,17 @@ import "github.com/gofrs/uuid"
 // Meta contains metadata for node specifications.
 type Meta struct {
 	// ID is the unique identifier of the node.
-	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Kind specifies the node's type.
-	Kind string `json:"kind" yaml:"kind" map:"kind"`
+	Kind string `json:"kind" bson:"kind" yaml:"kind" map:"kind"`
 	// Namespace groups nodes logically.
-	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
 	// Name is the human-readable name of the node.
-	Name string `json:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.
-	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	// Links define connections to other nodes.
-	Links map[string][]PortLocation `json:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
+	Links map[string][]PortLocation `json:"links,omitempty" bson:"links,omitempty" yaml:"links,omitempty" map:"links,omitempty"`
 }
 
 var _ Spec = (*Meta)(nil)

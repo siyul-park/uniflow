@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -20,7 +19,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	defer cancel()
 
 	s := scheme.New()
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
@@ -48,9 +47,8 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	_, _ = st.Store(ctx, meta)
 
 	cmd := NewDeleteCommand(DeleteConfig{
-		Scheme: s,
-		Store:  st,
-		FS:     fsys,
+		Store: st,
+		FS:    fsys,
 	})
 
 	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})

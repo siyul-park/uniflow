@@ -117,12 +117,12 @@ func (t *Table) Clear() error {
 func (t *Table) insert(sym *Symbol) error {
 	t.symbols[sym.ID()] = sym
 	if sym.Name() != "" {
-		namespace, ok := t.namespaces[sym.Namespace()]
+		ns, ok := t.namespaces[sym.Namespace()]
 		if !ok {
-			namespace = make(map[string]uuid.UUID)
-			t.namespaces[sym.Namespace()] = namespace
+			ns = make(map[string]uuid.UUID)
+			t.namespaces[sym.Namespace()] = ns
 		}
-		namespace[sym.Name()] = sym.ID()
+		ns[sym.Name()] = sym.ID()
 	}
 
 	t.links(sym)
@@ -145,9 +145,9 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 	}
 
 	if sym.Name() != "" {
-		if namespace, ok := t.namespaces[sym.Namespace()]; ok {
-			delete(namespace, sym.Name())
-			if len(namespace) == 0 {
+		if ns, ok := t.namespaces[sym.Namespace()]; ok {
+			delete(ns, sym.Name())
+			if len(ns) == 0 {
 				delete(t.namespaces, sym.Namespace())
 			}
 		}
@@ -196,7 +196,7 @@ func (t *Table) links(sym *Symbol) {
 
 		for _, location := range locations {
 			id := location.ID
-			if id == (uuid.UUID{}) {
+			if id == uuid.Nil {
 				id = t.lookup(sym.Namespace(), location.Name)
 			}
 
@@ -248,7 +248,7 @@ func (t *Table) unlinks(sym *Symbol) {
 	for name, locations := range sym.Links() {
 		for _, location := range locations {
 			id := location.ID
-			if id == (uuid.UUID{}) {
+			if id == uuid.Nil {
 				id = t.lookup(sym.Namespace(), location.Name)
 			}
 
@@ -317,7 +317,7 @@ func (t *Table) active(sym *Symbol) bool {
 		for _, locations := range sym.Links() {
 			for _, location := range locations {
 				id := location.ID
-				if id == (uuid.UUID{}) {
+				if id == uuid.Nil {
 					id = t.lookup(sym.Namespace(), location.Name)
 				}
 
@@ -334,8 +334,8 @@ func (t *Table) active(sym *Symbol) bool {
 }
 
 func (t *Table) lookup(namespace, name string) uuid.UUID {
-	if namespace, ok := t.namespaces[namespace]; ok {
-		return namespace[name]
+	if ns, ok := t.namespaces[namespace]; ok {
+		return ns[name]
 	}
 	return uuid.UUID{}
 }

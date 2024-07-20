@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/database/memdb"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -25,7 +24,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewStore(memdb.NewCollection(""))
+	st := spec.NewMemStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()

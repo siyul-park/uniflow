@@ -82,9 +82,11 @@ func newErrorEncoder() encoding.EncodeCompiler[any, Value] {
 }
 
 func newErrorDecoder() encoding.DecodeCompiler[Value] {
+	typeError := reflect.TypeOf((*error)(nil)).Elem()
+
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer {
-			if typ.Elem().ConvertibleTo(reflect.TypeOf((*error)(nil)).Elem()) {
+			if typ.Elem().ConvertibleTo(typeError) {
 				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						t := reflect.NewAt(typ.Elem(), target)

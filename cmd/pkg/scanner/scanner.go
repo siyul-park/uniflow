@@ -5,15 +5,14 @@ import (
 	"io"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/spf13/afero"
 )
 
 // Scanner is responsible for building spec.Spec instances from raw data.
 type Scanner struct {
-	scheme    *scheme.Scheme
-	store     *spec.Store
+	store     spec.Store
 	namespace string
 	fsys      afero.Fs
 	filename  string
@@ -24,14 +23,8 @@ func New() *Scanner {
 	return &Scanner{}
 }
 
-// Scheme sets the scheme for the Builder.
-func (s *Scanner) Scheme(scheme *scheme.Scheme) *Scanner {
-	s.scheme = scheme
-	return s
-}
-
 // Store sets the store for the Builder.
-func (s *Scanner) Store(store *spec.Store) *Scanner {
+func (s *Scanner) Store(store spec.Store) *Scanner {
 	s.store = store
 	return s
 }
@@ -80,23 +73,24 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 		raws = []map[string]any{e}
 	}
 
-	codec := NewSpecCodec(SpecCodecOptions{
-		Scheme:    s.scheme,
-		Namespace: s.namespace,
-	})
-
 	var specs []spec.Spec
 	for _, raw := range raws {
-		spec, err := codec.Decode(raw)
+		doc, err := types.TextEncoder.Encode(raw)
 		if err != nil {
 			return nil, err
 		}
-		specs = append(specs, spec)
+
+		v := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, v); err != nil {
+			return nil, err
+		}
+
+		specs = append(specs, v)
 	}
 
 	if s.store != nil {
 		for _, v := range specs {
-			if v.GetID() == (uuid.UUID{}) {
+			if v.GetID() == uuid.Nil {
 				if v.GetName() != "" {
 					if exists, err := s.store.Load(ctx, v); err != nil {
 						return nil, err
@@ -106,7 +100,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 				}
 			}
 
-			if v.GetID() == (uuid.UUID{}) {
+			if v.GetID() == uuid.Nil {
 				v.SetID(uuid.Must(uuid.NewV7()))
 			}
 		}
