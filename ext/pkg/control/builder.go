@@ -67,6 +67,9 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
 		s.AddCodec(KindSnippet, NewSnippetNodeCodec(module))
 
+		s.AddKnownType(KindSplit, &SplitNodeSpec{})
+		s.AddCodec(KindSplit, NewSplitNodeCodec())
+
 		s.AddKnownType(KindSwitch, &SwitchNodeSpec{})
 		s.AddCodec(KindSwitch, NewSwitchNodeCodec(expr))
 
