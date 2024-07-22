@@ -22,7 +22,7 @@ func TestSymbol_Getter(t *testing.T) {
 		Annotations: map[string]string{
 			faker.UUIDHyphenated(): faker.UUIDHyphenated(),
 		},
-		Links: map[string][]spec.PortLocation{
+		Ports: map[string][]spec.Port{
 			node.PortOut: {
 				{
 					ID:   uuid.Must(uuid.NewV7()),

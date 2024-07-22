@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoader_LoadOne(t *testing.T) {
+func TestLoader_Load(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -49,7 +49,7 @@ func TestLoader_LoadOne(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]spec.PortLocation{
+			Ports: map[string][]spec.Port{
 				node.PortIO: {
 					{
 						ID:   meta1.GetID(),
@@ -63,7 +63,7 @@ func TestLoader_LoadOne(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]spec.PortLocation{
+			Ports: map[string][]spec.Port{
 				node.PortIO: {
 					{
 						Name: meta2.GetName(),
@@ -77,17 +77,17 @@ func TestLoader_LoadOne(t *testing.T) {
 		st.Store(ctx, meta2)
 		st.Store(ctx, meta3)
 
-		r, err := ld.LoadOne(ctx, meta3.GetID())
+		r, err := ld.Load(ctx, meta3)
 		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
-		_, ok := tb.LookupByID(meta1.GetID())
+		_, ok := tb.Lookup(meta1.GetID())
 		assert.True(t, ok)
 
-		_, ok = tb.LookupByID(meta2.GetID())
+		_, ok = tb.Lookup(meta2.GetID())
 		assert.True(t, ok)
 
-		_, ok = tb.LookupByID(meta3.GetID())
+		_, ok = tb.Lookup(meta3.GetID())
 		assert.True(t, ok)
 
 	})
@@ -113,11 +113,11 @@ func TestLoader_LoadOne(t *testing.T) {
 
 		st.Store(ctx, meta)
 
-		r1, err := ld.LoadOne(ctx, meta.GetID())
+		r1, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		r2, err := ld.LoadOne(ctx, meta.GetID())
+		r2, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.NotNil(t, r2)
 
@@ -145,132 +145,18 @@ func TestLoader_LoadOne(t *testing.T) {
 
 		st.Store(ctx, meta)
 
-		r1, err := ld.LoadOne(ctx, meta.GetID())
+		r1, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
 		st.Delete(ctx, meta)
 
-		r2, err := ld.LoadOne(ctx, meta.GetID())
+		r2, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.Nil(t, r2)
 
-		_, ok := tb.LookupByID(meta.GetID())
+		_, ok := tb.Lookup(meta.GetID())
 		assert.False(t, ok)
-	})
-}
-
-func TestLoader_LoadAll(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	t.Run("Load", func(t *testing.T) {
-		st := spec.NewStore()
-
-		tb := NewTable()
-		defer tb.Clear()
-
-		ld := NewLoader(LoaderConfig{
-			Table:  tb,
-			Scheme: s,
-			Store:  st,
-		})
-		defer ld.Close()
-
-		meta1 := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
-		}
-		meta2 := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]spec.PortLocation{
-				node.PortIO: {
-					{
-						ID:   meta1.GetID(),
-						Port: node.PortIO,
-					},
-				},
-			},
-		}
-		meta3 := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
-			Links: map[string][]spec.PortLocation{
-				node.PortIO: {
-					{
-						Name: meta2.GetName(),
-						Port: node.PortIO,
-					},
-				},
-			},
-		}
-
-		st.Store(ctx, meta1)
-		st.Store(ctx, meta2)
-		st.Store(ctx, meta3)
-
-		r, err := ld.LoadAll(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, r, 3)
-
-		sym1, ok := tb.LookupByID(meta1.GetID())
-		assert.True(t, ok)
-		assert.Contains(t, r, sym1)
-
-		sym2, ok := tb.LookupByID(meta2.GetID())
-		assert.True(t, ok)
-		assert.Contains(t, r, sym2)
-
-		sym3, ok := tb.LookupByID(meta3.GetID())
-		assert.True(t, ok)
-		assert.Contains(t, r, sym3)
-	})
-
-	t.Run("Reload", func(t *testing.T) {
-		st := spec.NewStore()
-
-		tb := NewTable()
-		defer tb.Clear()
-
-		ld := NewLoader(LoaderConfig{
-			Table:  tb,
-			Scheme: s,
-			Store:  st,
-		})
-		defer ld.Close()
-
-		meta := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
-		}
-
-		st.Store(ctx, meta)
-
-		r1, err := ld.LoadAll(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, r1, 1)
-
-		r2, err := ld.LoadAll(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, r2, 1)
-
-		assert.False(t, r1[0] == r2[0])
 	})
 }
 
@@ -321,7 +207,7 @@ func TestLoader_Reconcile(t *testing.T) {
 				assert.NoError(t, ctx.Err())
 				return
 			default:
-				if sym, ok := tb.LookupByID(meta.GetID()); ok {
+				if sym, ok := tb.Lookup(meta.GetID()); ok {
 					assert.Equal(t, meta.GetID(), sym.ID())
 					return
 				}
@@ -330,7 +216,7 @@ func TestLoader_Reconcile(t *testing.T) {
 	}()
 }
 
-func BenchmarkLoader_LoadOne(b *testing.B) {
+func BenchmarkLoader_Load(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
@@ -366,57 +252,9 @@ func BenchmarkLoader_LoadOne(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		r, err := ld.LoadOne(ctx, meta.GetID())
+		r, err := ld.Load(ctx, meta)
 		assert.NoError(b, err)
 		assert.NotNil(b, r)
-
-		b.StopTimer()
-
-		tb.Free(meta.GetID())
-
-		b.StartTimer()
-	}
-}
-
-func BenchmarkLoader_LoadAll(b *testing.B) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	st := spec.NewStore()
-
-	tb := NewTable()
-	defer tb.Clear()
-
-	ld := NewLoader(LoaderConfig{
-		Store:  st,
-		Table:  tb,
-		Scheme: s,
-	})
-	defer ld.Close()
-
-	meta := &spec.Meta{
-		ID:        uuid.Must(uuid.NewV7()),
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
-
-	st.Store(ctx, meta)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		r, err := ld.LoadAll(ctx)
-		assert.NoError(b, err)
-		assert.Len(b, r, 1)
 
 		b.StopTimer()
 

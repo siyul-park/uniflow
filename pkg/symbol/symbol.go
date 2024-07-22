@@ -11,7 +11,7 @@ import (
 type Symbol struct {
 	Spec spec.Spec
 	Node node.Node
-	refs map[string][]spec.PortLocation
+	refs map[string][]spec.Port
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -41,13 +41,13 @@ func (s *Symbol) Annotations() map[string]string {
 	return s.Spec.GetAnnotations()
 }
 
-// Links returns the links associated with the Symbol.
-func (s *Symbol) Links() map[string][]spec.PortLocation {
-	return s.Spec.GetLinks()
+// Ports returns the ports associated with the Symbol.
+func (s *Symbol) Ports() map[string][]spec.Port {
+	return s.Spec.GetPorts()
 }
 
 // Refs returns the refs associated with the Symbol.
-func (s *Symbol) Refs() map[string][]spec.PortLocation {
+func (s *Symbol) Refs() map[string][]spec.Port {
 	return s.refs
 }
 

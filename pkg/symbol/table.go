@@ -47,7 +47,7 @@ func (t *Table) Insert(sym *Symbol) error {
 	defer t.mu.Unlock()
 
 	if sym.refs == nil {
-		sym.refs = make(map[string][]spec.PortLocation)
+		sym.refs = make(map[string][]spec.Port)
 	}
 
 	if _, err := t.free(sym.ID()); err != nil {
@@ -71,21 +71,12 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 	return sym != nil, nil
 }
 
-// LookupByID retrieves a symbol from the table by its ID.
-func (t *Table) LookupByID(id uuid.UUID) (*Symbol, bool) {
+// Lookup retrieves a symbol from the table by its ID.
+func (t *Table) Lookup(id uuid.UUID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	sym, ok := t.symbols[id]
-	return sym, ok
-}
-
-// LookupByName retrieves a symbol from the table by its namespace and name.
-func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	sym, ok := t.symbols[t.lookup(namespace, name)]
 	return sym, ok
 }
 
@@ -188,7 +179,7 @@ func (t *Table) unload(sym *Symbol) error {
 }
 
 func (t *Table) links(sym *Symbol) {
-	for name, locations := range sym.Links() {
+	for name, locations := range sym.Ports() {
 		out := sym.Out(name)
 		if out == nil {
 			continue
@@ -206,7 +197,7 @@ func (t *Table) links(sym *Symbol) {
 						out.Link(in)
 					}
 
-					ref.refs[location.Port] = append(ref.refs[location.Port], spec.PortLocation{
+					ref.refs[location.Port] = append(ref.refs[location.Port], spec.Port{
 						ID:   sym.ID(),
 						Name: location.Name,
 						Port: name,
@@ -221,7 +212,7 @@ func (t *Table) links(sym *Symbol) {
 			continue
 		}
 
-		for name, locations := range ref.Links() {
+		for name, locations := range ref.Ports() {
 			out := ref.Out(name)
 			if out == nil {
 				continue
@@ -233,7 +224,7 @@ func (t *Table) links(sym *Symbol) {
 						out.Link(in)
 					}
 
-					sym.refs[location.Port] = append(sym.refs[location.Port], spec.PortLocation{
+					sym.refs[location.Port] = append(sym.refs[location.Port], spec.Port{
 						ID:   ref.ID(),
 						Name: location.Name,
 						Port: name,
@@ -245,7 +236,7 @@ func (t *Table) links(sym *Symbol) {
 }
 
 func (t *Table) unlinks(sym *Symbol) {
-	for name, locations := range sym.Links() {
+	for name, locations := range sym.Ports() {
 		for _, location := range locations {
 			id := location.ID
 			if id == uuid.Nil {
@@ -257,7 +248,7 @@ func (t *Table) unlinks(sym *Symbol) {
 				continue
 			}
 
-			var locations []spec.PortLocation
+			var locations []spec.Port
 			for _, location := range ref.refs[location.Port] {
 				if location.ID != sym.ID() && location.Port != name {
 					locations = append(locations, location)
@@ -314,7 +305,7 @@ func (t *Table) active(sym *Symbol) bool {
 		}
 		visits[sym] = struct{}{}
 
-		for _, locations := range sym.Links() {
+		for _, locations := range sym.Ports() {
 			for _, location := range locations {
 				id := location.ID
 				if id == uuid.Nil {

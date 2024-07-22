@@ -46,7 +46,7 @@ make build
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: router
         port: in
@@ -57,7 +57,7 @@ make build
     - method: GET
       path: /ping
       port: out[0]
-  links:
+  ports:
     out[0]:
       - name: pong
         port: in

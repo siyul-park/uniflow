@@ -30,7 +30,7 @@ var SpecTableColumnDefinitions = []TableColumnDefinition{
 	{Name: "kind", Format: "$.kind"},
 	{Name: "namespace", Format: "$.namespace"},
 	{Name: "name", Format: "$.name"},
-	{Name: "links", Format: "$.links"},
+	{Name: "ports", Format: "$.ports"},
 }
 
 var style = table.Style{

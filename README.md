@@ -46,7 +46,7 @@ Let's run a basic HTTP request handling example, [ping.yaml](./examples/ping.yam
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: router
         port: in
@@ -57,7 +57,7 @@ Let's run a basic HTTP request handling example, [ping.yaml](./examples/ping.yam
     - method: GET
       path: /ping
       port: out[0]
-  links:
+  ports:
     out[0]:
       - name: pong
         port: in

@@ -34,7 +34,7 @@ func TestTable_Insert(t *testing.T) {
 				Namespace: spec.DefaultNamespace,
 			}
 
-			meta1.Links = map[string][]spec.PortLocation{
+			meta1.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						ID:   meta2.GetID(),
@@ -42,7 +42,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta2.Links = map[string][]spec.PortLocation{
+			meta2.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						ID:   meta3.GetID(),
@@ -50,7 +50,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta3.Links = map[string][]spec.PortLocation{
+			meta3.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						ID:   meta1.GetID(),
@@ -109,7 +109,7 @@ func TestTable_Insert(t *testing.T) {
 				Namespace: spec.DefaultNamespace,
 			}
 
-			meta1.Links = map[string][]spec.PortLocation{
+			meta1.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						ID:   meta3.GetID(),
@@ -117,7 +117,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta2.Links = map[string][]spec.PortLocation{
+			meta2.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						ID:   meta4.GetID(),
@@ -174,7 +174,7 @@ func TestTable_Insert(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			}
 
-			meta1.Links = map[string][]spec.PortLocation{
+			meta1.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						Name: meta2.GetName(),
@@ -182,7 +182,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta2.Links = map[string][]spec.PortLocation{
+			meta2.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						Name: meta3.GetName(),
@@ -190,7 +190,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta3.Links = map[string][]spec.PortLocation{
+			meta3.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						Name: meta1.GetName(),
@@ -251,7 +251,7 @@ func TestTable_Insert(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			}
 
-			meta1.Links = map[string][]spec.PortLocation{
+			meta1.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						Name: meta3.GetName(),
@@ -259,7 +259,7 @@ func TestTable_Insert(t *testing.T) {
 					},
 				},
 			}
-			meta2.Links = map[string][]spec.PortLocation{
+			meta2.Ports = map[string][]spec.Port{
 				node.PortOut: {
 					{
 						Name: meta4.GetName(),
@@ -315,7 +315,7 @@ func TestTable_Free(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	meta1.Links = map[string][]spec.PortLocation{
+	meta1.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta2.GetID(),
@@ -323,7 +323,7 @@ func TestTable_Free(t *testing.T) {
 			},
 		},
 	}
-	meta2.Links = map[string][]spec.PortLocation{
+	meta2.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta3.GetID(),
@@ -331,7 +331,7 @@ func TestTable_Free(t *testing.T) {
 			},
 		},
 	}
-	meta3.Links = map[string][]spec.PortLocation{
+	meta3.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta1.GetID(),
@@ -398,29 +398,7 @@ func TestTable_LookupByID(t *testing.T) {
 	err := tb.Insert(sym)
 	assert.NoError(t, err)
 
-	r, ok := tb.LookupByID(sym.ID())
-	assert.True(t, ok)
-	assert.Equal(t, sym, r)
-}
-
-func TestTable_LookupByName(t *testing.T) {
-	kind := faker.UUIDHyphenated()
-
-	tb := NewTable()
-	defer tb.Clear()
-
-	meta := &spec.Meta{
-		ID:        uuid.Must(uuid.NewV7()),
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
-
-	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
-	err := tb.Insert(sym)
-	assert.NoError(t, err)
-
-	r, ok := tb.LookupByName(sym.Namespace(), sym.Name())
+	r, ok := tb.Lookup(sym.ID())
 	assert.True(t, ok)
 	assert.Equal(t, sym, r)
 }
@@ -484,7 +462,7 @@ func TestTable_Hook(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	meta1.Links = map[string][]spec.PortLocation{
+	meta1.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta2.GetID(),
@@ -492,7 +470,7 @@ func TestTable_Hook(t *testing.T) {
 			},
 		},
 	}
-	meta2.Links = map[string][]spec.PortLocation{
+	meta2.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta3.GetID(),
@@ -500,7 +478,7 @@ func TestTable_Hook(t *testing.T) {
 			},
 		},
 	}
-	meta3.Links = map[string][]spec.PortLocation{
+	meta3.Ports = map[string][]spec.Port{
 		node.PortOut: {
 			{
 				ID:   meta1.GetID(),

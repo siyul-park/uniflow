@@ -2,7 +2,7 @@
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: proxy
         port: in

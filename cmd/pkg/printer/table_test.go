@@ -18,7 +18,7 @@ func TestTablePrintTable(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 
-	expect := " ID     KIND  NAMESPACE  NAME  LINKS \n <nil>  foo   <nil>      bar   <nil> "
+	expect := " ID     KIND  NAMESPACE  NAME  PORTS \n <nil>  foo   <nil>      bar   <nil> "
 
 	err := PrintTable(buf, specs, SpecTableColumnDefinitions)
 	assert.NoError(t, err)
@@ -36,7 +36,7 @@ func TestTablePrinter_Print(t *testing.T) {
 	p, err := NewTable(SpecTableColumnDefinitions)
 	assert.NoError(t, err)
 
-	expect := " ID     KIND  NAMESPACE  NAME  LINKS \n <nil>  foo   <nil>      bar   <nil> "
+	expect := " ID     KIND  NAMESPACE  NAME  PORTS \n <nil>  foo   <nil>      bar   <nil> "
 
 	table, err := p.Print(specs)
 	assert.NoError(t, err)
