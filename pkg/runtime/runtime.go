@@ -65,7 +65,9 @@ func New(config Config) *Runtime {
 // LookupByID retrieves a symbol by ID from the table or loads it from the store if not found.
 func (r *Runtime) Load(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbol, error) {
 	for _, spec := range specs {
-		spec.SetNamespace(r.namespace)
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
+		}
 	}
 
 	return r.loader.Load(ctx, specs...)
@@ -77,7 +79,9 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 		if spec.GetID() == uuid.Nil {
 			spec.SetID(uuid.Must(uuid.NewV7()))
 		}
-		spec.SetNamespace(r.namespace)
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
+		}
 	}
 
 	exists := make(map[uuid.UUID]spec.Spec)
@@ -107,7 +111,9 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 // Delete removes a spec from the Runtime and returns whether it was successfully deleted.
 func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 	for _, spec := range specs {
-		spec.SetNamespace(r.namespace)
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
+		}
 	}
 
 	specs, err := r.store.Load(ctx, specs...)
