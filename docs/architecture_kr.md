@@ -39,7 +39,7 @@
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: router
         port: in
@@ -62,7 +62,7 @@
     - method: DELETE
       path: /v1/nodes
       port: out[3]
-  links:
+  ports:
     out[0]:
       - name: nodes_create
         port: in
@@ -119,7 +119,7 @@
       port: out[0]
     - when: 'true'
       port: out[1]
-  links:
+  ports:
     out[0]:
       - name: status_400
         port: in

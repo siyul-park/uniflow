@@ -48,10 +48,9 @@ func New(config Config) *Runtime {
 	})
 
 	ld := symbol.NewLoader(symbol.LoaderConfig{
-		Namespace: config.Namespace,
-		Scheme:    config.Scheme,
-		Store:     config.Store,
-		Table:     tb,
+		Scheme: config.Scheme,
+		Store:  config.Store,
+		Table:  tb,
 	})
 
 	return &Runtime{
@@ -64,90 +63,106 @@ func New(config Config) *Runtime {
 }
 
 // LookupByID retrieves a symbol by ID from the table or loads it from the store if not found.
-func (r *Runtime) LookupByID(ctx context.Context, id uuid.UUID) (*symbol.Symbol, error) {
-	if s, ok := r.table.LookupByID(id); ok {
-		return s, nil
-	}
-	return r.loader.LoadOne(ctx, id)
-}
-
-// LookupByName retrieves a symbol by name from the table or loads it from the store if not found.
-func (r *Runtime) LookupByName(ctx context.Context, name string) (*symbol.Symbol, error) {
-	if s, ok := r.table.LookupByName(r.namespace, name); ok {
-		return s, nil
+func (r *Runtime) Load(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbol, error) {
+	if len(specs) == 0 {
+		specs = append(specs, &spec.Meta{
+			Namespace: r.namespace,
+		})
 	}
 
-	specs, err := r.store.Load(ctx, &spec.Meta{
-		Namespace: r.namespace,
-		Name:      name,
-	})
-	if err != nil || len(specs) == 0 {
-		return nil, err
-	}
-
-	return r.LookupByID(ctx, specs[0].GetID())
-}
-
-// Insert adds a spec to the Runtime and returns the corresponding symbol.
-func (r *Runtime) Insert(ctx context.Context, spec spec.Spec) (*symbol.Symbol, error) {
-	exists, err := r.store.Load(ctx, spec)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(exists) == 0 {
-		if _, err := r.store.Store(ctx, spec); err != nil {
-			return nil, err
+	for _, spec := range specs {
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
 		}
+	}
+
+	return r.loader.Load(ctx, specs...)
+}
+
+// Store adds a spec to the Runtime and returns the corresponding symbol.
+func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbol, error) {
+	if len(specs) == 0 {
+		return nil, nil
+	}
+
+	for _, spec := range specs {
+		if spec.GetID() == uuid.Nil {
+			spec.SetID(uuid.Must(uuid.NewV7()))
+		}
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
+		}
+	}
+
+	exists := make(map[uuid.UUID]spec.Spec)
+	if specs, err := r.store.Load(ctx, specs...); err != nil {
+		return nil, err
 	} else {
-		if _, err := r.store.Swap(ctx, spec); err != nil {
-			return nil, err
+		for _, spec := range specs {
+			exists[spec.GetID()] = spec
 		}
 	}
 
-	spec, err = r.scheme.Decode(spec)
-	if err != nil {
-		return nil, err
-	}
-	n, err := r.scheme.Compile(spec)
-	if err != nil {
-		return nil, err
+	for _, spec := range specs {
+		if _, ok := exists[spec.GetID()]; ok {
+			if _, err := r.store.Swap(ctx, spec); err != nil {
+				return nil, err
+			}
+		} else {
+			if _, err := r.store.Store(ctx, spec); err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	sym := &symbol.Symbol{Spec: spec, Node: n}
-	if err := r.table.Insert(sym); err != nil {
-		return nil, err
-	}
-	return sym, nil
+	return r.loader.Load(ctx, specs...)
 }
 
-// Free removes a spec from the Runtime and returns whether it was successfully deleted.
-func (r *Runtime) Free(ctx context.Context, spec spec.Spec) (bool, error) {
-	if spec.GetID() == uuid.Nil {
-		spec.SetID(uuid.Must(uuid.NewV7()))
+// Delete removes a spec from the Runtime and returns whether it was successfully deleted.
+func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
+	if len(specs) == 0 {
+		specs = append(specs, &spec.Meta{
+			Namespace: r.namespace,
+		})
 	}
 
-	count, err := r.store.Delete(ctx, spec)
+	for _, spec := range specs {
+		if spec.GetNamespace() != r.namespace {
+			spec.SetNamespace(r.namespace)
+		}
+	}
+
+	specs, err := r.store.Load(ctx, specs...)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	if _, err := r.table.Free(spec.GetID()); err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
 
-// Load loads all symbols from the spec.
-func (r *Runtime) Load(ctx context.Context) ([]*symbol.Symbol, error) {
-	return r.loader.LoadAll(ctx)
+	count, err := r.store.Delete(ctx, specs...)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, spec := range specs {
+		if _, err := r.table.Free(spec.GetID()); err != nil {
+			return 0, err
+		}
+	}
+	return count, nil
 }
 
 // Listen starts the loader's watch process and reconciles symbols.
 func (r *Runtime) Listen(ctx context.Context) error {
-	if err := r.loader.Watch(ctx); err != nil {
+	spec := &spec.Meta{
+		Namespace: r.namespace,
+	}
+
+	if err := r.loader.Watch(ctx, spec); err != nil {
 		return err
 	}
-	if _, err := r.loader.LoadAll(ctx); err != nil {
+	if err := r.table.Clear(); err != nil {
+		return err
+	}
+	if _, err := r.loader.Load(ctx, spec); err != nil {
 		return err
 	}
 	return r.loader.Reconcile(ctx)

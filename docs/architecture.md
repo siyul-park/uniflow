@@ -39,7 +39,7 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: router
         port: in
@@ -62,7 +62,7 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
     - method: DELETE
       path: /v1/nodes
       port: out[3]
-  links:
+  ports:
     out[0]:
       - name: nodes_create
         port: in
@@ -119,7 +119,7 @@ To modify node specifications, use the Command-Line Interface (CLI) to update th
       port: out[0]
     - when: 'true'
       port: out[1]
-  links:
+  ports:
     out[0]:
       - name: status_400
         port: in

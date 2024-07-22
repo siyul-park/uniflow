@@ -11,7 +11,7 @@
   name: listener
   protocol: http
   port: 8000
-  links:
+  ports:
     out:
       - name: router
         port: in
@@ -22,7 +22,7 @@
     - method: GET
       path: /ws
       port: out[0]
-  links:
+  ports:
     out[0]:
       - name: gateway
         port: io
@@ -32,7 +32,7 @@
 - kind: gateway
   name: gateway
   protocol: websocket
-  links:
+  ports:
     out:
       - name: proxy
         port: in
@@ -40,7 +40,7 @@
 - kind: websocket
   name: proxy
   url: wss://echo.websocket.org/
-  links:
+  ports:
     out:
       - name: gateway
         port: in

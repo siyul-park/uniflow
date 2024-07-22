@@ -227,7 +227,11 @@ r := runtime.New(runtime.Config{
 })
 defer r.Close()
 
-sym, _ := r.LookupByName(ctx, "main")
+symbols, _ := r.Load(ctx, &spec.Meta{
+	Name: "main",
+})
+
+sym := symbols[0]
 
 in := port.NewOut()
 defer in.Close()

@@ -26,14 +26,14 @@ type Spec interface {
 	GetAnnotations() map[string]string
 	// SetAnnotations assigns annotations to the node.
 	SetAnnotations(val map[string]string)
-	// GetLinks retrieves the connections or links between nodes.
-	GetLinks() map[string][]PortLocation
-	// SetLinks assigns connections or links between nodes.
-	SetLinks(val map[string][]PortLocation)
+	// GetPorts retrieves the connections or ports between nodes.
+	GetPorts() map[string][]Port
+	// SetPorts assigns connections or ports between nodes.
+	SetPorts(val map[string][]Port)
 }
 
-// PortLocation represents the location of a port within the namespace.
-type PortLocation struct {
+// Port represents the location of a port within the namespace.
+type Port struct {
 	// ID is the unique identifier of the port.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Name is the human-readable name of the port.

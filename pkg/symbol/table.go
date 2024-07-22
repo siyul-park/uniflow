@@ -47,7 +47,7 @@ func (t *Table) Insert(sym *Symbol) error {
 	defer t.mu.Unlock()
 
 	if sym.refs == nil {
-		sym.refs = make(map[string][]spec.PortLocation)
+		sym.refs = make(map[string][]spec.Port)
 	}
 
 	if _, err := t.free(sym.ID()); err != nil {
@@ -71,21 +71,12 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 	return sym != nil, nil
 }
 
-// LookupByID retrieves a symbol from the table by its ID.
-func (t *Table) LookupByID(id uuid.UUID) (*Symbol, bool) {
+// Lookup retrieves a symbol from the table by its ID.
+func (t *Table) Lookup(id uuid.UUID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	sym, ok := t.symbols[id]
-	return sym, ok
-}
-
-// LookupByName retrieves a symbol from the table by its namespace and name.
-func (t *Table) LookupByName(namespace, name string) (*Symbol, bool) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	sym, ok := t.symbols[t.lookup(namespace, name)]
 	return sym, ok
 }
 
@@ -188,27 +179,27 @@ func (t *Table) unload(sym *Symbol) error {
 }
 
 func (t *Table) links(sym *Symbol) {
-	for name, locations := range sym.Links() {
+	for name, ports := range sym.Ports() {
 		out := sym.Out(name)
 		if out == nil {
 			continue
 		}
 
-		for _, location := range locations {
-			id := location.ID
+		for _, port := range ports {
+			id := port.ID
 			if id == uuid.Nil {
-				id = t.lookup(sym.Namespace(), location.Name)
+				id = t.lookup(sym.Namespace(), port.Name)
 			}
 
 			if ref, ok := t.symbols[id]; ok {
 				if ref.Namespace() == sym.Namespace() {
-					if in := ref.In(location.Port); in != nil {
+					if in := ref.In(port.Port); in != nil {
 						out.Link(in)
 					}
 
-					ref.refs[location.Port] = append(ref.refs[location.Port], spec.PortLocation{
+					ref.refs[port.Port] = append(ref.refs[port.Port], spec.Port{
 						ID:   sym.ID(),
-						Name: location.Name,
+						Name: port.Name,
 						Port: name,
 					})
 				}
@@ -221,21 +212,21 @@ func (t *Table) links(sym *Symbol) {
 			continue
 		}
 
-		for name, locations := range ref.Links() {
+		for name, ports := range ref.Ports() {
 			out := ref.Out(name)
 			if out == nil {
 				continue
 			}
 
-			for _, location := range locations {
-				if (location.ID == sym.ID()) || (location.Name != "" && location.Name == sym.Name()) {
-					if in := sym.In(location.Port); in != nil {
+			for _, port := range ports {
+				if (port.ID == sym.ID()) || (port.Name != "" && port.Name == sym.Name()) {
+					if in := sym.In(port.Port); in != nil {
 						out.Link(in)
 					}
 
-					sym.refs[location.Port] = append(sym.refs[location.Port], spec.PortLocation{
+					sym.refs[port.Port] = append(sym.refs[port.Port], spec.Port{
 						ID:   ref.ID(),
-						Name: location.Name,
+						Name: port.Name,
 						Port: name,
 					})
 				}
@@ -245,11 +236,11 @@ func (t *Table) links(sym *Symbol) {
 }
 
 func (t *Table) unlinks(sym *Symbol) {
-	for name, locations := range sym.Links() {
-		for _, location := range locations {
-			id := location.ID
+	for name, ports := range sym.Ports() {
+		for _, port := range ports {
+			id := port.ID
 			if id == uuid.Nil {
-				id = t.lookup(sym.Namespace(), location.Name)
+				id = t.lookup(sym.Namespace(), port.Name)
 			}
 
 			ref, ok := t.symbols[id]
@@ -257,17 +248,17 @@ func (t *Table) unlinks(sym *Symbol) {
 				continue
 			}
 
-			var locations []spec.PortLocation
-			for _, location := range ref.refs[location.Port] {
-				if location.ID != sym.ID() && location.Port != name {
-					locations = append(locations, location)
+			var ports []spec.Port
+			for _, port := range ref.refs[port.Port] {
+				if port.ID != sym.ID() && port.Port != name {
+					ports = append(ports, port)
 				}
 			}
 
-			if len(locations) > 0 {
-				ref.refs[location.Port] = locations
+			if len(ports) > 0 {
+				ref.refs[port.Port] = ports
 			} else {
-				delete(ref.refs, location.Port)
+				delete(ref.refs, port.Port)
 			}
 		}
 	}
@@ -314,11 +305,11 @@ func (t *Table) active(sym *Symbol) bool {
 		}
 		visits[sym] = struct{}{}
 
-		for _, locations := range sym.Links() {
-			for _, location := range locations {
-				id := location.ID
+		for _, ports := range sym.Ports() {
+			for _, port := range ports {
+				id := port.ID
 				if id == uuid.Nil {
-					id = t.lookup(sym.Namespace(), location.Name)
+					id = t.lookup(sym.Namespace(), port.Name)
 				}
 
 				ref, ok := t.symbols[id]

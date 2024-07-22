@@ -16,7 +16,7 @@ annotations:
   key2: value2
 language: text
 code: foo
-links:
+ports:
   out:
     - name: bar
       port: in
@@ -30,7 +30,7 @@ links:
 - `name`: Specifies the name of the node, which must be unique within the same namespace.
 - `annotations`: Includes additional metadata for the node specification. These values are not used by the engine but are useful for providing extensions or integrating with external services. Both keys and values are strings.
 - `language`, `code`: Additional fields required for `snippet` type nodes. Required fields may vary depending on the node type.
-- `links`: Defines how ports are connected. Each port is identified by the ID or name and port name of another node.
+- `ports`: Defines how ports are connected. Each port is identified by the ID or name and port name of another node.
 
 ## Node
 
