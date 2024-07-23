@@ -119,7 +119,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 			n.tracer.Transform(inPck, outPck)
 		}
 
-		n.tracer.Sniff(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+		n.tracer.AddHandler(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
 			n.tracer.Transform(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
 				n.tracer.Write(errWriter, backPck)

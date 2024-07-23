@@ -1,11 +1,16 @@
 package packet
 
-import "sync"
+import (
+	"sync"
+
+	"golang.org/x/exp/slices"
+)
 
 // Tracer tracks the lifecycle and transformations of packets as they pass through readers and writers.
 type Tracer struct {
 	handlers map[*Packet][]Handler
 	sources  map[*Packet][]*Packet
+	targets  map[*Packet][]*Packet
 	receives map[*Packet][]*Packet
 	reads    map[*Reader][]*Packet
 	writes   map[*Writer][]*Packet
@@ -18,6 +23,7 @@ func NewTracer() *Tracer {
 	return &Tracer{
 		handlers: make(map[*Packet][]Handler),
 		sources:  make(map[*Packet][]*Packet),
+		targets:  make(map[*Packet][]*Packet),
 		receives: make(map[*Packet][]*Packet),
 		reads:    make(map[*Reader][]*Packet),
 		writes:   make(map[*Writer][]*Packet),
@@ -25,8 +31,8 @@ func NewTracer() *Tracer {
 	}
 }
 
-// Sniff adds a sniffer Handler to be invoked when a packet completes processing.
-func (t *Tracer) Sniff(pck *Packet, handler Handler) {
+// AddHandler adds a Handler to be invoked when a packet completes processing.
+func (t *Tracer) AddHandler(pck *Packet, handler Handler) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -44,6 +50,7 @@ func (t *Tracer) Transform(source, target *Packet) {
 
 	if target != None {
 		t.sources[target] = append(t.sources[target], source)
+		t.targets[source] = append(t.targets[source], target)
 		t.receives[source] = append(t.receives[source], nil)
 	} else {
 		t.receives[source] = append(t.receives[source], None)
@@ -71,6 +78,7 @@ func (t *Tracer) Write(writer *Writer, pck *Packet) {
 		t.receives[pck] = append(t.receives[pck], nil)
 	} else {
 		t.receives[pck] = append(t.receives[pck], pck)
+		t.handle(pck)
 		t.receive(pck)
 	}
 }
@@ -100,6 +108,7 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 		}
 	}
 
+	t.handle(write)
 	t.receive(write)
 }
 
@@ -114,6 +123,7 @@ func (t *Tracer) Close() {
 
 	t.handlers = make(map[*Packet][]Handler)
 	t.sources = make(map[*Packet][]*Packet)
+	t.targets = make(map[*Packet][]*Packet)
 	t.receives = make(map[*Packet][]*Packet)
 	t.reads = make(map[*Reader][]*Packet)
 	t.writes = make(map[*Writer][]*Packet)
@@ -121,11 +131,9 @@ func (t *Tracer) Close() {
 }
 
 func (t *Tracer) receive(pck *Packet) {
-	t.sniff(pck)
-
 	receives := t.receives[pck]
 
-	if len(receives) > 0 && receives[len(receives)-1] == nil {
+	if slices.Contains(receives, nil) {
 		return
 	}
 
@@ -134,13 +142,37 @@ func (t *Tracer) receive(pck *Packet) {
 
 		merged := Merge(receives)
 		for _, source := range sources {
-			receives := t.receives[source]
-			for i, receive := range receives {
-				if receive == nil {
-					receives[i] = merged
+			targets := t.targets[source]
+
+			index := 0
+			for i, target := range targets {
+				if target == pck {
+					targets[i] = nil
+					index = i
 					break
 				}
 			}
+
+			empty := true
+			for _, target := range targets {
+				if target != nil {
+					empty = false
+					break
+				}
+			}
+			if empty {
+				delete(t.targets, source)
+			}
+
+			receives := t.receives[source]
+			for ; index < len(receives); index++ {
+				if receives[index] == nil {
+					receives[index] = merged
+					break
+				}
+			}
+
+			t.handle(source)
 			t.receive(source)
 		}
 	}
@@ -151,7 +183,7 @@ func (t *Tracer) receive(pck *Packet) {
 			read := reads[0]
 			receives := t.receives[read]
 
-			if len(receives) > 0 && receives[len(receives)-1] == nil {
+			if slices.Contains(receives, nil) {
 				break
 			}
 
@@ -174,10 +206,10 @@ func (t *Tracer) receive(pck *Packet) {
 	}
 }
 
-func (t *Tracer) sniff(pck *Packet) {
+func (t *Tracer) handle(pck *Packet) {
 	receives := t.receives[pck]
 
-	if len(receives) > 0 && receives[len(receives)-1] == nil {
+	if slices.Contains(receives, nil) {
 		return
 	}
 

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTracer_Sniff(t *testing.T) {
+func TestTracer_AddHandler(t *testing.T) {
 	w1 := NewWriter()
 	defer w1.Close()
 
@@ -39,7 +39,7 @@ func TestTracer_Sniff(t *testing.T) {
 	w2.Receive()
 
 	count := 0
-	tr.Sniff(pck1, HandlerFunc(func(pck *Packet) {
+	tr.AddHandler(pck1, HandlerFunc(func(pck *Packet) {
 		count++
 	}))
 
