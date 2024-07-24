@@ -53,7 +53,7 @@ func (t *Tracer) Transform(source, target *Packet) {
 		t.targets[source] = append(t.targets[source], target)
 		t.receives[source] = append(t.receives[source], nil)
 	} else {
-		t.receives[source] = append(t.receives[source], None)
+		t.handle(source)
 		t.receive(source)
 	}
 }
@@ -100,11 +100,20 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 		delete(t.writes, writer)
 	}
 
+	targets := t.targets[write]
 	receives := t.receives[write]
-	for i, receive := range receives {
-		if receive == nil {
+
+	offset := 0
+	for i := 0; i < len(targets); i++ {
+		if receives[i+offset] != nil {
+			i--
+			offset++
+		}
+	}
+
+	for i := len(targets) + offset; i < len(receives); i++ {
+		if receives[i] == nil {
 			receives[i] = pck
-			break
 		}
 	}
 
@@ -143,33 +152,27 @@ func (t *Tracer) receive(pck *Packet) {
 		merged := Merge(receives)
 		for _, source := range sources {
 			targets := t.targets[source]
-
-			index := 0
-			for i, target := range targets {
-				if target == pck {
-					targets[i] = nil
-					index = i
-					break
-				}
-			}
-
-			empty := true
-			for _, target := range targets {
-				if target != nil {
-					empty = false
-					break
-				}
-			}
-			if empty {
-				delete(t.targets, source)
-			}
-
 			receives := t.receives[source]
-			for ; index < len(receives); index++ {
-				if receives[index] == nil {
-					receives[index] = merged
+
+			offset := 0
+			for i := 0; i < len(targets); i++ {
+				if receives[i+offset] != nil {
+					i--
+					offset++
+					continue
+				}
+
+				if targets[i] == pck {
+					receives[i+offset] = merged
+					targets = append(targets[:i], targets[i+1:]...)
 					break
 				}
+			}
+
+			if len(targets) > 0 {
+				t.targets[source] = targets
+			} else {
+				delete(t.targets, source)
 			}
 
 			t.handle(source)
