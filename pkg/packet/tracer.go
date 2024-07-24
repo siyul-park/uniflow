@@ -3,6 +3,7 @@ package packet
 import (
 	"sync"
 
+	"github.com/siyul-park/uniflow/pkg/types"
 	"golang.org/x/exp/slices"
 )
 
@@ -114,6 +115,7 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 	for i := len(targets) + offset; i < len(receives); i++ {
 		if receives[i] == nil {
 			receives[i] = pck
+			break
 		}
 	}
 
@@ -127,7 +129,7 @@ func (t *Tracer) Close() {
 	defer t.mu.Unlock()
 
 	for _, reader := range t.reader {
-		reader.Receive(None)
+		reader.Receive(New(types.NewError(ErrDroppedPacket)))
 	}
 
 	t.handlers = make(map[*Packet][]Handler)

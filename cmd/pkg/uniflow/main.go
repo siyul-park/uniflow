@@ -61,7 +61,7 @@ func main() {
 
 	if strings.HasPrefix(databaseURL, "memongodb://") {
 		server := mongoserver.New()
-		defer mongoserver.Release(server)
+		defer server.Stop()
 
 		databaseURL = server.URI()
 	}

@@ -105,32 +105,35 @@ Benchmarking 127.0.0.1 (be patient)
 Server Hostname:        127.0.0.1
 Server Port:            8000
 Document Path:          /ping
-Document Length:        0 bytes
+Document Length:        4 bytes
 Concurrency Level:      1024
-Time taken for tests:   14.951 seconds
+Time taken for tests:   13.760 seconds
 Complete requests:      102400
 Failed requests:        0
-Total transferred:      11878400 bytes
-Requests per second:    6849.06 [#/sec] (mean)
-Time per request:       149.510 [ms] (mean)
-Time per request:       0.146 [ms] (mean, across all concurrent requests)
-Transfer rate:          775.87 [Kbytes/sec] received
+Total transferred:      12288000 bytes
+HTML transferred:       409600 bytes
+Requests per second:    7441.92 [#/sec] (mean)
+Time per request:       137.599 [ms] (mean)
+Time per request:       0.134 [ms] (mean, across all concurrent requests)
+Transfer rate:          872.10 [Kbytes/sec] received
+
 Connection Times (ms)
               min  mean[+/-sd] median   max
-Connect:        0    2   4.7      0      55
-Processing:     0  146  62.2    148     528
-Waiting:        0  145  62.2    147     528
-Total:          0  148  62.3    150     559
+Connect:        0    1   3.1      0      34
+Processing:     0  136  58.2    137     550
+Waiting:        0  135  58.2    137     550
+Total:          0  137  58.0    139     553
+
 Percentage of the requests served within a certain time (ms)
-  50%    150
-  66%    174
-  75%    188
-  80%    196
-  90%    223
-  95%    248
-  98%    282
-  99%    307
- 100%    559 (longest request)
+  50%    139
+  66%    162
+  75%    174
+  80%    181
+  90%    202
+  95%    223
+  98%    264
+  99%    295
+ 100%    553 (longest request)
 ```
 
 ## 📚 자세히 알아보기
