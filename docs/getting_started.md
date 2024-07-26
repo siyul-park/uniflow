@@ -91,6 +91,8 @@ If the namespace is empty, you can provide initial node specifications using the
 ./dist/uniflow start --filename examples/ping.yaml
 ```
 
+This command start all node specifications defined in `examples/ping.yaml` from the specified namespace. If no namespace is specified, it uses the `default` namespace.
+
 ## HTTP API Integration
 
 To modify node specifications via HTTP API, you need to set up workflows that expose these functionalities. Use the `syscall` node included in the [basic extensions](../ext/README.md):

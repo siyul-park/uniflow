@@ -18,10 +18,10 @@ language: text
 code: foo
 ports:
   out:
-    - name: bar
-      port: in
-    - id: 01908c74-8b22-7cc0-ae2b-40504e7c9ff0
-      port: in
+  - name: bar
+    port: in
+  - id: 01908c74-8b22-7cc0-ae2b-40504e7c9ff0
+    port: in
 ```
 
 - `id`: A UUID, preferably in UUID V7 format.
@@ -48,6 +48,7 @@ Nodes are classified into five types based on packet processing:
 Ports are connection points where nodes send and receive packets. There are two types of ports, `InPort` and `OutPort`, which are connected to transmit packets. Packets sent to one port are delivered to all connected ports.
 
 Common port names include:
+- `init`: A special port used to initialize nodes. Once the node is ready, workflows connected to the `init` port are executed.
 - `io`: Processes and immediately returns packets.
 - `in`: Receives packets, processes them, and sends the result to `out` or `error`. If no `out` or `error` ports are connected, it returns the result.
 - `out`: Sends processed packets. The results sent may be returned to `in`.

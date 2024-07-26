@@ -11,7 +11,6 @@ import (
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
-	"github.com/siyul-park/uniflow/ext/pkg/event"
 	"github.com/siyul-park/uniflow/ext/pkg/io"
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/ext/pkg/language/cel"
@@ -105,17 +104,12 @@ func main() {
 	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(store))
 	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(store))
 
-	broker := event.NewBroker()
-	defer broker.Close()
-
 	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(event.AddToScheme(broker, broker))
 	sbuilder.Register(io.AddToScheme())
 	sbuilder.Register(network.AddToScheme())
 	sbuilder.Register(system.AddToScheme(stable))
 
 	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(event.AddToHook(broker))
 	hbuilder.Register(network.AddToHook())
 
 	scheme, err := sbuilder.Build()
