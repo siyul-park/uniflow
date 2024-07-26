@@ -5,7 +5,10 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // TableOptions holds configurations for a Table instance.
@@ -152,6 +155,10 @@ func (t *Table) load(sym *Symbol) error {
 	linked := t.linked(sym)
 	for _, sym := range linked {
 		if t.active(sym) {
+			if err := t.init(sym); err != nil {
+				return err
+			}
+
 			for _, hook := range t.loadHooks {
 				if err := hook.Load(sym); err != nil {
 					return err
@@ -181,9 +188,6 @@ func (t *Table) unload(sym *Symbol) error {
 func (t *Table) links(sym *Symbol) {
 	for name, ports := range sym.Ports() {
 		out := sym.Out(name)
-		if out == nil {
-			continue
-		}
 
 		for _, port := range ports {
 			id := port.ID
@@ -193,8 +197,10 @@ func (t *Table) links(sym *Symbol) {
 
 			if ref, ok := t.symbols[id]; ok {
 				if ref.Namespace() == sym.Namespace() {
-					if in := ref.In(port.Port); in != nil {
-						out.Link(in)
+					if out != nil {
+						if in := ref.In(port.Port); in != nil {
+							out.Link(in)
+						}
 					}
 
 					ref.refs[port.Port] = append(ref.refs[port.Port], spec.Port{
@@ -214,14 +220,13 @@ func (t *Table) links(sym *Symbol) {
 
 		for name, ports := range ref.Ports() {
 			out := ref.Out(name)
-			if out == nil {
-				continue
-			}
 
 			for _, port := range ports {
 				if (port.ID == sym.ID()) || (port.Name != "" && port.Name == sym.Name()) {
-					if in := sym.In(port.Port); in != nil {
-						out.Link(in)
+					if out != nil {
+						if in := sym.In(port.Port); in != nil {
+							out.Link(in)
+						}
 					}
 
 					sym.refs[port.Port] = append(sym.refs[port.Port], spec.Port{
@@ -322,6 +327,35 @@ func (t *Table) active(sym *Symbol) bool {
 		}
 	}
 	return true
+}
+
+func (t *Table) init(sym *Symbol) error {
+	out := port.NewOut()
+	defer out.Close()
+
+	ports := sym.Ports()
+	for _, port := range ports[node.PortInit] {
+		id := port.ID
+		if id == uuid.Nil {
+			id = t.lookup(sym.Namespace(), port.Name)
+		}
+
+		if ref, ok := t.symbols[id]; ok {
+			if ref.Namespace() == sym.Namespace() {
+				if in := ref.In(port.Port); in != nil {
+					out.Link(in)
+				}
+			}
+		}
+	}
+
+	payload, err := types.TextEncoder.Encode(sym.Spec)
+	if err != nil {
+		return err
+	}
+
+	_, err = port.Write(out, payload)
+	return err
 }
 
 func (t *Table) lookup(namespace, name string) uuid.UUID {

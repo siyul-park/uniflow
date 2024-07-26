@@ -18,10 +18,10 @@ language: text
 code: foo
 ports:
   out:
-    - name: bar
-      port: in
-    - id: 01908c74-8b22-7cc0-ae2b-40504e7c9ff0
-      port: in
+  - name: bar
+    port: in
+  - id: 01908c74-8b22-7cc0-ae2b-40504e7c9ff0
+    port: in
 ```
 
 - `id`: A UUID, preferably in UUID V7 format.

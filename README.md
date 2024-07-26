@@ -48,19 +48,19 @@ Let's run a basic HTTP request handling example, [ping.yaml](./examples/ping.yam
   port: 8000
   ports:
     out:
-      - name: router
-        port: in
+    - name: router
+      port: in
 
 - kind: router
   name: router
   routes:
-    - method: GET
-      path: /ping
-      port: out[0]
+  - method: GET
+    path: /ping
+    port: out[0]
   ports:
     out[0]:
-      - name: pong
-        port: in
+    - name: pong
+      port: in
 
 - kind: snippet
   name: pong
