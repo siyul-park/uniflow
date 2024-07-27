@@ -126,7 +126,6 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 				value.Name = secret.Name
 				value.Value = v
 			}
-
 			env[key] = append(env[key], value)
 		}
 	}

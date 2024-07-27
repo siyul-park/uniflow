@@ -8,50 +8,99 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestApplyCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
+	t.Run("nodes", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
 
-	st := spec.NewStore()
-	fsys := afero.NewMemMapFs()
+		spst := spec.NewStore()
+		scst := secret.NewStore()
 
-	kind := faker.UUIDHyphenated()
+		fsys := afero.NewMemMapFs()
 
-	filename := "patch.json"
+		kind := faker.UUIDHyphenated()
 
-	meta := &spec.Meta{
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
+		filename := "patch.json"
 
-	data, _ := json.Marshal(meta)
+		meta := &spec.Meta{
+			Kind:      kind,
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
 
-	f, _ := fsys.Create(filename)
-	f.Write(data)
+		data, _ := json.Marshal(meta)
 
-	output := new(bytes.Buffer)
+		f, _ := fsys.Create(filename)
+		f.Write(data)
 
-	cmd := NewApplyCommand(ApplyConfig{
-		SpecStore: st,
-		FS:        fsys,
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   spst,
+			SecretStore: scst,
+			FS:          fsys,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+
+		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err := cmd.Execute()
+		assert.NoError(t, err)
+
+		r, err := spst.Load(ctx, meta)
+		assert.NoError(t, err)
+		assert.Len(t, r, 1)
+
+		assert.Contains(t, output.String(), meta.Name)
 	})
-	cmd.SetOut(output)
-	cmd.SetErr(output)
 
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
+	t.Run("secrets", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
 
-	err := cmd.Execute()
-	assert.NoError(t, err)
+		spst := spec.NewStore()
+		scst := secret.NewStore()
 
-	r, err := st.Load(ctx, meta)
-	assert.NoError(t, err)
-	assert.Len(t, r, 1)
+		fsys := afero.NewMemMapFs()
 
-	assert.Contains(t, output.String(), meta.Name)
+		filename := "patch.json"
+
+		secret := &secret.Secret{
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
+
+		data, _ := json.Marshal(secret)
+
+		f, _ := fsys.Create(filename)
+		f.Write(data)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   spst,
+			SecretStore: scst,
+			FS:          fsys,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+
+		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err := cmd.Execute()
+		assert.NoError(t, err)
+
+		r, err := scst.Load(ctx, secret)
+		assert.NoError(t, err)
+		assert.Len(t, r, 1)
+
+		assert.Contains(t, output.String(), secret.Name)
+	})
 }

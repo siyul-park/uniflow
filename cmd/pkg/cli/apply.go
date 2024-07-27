@@ -21,7 +21,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Use:       "apply",
 		Short:     "Apply node specifications to the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{"nodes", "secrets"},
+		ValidArgs: []string{argNodes, argSecrets},
 		RunE:      runApplyCommand(config),
 	}
 
@@ -34,8 +34,6 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-
-		resources := args[0]
 
 		namespace, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
@@ -55,8 +53,8 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		reader := resource.NewReader(file)
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		switch resources {
-		case "nodes":
+		switch args[0] {
+		case argNodes:
 			var specs []spec.Spec
 			if err := reader.Read(&specs); err != nil {
 				return err
@@ -92,7 +90,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			}
 
 			return writer.Write(specs)
-		case "secrets":
+		case argSecrets:
 			var secrets []*secret.Secret
 			if err := reader.Read(&secrets); err != nil {
 				return err
