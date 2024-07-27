@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
+	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -60,14 +60,21 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				return nil
 			}
 
-			specs, err = scanner.New().
-				Store(config.SpecStore).
-				Namespace(namespace).
-				FS(config.FS).
-				Filename(filename).
-				Scan(ctx)
+			file, err := config.FS.Open(filename)
 			if err != nil {
 				return err
+			}
+			defer file.Close()
+
+			reader := resource.NewReader(file)
+			if err := reader.Read(&specs); err != nil {
+				return err
+			}
+
+			for _, spec := range specs {
+				if spec.GetNamespace() == "" {
+					spec.SetNamespace(namespace)
+				}
 			}
 
 			if _, err = config.SpecStore.Store(ctx, specs...); err != nil {

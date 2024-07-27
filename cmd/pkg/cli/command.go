@@ -90,8 +90,9 @@ func NewCommand(config Config) *cobra.Command {
 	cmd.PersistentFlags().String(flagMemProfile, "", "write memory profile to `file`")
 
 	cmd.AddCommand(NewApplyCommand(ApplyConfig{
-		SpecStore: config.SpecStore,
-		FS:        config.FS,
+		SpecStore:   config.SpecStore,
+		SecretStore: config.SecretStore,
+		FS:          config.FS,
 	}))
 	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
 		SpecStore: config.SpecStore,

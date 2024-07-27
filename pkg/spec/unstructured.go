@@ -17,7 +17,8 @@ const (
 	KeyNamespace   = "namespace"
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
-	KeyLinks       = "ports"
+	KeyPorts       = "ports"
+	KeyEnv         = "env"
 )
 
 var _ Spec = (*Unstructured)(nil)
@@ -35,8 +36,10 @@ func (u *Unstructured) Get(key string) (any, bool) {
 		return u.Name, true
 	case KeyAnnotations:
 		return u.Annotations, true
-	case KeyLinks:
+	case KeyPorts:
 		return u.Ports, true
+	case KeyEnv:
+		return u.Env, true
 	default:
 		if u.Fields == nil {
 			return nil, false
@@ -59,8 +62,10 @@ func (u *Unstructured) Set(key string, val any) {
 		u.Name, _ = val.(string)
 	case KeyAnnotations:
 		u.Annotations, _ = val.(map[string]string)
-	case KeyLinks:
+	case KeyPorts:
 		u.Ports, _ = val.(map[string][]Port)
+	case KeyEnv:
+		u.Env, _ = val.(map[string][]Secret)
 	default:
 		if u.Fields == nil {
 			u.Fields = make(map[string]any)

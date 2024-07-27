@@ -179,12 +179,21 @@ func (s *store) Swap(ctx context.Context, specs ...Spec) (int, error) {
 		}
 	}
 
+	for i := 0; i < len(specs); i++ {
+		spec := specs[i]
+		if !s.free(spec.GetID()) {
+			specs = append(specs[:i], specs[i+1:]...)
+			i--
+		}
+	}
+
 	count := 0
 	for _, spec := range specs {
-		if s.free(spec.GetID()) && s.insert(spec) {
-			s.emit(EventSwap, spec)
-			count++
+		if !s.insert(spec) {
+			return 0, errors.WithStack(ErrDuplicatedKey)
 		}
+		s.emit(EventSwap, spec)
+		count++
 	}
 	return count, nil
 }
@@ -217,20 +226,7 @@ func (s *store) match(spec Spec, examples ...Spec) bool {
 	if len(examples) == 0 {
 		return true
 	}
-
-	for _, example := range examples {
-		if example.GetID() != uuid.Nil && spec.GetID() != example.GetID() {
-			continue
-		}
-		if example.GetNamespace() != "" && spec.GetNamespace() != example.GetNamespace() {
-			continue
-		}
-		if example.GetName() != "" && spec.GetName() != example.GetName() {
-			continue
-		}
-		return true
-	}
-	return false
+	return len(Match(spec, examples...)) > 0
 }
 
 func (s *store) insert(spec Spec) bool {

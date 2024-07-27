@@ -85,11 +85,12 @@ pong#
 
 You can configure settings through the `.uniflow.toml` file or system environment variables.
 
-| TOML Key           | Environment Variable | Example                   |
-|--------------------|----------------------|---------------------------|
-| `database.url`     | `DATABASE.URL`       | `mem://` or `mongodb://`  |
-| `database.name`    | `DATABASE.NAME`      | -                         |
-| `collection.nodes` | `COLLECTION.NODES`   | `nodes`                   |
+| TOML Key             | Environment Variable | Example                   |
+|----------------------|----------------------|---------------------------|
+| `database.url`       | `DATABASE.URL`       | `mem://` or `mongodb://`  |
+| `database.name`      | `DATABASE.NAME`      | -                         |
+| `collection.nodes`   | `COLLECTION.NODES`   | `nodes`                   |
+| `collection.secrets` | `COLLECTION.SECRETS` | `secrets`                 |
 
 ## 📊 Benchmark
 

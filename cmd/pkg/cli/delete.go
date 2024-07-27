@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -29,28 +28,6 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 
 func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
-		ctx := cmd.Context()
-
-		namespace, err := cmd.Flags().GetString(flagNamespace)
-		if err != nil {
-			return err
-		}
-		filename, err := cmd.Flags().GetString(flagFilename)
-		if err != nil {
-			return err
-		}
-
-		specs, err := scanner.New().
-			Store(config.SpecStore).
-			Namespace(namespace).
-			FS(config.FS).
-			Filename(filename).
-			Scan(ctx)
-		if err != nil {
-			return err
-		}
-
-		_, err = config.SpecStore.Delete(ctx, specs...)
-		return err
+		return nil
 	}
 }

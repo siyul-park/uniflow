@@ -31,11 +31,12 @@ Once the build process is complete, the executable file will be generated in the
 
 Uniflow provides flexible configuration options via a `.uniflow.toml` file or system environment variables:
 
-| TOML Key           | Environment Variable | Example                   |
-|--------------------|----------------------|---------------------------|
-| `database.url`     | `DATABASE.URL`       | `mem://` or `mongodb://`  |
-| `database.name`    | `DATABASE.NAME`      | -                         |
-| `collection.nodes` | `COLLECTION.NODES`   | `nodes`                   |
+| TOML Key             | Environment Variable | Example                   |
+|----------------------|----------------------|---------------------------|
+| `database.url`       | `DATABASE.URL`       | `mem://` or `mongodb://`  |
+| `database.name`      | `DATABASE.NAME`      | -                         |
+| `collection.nodes`   | `COLLECTION.NODES`   | `nodes`                   |
+| `collection.secrets` | `COLLECTION.SECRETS` | `secrets`                 |
 
 When using [MongoDB](https://www.mongodb.com/), you need to enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to allow the engine to track node specification changes. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 

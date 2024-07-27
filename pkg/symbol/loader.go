@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/template"
 )
 
 // LoaderConfig holds configuration for the Loader.
@@ -45,23 +44,26 @@ func NewLoader(config LoaderConfig) *Loader {
 func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error) {
 	var symbols []*Symbol
 
-	nexts := specs
-	for len(nexts) > 0 {
-		curr := nexts
-		nexts = nil
+	queue := specs
+	for len(queue) > 0 {
+		examples := queue
+		queue = nil
 
-		specs, err := l.specStore.Load(ctx, curr...)
+		specs, err := l.specStore.Load(ctx, examples...)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, s := range specs {
+		for _, spc := range specs {
 			var secrets []*secret.Secret
-			for _, values := range s.GetEnv() {
+			for _, values := range spc.GetEnv() {
 				for _, value := range values {
+					if value.ID == uuid.Nil && value.Name == "" {
+						continue
+					}
 					secrets = append(secrets, &secret.Secret{
 						ID:        value.ID,
-						Namespace: s.GetNamespace(),
+						Namespace: spc.GetNamespace(),
 						Name:      value.Name,
 					})
 				}
@@ -72,39 +74,18 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 				return nil, err
 			}
 
-			if len(secrets) > 0 {
-				ok := true
-				for _, values := range s.GetEnv() {
-					for i, value := range values {
-						if value.ID == uuid.Nil && value.Name == "" {
-							continue
-						}
-
-						secret := l.lookup(secrets, value)
-						if secret == nil {
-							ok = false
-							break
-						}
-
-						if tmpl, err := template.New("").Parse(value.Value); err != nil {
-							return nil, err
-						} else if v, err := tmpl.Execute(secret.Data); err != nil {
-							return nil, err
-						} else {
-							value.Value = v
-							values[i] = value
-						}
-					}
-					if !ok {
-						break
-					}
+			bind, err := l.scheme.Bind(spc, secrets...)
+			if err != nil {
+				return nil, err
+			}
+			if bind == nil {
+				if _, err := l.table.Free(spc.GetID()); err != nil {
+					return nil, err
 				}
-				if !ok {
-					continue
-				}
+				continue
 			}
 
-			decode, err := l.scheme.Decode(s)
+			decode, err := l.scheme.Decode(bind)
 			if err != nil {
 				return nil, err
 			}
@@ -121,12 +102,12 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 					return nil, err
 				}
 
-				for _, locations := range sym.Ports() {
-					for _, location := range locations {
-						nexts = append(nexts, &spec.Meta{
-							ID:        location.ID,
-							Namespace: s.GetNamespace(),
-							Name:      location.Name,
+				for _, ports := range sym.Ports() {
+					for _, port := range ports {
+						queue = append(queue, &spec.Meta{
+							ID:        port.ID,
+							Namespace: spc.GetNamespace(),
+							Name:      port.Name,
 						})
 					}
 				}
@@ -135,23 +116,14 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 			symbols = append(symbols, sym)
 		}
 
-		for _, spec := range curr {
-			exists := false
-			for _, s := range specs {
-				if spec.GetID() == s.GetID() || (spec.GetNamespace() == s.GetNamespace() && spec.GetName() == s.GetName()) {
-					exists = true
-					break
-				}
-				if exists {
-					break
-				}
-			}
-
-			if !exists {
-				sym, ok := l.table.Lookup(spec.GetID())
-				if ok {
-					if _, err := l.table.Free(sym.ID()); err != nil {
-						return nil, err
+		for _, example := range examples {
+			if len(spec.Match(example, specs...)) == 0 {
+				for _, id := range l.table.Keys() {
+					sym, ok := l.table.Lookup(id)
+					if ok && len(spec.Match(sym.Spec, example)) > 0 {
+						if _, err := l.table.Free(sym.ID()); err != nil {
+							return nil, err
+						}
 					}
 				}
 			}
@@ -239,9 +211,13 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			secrets, err := l.secretStore.Load(ctx, &secret.Secret{ID: event.ID})
+			source := &secret.Secret{ID: event.ID}
+			secrets, err := l.secretStore.Load(ctx, source)
 			if err != nil {
 				return err
+			}
+			if len(secrets) == 0 {
+				secrets = append(secrets, source)
 			}
 
 			var examples []spec.Spec
@@ -250,25 +226,13 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				if !ok {
 					continue
 				}
-				examples = append(examples, sym.Spec)
+				if l.scheme.IsBound(sym.Spec, secrets...) {
+					examples = append(examples, sym.Spec)
+				}
 			}
 			for _, example := range unloaded {
-				examples = append(examples, example)
-			}
-
-			for i, example := range examples {
-				ok := false
-				for _, values := range example.GetEnv() {
-					for _, value := range values {
-						if secret := l.lookup(secrets, value); secret != nil {
-							ok = true
-							break
-						}
-					}
-				}
-				if !ok {
-					examples = append(examples[:i], examples[i+1:]...)
-					i--
+				if l.scheme.IsBound(example, secrets...) {
+					examples = append(examples, example)
 				}
 			}
 
@@ -330,14 +294,5 @@ func (l *Loader) Close() error {
 		l.secretStream = nil
 	}
 
-	return nil
-}
-
-func (l *Loader) lookup(secrets []*secret.Secret, secret spec.Secret) *secret.Secret {
-	for _, s := range secrets {
-		if s.GetID() == secret.ID || (s.GetName() != "" && s.GetName() == secret.Name) {
-			return s
-		}
-	}
 	return nil
 }

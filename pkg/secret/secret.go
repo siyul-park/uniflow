@@ -19,6 +19,15 @@ type Secret struct {
 // DefaultNamespace represents the default namespace for secrets.
 const DefaultNamespace = "default"
 
+// Key constants for commonly used fields.
+const (
+	KeyID          = "id"
+	KeyNamespace   = "namespace"
+	KeyName        = "name"
+	KeyAnnotations = "annotations"
+	KeyData        = "data"
+)
+
 // GetID returns the secret's unique identifier.
 func (s *Secret) GetID() uuid.UUID {
 	return s.ID
@@ -67,4 +76,22 @@ func (s *Secret) GetData() any {
 // SetData sets the secret's data.
 func (s *Secret) SetData(val any) {
 	s.Data = val
+}
+
+// Match returns all examples that match the given spec based on ID, namespace, or name.
+func Match(secret *Secret, examples ...*Secret) []*Secret {
+	var matched []*Secret
+	for _, example := range examples {
+		if example == nil {
+			continue
+		}
+		if example.GetID() != uuid.Nil && secret.GetID() == example.GetID() {
+			matched = append(matched, example)
+		} else if example.GetNamespace() != "" && secret.GetNamespace() == example.GetNamespace() {
+			matched = append(matched, example)
+		} else if example.GetName() != "" && secret.GetName() == example.GetName() {
+			matched = append(matched, example)
+		}
+	}
+	return matched
 }

@@ -31,11 +31,12 @@ make build
 
 Uniflow는 `.uniflow.toml` 파일이나 시스템 환경 변수를 통해 유연한 구성 옵션을 제공합니다:
 
-| TOML 키            | 환경 변수             | 예시                      |
-|--------------------|--------------------|--------------------------|
-| `database.url`     | `DATABASE.URL`     | `mem://` 또는 `mongodb://` |
-| `database.name`    | `DATABASE.NAME`    | -                        |
-| `collection.nodes` | `COLLECTION.NODES` | `nodes`                  |
+| TOML 키              | 환경 변수 키            | 예시                       |
+|----------------------|----------------------|---------------------------|
+| `database.url`       | `DATABASE.URL`       | `mem://` 또는 `mongodb://` |
+| `database.name`      | `DATABASE.NAME`      | -                         |
+| `collection.nodes`   | `COLLECTION.NODES`   | `nodes`                   |
+| `collection.secrets` | `COLLECTION.SECRETS` | `secrets`                 |
 
 [MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 노드 명세 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
 

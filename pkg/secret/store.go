@@ -179,12 +179,21 @@ func (s *store) Swap(ctx context.Context, secrets ...*Secret) (int, error) {
 		}
 	}
 
+	for i := 0; i < len(secrets); i++ {
+		secret := secrets[i]
+		if !s.free(secret.GetID()) {
+			secrets = append(secrets[:i], secrets[i+1:]...)
+			i--
+		}
+	}
+
 	count := 0
 	for _, secret := range secrets {
-		if s.free(secret.GetID()) && s.insert(secret) {
-			s.emit(EventSwap, secret)
-			count++
+		if !s.insert(secret) {
+			return 0, errors.WithStack(ErrDuplicatedKey)
 		}
+		s.emit(EventSwap, secret)
+		count++
 	}
 	return count, nil
 }
@@ -217,20 +226,7 @@ func (s *store) match(secret *Secret, examples ...*Secret) bool {
 	if len(examples) == 0 {
 		return true
 	}
-
-	for _, example := range examples {
-		if example.GetID() != uuid.Nil && secret.GetID() != example.GetID() {
-			continue
-		}
-		if example.GetNamespace() != "" && secret.GetNamespace() != example.GetNamespace() {
-			continue
-		}
-		if example.GetName() != "" && secret.GetName() != example.GetName() {
-			continue
-		}
-		return true
-	}
-	return false
+	return len(Match(secret, examples...)) > 0
 }
 
 func (s *store) insert(secret *Secret) bool {

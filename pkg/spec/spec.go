@@ -26,14 +26,14 @@ type Spec interface {
 	GetAnnotations() map[string]string
 	// SetAnnotations assigns annotations to the node.
 	SetAnnotations(val map[string]string)
-	// GetEnv retrieves the environment secrets for the node.
-	GetEnv() map[string][]Secret
-	// SetEnv assigns environment secrets to the node.
-	SetEnv(val map[string][]Secret)
 	// GetPorts retrieves the port connections for the node.
 	GetPorts() map[string][]Port
 	// SetPorts assigns port connections to the node.
 	SetPorts(val map[string][]Port)
+	// GetEnv retrieves the environment secrets for the node.
+	GetEnv() map[string][]Secret
+	// SetEnv assigns environment secrets to the node.
+	SetEnv(val map[string][]Secret)
 }
 
 // Port represents a network port or connection on a node.
@@ -58,3 +58,21 @@ type Secret struct {
 
 // DefaultNamespace represents the default logical grouping for nodes.
 const DefaultNamespace = "default"
+
+// Match returns all examples that match the given spec based on ID, namespace, or name.
+func Match(spec Spec, examples ...Spec) []Spec {
+	var matched []Spec
+	for _, example := range examples {
+		if example == nil {
+			continue
+		}
+		if example.GetID() != uuid.Nil && spec.GetID() == example.GetID() {
+			matched = append(matched, example)
+		} else if example.GetNamespace() != "" && spec.GetNamespace() == example.GetNamespace() {
+			matched = append(matched, example)
+		} else if example.GetName() != "" && spec.GetName() == example.GetName() {
+			matched = append(matched, example)
+		}
+	}
+	return matched
+}

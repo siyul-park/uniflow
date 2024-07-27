@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/siyul-park/uniflow/cmd/pkg/printer"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/cobra"
 )
@@ -26,18 +25,6 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 
 func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
-		ctx := cmd.Context()
-
-		namespace, err := cmd.Flags().GetString(flagNamespace)
-		if err != nil {
-			return err
-		}
-
-		specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
-		if err != nil {
-			return err
-		}
-
-		return printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions)
+		return nil
 	}
 }

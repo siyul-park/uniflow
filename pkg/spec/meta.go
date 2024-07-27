@@ -14,10 +14,10 @@ type Meta struct {
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	// Env contains sensitive data associated with the node.
-	Env map[string][]Secret `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 	// Ports define connections to other nodes.
 	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
+	// Env contains sensitive data associated with the node.
+	Env map[string][]Secret `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 var _ Spec = (*Meta)(nil)
@@ -72,16 +72,6 @@ func (m *Meta) SetAnnotations(val map[string]string) {
 	m.Annotations = val
 }
 
-// GetEnv returns the node's environment secrets.
-func (m *Meta) GetEnv() map[string][]Secret {
-	return m.Env
-}
-
-// SetEnv sets the node's environment secrets.
-func (m *Meta) SetEnv(val map[string][]Secret) {
-	m.Env = val
-}
-
 // GetPorts returns the node's connections.
 func (m *Meta) GetPorts() map[string][]Port {
 	return m.Ports
@@ -90,4 +80,14 @@ func (m *Meta) GetPorts() map[string][]Port {
 // SetPorts sets the node's connections.
 func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
+}
+
+// GetEnv returns the node's environment secrets.
+func (m *Meta) GetEnv() map[string][]Secret {
+	return m.Env
+}
+
+// SetEnv sets the node's environment secrets.
+func (m *Meta) SetEnv(val map[string][]Secret) {
+	m.Env = val
 }

@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
+	mongosecret "github.com/siyul-park/uniflow/driver/mongo/pkg/secret"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	"github.com/siyul-park/uniflow/ext/pkg/control"
@@ -23,6 +24,7 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/system"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -33,9 +35,10 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
-	flagDatabaseURL     = "database.url"
-	flagDatabaseName    = "database.name"
-	flagCollectionNodes = "collection.nodes"
+	flagDatabaseURL       = "database.url"
+	flagDatabaseName      = "database.name"
+	flagCollectionNodes   = "collection.nodes"
+	flagCollectionSecrets = "collection.secrets"
 )
 
 func init() {
@@ -53,9 +56,13 @@ func main() {
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
 	collectionNodes := viper.GetString(flagCollectionNodes)
+	collectionSecrets := viper.GetString(flagCollectionSecrets)
 
 	if collectionNodes == "" {
 		collectionNodes = "nodes"
+	}
+	if collectionSecrets == "" {
+		collectionSecrets = "secrets"
 	}
 
 	if strings.HasPrefix(databaseURL, "memongodb://") {
@@ -65,7 +72,8 @@ func main() {
 		databaseURL = server.URI()
 	}
 
-	var store spec.Store
+	var specStore spec.Store
+	var secretStore secret.Store
 	if strings.HasPrefix(databaseURL, "mongodb://") {
 		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 		opts := options.Client().ApplyURI(databaseURL).SetServerAPIOptions(serverAPI)
@@ -77,14 +85,19 @@ func main() {
 		defer client.Disconnect(ctx)
 
 		collection := client.Database(databaseName).Collection(collectionNodes)
-
-		s := mongospec.NewStore(collection)
-		if err := s.Index(ctx); err != nil {
+		specStore = mongospec.NewStore(collection)
+		if err := specStore.(*mongospec.Store).Index(ctx); err != nil {
 			log.Fatal(err)
 		}
-		store = s
+
+		collection = client.Database(databaseName).Collection(collectionSecrets)
+		secretStore = mongosecret.NewStore(collection)
+		if err := secretStore.(*mongosecret.Store).Index(ctx); err != nil {
+			log.Fatal(err)
+		}
 	} else {
-		store = spec.NewStore()
+		specStore = spec.NewStore()
+		secretStore = secret.NewStore()
 	}
 
 	sbuilder := scheme.NewBuilder()
@@ -99,10 +112,10 @@ func main() {
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
 	stable := system.NewTable()
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(store))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(store))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(store))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(store))
+	stable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
+	stable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
+	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
+	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
 
 	sbuilder.Register(control.AddToScheme(langs, cel.Language))
 	sbuilder.Register(io.AddToScheme())
@@ -124,10 +137,11 @@ func main() {
 	fsys := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
-		Scheme:    scheme,
-		Hook:      hook,
-		SpecStore: store,
-		FS:        fsys,
+		Scheme:      scheme,
+		Hook:        hook,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
+		FS:          fsys,
 	})
 
 	if err := cmd.Execute(); err != nil {
