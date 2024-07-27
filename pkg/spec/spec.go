@@ -53,7 +53,7 @@ type Secret struct {
 	// Name is the human-readable name of the secret.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Value is the sensitive value of the secret.
-	Value string `json:"value" bson:"value" yaml:"value" map:"value"`
+	Value any `json:"value,omitempty" bson:"value,omitempty" yaml:"value,omitempty" map:"value,omitempty"`
 }
 
 // DefaultNamespace represents the default logical grouping for nodes.

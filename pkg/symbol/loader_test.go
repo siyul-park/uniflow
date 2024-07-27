@@ -41,11 +41,22 @@ func TestLoader_Load(t *testing.T) {
 		})
 		defer ld.Close()
 
+		secret := &secret.Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+
 		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
+			Env: map[string][]spec.Secret{
+				"": {
+					{
+						ID: secret.GetID(),
+					},
+				},
+			},
 		}
 		meta2 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -75,6 +86,8 @@ func TestLoader_Load(t *testing.T) {
 				},
 			},
 		}
+
+		scst.Store(ctx, secret)
 
 		spst.Store(ctx, meta1)
 		spst.Store(ctx, meta2)
@@ -110,12 +123,24 @@ func TestLoader_Load(t *testing.T) {
 		})
 		defer ld.Close()
 
+		secret := &secret.Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
+			Env: map[string][]spec.Secret{
+				"": {
+					{
+						ID: secret.GetID(),
+					},
+				},
+			},
 		}
 
+		scst.Store(ctx, secret)
 		spst.Store(ctx, meta)
 
 		r1, err := ld.Load(ctx, meta)
@@ -144,12 +169,24 @@ func TestLoader_Load(t *testing.T) {
 		})
 		defer ld.Close()
 
+		secret := &secret.Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
+			Env: map[string][]spec.Secret{
+				"": {
+					{
+						ID: secret.GetID(),
+					},
+				},
+			},
 		}
 
+		scst.Store(ctx, secret)
 		spst.Store(ctx, meta)
 
 		r1, err := ld.Load(ctx, meta)
@@ -198,12 +235,24 @@ func TestLoader_Reconcile(t *testing.T) {
 
 	go ld.Reconcile(ctx)
 
+	secret := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: spec.DefaultNamespace,
+		Env: map[string][]spec.Secret{
+			"": {
+				{
+					ID: secret.GetID(),
+				},
+			},
+		},
 	}
 
+	scst.Store(ctx, secret)
 	spst.Store(ctx, meta)
 
 	func() {

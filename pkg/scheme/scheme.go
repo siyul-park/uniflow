@@ -76,20 +76,28 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 }
 
 // Decode converts the provided spec.Spec into a structured representation using reflection and encoding utilities.
-func (s *Scheme) Decode(spc spec.Spec, values ...any) (spec.Spec, error) {
+func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
+	env := map[string]any{}
+	for key, values := range spc.GetEnv() {
+		for _, value := range values {
+			if value.Value != nil {
+				env[key] = value.Value
+			}
+		}
+	}
 
 	doc, err := types.Encoder.Encode(spc)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(values) > 0 {
-		value := values[len(values)-1]
+	if len(env) > 0 {
 		if tmpl, err := template.New("").Parse(doc.Interface()); err != nil {
 			return nil, err
-		} else if data, err := tmpl.Execute(value); err != nil {
+		} else if data, err := tmpl.Execute(env); err != nil {
 			return nil, err
 		} else if doc, err = types.Encoder.Encode(data); err != nil {
 			return nil, err

@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/template"
 )
 
 // LoaderConfig holds configuration for the Loader.
@@ -55,6 +56,50 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 		}
 
 		for _, s := range specs {
+			var secrets []*secret.Secret
+			for _, values := range s.GetEnv() {
+				for _, value := range values {
+					secrets = append(secrets, &secret.Secret{
+						ID:        value.ID,
+						Namespace: s.GetNamespace(),
+						Name:      value.Name,
+					})
+				}
+			}
+
+			secrets, err := l.secretStore.Load(ctx, secrets...)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(secrets) > 0 {
+				ok := true
+				for _, values := range s.GetEnv() {
+					for i, value := range values {
+						secret := l.lookup(secrets, value)
+						if secret == nil {
+							ok = false
+							break
+						}
+
+						if tmpl, err := template.New("").Parse(value.Value); err != nil {
+							return nil, err
+						} else if v, err := tmpl.Execute(secret.Data); err != nil {
+							return nil, err
+						} else {
+							value.Value = v
+							values[i] = value
+						}
+					}
+					if !ok {
+						break
+					}
+				}
+				if !ok {
+					continue
+				}
+			}
+
 			decode, err := l.scheme.Decode(s)
 			if err != nil {
 				return nil, err
@@ -185,6 +230,52 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case event, ok := <-secretStream.Next():
+			if !ok {
+				return nil
+			}
+
+			secrets, err := l.secretStore.Load(ctx, &secret.Secret{ID: event.ID})
+			if err != nil {
+				return err
+			}
+
+			var examples []spec.Spec
+			for _, id := range l.table.Keys() {
+				sym, ok := l.table.Lookup(id)
+				if !ok {
+					continue
+				}
+				examples = append(examples, sym.Spec)
+			}
+			for _, example := range unloaded {
+				examples = append(examples, example)
+			}
+
+			for i, example := range examples {
+				ok := false
+				for _, values := range example.GetEnv() {
+					for _, value := range values {
+						if secret := l.lookup(secrets, value); secret != nil {
+							ok = true
+							break
+						}
+					}
+				}
+				if !ok {
+					examples = append(examples[:i], examples[i+1:]...)
+					i--
+				}
+			}
+
+			symbols, err := l.Load(ctx, examples...)
+			if err != nil {
+				return err
+			}
+
+			for _, sym := range symbols {
+				delete(unloaded, sym.ID())
+			}
 		case event, ok := <-specStream.Next():
 			if !ok {
 				return nil
@@ -235,5 +326,14 @@ func (l *Loader) Close() error {
 		l.secretStream = nil
 	}
 
+	return nil
+}
+
+func (l *Loader) lookup(secrets []*secret.Secret, secret spec.Secret) *secret.Secret {
+	for _, s := range secrets {
+		if s.GetID() == secret.ID || (s.GetName() != "" && s.GetName() == secret.Name) {
+			return s
+		}
+	}
 	return nil
 }

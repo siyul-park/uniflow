@@ -62,6 +62,16 @@ func TestScheme_Decode(t *testing.T) {
 		Meta: spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
+			Env: map[string][]spec.Secret{
+				"FOO": {
+					{
+						Value: "foo",
+					},
+				},
+			},
+		},
+		Fields: map[string]any{
+			"foo": "{{ .FOO }}",
 		},
 	}
 
