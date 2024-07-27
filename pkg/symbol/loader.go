@@ -37,9 +37,6 @@ func NewLoader(config LoaderConfig) *Loader {
 
 // Load loads a spec.Spec by ID and its linked specs into the symbol table.
 func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	var symbols []*Symbol
 	nexts := specs
 	for len(nexts) > 0 {
@@ -148,7 +145,7 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	var nexts []uuid.UUID
+	unloaded := map[uuid.UUID]spec.Spec{}
 	for {
 		select {
 		case <-ctx.Done():
@@ -158,13 +155,27 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			nexts = append(nexts, event.ID)
+			specs, err := l.store.Load(ctx, &spec.Meta{ID: event.ID})
+			if err != nil {
+				return err
+			}
 
-			for i := len(nexts) - 1; i >= 0; i-- {
-				id := nexts[i]
-				if _, err := l.Load(ctx, &spec.Meta{ID: id}); err == nil {
-					nexts = append(nexts[:i], nexts[i+1:]...)
-				}
+			for _, spec := range specs {
+				unloaded[spec.GetID()] = spec
+			}
+
+			var examples []spec.Spec
+			for _, example := range unloaded {
+				examples = append(examples, &spec.Meta{ID: example.GetID()})
+			}
+
+			symbols, err := l.Load(ctx, examples...)
+			if err != nil {
+				return err
+			}
+
+			for _, sym := range symbols {
+				delete(unloaded, sym.ID())
 			}
 		}
 	}
