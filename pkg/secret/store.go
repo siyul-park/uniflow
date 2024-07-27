@@ -11,19 +11,19 @@ import (
 // Store defines methods for managing Secret objects in a database.
 type Store interface {
 	// Watch returns a Stream that monitors changes matching the specified filter.
-	Watch(ctx context.Context, secrets ...Secret) (Stream, error)
+	Watch(ctx context.Context, secrets ...*Secret) (Stream, error)
 
 	// Load retrieves Secrets from the store that match the given criteria.
-	Load(ctx context.Context, secrets ...Secret) ([]Secret, error)
+	Load(ctx context.Context, secrets ...*Secret) ([]*Secret, error)
 
 	// Store saves the given Secrets into the database.
-	Store(ctx context.Context, secrets ...Secret) (int, error)
+	Store(ctx context.Context, secrets ...*Secret) (int, error)
 
 	// Swap updates existing Secrets in the database with the provided data.
-	Swap(ctx context.Context, secrets ...Secret) (int, error)
+	Swap(ctx context.Context, secrets ...*Secret) (int, error)
 
 	// Delete removes Secrets from the store based on the provided criteria.
-	Delete(ctx context.Context, secrets ...Secret) (int, error)
+	Delete(ctx context.Context, secrets ...*Secret) (int, error)
 }
 
 // Stream represents a stream for tracking Secret changes.
@@ -55,10 +55,10 @@ const (
 
 // store is an in-memory implementation of the Store interface using maps.
 type store struct {
-	data       map[uuid.UUID]Secret
+	data       map[uuid.UUID]*Secret
 	namespaces map[string]map[string]uuid.UUID
 	streams    []*stream
-	examples   [][]Secret
+	examples   [][]*Secret
 	mu         sync.RWMutex
 }
 
@@ -81,13 +81,13 @@ var _ Stream = (*stream)(nil)
 // NewStore creates a new Store instance for managing Secrets.
 func NewStore() Store {
 	return &store{
-		data:       make(map[uuid.UUID]Secret),
+		data:       make(map[uuid.UUID]*Secret),
 		namespaces: make(map[string]map[string]uuid.UUID),
 	}
 }
 
 // Watch implements the Store interface, creating a stream for watching events.
-func (s *store) Watch(ctx context.Context, secrets ...Secret) (Stream, error) {
+func (s *store) Watch(ctx context.Context, secrets ...*Secret) (Stream, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -122,11 +122,11 @@ func (s *store) Watch(ctx context.Context, secrets ...Secret) (Stream, error) {
 }
 
 // Load implements the Store interface, loading secrets matching the criteria.
-func (s *store) Load(ctx context.Context, secrets ...Secret) ([]Secret, error) {
+func (s *store) Load(ctx context.Context, secrets ...*Secret) ([]*Secret, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var result []Secret
+	var result []*Secret
 	for _, secret := range s.data {
 		if s.match(secret, secrets...) {
 			result = append(result, secret)
@@ -136,7 +136,7 @@ func (s *store) Load(ctx context.Context, secrets ...Secret) ([]Secret, error) {
 }
 
 // Store implements the Store interface, storing new secrets.
-func (s *store) Store(ctx context.Context, secrets ...Secret) (int, error) {
+func (s *store) Store(ctx context.Context, secrets ...*Secret) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -165,7 +165,7 @@ func (s *store) Store(ctx context.Context, secrets ...Secret) (int, error) {
 }
 
 // Swap implements the Store interface, swapping existing secrets with new ones.
-func (s *store) Swap(ctx context.Context, secrets ...Secret) (int, error) {
+func (s *store) Swap(ctx context.Context, secrets ...*Secret) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -190,7 +190,7 @@ func (s *store) Swap(ctx context.Context, secrets ...Secret) (int, error) {
 }
 
 // Delete implements the Store interface, deleting secrets matching the criteria.
-func (s *store) Delete(ctx context.Context, secrets ...Secret) (int, error) {
+func (s *store) Delete(ctx context.Context, secrets ...*Secret) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -206,7 +206,7 @@ func (s *store) Delete(ctx context.Context, secrets ...Secret) (int, error) {
 	return count, nil
 }
 
-func (s *store) match(secret Secret, examples ...Secret) bool {
+func (s *store) match(secret *Secret, examples ...*Secret) bool {
 	for i, example := range examples {
 		if example == nil {
 			examples = append(examples[:i], examples[i+1:]...)
@@ -233,7 +233,7 @@ func (s *store) match(secret Secret, examples ...Secret) bool {
 	return false
 }
 
-func (s *store) insert(secret Secret) bool {
+func (s *store) insert(secret *Secret) bool {
 	if _, exists := s.data[secret.GetID()]; exists {
 		return false
 	}
@@ -281,7 +281,7 @@ func (s *store) lookup(namespace, name string) uuid.UUID {
 	return uuid.Nil
 }
 
-func (s *store) emit(op EventOP, secret Secret) {
+func (s *store) emit(op EventOP, secret *Secret) {
 	for i, stream := range s.streams {
 		if s.match(secret, s.examples[i]...) {
 			stream.Emit(Event{

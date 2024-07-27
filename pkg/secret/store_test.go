@@ -30,14 +30,14 @@ func TestStore_Watch(t *testing.T) {
 		}
 	}()
 
-	meta := &Meta{
+	secret := &Secret{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: DefaultNamespace,
 	}
 
-	_, _ = st.Store(ctx, meta)
-	_, _ = st.Store(ctx, meta)
-	_, _ = st.Delete(ctx, meta)
+	_, _ = st.Store(ctx, secret)
+	_, _ = st.Store(ctx, secret)
+	_, _ = st.Delete(ctx, secret)
 }
 
 func TestStore_Load(t *testing.T) {
@@ -46,18 +46,18 @@ func TestStore_Load(t *testing.T) {
 
 	st := NewStore()
 
-	meta1 := &Meta{
+	secret1 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &Meta{
+	secret2 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -68,18 +68,18 @@ func TestStore_Store(t *testing.T) {
 
 	st := NewStore()
 
-	meta1 := &Meta{
+	secret1 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &Meta{
+	secret2 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -90,22 +90,22 @@ func TestStore_Swap(t *testing.T) {
 
 	st := NewStore()
 
-	meta1 := &Meta{
+	secret1 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &Meta{
+	secret2 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Swap(ctx, meta1, meta2)
+	count, err = st.Swap(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -116,22 +116,22 @@ func TestStore_Delete(t *testing.T) {
 
 	st := NewStore()
 
-	meta1 := &Meta{
+	secret1 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &Meta{
+	secret2 := &Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Delete(ctx, meta1, meta2)
+	count, err = st.Delete(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 0)
 }
