@@ -153,7 +153,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Status: w.StatusCode,
 	}
 
-	outPayload, err := types.TextEncoder.Encode(res)
+	outPayload, err := types.Encoder.Encode(res)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

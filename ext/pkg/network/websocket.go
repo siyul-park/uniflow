@@ -259,7 +259,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 				data = types.NewBinary(websocket.FormatCloseMessage(err.Code, err.Text))
 			}
 
-			outPayload, _ := types.TextEncoder.Encode(&WebSocketPayload{
+			outPayload, _ := types.Encoder.Encode(&WebSocketPayload{
 				Type: websocket.CloseMessage,
 				Data: data,
 			})
@@ -282,7 +282,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 			data = types.NewString(err.Error())
 		}
 
-		outPayload, _ := types.TextEncoder.Encode(&WebSocketPayload{
+		outPayload, _ := types.Encoder.Encode(&WebSocketPayload{
 			Type: typ,
 			Data: data,
 		})

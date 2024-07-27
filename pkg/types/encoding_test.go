@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTextEncoder_Encode(t *testing.T) {
+func TestEncoder_Encode(t *testing.T) {
 	var testCase = []struct {
 		when   any
 		expect Value
@@ -61,67 +61,7 @@ func TestTextEncoder_Encode(t *testing.T) {
 
 	for _, tc := range testCase {
 		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			res, err := TextEncoder.Encode(tc.when)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expect, res)
-		})
-	}
-}
-
-func TestBinaryEncoder_Encode(t *testing.T) {
-	var testCase = []struct {
-		when   any
-		expect Value
-	}{
-		{
-			when:   nil,
-			expect: nil,
-		},
-		{
-			when:   []byte{0},
-			expect: NewBinary([]byte{0}),
-		},
-		{
-			when:   true,
-			expect: True,
-		},
-		{
-			when:   int(0),
-			expect: NewInt(0),
-		},
-		{
-			when:   uint(0),
-			expect: NewUint(0),
-		},
-		{
-			when:   float64(0),
-			expect: NewFloat64(0),
-		},
-		{
-			when:   "a",
-			expect: NewString("a"),
-		},
-		{
-			when:   errors.New("error"),
-			expect: NewError(errors.New("error")),
-		},
-		{
-			when:   []string{"a", "b", "c"},
-			expect: NewSlice(NewString("a"), NewString("b"), NewString("c")),
-		},
-		{
-			when:   map[string]string{"a": "a", "b": "b", "c": "c"},
-			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
-		},
-		{
-			when:   map[string]Value{"a": NewString("a"), "b": NewString("b"), "c": NewString("c")},
-			expect: NewMap(NewString("a"), NewString("a"), NewString("b"), NewString("b"), NewString("c"), NewString("c")),
-		},
-	}
-
-	for _, tc := range testCase {
-		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			res, err := BinaryEncoder.Encode(tc.when)
+			res, err := Encoder.Encode(tc.when)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, res)
 		})

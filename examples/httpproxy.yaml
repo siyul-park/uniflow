@@ -4,8 +4,8 @@
   port: 8000
   ports:
     out:
-    - name: proxy
-      port: in
+      - name: proxy
+        port: in
 
 - kind: http
   name: proxy

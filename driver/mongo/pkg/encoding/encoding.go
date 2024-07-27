@@ -11,8 +11,7 @@ import (
 )
 
 func init() {
-	types.BinaryEncoder.Add(newBSONEncoder())
-	types.TextEncoder.Add(newBSONEncoder())
+	types.Encoder.Add(newBSONEncoder())
 	types.Decoder.Add(newBSONDecoder())
 }
 

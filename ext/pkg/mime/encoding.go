@@ -259,7 +259,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		if err := d.Decode(&data); err != nil {
 			return nil, err
 		}
-		return types.TextEncoder.Encode(data)
+		return types.Encoder.Encode(data)
 	case ApplicationFormURLEncoded:
 		data, err := io.ReadAll(r)
 		if err != nil {
@@ -269,7 +269,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		if err != nil {
 			return nil, err
 		}
-		return types.TextEncoder.Encode(v)
+		return types.Encoder.Encode(v)
 	case TextPlain:
 		data, err := io.ReadAll(r)
 		if err != nil {
@@ -308,7 +308,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 			}
 		}
 
-		return types.TextEncoder.Encode(map[string]any{
+		return types.Encoder.Encode(map[string]any{
 			keyValues.String(): form.Value,
 			keyFiles.String():  files,
 		})

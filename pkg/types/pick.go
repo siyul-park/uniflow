@@ -5,7 +5,7 @@ func Pick[T any](obj Value, paths ...any) (T, bool) {
 	var val T
 	cur := obj
 	for _, path := range paths {
-		p, err := TextEncoder.Encode(path)
+		p, err := Encoder.Encode(path)
 		if err != nil {
 			return val, false
 		}

@@ -108,7 +108,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 
 	outPayloads := make([]types.Value, len(outs))
 	for i, out := range outs {
-		if outPayload, err := types.TextEncoder.Encode(out.Interface()); err != nil {
+		if outPayload, err := types.Encoder.Encode(out.Interface()); err != nil {
 			return nil, packet.New(types.NewError(err))
 		} else {
 			outPayloads[i] = outPayload

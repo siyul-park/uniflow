@@ -101,7 +101,7 @@ func NewTable(columns []TableColumnDefinition) (*TablePrinter, error) {
 
 // Print formats and prints the provided data as a table.
 func (p *TablePrinter) Print(specs []spec.Spec) (string, error) {
-	value, err := types.TextEncoder.Encode(specs)
+	value, err := types.Encoder.Encode(specs)
 	if err != nil {
 		return "", err
 	}

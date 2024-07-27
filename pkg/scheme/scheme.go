@@ -79,7 +79,7 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	doc, err := types.BinaryEncoder.Encode(spc)
+	doc, err := types.Encoder.Encode(spc)
 	if err != nil {
 		return nil, err
 	}

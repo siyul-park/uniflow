@@ -40,7 +40,7 @@ func TestCreateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(meta)
+	inPayload, _ := types.Encoder.Encode(meta)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -78,7 +78,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(meta)
+	inPayload, _ := types.Encoder.Encode(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -118,7 +118,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(meta)
+	inPayload, _ := types.Encoder.Encode(meta)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -158,7 +158,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.TextEncoder.Encode(meta)
+	inPayload, _ := types.Encoder.Encode(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

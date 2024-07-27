@@ -167,7 +167,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req, err := n.read(r)
 	if err != nil {
 		errPck = packet.New(types.NewError(err))
-	} else if outPayload, err := types.TextEncoder.Encode(req); err != nil {
+	} else if outPayload, err := types.Encoder.Encode(req); err != nil {
 		errPck = packet.New(types.NewError(err))
 	} else {
 		outPck = packet.New(outPayload)

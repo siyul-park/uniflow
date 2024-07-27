@@ -349,7 +349,7 @@ func (t *Table) init(sym *Symbol) error {
 		}
 	}
 
-	payload, err := types.TextEncoder.Encode(sym.Spec)
+	payload, err := types.Encoder.Encode(sym.Spec)
 	if err != nil {
 		return err
 	}

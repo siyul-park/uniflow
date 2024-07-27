@@ -172,7 +172,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 
 	route, paramValues := n.find(method, path)
 	if route == nil {
-		outPayload, _ := types.TextEncoder.Encode(NewHTTPPayload(http.StatusNotFound))
+		outPayload, _ := types.Encoder.Encode(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
 	}
 
@@ -185,7 +185,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 			res = NewHTTPPayload(http.StatusMethodNotAllowed)
 		}
 		res.Header.Set(mime.HeaderAllow, route.allowHeader())
-		outPayload, _ := types.TextEncoder.Encode(res)
+		outPayload, _ := types.Encoder.Encode(res)
 		return nil, packet.New(outPayload)
 	}
 

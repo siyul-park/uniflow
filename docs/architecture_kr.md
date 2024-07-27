@@ -41,91 +41,91 @@
   port: 8000
   ports:
     out:
-    - name: router
-      port: in
+      - name: router
+        port: in
     error:
-    - name: catch
-      port: in
+      - name: catch
+        port: in
 
 - kind: router
   name: router
   routes:
-  - method: POST
-    path: /v1/nodes
-    port: out[0]
-  - method: GET
-    path: /v1/nodes
-    port: out[1]
-  - method: PATCH
-    path: /v1/nodes
-    port: out[2]
-  - method: DELETE
-    path: /v1/nodes
-    port: out[3]
+    - method: POST
+      path: /v1/nodes
+      port: out[0]
+    - method: GET
+      path: /v1/nodes
+      port: out[1]
+    - method: PATCH
+      path: /v1/nodes
+      port: out[2]
+    - method: DELETE
+      path: /v1/nodes
+      port: out[3]
   ports:
     out[0]:
-    - name: nodes_create
-      port: in
+      - name: nodes_create
+        port: in
     out[1]:
-    - name: nodes_read
-      port: in
+      - name: nodes_read
+        port: in
     out[2]:
-    - name: nodes_update
-      port: in
+      - name: nodes_update
+        port: in
     out[3]:
-    - name: nodes_delete
-      port: in
+      - name: nodes_delete
+        port: in
 
 - kind: block
   name: nodes_create
   specs:
-  - kind: snippet
-    language: cel
-    code: 'has(self.body) ? self.body : null'
-  - kind: syscall
-    opcode: nodes.create
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.create
 
 - kind: block
   name: nodes_read
   specs:
-  - kind: snippet
-    language: json
-    code: 'null'
-  - kind: syscall
-    opcode: nodes.read
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.read
 
 - kind: block
   name: nodes_update
   specs:
-  - kind: snippet
-    language: cel
-    code: 'has(self.body) ? self.body : null'
-  - kind: syscall
-    opcode: nodes.update
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: syscall
+      opcode: nodes.update
 
 - kind: block
   name: nodes_delete
   specs:
-  - kind: snippet
-    language: json
-    code: 'null'
-  - kind: syscall
-    opcode: nodes.delete
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: syscall
+      opcode: nodes.delete
 
 - kind: switch
   name: catch
   matches:
-  - when: self == "unsupported type" || self == "unsupported value"
-    port: out[0]
-  - when: 'true'
-    port: out[1]
+    - when: self == "unsupported type" || self == "unsupported value"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
   ports:
     out[0]:
-    - name: status_400
-      port: in
+      - name: status_400
+        port: in
     out[1]:
-    - name: status_500
-      port: in
+      - name: status_500
+        port: in
 
 - kind: snippet
   name: status_400

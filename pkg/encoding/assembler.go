@@ -38,7 +38,7 @@ func (a *EncodeAssembler[S, T]) Add(compiler EncodeCompiler[S, T]) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.compilers = append(a.compilers, compiler)
+	a.compilers = append([]EncodeCompiler[S, T]{compiler}, a.compilers...)
 }
 
 // Len returns the number of compilers in the EncodeAssembler.
@@ -95,7 +95,7 @@ func (a *DecodeAssembler[S, T]) Add(compiler DecodeCompiler[S]) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.compilers = append(a.compilers, compiler)
+	a.compilers = append([]DecodeCompiler[S]{compiler}, a.compilers...)
 }
 
 // Len returns the number of compilers in the DecodeAssembler.

@@ -75,7 +75,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]spec.Spec, error) {
 
 	var specs []spec.Spec
 	for _, raw := range raws {
-		doc, err := types.TextEncoder.Encode(raw)
+		doc, err := types.Encoder.Encode(raw)
 		if err != nil {
 			return nil, err
 		}
