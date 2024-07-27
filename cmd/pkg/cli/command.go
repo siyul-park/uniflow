@@ -100,13 +100,7 @@ func NewCommand(config Config) *cobra.Command {
 	cmd.AddCommand(NewGetCommand(GetConfig{
 		SpecStore: config.SpecStore,
 	}))
-	cmd.AddCommand(NewStartCommand(StartConfig{
-		Scheme:      config.Scheme,
-		Hook:        config.Hook,
-		SpecStore:   config.SpecStore,
-		SecretStore: config.SecretStore,
-		FS:          config.FS,
-	}))
+	cmd.AddCommand(NewStartCommand(StartConfig(config)))
 
 	return cmd
 }
