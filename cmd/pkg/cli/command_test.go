@@ -25,10 +25,10 @@ func TestCommend_Execute(t *testing.T) {
 	output := new(bytes.Buffer)
 
 	cmd := NewCommand(Config{
-		Scheme: s,
-		Hook:   h,
-		Store:  st,
-		FS:     fsys,
+		Scheme:    s,
+		Hook:      h,
+		SpecStore: st,
+		FS:        fsys,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

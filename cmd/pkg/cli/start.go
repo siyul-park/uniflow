@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -16,10 +17,11 @@ import (
 
 // StartConfig holds the configuration for the uniflow command.
 type StartConfig struct {
-	Scheme *scheme.Scheme
-	Hook   *hook.Hook
-	Store  spec.Store
-	FS     afero.Fs
+	Scheme      *scheme.Scheme
+	Hook        *hook.Hook
+	SpecStore   spec.Store
+	SecretStore secret.Store
+	FS          afero.Fs
 }
 
 // NewStartCommand creates a new Cobra command for the uniflow application.
@@ -50,7 +52,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		if filename != "" {
-			specs, err := config.Store.Load(ctx, &spec.Meta{Namespace: namespace})
+			specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
 			if err != nil {
 				return err
 			}
@@ -59,7 +61,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			}
 
 			specs, err = scanner.New().
-				Store(config.Store).
+				Store(config.SpecStore).
 				Namespace(namespace).
 				FS(config.FS).
 				Filename(filename).
@@ -68,16 +70,17 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			if _, err = config.Store.Store(ctx, specs...); err != nil {
+			if _, err = config.SpecStore.Store(ctx, specs...); err != nil {
 				return err
 			}
 		}
 
 		r := runtime.New(runtime.Config{
-			Namespace: namespace,
-			Scheme:    config.Scheme,
-			Hook:      config.Hook,
-			Store:     config.Store,
+			Namespace:   namespace,
+			Scheme:      config.Scheme,
+			Hook:        config.Hook,
+			SpecStore:   config.SpecStore,
+			SecretStore: config.SecretStore,
 		})
 
 		sigs := make(chan os.Signal, 1)

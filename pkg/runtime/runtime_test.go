@@ -28,8 +28,8 @@ func TestRuntime_Load(t *testing.T) {
 	st := spec.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:    s,
+		SpecStore: st,
 	})
 
 	defer r.Close()
@@ -61,8 +61,8 @@ func TestRuntime_Store(t *testing.T) {
 	st := spec.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:    s,
+		SpecStore: st,
 	})
 
 	defer r.Close()
@@ -96,8 +96,8 @@ func TestRuntime_Delete(t *testing.T) {
 	st := spec.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:    s,
+		SpecStore: st,
 	})
 
 	defer r.Close()
@@ -137,8 +137,8 @@ func TestRuntime_Listen(t *testing.T) {
 	st := spec.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:    s,
+		SpecStore: st,
 	})
 
 	defer r.Close()
@@ -186,8 +186,8 @@ func BenchmarkNewRuntime(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		r := New(Config{
-			Scheme: s,
-			Store:  st,
+			Scheme:    s,
+			SpecStore: st,
 		})
 		r.Close()
 	}

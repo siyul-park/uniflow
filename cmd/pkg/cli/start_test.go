@@ -13,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,8 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewStore()
+	spst := spec.NewStore()
+	scst := secret.NewStore()
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
@@ -56,10 +58,11 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme: s,
-			Hook:   h,
-			FS:     fsys,
-			Store:  st,
+			Scheme:      s,
+			Hook:        h,
+			FS:          fsys,
+			SpecStore:   spst,
+			SecretStore: scst,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -77,7 +80,7 @@ func TestStartCommand_Execute(t *testing.T) {
 				assert.Fail(t, "timeout")
 				return
 			default:
-				if r, _ := st.Load(ctx, meta); len(r) > 0 {
+				if r, _ := spst.Load(ctx, meta); len(r) > 0 {
 					return
 				}
 			}

@@ -9,6 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,15 +27,17 @@ func TestLoader_Load(t *testing.T) {
 	}))
 
 	t.Run("Load", func(t *testing.T) {
-		st := spec.NewStore()
+		spst := spec.NewStore()
+		scst := secret.NewStore()
 
 		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Table:  tb,
-			Scheme: s,
-			Store:  st,
+			Table:       tb,
+			Scheme:      s,
+			SpecStore:   spst,
+			SecretStore: scst,
 		})
 		defer ld.Close()
 
@@ -73,9 +76,9 @@ func TestLoader_Load(t *testing.T) {
 			},
 		}
 
-		st.Store(ctx, meta1)
-		st.Store(ctx, meta2)
-		st.Store(ctx, meta3)
+		spst.Store(ctx, meta1)
+		spst.Store(ctx, meta2)
+		spst.Store(ctx, meta3)
 
 		r, err := ld.Load(ctx, meta3)
 		assert.NoError(t, err)
@@ -93,15 +96,17 @@ func TestLoader_Load(t *testing.T) {
 	})
 
 	t.Run("Reload Same ID", func(t *testing.T) {
-		st := spec.NewStore()
+		spst := spec.NewStore()
+		scst := secret.NewStore()
 
 		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Table:  tb,
-			Scheme: s,
-			Store:  st,
+			Table:       tb,
+			Scheme:      s,
+			SpecStore:   spst,
+			SecretStore: scst,
 		})
 		defer ld.Close()
 
@@ -111,7 +116,7 @@ func TestLoader_Load(t *testing.T) {
 			Namespace: spec.DefaultNamespace,
 		}
 
-		st.Store(ctx, meta)
+		spst.Store(ctx, meta)
 
 		r1, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
@@ -125,15 +130,17 @@ func TestLoader_Load(t *testing.T) {
 	})
 
 	t.Run("Reload After Delete", func(t *testing.T) {
-		st := spec.NewStore()
+		spst := spec.NewStore()
+		scst := secret.NewStore()
 
 		tb := NewTable()
 		defer tb.Clear()
 
 		ld := NewLoader(LoaderConfig{
-			Table:  tb,
-			Scheme: s,
-			Store:  st,
+			Table:       tb,
+			Scheme:      s,
+			SpecStore:   spst,
+			SecretStore: scst,
 		})
 		defer ld.Close()
 
@@ -143,13 +150,13 @@ func TestLoader_Load(t *testing.T) {
 			Namespace: spec.DefaultNamespace,
 		}
 
-		st.Store(ctx, meta)
+		spst.Store(ctx, meta)
 
 		r1, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.NotNil(t, r1)
 
-		st.Delete(ctx, meta)
+		spst.Delete(ctx, meta)
 
 		r2, err := ld.Load(ctx, meta)
 		assert.NoError(t, err)
@@ -172,15 +179,17 @@ func TestLoader_Reconcile(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	spst := spec.NewStore()
+	scst := secret.NewStore()
 
 	tb := NewTable()
 	defer tb.Clear()
 
 	ld := NewLoader(LoaderConfig{
-		Table:  tb,
-		Scheme: s,
-		Store:  st,
+		Table:       tb,
+		Scheme:      s,
+		SpecStore:   spst,
+		SecretStore: scst,
 	})
 	defer ld.Close()
 
@@ -195,7 +204,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		Namespace: spec.DefaultNamespace,
 	}
 
-	st.Store(ctx, meta)
+	spst.Store(ctx, meta)
 
 	func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -228,15 +237,17 @@ func BenchmarkLoader_Load(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	spst := spec.NewStore()
+	scst := secret.NewStore()
 
 	tb := NewTable()
 	defer tb.Clear()
 
 	ld := NewLoader(LoaderConfig{
-		Store:  st,
-		Table:  tb,
-		Scheme: s,
+		Table:       tb,
+		Scheme:      s,
+		SpecStore:   spst,
+		SecretStore: scst,
 	})
 	defer ld.Close()
 
@@ -247,7 +258,7 @@ func BenchmarkLoader_Load(b *testing.B) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	st.Store(ctx, meta)
+	spst.Store(ctx, meta)
 
 	b.ResetTimer()
 

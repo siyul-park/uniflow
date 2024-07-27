@@ -47,8 +47,8 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	_, _ = st.Store(ctx, meta)
 
 	cmd := NewDeleteCommand(DeleteConfig{
-		Store: st,
-		FS:    fsys,
+		SpecStore: st,
+		FS:        fsys,
 	})
 
 	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})

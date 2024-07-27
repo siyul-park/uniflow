@@ -8,7 +8,7 @@ import (
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
-	Store spec.Store
+	SpecStore spec.Store
 }
 
 // NewGetCommand creates a new cobra.Command for the get command.
@@ -33,7 +33,7 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 			return err
 		}
 
-		specs, err := config.Store.Load(ctx, &spec.Meta{Namespace: namespace})
+		specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
 		if err != nil {
 			return err
 		}

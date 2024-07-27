@@ -9,8 +9,8 @@ import (
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	Store spec.Store
-	FS    afero.Fs
+	SpecStore spec.Store
+	FS        afero.Fs
 }
 
 // NewDeleteCommand creates a new cobra.Command for the delete command.
@@ -41,7 +41,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 		}
 
 		specs, err := scanner.New().
-			Store(config.Store).
+			Store(config.SpecStore).
 			Namespace(namespace).
 			FS(config.FS).
 			Filename(filename).
@@ -50,7 +50,7 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			return err
 		}
 
-		_, err = config.Store.Delete(ctx, specs...)
+		_, err = config.SpecStore.Delete(ctx, specs...)
 		return err
 	}
 }

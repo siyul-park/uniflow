@@ -38,8 +38,8 @@ func TestApplyCommand_Execute(t *testing.T) {
 	output := new(bytes.Buffer)
 
 	cmd := NewApplyCommand(ApplyConfig{
-		Store: st,
-		FS:    fsys,
+		SpecStore: st,
+		FS:        fsys,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

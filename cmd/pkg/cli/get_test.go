@@ -29,7 +29,7 @@ func TestGetCommand_Execute(t *testing.T) {
 	output := new(bytes.Buffer)
 
 	cmd := NewGetCommand(GetConfig{
-		Store: st,
+		SpecStore: st,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

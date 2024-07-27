@@ -124,10 +124,10 @@ func main() {
 	fsys := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
-		Scheme: scheme,
-		Hook:   hook,
-		Store:  store,
-		FS:     fsys,
+		Scheme:    scheme,
+		Hook:      hook,
+		SpecStore: store,
+		FS:        fsys,
 	})
 
 	if err := cmd.Execute(); err != nil {

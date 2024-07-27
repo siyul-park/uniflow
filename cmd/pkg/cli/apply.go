@@ -11,8 +11,8 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	Store spec.Store
-	FS    afero.Fs
+	SpecStore spec.Store
+	FS        afero.Fs
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
@@ -43,7 +43,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		specs, err := scanner.New().
-			Store(config.Store).
+			Store(config.SpecStore).
 			Namespace(namespace).
 			FS(config.FS).
 			Filename(filename).
@@ -52,7 +52,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		origins, err := config.Store.Load(ctx, specs...)
+		origins, err := config.SpecStore.Load(ctx, specs...)
 		if err != nil {
 			return err
 		}
@@ -72,10 +72,10 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		if _, err := config.Store.Store(ctx, inserts...); err != nil {
+		if _, err := config.SpecStore.Store(ctx, inserts...); err != nil {
 			return err
 		}
-		if _, err := config.Store.Swap(ctx, updates...); err != nil {
+		if _, err := config.SpecStore.Swap(ctx, updates...); err != nil {
 			return err
 		}
 
