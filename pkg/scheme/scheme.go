@@ -81,6 +81,10 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 	for _, values := range spc.GetEnv() {
 		for _, value := range values {
+			if value.ID == uuid.Nil && value.Name == "" {
+				continue
+			}
+
 			example := &secret.Secret{
 				ID:        value.ID,
 				Namespace: spc.GetNamespace(),
@@ -110,39 +114,41 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 
 	for _, values := range unstructured.GetEnv() {
 		for i, value := range values {
-			if value.ID != uuid.Nil || value.Name != "" {
-				example := &secret.Secret{
-					ID:        value.ID,
-					Namespace: unstructured.GetNamespace(),
-					Name:      value.Name,
-				}
-
-				var match *secret.Secret
-				for _, sec := range secrets {
-					if len(secret.Match(sec, example)) > 0 {
-						match = sec
-						break
-					}
-				}
-				if match == nil {
-					return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-				}
-
-				tmpl, err := template.New("").Parse(value.Value)
-				if err != nil {
-					return nil, err
-				}
-				v, err := tmpl.Execute(match.Data)
-				if err != nil {
-					return nil, err
-				}
-
-				value.ID = match.ID
-				value.Name = match.Name
-				value.Value = v
-
-				values[i] = value
+			if value.ID == uuid.Nil && value.Name == "" {
+				continue
 			}
+			
+			example := &secret.Secret{
+				ID:        value.ID,
+				Namespace: unstructured.GetNamespace(),
+				Name:      value.Name,
+			}
+
+			var match *secret.Secret
+			for _, sec := range secrets {
+				if len(secret.Match(sec, example)) > 0 {
+					match = sec
+					break
+				}
+			}
+			if match == nil {
+				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+			}
+
+			tmpl, err := template.New("").Parse(value.Value)
+			if err != nil {
+				return nil, err
+			}
+			v, err := tmpl.Execute(match.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			value.ID = match.ID
+			value.Name = match.Name
+			value.Value = v
+
+			values[i] = value
 		}
 	}
 

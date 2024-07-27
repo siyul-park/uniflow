@@ -115,7 +115,11 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 
 		for _, id := range l.table.Keys() {
 			sym, ok := l.table.Lookup(id)
-			if ok && len(spec.Match(sym.Spec, examples...)) > 0 {
+			if !ok {
+				continue
+			}
+
+			if len(spec.Match(sym.Spec, examples...)) > 0 {
 				match := false
 				for _, spec := range specs {
 					if spec.GetID() == id {
@@ -212,13 +216,13 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			source := &secret.Secret{ID: event.ID}
-			secrets, err := l.secretStore.Load(ctx, source)
+			example := &secret.Secret{ID: event.ID}
+			secrets, err := l.secretStore.Load(ctx, example)
 			if err != nil {
 				return err
 			}
 			if len(secrets) == 0 {
-				secrets = append(secrets, source)
+				secrets = append(secrets, example)
 			}
 
 			var examples []spec.Spec
