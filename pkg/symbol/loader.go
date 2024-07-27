@@ -76,6 +76,10 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 				ok := true
 				for _, values := range s.GetEnv() {
 					for i, value := range values {
+						if value.ID == uuid.Nil && value.Name == "" {
+							continue
+						}
+
 						secret := l.lookup(secrets, value)
 						if secret == nil {
 							ok = false
