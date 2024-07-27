@@ -76,9 +76,6 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 
 			bind, err := l.scheme.Bind(spc, secrets...)
 			if err != nil {
-				return nil, err
-			}
-			if bind == nil {
 				if _, err := l.table.Free(spc.GetID()); err != nil {
 					return nil, err
 				}
@@ -116,14 +113,18 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 			symbols = append(symbols, sym)
 		}
 
-		for _, example := range examples {
-			if len(spec.Match(example, specs...)) == 0 {
-				for _, id := range l.table.Keys() {
-					sym, ok := l.table.Lookup(id)
-					if ok && len(spec.Match(sym.Spec, example)) > 0 {
-						if _, err := l.table.Free(sym.ID()); err != nil {
-							return nil, err
-						}
+		for _, id := range l.table.Keys() {
+			sym, ok := l.table.Lookup(id)
+			if ok && len(spec.Match(sym.Spec, examples...)) > 0 {
+				match := false
+				for _, spec := range specs {
+					if spec.GetID() == id {
+						match = true
+					}
+				}
+				if !match {
+					if _, err := l.table.Free(sym.ID()); err != nil {
+						return nil, err
 					}
 				}
 			}

@@ -81,13 +81,15 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 	for _, values := range spc.GetEnv() {
 		for _, value := range values {
-			source := &secret.Secret{
+			example := &secret.Secret{
 				ID:        value.ID,
 				Namespace: spc.GetNamespace(),
 				Name:      value.Name,
 			}
-			if len(secret.Match(source, secrets...)) > 0 {
-				return true
+			for _, sec := range secrets {
+				if len(secret.Match(sec, example)) > 0 {
+					return true
+				}
 			}
 		}
 	}
@@ -96,74 +98,74 @@ func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 
 // Bind processes the environment variables in the spec using the provided secrets.
 func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
-	env := map[string][]spec.Secret{}
-	for key, values := range spc.GetEnv() {
-		for _, value := range values {
-			if value.ID != uuid.Nil || value.Name != "" {
-				source := &secret.Secret{
-					ID:        value.ID,
-					Namespace: spc.GetNamespace(),
-					Name:      value.Name,
-				}
-				secrets := secret.Match(source, secrets...)
-
-				if len(secrets) == 0 {
-					return nil, nil
-				}
-
-				secret := secrets[0]
-
-				tmpl, err := template.New("").Parse(value.Value)
-				if err != nil {
-					return nil, err
-				}
-				v, err := tmpl.Execute(secret.Data)
-				if err != nil {
-					return nil, err
-				}
-
-				value.ID = secret.ID
-				value.Name = secret.Name
-				value.Value = v
-			}
-			env[key] = append(env[key], value)
-		}
-	}
-
-	data := map[string]any{}
-	for key, values := range spc.GetEnv() {
-		for _, value := range values {
-			if value.Value != nil {
-				data[key] = value.Value
-			}
-		}
-	}
-
 	doc, err := types.Encoder.Encode(spc)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(data) > 0 {
-		tmpl, err := template.New("").Parse(doc.Interface())
-		if err != nil {
-			return nil, err
-		}
-		v, err := tmpl.Execute(data)
-		if err != nil {
-			return nil, err
-		}
-		doc, err = types.Encoder.Encode(v)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	unstructured := &spec.Unstructured{}
 	if err := types.Decoder.Decode(doc, &unstructured); err != nil {
 		return nil, err
 	}
-	unstructured.SetEnv(env)
+
+	for _, values := range unstructured.GetEnv() {
+		for i, value := range values {
+			if value.ID != uuid.Nil || value.Name != "" {
+				example := &secret.Secret{
+					ID:        value.ID,
+					Namespace: unstructured.GetNamespace(),
+					Name:      value.Name,
+				}
+
+				var match *secret.Secret
+				for _, sec := range secrets {
+					if len(secret.Match(sec, example)) > 0 {
+						match = sec
+						break
+					}
+				}
+				if match == nil {
+					return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+				}
+
+				tmpl, err := template.New("").Parse(value.Value)
+				if err != nil {
+					return nil, err
+				}
+				v, err := tmpl.Execute(match.Data)
+				if err != nil {
+					return nil, err
+				}
+
+				value.ID = match.ID
+				value.Name = match.Name
+				value.Value = v
+
+				values[i] = value
+			}
+		}
+	}
+
+	env := map[string]any{}
+	for key, values := range spc.GetEnv() {
+		for _, value := range values {
+			if value.Value != nil {
+				env[key] = value.Value
+			}
+		}
+	}
+
+	if len(env) > 0 {
+		tmpl, err := template.New("").Parse(unstructured.Fields)
+		if err != nil {
+			return nil, err
+		}
+		v, err := tmpl.Execute(env)
+		if err != nil {
+			return nil, err
+		}
+		unstructured.Fields = v.(map[string]any)
+	}
 
 	return unstructured, nil
 }

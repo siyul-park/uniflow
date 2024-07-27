@@ -85,13 +85,16 @@ func Match(secret *Secret, examples ...*Secret) []*Secret {
 		if example == nil {
 			continue
 		}
-		if example.GetID() != uuid.Nil && secret.GetID() == example.GetID() {
-			matched = append(matched, example)
-		} else if example.GetNamespace() != "" && secret.GetNamespace() == example.GetNamespace() {
-			matched = append(matched, example)
-		} else if example.GetName() != "" && secret.GetName() == example.GetName() {
-			matched = append(matched, example)
+		if example.GetID() != uuid.Nil && secret.GetID() != example.GetID() {
+			continue
 		}
+		if example.GetNamespace() != "" && secret.GetNamespace() != example.GetNamespace() {
+			continue
+		}
+		if example.GetName() != "" && secret.GetName() != example.GetName() {
+			continue
+		}
+		matched = append(matched, example)
 	}
 	return matched
 }

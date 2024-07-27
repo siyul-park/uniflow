@@ -66,13 +66,16 @@ func Match(spec Spec, examples ...Spec) []Spec {
 		if example == nil {
 			continue
 		}
-		if example.GetID() != uuid.Nil && spec.GetID() == example.GetID() {
-			matched = append(matched, example)
-		} else if example.GetNamespace() != "" && spec.GetNamespace() == example.GetNamespace() {
-			matched = append(matched, example)
-		} else if example.GetName() != "" && spec.GetName() == example.GetName() {
-			matched = append(matched, example)
+		if example.GetID() != uuid.Nil && spec.GetID() != example.GetID() {
+			continue
 		}
+		if example.GetNamespace() != "" && spec.GetNamespace() != example.GetNamespace() {
+			continue
+		}
+		if example.GetName() != "" && spec.GetName() != example.GetName() {
+			continue
+		}
+		matched = append(matched, example)
 	}
 	return matched
 }
