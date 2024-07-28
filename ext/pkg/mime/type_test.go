@@ -8,7 +8,7 @@ import (
 )
 
 func TestIsCompatible(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		whenX  string
 		whenY  string
 		expect bool
@@ -55,10 +55,10 @@ func TestIsCompatible(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s, %s", tc.whenX, tc.whenY), func(t *testing.T) {
-			ok := IsCompatible(tc.whenX, tc.whenY)
-			assert.Equal(t, tc.expect, ok)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s, %s", tt.whenX, tt.whenY), func(t *testing.T) {
+			ok := IsCompatible(tt.whenX, tt.whenY)
+			assert.Equal(t, tt.expect, ok)
 		})
 	}
 }

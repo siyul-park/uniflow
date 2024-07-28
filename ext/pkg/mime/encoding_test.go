@@ -11,7 +11,7 @@ import (
 )
 
 func TestEncode(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		whenValue types.Value
 		whenType  string
 		expect    []byte
@@ -124,20 +124,20 @@ func TestEncode(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%v, Content-Type: %v", tc.whenValue.Interface(), tc.whenType), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%v, Content-Type: %v", tt.whenValue.Interface(), tt.whenType), func(t *testing.T) {
 			w := bytes.NewBuffer(nil)
-			err := Encode(w, tc.whenValue, textproto.MIMEHeader{
-				HeaderContentType: []string{tc.whenType},
+			err := Encode(w, tt.whenValue, textproto.MIMEHeader{
+				HeaderContentType: []string{tt.whenType},
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, string(tc.expect), w.String())
+			assert.Equal(t, string(tt.expect), w.String())
 		})
 	}
 }
 
 func TestDecode(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		whenValue []byte
 		whenType  string
 		expect    types.Value
@@ -204,13 +204,13 @@ func TestDecode(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.whenType, func(t *testing.T) {
-			decode, err := Decode(bytes.NewBuffer(tc.whenValue), textproto.MIMEHeader{
-				HeaderContentType: []string{tc.whenType},
+	for _, tt := range tests {
+		t.Run(tt.whenType, func(t *testing.T) {
+			decode, err := Decode(bytes.NewBuffer(tt.whenValue), textproto.MIMEHeader{
+				HeaderContentType: []string{tt.whenType},
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expect.Interface(), decode.Interface())
+			assert.Equal(t, tt.expect.Interface(), decode.Interface())
 		})
 	}
 }

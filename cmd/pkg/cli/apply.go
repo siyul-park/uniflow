@@ -1,9 +1,8 @@
 package cli
 
 import (
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/cmd/pkg/printer"
-	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
+	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -11,16 +10,19 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	Store spec.Store
-	FS    afero.Fs
+	SpecStore   spec.Store
+	SecretStore secret.Store
+	FS          afero.Fs
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "apply",
-		Short: "Apply node specifications to the specified namespace",
-		RunE:  runApplyCommand(config),
+		Use:       "apply",
+		Short:     "Apply resources to the specified namespace",
+		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		ValidArgs: []string{argNodes, argSecrets},
+		RunE:      runApplyCommand(config),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
@@ -30,7 +32,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 }
 
 func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, _ []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
 		namespace, err := cmd.Flags().GetString(flagNamespace)
@@ -42,43 +44,90 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		specs, err := scanner.New().
-			Store(config.Store).
-			Namespace(namespace).
-			FS(config.FS).
-			Filename(filename).
-			Scan(ctx)
+		file, err := config.FS.Open(filename)
 		if err != nil {
 			return err
 		}
+		defer file.Close()
 
-		origins, err := config.Store.Load(ctx, specs...)
-		if err != nil {
-			return err
-		}
+		reader := resource.NewReader(file)
+		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		exists := make(map[uuid.UUID]struct{}, len(origins))
-		for _, spec := range origins {
-			exists[spec.GetID()] = struct{}{}
-		}
-
-		var inserts []spec.Spec
-		var updates []spec.Spec
-		for _, spec := range specs {
-			if _, ok := exists[spec.GetID()]; ok {
-				updates = append(updates, spec)
-			} else {
-				inserts = append(inserts, spec)
+		switch args[0] {
+		case argNodes:
+			var specs []spec.Spec
+			if err := reader.Read(&specs); err != nil {
+				return err
 			}
+
+			for _, spc := range specs {
+				if spc.GetNamespace() == "" {
+					spc.SetNamespace(namespace)
+				}
+			}
+
+			exists, err := config.SpecStore.Load(ctx, specs...)
+			if err != nil {
+				return err
+			}
+
+			var inserts []spec.Spec
+			var updates []spec.Spec
+			for _, spc := range specs {
+				if match := spec.Match(spc, exists...); len(match) > 0 {
+					spc.SetID(match[0].GetID())
+					updates = append(updates, spc)
+				} else {
+					inserts = append(inserts, spc)
+				}
+			}
+
+			if _, err := config.SpecStore.Store(ctx, inserts...); err != nil {
+				return err
+			}
+			if _, err := config.SpecStore.Swap(ctx, updates...); err != nil {
+				return err
+			}
+
+			return writer.Write(specs)
+		case argSecrets:
+			var secrets []*secret.Secret
+			if err := reader.Read(&secrets); err != nil {
+				return err
+			}
+
+			for _, sec := range secrets {
+				if sec.GetNamespace() == "" {
+					sec.SetNamespace(namespace)
+				}
+			}
+
+			exists, err := config.SecretStore.Load(ctx, secrets...)
+			if err != nil {
+				return err
+			}
+
+			var inserts []*secret.Secret
+			var updates []*secret.Secret
+			for _, sec := range secrets {
+				if match := secret.Match(sec, exists...); len(match) > 0 {
+					sec.SetID(match[0].GetID())
+					updates = append(updates, sec)
+				} else {
+					inserts = append(inserts, sec)
+				}
+			}
+
+			if _, err := config.SecretStore.Store(ctx, inserts...); err != nil {
+				return err
+			}
+			if _, err := config.SecretStore.Swap(ctx, updates...); err != nil {
+				return err
+			}
+
+			return writer.Write(secrets)
 		}
 
-		if _, err := config.Store.Store(ctx, inserts...); err != nil {
-			return err
-		}
-		if _, err := config.Store.Swap(ctx, updates...); err != nil {
-			return err
-		}
-
-		return printer.PrintTable(cmd.OutOrStdout(), specs, printer.SpecTableColumnDefinitions)
+		return nil
 	}
 }

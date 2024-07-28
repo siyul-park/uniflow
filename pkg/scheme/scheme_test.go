@@ -7,6 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,6 +37,61 @@ func TestScheme_Codec(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestScheme_Bind(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &spec.Meta{})
+
+	secret := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: "foo",
+	}
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+		Env: map[string]spec.Secret{
+			"FOO": {
+				ID:    secret.ID,
+				Value: "{{ . }}",
+			},
+		},
+	}
+
+	bind, err := s.Bind(meta, secret)
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", bind.GetEnv()["FOO"].Value)
+	assert.True(t, s.IsBound(bind, secret))
+}
+
+func TestScheme_Decode(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &spec.Meta{})
+
+	meta := &spec.Unstructured{
+		Meta: spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: kind,
+			Env: map[string]spec.Secret{
+				"FOO": {
+					Value: "foo",
+				},
+			},
+		},
+		Fields: map[string]any{
+			"foo": "{{ .FOO }}",
+		},
+	}
+
+	structured, err := s.Decode(meta)
+	assert.NoError(t, err)
+	assert.Equal(t, meta.GetID(), structured.GetID())
+	assert.IsType(t, &spec.Meta{}, structured)
+}
+
 func TestScheme_Compile(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
@@ -52,21 +108,29 @@ func TestScheme_Compile(t *testing.T) {
 	assert.NotNil(t, n)
 }
 
-func TestScheme_Decode(t *testing.T) {
+func TestScheme_IsBound(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
 
 	s.AddKnownType(kind, &spec.Meta{})
 
-	meta := &spec.Unstructured{
-		Meta: spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: kind,
+	sec1 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+	sec2 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+		Env: map[string]spec.Secret{
+			"FOO": {
+				ID: sec1.ID,
+			},
 		},
 	}
 
-	structured, err := s.Decode(meta)
-	assert.NoError(t, err)
-	assert.Equal(t, structured.GetID(), meta.GetID())
-	assert.IsType(t, structured, &spec.Meta{})
+	assert.True(t, s.IsBound(meta, sec1))
+	assert.False(t, s.IsBound(meta, sec2))
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -16,19 +17,15 @@ import (
 
 // Config holds the configuration parameters for the root command.
 type Config struct {
-	Scheme *scheme.Scheme
-	Hook   *hook.Hook
-	Store  spec.Store
-	FS     afero.Fs
+	Scheme      *scheme.Scheme
+	Hook        *hook.Hook
+	SpecStore   spec.Store
+	SecretStore secret.Store
+	FS          afero.Fs
 }
 
 // NewCommand creates the root cobra command for the 'uniflow' CLI.
 func NewCommand(config Config) *cobra.Command {
-	sc := config.Scheme
-	hk := config.Hook
-	st := config.Store
-	fsys := config.FS
-
 	var cpuprof *os.File
 
 	cmd := &cobra.Command{
@@ -93,22 +90,20 @@ func NewCommand(config Config) *cobra.Command {
 	cmd.PersistentFlags().String(flagMemProfile, "", "write memory profile to `file`")
 
 	cmd.AddCommand(NewApplyCommand(ApplyConfig{
-		Store: st,
-		FS:    fsys,
+		SpecStore:   config.SpecStore,
+		SecretStore: config.SecretStore,
+		FS:          config.FS,
 	}))
 	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
-		Store: st,
-		FS:    fsys,
+		SpecStore:   config.SpecStore,
+		SecretStore: config.SecretStore,
+		FS:          config.FS,
 	}))
 	cmd.AddCommand(NewGetCommand(GetConfig{
-		Store: st,
+		SpecStore:   config.SpecStore,
+		SecretStore: config.SecretStore,
 	}))
-	cmd.AddCommand(NewStartCommand(StartConfig{
-		Scheme: sc,
-		Hook:   hk,
-		Store:  st,
-		FS:     fsys,
-	}))
+	cmd.AddCommand(NewStartCommand(StartConfig(config)))
 
 	return cmd
 }

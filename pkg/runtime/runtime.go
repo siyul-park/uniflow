@@ -6,25 +6,28 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // Config defines configuration options for the Runtime.
 type Config struct {
-	Namespace string         // Namespace defines the isolated execution environment for workflows.
-	Hook      *hook.Hook     // Hook is a collection of hook functions for managing symbols.
-	Scheme    *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	Store     spec.Store     // Store is responsible for persisting symbols.
+	Namespace   string         // Namespace defines the isolated execution environment for workflows.
+	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
+	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
+	SpecStore   spec.Store     // SpecStore is responsible for persisting symbols.
+	SecretStore secret.Store   // SpecStore is responsible for persisting symbols.
 }
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
-	namespace string
-	scheme    *scheme.Scheme
-	store     spec.Store
-	table     *symbol.Table
-	loader    *symbol.Loader
+	namespace   string
+	scheme      *scheme.Scheme
+	specStore   spec.Store
+	secretStore secret.Store
+	table       *symbol.Table
+	loader      *symbol.Loader
 }
 
 // New creates a new Runtime instance with the specified configuration.
@@ -38,8 +41,11 @@ func New(config Config) *Runtime {
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
 	}
-	if config.Store == nil {
-		config.Store = spec.NewStore()
+	if config.SpecStore == nil {
+		config.SpecStore = spec.NewStore()
+	}
+	if config.SecretStore == nil {
+		config.SecretStore = secret.NewStore()
 	}
 
 	tb := symbol.NewTable(symbol.TableOptions{
@@ -48,17 +54,19 @@ func New(config Config) *Runtime {
 	})
 
 	ld := symbol.NewLoader(symbol.LoaderConfig{
-		Scheme: config.Scheme,
-		Store:  config.Store,
-		Table:  tb,
+		Scheme:      config.Scheme,
+		SpecStore:   config.SpecStore,
+		SecretStore: config.SecretStore,
+		Table:       tb,
 	})
 
 	return &Runtime{
-		namespace: config.Namespace,
-		scheme:    config.Scheme,
-		store:     config.Store,
-		table:     tb,
-		loader:    ld,
+		namespace:   config.Namespace,
+		scheme:      config.Scheme,
+		specStore:   config.SpecStore,
+		secretStore: config.SecretStore,
+		table:       tb,
+		loader:      ld,
 	}
 }
 
@@ -95,7 +103,7 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 	}
 
 	exists := make(map[uuid.UUID]spec.Spec)
-	if specs, err := r.store.Load(ctx, specs...); err != nil {
+	if specs, err := r.specStore.Load(ctx, specs...); err != nil {
 		return nil, err
 	} else {
 		for _, spec := range specs {
@@ -105,11 +113,11 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 
 	for _, spec := range specs {
 		if _, ok := exists[spec.GetID()]; ok {
-			if _, err := r.store.Swap(ctx, spec); err != nil {
+			if _, err := r.specStore.Swap(ctx, spec); err != nil {
 				return nil, err
 			}
 		} else {
-			if _, err := r.store.Store(ctx, spec); err != nil {
+			if _, err := r.specStore.Store(ctx, spec); err != nil {
 				return nil, err
 			}
 		}
@@ -132,12 +140,12 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 		}
 	}
 
-	specs, err := r.store.Load(ctx, specs...)
+	specs, err := r.specStore.Load(ctx, specs...)
 	if err != nil {
 		return 0, err
 	}
 
-	count, err := r.store.Delete(ctx, specs...)
+	count, err := r.specStore.Delete(ctx, specs...)
 	if err != nil {
 		return 0, err
 	}

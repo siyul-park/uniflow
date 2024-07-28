@@ -13,18 +13,19 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStartCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewStore()
+
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
+
 	fsys := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
@@ -36,36 +37,37 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
-	filename := "patch.json"
-
-	meta := &spec.Meta{
-		ID:        uuid.Must(uuid.NewV7()),
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-	}
-
-	data, _ := json.Marshal(meta)
-
-	f, _ := fsys.Create(filename)
-	f.Write(data)
-
-	func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+	t.Run("ExecuteFromNodes", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
+
+		filename := "nodes.json"
+
+		meta := &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: spec.DefaultNamespace,
+		}
+
+		data, _ := json.Marshal(meta)
+
+		f, _ := fsys.Create(filename)
+		f.Write(data)
 
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme: s,
-			Hook:   h,
-			FS:     fsys,
-			Store:  st,
+			Scheme:      s,
+			Hook:        h,
+			FS:          fsys,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
 		cmd.SetContext(ctx)
 
-		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromNodes), filename})
 
 		go func() {
 			_ = cmd.Execute()
@@ -74,13 +76,59 @@ func TestStartCommand_Execute(t *testing.T) {
 		for {
 			select {
 			case <-ctx.Done():
-				assert.Fail(t, "timeout")
+				assert.Fail(t, ctx.Err().Error())
 				return
 			default:
-				if r, _ := st.Load(ctx, meta); len(r) > 0 {
+				if r, _ := specStore.Load(ctx, meta); len(r) > 0 {
 					return
 				}
 			}
 		}
-	}()
+	})
+
+	t.Run("ExecuteFromSecrets", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		filename := "nodes.json"
+
+		sec := &secret.Secret{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: secret.DefaultNamespace,
+		}
+
+		data, _ := json.Marshal(sec)
+
+		f, _ := fsys.Create(filename)
+		f.Write(data)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewStartCommand(StartConfig{
+			Scheme:      s,
+			Hook:        h,
+			FS:          fsys,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetContext(ctx)
+
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromSecrets), filename})
+
+		go func() {
+			_ = cmd.Execute()
+		}()
+
+		select {
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+			return
+		default:
+			if r, _ := secretStore.Load(ctx, sec); len(r) > 0 {
+				return
+			}
+		}
+	})
 }

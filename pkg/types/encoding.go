@@ -131,7 +131,11 @@ func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.E
 
 func newPointerDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.DecodeCompiler[Value] {
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
-		if typ != nil && typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.Pointer {
+		if typ == nil {
+			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return nil
+			}), nil
+		} else if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.Pointer {
 			dec, err := decoder.Compile(typ.Elem())
 			if err != nil {
 				return nil, err

@@ -5,24 +5,26 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/siyul-park/uniflow/cmd/pkg/scanner"
+	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-// StartConfig holds the configuration for the uniflow command.
+// StartConfig holds the configuration for the start command.
 type StartConfig struct {
-	Scheme *scheme.Scheme
-	Hook   *hook.Hook
-	Store  spec.Store
-	FS     afero.Fs
+	Scheme      *scheme.Scheme
+	Hook        *hook.Hook
+	SpecStore   spec.Store
+	SecretStore secret.Store
+	FS          afero.Fs
 }
 
-// NewStartCommand creates a new Cobra command for the uniflow application.
+// NewStartCommand creates a new cobra.Command for the start command.
 func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -31,11 +33,13 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the namespace for running")
-	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the boot file path for initializing nodes")
+	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing node specs")
+	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
 
 	return cmd
 }
 
+// runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
@@ -44,40 +48,83 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
-		filename, err := cmd.Flags().GetString(flagFilename)
+
+		fromNodes, err := cmd.Flags().GetString(flagFromNodes)
 		if err != nil {
 			return err
 		}
 
-		if filename != "" {
-			specs, err := config.Store.Load(ctx, &spec.Meta{Namespace: namespace})
-			if err != nil {
-				return err
-			}
-			if len(specs) > 0 {
-				return nil
-			}
+		fromSecrets, err := cmd.Flags().GetString(flagFromSecrets)
+		if err != nil {
+			return err
+		}
 
-			specs, err = scanner.New().
-				Store(config.Store).
-				Namespace(namespace).
-				FS(config.FS).
-				Filename(filename).
-				Scan(ctx)
+		if fromNodes != "" {
+			specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
 			if err != nil {
 				return err
 			}
 
-			if _, err = config.Store.Store(ctx, specs...); err != nil {
+			if len(specs) == 0 {
+				file, err := config.FS.Open(fromNodes)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+
+				reader := resource.NewReader(file)
+				if err := reader.Read(&specs); err != nil {
+					return err
+				}
+
+				for _, spec := range specs {
+					if spec.GetNamespace() == "" {
+						spec.SetNamespace(namespace)
+					}
+				}
+
+				if _, err = config.SpecStore.Store(ctx, specs...); err != nil {
+					return err
+				}
+			}
+		}
+
+		if fromSecrets != "" {
+			secrets, err := config.SecretStore.Load(ctx, &secret.Secret{Namespace: namespace})
+			if err != nil {
 				return err
+			}
+
+			if len(secrets) == 0 {
+				file, err := config.FS.Open(fromSecrets)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+
+				reader := resource.NewReader(file)
+				if err := reader.Read(&secrets); err != nil {
+					return err
+				}
+
+				for _, sec := range secrets {
+					if sec.GetNamespace() == "" {
+						sec.SetNamespace(namespace)
+					}
+				}
+
+				if _, err := config.SecretStore.Store(ctx, secrets...); err != nil {
+					return err
+				}
 			}
 		}
 
 		r := runtime.New(runtime.Config{
-			Namespace: namespace,
-			Scheme:    config.Scheme,
-			Hook:      config.Hook,
-			Store:     config.Store,
+			Namespace:   namespace,
+			Scheme:      config.Scheme,
+			Hook:        config.Hook,
+			SpecStore:   config.SpecStore,
+			SecretStore: config.SecretStore,
 		})
 
 		sigs := make(chan os.Signal, 1)

@@ -8,27 +8,32 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCommend_Execute(t *testing.T) {
+func TestCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	s := scheme.New()
 	h := hook.New()
-	st := spec.NewStore()
+
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
+
 	fsys := afero.NewMemMapFs()
 
 	output := new(bytes.Buffer)
 
 	cmd := NewCommand(Config{
-		Scheme: s,
-		Hook:   h,
-		Store:  st,
-		FS:     fsys,
+		Scheme:      s,
+		Hook:        h,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
+		FS:          fsys,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)

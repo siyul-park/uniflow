@@ -101,7 +101,7 @@ func TestString_Decode(t *testing.T) {
 
 	uid := uuid.Must(uuid.NewV7())
 
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source String
 		target any
@@ -124,11 +124,11 @@ func TestString_Decode(t *testing.T) {
 		{"any", NewString("foo"), new(any), "foo"},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := dec.Decode(tc.source, tc.target)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := dec.Decode(tt.source, tt.target)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want, reflect.ValueOf(tc.target).Elem().Interface())
+			assert.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
 		})
 	}
 }

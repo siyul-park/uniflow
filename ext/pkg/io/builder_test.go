@@ -13,14 +13,14 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme().AddToScheme(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindRDB, KindWrite}
+	tests := []string{KindRDB, KindWrite}
 
-	for _, tc := range testCase {
-		t.Run(tc, func(t *testing.T) {
-			_, ok := s.KnownType(tc)
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			_, ok := s.KnownType(tt)
 			assert.True(t, ok)
 
-			_, ok = s.Codec(tc)
+			_, ok = s.Codec(tt)
 			assert.True(t, ok)
 		})
 	}

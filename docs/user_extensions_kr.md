@@ -153,7 +153,8 @@ r.Listen(ctx)
 
 ```go
 func main() {
-	store := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	sbuilder := scheme.NewBuilder()
 	hbuilder := hook.NewBuilder()
@@ -167,10 +168,10 @@ func main() {
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
 	stable := system.NewTable()
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(store))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(store))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(store))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(store))
+	stable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
+	stable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
+	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
+	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
 
 	broker := event.NewBroker()
 	defer broker.Close()
@@ -195,10 +196,11 @@ func main() {
 	}
 
 	r := runtime.New(runtime.Config{
-		Namespace: "default",
-		Scheme:    scheme,
-		Hook:      hook,
-		Store:     store,
+		Namespace:	 "default",
+		Scheme:		 scheme,
+		Hook:		 hook,
+		SpecStore:	 specStore,
+		SecretStore: secretStore,
 	})
 	defer r.Close()
 

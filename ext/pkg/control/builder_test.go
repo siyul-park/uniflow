@@ -45,14 +45,14 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme(m, text.Language).AddToScheme(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindCall, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindSession, KindSnippet, KindSplit, KindSwitch}
+	tests := []string{KindCall, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindSession, KindSnippet, KindSplit, KindSwitch}
 
-	for _, tc := range testCase {
-		t.Run(tc, func(t *testing.T) {
-			_, ok := s.KnownType(tc)
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			_, ok := s.KnownType(tt)
 			assert.True(t, ok)
 
-			_, ok = s.Codec(tc)
+			_, ok = s.Codec(tt)
 			assert.True(t, ok)
 		})
 	}

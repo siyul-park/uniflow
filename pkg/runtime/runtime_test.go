@@ -9,6 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,11 +26,13 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:      s,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
 	})
 
 	defer r.Close()
@@ -39,7 +42,7 @@ func TestRuntime_Load(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.Store(ctx, meta)
+	_, _ = specStore.Store(ctx, meta)
 
 	symbols, err := r.Load(ctx, meta)
 	assert.NoError(t, err)
@@ -58,11 +61,13 @@ func TestRuntime_Store(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:      s,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
 	})
 
 	defer r.Close()
@@ -93,11 +98,13 @@ func TestRuntime_Delete(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:      s,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
 	})
 
 	defer r.Close()
@@ -134,11 +141,13 @@ func TestRuntime_Listen(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	r := New(Config{
-		Scheme: s,
-		Store:  st,
+		Scheme:      s,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
 	})
 
 	defer r.Close()
@@ -148,7 +157,7 @@ func TestRuntime_Listen(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = st.Store(ctx, meta)
+	_, _ = specStore.Store(ctx, meta)
 
 	go r.Listen(ctx)
 
@@ -182,12 +191,14 @@ func BenchmarkNewRuntime(b *testing.B) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	st := spec.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
 	for i := 0; i < b.N; i++ {
 		r := New(Config{
-			Scheme: s,
-			Store:  st,
+			Scheme:      s,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
 		})
 		r.Close()
 	}

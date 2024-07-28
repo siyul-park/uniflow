@@ -42,14 +42,14 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme().AddToScheme(s)
 	assert.NoError(t, err)
 
-	testCase := []string{KindHTTP, KindListener, KindRouter, KindWebSocket, KindGateway}
+	tests := []string{KindHTTP, KindListener, KindRouter, KindWebSocket, KindGateway}
 
-	for _, tc := range testCase {
-		t.Run(tc, func(t *testing.T) {
-			_, ok := s.KnownType(tc)
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			_, ok := s.KnownType(tt)
 			assert.True(t, ok)
 
-			_, ok = s.Codec(tc)
+			_, ok = s.Codec(tt)
 			assert.True(t, ok)
 		})
 	}

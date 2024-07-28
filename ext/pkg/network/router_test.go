@@ -41,7 +41,7 @@ func TestNewRouteNode(t *testing.T) {
 }
 
 func TestRouteNode_Add(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		whenMethod   string
 		whenPath     string
 		expectPaths  []string
@@ -88,19 +88,19 @@ func TestRouteNode_Add(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s %s", tt.whenMethod, tt.whenPath), func(t *testing.T) {
 			n := NewRouteNode()
 			defer n.Close()
 
 			expectPort := node.PortWithIndex(node.PortOut, 0)
 
-			n.Add(http.MethodGet, tc.whenPath, expectPort)
+			n.Add(http.MethodGet, tt.whenPath, expectPort)
 
-			for i, expectPath := range tc.expectPaths {
+			for i, expectPath := range tt.expectPaths {
 				var expectParam map[string]string
-				if len(tc.expectParams) > i {
-					expectParam = tc.expectParams[i]
+				if len(tt.expectParams) > i {
+					expectParam = tt.expectParams[i]
 				}
 
 				port, param := n.Find(http.MethodGet, expectPath)
@@ -121,7 +121,7 @@ func TestRouteNode_Find(t *testing.T) {
 	n.Add(http.MethodGet, "/:e/c/f", node.PortWithIndex(node.PortOut, 3))
 	n.Add(http.MethodGet, "/*", node.PortWithIndex(node.PortOut, 4))
 
-	testCases := []struct {
+	tests := []struct {
 		whenMethod   string
 		whenPath     string
 		expectPort   string
@@ -157,11 +157,11 @@ func TestRouteNode_Find(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
-			port, params := n.Find(tc.whenMethod, tc.whenPath)
-			assert.Equal(t, tc.expectPort, port)
-			assert.Equal(t, tc.expectParams, params)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s %s", tt.whenMethod, tt.whenPath), func(t *testing.T) {
+			port, params := n.Find(tt.whenMethod, tt.whenPath)
+			assert.Equal(t, tt.expectPort, port)
+			assert.Equal(t, tt.expectParams, params)
 		})
 	}
 }
@@ -174,7 +174,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	n.Add(http.MethodGet, "/a/c/d", node.PortWithIndex(node.PortOut, 1))
 	n.Add(http.MethodGet, "/a/*", node.PortWithIndex(node.PortOut, 2))
 
-	testCases := []struct {
+	tests := []struct {
 		whenMethod   string
 		whenPath     string
 		expectPort   string
@@ -220,20 +220,20 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 	in.Link(n.In(node.PortIn))
 
 	outs := map[string]*port.InPort{}
-	for _, tc := range testCases {
-		if _, ok := outs[tc.expectPort]; !ok {
+	for _, tt := range tests {
+		if _, ok := outs[tt.expectPort]; !ok {
 			out := port.NewIn()
-			n.Out(tc.expectPort).Link(out)
-			outs[tc.expectPort] = out
+			n.Out(tt.expectPort).Link(out)
+			outs[tt.expectPort] = out
 		}
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s %s", tc.whenMethod, tc.whenPath), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s %s", tt.whenMethod, tt.whenPath), func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 			defer cancel()
 
-			out := outs[tc.expectPort]
+			out := outs[tt.expectPort]
 
 			proc := process.New()
 			defer proc.Exit(nil)
@@ -242,8 +242,8 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			outReader := out.Open(proc)
 
 			inPayload := types.NewMap(
-				types.NewString("method"), types.NewString(tc.whenMethod),
-				types.NewString("path"), types.NewString(tc.whenPath),
+				types.NewString("method"), types.NewString(tt.whenMethod),
+				types.NewString("path"), types.NewString(tt.whenPath),
 			)
 			inPck := packet.New(inPayload)
 
@@ -252,7 +252,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			select {
 			case outPck := <-outReader.Read():
 				params, _ := types.Pick[map[string]string](outPck.Payload(), "params")
-				assert.Equal(t, tc.expectParams, params)
+				assert.Equal(t, tt.expectParams, params)
 				outReader.Receive(outPck)
 			case <-ctx.Done():
 				assert.Fail(t, ctx.Err().Error())

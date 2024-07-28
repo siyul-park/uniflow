@@ -7,56 +7,97 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
+	fs := afero.NewMemMapFs()
 
-	s := scheme.New()
-	st := spec.NewStore()
-	fsys := afero.NewMemMapFs()
+	t.Run("DeleteNodeSpec", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	kind := faker.UUIDHyphenated()
+		filename := "nodes.json"
 
-	codec := scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
+		kind := faker.UUIDHyphenated()
+
+		meta := &spec.Meta{
+			Kind:      kind,
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
+
+		data, err := json.Marshal(meta)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		_, err = specStore.Store(ctx, meta)
+		assert.NoError(t, err)
+
+		cmd := NewDeleteCommand(DeleteConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			FS:          fs,
+		})
+
+		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		r, err := specStore.Load(ctx, meta)
+		assert.NoError(t, err)
+		assert.Len(t, r, 0)
 	})
 
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, codec)
+	t.Run("DeleteSecret", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	filename := "patch.json"
+		filename := "secrets.json"
 
-	meta := &spec.Meta{
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
+		sec := &secret.Secret{
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
 
-	data, _ := json.Marshal(meta)
+		data, err := json.Marshal(sec)
+		assert.NoError(t, err)
 
-	f, _ := fsys.Create(filename)
-	f.Write(data)
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
 
-	_, _ = st.Store(ctx, meta)
+		_, err = file.Write(data)
+		assert.NoError(t, err)
 
-	cmd := NewDeleteCommand(DeleteConfig{
-		Store: st,
-		FS:    fsys,
+		_, err = secretStore.Store(ctx, sec)
+		assert.NoError(t, err)
+
+		cmd := NewDeleteCommand(DeleteConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			FS:          fs,
+		})
+
+		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		rSecret, err := secretStore.Load(ctx, sec)
+		assert.NoError(t, err)
+		assert.Len(t, rSecret, 0)
 	})
-
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFilename), filename})
-
-	err := cmd.Execute()
-	assert.NoError(t, err)
-
-	r, err := st.Load(ctx, meta)
-	assert.NoError(t, err)
-	assert.Len(t, r, 0)
 }
