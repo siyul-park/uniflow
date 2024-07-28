@@ -50,8 +50,8 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 		return nil, err
 	}
 
+	var secrets []*secret.Secret
 	for _, spc := range specs {
-		var secrets []*secret.Secret
 		for _, value := range spc.GetEnv() {
 			if value.ID == uuid.Nil && value.Name == "" {
 				continue
@@ -62,12 +62,14 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 				Name:      value.Name,
 			})
 		}
+	}
 
-		secrets, err := l.secretStore.Load(ctx, secrets...)
-		if err != nil {
-			return nil, err
-		}
+	secrets, err = l.secretStore.Load(ctx, secrets...)
+	if err != nil {
+		return nil, err
+	}
 
+	for _, spc := range specs {
 		bind, err := l.scheme.Bind(spc, secrets...)
 		if err != nil {
 			return nil, err
@@ -252,17 +254,17 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				examples = append(examples, &spec.Meta{ID: example.GetID()})
 			}
 
-			symbols, err := l.Load(ctx, examples...)
-			if err != nil {
-				for _, example := range examples {
+			for _, example := range examples {
+				symbols, err := l.Load(ctx, example)
+				if err != nil {
 					if _, err := l.table.Free(example.GetID()); err != nil {
 						return err
 					}
 				}
-			}
 
-			for _, sym := range symbols {
-				delete(unloaded, sym.ID())
+				for _, sym := range symbols {
+					delete(unloaded, sym.ID())
+				}
 			}
 		}
 	}
