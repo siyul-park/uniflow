@@ -18,7 +18,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	secretStore := secret.NewStore()
 	fs := afero.NewMemMapFs()
 
-	t.Run("Delete Node Spec", func(t *testing.T) {
+	t.Run("DeleteNodeSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -61,18 +61,18 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		assert.Len(t, r, 0)
 	})
 
-	t.Run("Delete Secret", func(t *testing.T) {
+	t.Run("DeleteSecret", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		filename := "secrets.json"
 
-		secret := &secret.Secret{
+		sec := &secret.Secret{
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
-		data, err := json.Marshal(secret)
+		data, err := json.Marshal(sec)
 		assert.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -82,7 +82,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		_, err = file.Write(data)
 		assert.NoError(t, err)
 
-		_, err = secretStore.Store(ctx, secret)
+		_, err = secretStore.Store(ctx, sec)
 		assert.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
@@ -96,7 +96,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
-		rSecret, err := secretStore.Load(ctx, secret)
+		rSecret, err := secretStore.Load(ctx, sec)
 		assert.NoError(t, err)
 		assert.Len(t, rSecret, 0)
 	})

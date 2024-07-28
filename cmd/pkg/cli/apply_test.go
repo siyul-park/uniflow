@@ -20,7 +20,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 	fs := afero.NewMemMapFs()
 
-	t.Run("Insert Node Spec", func(t *testing.T) {
+	t.Run("InsertNodeSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -65,7 +65,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("Insert Secret", func(t *testing.T) {
+	t.Run("InsertSecret", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -107,7 +107,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), sec.Name)
 	})
 
-	t.Run("Update Node Spec", func(t *testing.T) {
+	t.Run("UpdateNodeSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -155,7 +155,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("Update Secret", func(t *testing.T) {
+	t.Run("UpdateSecret", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

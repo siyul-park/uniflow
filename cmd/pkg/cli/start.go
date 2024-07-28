@@ -33,8 +33,8 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the namespace for running")
-	cmd.PersistentFlags().String(flagFromNodes, "", "Set the file path to be applied")
-	cmd.PersistentFlags().String(flagFromSecrets, "", "Set the file path to be applied")
+	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing node specs")
+	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
 
 	return cmd
 }

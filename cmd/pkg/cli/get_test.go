@@ -15,7 +15,7 @@ func TestGetCommand_Execute(t *testing.T) {
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
-	t.Run("Get Node Spec", func(t *testing.T) {
+	t.Run("GetNodeSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -46,7 +46,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("Get Secret", func(t *testing.T) {
+	t.Run("GetSecret", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

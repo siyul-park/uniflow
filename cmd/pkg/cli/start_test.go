@@ -37,7 +37,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
-	t.Run("From Nodes", func(t *testing.T) {
+	t.Run("ExecuteFromNodes", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
@@ -86,18 +86,18 @@ func TestStartCommand_Execute(t *testing.T) {
 		}
 	})
 
-	t.Run("From Secrets", func(t *testing.T) {
+	t.Run("ExecuteFromSecrets", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
 		filename := "nodes.json"
 
-		secret := &secret.Secret{
+		sec := &secret.Secret{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: secret.DefaultNamespace,
 		}
 
-		data, _ := json.Marshal(secret)
+		data, _ := json.Marshal(sec)
 
 		f, _ := fsys.Create(filename)
 		f.Write(data)
@@ -126,10 +126,9 @@ func TestStartCommand_Execute(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 			return
 		default:
-			if r, _ := secretStore.Load(ctx, secret); len(r) > 0 {
+			if r, _ := secretStore.Load(ctx, sec); len(r) > 0 {
 				return
 			}
-
 		}
 	})
 }

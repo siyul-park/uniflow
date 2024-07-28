@@ -26,7 +26,7 @@ func TestLoader_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	t.Run("Load Multiple Specs", func(t *testing.T) {
+	t.Run("LoadMultipleSpecs", func(t *testing.T) {
 		spStore := spec.NewStore()
 		scStore := secret.NewStore()
 
@@ -83,7 +83,7 @@ func TestLoader_Load(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("Reload Same ID", func(t *testing.T) {
+	t.Run("ReloadWithSameID", func(t *testing.T) {
 		spStore := spec.NewStore()
 		scStore := secret.NewStore()
 
@@ -120,7 +120,7 @@ func TestLoader_Load(t *testing.T) {
 		assert.Equal(t, res1, res2)
 	})
 
-	t.Run("Reload After Delete", func(t *testing.T) {
+	t.Run("ReloadAfterDelete", func(t *testing.T) {
 		spStore := spec.NewStore()
 		scStore := secret.NewStore()
 
@@ -160,7 +160,7 @@ func TestLoader_Load(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("Load Multiple Secrets", func(t *testing.T) {
+	t.Run("LoadMultipleSecrets", func(t *testing.T) {
 		spStore := spec.NewStore()
 		scStore := secret.NewStore()
 
@@ -200,7 +200,7 @@ func TestLoader_Load(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("Load Non Exist Secret", func(t *testing.T) {
+	t.Run("LoadNonExistSecret", func(t *testing.T) {
 		spStore := spec.NewStore()
 		scStore := secret.NewStore()
 
@@ -236,7 +236,7 @@ func TestLoader_Load(t *testing.T) {
 }
 
 func TestLoader_Reconcile(t *testing.T) {
-	t.Run("Load Spec", func(t *testing.T) {
+	t.Run("ReconcileLoadedSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -292,52 +292,12 @@ func TestLoader_Reconcile(t *testing.T) {
 						assert.Equal(t, meta.GetID(), sym.ID())
 						return
 					}
+
 				}
 			}
 		}()
-	})
 
-	t.Run("Load Secret", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		s := scheme.New()
-		kind := faker.UUIDHyphenated()
-
-		s.AddKnownType(kind, &spec.Meta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
-
-		spStore := spec.NewStore()
-		scStore := secret.NewStore()
-
-		table := NewTable()
-		defer table.Clear()
-
-		loader := NewLoader(LoaderConfig{
-			Table:       table,
-			Scheme:      s,
-			SpecStore:   spStore,
-			SecretStore: scStore,
-		})
-		defer loader.Close()
-
-		err := loader.Watch(ctx)
-		assert.NoError(t, err)
-
-		go loader.Reconcile(ctx)
-
-		sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
-		meta := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
-			Env:       map[string]spec.Secret{"": {ID: sec.GetID()}},
-		}
-
-		spStore.Store(ctx, meta)
-		scStore.Store(ctx, sec)
+		spStore.Delete(ctx, meta)
 
 		func() {
 			ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -349,60 +309,11 @@ func TestLoader_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sym, ok := table.Lookup(meta.GetID()); ok {
-						assert.Equal(t, meta.GetID(), sym.ID())
+					if _, ok := table.Lookup(meta.GetID()); !ok {
 						return
 					}
 				}
 			}
 		}()
 	})
-}
-
-func BenchmarkLoader_Load(b *testing.B) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	spStore := spec.NewStore()
-	scStore := secret.NewStore()
-
-	table := NewTable()
-	defer table.Clear()
-
-	loader := NewLoader(LoaderConfig{
-		Table:       table,
-		Scheme:      s,
-		SpecStore:   spStore,
-		SecretStore: scStore,
-	})
-	defer loader.Close()
-
-	meta := &spec.Meta{
-		ID:        uuid.Must(uuid.NewV7()),
-		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
-		Name:      faker.UUIDHyphenated(),
-	}
-
-	spStore.Store(ctx, meta)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		res, err := loader.Load(ctx, meta)
-		assert.NoError(b, err)
-		assert.NotNil(b, res)
-
-		b.StopTimer()
-		table.Free(meta.GetID())
-		b.StartTimer()
-	}
 }

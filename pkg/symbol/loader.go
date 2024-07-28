@@ -142,7 +142,7 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 	}
 
 	if l.secretStream == nil {
-		secrets := make([]*secret.Secret, len(specs))
+		secrets := make([]*secret.Secret, 0, len(specs))
 		for _, spec := range specs {
 			secrets = append(secrets, &secret.Secret{
 				Namespace: spec.GetNamespace(),
