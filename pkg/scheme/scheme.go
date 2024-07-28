@@ -145,7 +145,7 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 			}
 
 			value.ID = match.ID
-			value.Name = match.Name
+			value.Name = ""
 			value.Value = v
 
 			values[i] = value
