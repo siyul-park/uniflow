@@ -80,18 +80,18 @@ func TestStore_Load(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	meta1 := &secret.Secret{
+	secret1 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &secret.Secret{
+	secret2 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -108,18 +108,18 @@ func TestStore_Store(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	meta1 := &secret.Secret{
+	secret1 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &secret.Secret{
+	secret2 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -136,22 +136,22 @@ func TestStore_Swap(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	meta1 := &secret.Secret{
+	secret1 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &secret.Secret{
+	secret2 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Swap(ctx, meta1, meta2)
+	count, err = st.Swap(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -168,22 +168,22 @@ func TestMemStore_Delete(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	meta1 := &secret.Secret{
+	secret1 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	meta2 := &secret.Secret{
+	secret2 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, meta1, meta2)
+	count, err := st.Store(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Delete(ctx, meta1, meta2)
+	count, err = st.Delete(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, meta1, meta2)
+	loaded, err := st.Load(ctx, secret1, secret2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 0)
 }
