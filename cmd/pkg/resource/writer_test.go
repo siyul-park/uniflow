@@ -18,7 +18,7 @@ func TestWriter_Write(t *testing.T) {
 				"key1": "value1",
 				"key2": 123,
 			},
-			expected: " KEY1    KEY2 \n value1   123 ",
+			expected: " KEY2  KEY1   \n  123  value1 ",
 		},
 		{
 			input: []map[string]any{
@@ -31,7 +31,7 @@ func TestWriter_Write(t *testing.T) {
 					"key2": 456,
 				},
 			},
-			expected: " KEY1    KEY2 \n value1   123 \n value2   456 ",
+			expected: " KEY2  KEY1   \n  123  value1 \n  456  value2 ",
 		},
 		{
 			input: []map[string]any{
@@ -42,7 +42,7 @@ func TestWriter_Write(t *testing.T) {
 					"key2": 456,
 				},
 			},
-			expected: " KEY1    KEY2  \n value1  <nil> \n <nil>   456   ",
+			expected: " KEY2   KEY1   \n <nil>  value1 \n 456    <nil>  ",
 		},
 	}
 

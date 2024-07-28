@@ -70,7 +70,7 @@ func (w *Writer) Write(value any) error {
 
 	var keys []string
 	for key, count := range counts {
-		if count > len(elements)/2 {
+		if count >= len(elements)/2 {
 			keys = append(keys, key)
 		}
 	}
