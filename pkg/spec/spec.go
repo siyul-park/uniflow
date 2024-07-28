@@ -31,9 +31,9 @@ type Spec interface {
 	// SetPorts assigns port connections to the node.
 	SetPorts(val map[string][]Port)
 	// GetEnv retrieves the environment secrets for the node.
-	GetEnv() map[string][]Secret
+	GetEnv() map[string]Secret
 	// SetEnv assigns environment secrets to the node.
-	SetEnv(val map[string][]Secret)
+	SetEnv(val map[string]Secret)
 }
 
 // Port represents a network port or connection on a node.

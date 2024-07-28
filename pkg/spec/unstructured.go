@@ -65,7 +65,7 @@ func (u *Unstructured) Set(key string, val any) {
 	case KeyPorts:
 		u.Ports, _ = val.(map[string][]Port)
 	case KeyEnv:
-		u.Env, _ = val.(map[string][]Secret)
+		u.Env, _ = val.(map[string]Secret)
 	default:
 		if u.Fields == nil {
 			u.Fields = make(map[string]any)

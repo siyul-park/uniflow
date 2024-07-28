@@ -51,19 +51,17 @@ func TestScheme_Bind(t *testing.T) {
 	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
-		Env: map[string][]spec.Secret{
+		Env: map[string]spec.Secret{
 			"FOO": {
-				{
-					ID:    secret.ID,
-					Value: "{{ . }}",
-				},
+				ID:    secret.ID,
+				Value: "{{ . }}",
 			},
 		},
 	}
 
 	bind, err := s.Bind(meta, secret)
 	assert.NoError(t, err)
-	assert.Equal(t, bind.GetEnv()["FOO"][0].Value, "foo")
+	assert.Equal(t, bind.GetEnv()["FOO"].Value, "foo")
 	assert.True(t, s.IsBound(bind, secret))
 }
 
@@ -77,11 +75,9 @@ func TestScheme_Decode(t *testing.T) {
 		Meta: spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
-			Env: map[string][]spec.Secret{
+			Env: map[string]spec.Secret{
 				"FOO": {
-					{
-						Value: "foo",
-					},
+					Value: "foo",
 				},
 			},
 		},

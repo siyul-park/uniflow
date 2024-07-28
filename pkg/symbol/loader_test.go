@@ -50,11 +50,9 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Secret{
+			Env: map[string]spec.Secret{
 				"": {
-					{
-						ID: secret.GetID(),
-					},
+					ID: secret.GetID(),
 				},
 			},
 		}
@@ -93,7 +91,7 @@ func TestLoader_Load(t *testing.T) {
 		spst.Store(ctx, meta2)
 		spst.Store(ctx, meta3)
 
-		r, err := ld.Load(ctx, meta3)
+		r, err := ld.Load(ctx, meta1, meta2, meta3)
 		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
@@ -131,11 +129,9 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string]spec.Secret{
 				"": {
-					{
-						ID: secret.GetID(),
-					},
+					ID: secret.GetID(),
 				},
 			},
 		}
@@ -177,11 +173,9 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string]spec.Secret{
 				"": {
-					{
-						ID: secret.GetID(),
-					},
+					ID: secret.GetID(),
 				},
 			},
 		}
@@ -243,11 +237,9 @@ func TestLoader_Reconcile(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
 		Namespace: spec.DefaultNamespace,
-		Env: map[string][]spec.Secret{
+		Env: map[string]spec.Secret{
 			"": {
-				{
-					ID: secret.GetID(),
-				},
+				ID: secret.GetID(),
 			},
 		},
 	}

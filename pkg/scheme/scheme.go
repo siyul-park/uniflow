@@ -79,21 +79,20 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 
 // IsBound checks if the spec is bound to any of the provided secrets.
 func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
-	for _, values := range spc.GetEnv() {
-		for _, value := range values {
-			if value.ID == uuid.Nil && value.Name == "" {
-				continue
-			}
+	for _, value := range spc.GetEnv() {
+		if value.ID == uuid.Nil && value.Name == "" {
+			continue
+		}
 
-			example := &secret.Secret{
-				ID:        value.ID,
-				Namespace: spc.GetNamespace(),
-				Name:      value.Name,
-			}
-			for _, sec := range secrets {
-				if len(secret.Match(sec, example)) > 0 {
-					return true
-				}
+		example := &secret.Secret{
+			ID:        value.ID,
+			Namespace: spc.GetNamespace(),
+			Name:      value.Name,
+		}
+
+		for _, sec := range secrets {
+			if len(secret.Match(sec, example)) > 0 {
+				return true
 			}
 		}
 	}
@@ -112,61 +111,62 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 		return nil, err
 	}
 
-	for _, values := range unstructured.GetEnv() {
-		for i, value := range values {
-			if value.ID == uuid.Nil && value.Name == "" {
-				continue
-			}
-			
-			example := &secret.Secret{
-				ID:        value.ID,
-				Namespace: unstructured.GetNamespace(),
-				Name:      value.Name,
-			}
+	env := unstructured.GetEnv()
+	for key, value := range env {
+		if value.ID == uuid.Nil && value.Name == "" {
+			continue
+		}
 
-			var match *secret.Secret
-			for _, sec := range secrets {
-				if len(secret.Match(sec, example)) > 0 {
-					match = sec
-					break
-				}
-			}
-			if match == nil {
-				return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-			}
+		example := &secret.Secret{
+			ID:        value.ID,
+			Namespace: unstructured.GetNamespace(),
+			Name:      value.Name,
+		}
 
-			tmpl, err := template.New("").Parse(value.Value)
-			if err != nil {
-				return nil, err
+		var match *secret.Secret
+		for _, sec := range secrets {
+			if len(secret.Match(sec, example)) > 0 {
+				match = sec
+				break
 			}
-			v, err := tmpl.Execute(match.Data)
-			if err != nil {
-				return nil, err
-			}
+		}
 
+		var data any
+		if match != nil {
+			data = match.Data
+		}
+
+		tmpl, err := template.New("").Parse(value.Value)
+		if err != nil {
+			return nil, err
+		}
+		v, err := tmpl.Execute(data)
+		if err != nil {
+			return nil, err
+		}
+
+		if match != nil {
 			value.ID = match.ID
 			value.Name = ""
-			value.Value = v
+		}
+		value.Value = v
 
-			values[i] = value
+		env[key] = value
+	}
+
+	data := map[string]any{}
+	for key, value := range spc.GetEnv() {
+		if value.Value != nil {
+			data[key] = value.Value
 		}
 	}
 
-	env := map[string]any{}
-	for key, values := range spc.GetEnv() {
-		for _, value := range values {
-			if value.Value != nil {
-				env[key] = value.Value
-			}
-		}
-	}
-
-	if len(env) > 0 {
+	if len(data) > 0 {
 		tmpl, err := template.New("").Parse(unstructured.Fields)
 		if err != nil {
 			return nil, err
 		}
-		v, err := tmpl.Execute(env)
+		v, err := tmpl.Execute(data)
 		if err != nil {
 			return nil, err
 		}
