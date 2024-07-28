@@ -378,9 +378,9 @@ func TestLoader_Reconcile(t *testing.T) {
 					return
 				default:
 					if sym, ok := table.Lookup(meta.GetID()); ok {
-						assert.Equal(t, meta.GetID(), sym.ID())
-						assert.Equal(t, sec.Data, sym.Env()[""].Value)
-						return
+						if sec.Data == sym.Env()[""].Value {
+							return
+						}
 					}
 
 				}
