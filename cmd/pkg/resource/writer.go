@@ -1,12 +1,11 @@
 package resource
 
 import (
+	"encoding/json"
 	"io"
-	"slices"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Writer writes structured data to an io.Writer in table format.
@@ -39,39 +38,33 @@ func NewWriter(writer io.Writer) *Writer {
 
 // Write encodes the value, transforms it into a table, and writes it to the writer.
 func (w *Writer) Write(value any) error {
-	doc, err := types.Encoder.Encode(value)
+	data, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	var elements []types.Map
-	switch v := doc.(type) {
-	case types.Slice:
-		for _, value := range v.Values() {
-			if v, ok := value.(types.Map); ok {
-				elements = append(elements, v)
-			}
+	var elements []map[string]any
+	if err := json.Unmarshal(data, &elements); err != nil {
+		var element map[string]any
+		if err := json.Unmarshal(data, &element); err != nil {
+			return err
 		}
-	case types.Map:
-		elements = append(elements, v)
+		elements = append(elements, element)
 	}
 
-	metrix := map[string]int{}
+	matrix := map[string]int{}
 	for _, element := range elements {
-		for _, key := range element.Keys() {
-			if k, ok := key.(types.String); ok {
-				metrix[k.String()]++
-			}
+		for key := range element {
+			matrix[key]++
 		}
 	}
 
 	var keys []string
-	for key, count := range metrix {
+	for key, count := range matrix {
 		if count > len(elements)/3 {
 			keys = append(keys, key)
 		}
 	}
-	slices.Sort(keys)
 
 	header := table.Row{}
 	for _, key := range keys {
@@ -82,8 +75,7 @@ func (w *Writer) Write(value any) error {
 	for _, element := range elements {
 		row := make(table.Row, 0, len(header))
 		for _, key := range keys {
-			val, _ := element.Get(types.NewString(key))
-			row = append(row, types.InterfaceOf(val))
+			row = append(row, element[key])
 		}
 		rows = append(rows, row)
 	}
