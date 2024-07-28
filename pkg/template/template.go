@@ -11,6 +11,14 @@ type Template struct {
 	root node
 }
 
+func Execute(value, data any) (any, error) {
+	tmpl, err := New("").Parse(value)
+	if err != nil {
+		return nil, err
+	}
+	return tmpl.Execute(data)
+}
+
 // New creates a new Template with the given name.
 func New(name string) *Template {
 	return &Template{

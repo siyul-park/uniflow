@@ -61,8 +61,8 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	c, exists := s.codecs[kind]
-	return c, exists
+	codec, exists := s.codecs[kind]
+	return codec, exists
 }
 
 // Compile decodes the given spec into node using the associated codec.
@@ -136,11 +136,7 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 			data = match.Data
 		}
 
-		tmpl, err := template.New("").Parse(val.Value)
-		if err != nil {
-			return nil, err
-		}
-		value, err := tmpl.Execute(data)
+		value, err := template.Execute(val.Value, data)
 		if err != nil {
 			return nil, err
 		}
@@ -162,11 +158,7 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 	}
 
 	if len(data) > 0 {
-		tmpl, err := template.New("").Parse(unstructured.Fields)
-		if err != nil {
-			return nil, err
-		}
-		value, err := tmpl.Execute(data)
+		value, err := template.Execute(unstructured.Fields, data)
 		if err != nil {
 			return nil, err
 		}
