@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// Scheme manages type information and decodes spec.Spec implementations into node.Node objects within a workflow environment.
+// Scheme manages type information and decodes spec implementations into node objects within a workflow environment.
 type Scheme struct {
 	types  map[string]reflect.Type
 	codecs map[string]Codec
@@ -23,7 +23,7 @@ type Scheme struct {
 
 var _ Codec = (*Scheme)(nil)
 
-// New creates a new Scheme instance initialized with type and codec maps.
+// New creates a new Scheme instance with initialized type and codec maps.
 func New() *Scheme {
 	return &Scheme{
 		types:  make(map[string]reflect.Type),
@@ -31,24 +31,24 @@ func New() *Scheme {
 	}
 }
 
-// AddKnownType associates a Spec type with a kind in the Scheme.
-func (s *Scheme) AddKnownType(kind string, spec spec.Spec) {
+// AddKnownType associates a spec type with a kind.
+func (s *Scheme) AddKnownType(kind string, spc spec.Spec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.types[kind] = reflect.TypeOf(spec)
+	s.types[kind] = reflect.TypeOf(spc)
 }
 
-// KnownType retrieves the reflect.Type of the Spec associated with the given kind.
+// KnownType retrieves the type of the spec associated with the given kind.
 func (s *Scheme) KnownType(kind string) (reflect.Type, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	t, ok := s.types[kind]
-	return t, ok
+	typ, exists := s.types[kind]
+	return typ, exists
 }
 
-// AddCodec associates a Codec with a specific kind in the Scheme.
+// AddCodec associates a codec with a specific kind.
 func (s *Scheme) AddCodec(kind string, codec Codec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -56,22 +56,22 @@ func (s *Scheme) AddCodec(kind string, codec Codec) {
 	s.codecs[kind] = codec
 }
 
-// Codec retrieves the Codec associated with the given kind.
+// Codec retrieves the codec associated with the given kind.
 func (s *Scheme) Codec(kind string) (Codec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	c, ok := s.codecs[kind]
-	return c, ok
+	
+	c, exists := s.codecs[kind]
+	return c, exists
 }
 
-// Compile decodes the given spec.Spec into a node.Node using the associated Codec.
+// Compile decodes the given spec into node using the associated codec.
 func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	codec, ok := s.Codec(spc.GetKind())
-	if !ok {
+	codec, exists := s.Codec(spc.GetKind())
+	if !exists {
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	}
 	return codec.Compile(spc)
@@ -79,15 +79,15 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 
 // IsBound checks if the spec is bound to any of the provided secrets.
 func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
-	for _, value := range spc.GetEnv() {
-		if value.ID == uuid.Nil && value.Name == "" {
+	for _, val := range spc.GetEnv() {
+		if val.ID == uuid.Nil && val.Name == "" {
 			continue
 		}
 
 		example := &secret.Secret{
-			ID:        value.ID,
+			ID:        val.ID,
 			Namespace: spc.GetNamespace(),
-			Name:      value.Name,
+			Name:      val.Name,
 		}
 
 		for _, sec := range secrets {
@@ -107,20 +107,20 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 	}
 
 	unstructured := &spec.Unstructured{}
-	if err := types.Decoder.Decode(doc, &unstructured); err != nil {
+	if err := types.Decoder.Decode(doc, unstructured); err != nil {
 		return nil, err
 	}
 
 	env := unstructured.GetEnv()
-	for key, value := range env {
-		if value.ID == uuid.Nil && value.Name == "" {
+	for key, val := range env {
+		if val.ID == uuid.Nil && val.Name == "" {
 			continue
 		}
 
 		example := &secret.Secret{
-			ID:        value.ID,
+			ID:        val.ID,
 			Namespace: unstructured.GetNamespace(),
-			Name:      value.Name,
+			Name:      val.Name,
 		}
 
 		var match *secret.Secret
@@ -136,28 +136,28 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 			data = match.Data
 		}
 
-		tmpl, err := template.New("").Parse(value.Value)
+		tmpl, err := template.New("").Parse(val.Value)
 		if err != nil {
 			return nil, err
 		}
-		v, err := tmpl.Execute(data)
+		value, err := tmpl.Execute(data)
 		if err != nil {
 			return nil, err
 		}
 
 		if match != nil {
-			value.ID = match.ID
-			value.Name = ""
+			val.ID = match.ID
+			val.Name = ""
 		}
-		value.Value = v
+		val.Value = value
 
-		env[key] = value
+		env[key] = val
 	}
 
 	data := map[string]any{}
-	for key, value := range spc.GetEnv() {
-		if value.Value != nil {
-			data[key] = value.Value
+	for key, val := range spc.GetEnv() {
+		if val.Value != nil {
+			data[key] = val.Value
 		}
 	}
 
@@ -166,11 +166,11 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 		if err != nil {
 			return nil, err
 		}
-		v, err := tmpl.Execute(data)
+		value, err := tmpl.Execute(data)
 		if err != nil {
 			return nil, err
 		}
-		unstructured.Fields = v.(map[string]any)
+		unstructured.Fields = value.(map[string]any)
 	}
 
 	return unstructured, nil
@@ -186,8 +186,8 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 		return nil, err
 	}
 
-	typ, ok := s.types[spc.GetKind()]
-	if !ok {
+	typ, exists := s.types[spc.GetKind()]
+	if !exists {
 		return spc, nil
 	}
 

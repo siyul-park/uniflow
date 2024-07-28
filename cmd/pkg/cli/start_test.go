@@ -38,7 +38,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
-	filename := "patch.json"
+	filename := "resources.json"
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),

@@ -1,80 +1,101 @@
 # 📚 Key Concepts
 
-This guide explains key terms and concepts in detail.
+This guide provides a detailed explanation of key terms and concepts used in our system.
 
-## Node Specification
+## Node Specifications
 
-A node specification declaratively defines how each node operates and connects to ports. This specification is compiled into executable nodes by the engine.
+Node specifications define the behavior and connections of each node in a declarative format. The engine compiles these specifications into executable nodes.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01a
-kind: snippet
+kind: listener
 namespace: default
-name: foo
+name: example-listener
 annotations:
-  key1: value1
-  key2: value2
-language: text
-code: foo
+  description: "An example listener node for HTTP protocol"
+  version: "1.0"
+protocol: http
+port: "{{ .PORT }}"
 ports:
   out:
-  - name: bar
-    port: in
-  - id: 01908c74-8b22-7cc0-ae2b-40504e7c9ff0
-    port: in
+    - name: proxy
+      port: in
+env:
+  PORT:
+    name: http_config
+    value: "{{ .PORT }}"
 ```
 
-- `id`: A UUID, preferably in UUID V7 format.
-- `kind`: Specifies the type of node, with different specifications depending on the kind.
-- `namespace`: Specifies the namespace the node belongs to, with `default` as the default.
-- `name`: Specifies the name of the node, which must be unique within the same namespace.
-- `annotations`: Includes additional metadata for the node specification. These values are not used by the engine but are useful for providing extensions or integrating with external services. Both keys and values are strings.
-- `language`, `code`: Additional fields required for `snippet` type nodes. Required fields may vary depending on the node type.
-- `ports`: Defines how ports are connected. Each port is identified by the ID or name and port name of another node.
+- `id`: A unique identifier in UUID format. UUID V7 is recommended.
+- `kind`: Specifies the type of node, in this case, a `listener`.
+- `namespace`: The namespace the node belongs to, defaulting to `default`.
+- `name`: The name of the node, which must be unique within the same namespace.
+- `annotations`: Additional metadata about the node. This can include descriptions, versions, or other custom key-value pairs.
+- `protocol`: Specifies the protocol used by the listener, in this case, `http`.
+- `ports`: Defines how ports are connected. `out` specifies the output port named `proxy`, connected to the `in` port of another node.
+- `env`: Environment variables for the node. Here, `PORT` is specified to be dynamically set.
 
-## Node
+## Secrets
 
-Nodes are data processing objects that execute workflows by sending and receiving packets through interconnected ports. Each node has an independent processing loop, allowing asynchronous communication with other nodes.
+Secrets securely store sensitive information such as passwords, API keys, or other confidential data that nodes may require. The following structure illustrates a secret definition:
 
-Nodes are classified into five types based on packet processing:
-- `ZeroToOne`: Generates the first packet to start the workflow.
-- `OneToOne`: Receives a packet from one input port, processes it, and sends it to one output port.
-- `OneToMany`: Receives a packet from one input port, processes it, and sends it to multiple output ports.
-- `ManyToOne`: Receives packets from multiple input ports, aggregates them, processes them, and sends them to one output port.
-- `Other`: Includes nodes that manage state and interactions beyond simple packet forwarding.
+```yaml
+id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
+namespace: default
+name: my-secret
+annotations:
+  purpose: "database password"
+data:
+  password: "super-secret-password"
+```
 
-## Port
+- `id`: Unique identifier for the secret.
+- `namespace`: Namespace the secret belongs to.
+- `name`: Name of the secret, which must be unique within the namespace.
+- `annotations`: Additional metadata for the secret.
+- `data`: Contains the secret data as key-value pairs.
 
-Ports are connection points where nodes send and receive packets. There are two types of ports, `InPort` and `OutPort`, which are connected to transmit packets. Packets sent to one port are delivered to all connected ports.
+## Nodes
 
-Common port names include:
-- `init`: A special port used to initialize nodes. Once the node is ready, workflows connected to the `init` port are executed.
-- `io`: Processes and immediately returns packets.
-- `in`: Receives packets, processes them, and sends the result to `out` or `error`. If no `out` or `error` ports are connected, it returns the result.
-- `out`: Sends processed packets. The results sent may be returned to `in`.
-- `error`: Sends errors that occur during packet processing. Error handling results may be returned to `in`.
+Nodes are data processing objects that execute workflows by exchanging packets through connected ports. Each node operates independently with its own processing loop, communicating asynchronously with other nodes.
 
-When multiple ports with the same role are needed, they are expressed as `in[0]` or `out[1]`.
+Nodes are categorized based on how they process packets:
+- `ZeroToOne`: Nodes that generate the initial packet to start the workflow.
+- `OneToOne`: Nodes that receive a packet on an input port, process it, and send it to an output port.
+- `OneToMany`: Nodes that receive a packet on an input port, process it, and send it to multiple output ports.
+- `ManyToOne`: Nodes that receive packets on multiple input ports, aggregate them, and send them to a single output port.
+- `Other`: Nodes that manage state and interactions beyond simple packet forwarding.
 
-## Packet
+## Ports
 
-A packet is the data exchanged between ports, and each packet includes a payload.
+Ports are connection points through which nodes exchange packets. There are two types of ports: `InPort` and `OutPort`. Connecting these ports allows packet transmission. Packets sent to a port are forwarded to all connected ports.
 
-Nodes must return the corresponding response packet according to the transmission order of the request packets. When connected to multiple ports, all response packets are aggregated into a single new response packet and returned to the node.
+Commonly used port names:
+- `init`: Special port used to initialize nodes. The workflow connected to the `init` port is executed when the node becomes available.
+- `io`: Processes packets and immediately returns them.
+- `in`: Receives and processes packets, sending the results to `out` or `error`. If no `out` or `error` port is connected, the result is returned.
+- `out`: Sends processed packets. The result can be sent to another `in` port for further processing.
+- `error`: Sends error packets if processing fails. Error handling results can be sent to an `in` port for recovery or logging.
 
-A special `None` packet indicates that the packet was simply accepted, showing that there is no response.
+When multiple ports serve the same role, they can be indexed as `in[0]`, `in[1]`, `out[0]`, `out[1]`, etc.
 
-Packets are transmitted along node connections for processing. Forward propagation occurs when packets follow the connected ports, and backpropagation occurs when responses are returned after all processing is complete.
+## Packets
+
+Packets are units of data exchanged between ports. Each packet contains a payload that nodes process and transmit.
+
+Nodes must return a response packet corresponding to the received request packet. When connected to multiple ports, nodes aggregate all response packets into a single new response packet.
+
+A special `None` packet exists to indicate the absence of a response, showing that the packet was simply accepted without further processing.
 
 ## Process
 
-A process is the basic unit of execution and is managed independently. Processes can have parent processes, and child processes terminate when the parent process terminates.
+A process is the basic unit of execution, managed independently. Processes can have parent processes, and child processes terminate when their parent process does.
 
-Each process has its own storage to save values that are difficult to transmit via packets, and operates using a Copy-On-Write (COW) method to efficiently share the parent process's data.
+Processes have their own storage for values that are difficult to transmit as packets. This storage operates in a Copy-On-Write (COW) manner, efficiently sharing data from parent processes.
 
-A new process is created to start a new workflow, and all resources used are released when the process terminates.
+New workflows start with the creation of a process. When the process ends, all resources used are released.
 
-Processes can have more than one root packet, but root packets must be generated from the same node. If they are generated from different nodes, a new child process must be created to handle the flow.
+Processes can have multiple root packets from the same node. If root packets originate from different nodes, a new child process is created to handle the flow.
 
 ## Workflow
 

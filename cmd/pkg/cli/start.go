@@ -11,11 +11,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-// StartConfig holds the configuration for the uniflow command.
+// StartConfig holds the configuration for the start command.
 type StartConfig struct {
 	Scheme      *scheme.Scheme
 	Hook        *hook.Hook
@@ -24,7 +25,7 @@ type StartConfig struct {
 	FS          afero.Fs
 }
 
-// NewStartCommand creates a new Cobra command for the uniflow application.
+// NewStartCommand creates a new cobra.Command for the start command.
 func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -33,11 +34,12 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the namespace for running")
-	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the boot file path for initializing nodes")
+	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd
 }
 
+// runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
@@ -56,29 +58,58 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			if err != nil {
 				return err
 			}
-			if len(specs) > 0 {
-				return nil
-			}
-
-			file, err := config.FS.Open(filename)
+			secrets, err := config.SecretStore.Load(ctx, &secret.Secret{Namespace: namespace})
 			if err != nil {
 				return err
 			}
-			defer file.Close()
 
-			reader := resource.NewReader(file)
-			if err := reader.Read(&specs); err != nil {
-				return err
-			}
-
-			for _, spec := range specs {
-				if spec.GetNamespace() == "" {
-					spec.SetNamespace(namespace)
+			if len(specs) == 0 && len(secrets) == 0 {
+				file, err := config.FS.Open(filename)
+				if err != nil {
+					return err
 				}
-			}
+				defer file.Close()
 
-			if _, err = config.SpecStore.Store(ctx, specs...); err != nil {
-				return err
+				reader := resource.NewReader(file)
+
+				var raws []types.Value
+				if err := reader.Read(&raws); err != nil {
+					return err
+				}
+
+				for _, raw := range raws {
+					var spec spec.Spec
+					if err := types.Decoder.Decode(raw, &spec); err == nil {
+						specs = append(specs, spec)
+						continue
+					}
+
+					var secret *secret.Secret
+					if err := types.Decoder.Decode(raw, &secret); err == nil {
+						secrets = append(secrets, secret)
+						continue
+					}
+				}
+
+				for _, spec := range specs {
+					if spec.GetNamespace() == "" {
+						spec.SetNamespace(namespace)
+					}
+				}
+
+				for _, sec := range secrets {
+					if sec.GetNamespace() == "" {
+						sec.SetNamespace(namespace)
+					}
+				}
+
+				if _, err = config.SpecStore.Store(ctx, specs...); err != nil {
+					return err
+				}
+
+				if _, err = config.SecretStore.Store(ctx, secrets...); err != nil {
+					return err
+				}
 			}
 		}
 

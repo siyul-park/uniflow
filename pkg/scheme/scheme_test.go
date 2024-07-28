@@ -61,7 +61,7 @@ func TestScheme_Bind(t *testing.T) {
 
 	bind, err := s.Bind(meta, secret)
 	assert.NoError(t, err)
-	assert.Equal(t, bind.GetEnv()["FOO"].Value, "foo")
+	assert.Equal(t, "foo", bind.GetEnv()["FOO"].Value)
 	assert.True(t, s.IsBound(bind, secret))
 }
 
@@ -88,8 +88,8 @@ func TestScheme_Decode(t *testing.T) {
 
 	structured, err := s.Decode(meta)
 	assert.NoError(t, err)
-	assert.Equal(t, structured.GetID(), meta.GetID())
-	assert.IsType(t, structured, &spec.Meta{})
+	assert.Equal(t, meta.GetID(), structured.GetID())
+	assert.IsType(t, &spec.Meta{}, structured)
 }
 
 func TestScheme_Compile(t *testing.T) {
@@ -106,4 +106,31 @@ func TestScheme_Compile(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
+}
+
+func TestScheme_IsBound(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	s.AddKnownType(kind, &spec.Meta{})
+
+	sec1 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+	sec2 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+		Env: map[string]spec.Secret{
+			"FOO": {
+				ID: sec1.ID,
+			},
+		},
+	}
+
+	assert.True(t, s.IsBound(meta, sec1))
+	assert.False(t, s.IsBound(meta, sec2))
 }

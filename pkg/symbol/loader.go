@@ -98,11 +98,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 
 	for _, id := range l.table.Keys() {
 		sym, ok := l.table.Lookup(id)
-		if !ok {
-			continue
-		}
-
-		if len(spec.Match(sym.Spec, examples...)) > 0 {
+		if ok && len(spec.Match(sym.Spec, examples...)) > 0 {
 			match := false
 			for _, spec := range specs {
 				if spec.GetID() == id {

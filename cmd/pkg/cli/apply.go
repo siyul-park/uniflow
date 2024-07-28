@@ -19,7 +19,7 @@ type ApplyConfig struct {
 func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "apply",
-		Short:     "Apply node specifications to the specified namespace",
+		Short:     "Apply resources to the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{argNodes, argSecrets},
 		RunE:      runApplyCommand(config),

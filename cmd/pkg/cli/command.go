@@ -96,10 +96,12 @@ func NewCommand(config Config) *cobra.Command {
 	}))
 	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
 		SpecStore: config.SpecStore,
+		SecretStore: config.SecretStore,		
 		FS:        config.FS,
 	}))
 	cmd.AddCommand(NewGetCommand(GetConfig{
 		SpecStore: config.SpecStore,
+		SecretStore: config.SecretStore,
 	}))
 	cmd.AddCommand(NewStartCommand(StartConfig(config)))
 
