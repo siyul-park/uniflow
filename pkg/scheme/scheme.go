@@ -85,9 +85,11 @@ func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 		}
 
 		example := &secret.Secret{
-			ID:        val.ID,
-			Namespace: spc.GetNamespace(),
-			Name:      val.Name,
+			ID:   val.ID,
+			Name: val.Name,
+		}
+		if example.GetName() != "" {
+			example.SetNamespace(spc.GetNamespace())
 		}
 
 		for _, sec := range secrets {
@@ -118,9 +120,11 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 		}
 
 		example := &secret.Secret{
-			ID:        val.ID,
-			Namespace: unstructured.GetNamespace(),
-			Name:      val.Name,
+			ID:   val.ID,
+			Name: val.Name,
+		}
+		if example.GetName() != "" {
+			example.SetNamespace(spc.GetNamespace())
 		}
 
 		var match *secret.Secret

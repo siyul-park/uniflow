@@ -237,7 +237,7 @@ func TestLoader_Load(t *testing.T) {
 
 func TestLoader_Reconcile(t *testing.T) {
 	t.Run("ReconcileLoadedSpec", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
 		s := scheme.New()
@@ -267,21 +267,26 @@ func TestLoader_Reconcile(t *testing.T) {
 
 		go loader.Reconcile(ctx)
 
-		sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		sec := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.Word(),
+		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env:       map[string]spec.Secret{"": {ID: sec.GetID()}},
+			Env: map[string]spec.Secret{
+				"": {
+					ID:    sec.GetID(),
+					Value: "{{ . }}",
+				},
+			},
 		}
 
 		scStore.Store(ctx, sec)
 		spStore.Store(ctx, meta)
 
 		func() {
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
-			defer cancel()
-
 			for {
 				select {
 				case <-ctx.Done():
@@ -290,6 +295,7 @@ func TestLoader_Reconcile(t *testing.T) {
 				default:
 					if sym, ok := table.Lookup(meta.GetID()); ok {
 						assert.Equal(t, meta.GetID(), sym.ID())
+						assert.Equal(t, sec.Data, sym.Env()[""].Value)
 						return
 					}
 
@@ -300,9 +306,6 @@ func TestLoader_Reconcile(t *testing.T) {
 		spStore.Delete(ctx, meta)
 
 		func() {
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
-			defer cancel()
-
 			for {
 				select {
 				case <-ctx.Done():
@@ -311,6 +314,92 @@ func TestLoader_Reconcile(t *testing.T) {
 				default:
 					if _, ok := table.Lookup(meta.GetID()); !ok {
 						return
+					}
+				}
+			}
+		}()
+	})
+
+	t.Run("ReconcileLoadedSecret", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		s := scheme.New()
+		kind := faker.UUIDHyphenated()
+
+		s.AddKnownType(kind, &spec.Meta{})
+		s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(nil), nil
+		}))
+
+		spStore := spec.NewStore()
+		scStore := secret.NewStore()
+
+		table := NewTable()
+		defer table.Clear()
+
+		loader := NewLoader(LoaderConfig{
+			Table:       table,
+			Scheme:      s,
+			SpecStore:   spStore,
+			SecretStore: scStore,
+		})
+		defer loader.Close()
+
+		err := loader.Watch(ctx)
+		assert.NoError(t, err)
+
+		go loader.Reconcile(ctx)
+
+		sec := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.Word(),
+		}
+		meta := &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: spec.DefaultNamespace,
+			Env: map[string]spec.Secret{
+				"": {
+					ID:    sec.GetID(),
+					Value: "{{ . }}",
+				},
+			},
+		}
+
+		spStore.Store(ctx, meta)
+		scStore.Store(ctx, sec)
+
+		func() {
+			for {
+				select {
+				case <-ctx.Done():
+					assert.NoError(t, ctx.Err())
+					return
+				default:
+					if sym, ok := table.Lookup(meta.GetID()); ok {
+						assert.Equal(t, meta.GetID(), sym.ID())
+						assert.Equal(t, sec.Data, sym.Env()[""].Value)
+						return
+					}
+
+				}
+			}
+		}()
+
+		scStore.Delete(ctx, sec)
+
+		func() {
+			for {
+				select {
+				case <-ctx.Done():
+					assert.NoError(t, ctx.Err())
+					return
+				default:
+					if sym, ok := table.Lookup(meta.GetID()); ok {
+						if sec.Data != sym.Env()[""].Value {
+							return
+						}
 					}
 				}
 			}

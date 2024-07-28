@@ -14,6 +14,7 @@ type Symbol struct {
 	refs map[string][]spec.Port
 }
 
+// Verify that Symbol implements the node.Node interface.
 var _ node.Node = (*Symbol)(nil)
 
 // ID returns the unique identifier of the Symbol.
@@ -21,12 +22,12 @@ func (s *Symbol) ID() uuid.UUID {
 	return s.Spec.GetID()
 }
 
-// Kind returns the kind or type of the Symbol.
+// Kind returns the type of the Symbol.
 func (s *Symbol) Kind() string {
 	return s.Spec.GetKind()
 }
 
-// Namespace returns the namespace of the Symbol.
+// Namespace returns the namespace to which the Symbol belongs.
 func (s *Symbol) Namespace() string {
 	return s.Spec.GetNamespace()
 }
@@ -46,7 +47,12 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
 }
 
-// Refs returns the refs associated with the Symbol.
+// Env returns the environment variables associated with the Symbol.
+func (s *Symbol) Env() map[string]spec.Secret {
+	return s.Spec.GetEnv()
+}
+
+// Refs returns the references associated with the Symbol.
 func (s *Symbol) Refs() map[string][]spec.Port {
 	return s.refs
 }

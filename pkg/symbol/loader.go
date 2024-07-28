@@ -206,10 +206,7 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 			var examples []spec.Spec
 			for _, id := range l.table.Keys() {
 				sym, ok := l.table.Lookup(id)
-				if !ok {
-					continue
-				}
-				if l.scheme.IsBound(sym.Spec, secrets...) {
+				if ok && l.scheme.IsBound(sym.Spec, secrets...) {
 					examples = append(examples, sym.Spec)
 				}
 			}
@@ -221,12 +218,12 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 
 			for _, example := range examples {
 				symbols, err := l.Load(ctx, example)
-				if err != nil {
+				if err != nil || len(symbols) == 0 {
+					delete(unloaded, example.GetID())
 					if _, err := l.table.Free(example.GetID()); err != nil {
 						return err
 					}
 				}
-
 				for _, sym := range symbols {
 					delete(unloaded, sym.ID())
 				}
@@ -236,9 +233,13 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			specs, err := l.specStore.Load(ctx, &spec.Meta{ID: event.ID})
+			example := &spec.Meta{ID: event.ID}
+			specs, err := l.specStore.Load(ctx, example)
 			if err != nil {
 				return err
+			}
+			if len(specs) == 0 {
+				specs = append(specs, example)
 			}
 
 			for _, spec := range specs {
@@ -252,12 +253,12 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 
 			for _, example := range examples {
 				symbols, err := l.Load(ctx, example)
-				if err != nil {
+				if err != nil || len(symbols) == 0 {
+					delete(unloaded, example.GetID())
 					if _, err := l.table.Free(example.GetID()); err != nil {
 						return err
 					}
 				}
-
 				for _, sym := range symbols {
 					delete(unloaded, sym.ID())
 				}
