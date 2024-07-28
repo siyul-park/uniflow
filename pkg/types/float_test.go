@@ -9,7 +9,7 @@ import (
 )
 
 func TestFloat_Float(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source Float
 		want   float64
@@ -18,15 +18,15 @@ func TestFloat_Float(t *testing.T) {
 		{"Float64", NewFloat64(6.28), 6.28},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, tc.source.Float())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.source.Float())
 		})
 	}
 }
 
 func TestFloat_Kind(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source Float
 		want   Kind
@@ -35,15 +35,15 @@ func TestFloat_Kind(t *testing.T) {
 		{"Float64", NewFloat64(6.28), KindFloat64},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, tc.source.Kind())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.source.Kind())
 		})
 	}
 }
 
 func TestFloat_Hash(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name string
 		v1   Float
 		v2   Float
@@ -52,15 +52,15 @@ func TestFloat_Hash(t *testing.T) {
 		{"Float64", NewFloat64(6.28), NewFloat64(3.14)},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.NotEqual(t, tc.v1.Hash(), tc.v2.Hash())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotEqual(t, tt.v1.Hash(), tt.v2.Hash())
 		})
 	}
 }
 
 func TestFloat_Interface(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source Float
 		want   any
@@ -69,15 +69,15 @@ func TestFloat_Interface(t *testing.T) {
 		{"Float64", NewFloat64(6.28), float64(6.28)},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, tc.source.Interface())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.source.Interface())
 		})
 	}
 }
 
 func TestFloat_Equal(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		v1     Float
 		v2     Float
@@ -89,15 +89,15 @@ func TestFloat_Equal(t *testing.T) {
 		{"Float64 not equal", NewFloat64(6.28), NewFloat64(3.14), false},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.equals, tc.v1.Equal(tc.v2))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.equals, tt.v1.Equal(tt.v2))
 		})
 	}
 }
 
 func TestFloat_Compare(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name    string
 		v1      Float
 		v2      Float
@@ -111,9 +111,9 @@ func TestFloat_Compare(t *testing.T) {
 		{"Float64 greater", NewFloat64(9.42), NewFloat64(6.28), 1},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.compare, tc.v1.Compare(tc.v2))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.compare, tt.v1.Compare(tt.v2))
 		})
 	}
 }
@@ -122,7 +122,7 @@ func TestFloat_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newFloatEncoder())
 
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source any
 		want   Float
@@ -131,11 +131,11 @@ func TestFloat_Encode(t *testing.T) {
 		{"float64", 6.28, NewFloat64(6.28)},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			decoded, err := enc.Encode(tc.source)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decoded, err := enc.Encode(tt.source)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want, decoded)
+			assert.Equal(t, tt.want, decoded)
 		})
 	}
 }
@@ -144,7 +144,7 @@ func TestFloat_Decode(t *testing.T) {
 	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newFloatDecoder())
 
-	testCases := []struct {
+	tests := []struct {
 		name   string
 		source Float
 		target any
@@ -165,11 +165,11 @@ func TestFloat_Decode(t *testing.T) {
 		{"string", NewFloat64(1), new(string), "1"},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := dec.Decode(tc.source, tc.target)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := dec.Decode(tt.source, tt.target)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want, reflect.ValueOf(tc.target).Elem().Interface())
+			assert.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
 		})
 	}
 }

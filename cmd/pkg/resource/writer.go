@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// Writer writes structured data to an io.Writer in table format.
 type Writer struct {
 	writer io.Writer
 }
@@ -16,24 +17,11 @@ type Writer struct {
 var style = table.Style{
 	Name: "StyleDefault",
 	Box: table.BoxStyle{
-		BottomLeft:       "",
-		BottomRight:      "",
-		BottomSeparator:  "",
-		EmptySeparator:   text.RepeatAndTrim(" ", text.RuneWidthWithoutEscSequences(" ")),
-		Left:             "",
-		LeftSeparator:    "",
-		MiddleHorizontal: "",
-		MiddleSeparator:  "",
-		MiddleVertical:   "",
-		PaddingLeft:      " ",
-		PaddingRight:     " ",
-		PageSeparator:    "\n",
-		Right:            "",
-		RightSeparator:   "",
-		TopLeft:          "",
-		TopRight:         "",
-		TopSeparator:     "",
-		UnfinishedRow:    " ~",
+		EmptySeparator: text.RepeatAndTrim(" ", text.RuneWidthWithoutEscSequences(" ")),
+		PaddingLeft:    " ",
+		PaddingRight:   " ",
+		PageSeparator:  "\n",
+		UnfinishedRow:  " ~",
 	},
 	Color:  table.ColorOptionsDefault,
 	Format: table.FormatOptionsDefault,
@@ -44,10 +32,12 @@ var style = table.Style{
 	Title: table.TitleOptionsDefault,
 }
 
+// NewWriter creates a new Writer for the given io.Writer.
 func NewWriter(writer io.Writer) *Writer {
 	return &Writer{writer: writer}
 }
 
+// Write encodes the value, transforms it into a table, and writes it to the writer.
 func (w *Writer) Write(value any) error {
 	doc, err := types.Encoder.Encode(value)
 	if err != nil {
@@ -77,11 +67,10 @@ func (w *Writer) Write(value any) error {
 
 	var keys []string
 	for key, count := range metrix {
-		if count > len(elements)/2 {
+		if count > len(elements)/3 {
 			keys = append(keys, key)
 		}
 	}
-
 	slices.Sort(keys)
 
 	header := table.Row{}

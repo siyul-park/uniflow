@@ -32,14 +32,14 @@ func TestDeleteCommand_Execute(t *testing.T) {
 			Name:      faker.UUIDHyphenated(),
 		}
 
-		dataMeta, err := json.Marshal(meta)
+		data, err := json.Marshal(meta)
 		assert.NoError(t, err)
 
-		fileMeta, err := fs.Create(filename)
+		file, err := fs.Create(filename)
 		assert.NoError(t, err)
-		defer fileMeta.Close()
+		defer file.Close()
 
-		_, err = fileMeta.Write(dataMeta)
+		_, err = file.Write(data)
 		assert.NoError(t, err)
 
 		_, err = specStore.Store(ctx, meta)
@@ -72,14 +72,14 @@ func TestDeleteCommand_Execute(t *testing.T) {
 			Name:      faker.UUIDHyphenated(),
 		}
 
-		dataSecret, err := json.Marshal(secret)
+		data, err := json.Marshal(secret)
 		assert.NoError(t, err)
 
-		fileSecret, err := fs.Create(filename)
+		file, err := fs.Create(filename)
 		assert.NoError(t, err)
-		defer fileSecret.Close()
+		defer file.Close()
 
-		_, err = fileSecret.Write(dataSecret)
+		_, err = file.Write(data)
 		assert.NoError(t, err)
 
 		_, err = secretStore.Store(ctx, secret)

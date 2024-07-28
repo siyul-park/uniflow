@@ -10,7 +10,7 @@ import (
 )
 
 func TestDetectTypes(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		when types.Value
 	}{
 		{
@@ -27,16 +27,16 @@ func TestDetectTypes(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			types := DetectTypes(tc.when)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
+			types := DetectTypes(tt.when)
 			assert.Greater(t, len(types), 0)
 		})
 	}
 }
 
 func TestNegotiate(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		when   string
 		offers []string
 		expect string
@@ -71,10 +71,10 @@ func TestNegotiate(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.expect, func(t *testing.T) {
-			typ := Negotiate(tc.when, tc.offers)
-			assert.Equal(t, tc.expect, typ)
+	for _, tt := range tests {
+		t.Run(tt.expect, func(t *testing.T) {
+			typ := Negotiate(tt.when, tt.offers)
+			assert.Equal(t, tt.expect, typ)
 		})
 	}
 }

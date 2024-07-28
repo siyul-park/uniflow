@@ -17,9 +17,10 @@ import (
 func TestApplyCommand_Execute(t *testing.T) {
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
+
 	fs := afero.NewMemMapFs()
 
-	t.Run("Apply Node Spec", func(t *testing.T) {
+	t.Run("Insert Node Spec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -33,14 +34,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 			Name:      faker.UUIDHyphenated(),
 		}
 
-		dataMeta, err := json.Marshal(meta)
+		data, err := json.Marshal(meta)
 		assert.NoError(t, err)
 
-		fileMeta, err := fs.Create(filename)
+		file, err := fs.Create(filename)
 		assert.NoError(t, err)
-		defer fileMeta.Close()
+		defer file.Close()
 
-		_, err = fileMeta.Write(dataMeta)
+		_, err = file.Write(data)
 		assert.NoError(t, err)
 
 		output := new(bytes.Buffer)
@@ -64,7 +65,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("Apply Secret", func(t *testing.T) {
+	t.Run("Insert Secret", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -75,14 +76,104 @@ func TestApplyCommand_Execute(t *testing.T) {
 			Name:      faker.UUIDHyphenated(),
 		}
 
-		dataSecret, err := json.Marshal(sec)
+		data, err := json.Marshal(sec)
 		assert.NoError(t, err)
 
-		fileSecret, err := fs.Create(filename)
+		file, err := fs.Create(filename)
 		assert.NoError(t, err)
-		defer fileSecret.Close()
+		defer file.Close()
 
-		_, err = fileSecret.Write(dataSecret)
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			FS:          fs,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		results, err := secretStore.Load(ctx, sec)
+		assert.NoError(t, err)
+		assert.Len(t, results, 1)
+
+		assert.Contains(t, output.String(), sec.Name)
+	})
+
+	t.Run("Update Node Spec", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		filename := "nodes.json"
+
+		kind := faker.UUIDHyphenated()
+
+		meta := &spec.Meta{
+			Kind:      kind,
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
+
+		_, err := specStore.Store(ctx, meta)
+		assert.NoError(t, err)
+
+		data, err := json.Marshal(meta)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			FS:          fs,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		results, err := specStore.Load(ctx, meta)
+		assert.NoError(t, err)
+		assert.Len(t, results, 1)
+
+		assert.Contains(t, output.String(), meta.Name)
+	})
+
+	t.Run("Update Secret", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		filename := "secrets.json"
+
+		sec := &secret.Secret{
+			Namespace: spec.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		}
+
+		data, err := json.Marshal(sec)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
 		assert.NoError(t, err)
 
 		output := new(bytes.Buffer)

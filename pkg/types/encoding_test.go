@@ -13,7 +13,7 @@ import (
 )
 
 func TestEncoder_Encode(t *testing.T) {
-	var testCase = []struct {
+	var tests = []struct {
 		when   any
 		expect Value
 	}{
@@ -59,17 +59,17 @@ func TestEncoder_Encode(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCase {
-		t.Run(fmt.Sprintf("%v", tc.when), func(t *testing.T) {
-			res, err := Encoder.Encode(tc.when)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
+			res, err := Encoder.Encode(tt.when)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expect, res)
+			assert.Equal(t, tt.expect, res)
 		})
 	}
 }
 
 func TestDecoder_Decode(t *testing.T) {
-	var testCase = []struct {
+	var tests = []struct {
 		when   Value
 		expect any
 	}{
@@ -115,13 +115,13 @@ func TestDecoder_Decode(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCase {
-		t.Run(fmt.Sprintf("%v", tc.expect), func(t *testing.T) {
-			zero := reflect.New(reflect.ValueOf(tc.expect).Type())
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%v", tt.expect), func(t *testing.T) {
+			zero := reflect.New(reflect.ValueOf(tt.expect).Type())
 
-			err := Decoder.Decode(tc.when, zero.Interface())
+			err := Decoder.Decode(tt.when, zero.Interface())
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expect, zero.Elem().Interface())
+			assert.Equal(t, tt.expect, zero.Elem().Interface())
 		})
 	}
 }

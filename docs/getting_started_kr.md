@@ -110,6 +110,12 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 ./dist/uniflow start --namespace default --from-nodes examples/nodes.json
 ```
 
+또한, 초기 시크릿을 제공하려면 `--from-secrets` 플래그를 사용할 수 있습니다:
+
+```sh
+./dist/uniflow start --namespace default --from-secrets examples/secrets.json
+```
+
 이 명령어는 지정된 네임스페이스의 모든 노드 명세를 실행합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
 
 ## HTTP API 통합

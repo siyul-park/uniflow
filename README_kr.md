@@ -74,7 +74,7 @@ make build
 uniflow start --from-nodes example/ping.yaml
 ```
 
-정상 작동 여부를 확인하기 위해 HTTP 엔드포인트를 호출해보세요:
+정상 작동 여부를 확인하기 위해 HTTP 엔드포인트를 호출해 보세요:
 
 ```sh
 curl localhost:8000/ping
@@ -86,11 +86,11 @@ pong#
 환경 설정은 `.uniflow.toml` 파일 또는 시스템 환경 변수를 통해 구성할 수 있습니다.
 
 | TOML 키              | 환경 변수 키            | 예시                       |
-|----------------------|----------------------|---------------------------|
-| `database.url`       | `DATABASE.URL`       | `mem://` 또는 `mongodb://` |
-| `database.name`      | `DATABASE.NAME`      | -                         |
-| `collection.nodes`   | `COLLECTION.NODES`   | `nodes`                   |
-| `collection.secrets` | `COLLECTION.SECRETS` | `secrets`                 |
+|----------------------|--------------------------|---------------------------|
+| `database.url`       | `DATABASE.URL`           | `mem://` 또는 `mongodb://` |
+| `database.name`      | `DATABASE.NAME`          | -                         |
+| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                   |
+| `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
 
 ## 📊 벤치마크
 

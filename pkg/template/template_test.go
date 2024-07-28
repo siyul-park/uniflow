@@ -6,6 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTemplate_Execute(t *testing.T) {
+	value, err := Execute(map[any]any{"key1": "{{.value}}", "key2": 456}, map[string]string{"value": "map value"})
+	assert.NoError(t, err)
+	assert.Equal(t, map[any]any{"key1": "map value", "key2": 456}, value)
+}
+
 func TestTemplate_ParseAndExecute(t *testing.T) {
 	tmpl := New("test")
 

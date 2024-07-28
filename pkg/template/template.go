@@ -11,6 +11,7 @@ type Template struct {
 	root node
 }
 
+// Execute creates a new template, parses the given value, and executes it with the provided data.
 func Execute(value, data any) (any, error) {
 	tmpl, err := New("").Parse(value)
 	if err != nil {
@@ -49,7 +50,6 @@ func (t *Template) Execute(data any) (any, error) {
 	return t.root.execute(data)
 }
 
-// parse recursively parses a reflect.Value into a corresponding node.
 func (t *Template) parse(val reflect.Value) (node, error) {
 	switch val.Kind() {
 	case reflect.String:
