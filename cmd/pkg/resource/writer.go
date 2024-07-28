@@ -1,11 +1,14 @@
 package resource
 
 import (
-	"encoding/json"
+	"fmt"
 	"io"
+	"slices"
+	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"gopkg.in/yaml.v3"
 )
 
 // Writer writes structured data to an io.Writer in table format.
@@ -38,33 +41,49 @@ func NewWriter(writer io.Writer) *Writer {
 
 // Write encodes the value, transforms it into a table, and writes it to the writer.
 func (w *Writer) Write(value any) error {
-	data, err := json.Marshal(value)
+	data, err := yaml.Marshal(value)
 	if err != nil {
 		return err
 	}
 
 	var elements []map[string]any
-	if err := json.Unmarshal(data, &elements); err != nil {
+	if err := yaml.Unmarshal(data, &elements); err != nil {
 		var element map[string]any
-		if err := json.Unmarshal(data, &element); err != nil {
+		if err := yaml.Unmarshal(data, &element); err != nil {
 			return err
 		}
 		elements = append(elements, element)
 	}
 
-	matrix := map[string]int{}
+	counts := map[string]int{}
 	for _, element := range elements {
 		for key := range element {
-			matrix[key]++
+			counts[key]++
+		}
+	}
+	sizes := map[string]int{}
+	for _, element := range elements {
+		for key, value := range element {
+			sizes[key] += len(fmt.Sprint(value))
 		}
 	}
 
 	var keys []string
-	for key, count := range matrix {
-		if count > len(elements)/3 {
+	for key, count := range counts {
+		if count > len(elements)/2 {
 			keys = append(keys, key)
 		}
 	}
+
+	slices.SortFunc(keys, func(x, y string) int {
+		if diff := counts[y] - counts[x]; diff != 0 {
+			return diff
+		}
+		if diff := sizes[x] - sizes[y]; diff != 0 {
+			return diff
+		}
+		return strings.Compare(x, y)
+	})
 
 	header := table.Row{}
 	for _, key := range keys {
