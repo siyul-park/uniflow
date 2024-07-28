@@ -12,13 +12,13 @@ import (
 )
 
 func TestGetCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
 	t.Run("Get Node Spec", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
@@ -47,6 +47,9 @@ func TestGetCommand_Execute(t *testing.T) {
 	})
 
 	t.Run("Get Secret", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		sec := &secret.Secret{
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),

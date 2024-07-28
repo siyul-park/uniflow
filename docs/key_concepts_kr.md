@@ -22,7 +22,7 @@ ports:
       port: in
 env:
   PORT:
-    name: http_config
+    name: network
     value: "{{ .PORT }}"
 ```
 

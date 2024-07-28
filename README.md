@@ -71,7 +71,7 @@ Let's run a basic HTTP request handling example, [ping.yaml](./examples/ping.yam
 To run the workflow, use the following command:
 
 ```sh
-uniflow start --filename example/ping.yaml
+uniflow start --from-nodes example/ping.yaml
 ```
 
 To verify it's working, call the HTTP endpoint:

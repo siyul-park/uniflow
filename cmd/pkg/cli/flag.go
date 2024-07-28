@@ -4,6 +4,9 @@ const (
 	flagNamespace = "namespace"
 	flagFilename  = "filename"
 
+	flagFromNodes   = "from-nodes"
+	flagFromSecrets = "from-secrets"
+
 	flagCPUProfile = "cpuprofile"
 	flagMemProfile = "memprofile"
 )

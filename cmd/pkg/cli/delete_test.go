@@ -14,14 +14,14 @@ import (
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 	fs := afero.NewMemMapFs()
 
 	t.Run("Delete Node Spec", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		filename := "nodes.json"
 
 		kind := faker.UUIDHyphenated()
@@ -62,6 +62,9 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	})
 
 	t.Run("Delete Secret", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		filename := "secrets.json"
 
 		secret := &secret.Secret{

@@ -104,10 +104,10 @@ The `start` command launches the runtime with node specifications in a specified
 ./dist/uniflow start --namespace default
 ```
 
-If the namespace is empty, you can provide initial node specifications using the `--filename` flag:
+If the namespace is empty, you can provide initial node specifications using the `--from-nodes` flag:
 
 ```sh
-./dist/uniflow start --namespace default --filename examples/nodes.json
+./dist/uniflow start --namespace default --from-nodes examples/nodes.json
 ```
 
 This command runs all node specifications in the specified namespace. It defaults to the `default` namespace if not specified.

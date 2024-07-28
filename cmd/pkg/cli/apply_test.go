@@ -15,14 +15,14 @@ import (
 )
 
 func TestApplyCommand_Execute(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 	fs := afero.NewMemMapFs()
 
 	t.Run("Apply Node Spec", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		filename := "nodes.json"
 
 		kind := faker.UUIDHyphenated()
@@ -65,6 +65,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 	})
 
 	t.Run("Apply Secret", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		filename := "secrets.json"
 
 		sec := &secret.Secret{

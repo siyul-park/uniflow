@@ -60,7 +60,7 @@ func (s *Scheme) AddCodec(kind string, codec Codec) {
 func (s *Scheme) Codec(kind string) (Codec, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	c, exists := s.codecs[kind]
 	return c, exists
 }

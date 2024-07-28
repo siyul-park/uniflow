@@ -71,7 +71,7 @@ make build
 워크플로우를 실행하려면 다음 명령어를 사용하세요:
 
 ```sh
-uniflow start --filename example/ping.yaml
+uniflow start --from-nodes example/ping.yaml
 ```
 
 정상 작동 여부를 확인하기 위해 HTTP 엔드포인트를 호출해보세요:
