@@ -48,7 +48,7 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 }
 
 // Env returns the environment variables associated with the Symbol.
-func (s *Symbol) Env() map[string]spec.Secret {
+func (s *Symbol) Env() map[string][]spec.Secret {
 	return s.Spec.GetEnv()
 }
 

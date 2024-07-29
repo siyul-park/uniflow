@@ -133,10 +133,11 @@ Pass this schema to the runtime environment to run a workflow that includes the 
 
 ```go
 r := runtime.New(runtime.Config{
-	Namespace: namespace,
-	Schema:    scheme,
-	Hook:      hook,
-	Store:     store,
+	Namespace:   namespace,
+	Schema:      scheme,
+	Hook:        hook,
+	SpecStore:   specStore,
+	SecretStore: secretStore,
 })
 defer r.Close()
 

@@ -13,7 +13,7 @@ type Secret struct {
 	// Annotations hold additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	// Data holds the secret's actual data.
-	Data any `json:"data,omitempty" bson:"data,omitempty" yaml:"data,omitempty" map:"data,omitempty"`
+	Data any `json:"data" bson:"data" yaml:"data" map:"data"`
 }
 
 // DefaultNamespace represents the default namespace for secrets.

@@ -47,7 +47,14 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env:       map[string]spec.Secret{"": {ID: sec.GetID()}},
+			Env: map[string][]spec.Secret{
+				"key": {
+					{
+						ID:    sec.GetID(),
+						Value: faker.Word(),
+					},
+				},
+			},
 		}
 		meta2 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -103,7 +110,14 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env:       map[string]spec.Secret{"": {ID: sec.GetID()}},
+			Env: map[string][]spec.Secret{
+				"key": {
+					{
+						ID:    sec.GetID(),
+						Value: faker.Word(),
+					},
+				},
+			},
 		}
 
 		scStore.Store(ctx, sec)
@@ -140,7 +154,14 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env:       map[string]spec.Secret{"": {ID: sec.GetID()}},
+			Env: map[string][]spec.Secret{
+				"key": {
+					{
+						ID:    sec.GetID(),
+						Value: faker.Word(),
+					},
+				},
+			},
 		}
 
 		scStore.Store(ctx, sec)
@@ -182,9 +203,19 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string]spec.Secret{
-				"sec1": {ID: sec1.GetID()},
-				"sec2": {ID: sec2.GetID()},
+			Env: map[string][]spec.Secret{
+				"sec1": {
+					{
+						ID:    sec1.GetID(),
+						Value: faker.Word(),
+					},
+				},
+				"sec2": {
+					{
+						ID:    sec2.GetID(),
+						Value: faker.Word(),
+					},
+				},
 			},
 		}
 
@@ -220,18 +251,23 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string]spec.Secret{
-				"nonexist": {ID: uuid.Must(uuid.NewV7())},
+			Env: map[string][]spec.Secret{
+				"nonexist": {
+					{
+						ID:    uuid.Must(uuid.NewV7()),
+						Value: faker.Word(),
+					},
+				},
 			},
 		}
 
 		spStore.Store(ctx, meta)
 
 		_, err := loader.Load(ctx, meta)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 
 		_, ok := table.Lookup(meta.GetID())
-		assert.True(t, ok)
+		assert.False(t, ok)
 	})
 }
 
@@ -275,10 +311,12 @@ func TestLoader_Reconcile(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env: map[string]spec.Secret{
-				"": {
-					ID:    sec.GetID(),
-					Value: "{{ . }}",
+			Env: map[string][]spec.Secret{
+				"key": {
+					{
+						ID:    sec.GetID(),
+						Value: "{{ . }}",
+					},
 				},
 			},
 		}
@@ -295,7 +333,7 @@ func TestLoader_Reconcile(t *testing.T) {
 				default:
 					if sym, ok := table.Lookup(meta.GetID()); ok {
 						assert.Equal(t, meta.GetID(), sym.ID())
-						assert.Equal(t, sec.Data, sym.Env()[""].Value)
+						assert.Equal(t, sec.Data, sym.Env()["key"][0].Value)
 						return
 					}
 
@@ -359,10 +397,12 @@ func TestLoader_Reconcile(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: spec.DefaultNamespace,
-			Env: map[string]spec.Secret{
-				"": {
-					ID:    sec.GetID(),
-					Value: "{{ . }}",
+			Env: map[string][]spec.Secret{
+				"key": {
+					{
+						ID:    sec.GetID(),
+						Value: "{{ . }}",
+					},
 				},
 			},
 		}
@@ -378,7 +418,7 @@ func TestLoader_Reconcile(t *testing.T) {
 					return
 				default:
 					if sym, ok := table.Lookup(meta.GetID()); ok {
-						if sec.Data == sym.Env()[""].Value {
+						if sec.Data == sym.Env()["key"][0].Value {
 							return
 						}
 					}
@@ -396,10 +436,8 @@ func TestLoader_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sym, ok := table.Lookup(meta.GetID()); ok {
-						if sec.Data != sym.Env()[""].Value {
-							return
-						}
+					if _, ok := table.Lookup(meta.GetID()); !ok {
+						return
 					}
 				}
 			}

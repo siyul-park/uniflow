@@ -2,6 +2,7 @@ package symbol
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"sync"
 
@@ -42,8 +43,6 @@ func NewLoader(config LoaderConfig) *Loader {
 
 // Load loads a spec.Spec by ID and its linked specs into the symbol table.
 func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error) {
-	var symbols []*Symbol
-
 	examples := specs
 	specs, err := l.specStore.Load(ctx, examples...)
 	if err != nil {
@@ -52,15 +51,17 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 
 	var secrets []*secret.Secret
 	for _, spc := range specs {
-		for _, value := range spc.GetEnv() {
-			if value.ID == uuid.Nil && value.Name == "" {
-				continue
+		for _, vals := range spc.GetEnv() {
+			for _, val := range vals {
+				if val.ID == uuid.Nil && val.Name == "" {
+					continue
+				}
+				secrets = append(secrets, &secret.Secret{
+					ID:        val.ID,
+					Namespace: spc.GetNamespace(),
+					Name:      val.Name,
+				})
 			}
-			secrets = append(secrets, &secret.Secret{
-				ID:        value.ID,
-				Namespace: spc.GetNamespace(),
-				Name:      value.Name,
-			})
 		}
 	}
 
@@ -69,50 +70,64 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 		return nil, err
 	}
 
+	var symbols []*Symbol
+	var errs []error
 	for _, spc := range specs {
 		bind, err := l.scheme.Bind(spc, secrets...)
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
+			continue
 		}
 
 		decode, err := l.scheme.Decode(bind)
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
+			continue
 		}
 
 		sym, ok := l.table.Lookup(decode.GetID())
 		if !ok || !reflect.DeepEqual(sym.Spec, decode) {
 			n, err := l.scheme.Compile(decode)
 			if err != nil {
-				return nil, err
+				errs = append(errs, err)
+				continue
 			}
 
 			sym = &Symbol{Spec: decode, Node: n}
 			if err := l.table.Insert(sym); err != nil {
-				return nil, err
+				errs = append(errs, err)
+				continue
 			}
 		}
 
 		symbols = append(symbols, sym)
 	}
 
+	if len(errs) > 0 {
+		symbols = nil
+	}
+
 	for _, id := range l.table.Keys() {
 		sym, ok := l.table.Lookup(id)
 		if ok && len(spec.Match(sym.Spec, examples...)) > 0 {
-			match := false
-			for _, spec := range specs {
-				if spec.GetID() == id {
-					match = true
+			var sym *Symbol
+			for _, s := range symbols {
+				if s.ID() == id {
+					sym = s
+					break
 				}
 			}
-			if !match {
-				if _, err := l.table.Free(sym.ID()); err != nil {
+			if sym == nil {
+				if _, err := l.table.Free(id); err != nil {
 					return nil, err
 				}
 			}
 		}
 	}
 
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
 	return symbols, nil
 }
 
@@ -127,6 +142,8 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 			return err
 		}
 
+		l.specStream = specStream
+
 		go func() {
 			<-specStream.Done()
 
@@ -137,8 +154,6 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 				l.specStream = nil
 			}
 		}()
-
-		l.specStream = specStream
 	}
 
 	if l.secretStream == nil {
@@ -154,6 +169,8 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 			return err
 		}
 
+		l.secretStream = secretStream
+
 		go func() {
 			<-secretStream.Done()
 
@@ -164,8 +181,6 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 				l.secretStream = nil
 			}
 		}()
-
-		l.secretStream = secretStream
 	}
 
 	return nil
@@ -217,15 +232,8 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 			}
 
 			for _, example := range examples {
-				symbols, err := l.Load(ctx, example)
-				if err != nil || len(symbols) == 0 {
+				if _, err := l.Load(ctx, example); err == nil {
 					delete(unloaded, example.GetID())
-					if _, err := l.table.Free(example.GetID()); err != nil {
-						return err
-					}
-				}
-				for _, sym := range symbols {
-					delete(unloaded, sym.ID())
 				}
 			}
 		case event, ok := <-specStream.Next():
@@ -252,15 +260,8 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 			}
 
 			for _, example := range examples {
-				symbols, err := l.Load(ctx, example)
-				if err != nil || len(symbols) == 0 {
+				if _, err := l.Load(ctx, example); err == nil {
 					delete(unloaded, example.GetID())
-					if _, err := l.table.Free(example.GetID()); err != nil {
-						return err
-					}
-				}
-				for _, sym := range symbols {
-					delete(unloaded, sym.ID())
 				}
 			}
 		}
