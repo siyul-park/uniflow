@@ -53,6 +53,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		sec := &secret.Secret{
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
+			Data:      faker.Word(),
 		}
 
 		_, err := secretStore.Store(ctx, sec)

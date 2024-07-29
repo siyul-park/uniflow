@@ -167,9 +167,6 @@ func (r *Runtime) Listen(ctx context.Context) error {
 	if err := r.loader.Watch(ctx, spec); err != nil {
 		return err
 	}
-	if err := r.table.Clear(); err != nil {
-		return err
-	}
 	if _, err := r.loader.Load(ctx, spec); err != nil {
 		return err
 	}

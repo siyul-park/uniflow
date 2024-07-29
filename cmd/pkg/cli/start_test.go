@@ -95,6 +95,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		sec := &secret.Secret{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: secret.DefaultNamespace,
+			Data:      faker.Word(),
 		}
 
 		data, _ := json.Marshal(sec)

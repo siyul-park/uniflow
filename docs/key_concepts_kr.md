@@ -22,8 +22,8 @@ ports:
       port: in
 env:
   PORT:
-    name: network
-    value: "{{ .PORT }}"
+    - name: network
+      value: "{{ .PORT }}"
 ```
 
 - `id`: UUID 형식의 고유 식별자입니다. UUID V7을 권장합니다.

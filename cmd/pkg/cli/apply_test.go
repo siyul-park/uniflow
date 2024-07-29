@@ -74,6 +74,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		sec := &secret.Secret{
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
+			Data:      faker.Word(),
 		}
 
 		data, err := json.Marshal(sec)
@@ -164,7 +165,11 @@ func TestApplyCommand_Execute(t *testing.T) {
 		sec := &secret.Secret{
 			Namespace: spec.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
+			Data:      faker.Word(),
 		}
+
+		_, err := secretStore.Store(ctx, sec)
+		assert.NoError(t, err)
 
 		data, err := json.Marshal(sec)
 		assert.NoError(t, err)
