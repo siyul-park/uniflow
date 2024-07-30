@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -33,7 +34,7 @@ type Runtime struct {
 // New creates a new Runtime instance with the specified configuration.
 func New(config Config) *Runtime {
 	if config.Namespace == "" {
-		config.Namespace = spec.DefaultNamespace
+		config.Namespace = resource.DefaultNamespace
 	}
 	if config.Hook == nil {
 		config.Hook = hook.New()
@@ -160,9 +161,7 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Listen starts the loader's watch process and reconciles symbols.
 func (r *Runtime) Listen(ctx context.Context) error {
-	spec := &spec.Meta{
-		Namespace: r.namespace,
-	}
+	spec := &spec.Meta{Namespace: r.namespace}
 
 	if err := r.loader.Watch(ctx, spec); err != nil {
 		return err

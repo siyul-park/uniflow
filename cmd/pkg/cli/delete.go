@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
@@ -25,7 +26,7 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		RunE:      runDeleteCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be deleted")
 
 	return cmd

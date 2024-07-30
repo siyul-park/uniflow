@@ -2,6 +2,7 @@ package spec
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
 )
 
 // Spec defines the behavior and connections of each node.
@@ -74,31 +75,8 @@ type Secret struct {
 	Value any `json:"value" bson:"value" yaml:"value" map:"value"`
 }
 
-// DefaultNamespace represents the default logical grouping for nodes.
-const DefaultNamespace = "default"
-
+var _ resource.Resource = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
-
-// Match returns all examples that match the given spec based on ID, namespace, or name.
-func Match(spec Spec, examples ...Spec) []Spec {
-	var matched []Spec
-	for _, example := range examples {
-		if example == nil {
-			continue
-		}
-		if example.GetID() != uuid.Nil && spec.GetID() != example.GetID() {
-			continue
-		}
-		if example.GetNamespace() != "" && spec.GetNamespace() != example.GetNamespace() {
-			continue
-		}
-		if example.GetName() != "" && spec.GetName() != example.GetName() {
-			continue
-		}
-		matched = append(matched, example)
-	}
-	return matched
-}
 
 // GetID returns the node's unique identifier.
 func (m *Meta) GetID() uuid.UUID {

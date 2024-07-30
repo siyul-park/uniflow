@@ -6,6 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,7 +23,7 @@ type Stream struct {
 	stream *mongo.ChangeStream
 	ctx    context.Context
 	cancel context.CancelFunc
-	out    chan secret.Event
+	out    chan resource.Event
 }
 
 type changeDocument struct {
@@ -33,7 +34,7 @@ type changeDocument struct {
 }
 
 var _ secret.Store = (*Store)(nil)
-var _ secret.Stream = (*Stream)(nil)
+var _ resource.Stream = (*Stream)(nil)
 
 // NewStore creates a new Store with the specified MongoDB collection.
 func NewStore(collection *mongo.Collection) *Store {
@@ -59,7 +60,7 @@ func (s *Store) Index(ctx context.Context) error {
 }
 
 // Watch returns a Stream that monitors changes matching the specified filter.
-func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (secret.Stream, error) {
+func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (resource.Stream, error) {
 	filter := s.filter(secrets...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)
@@ -96,11 +97,11 @@ func (s *Store) Load(ctx context.Context, secrets ...*secret.Secret) ([]*secret.
 
 	var result []*secret.Secret
 	for cursor.Next(ctx) {
-		secret := &secret.Secret{}
-		if err := cursor.Decode(secret); err != nil {
+		sec := &secret.Secret{}
+		if err := cursor.Decode(&sec); err != nil {
 			return nil, err
 		}
-		result = append(result, secret)
+		result = append(result, sec)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -112,21 +113,21 @@ func (s *Store) Load(ctx context.Context, secrets ...*secret.Secret) ([]*secret.
 // Store saves the given Specs into the database.
 func (s *Store) Store(ctx context.Context, secrets ...*secret.Secret) (int, error) {
 	var docs []any
-	for _, v := range secrets {
-		if v.GetID() == uuid.Nil {
-			v.SetID(uuid.Must(uuid.NewV7()))
+	for _, sec := range secrets {
+		if sec.GetID() == uuid.Nil {
+			sec.SetID(uuid.Must(uuid.NewV7()))
 		}
-		if v.GetNamespace() == "" {
-			v.SetNamespace(secret.DefaultNamespace)
+		if sec.GetNamespace() == "" {
+			sec.SetNamespace(resource.DefaultNamespace)
 		}
 
-		docs = append(docs, v)
+		docs = append(docs, sec)
 	}
 
 	res, err := s.collection.InsertMany(ctx, docs)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return 0, errors.WithMessage(secret.ErrDuplicatedKey, err.Error())
+			return 0, errors.WithMessage(resource.ErrDuplicatedKey, err.Error())
 		}
 		return 0, err
 	}
@@ -136,11 +137,11 @@ func (s *Store) Store(ctx context.Context, secrets ...*secret.Secret) (int, erro
 // Swap updates existing Specs in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error) {
 	ids := make([]uuid.UUID, len(secrets))
-	for i, secret := range secrets {
-		if secret.GetID() == uuid.Nil {
-			secret.SetID(uuid.Must(uuid.NewV7()))
+	for i, sec := range secrets {
+		if sec.GetID() == uuid.Nil {
+			sec.SetID(uuid.Must(uuid.NewV7()))
 		}
-		ids[i] = secret.GetID()
+		ids[i] = sec.GetID()
 	}
 
 	filter := bson.M{"_id": bson.M{"$in": ids}}
@@ -153,24 +154,24 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 
 	exists := make(map[uuid.UUID]*secret.Secret)
 	for cursor.Next(ctx) {
-		secret := &secret.Secret{}
-		if err := cursor.Decode(secret); err != nil {
+		sec := &secret.Secret{}
+		if err := cursor.Decode(&sec); err != nil {
 			return 0, err
 		}
-		exists[secret.GetID()] = secret
+		exists[sec.GetID()] = sec
 	}
 
 	count := 0
-	for _, secret := range secrets {
-		exist, ok := exists[secret.GetID()]
+	for _, sec := range secrets {
+		exist, ok := exists[sec.GetID()]
 		if !ok {
 			continue
 		}
 
-		secret.SetNamespace(exist.GetNamespace())
+		sec.SetNamespace(exist.GetNamespace())
 
-		filter := bson.M{"_id": secret.GetID()}
-		update := bson.M{"$set": secret}
+		filter := bson.M{"_id": sec.GetID()}
+		update := bson.M{"$set": sec}
 
 		res, err := s.collection.UpdateOne(ctx, filter, update)
 		if err != nil {
@@ -239,7 +240,7 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 		stream: stream,
 		ctx:    ctx,
 		cancel: cancel,
-		out:    make(chan secret.Event),
+		out:    make(chan resource.Event),
 	}
 
 	go func() {
@@ -251,19 +252,19 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 				continue
 			}
 
-			var op secret.EventOP
+			var op resource.EventOP
 			switch doc.OperationType {
 			case "insert":
-				op = secret.EventStore
+				op = resource.EventStore
 			case "update":
-				op = secret.EventSwap
+				op = resource.EventSwap
 			case "delete":
-				op = secret.EventDelete
+				op = resource.EventDelete
 			default:
 				continue
 			}
 
-			event := secret.Event{
+			event := resource.Event{
 				OP: op,
 				ID: doc.DocumentKey.ID,
 			}
@@ -280,7 +281,7 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 }
 
 // Next returns a channel for receiving events from the stream.
-func (s *Stream) Next() <-chan secret.Event {
+func (s *Stream) Next() <-chan resource.Event {
 	return s.out
 }
 

@@ -1,6 +1,9 @@
 package secret
 
-import "github.com/gofrs/uuid"
+import (
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
+)
 
 // Secret defines the interface for a secret with various attributes.
 type Secret struct {
@@ -16,9 +19,6 @@ type Secret struct {
 	Data any `json:"data" bson:"data" yaml:"data" map:"data"`
 }
 
-// DefaultNamespace represents the default namespace for secrets.
-const DefaultNamespace = "default"
-
 // Key constants for commonly used fields.
 const (
 	KeyID          = "id"
@@ -27,6 +27,8 @@ const (
 	KeyAnnotations = "annotations"
 	KeyData        = "data"
 )
+
+var _ resource.Resource = (*Secret)(nil)
 
 // GetID returns the secret's unique identifier.
 func (s *Secret) GetID() uuid.UUID {
@@ -76,25 +78,4 @@ func (s *Secret) GetData() any {
 // SetData sets the secret's data.
 func (s *Secret) SetData(val any) {
 	s.Data = val
-}
-
-// Match returns all examples that match the given spec based on ID, namespace, or name.
-func Match(secret *Secret, examples ...*Secret) []*Secret {
-	var matched []*Secret
-	for _, example := range examples {
-		if example == nil {
-			continue
-		}
-		if example.GetID() != uuid.Nil && secret.GetID() != example.GetID() {
-			continue
-		}
-		if example.GetNamespace() != "" && secret.GetNamespace() != example.GetNamespace() {
-			continue
-		}
-		if example.GetName() != "" && secret.GetName() != example.GetName() {
-			continue
-		}
-		matched = append(matched, example)
-	}
-	return matched
 }

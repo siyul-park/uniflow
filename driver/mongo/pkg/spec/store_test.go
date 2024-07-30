@@ -7,6 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -62,7 +63,7 @@ func TestStore_Watch(t *testing.T) {
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 
 	_, _ = st.Store(ctx, meta)

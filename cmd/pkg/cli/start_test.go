@@ -12,6 +12,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -46,7 +47,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 		}
 
 		data, _ := json.Marshal(meta)
@@ -94,7 +95,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		sec := &secret.Secret{
 			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: secret.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Data:      faker.Word(),
 		}
 

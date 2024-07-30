@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -26,8 +27,8 @@ type Loader struct {
 	scheme       *scheme.Scheme
 	specStore    spec.Store
 	secretStore  secret.Store
-	specStream   spec.Stream
-	secretStream secret.Stream
+	specStream   resource.Stream
+	secretStream resource.Stream
 	mu           sync.RWMutex
 }
 
@@ -111,7 +112,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 
 	for _, id := range l.table.Keys() {
 		sym, ok := l.table.Lookup(id)
-		if ok && len(spec.Match(sym.Spec, examples...)) > 0 {
+		if ok && len(resource.Match(sym.Spec, examples...)) > 0 {
 			var sym *Symbol
 			for _, s := range symbols {
 				if s.ID() == id {
@@ -134,11 +135,18 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 }
 
 // Watch starts watching for changes to spec.Spec.
-func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
+func (l *Loader) Watch(ctx context.Context, resources ...resource.Resource) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	if l.specStream == nil {
+		specs := make([]spec.Spec, 0, len(resources))
+		for _, res := range resources {
+			specs = append(specs, &spec.Meta{
+				Namespace: res.GetNamespace(),
+			})
+		}
+
 		specStream, err := l.specStore.Watch(ctx, specs...)
 		if err != nil {
 			return err
@@ -159,10 +167,10 @@ func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 	}
 
 	if l.secretStream == nil {
-		secrets := make([]*secret.Secret, 0, len(specs))
-		for _, spec := range specs {
+		secrets := make([]*secret.Secret, 0, len(resources))
+		for _, res := range resources {
 			secrets = append(secrets, &secret.Secret{
-				Namespace: spec.GetNamespace(),
+				Namespace: res.GetNamespace(),
 			})
 		}
 

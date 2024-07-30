@@ -1,10 +1,9 @@
-package spec
+package resource
 
 import (
 	"context"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,9 +12,7 @@ func TestStore_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
-
-	st := NewStore()
+	st := NewStore[*Meta]()
 
 	stream, err := st.Watch(ctx)
 	assert.NoError(t, err)
@@ -35,7 +32,6 @@ func TestStore_Watch(t *testing.T) {
 
 	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
-		Kind:      kind,
 		Namespace: DefaultNamespace,
 	}
 
@@ -48,17 +44,13 @@ func TestStore_Load(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
-
-	st := NewStore()
+	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 	meta2 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -74,17 +66,13 @@ func TestStore_Store(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
-
-	st := NewStore()
+	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 	meta2 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -100,17 +88,13 @@ func TestStore_Swap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
-
-	st := NewStore()
+	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 	meta2 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -130,17 +114,13 @@ func TestStore_Delete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
-
-	st := NewStore()
+	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 	meta2 := &Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)

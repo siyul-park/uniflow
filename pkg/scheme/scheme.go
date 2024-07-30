@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/template"
@@ -90,7 +91,7 @@ func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 			}
 
 			for _, sec := range secrets {
-				if len(secret.Match(sec, examples...)) > 0 {
+				if len(resource.Match(sec, examples...)) > 0 {
 					return true
 				}
 			}
@@ -123,7 +124,7 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 
 				var sec *secret.Secret
 				for _, s := range secrets {
-					if len(secret.Match(s, example)) > 0 {
+					if len(resource.Match(s, example)) > 0 {
 						sec = s
 						break
 					}

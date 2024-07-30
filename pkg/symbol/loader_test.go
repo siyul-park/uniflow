@@ -8,6 +8,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -45,7 +46,7 @@ func TestLoader_Load(t *testing.T) {
 		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Env: map[string][]spec.Secret{
 				"key": {
@@ -59,14 +60,14 @@ func TestLoader_Load(t *testing.T) {
 		meta2 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Ports:     map[string][]spec.Port{node.PortIO: {{ID: meta1.GetID(), Port: node.PortIO}}},
 		}
 		meta3 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Ports:     map[string][]spec.Port{node.PortIO: {{Name: meta2.GetName(), Port: node.PortIO}}},
 		}
@@ -109,7 +110,7 @@ func TestLoader_Load(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Env: map[string][]spec.Secret{
 				"key": {
 					{
@@ -153,7 +154,7 @@ func TestLoader_Load(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Env: map[string][]spec.Secret{
 				"key": {
 					{
@@ -201,7 +202,7 @@ func TestLoader_Load(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Env: map[string][]spec.Secret{
 				"sec1": {
@@ -249,7 +250,7 @@ func TestLoader_Load(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Env: map[string][]spec.Secret{
 				"nonexist": {
@@ -310,7 +311,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Env: map[string][]spec.Secret{
 				"key": {
 					{
@@ -396,7 +397,7 @@ func TestLoader_Reconcile(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Env: map[string][]spec.Secret{
 				"key": {
 					{

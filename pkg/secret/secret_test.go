@@ -3,25 +3,23 @@ package secret
 import (
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMatch(t *testing.T) {
-	id1 := uuid.Must(uuid.NewV7())
-	id2 := uuid.Must(uuid.NewV7())
-
-	spc := &Secret{ID: id1, Namespace: "default", Name: "secret1"}
-	examples := []*Secret{
-		{ID: id1, Namespace: "default", Name: "secret1"},
-		{ID: id1},
-		{Namespace: "default", Name: "secret1"},
-		{ID: id2, Namespace: "default", Name: "secret2"},
-		{ID: id2},
-		{Namespace: "default", Name: "secret2"},
+func TestSecret_GetSet(t *testing.T) {
+	sec := &Secret{
+		ID:          uuid.Must(uuid.NewV7()),
+		Namespace:   "default",
+		Name:        faker.Word(),
+		Annotations: map[string]string{"key": "value"},
+		Data:        faker.Word(),
 	}
 
-	expeced := []*Secret{examples[0], examples[1], examples[2]}
-
-	assert.Equal(t, expeced, Match(spc, examples...))
+	assert.Equal(t, sec.ID, sec.GetID())
+	assert.Equal(t, sec.Namespace, sec.GetNamespace())
+	assert.Equal(t, sec.Name, sec.GetName())
+	assert.Equal(t, sec.Annotations, sec.GetAnnotations())
+	assert.Equal(t, sec.Data, sec.GetData())
 }

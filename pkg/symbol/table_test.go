@@ -6,6 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,17 +22,17 @@ func TestTable_Insert(t *testing.T) {
 			meta1 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 			}
 			meta2 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 			}
 			meta3 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 			}
 
 			meta1.Ports = map[string][]spec.Port{
@@ -89,24 +90,24 @@ func TestTable_Insert(t *testing.T) {
 			meta1 := &spec.Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta2 := &spec.Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta3 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 			}
 			meta4 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 			}
 
 			meta1.Ports = map[string][]spec.Port{
@@ -158,19 +159,19 @@ func TestTable_Insert(t *testing.T) {
 			meta1 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta2 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta3 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 
@@ -229,25 +230,25 @@ func TestTable_Insert(t *testing.T) {
 			meta1 := &spec.Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta2 := &spec.Meta{
 				ID:        id,
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta3 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 			meta4 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
-				Namespace: spec.DefaultNamespace,
+				Namespace: resource.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			}
 
@@ -302,17 +303,17 @@ func TestTable_Free(t *testing.T) {
 	meta1 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 	meta2 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 	meta3 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 
 	meta1.Ports = map[string][]spec.Port{
@@ -391,7 +392,7 @@ func TestTable_LookupByID(t *testing.T) {
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 
 	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
@@ -412,7 +413,7 @@ func TestTable_Keys(t *testing.T) {
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
 
@@ -449,17 +450,17 @@ func TestTable_Hook(t *testing.T) {
 	meta1 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 	meta2 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 	meta3 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      kind,
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 	}
 
 	meta1.Ports = map[string][]spec.Port{
@@ -530,7 +531,7 @@ func BenchmarkTable_Insert(b *testing.B) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 		}
 
 		sym := &Symbol{Spec: meta}
@@ -550,7 +551,7 @@ func BenchmarkTable_Free(b *testing.B) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 		}
 
 		sym := &Symbol{Spec: meta}

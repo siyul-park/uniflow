@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
@@ -25,7 +26,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		RunE:      runApplyCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd
@@ -74,7 +75,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			var inserts []spec.Spec
 			var updates []spec.Spec
 			for _, spc := range specs {
-				if match := spec.Match(spc, exists...); len(match) > 0 {
+				if match := resourcebase.Match(spc, exists...); len(match) > 0 {
 					spc.SetID(match[0].GetID())
 					updates = append(updates, spc)
 				} else {
@@ -110,7 +111,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			var inserts []*secret.Secret
 			var updates []*secret.Secret
 			for _, sec := range secrets {
-				if match := secret.Match(sec, exists...); len(match) > 0 {
+				if match := resourcebase.Match(sec, exists...); len(match) > 0 {
 					sec.SetID(match[0].GetID())
 					updates = append(updates, sec)
 				} else {

@@ -6,7 +6,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,7 +24,7 @@ type Stream struct {
 	stream *mongo.ChangeStream
 	ctx    context.Context
 	cancel context.CancelFunc
-	out    chan spec.Event
+	out    chan resource.Event
 }
 
 type changeDocument struct {
@@ -33,7 +35,7 @@ type changeDocument struct {
 }
 
 var _ spec.Store = (*Store)(nil)
-var _ spec.Stream = (*Stream)(nil)
+var _ resource.Stream = (*Stream)(nil)
 
 // NewStore creates a new Store with the specified MongoDB collection.
 func NewStore(collection *mongo.Collection) *Store {
@@ -62,7 +64,7 @@ func (s *Store) Index(ctx context.Context) error {
 }
 
 // Watch returns a Stream that monitors changes matching the specified filter.
-func (s *Store) Watch(ctx context.Context, specs ...spec.Spec) (spec.Stream, error) {
+func (s *Store) Watch(ctx context.Context, specs ...spec.Spec) (resource.Stream, error) {
 	filter := s.filter(specs...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)
@@ -99,11 +101,11 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 
 	var result []spec.Spec
 	for cursor.Next(ctx) {
-		spec := &spec.Unstructured{}
-		if err := cursor.Decode(spec); err != nil {
+		spc := &spec.Unstructured{}
+		if err := cursor.Decode(&spc); err != nil {
 			return nil, err
 		}
-		result = append(result, spec)
+		result = append(result, spc)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -115,21 +117,31 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 // Store saves the given Specs into the database.
 func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 	var docs []any
-	for _, v := range specs {
-		if v.GetID() == uuid.Nil {
-			v.SetID(uuid.Must(uuid.NewV7()))
+	for _, spc := range specs {
+		if spc.GetID() == uuid.Nil {
+			spc.SetID(uuid.Must(uuid.NewV7()))
 		}
-		if v.GetNamespace() == "" {
-			v.SetNamespace(spec.DefaultNamespace)
+		if spc.GetNamespace() == "" {
+			spc.SetNamespace(resource.DefaultNamespace)
 		}
 
-		docs = append(docs, v)
+		doc, err := types.Encoder.Encode(spc)
+		if err != nil {
+			return 0, err
+		}
+
+		unstructured := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, &unstructured); err != nil {
+			return 0, err
+		}
+
+		docs = append(docs, unstructured)
 	}
 
 	res, err := s.collection.InsertMany(ctx, docs)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return 0, errors.WithMessage(spec.ErrDuplicatedKey, err.Error())
+			return 0, errors.WithMessage(resource.ErrDuplicatedKey, err.Error())
 		}
 		return 0, err
 	}
@@ -139,11 +151,11 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 // Swap updates existing Specs in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 	ids := make([]uuid.UUID, len(specs))
-	for i, spec := range specs {
-		if spec.GetID() == uuid.Nil {
-			spec.SetID(uuid.Must(uuid.NewV7()))
+	for i, spc := range specs {
+		if spc.GetID() == uuid.Nil {
+			spc.SetID(uuid.Must(uuid.NewV7()))
 		}
-		ids[i] = spec.GetID()
+		ids[i] = spc.GetID()
 	}
 
 	filter := bson.M{"_id": bson.M{"$in": ids}}
@@ -156,24 +168,34 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 	exists := make(map[uuid.UUID]spec.Spec)
 	for cursor.Next(ctx) {
-		spec := &spec.Unstructured{}
-		if err := cursor.Decode(spec); err != nil {
+		spc := &spec.Unstructured{}
+		if err := cursor.Decode(spc); err != nil {
 			return 0, err
 		}
-		exists[spec.GetID()] = spec
+		exists[spc.GetID()] = spc
 	}
 
 	count := 0
-	for _, spec := range specs {
-		exist, ok := exists[spec.GetID()]
+	for _, spc := range specs {
+		exist, ok := exists[spc.GetID()]
 		if !ok {
 			continue
 		}
 
-		spec.SetNamespace(exist.GetNamespace())
+		spc.SetNamespace(exist.GetNamespace())
 
-		filter := bson.M{"_id": spec.GetID()}
-		update := bson.M{"$set": spec}
+		doc, err := types.Encoder.Encode(spc)
+		if err != nil {
+			return 0, err
+		}
+
+		unstructured := &spec.Unstructured{}
+		if err := types.Decoder.Decode(doc, &unstructured); err != nil {
+			return 0, err
+		}
+
+		filter := bson.M{"_id": unstructured.GetID()}
+		update := bson.M{"$set": unstructured}
 
 		res, err := s.collection.UpdateOne(ctx, filter, update)
 		if err != nil {
@@ -242,7 +264,7 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 		stream: stream,
 		ctx:    ctx,
 		cancel: cancel,
-		out:    make(chan spec.Event),
+		out:    make(chan resource.Event),
 	}
 
 	go func() {
@@ -254,19 +276,19 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 				continue
 			}
 
-			var op spec.EventOP
+			var op resource.EventOP
 			switch doc.OperationType {
 			case "insert":
-				op = spec.EventStore
+				op = resource.EventStore
 			case "update":
-				op = spec.EventSwap
+				op = resource.EventSwap
 			case "delete":
-				op = spec.EventDelete
+				op = resource.EventDelete
 			default:
 				continue
 			}
 
-			event := spec.Event{
+			event := resource.Event{
 				OP: op,
 				ID: doc.DocumentKey.ID,
 			}
@@ -283,7 +305,7 @@ func newStream(stream *mongo.ChangeStream) *Stream {
 }
 
 // Next returns a channel for receiving events from the stream.
-func (s *Stream) Next() <-chan spec.Event {
+func (s *Stream) Next() <-chan resource.Event {
 	return s.out
 }
 

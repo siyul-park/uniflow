@@ -27,22 +27,3 @@ func TestMeta_GetSet(t *testing.T) {
 	assert.Equal(t, meta.Ports, meta.GetPorts())
 	assert.Equal(t, meta.Env, meta.GetEnv())
 }
-
-func TestMatch(t *testing.T) {
-	id1 := uuid.Must(uuid.NewV7())
-	id2 := uuid.Must(uuid.NewV7())
-
-	spc := &Meta{ID: id1, Namespace: "default", Name: "node1"}
-	examples := []Spec{
-		&Meta{ID: id1, Namespace: "default", Name: "node1"},
-		&Meta{ID: id1},
-		&Meta{Namespace: "default", Name: "node1"},
-		&Meta{ID: id2, Namespace: "default", Name: "node2"},
-		&Meta{ID: id2},
-		&Meta{Namespace: "default", Name: "node2"},
-	}
-
-	expeced := []Spec{examples[0], examples[1], examples[2]}
-
-	assert.Equal(t, expeced, Match(spc, examples...))
-}

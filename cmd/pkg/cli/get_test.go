@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestGetCommand_Execute(t *testing.T) {
 
 		meta := &spec.Meta{
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
@@ -51,7 +52,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		defer cancel()
 
 		sec := &secret.Secret{
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}

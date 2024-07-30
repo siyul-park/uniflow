@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
@@ -28,7 +29,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 
 		meta := &spec.Meta{
 			Kind:      kind,
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
@@ -68,7 +69,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		filename := "secrets.json"
 
 		sec := &secret.Secret{
-			Namespace: spec.DefaultNamespace,
+			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}

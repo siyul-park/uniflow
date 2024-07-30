@@ -7,6 +7,7 @@ import (
 
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
@@ -32,7 +33,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), spec.DefaultNamespace, "Set the namespace for running")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running")
 	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing node specs")
 	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
 

@@ -6,6 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +18,7 @@ func TestSymbol_Getter(t *testing.T) {
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Kind:      faker.UUIDHyphenated(),
-		Namespace: spec.DefaultNamespace,
+		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 		Annotations: map[string]string{
 			faker.UUIDHyphenated(): faker.UUIDHyphenated(),
