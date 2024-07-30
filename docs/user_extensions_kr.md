@@ -12,7 +12,7 @@ go get github.com/siyul-park/uniflow
 
 ## 새로운 노드 추가
 
-새로운 기능을 추가하기 위해 노드 명세를 정의하고, 이를 노드로 변환하는 코덱을 스키마에 등록합니다.
+새로운 기능을 추가하려면 노드 명세를 정의하고, 이를 노드로 변환하는 코덱을 스키마에 등록합니다.
 
 노드 명세는 `spec.Spec` 인터페이스를 구현하며, `spec.Meta`를 사용하여 정의할 수 있습니다:
 
@@ -49,13 +49,7 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-다음과 같은 명세를 가진 함수를 구현합니다. 이 함수는 정상 처리 시 첫 번째 반환값을 사용하고, 오류 발생 시 두 번째 반환값을 사용합니다:
-
-```go
-func (proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet)
-```
-
-여기서는 입력 패킷을 `contents`를 포함한 패킷으로 변환하여 전송합니다:
+패킷을 처리하는 함수를 구현합니다. 이 함수는 정상 처리 시 첫 번째 반환값을 사용하고, 오류 발생 시 두 번째 반환값을 사용합니다:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -64,7 +58,7 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 ```
 
-이제 노드 명세가 의도한 대로 작동하는지 확인하기 위해 테스트를 작성합니다. 입력 패킷을 `in` 포트로 전송하고, 출력 패킷이 `contents`를 포함하는지 확인합니다:
+노드가 의도한 대로 작동하는지 확인하기 위해 테스트를 작성합니다. 입력 패킷을 `in` 포트로 전송하고, 출력 패킷이 `contents`를 포함하는지 확인합니다:
 
 ```go
 func TestTextNode_SendAndReceive(t *testing.T) {
@@ -146,11 +140,11 @@ r.Listen(ctx)
 
 ## 서비스 통합
 
-런타임 환경을 서비스에 두 가지 방식으로 통합할 수 있습니다.
+런타임 환경을 서비스에 통합하는 방법에는 두 가지가 있습니다.
 
 ### 지속적 통합
 
-외부 요청에 신속하게 대응하기 위해 런타임 환경을 지속적으로 유지합니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적 워크플로우 실행이 필요한 시나리오에 적합합니다.
+외부 요청에 신속하게 대응하기 위해 런타임 환경을 지속적으로 유지합니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다.
 
 ```go
 func main() {
@@ -174,17 +168,12 @@ func main() {
 	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
 	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
 
-	broker := event.NewBroker()
-	defer broker.Close()
-
 	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(event.AddToScheme(broker, broker))
 	sbuilder.Register(io.AddToScheme())
 	sbuilder.Register(network.AddToScheme())
 	sbuilder.Register(system.AddToScheme(stable))
 
 	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(event.AddToHook(broker))
 	hbuilder.Register(network.AddToHook())
 
 	scheme, err := sbuilder.Build()
@@ -197,10 +186,10 @@ func main() {
 	}
 
 	r := runtime.New(runtime.Config{
-		Namespace:	 "default",
-		Scheme:		 scheme,
-		Hook:		 hook,
-		SpecStore:	 specStore,
+		Namespace:   "default",
+		Schema:      scheme,
+		Hook:        hook,
+		SpecStore:   specStore,
 		SecretStore: secretStore,
 	})
 	defer r.Close()

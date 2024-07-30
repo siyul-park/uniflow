@@ -42,9 +42,9 @@ env:
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
 namespace: default
-name: my-secret
+name: database
 annotations:
-  purpose: "데이터베이스 비밀번호"
+  description: "데이터베이스 정보"
 data:
   password: "super-secret-password"
 ```

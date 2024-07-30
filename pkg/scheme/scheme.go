@@ -137,8 +137,8 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 					return nil, err
 				}
 
-				val.ID = sec.ID
-				val.Name = ""
+				val.ID = sec.GetID()
+				val.Name = sec.GetName()
 				val.Value = v
 
 				vals[i] = val

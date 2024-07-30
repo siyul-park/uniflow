@@ -1,10 +1,10 @@
-# 🔧 User Extensions
+# 🔧 Extending User Functionality
 
-This guide explains how to extend your service and integrate it into the runtime environment.
+This guide explains how users can extend their services and integrate them into the runtime environment.
 
 ## Setting Up the Development Environment
 
-First, initialize the [Go](https://go.dev) module and download the necessary dependencies.
+First, initialize the [Go](https://go.dev) module and download the required dependencies:
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -12,9 +12,9 @@ go get github.com/siyul-park/uniflow
 
 ## Adding a New Node
 
-To add new functionality, define the node specification and register the codec that converts it to a node in the schema.
+To add new functionality, define the node specification and register a codec to convert it into a node.
 
-The node specification implements the `spec.Spec` interface and can be defined using `spec.Meta`:
+Node specifications implement the `spec.Spec` interface and can be defined using `spec.Meta`:
 
 ```go
 type TextNodeSpec struct {
@@ -23,13 +23,13 @@ type TextNodeSpec struct {
 }
 ```
 
-Define the new node type:
+Define a new node type:
 
 ```go
 const KindText = "text"
 ```
 
-Now, implement the node that will perform the actual functionality. Use the provided `OneToOneNode` template to receive an input packet, process it, and send an output packet:
+Implement the actual node functionality. Use the `OneToOneNode` template provided to receive input packets, process them, and send output packets:
 
 ```go
 type TextNode struct {
@@ -38,7 +38,7 @@ type TextNode struct {
 }
 ```
 
-Define a function to create the node and set up the packet processing using the `OneToOneNode` constructor:
+Define a function to create the node, passing the packet processing method to the `OneToOneNode` constructor:
 
 ```go
 func NewTextNode(contents string) *TextNode {
@@ -49,13 +49,7 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-Implement the processing function, which will return the first value on success and the second value in case of an error:
-
-```go
-func (proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet)
-```
-
-In this example, the input packet is transformed into a packet containing the `contents` and sent:
+Implement the packet processing function. This function uses the first return value for successful processing and the second return value for errors:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -64,7 +58,7 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 ```
 
-Now, write tests to ensure the node specification works as intended. Send an input packet to the `in` port and verify that the output packet contains the `contents`:
+Write a test to verify that the node functions as intended. Send an input packet to the `in` port and check that the output packet contains the `contents`:
 
 ```go
 func TestTextNode_SendAndReceive(t *testing.T) {
@@ -98,9 +92,9 @@ func TestTextNode_SendAndReceive(t *testing.T) {
 }
 ```
 
-### Registering the Schema and Codec
+### Registering Schema and Codec
 
-Create a codec to convert the node specification to a node and register it in the schema:
+Create a codec to convert the node specification into a node and register it with the schema:
 
 ```go
 func NewTextNodeCodec() scheme.Codec {
@@ -118,7 +112,7 @@ func AddToScheme() scheme.Register {
 }
 ```
 
-Use the `scheme.Builder` to build the schema:
+Use `scheme.Builder` to build the schema:
 
 ```go
 builder := scheme.NewBuilder()
@@ -129,7 +123,7 @@ scheme, _ := builder.Build()
 
 ### Running the Runtime Environment
 
-Pass this schema to the runtime environment to run a workflow that includes the extended node:
+Now pass the schema to the runtime environment to execute workflows containing the extended node:
 
 ```go
 r := runtime.New(runtime.Config{
@@ -144,13 +138,13 @@ defer r.Close()
 r.Listen(ctx)
 ```
 
-## Service Integration
+## Integrating with Services
 
-You can integrate the runtime environment into your service in two ways.
+There are two ways to integrate the runtime environment with a service:
 
-### Persistent Integration
+### Continuous Integration
 
-Maintain a persistent runtime environment to quickly respond to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution.
+Maintain the runtime environment continuously for rapid responses to external requests. Each runtime environment runs in an independent container and is suitable for scenarios requiring ongoing workflow execution.
 
 ```go
 func main() {
@@ -174,17 +168,12 @@ func main() {
 	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
 	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
 
-	broker := event.NewBroker()
-	defer broker.Close()
-
 	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(event.AddToScheme(broker, broker))
 	sbuilder.Register(io.AddToScheme())
 	sbuilder.Register(network.AddToScheme())
 	sbuilder.Register(system.AddToScheme(stable))
 
 	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(event.AddToHook(broker))
 	hbuilder.Register(network.AddToHook())
 
 	scheme, err := sbuilder.Build()
@@ -197,10 +186,10 @@ func main() {
 	}
 
 	r := runtime.New(runtime.Config{
-		Namespace:	 "default",
-		Scheme:		 scheme,
-		Hook:		 hook,
-		SpecStore:	 specStore,
+		Namespace:   "default",
+		Schema:      scheme,
+		Hook:        hook,
+		SpecStore:   specStore,
 		SecretStore: secretStore,
 	})
 	defer r.Close()
@@ -219,7 +208,7 @@ func main() {
 
 ### Temporary Execution
 
-Execute the workflow temporarily and then remove the execution environment. This method is suitable for running workflows in temporary environments:
+Run workflows temporarily and remove the execution environment. This method is suitable for executing workflows in transient environments:
 
 ```go
 r := runtime.New(runtime.Config{

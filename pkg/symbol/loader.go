@@ -65,9 +65,11 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 		}
 	}
 
-	secrets, err = l.secretStore.Load(ctx, secrets...)
-	if err != nil {
-		return nil, err
+	if len(secrets) > 0 {
+		secrets, err = l.secretStore.Load(ctx, secrets...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var symbols []*Symbol
@@ -199,7 +201,7 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	unloaded := map[uuid.UUID]spec.Spec{}
+	buffer := map[uuid.UUID]spec.Spec{}
 	for {
 		select {
 		case <-ctx.Done():
@@ -225,15 +227,17 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 					examples = append(examples, sym.Spec)
 				}
 			}
-			for _, example := range unloaded {
-				if l.scheme.IsBound(example, secrets...) {
-					examples = append(examples, example)
+			for _, spc := range buffer {
+				if l.scheme.IsBound(spc, secrets...) {
+					examples = append(examples, spc)
 				}
 			}
 
 			for _, example := range examples {
-				if _, err := l.Load(ctx, example); err == nil {
-					delete(unloaded, example.GetID())
+				if _, err := l.Load(ctx, &spec.Meta{ID: example.GetID()}); err == nil {
+					delete(buffer, example.GetID())
+				} else {
+					buffer[example.GetID()] = example
 				}
 			}
 		case event, ok := <-specStream.Next():
@@ -251,17 +255,17 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 			}
 
 			for _, spec := range specs {
-				unloaded[spec.GetID()] = spec
+				buffer[spec.GetID()] = spec
 			}
 
 			var examples []spec.Spec
-			for _, example := range unloaded {
-				examples = append(examples, &spec.Meta{ID: example.GetID()})
+			for _, example := range buffer {
+				examples = append(examples, example)
 			}
 
 			for _, example := range examples {
-				if _, err := l.Load(ctx, example); err == nil {
-					delete(unloaded, example.GetID())
+				if _, err := l.Load(ctx, &spec.Meta{ID: example.GetID()}); err == nil {
+					delete(buffer, example.GetID())
 				}
 			}
 		}

@@ -1,8 +1,8 @@
 # 🏗️ Architecture
 
-Node specifications define the role of each node declaratively, and these specifications are connected to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
+Each node specification declaratively defines the role of each node, and these specifications connect to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
 
-```plaintext
+```plantext
    +-------------------------------------------------+
    |                   Workflow A                    |
    |  +--------------------+ +--------------------+  |
@@ -24,15 +24,15 @@ Node specifications define the role of each node declaratively, and these specif
    +-------------------------------------------------+
 ```
 
-The engine does not enforce the use of specific nodes. All nodes are connected to the engine through extensions and can be freely added or removed to suit the service.
+The engine does not enforce the use of specific nodes. All nodes connect to the engine through extensions and can be freely added or removed according to the service needs.
 
-To effectively execute node specifications, two main processes are involved: compilation and runtime. These processes help reduce complexity and optimize performance.
+To effectively execute node specifications, two main processes—compilation and runtime—are employed. These processes help reduce complexity and optimize performance.
 
 ## Workflow Modification
 
-The engine does not expose an API for users to modify node specifications directly. Instead, it focuses on loading, compiling, and activating nodes to make them executable.
+The engine does not expose an API to users for modifying node specifications. Instead, the engine focuses solely on loading, compiling, and activating nodes to make them executable.
 
-To modify node specifications, users can update the database using a Command-Line Interface (CLI) or define workflows that provide HTTP APIs for modifying node specifications. These workflows are typically defined in the `system` namespace.
+To modify node specifications, users can update the database using a Command-Line Interface (CLI) or define workflows that provide an HTTP API to modify node specifications. Typically, such workflows are defined in the `system` namespace.
 
 ```yaml
 - kind: listener
@@ -156,11 +156,11 @@ This approach ensures the runtime environment remains stable while allowing flex
 
 ## Compilation Process
 
-The loader tracks real-time changes to node specifications and secrets in the database through a change stream. When additions, modifications, or deletions occur, the loader detects these changes and dynamically reloads from the database. It then compiles the specifications into executable form using codecs defined in the schema. Caching and optimization are performed during this process to improve performance.
+The loader tracks real-time changes to node specifications and secrets in the database through a change stream. When additions, modifications, or deletions occur, the loader detects these changes and dynamically reloads them from the database. The specifications are then compiled into executable forms using codecs defined in the schema. This process involves caching and optimization to enhance performance.
 
-The compiled nodes are transformed into symbols and stored in a symbol table. The symbol table links each symbol’s ports based on the port connection information defined in the node specifications.
+The compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information defined in the node specifications.
 
-```plaintext
+```plantext
    +--------------------------+
    |         Database         |
    |  +--------------------+  |
@@ -192,19 +192,19 @@ The compiled nodes are transformed into symbols and stored in a symbol table. Th
    +-------------------------+
 ```
 
-Once all nodes within a workflow are loaded into the symbol table and all ports are connected, load hooks are executed sequentially from internal nodes to external nodes to activate the nodes. However, if a specific node is removed from the symbol table and cannot be executed, unload hooks are executed in reverse order to deactivate all nodes referencing the removed node.
+Once all nodes within a workflow are loaded into the symbol table and all ports are connected, the workflow executes load hooks sequentially from internal nodes to external nodes to activate them. Conversely, if a specific node is removed from the symbol table and becomes non-executable, unload hooks are executed in reverse order to deactivate all nodes that reference the affected node.
 
-Any changes to node specifications in the database are reflected across all runtime environments through this process.
+Any changes to node specifications in the database are propagated to all runtime environments through this process.
 
 ## Runtime Process
 
-Activated nodes monitor sockets or files and execute the workflow. Nodes initiate independent processes for execution, isolating the execution flow from other processes. This ensures efficient resource management without affecting other tasks.
+Activated nodes monitor sockets or files and execute workflows. Each node starts by spawning an independent process, isolating its execution flow from other processes. This approach ensures efficient resource management and minimizes impact on other tasks.
 
-Each node opens ports through processes and creates writers to send packets to connected nodes. The payload of the packets is converted into a common type used at runtime.
+Each node opens ports through processes and creates writers to send packets to connected nodes. The payload of these packets is converted into common types used in the runtime for transmission.
 
-Connected nodes monitor whether a new process has opened the respective port and create readers accordingly. The readers continuously process pending packets and pass the processed results to the next node or return them.
+Connected nodes monitor whether a new process has opened the port and create readers accordingly. These readers continuously process waiting packets and pass the processed results to the next node or return them.
 
-```plaintext
+```plantext
    +-----------------------+          +-----------------------+
    |        Node A         |          |        Node B         |
    |  +-----------------+  |          |  +-----------------+  |
@@ -220,12 +220,10 @@ Connected nodes monitor whether a new process has opened the respective port and
    +-----------------------+          +-----------------------+
 ```
 
-Each reader must sequentially process and respond to all packets, and packets sent by a writer must be returned as response packets. This ensures smooth communication between nodes and maintains data consistency and integrity.
+A single reader processes and responds to all packets sequentially, and packets sent by writers must be returned as response packets. This mechanism ensures smooth communication between nodes and maintains data consistency and integrity.
 
-Nodes executing the workflow wait until all response packets are returned before terminating the process and releasing allocated resources. If an error occurs during packet processing, resulting in an error response, the node logs the error and terminates the process.
+Nodes that execute workflows wait until responses for all sent packets are returned before terminating the process and releasing allocated resources. If an error occurs during packet processing, resulting in an error response, the node logs the error and terminates the process.
 
-Upon process termination, all open file descriptors, allocated memory, and database transactions are
+Upon process termination, the system verifies normal termination and releases all associated resources, including open file descriptors, allocated memory, and database transactions.
 
- released after verifying normal termination.
-
-When a parent process terminates, all derived child processes also terminate. The parent process typically waits until all child processes have terminated.
+When a parent process terminates, all derived child processes also terminate. Typically, the parent process waits until all child processes have terminated.

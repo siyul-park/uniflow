@@ -38,7 +38,7 @@ Uniflow는 `.uniflow.toml` 파일이나 시스템 환경 변수를 통해 유연
 | `collection.nodes`   | `COLLECTION.NODES`      | `nodes`                    |
 | `collection.secrets` | `COLLECTION.SECRETS`    | `secrets`                  |
 
-[MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 노드 및 시크릿 명세 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
+[MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 노드 명세 및 시크릿 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
 
 ## CLI 명령어
 
@@ -53,13 +53,13 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 `apply` 명령어는 네임스페이스에 노드 명세 또는 시크릿을 추가하거나 업데이트합니다. 명령어는 다음과 같이 사용할 수 있습니다:
 
 ```sh
-./dist/uniflow apply nodes --namespace default --filename examples/nodes.json
+./dist/uniflow apply nodes --namespace default --filename examples/nodes.yaml
 ```
 
 또는
 
 ```sh
-./dist/uniflow apply secrets --namespace default --filename examples/secrets.json
+./dist/uniflow apply secrets --namespace default --filename examples/secrets.yaml
 ```
 
 이 명령어는 결과를 출력하며, 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
@@ -69,16 +69,16 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 `delete` 명령어는 네임스페이스에서 노드 명세 또는 시크릿을 제거합니다:
 
 ```sh
-./dist/uniflow delete nodes --namespace default --filename examples/nodes.json
+./dist/uniflow delete nodes --namespace default --filename examples/nodes.yaml
 ```
 
 또는
 
 ```sh
-./dist/uniflow delete secrets --namespace default --filename examples/secrets.json
+./dist/uniflow delete secrets --namespace default --filename examples/secrets.yaml
 ```
 
-이 명령어는 `examples/nodes.json` 또는 `examples/secrets.json`에 정의된 모든 노드 명세 또는 시크릿을 지정된 네임스페이스에서 제거합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
+이 명령어는 `examples/nodes.yaml` 또는 `examples/secrets.yaml`에 정의된 모든 노드 명세 또는 시크릿을 지정된 네임스페이스에서 제거합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
 
 ### Get
 
@@ -107,13 +107,13 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 네임스페이스가 비어 있을 경우, `--from-nodes` 플래그를 사용하여 초기 노드 명세를 제공할 수 있습니다:
 
 ```sh
-./dist/uniflow start --namespace default --from-nodes examples/nodes.json
+./dist/uniflow start --namespace default --from-nodes examples/nodes.yaml
 ```
 
 또한, 초기 시크릿을 제공하려면 `--from-secrets` 플래그를 사용할 수 있습니다:
 
 ```sh
-./dist/uniflow start --namespace default --from-secrets examples/secrets.json
+./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
 ```
 
 이 명령어는 지정된 네임스페이스의 모든 노드 명세를 실행합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
