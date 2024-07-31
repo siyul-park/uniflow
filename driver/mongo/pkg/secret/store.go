@@ -34,7 +34,7 @@ type changeDocument struct {
 }
 
 var _ secret.Store = (*Store)(nil)
-var _ resource.Stream = (*Stream)(nil)
+var _ secret.Stream = (*Stream)(nil)
 
 // NewStore creates a new Store with the specified MongoDB collection.
 func NewStore(collection *mongo.Collection) *Store {
@@ -60,7 +60,7 @@ func (s *Store) Index(ctx context.Context) error {
 }
 
 // Watch returns a Stream that monitors changes matching the specified filter.
-func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (resource.Stream, error) {
+func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (secret.Stream, error) {
 	filter := s.filter(secrets...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)

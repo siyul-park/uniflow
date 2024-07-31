@@ -79,9 +79,9 @@ func (r *Runtime) Load(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbo
 		})
 	}
 
-	for _, spec := range specs {
-		if spec.GetNamespace() != r.namespace {
-			spec.SetNamespace(r.namespace)
+	for _, spc := range specs {
+		if spc.GetNamespace() != r.namespace {
+			spc.SetNamespace(r.namespace)
 		}
 	}
 
@@ -94,12 +94,12 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 		return nil, nil
 	}
 
-	for _, spec := range specs {
-		if spec.GetID() == uuid.Nil {
-			spec.SetID(uuid.Must(uuid.NewV7()))
+	for _, spc := range specs {
+		if spc.GetID() == uuid.Nil {
+			spc.SetID(uuid.Must(uuid.NewV7()))
 		}
-		if spec.GetNamespace() != r.namespace {
-			spec.SetNamespace(r.namespace)
+		if spc.GetNamespace() != r.namespace {
+			spc.SetNamespace(r.namespace)
 		}
 	}
 
@@ -107,18 +107,18 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 	if specs, err := r.specStore.Load(ctx, specs...); err != nil {
 		return nil, err
 	} else {
-		for _, spec := range specs {
-			exists[spec.GetID()] = spec
+		for _, spc := range specs {
+			exists[spc.GetID()] = spc
 		}
 	}
 
-	for _, spec := range specs {
-		if _, ok := exists[spec.GetID()]; ok {
-			if _, err := r.specStore.Swap(ctx, spec); err != nil {
+	for _, spc := range specs {
+		if _, ok := exists[spc.GetID()]; ok {
+			if _, err := r.specStore.Swap(ctx, spc); err != nil {
 				return nil, err
 			}
 		} else {
-			if _, err := r.specStore.Store(ctx, spec); err != nil {
+			if _, err := r.specStore.Store(ctx, spc); err != nil {
 				return nil, err
 			}
 		}
@@ -135,9 +135,9 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 		})
 	}
 
-	for _, spec := range specs {
-		if spec.GetNamespace() != r.namespace {
-			spec.SetNamespace(r.namespace)
+	for _, spc := range specs {
+		if spc.GetNamespace() != r.namespace {
+			spc.SetNamespace(r.namespace)
 		}
 	}
 
@@ -151,8 +151,8 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 		return 0, err
 	}
 
-	for _, spec := range specs {
-		if _, err := r.table.Free(spec.GetID()); err != nil {
+	for _, spc := range specs {
+		if _, err := r.table.Free(spc.GetID()); err != nil {
 			return 0, err
 		}
 	}
@@ -161,12 +161,11 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Listen starts the loader's watch process and reconciles symbols.
 func (r *Runtime) Listen(ctx context.Context) error {
-	spec := &spec.Meta{Namespace: r.namespace}
-
-	if err := r.loader.Watch(ctx, spec); err != nil {
+	spc := &spec.Meta{Namespace: r.namespace}
+	if err := r.loader.Watch(ctx, spc); err != nil {
 		return err
 	}
-	if _, err := r.loader.Load(ctx, spec); err != nil {
+	if _, err := r.loader.Load(ctx, spc); err != nil {
 		return err
 	}
 	return r.loader.Reconcile(ctx)

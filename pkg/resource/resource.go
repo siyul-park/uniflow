@@ -2,7 +2,7 @@ package resource
 
 import "github.com/gofrs/uuid"
 
-// Resource represents the common interface for objects with metadata.
+// Resource represents a common interface for objects with metadata.
 type Resource interface {
 	// GetID retrieves the unique identifier of the resource.
 	GetID() uuid.UUID
@@ -39,7 +39,7 @@ const DefaultNamespace = "default"
 
 var _ Resource = (*Meta)(nil)
 
-// Match returns all examples that match the given spec based on ID, namespace, or name.
+// Match returns all resources that match the given specification based on ID, namespace, or name.
 func Match[T Resource](source T, examples ...T) []T {
 	var matched []T
 	for _, example := range examples {

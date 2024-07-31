@@ -27,8 +27,8 @@ type Loader struct {
 	scheme       *scheme.Scheme
 	specStore    spec.Store
 	secretStore  secret.Store
-	specStream   resource.Stream
-	secretStream resource.Stream
+	specStream   spec.Stream
+	secretStream secret.Stream
 	mu           sync.RWMutex
 }
 
@@ -135,18 +135,11 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 }
 
 // Watch starts watching for changes to spec.Spec.
-func (l *Loader) Watch(ctx context.Context, resources ...resource.Resource) error {
+func (l *Loader) Watch(ctx context.Context, specs ...spec.Spec) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	if l.specStream == nil {
-		specs := make([]spec.Spec, 0, len(resources))
-		for _, res := range resources {
-			specs = append(specs, &spec.Meta{
-				Namespace: res.GetNamespace(),
-			})
-		}
-
 		specStream, err := l.specStore.Watch(ctx, specs...)
 		if err != nil {
 			return err
@@ -167,10 +160,10 @@ func (l *Loader) Watch(ctx context.Context, resources ...resource.Resource) erro
 	}
 
 	if l.secretStream == nil {
-		secrets := make([]*secret.Secret, 0, len(resources))
-		for _, res := range resources {
+		secrets := make([]*secret.Secret, 0, len(specs))
+		for _, spc := range specs {
 			secrets = append(secrets, &secret.Secret{
-				Namespace: res.GetNamespace(),
+				Namespace: spc.GetNamespace(),
 			})
 		}
 

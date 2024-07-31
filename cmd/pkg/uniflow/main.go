@@ -100,8 +100,8 @@ func main() {
 		secretStore = secret.NewStore()
 	}
 
-	sbuilder := scheme.NewBuilder()
-	hbuilder := hook.NewBuilder()
+	schemeBuilder := scheme.NewBuilder()
+	hookBuilder := hook.NewBuilder()
 
 	langs := language.NewModule()
 	langs.Store(text.Language, text.NewCompiler())
@@ -111,25 +111,29 @@ func main() {
 	langs.Store(javascript.Language, javascript.NewCompiler())
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
-	stable := system.NewTable()
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
+	systemTable := system.NewTable()
+	systemTable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
+	systemTable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
+	systemTable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
+	systemTable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
+	systemTable.Store(system.CodeCreateSecrets, system.CreateSecrets(secretStore))
+	systemTable.Store(system.CodeReadSecrets, system.ReadSecrets(secretStore))
+	systemTable.Store(system.CodeUpdateSecrets, system.UpdateSecrets(secretStore))
+	systemTable.Store(system.CodeDeleteSecrets, system.DeleteSecrets(secretStore))
 
-	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(io.AddToScheme())
-	sbuilder.Register(network.AddToScheme())
-	sbuilder.Register(system.AddToScheme(stable))
+	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
+	schemeBuilder.Register(io.AddToScheme())
+	schemeBuilder.Register(network.AddToScheme())
+	schemeBuilder.Register(system.AddToScheme(systemTable))
 
-	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(network.AddToHook())
+	hookBuilder.Register(control.AddToHook())
+	hookBuilder.Register(network.AddToHook())
 
-	scheme, err := sbuilder.Build()
+	scheme, err := schemeBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
-	hook, err := hbuilder.Build()
+	hook, err := hookBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}

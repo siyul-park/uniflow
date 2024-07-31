@@ -47,7 +47,6 @@ type Event struct {
 // EventOP represents the type of operation that triggered an Event.
 type EventOP int
 
-// store is an in-memory implementation of the Store interface using maps.
 type store[T Resource] struct {
 	data       map[uuid.UUID]T
 	namespaces map[string]map[string]uuid.UUID
@@ -56,7 +55,6 @@ type store[T Resource] struct {
 	mu         sync.RWMutex
 }
 
-// stream is an implementation of the Stream interface for in-memory streams.
 type stream struct {
 	in   chan Event
 	out  chan Event
@@ -70,7 +68,6 @@ const (
 	EventDelete                // EventDelete indicates an event for deleting a Resource.
 )
 
-// Common errors
 var (
 	ErrDuplicatedKey = errors.New("duplicated key") // ErrDuplicatedKey indicates a duplicated key error.
 )
@@ -127,9 +124,9 @@ func (s *store[T]) Load(ctx context.Context, resources ...T) ([]T, error) {
 	defer s.mu.RUnlock()
 
 	var result []T
-	for _, resource := range s.data {
-		if s.match(resource, resources...) {
-			result = append(result, resource)
+	for _, res := range s.data {
+		if s.match(res, resources...) {
+			result = append(result, res)
 		}
 	}
 	return result, nil
@@ -140,24 +137,24 @@ func (s *store[T]) Store(ctx context.Context, resources ...T) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, resource := range resources {
-		if resource.GetID() == uuid.Nil {
-			resource.SetID(uuid.Must(uuid.NewV7()))
+	for _, res := range resources {
+		if res.GetID() == uuid.Nil {
+			res.SetID(uuid.Must(uuid.NewV7()))
 		}
 
-		if resource.GetNamespace() == "" {
-			resource.SetNamespace(DefaultNamespace)
+		if res.GetNamespace() == "" {
+			res.SetNamespace(DefaultNamespace)
 		}
 
-		if resource.GetName() != "" && s.lookup(resource.GetNamespace(), resource.GetName()) != uuid.Nil {
+		if res.GetName() != "" && s.lookup(res.GetNamespace(), res.GetName()) != uuid.Nil {
 			return 0, errors.WithStack(ErrDuplicatedKey)
 		}
 	}
 
 	count := 0
-	for _, resource := range resources {
-		if s.insert(resource) {
-			s.emit(EventStore, resource)
+	for _, res := range resources {
+		if s.insert(res) {
+			s.emit(EventStore, res)
 			count++
 		}
 	}
@@ -169,30 +166,30 @@ func (s *store[T]) Swap(ctx context.Context, resources ...T) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, resource := range resources {
-		if resource.GetNamespace() == "" {
-			resource.SetNamespace(DefaultNamespace)
+	for _, res := range resources {
+		if res.GetNamespace() == "" {
+			res.SetNamespace(DefaultNamespace)
 		}
 
-		if resource.GetID() == uuid.Nil {
-			resource.SetID(s.lookup(resource.GetNamespace(), resource.GetName()))
+		if res.GetID() == uuid.Nil {
+			res.SetID(s.lookup(res.GetNamespace(), res.GetName()))
 		}
 	}
 
 	for i := 0; i < len(resources); i++ {
-		resource := resources[i]
-		if !s.free(resource.GetID()) {
+		res := resources[i]
+		if !s.free(res.GetID()) {
 			resources = append(resources[:i], resources[i+1:]...)
 			i--
 		}
 	}
 
 	count := 0
-	for _, resource := range resources {
-		if !s.insert(resource) {
+	for _, res := range resources {
+		if !s.insert(res) {
 			return 0, errors.WithStack(ErrDuplicatedKey)
 		}
-		s.emit(EventSwap, resource)
+		s.emit(EventSwap, res)
 		count++
 	}
 	return count, nil
@@ -204,10 +201,10 @@ func (s *store[T]) Delete(ctx context.Context, resources ...T) (int, error) {
 	defer s.mu.Unlock()
 
 	count := 0
-	for id, resource := range s.data {
-		if s.match(resource, resources...) {
+	for id, res := range s.data {
+		if s.match(res, resources...) {
 			if s.free(id) {
-				s.emit(EventDelete, resource)
+				s.emit(EventDelete, res)
 				count++
 			}
 		}
@@ -222,40 +219,40 @@ func (s *store[T]) match(resource T, examples ...T) bool {
 	return len(Match(resource, examples...)) > 0
 }
 
-func (s *store[T]) insert(resource T) bool {
-	if _, exists := s.data[resource.GetID()]; exists {
+func (s *store[T]) insert(res T) bool {
+	if _, exists := s.data[res.GetID()]; exists {
 		return false
 	}
 
-	id := s.lookup(resource.GetNamespace(), resource.GetName())
-	if id != uuid.Nil && id != resource.GetID() {
+	id := s.lookup(res.GetNamespace(), res.GetName())
+	if id != uuid.Nil && id != res.GetID() {
 		return false
 	}
 
-	s.data[resource.GetID()] = resource
+	s.data[res.GetID()] = res
 
-	if resource.GetName() != "" {
-		ns, ok := s.namespaces[resource.GetNamespace()]
+	if res.GetName() != "" {
+		ns, ok := s.namespaces[res.GetNamespace()]
 		if !ok {
 			ns = make(map[string]uuid.UUID)
-			s.namespaces[resource.GetNamespace()] = ns
+			s.namespaces[res.GetNamespace()] = ns
 		}
-		ns[resource.GetName()] = resource.GetID()
+		ns[res.GetName()] = res.GetID()
 	}
 	return true
 }
 
 func (s *store[T]) free(id uuid.UUID) bool {
-	resource, ok := s.data[id]
+	res, ok := s.data[id]
 	if !ok {
 		return false
 	}
 
-	if resource.GetName() != "" {
-		if ns, ok := s.namespaces[resource.GetNamespace()]; ok {
-			delete(ns, resource.GetName())
+	if res.GetName() != "" {
+		if ns, ok := s.namespaces[res.GetNamespace()]; ok {
+			delete(ns, res.GetName())
 			if len(ns) == 0 {
-				delete(s.namespaces, resource.GetNamespace())
+				delete(s.namespaces, res.GetNamespace())
 			}
 		}
 	}

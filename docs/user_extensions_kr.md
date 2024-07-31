@@ -1,4 +1,4 @@
-# 🔧 사용자 기능 확장
+# 🔧 사용자 확장
 
 이 가이드는 사용자가 자신의 서비스를 확장하고 런타임 환경에 통합하는 방법을 설명합니다.
 
@@ -12,7 +12,7 @@ go get github.com/siyul-park/uniflow
 
 ## 새로운 노드 추가
 
-새로운 기능을 추가하려면 노드 명세를 정의하고, 이를 노드로 변환하는 코덱을 스키마에 등록합니다.
+새로운 기능을 추가하려면 노드 명세를 정의하고 이를 노드로 변환하는 코덱을 스키마에 등록합니다.
 
 노드 명세는 `spec.Spec` 인터페이스를 구현하며, `spec.Meta`를 사용하여 정의할 수 있습니다:
 
@@ -151,36 +151,14 @@ func main() {
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
-	sbuilder := scheme.NewBuilder()
-	hbuilder := hook.NewBuilder()
+	schemeBuilder := scheme.NewBuilder()
+	hookBuilder := hook.NewBuilder()
 
-	langs := language.NewModule()
-	langs.Store(text.Language, text.NewCompiler())
-	langs.Store(json.Language, json.NewCompiler())
-	langs.Store(yaml.Language, yaml.NewCompiler())
-	langs.Store(cel.Language, cel.NewCompiler())
-	langs.Store(javascript.Language, javascript.NewCompiler())
-	langs.Store(typescript.Language, typescript.NewCompiler())
-
-	stable := system.NewTable()
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
-
-	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(io.AddToScheme())
-	sbuilder.Register(network.AddToScheme())
-	sbuilder.Register(system.AddToScheme(stable))
-
-	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(network.AddToHook())
-
-	scheme, err := sbuilder.Build()
+	scheme, err := schemeBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
-	hook, err := hbuilder.Build()
+	hook, err := hookBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -212,12 +190,15 @@ func main() {
 
 ```go
 r := runtime.New(runtime.Config{
-	Namespace: "default",
-	Schema:    scheme,
-	Hook:      hook,
-	Store:     store,
+	Namespace:   "default",
+	Schema:      scheme,
+	Hook:        hook,
+	SpecStore:   specStore,
+	SecretStore: secretStore,
 })
 defer r.Close()
+
+r.Load(ctx) // Load All
 
 symbols, _ := r.Load(ctx, &spec.Meta{
 	Name: "main",

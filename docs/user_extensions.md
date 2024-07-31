@@ -1,10 +1,11 @@
-# 🔧 Extending User Functionality
 
-This guide explains how users can extend their services and integrate them into the runtime environment.
+# 🔧 User Extensions
 
-## Setting Up the Development Environment
+This guide explains how to extend your service and integrate it into the runtime environment.
 
-First, initialize the [Go](https://go.dev) module and download the required dependencies:
+## Development Environment Setup
+
+First, initialize the [Go](https://go.dev) module and download the necessary dependencies.
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -12,9 +13,9 @@ go get github.com/siyul-park/uniflow
 
 ## Adding a New Node
 
-To add new functionality, define the node specification and register a codec to convert it into a node.
+To add new functionality, define the node specification and register the codec that converts this specification into a node.
 
-Node specifications implement the `spec.Spec` interface and can be defined using `spec.Meta`:
+A node specification implements the `spec.Spec` interface and can be defined using `spec.Meta`:
 
 ```go
 type TextNodeSpec struct {
@@ -23,13 +24,13 @@ type TextNodeSpec struct {
 }
 ```
 
-Define a new node type:
+Define the new node type:
 
 ```go
 const KindText = "text"
 ```
 
-Implement the actual node functionality. Use the `OneToOneNode` template provided to receive input packets, process them, and send output packets:
+Now implement the node that performs the actual work. Use the provided `OneToOneNode` template to receive an input packet, process it, and send an output packet:
 
 ```go
 type TextNode struct {
@@ -38,7 +39,7 @@ type TextNode struct {
 }
 ```
 
-Define a function to create the node, passing the packet processing method to the `OneToOneNode` constructor:
+Define a function to create the node and set up packet processing using the `OneToOneNode` constructor:
 
 ```go
 func NewTextNode(contents string) *TextNode {
@@ -49,7 +50,7 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-Implement the packet processing function. This function uses the first return value for successful processing and the second return value for errors:
+Implement the function that processes packets. This function uses the first return value on success and the second return value on error:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -58,7 +59,7 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 ```
 
-Write a test to verify that the node functions as intended. Send an input packet to the `in` port and check that the output packet contains the `contents`:
+Write a test to ensure the node works as intended. Send an input packet to the `in` port and verify the output packet contains the `contents`:
 
 ```go
 func TestTextNode_SendAndReceive(t *testing.T) {
@@ -92,9 +93,9 @@ func TestTextNode_SendAndReceive(t *testing.T) {
 }
 ```
 
-### Registering Schema and Codec
+### Registering the Schema and Codec
 
-Create a codec to convert the node specification into a node and register it with the schema:
+Create a codec that converts the node specification to a node and register it with the schema:
 
 ```go
 func NewTextNodeCodec() scheme.Codec {
@@ -112,7 +113,7 @@ func AddToScheme() scheme.Register {
 }
 ```
 
-Use `scheme.Builder` to build the schema:
+Use the `scheme.Builder` to construct the schema:
 
 ```go
 builder := scheme.NewBuilder()
@@ -123,7 +124,7 @@ scheme, _ := builder.Build()
 
 ### Running the Runtime Environment
 
-Now pass the schema to the runtime environment to execute workflows containing the extended node:
+Pass this schema to the runtime environment to execute workflows that include the extended node:
 
 ```go
 r := runtime.New(runtime.Config{
@@ -138,49 +139,27 @@ defer r.Close()
 r.Listen(ctx)
 ```
 
-## Integrating with Services
+## Service Integration
 
-There are two ways to integrate the runtime environment with a service:
+There are two ways to integrate the runtime environment into your service.
 
 ### Continuous Integration
 
-Maintain the runtime environment continuously for rapid responses to external requests. Each runtime environment runs in an independent container and is suitable for scenarios requiring ongoing workflow execution.
+Maintain the runtime environment continuously to respond quickly to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution.
 
 ```go
 func main() {
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
-	sbuilder := scheme.NewBuilder()
-	hbuilder := hook.NewBuilder()
+	schemeBuilder := scheme.NewBuilder()
+	hookBuilder := hook.NewBuilder()
 
-	langs := language.NewModule()
-	langs.Store(text.Language, text.NewCompiler())
-	langs.Store(json.Language, json.NewCompiler())
-	langs.Store(yaml.Language, yaml.NewCompiler())
-	langs.Store(cel.Language, cel.NewCompiler())
-	langs.Store(javascript.Language, javascript.NewCompiler())
-	langs.Store(typescript.Language, typescript.NewCompiler())
-
-	stable := system.NewTable()
-	stable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	stable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	stable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	stable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
-
-	sbuilder.Register(control.AddToScheme(langs, cel.Language))
-	sbuilder.Register(io.AddToScheme())
-	sbuilder.Register(network.AddToScheme())
-	sbuilder.Register(system.AddToScheme(stable))
-
-	hbuilder.Register(control.AddToHook())
-	hbuilder.Register(network.AddToHook())
-
-	scheme, err := sbuilder.Build()
+	scheme, err := schemeBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
-	hook, err := hbuilder.Build()
+	hook, err := hookBuilder.Build()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -208,16 +187,19 @@ func main() {
 
 ### Temporary Execution
 
-Run workflows temporarily and remove the execution environment. This method is suitable for executing workflows in transient environments:
+Run the workflow temporarily and then dispose of the execution environment. This method is suitable for running workflows in temporary environments:
 
 ```go
 r := runtime.New(runtime.Config{
-	Namespace: "default",
-	Schema:    scheme,
-	Hook:      hook,
-	Store:     store,
+	Namespace:   "default",
+	Schema:      scheme,
+	Hook:        hook,
+	SpecStore:   specStore,
+	SecretStore: secretStore,
 })
 defer r.Close()
+
+r.Load(ctx) // Load All
 
 symbols, _ := r.Load(ctx, &spec.Meta{
 	Name: "main",

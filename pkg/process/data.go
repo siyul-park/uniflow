@@ -9,14 +9,15 @@ type Data struct {
 	mu    sync.RWMutex
 }
 
+// newData creates a new Data instance.
 func newData() *Data {
 	return &Data{
 		data: make(map[string]any),
 	}
 }
 
-// LoadAndDelete retrieves and deletes the value associated with key atomically.
-// It traverses to the outer Data if the key is not found in the current instance.
+// LoadAndDelete retrieves and deletes the value for the given key.
+// If not found, it checks the outer Data instance.
 func (d *Data) LoadAndDelete(key string) any {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -32,8 +33,8 @@ func (d *Data) LoadAndDelete(key string) any {
 	return d.outer.LoadAndDelete(key)
 }
 
-// Load retrieves the value associated with key.
-// It traverses to the outer Data if the key is not found in the current instance.
+// Load retrieves the value for the given key.
+// If not found, it checks the outer Data instance.
 func (d *Data) Load(key string) any {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -48,7 +49,7 @@ func (d *Data) Load(key string) any {
 	return d.outer.Load(key)
 }
 
-// Store stores the given value under the specified key.
+// Store stores the value under the given key.
 func (d *Data) Store(key string, val any) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -56,8 +57,8 @@ func (d *Data) Store(key string, val any) {
 	d.data[key] = val
 }
 
-// Delete deletes the value associated with the specified key.
-// It returns true if the key existed and was deleted; otherwise, false.
+// Delete removes the value for the given key.
+// Returns true if the key existed and was deleted.
 func (d *Data) Delete(key string) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -69,7 +70,7 @@ func (d *Data) Delete(key string) bool {
 	return false
 }
 
-// Fork creates and returns a new Data instance that inherits from the current Data instance.
+// Fork creates a new Data instance that inherits from the current instance.
 func (d *Data) Fork() *Data {
 	return &Data{
 		data:  make(map[string]any),
@@ -77,7 +78,7 @@ func (d *Data) Fork() *Data {
 	}
 }
 
-// Close clears the stored data in the current Data instance and removes the reference to the outer Data.
+// Close clears the data and removes the reference to the outer instance.
 func (d *Data) Close() {
 	d.mu.Lock()
 	defer d.mu.Unlock()

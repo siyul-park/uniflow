@@ -2,14 +2,14 @@ package process
 
 import "sync"
 
-// Local is a cache for storing data associated with processes, supporting concurrency.
+// Local is a concurrent cache for storing data associated with processes.
 type Local[T any] struct {
 	data    map[*Process]T
 	watches map[*Process][]func(T)
 	mu      sync.RWMutex
 }
 
-// NewLocal creates and initializes a new Local cache instance.
+// NewLocal creates a new Local cache instance.
 func NewLocal[T any]() *Local[T] {
 	return &Local[T]{
 		data:    make(map[*Process]T),
@@ -17,8 +17,8 @@ func NewLocal[T any]() *Local[T] {
 	}
 }
 
-// Watch adds a watcher function for a specific process.
-// If the process is already present, the watcher is called immediately with the current value.
+// Watch adds a watcher function for a process.
+// If the process already has a value, the watcher is called immediately.
 func (l *Local[T]) Watch(proc *Process, watch func(T)) bool {
 	l.mu.Lock()
 
@@ -35,7 +35,7 @@ func (l *Local[T]) Watch(proc *Process, watch func(T)) bool {
 	return ok
 }
 
-// Keys returns all processes stored in the Local cache.
+// Keys returns all processes in the Local cache.
 func (l *Local[T]) Keys() []*Process {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -47,7 +47,7 @@ func (l *Local[T]) Keys() []*Process {
 	return keys
 }
 
-// Load retrieves the value associated with a given process.
+// Load retrieves the value for a given process.
 func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -56,8 +56,7 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 	return val, ok
 }
 
-// Store stores a value associated with a process in the Local cache.
-// If the process is not already present, it registers an exit hook to remove the process on exit.
+// Store stores a value for a process and sets an exit hook if new.
 func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
 
@@ -80,7 +79,7 @@ func (l *Local[T]) Store(proc *Process, val T) {
 	}
 }
 
-// Delete removes the association of a process and its value from the Local cache.
+// Delete removes a process and its value from the Local cache.
 func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -93,7 +92,7 @@ func (l *Local[T]) Delete(proc *Process) bool {
 	return ok
 }
 
-// LoadOrStore retrieves the value associated with a process, or stores a new value if the process is not present.
+// LoadOrStore retrieves the value for a process or stores a new value if not present.
 func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -115,7 +114,7 @@ func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) 
 	return v, nil
 }
 
-// Close closes the Local cache, releasing associated resources.
+// Close clears the Local cache.
 func (l *Local[T]) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()

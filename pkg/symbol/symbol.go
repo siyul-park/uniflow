@@ -14,7 +14,6 @@ type Symbol struct {
 	refs map[string][]spec.Port
 }
 
-// Verify that Symbol implements the node.Node interface.
 var _ node.Node = (*Symbol)(nil)
 
 // ID returns the unique identifier of the Symbol.

@@ -7,6 +7,8 @@ import (
 // Store is an alias for the resource.Store interface, specialized for Spec resources.
 type Store resource.Store[Spec]
 
+type Stream = resource.Stream
+
 // NewStore creates and returns a new instance of a Store for managing Spec resources.
 func NewStore() Store {
 	return resource.NewStore[Spec]()

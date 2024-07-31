@@ -147,7 +147,7 @@ func TestInteger_Compare(t *testing.T) {
 
 func TestInteger_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
-	enc.Add(NewIntegerEncoder())
+	enc.Add(newIntegerEncoder())
 
 	tests := []struct {
 		name   string
@@ -172,7 +172,7 @@ func TestInteger_Encode(t *testing.T) {
 
 func TestInteger_Decode(t *testing.T) {
 	dec := encoding.NewDecodeAssembler[Value, any]()
-	dec.Add(NewIntegerDecoder())
+	dec.Add(newIntegerDecoder())
 
 	tests := []struct {
 		name   string
