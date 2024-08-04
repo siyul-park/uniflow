@@ -11,19 +11,6 @@ import (
 	mongosecret "github.com/siyul-park/uniflow/driver/mongo/pkg/secret"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
-	"github.com/siyul-park/uniflow/ext/pkg/control"
-	"github.com/siyul-park/uniflow/ext/pkg/io"
-	"github.com/siyul-park/uniflow/ext/pkg/language"
-	"github.com/siyul-park/uniflow/ext/pkg/language/cel"
-	"github.com/siyul-park/uniflow/ext/pkg/language/javascript"
-	"github.com/siyul-park/uniflow/ext/pkg/language/json"
-	"github.com/siyul-park/uniflow/ext/pkg/language/text"
-	"github.com/siyul-park/uniflow/ext/pkg/language/typescript"
-	"github.com/siyul-park/uniflow/ext/pkg/language/yaml"
-	"github.com/siyul-park/uniflow/ext/pkg/network"
-	"github.com/siyul-park/uniflow/ext/pkg/system"
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
@@ -100,57 +87,25 @@ func main() {
 		secretStore = secret.NewStore()
 	}
 
-	schemeBuilder := scheme.NewBuilder()
-	hookBuilder := hook.NewBuilder()
-
-	langs := language.NewModule()
-	langs.Store(text.Language, text.NewCompiler())
-	langs.Store(json.Language, json.NewCompiler())
-	langs.Store(yaml.Language, yaml.NewCompiler())
-	langs.Store(cel.Language, cel.NewCompiler())
-	langs.Store(javascript.Language, javascript.NewCompiler())
-	langs.Store(typescript.Language, typescript.NewCompiler())
-
-	systemTable := system.NewTable()
-	systemTable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	systemTable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	systemTable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	systemTable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
-	systemTable.Store(system.CodeCreateSecrets, system.CreateSecrets(secretStore))
-	systemTable.Store(system.CodeReadSecrets, system.ReadSecrets(secretStore))
-	systemTable.Store(system.CodeUpdateSecrets, system.UpdateSecrets(secretStore))
-	systemTable.Store(system.CodeDeleteSecrets, system.DeleteSecrets(secretStore))
-
-	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
-	schemeBuilder.Register(io.AddToScheme())
-	schemeBuilder.Register(network.AddToScheme())
-	schemeBuilder.Register(system.AddToScheme(systemTable))
-
-	hookBuilder.Register(control.AddToHook())
-	hookBuilder.Register(network.AddToHook())
-
-	scheme, err := schemeBuilder.Build()
-	if err != nil {
-		log.Fatal(err)
-	}
-	hook, err := hookBuilder.Build()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	fsys := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
-		Use:   "uniflow",
+		Use:   "uniflowctl",
 		Short: "A high-performance, extremely flexible, and easily extensible universal workflow engine.",
-		FS:    fsys,
 	})
-	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
-		Scheme:      scheme,
-		Hook:        hook,
+	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
 		SpecStore:   specStore,
 		SecretStore: secretStore,
 		FS:          fsys,
+	}))
+	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
+		SpecStore:   specStore,
+		SecretStore: secretStore,
+		FS:          fsys,
+	}))
+	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
+		SpecStore:   specStore,
+		SecretStore: secretStore,
 	}))
 
 	if err := cmd.Execute(); err != nil {

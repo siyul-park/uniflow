@@ -26,7 +26,7 @@ func TestCreateSecrets(t *testing.T) {
 	defer n.Close()
 
 	sec := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 
@@ -62,7 +62,7 @@ func TestReadSecrets(t *testing.T) {
 	defer n.Close()
 
 	sec := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 
@@ -98,7 +98,7 @@ func TestUpdateSecrets(t *testing.T) {
 	defer n.Close()
 
 	sec := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 
@@ -136,7 +136,7 @@ func TestDeleteSecrets(t *testing.T) {
 	defer n.Close()
 
 	sec := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 

@@ -3,14 +3,12 @@ package cli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,26 +16,29 @@ func TestCommand_Execute(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	s := scheme.New()
-	h := hook.New()
+	fs := afero.NewMemMapFs()
 
-	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
-
-	fsys := afero.NewMemMapFs()
+	cpuprofile := "cpu.prof"
+	memprofile := "mem.prof"
 
 	output := new(bytes.Buffer)
 
 	cmd := NewCommand(Config{
-		Scheme:      s,
-		Hook:        h,
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		FS:          fsys,
+		FS: fs,
 	})
 	cmd.SetOut(output)
 	cmd.SetErr(output)
 	cmd.SetContext(ctx)
+
+	cmd.AddCommand(&cobra.Command{
+		Use:       "dummy",
+		ValidArgs: []string{argNodes, argSecrets},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	})
+
+	cmd.SetArgs([]string{"dummy", fmt.Sprintf("--%s", flagCPUProfile), cpuprofile, fmt.Sprintf("--%s", flagMemProfile), memprofile})
 
 	err := cmd.Execute()
 	assert.NoError(t, err)

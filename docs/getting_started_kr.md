@@ -45,6 +45,9 @@ Uniflow는 `.uniflow.toml` 파일이나 시스템 환경 변수를 통해 유연
 CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 사용 가능한 모든 명령어를 보려면 다음을 실행하세요:
 
 ```sh
+./dist/uniflowctl --help
+```
+```sh
 ./dist/uniflow --help
 ```
 
@@ -53,13 +56,13 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 `apply` 명령어는 네임스페이스에 노드 명세 또는 시크릿을 추가하거나 업데이트합니다. 명령어는 다음과 같이 사용할 수 있습니다:
 
 ```sh
-./dist/uniflow apply nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl apply nodes --namespace default --filename examples/nodes.yaml
 ```
 
 또는
 
 ```sh
-./dist/uniflow apply secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl apply secrets --namespace default --filename examples/secrets.yaml
 ```
 
 이 명령어는 결과를 출력하며, 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
@@ -69,13 +72,13 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 `delete` 명령어는 네임스페이스에서 노드 명세 또는 시크릿을 제거합니다:
 
 ```sh
-./dist/uniflow delete nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl delete nodes --namespace default --filename examples/nodes.yaml
 ```
 
 또는
 
 ```sh
-./dist/uniflow delete secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl delete secrets --namespace default --filename examples/secrets.yaml
 ```
 
 이 명령어는 `examples/nodes.yaml` 또는 `examples/secrets.yaml`에 정의된 모든 노드 명세 또는 시크릿을 지정된 네임스페이스에서 제거합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.
@@ -85,13 +88,13 @@ CLI는 워크플로우 제어를 위한 다양한 명령어를 제공합니다. 
 `get` 명령어는 네임스페이스에서 노드 명세 또는 시크릿을 조회합니다:
 
 ```sh
-./dist/uniflow get nodes --namespace default
+./dist/uniflowctl get nodes --namespace default
 ```
 
 또는
 
 ```sh
-./dist/uniflow get secrets --namespace default
+./dist/uniflowctl get secrets --namespace default
 ```
 
 이 명령어는 지정된 네임스페이스의 모든 노드 명세 또는 시크릿을 표시합니다. 네임스페이스를 지정하지 않으면 `default` 네임스페이스를 사용합니다.

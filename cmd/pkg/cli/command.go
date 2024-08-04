@@ -2,35 +2,27 @@ package cli
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-// Config holds the configuration parameters for the root command.
+// Config is a structure to hold the configuration for the CLI command.
 type Config struct {
-	Scheme      *scheme.Scheme
-	Hook        *hook.Hook
-	SpecStore   spec.Store
-	SecretStore secret.Store
-	FS          afero.Fs
+	Use   string
+	Short string
+	FS    afero.Fs
 }
 
 // NewCommand creates the root cobra command for the 'uniflow' CLI.
 func NewCommand(config Config) *cobra.Command {
-	var cpuprof *os.File
+	var cpuprof afero.File
 
 	cmd := &cobra.Command{
-		Use:  "uniflow",
-		Long: "Low-Code Engine for Backend Workflows",
+		Use:   config.Use,
+		Short: config.Short,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cpuprofile, err := cmd.Flags().GetString(flagCPUProfile)
 			if err != nil {
@@ -38,9 +30,9 @@ func NewCommand(config Config) *cobra.Command {
 			}
 
 			if cpuprofile != "" {
-				fmt.Printf("Using cpu profile: %s\n", cpuprofile)
+				fmt.Fprintf(cmd.OutOrStdout(), "Using cpu profile: %s\n", cpuprofile)
 
-				cpuprof, err = os.Create(cpuprofile)
+				cpuprof, err = config.FS.Create(cpuprofile)
 				if err != nil {
 					return err
 				}
@@ -69,9 +61,9 @@ func NewCommand(config Config) *cobra.Command {
 			}
 
 			if memprofile != "" {
-				log.Printf("Using mem profile: %s\n", memprofile)
+				fmt.Fprintf(cmd.OutOrStdout(), "Using mem profile: %s\n", memprofile)
 
-				f, err := os.Create(memprofile)
+				f, err := config.FS.Create(memprofile)
 				if err != nil {
 					return err
 				}
@@ -88,22 +80,6 @@ func NewCommand(config Config) *cobra.Command {
 
 	cmd.PersistentFlags().String(flagCPUProfile, "", "write cpu profile to `file`")
 	cmd.PersistentFlags().String(flagMemProfile, "", "write memory profile to `file`")
-
-	cmd.AddCommand(NewApplyCommand(ApplyConfig{
-		SpecStore:   config.SpecStore,
-		SecretStore: config.SecretStore,
-		FS:          config.FS,
-	}))
-	cmd.AddCommand(NewDeleteCommand(DeleteConfig{
-		SpecStore:   config.SpecStore,
-		SecretStore: config.SecretStore,
-		FS:          config.FS,
-	}))
-	cmd.AddCommand(NewGetCommand(GetConfig{
-		SpecStore:   config.SpecStore,
-		SecretStore: config.SecretStore,
-	}))
-	cmd.AddCommand(NewStartCommand(StartConfig(config)))
 
 	return cmd
 }

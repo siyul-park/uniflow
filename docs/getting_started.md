@@ -45,6 +45,9 @@ If using [MongoDB](https://www.mongodb.com/), enable [change streams](https://ww
 The CLI provides various commands for controlling workflows. To see all available commands, run:
 
 ```sh
+./dist/uniflowctl --help
+```
+```sh
 ./dist/uniflow --help
 ```
 
@@ -53,13 +56,13 @@ The CLI provides various commands for controlling workflows. To see all availabl
 The `apply` command adds or updates node specifications or secrets in a namespace. Use it as follows:
 
 ```sh
-./dist/uniflow apply nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl apply nodes --namespace default --filename examples/nodes.yaml
 ```
 
 or
 
 ```sh
-./dist/uniflow apply secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl apply secrets --namespace default --filename examples/secrets.yaml
 ```
 
 This command outputs the result, and if a namespace is not specified, it uses the `default` namespace.
@@ -69,13 +72,13 @@ This command outputs the result, and if a namespace is not specified, it uses th
 The `delete` command removes node specifications or secrets from a namespace:
 
 ```sh
-./dist/uniflow delete nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl delete nodes --namespace default --filename examples/nodes.yaml
 ```
 
 or
 
 ```sh
-./dist/uniflow delete secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl delete secrets --namespace default --filename examples/secrets.yaml
 ```
 
 This command removes all node specifications or secrets defined in `examples/nodes.yaml` or `examples/secrets.yaml` from the specified namespace. If no namespace is specified, it defaults to the `default` namespace.
@@ -85,13 +88,13 @@ This command removes all node specifications or secrets defined in `examples/nod
 The `get` command retrieves node specifications or secrets from a namespace:
 
 ```sh
-./dist/uniflow get nodes --namespace default
+./dist/uniflowctl get nodes --namespace default
 ```
 
 or
 
 ```sh
-./dist/uniflow get secrets --namespace default
+./dist/uniflowctl get secrets --namespace default
 ```
 
 This command displays all node specifications or secrets in the specified namespace. If no namespace is specified, it defaults to the `default` namespace.
