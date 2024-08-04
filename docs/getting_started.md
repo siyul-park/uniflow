@@ -1,12 +1,14 @@
 # 🚀 Getting Started
 
-This comprehensive guide covers how to manage workflows and run the engine using the [Command-Line Interface (CLI)](../cmd/README_kr.md). It includes everything from installation to workflow control and configuration settings.
+This guide provides detailed instructions on how to install, configure, and manage workflows using the [Command Line Interface (CLI)](../cmd/README.md). It covers the entire process from installation to workflow control and configuration.
 
 ## Installing from Source
 
-First, set up the [CLI](../cmd/README_kr.md), which allows you to control workflows along with the [built-in extensions](../ext/README_kr.md). Before you start, ensure your system has [Go 1.22](https://go.dev/doc/install) or later installed.
+To begin, you need to set up the [CLI](../cmd/README.md) along with the [built-in extensions](../ext/README.md). Before starting the installation, ensure that [Go 1.22](https://go.dev/doc/install) or higher is installed on your system.
 
-Start by cloning the repository:
+### Cloning the Repository
+
+To clone the source code, run the following command:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -18,42 +20,63 @@ Navigate to the cloned directory:
 cd uniflow
 ```
 
-Install dependencies and build the project:
+### Installing Dependencies and Building
+
+To install dependencies and build the project, execute the following commands:
 
 ```sh
 make init
 make build
 ```
 
-Once the build process is complete, the executable files will be available in the `dist` folder, ready for use.
+Once the build is complete, the executable will be located in the `dist` folder.
 
-## Configuration
+### Configuration
 
-Uniflow offers flexible configuration options through the `.uniflow.toml` file or system environment variables:
+You can flexibly modify settings via the `.uniflow.toml` file or system environment variables. Key configuration options include:
 
-| TOML Key              | Environment Variable Key | Example                     |
-|-----------------------|--------------------------|-----------------------------|
-| `database.url`        | `DATABASE.URL`           | `mem://` or `mongodb://`    |
-| `database.name`       | `DATABASE.NAME`          | -                           |
-| `collection.nodes`    | `COLLECTION.NODES`       | `nodes`                     |
-| `collection.secrets`  | `COLLECTION.SECRETS`     | `secrets`                   |
+| TOML Key              | Environment Variable Key  | Example                    |
+|-----------------------|----------------------------|----------------------------|
+| `database.url`        | `DATABASE.URL`             | `mem://` or `mongodb://`   |
+| `database.name`       | `DATABASE.NAME`            | -                          |
+| `collection.nodes`    | `COLLECTION.NODES`         | `nodes`                    |
+| `collection.secrets`  | `COLLECTION.SECRETS`       | `secrets`                  |
 
-If using [MongoDB](https://www.mongodb.com/), enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to allow the engine to track changes to node specifications and secrets. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
+If using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) so that the engine can track node specifications and secret changes. This requires setting up a [Replica Set](https://www.mongodb.com/docs/manual/replication/).
 
-## CLI Commands
+## Uniflow
 
-The CLI provides various commands for controlling workflows. To see all available commands, run:
+`uniflow` is primarily used to start and manage runtime environments.
+
+### Start
+
+The `start` command initiates the runtime with node specifications for a specific namespace. The basic usage is as follows:
 
 ```sh
-./dist/uniflowctl --help
+./dist/uniflow start --namespace default
 ```
+
+If the namespace is empty, you can provide initial node specifications using the `--from-nodes` flag:
+
 ```sh
-./dist/uniflow --help
+./dist/uniflow start --namespace default --from-nodes examples/nodes.yaml
 ```
+
+To provide initial secrets, use the `--from-secrets` flag:
+
+```sh
+./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
+```
+
+This command will execute all node specifications for the specified namespace. If no namespace is specified, the `default` namespace is used.
+
+## Uniflowctl
+
+`uniflowctl` is used to manage node specifications and secrets within a namespace.
 
 ### Apply
 
-The `apply` command adds or updates node specifications or secrets in a namespace. Use it as follows:
+The `apply` command adds or updates node specifications or secrets in a namespace. Usage examples are:
 
 ```sh
 ./dist/uniflowctl apply nodes --namespace default --filename examples/nodes.yaml
@@ -65,11 +88,11 @@ or
 ./dist/uniflowctl apply secrets --namespace default --filename examples/secrets.yaml
 ```
 
-This command outputs the result, and if a namespace is not specified, it uses the `default` namespace.
+This command applies the contents of the specified file to the namespace. If no namespace is specified, the `default` namespace is used by default.
 
 ### Delete
 
-The `delete` command removes node specifications or secrets from a namespace:
+The `delete` command removes node specifications or secrets from a namespace. Usage examples are:
 
 ```sh
 ./dist/uniflowctl delete nodes --namespace default --filename examples/nodes.yaml
@@ -81,11 +104,11 @@ or
 ./dist/uniflowctl delete secrets --namespace default --filename examples/secrets.yaml
 ```
 
-This command removes all node specifications or secrets defined in `examples/nodes.yaml` or `examples/secrets.yaml` from the specified namespace. If no namespace is specified, it defaults to the `default` namespace.
+This command removes all node specifications or secrets defined in the specified file. If no namespace is specified, the `default` namespace is used.
 
 ### Get
 
-The `get` command retrieves node specifications or secrets from a namespace:
+The `get` command retrieves node specifications or secrets from a namespace. Usage examples are:
 
 ```sh
 ./dist/uniflowctl get nodes --namespace default
@@ -97,37 +120,15 @@ or
 ./dist/uniflowctl get secrets --namespace default
 ```
 
-This command displays all node specifications or secrets in the specified namespace. If no namespace is specified, it defaults to the `default` namespace.
+This command displays all node specifications or secrets for the specified namespace. If no namespace is specified, the `default` namespace is used.
 
-### Start
+## HTTP API Integration
 
-The `start` command initiates the runtime with node specifications from a specific namespace:
-
-```sh
-./dist/uniflow start --namespace default
-```
-
-If the namespace is empty, you can use the `--from-nodes` flag to provide initial node specifications:
-
-```sh
-./dist/uniflow start --namespace default --from-nodes examples/nodes.yaml
-```
-
-You can also use the `--from-secrets` flag to provide initial secrets:
-
-```sh
-./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
-```
-
-This command runs all node specifications in the specified namespace. If no namespace is specified, it defaults to the `default` namespace.
-
-## Integrating HTTP API
-
-To modify node specifications via HTTP API, set up a workflow that exposes this functionality. Utilize the `syscall` node included in the [basic extensions](../ext/README_kr.md):
+To modify node specifications through the HTTP API, you need to set up a workflow that exposes this functionality. You can use the `syscall` node included in the [basic extensions](../ext/README.md):
 
 ```yaml
 kind: syscall
-opcode: nodes.create # nodes.read, nodes.update, nodes.delete
+opcode: nodes.create # or nodes.read, nodes.update, nodes.delete
 ```
 
-To get started, refer to the [workflow example](../examples/system.yaml). You can add authentication and authorization processes to this workflow as needed. Typically, these runtime control workflows are defined in the `system` namespace.
+To get started, refer to the [workflow example](../examples/system.yaml). You may need to add authentication and authorization processes to this workflow as needed. Typically, such runtime control workflows are defined in the `system` namespace.

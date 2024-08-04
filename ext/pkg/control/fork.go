@@ -106,15 +106,17 @@ func (n *ForkNode) backward(proc *process.Process) {
 			return
 		}
 
-		if err, ok := backPck.Payload().(types.Error); ok {
-			if errWriter.Write(backPck) == 0 {
-				proc.Wait()
-				proc.Exit(err.Unwrap())
-			}
-		} else {
-			proc.Wait()
-			proc.Exit(nil)
+		var err error
+		if v, ok := backPck.Payload().(types.Error); ok {
+			err = v.Unwrap()
 		}
+
+		if err != nil && errWriter.Write(backPck) > 0 {
+			continue
+		}
+
+		proc.Wait()
+		proc.Exit(err)
 	}
 }
 
@@ -127,7 +129,10 @@ func (n *ForkNode) catch(proc *process.Process) {
 			return
 		}
 
-		err, _ := backPck.Payload().(types.Error)
+		var err error
+		if v, ok := backPck.Payload().(types.Error); ok {
+			err = v.Unwrap()
+		}
 
 		proc.Wait()
 		proc.Exit(err)
