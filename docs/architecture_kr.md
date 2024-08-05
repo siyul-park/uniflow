@@ -106,7 +106,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: syscall
+    - kind: native
       opcode: nodes.create
 
 - kind: block
@@ -115,7 +115,7 @@
     - kind: snippet
       language: json
       code: 'null'
-    - kind: syscall
+    - kind: native
       opcode: nodes.read
 
 - kind: block
@@ -124,7 +124,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: syscall
+    - kind: native
       opcode: nodes.update
 
 - kind: block
@@ -133,7 +133,7 @@
     - kind: snippet
       language: json
       code: 'null'
-    - kind: syscall
+    - kind: native
       opcode: nodes.delete
 
 - kind: block
@@ -142,7 +142,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: syscall
+    - kind: native
       opcode: secrets.create
 
 - kind: block
@@ -151,7 +151,7 @@
     - kind: snippet
       language: json
       code: 'null'
-    - kind: syscall
+    - kind: native
       opcode: secrets.read
 
 - kind: block
@@ -160,7 +160,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: syscall
+    - kind: native
       opcode: secrets.update
 
 - kind: block
@@ -169,7 +169,7 @@
     - kind: snippet
       language: json
       code: 'null'
-    - kind: syscall
+    - kind: native
       opcode: secrets.delete
 
 - kind: switch

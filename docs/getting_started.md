@@ -124,10 +124,10 @@ This command displays all node specifications or secrets for the specified names
 
 ## HTTP API Integration
 
-To modify node specifications through the HTTP API, you need to set up a workflow that exposes this functionality. You can use the `syscall` node included in the [basic extensions](../ext/README.md):
+To modify node specifications through the HTTP API, you need to set up a workflow that exposes this functionality. You can use the `native` node included in the [basic extensions](../ext/README.md):
 
 ```yaml
-kind: syscall
+kind: native
 opcode: nodes.create # or nodes.read, nodes.update, nodes.delete
 ```
 

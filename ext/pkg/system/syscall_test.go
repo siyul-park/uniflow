@@ -2,247 +2,36 @@ package system
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSyscallNodeCodec_Decode(t *testing.T) {
-	table := NewTable()
+func TestCreateNodes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-	operation := faker.UUIDHyphenated()
+	kind := faker.UUIDHyphenated()
 
-	table.Store(operation, func(arg any) any {
-		return arg
-	})
+	st := spec.NewStore()
 
-	codec := NewSyscallNodeCodec(table)
-
-	spec := &SyscallNodeSpec{
-		OPCode: operation,
-	}
-
-	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
-
-func TestNewSyscallNode(t *testing.T) {
-	n, err := NewSyscallNode(func() {})
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
-}
-
-func TestSyscallNode_SendAndReceive(t *testing.T) {
-	t.Run("Operands, Returns = 0", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func() {})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Nil(t, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands = 1, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands > 1, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func(arg1, arg2 any) any {
-			return arg2
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewSlice(
-			types.NewString(faker.UUIDHyphenated()),
-			types.NewString(faker.UUIDHyphenated()),
-		)
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload.Get(1), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == Context, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func(ctx context.Context, arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == 1, Returns > 2", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func(arg any) (any, any) {
-			return arg, arg
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, types.NewSlice(inPayload, inPayload), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == 1, Returns == error", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewSyscallNode(func(arg any) error {
-			return fmt.Errorf("%v", arg)
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		err := port.NewIn()
-		n.Out(node.PortErr).Link(err)
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-		errReader := err.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-errReader.Read():
-			assert.NotNil(t, outPck)
-			errReader.Receive(outPck)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-
-		select {
-		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
-		case <-ctx.Done():
-			assert.Fail(t, "timeout")
-		}
-	})
-}
-
-func BenchmarkSyscallNode_SendAndReceive(b *testing.B) {
-	n, _ := NewSyscallNode(func(arg any) any {
-		return arg
-	})
+	n, _ := NewNativeNode(CreateNodes(st))
 	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -252,13 +41,282 @@ func BenchmarkSyscallNode_SendAndReceive(b *testing.B) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPayload, _ := types.Encoder.Encode(meta)
+	inPck := packet.New(types.NewSlice(inPayload))
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*spec.Meta
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestReadNodes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	st := spec.NewStore()
+
+	n, _ := NewNativeNode(ReadNodes(st))
+	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(meta)
 	inPck := packet.New(inPayload)
 
-	b.ResetTimer()
+	inWriter.Write(inPck)
 
-	for i := 0; i < b.N; i++ {
-		inWriter.Write(inPck)
-		<-inWriter.Receive()
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*spec.Meta
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestUpdateNodes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	st := spec.NewStore()
+
+	n, _ := NewNativeNode(UpdateNodes(st))
+	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	_, _ = st.Store(ctx, meta)
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(meta)
+	inPck := packet.New(types.NewSlice(inPayload))
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*spec.Meta
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestDeleteNodes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	kind := faker.UUIDHyphenated()
+
+	st := spec.NewStore()
+
+	n, _ := NewNativeNode(DeleteNodes(st))
+	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: kind,
+	}
+
+	_, _ = st.Store(ctx, meta)
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(meta)
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*spec.Meta
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestCreateSecrets(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	st := secret.NewStore()
+
+	n, _ := NewNativeNode(CreateSecrets(st))
+	defer n.Close()
+
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.Word(),
+	}
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(sec)
+	inPck := packet.New(types.NewSlice(inPayload))
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*secret.Secret
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestReadSecrets(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	st := secret.NewStore()
+
+	n, _ := NewNativeNode(ReadSecrets(st))
+	defer n.Close()
+
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.Word(),
+	}
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(sec)
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*secret.Secret
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestUpdateSecrets(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	st := secret.NewStore()
+
+	n, _ := NewNativeNode(UpdateSecrets(st))
+	defer n.Close()
+
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.Word(),
+	}
+
+	_, _ = st.Store(ctx, sec)
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(sec)
+	inPck := packet.New(types.NewSlice(inPayload))
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*secret.Secret
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
+}
+
+func TestDeleteSecrets(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	st := secret.NewStore()
+
+	n, _ := NewNativeNode(DeleteSecrets(st))
+	defer n.Close()
+
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.Word(),
+	}
+
+	_, _ = st.Store(ctx, sec)
+
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload, _ := types.Encoder.Encode(sec)
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		var outPayload []*secret.Secret
+		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
 	}
 }

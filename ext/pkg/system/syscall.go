@@ -2,124 +2,95 @@ package system
 
 import (
 	"context"
-	"reflect"
 
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SyscallNodeSpec holds the specifications for creating a SyscallNode.
-type SyscallNodeSpec struct {
-	spec.Meta `map:",inline"`
-	OPCode    string `map:"opcode"`
+const (
+	CodeCreateNodes = "nodes.create"
+	CodeReadNodes   = "nodes.read"
+	CodeUpdateNodes = "nodes.update"
+	CodeDeleteNodes = "nodes.delete"
+
+	CodeCreateSecrets = "secrets.create"
+	CodeReadSecrets   = "secrets.read"
+	CodeUpdateSecrets = "secrets.update"
+	CodeDeleteSecrets = "secrets.delete"
+)
+
+func CreateNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
+		if _, err := s.Store(ctx, specs...); err != nil {
+			return nil, err
+		}
+		return s.Load(ctx, specs...)
+
+	}
 }
 
-// SyscallNode represents a node for executing internal calls.
-type SyscallNode struct {
-	*node.OneToOneNode
-	operator reflect.Value
+func ReadNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
+		return s.Load(ctx, specs...)
+	}
 }
 
-const KindSyscall = "syscall"
+func UpdateNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
+		if _, err := s.Swap(ctx, specs...); err != nil {
+			return nil, err
+		}
+		return s.Load(ctx, specs...)
+	}
+}
 
-var typeContext = reflect.TypeOf((*context.Context)(nil)).Elem()
-var typeError = reflect.TypeOf((*error)(nil)).Elem()
-
-// NewSyscallNodeCodec creates a new codec for SyscallNodeSpec.
-func NewSyscallNodeCodec(table *Table) scheme.Codec {
-	return scheme.CodecWithType(func(spec *SyscallNodeSpec) (node.Node, error) {
-		fn, err := table.Load(spec.OPCode)
+func DeleteNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
+	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
+		exists, err := s.Load(ctx, specs...)
 		if err != nil {
 			return nil, err
 		}
-		return NewSyscallNode(fn)
-	})
+		if _, err := s.Delete(ctx, exists...); err != nil {
+			return nil, err
+		}
+		return exists, nil
+	}
 }
 
-// NewSyscallNode creates a new SyscallNode with the provided function.
-// It returns an error if the provided function is not valid.
-func NewSyscallNode(operator any) (*SyscallNode, error) {
-	op := reflect.ValueOf(operator)
-	if op.Kind() != reflect.Func {
-		return nil, errors.WithStack(ErrInvalidOperation)
+func CreateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
+	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
+		if _, err := s.Store(ctx, secrets...); err != nil {
+			return nil, err
+		}
+		return s.Load(ctx, secrets...)
+
 	}
-
-	n := &SyscallNode{operator: op}
-	n.OneToOneNode = node.NewOneToOneNode(n.action)
-
-	return n, nil
 }
 
-func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	ctx := proc.Context()
-
-	inPayload := inPck.Payload()
-
-	ins := make([]reflect.Value, n.operator.Type().NumIn())
-
-	offset := 0
-	if n.operator.Type().NumIn() > 0 {
-		if n.operator.Type().In(0).Implements(typeContext) {
-			ins[0] = reflect.ValueOf(ctx)
-			offset++
-		}
+func ReadSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
+	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
+		return s.Load(ctx, secrets...)
 	}
+}
 
-	if remains := len(ins) - offset; remains == 1 {
-		in := reflect.New(n.operator.Type().In(offset))
-		if err := types.Decoder.Decode(inPayload, in.Interface()); err != nil {
-			return nil, packet.New(types.NewError(err))
+func UpdateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
+	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
+		if _, err := s.Swap(ctx, secrets...); err != nil {
+			return nil, err
 		}
-		ins[offset] = in.Elem()
-	} else if remains > 1 {
-		var arguments []types.Value
-		if v, ok := inPayload.(types.Slice); ok {
-			arguments = v.Values()
-		} else {
-			arguments = append(arguments, v)
+		return s.Load(ctx, secrets...)
+	}
+}
+
+func DeleteSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
+	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
+		exists, err := s.Load(ctx, secrets...)
+		if err != nil {
+			return nil, err
 		}
-
-		for i := offset; i < len(ins); i++ {
-			in := reflect.New(n.operator.Type().In(i))
-			if err := types.Decoder.Decode(arguments[i-offset], in.Interface()); err != nil {
-				return nil, packet.New(types.NewError(err))
-			}
-			ins[i] = in.Elem()
+		if _, err := s.Delete(ctx, exists...); err != nil {
+			return nil, err
 		}
+		return exists, nil
 	}
-
-	outs := n.operator.Call(ins)
-
-	if n.operator.Type().NumOut() > 0 && n.operator.Type().Out(n.operator.Type().NumOut()-1).Implements(typeError) {
-		last := outs[len(outs)-1].Interface()
-		outs = outs[:len(outs)-1]
-
-		if err, ok := last.(error); ok {
-			if err != nil {
-				return nil, packet.New(types.NewError(err))
-			}
-		}
-	}
-
-	outPayloads := make([]types.Value, len(outs))
-	for i, out := range outs {
-		if outPayload, err := types.Encoder.Encode(out.Interface()); err != nil {
-			return nil, packet.New(types.NewError(err))
-		} else {
-			outPayloads[i] = outPayload
-		}
-	}
-
-	if len(outPayloads) == 0 {
-		return packet.New(nil), nil
-	}
-	if len(outPayloads) == 1 {
-		return packet.New(outPayloads[0]), nil
-	}
-	return packet.New(types.NewSlice(outPayloads...)), nil
 }

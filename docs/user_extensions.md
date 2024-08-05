@@ -174,7 +174,7 @@ func main() {
 	defer r.Close()
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, native.SIGINT, native.SIGTERM)
 
 	go func() {
 		<-sigs

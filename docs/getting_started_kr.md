@@ -124,10 +124,10 @@ make build
 
 ## HTTP API 통합
 
-HTTP API를 통해 노드 명세를 수정하려면 해당 기능을 노출하는 워크플로우를 설정해야 합니다. 이를 위해 [기본 확장](../ext/README_kr.md)에 포함된 `syscall` 노드를 활용할 수 있습니다:
+HTTP API를 통해 노드 명세를 수정하려면 해당 기능을 노출하는 워크플로우를 설정해야 합니다. 이를 위해 [기본 확장](../ext/README_kr.md)에 포함된 `native` 노드를 활용할 수 있습니다:
 
 ```yaml
-kind: syscall
+kind: native
 opcode: nodes.create # 또는 nodes.read, nodes.update, nodes.delete
 ```
 
