@@ -138,19 +138,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fsys := afero.NewOsFs()
+	fs := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
 		Use:   "uniflow",
 		Short: "A high-performance, extremely flexible, and easily extensible universal workflow engine.",
-		FS:    fsys,
+		FS:    fs,
 	})
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
 		Scheme:      scheme,
 		Hook:        hook,
 		SpecStore:   specStore,
 		SecretStore: secretStore,
-		FS:          fsys,
+		FS:          fs,
 	}))
 
 	if err := cmd.Execute(); err != nil {

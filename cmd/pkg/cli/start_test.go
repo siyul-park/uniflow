@@ -27,7 +27,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
-	fsys := afero.NewMemMapFs()
+	fs := afero.NewMemMapFs()
 
 	kind := faker.UUIDHyphenated()
 
@@ -52,7 +52,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		data, _ := json.Marshal(meta)
 
-		f, _ := fsys.Create(filename)
+		f, _ := fs.Create(filename)
 		f.Write(data)
 
 		output := new(bytes.Buffer)
@@ -60,7 +60,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		cmd := NewStartCommand(StartConfig{
 			Scheme:      s,
 			Hook:        h,
-			FS:          fsys,
+			FS:          fs,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
 		})
@@ -101,7 +101,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		data, _ := json.Marshal(sec)
 
-		f, _ := fsys.Create(filename)
+		f, _ := fs.Create(filename)
 		f.Write(data)
 
 		output := new(bytes.Buffer)
@@ -109,7 +109,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		cmd := NewStartCommand(StartConfig{
 			Scheme:      s,
 			Hook:        h,
-			FS:          fsys,
+			FS:          fs,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
 		})

@@ -87,7 +87,7 @@ func main() {
 		secretStore = secret.NewStore()
 	}
 
-	fsys := afero.NewOsFs()
+	fs := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
 		Use:   "uniflowctl",
@@ -96,12 +96,12 @@ func main() {
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
 		SpecStore:   specStore,
 		SecretStore: secretStore,
-		FS:          fsys,
+		FS:          fs,
 	}))
 	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
 		SpecStore:   specStore,
 		SecretStore: secretStore,
-		FS:          fsys,
+		FS:          fs,
 	}))
 	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
 		SpecStore:   specStore,
