@@ -8,7 +8,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
-	github.com/siyul-park/uniflow v0.8.0
+	github.com/siyul-park/uniflow v0.9.0
 	github.com/siyul-park/uniflow/driver/mongo v0.8.0
 	github.com/siyul-park/uniflow/ext v0.8.0
 	github.com/spf13/afero v1.11.0
