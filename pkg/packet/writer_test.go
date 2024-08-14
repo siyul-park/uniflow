@@ -93,11 +93,11 @@ func TestWriter_AddHook(t *testing.T) {
 	in := <-r.Read()
 
 	r.Receive(in)
-	assert.Equal(t, 2, count)
 
 	back, ok := <-w.Receive()
 	assert.True(t, ok)
 	assert.Equal(t, in, back)
+	assert.Equal(t, 2, count)
 }
 
 func TestWriter_Write(t *testing.T) {

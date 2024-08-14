@@ -26,9 +26,9 @@ func TestReader_AddHook(t *testing.T) {
 	out := New(nil)
 
 	w.Write(out)
-	assert.Equal(t, 1, count)
 
 	in := <-r.Read()
+	assert.Equal(t, 1, count)
 
 	r.Receive(in)
 	assert.Equal(t, 2, count)
