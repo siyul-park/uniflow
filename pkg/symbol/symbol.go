@@ -12,6 +12,8 @@ type Symbol struct {
 	Spec spec.Spec
 	Node node.Node
 	refs map[string][]spec.Port
+	ins  map[string]*port.InPort
+	outs map[string]*port.OutPort
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -46,24 +48,52 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
 }
 
-// Env returns the environment variables associated with the Symbol.
-func (s *Symbol) Env() map[string][]spec.Secret {
-	return s.Spec.GetEnv()
-}
-
 // Refs returns the references associated with the Symbol.
 func (s *Symbol) Refs() map[string][]spec.Port {
 	return s.refs
 }
 
-// In returns the input port with the specified name.
-func (s *Symbol) In(name string) *port.InPort {
-	return s.Node.In(name)
+// Env returns the environment variables associated with the Symbol.
+func (s *Symbol) Env() map[string][]spec.Secret {
+	return s.Spec.GetEnv()
 }
 
-// Out returns the output port with the specified name.
+// Ins returns the input ports associated with the Symbol.
+func (s *Symbol) Ins() map[string]*port.InPort {
+	if s.ins == nil {
+		s.ins = make(map[string]*port.InPort)
+	}
+	return s.ins
+}
+
+// In returns the input port with the specified name, caching the result.
+func (s *Symbol) In(name string) *port.InPort {
+	if p, ok := s.Ins()[name]; ok {
+		return p
+	}
+
+	p := s.Node.In(name)
+	s.ins[name] = p
+	return p
+}
+
+// Outs returns the output ports associated with the Symbol.
+func (s *Symbol) Outs() map[string]*port.OutPort {
+	if s.outs == nil {
+		s.outs = make(map[string]*port.OutPort)
+	}
+	return s.outs
+}
+
+// Out returns the output port with the specified name, caching the result.
 func (s *Symbol) Out(name string) *port.OutPort {
-	return s.Node.Out(name)
+	if p, ok := s.Outs()[name]; ok {
+		return p
+	}
+
+	p := s.Node.Out(name)
+	s.outs[name] = p
+	return p
 }
 
 // Close frees all resources held by the Symbol.
