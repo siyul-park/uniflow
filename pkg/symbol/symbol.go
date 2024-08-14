@@ -79,12 +79,14 @@ func (s *Symbol) Ins() map[string]*port.InPort {
 
 // In returns the input port with the specified name, caching the result.
 func (s *Symbol) In(name string) *port.InPort {
-	if p, ok := s.Ins()[name]; ok {
-		return p
+	if s.ins == nil {
+		s.ins = make(map[string]*port.InPort)
 	}
 
 	p := s.Node.In(name)
-	s.ins[name] = p
+	if p != nil {
+		s.ins[name] = p
+	}
 	return p
 }
 
@@ -98,12 +100,14 @@ func (s *Symbol) Outs() map[string]*port.OutPort {
 
 // Out returns the output port with the specified name, caching the result.
 func (s *Symbol) Out(name string) *port.OutPort {
-	if p, ok := s.Outs()[name]; ok {
-		return p
+	if s.outs == nil {
+		s.outs = make(map[string]*port.OutPort)
 	}
 
 	p := s.Node.Out(name)
-	s.outs[name] = p
+	if p != nil {
+		s.outs[name] = p
+	}
 	return p
 }
 
