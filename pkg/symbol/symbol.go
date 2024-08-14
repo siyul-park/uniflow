@@ -52,14 +52,10 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 func (s *Symbol) Links() map[string][]spec.Port {
 	links := make(map[string][]spec.Port)
 	for name, ports := range s.Spec.GetPorts() {
-		for _, port := range ports {
-			links[name] = append(links[name], port)
-		}
+		links[name] = append(links[name], ports...)
 	}
 	for name, ports := range s.inbounds {
-		for _, port := range ports {
-			links[name] = append(links[name], port)
-		}
+		links[name] = append(links[name], ports...)
 	}
 	return links
 }
