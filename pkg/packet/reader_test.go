@@ -6,6 +6,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestReader_AddHook(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	count := 0
+	r.AddInboundHook(HookFunc(func(_ *Packet) {
+		count += 1
+	}))
+	r.AddOutboundHook(HookFunc(func(_ *Packet) {
+		count += 1
+	}))
+
+	w.Link(r)
+
+	out := New(nil)
+
+	w.Write(out)
+	assert.Equal(t, 1, count)
+
+	in := <-r.Read()
+
+	r.Receive(in)
+	assert.Equal(t, 2, count)
+
+	back, ok := <-w.Receive()
+	assert.True(t, ok)
+	assert.Equal(t, in, back)
+}
+
 func TestReader_Receive(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()

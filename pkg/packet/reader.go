@@ -8,11 +8,13 @@ import (
 
 // Reader represents a packet reader that manages incoming packets from multiple writers.
 type Reader struct {
-	writers []*Writer
-	in      chan *Packet
-	out     chan *Packet
-	done    chan struct{}
-	mu      sync.Mutex
+	writers       []*Writer
+	in            chan *Packet
+	out           chan *Packet
+	done          chan struct{}
+	inboundHooks  []Hook
+	outboundHooks []Hook
+	mu            sync.Mutex
 }
 
 // NewReader creates a new Reader instance and starts its processing loop.
@@ -63,6 +65,34 @@ func NewReader() *Reader {
 	return r
 }
 
+// AddInboundHook adds a handler to process inbound packets.
+func (r *Reader) AddInboundHook(hook Hook) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, h := range r.inboundHooks {
+		if h == hook {
+			return
+		}
+	}
+
+	r.inboundHooks = append(r.inboundHooks, hook)
+}
+
+// AddOutboundHook adds a handler to process outbound packets.
+func (r *Reader) AddOutboundHook(hook Hook) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, h := range r.outboundHooks {
+		if h == hook {
+			return
+		}
+	}
+
+	r.outboundHooks = append(r.outboundHooks, hook)
+}
+
 // Read returns the channel for reading packets from the reader.
 func (r *Reader) Read() <-chan *Packet {
 	return r.out
@@ -73,6 +103,9 @@ func (r *Reader) Receive(pck *Packet) bool {
 	if w := r.writer(); w == nil {
 		return false
 	} else {
+		for _, hook := range r.outboundHooks {
+			hook.Handle(pck)
+		}
 		return w.receive(pck, r)
 	}
 }
@@ -97,6 +130,10 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	case <-r.done:
 		return false
 	default:
+		for _, hook := range r.inboundHooks {
+			hook.Handle(pck)
+		}
+
 		r.writers = append(r.writers, writer)
 		r.in <- pck
 		return true

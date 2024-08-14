@@ -9,7 +9,7 @@ import (
 
 // Tracer tracks the lifecycle and transformations of packets as they pass through readers and writers.
 type Tracer struct {
-	handlers map[*Packet][]Handler
+	hooks    map[*Packet][]Hook
 	sources  map[*Packet][]*Packet
 	targets  map[*Packet][]*Packet
 	receives map[*Packet][]*Packet
@@ -22,7 +22,7 @@ type Tracer struct {
 // NewTracer initializes a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
-		handlers: make(map[*Packet][]Handler),
+		hooks:    make(map[*Packet][]Hook),
 		sources:  make(map[*Packet][]*Packet),
 		targets:  make(map[*Packet][]*Packet),
 		receives: make(map[*Packet][]*Packet),
@@ -32,12 +32,12 @@ func NewTracer() *Tracer {
 	}
 }
 
-// AddHandler adds a Handler to be invoked when a packet completes processing.
-func (t *Tracer) AddHandler(pck *Packet, handler Handler) {
+// AddHook adds a Handler to be invoked when a packet completes processing.
+func (t *Tracer) AddHook(pck *Packet, hook Hook) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.handlers[pck] = append(t.handlers[pck], handler)
+	t.hooks[pck] = append(t.hooks[pck], hook)
 }
 
 // Transform tracks the transformation of a source packet into a target packet.
@@ -132,7 +132,7 @@ func (t *Tracer) Close() {
 		reader.Receive(New(types.NewError(ErrDroppedPacket)))
 	}
 
-	t.handlers = make(map[*Packet][]Handler)
+	t.hooks = make(map[*Packet][]Hook)
 	t.sources = make(map[*Packet][]*Packet)
 	t.targets = make(map[*Packet][]*Packet)
 	t.receives = make(map[*Packet][]*Packet)
@@ -218,15 +218,15 @@ func (t *Tracer) handle(pck *Packet) {
 		return
 	}
 
-	if handlers := t.handlers[pck]; len(handlers) > 0 {
+	if hooks := t.hooks[pck]; len(hooks) > 0 {
 		merged := Merge(receives)
 
-		delete(t.handlers, pck)
+		delete(t.hooks, pck)
 		delete(t.receives, pck)
 
 		t.mu.Unlock()
-		for _, handler := range handlers {
-			handler.Handle(merged)
+		for _, hook := range hooks {
+			hook.Handle(merged)
 		}
 		t.mu.Lock()
 	}

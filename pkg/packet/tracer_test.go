@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTracer_AddHandler(t *testing.T) {
+func TestTracer_AddHook(t *testing.T) {
 	w1 := NewWriter()
 	defer w1.Close()
 
@@ -39,7 +39,7 @@ func TestTracer_AddHandler(t *testing.T) {
 	w2.Receive()
 
 	count := 0
-	tr.AddHandler(pck1, HandlerFunc(func(pck *Packet) {
+	tr.AddHook(pck1, HookFunc(func(pck *Packet) {
 		count++
 	}))
 
