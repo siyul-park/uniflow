@@ -9,11 +9,11 @@ import (
 
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
-	Spec spec.Spec
-	Node node.Node
-	refs map[string][]spec.Port
-	ins  map[string]*port.InPort
-	outs map[string]*port.OutPort
+	Spec     spec.Spec
+	Node     node.Node
+	inbounds map[string][]spec.Port
+	ins      map[string]*port.InPort
+	outs     map[string]*port.OutPort
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -48,9 +48,20 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
 }
 
-// Refs returns the references associated with the Symbol.
-func (s *Symbol) Refs() map[string][]spec.Port {
-	return s.refs
+// Links returns the references associated with the Symbol.
+func (s *Symbol) Links() map[string][]spec.Port {
+	links := make(map[string][]spec.Port)
+	for name, ports := range s.Spec.GetPorts() {
+		for _, port := range ports {
+			links[name] = append(links[name], port)
+		}
+	}
+	for name, ports := range s.inbounds {
+		for _, port := range ports {
+			links[name] = append(links[name], port)
+		}
+	}
+	return links
 }
 
 // Env returns the environment variables associated with the Symbol.
