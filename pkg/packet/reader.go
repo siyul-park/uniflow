@@ -106,6 +106,7 @@ func (r *Reader) Receive(pck *Packet) bool {
 		for _, hook := range r.outboundHooks {
 			hook.Handle(pck)
 		}
+		
 		return w.receive(pck, r)
 	}
 }
