@@ -276,9 +276,9 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 	for len(nexts) > 0 {
 		sym := nexts[len(nexts)-1]
 		ok := true
-		for _, locations := range sym.inbounds {
-			for _, location := range locations {
-				next := t.symbols[location.ID]
+		for _, ports := range sym.inbounds {
+			for _, port := range ports {
+				next := t.symbols[port.ID]
 				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {
 					nexts = append(nexts, next)
 					break
