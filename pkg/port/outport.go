@@ -53,6 +53,12 @@ func (p *OutPort) Accept(listener Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	for _, l := range p.listeners {
+		if l == listener {
+			return
+		}
+	}
+
 	p.listeners = append(p.listeners, listener)
 }
 
