@@ -9,9 +9,11 @@ import (
 
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
-	Spec spec.Spec
-	Node node.Node
-	refs map[string][]spec.Port
+	Spec     spec.Spec
+	Node     node.Node
+	inbounds map[string][]spec.Port
+	ins      map[string]*port.InPort
+	outs     map[string]*port.OutPort
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -46,24 +48,63 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
 }
 
+// Links returns the references associated with the Symbol.
+func (s *Symbol) Links() map[string][]spec.Port {
+	links := make(map[string][]spec.Port)
+	for name, ports := range s.Spec.GetPorts() {
+		links[name] = append(links[name], ports...)
+	}
+	for name, ports := range s.inbounds {
+		links[name] = append(links[name], ports...)
+	}
+	return links
+}
+
 // Env returns the environment variables associated with the Symbol.
 func (s *Symbol) Env() map[string][]spec.Secret {
 	return s.Spec.GetEnv()
 }
 
-// Refs returns the references associated with the Symbol.
-func (s *Symbol) Refs() map[string][]spec.Port {
-	return s.refs
+// Ins returns the input ports associated with the Symbol.
+func (s *Symbol) Ins() []string {
+	ins := make([]string, 0, len(s.ins))
+	for name := range s.ins {
+		ins = append(ins, name)
+	}
+	return ins
 }
 
-// In returns the input port with the specified name.
+// In returns the input port with the specified name, caching the result.
 func (s *Symbol) In(name string) *port.InPort {
-	return s.Node.In(name)
+	if s.ins == nil {
+		s.ins = make(map[string]*port.InPort)
+	}
+	p := s.Node.In(name)
+	if p != nil {
+		s.ins[name] = p
+	}
+	return p
 }
 
-// Out returns the output port with the specified name.
+// Outs returns the output ports associated with the Symbol.
+func (s *Symbol) Outs() []string {
+	outs := make([]string, 0, len(s.outs))
+	for name := range s.outs {
+		outs = append(outs, name)
+	}
+	return outs
+}
+
+// Out returns the output port with the specified name, caching the result.
 func (s *Symbol) Out(name string) *port.OutPort {
-	return s.Node.Out(name)
+	if s.outs == nil {
+		s.outs = make(map[string]*port.OutPort)
+	}
+	p := s.Node.Out(name)
+	if p != nil {
+		s.outs[name] = p
+	}
+	return p
 }
 
 // Close frees all resources held by the Symbol.

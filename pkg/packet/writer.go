@@ -8,12 +8,14 @@ import (
 
 // Writer represents a packet writer that sends packets to linked readers.
 type Writer struct {
-	readers  []*Reader
-	receives [][]*Packet
-	in       chan *Packet
-	out      chan *Packet
-	done     chan struct{}
-	mu       sync.Mutex
+	readers       []*Reader
+	receives      [][]*Packet
+	in            chan *Packet
+	out           chan *Packet
+	done          chan struct{}
+	inboundHooks  []Hook
+	outboundHooks []Hook
+	mu            sync.Mutex
 }
 
 // Write sends a packet to the writer and returns the received packet or None if the write fails.
@@ -56,13 +58,21 @@ func NewWriter() *Writer {
 			case pck = <-w.in:
 			case <-w.done:
 				w.mu.Lock()
+
 				receives := w.receives
 				w.readers = nil
 				w.receives = nil
+
 				w.mu.Unlock()
 
 				for range receives {
-					w.out <- New(types.NewError(ErrDroppedPacket))
+					pck := New(types.NewError(ErrDroppedPacket))
+
+					for _, hook := range w.inboundHooks {
+						hook.Handle(pck)
+					}
+
+					w.out <- pck
 				}
 				return
 			}
@@ -85,6 +95,34 @@ func NewWriter() *Writer {
 	}()
 
 	return w
+}
+
+// AddInboundHook adds a handler to process inbound packets.
+func (w *Writer) AddInboundHook(hook Hook) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	for _, h := range w.inboundHooks {
+		if h == hook {
+			return
+		}
+	}
+
+	w.inboundHooks = append(w.inboundHooks, hook)
+}
+
+// AddOutboundHook adds a handler to process outbound packets.
+func (w *Writer) AddOutboundHook(hook Hook) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	for _, h := range w.outboundHooks {
+		if h == hook {
+			return
+		}
+	}
+
+	w.outboundHooks = append(w.outboundHooks, hook)
 }
 
 // Link connects a reader to the writer.
@@ -118,7 +156,13 @@ func (w *Writer) Write(pck *Packet) int {
 			}
 		}
 
-		w.receives = append(w.receives, receives)
+		if count > 0 {
+			w.receives = append(w.receives, receives)
+
+			for _, hook := range w.outboundHooks {
+				hook.Handle(pck)
+			}
+		}
 
 		return count
 	}
@@ -170,8 +214,13 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 			}
 
 			w.receives = w.receives[1:]
+			pck := Merge(receives)
 
-			w.in <- Merge(receives)
+			w.in <- pck
+
+			for _, hook := range w.inboundHooks {
+				hook.Handle(pck)
+			}
 		}
 
 		return true

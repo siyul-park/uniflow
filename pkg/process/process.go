@@ -3,11 +3,14 @@ package process
 import (
 	"context"
 	"sync"
+
+	"github.com/gofrs/uuid"
 )
 
 // Process represents an individual execution unit with its own data and termination handling.
 type Process struct {
 	parent    *Process
+	id        uuid.UUID
 	data      *Data
 	status    Status
 	err       error
@@ -31,6 +34,7 @@ var _ ExitHook = (*Process)(nil)
 func New() *Process {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	return &Process{
+		id:        uuid.Must(uuid.NewV7()),
 		data:      newData(),
 		ctx:       ctx,
 		exitHooks: []ExitHook{ExitFunc(cancel)},
@@ -45,6 +49,11 @@ func (p *Process) AddExitHook(h ExitHook) {
 	if p.status != StatusTerminated {
 		p.exitHooks = append(p.exitHooks, h)
 	}
+}
+
+// ID returns the process's id.
+func (p *Process) ID() uuid.UUID {
+	return p.id
 }
 
 // Data returns the process's data.
@@ -89,6 +98,7 @@ func (p *Process) Fork() *Process {
 
 	ctx, cancel := context.WithCancelCause(context.Background())
 	child := &Process{
+		id:     uuid.Must(uuid.NewV7()),
 		data:   p.data.Fork(),
 		ctx:    ctx,
 		parent: p,

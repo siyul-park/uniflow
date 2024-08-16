@@ -104,7 +104,7 @@ func (n *CallNode) forward(proc *process.Process) {
 		}
 		n.tracer.Read(inReader, inPck)
 
-		n.tracer.AddHandler(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 			n.tracer.Transform(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
 				n.tracer.Write(errWriter, backPck)

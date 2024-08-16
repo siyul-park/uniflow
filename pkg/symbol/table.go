@@ -49,8 +49,8 @@ func (t *Table) Insert(sym *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if sym.refs == nil {
-		sym.refs = make(map[string][]spec.Port)
+	if sym.inbounds == nil {
+		sym.inbounds = make(map[string][]spec.Port)
 	}
 
 	if _, err := t.free(sym.ID()); err != nil {
@@ -203,7 +203,7 @@ func (t *Table) links(sym *Symbol) {
 						}
 					}
 
-					ref.refs[port.Port] = append(ref.refs[port.Port], spec.Port{
+					ref.inbounds[port.Port] = append(ref.inbounds[port.Port], spec.Port{
 						ID:   sym.ID(),
 						Name: port.Name,
 						Port: name,
@@ -229,7 +229,7 @@ func (t *Table) links(sym *Symbol) {
 						}
 					}
 
-					sym.refs[port.Port] = append(sym.refs[port.Port], spec.Port{
+					sym.inbounds[port.Port] = append(sym.inbounds[port.Port], spec.Port{
 						ID:   ref.ID(),
 						Name: port.Name,
 						Port: name,
@@ -254,16 +254,16 @@ func (t *Table) unlinks(sym *Symbol) {
 			}
 
 			var ports []spec.Port
-			for _, port := range ref.refs[port.Port] {
+			for _, port := range ref.inbounds[port.Port] {
 				if port.ID != sym.ID() && port.Port != name {
 					ports = append(ports, port)
 				}
 			}
 
 			if len(ports) > 0 {
-				ref.refs[port.Port] = ports
+				ref.inbounds[port.Port] = ports
 			} else {
-				delete(ref.refs, port.Port)
+				delete(ref.inbounds, port.Port)
 			}
 		}
 	}
@@ -276,9 +276,9 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 	for len(nexts) > 0 {
 		sym := nexts[len(nexts)-1]
 		ok := true
-		for _, locations := range sym.refs {
-			for _, location := range locations {
-				next := t.symbols[location.ID]
+		for _, ports := range sym.inbounds {
+			for _, port := range ports {
+				next := t.symbols[port.ID]
 				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {
 					nexts = append(nexts, next)
 					break

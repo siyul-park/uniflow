@@ -12,6 +12,7 @@ func TestNewProcess(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
+	assert.NotZero(t, proc.ID())
 	assert.NotNil(t, proc.Data())
 	assert.NotNil(t, proc.Context())
 	assert.Equal(t, nil, proc.Err())

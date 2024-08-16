@@ -68,6 +68,38 @@ func TestCallOrReturn(t *testing.T) {
 	})
 }
 
+func TestWriter_AddHook(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	count := 0
+	w.AddInboundHook(HookFunc(func(_ *Packet) {
+		count += 1
+	}))
+	w.AddOutboundHook(HookFunc(func(_ *Packet) {
+		count += 1
+	}))
+
+	w.Link(r)
+
+	out := New(nil)
+
+	w.Write(out)
+	assert.Equal(t, 1, count)
+
+	in := <-r.Read()
+
+	r.Receive(in)
+
+	back, ok := <-w.Receive()
+	assert.True(t, ok)
+	assert.Equal(t, in, back)
+	assert.Equal(t, 2, count)
+}
+
 func TestWriter_Write(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
