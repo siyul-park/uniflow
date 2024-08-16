@@ -66,11 +66,12 @@ func (s *Symbol) Env() map[string][]spec.Secret {
 }
 
 // Ins returns the input ports associated with the Symbol.
-func (s *Symbol) Ins() map[string]*port.InPort {
-	if s.ins == nil {
-		s.ins = make(map[string]*port.InPort)
+func (s *Symbol) Ins() []string {
+	ins := make([]string, 0, len(s.ins))
+	for name := range s.ins {
+		ins = append(ins, name)
 	}
-	return s.ins
+	return ins
 }
 
 // In returns the input port with the specified name, caching the result.
@@ -78,7 +79,6 @@ func (s *Symbol) In(name string) *port.InPort {
 	if s.ins == nil {
 		s.ins = make(map[string]*port.InPort)
 	}
-
 	p := s.Node.In(name)
 	if p != nil {
 		s.ins[name] = p
@@ -87,11 +87,12 @@ func (s *Symbol) In(name string) *port.InPort {
 }
 
 // Outs returns the output ports associated with the Symbol.
-func (s *Symbol) Outs() map[string]*port.OutPort {
-	if s.outs == nil {
-		s.outs = make(map[string]*port.OutPort)
+func (s *Symbol) Outs() []string {
+	outs := make([]string, 0, len(s.outs))
+	for name := range s.outs {
+		outs = append(outs, name)
 	}
-	return s.outs
+	return outs
 }
 
 // Out returns the output port with the specified name, caching the result.
@@ -99,7 +100,6 @@ func (s *Symbol) Out(name string) *port.OutPort {
 	if s.outs == nil {
 		s.outs = make(map[string]*port.OutPort)
 	}
-
 	p := s.Node.Out(name)
 	if p != nil {
 		s.outs[name] = p
