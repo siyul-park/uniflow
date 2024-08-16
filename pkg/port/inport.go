@@ -26,6 +26,12 @@ func (p *InPort) Accept(listener Listener) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	for _, l := range p.listeners {
+		if l == listener {
+			return
+		}
+	}
+
 	p.listeners = append(p.listeners, listener)
 }
 
@@ -58,10 +64,12 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 		reader.Close()
 	}))
 
-	for _, listener := range p.listeners {
-		listener := listener
-		go listener.Accept(proc)
-	}
+	listeners := p.listeners[:]
+	go func() {
+		for i := len(listeners) - 1; i >= 0; i-- {
+			listeners[i].Accept(proc)
+		}
+	}()
 
 	return reader
 }

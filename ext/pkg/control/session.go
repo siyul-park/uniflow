@@ -131,7 +131,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 			}
 		}
 
-		n.tracer.AddHandler(inPck, packet.HandlerFunc(func(backPck *packet.Packet) {
+		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 			var err error
 			if v, ok := backPck.Payload().(types.Error); ok {
 				err = v.Unwrap()
