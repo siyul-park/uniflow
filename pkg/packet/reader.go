@@ -39,7 +39,12 @@ func NewReader() *Reader {
 					if w := r.writer(); w == nil {
 						break
 					} else {
-						w.receive(New(types.NewError(ErrDroppedPacket)), r)
+						pck := New(types.NewError(ErrDroppedPacket))
+						if ok := w.receive(pck, r); ok {
+							for _, hook := range r.outboundHooks {
+								hook.Handle(pck)
+							}
+						}
 					}
 				}
 				return
@@ -103,11 +108,13 @@ func (r *Reader) Receive(pck *Packet) bool {
 	if w := r.writer(); w == nil {
 		return false
 	} else {
-		for _, hook := range r.outboundHooks {
-			hook.Handle(pck)
+		ok := w.receive(pck, r)
+		if ok {
+			for _, hook := range r.outboundHooks {
+				hook.Handle(pck)
+			}
 		}
-
-		return w.receive(pck, r)
+		return ok
 	}
 }
 
@@ -131,12 +138,13 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	case <-r.done:
 		return false
 	default:
+		r.writers = append(r.writers, writer)
+		r.in <- pck
+
 		for _, hook := range r.inboundHooks {
 			hook.Handle(pck)
 		}
 
-		r.writers = append(r.writers, writer)
-		r.in <- pck
 		return true
 	}
 }
