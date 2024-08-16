@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow
 
-go 1.22.6
+go 1.23.0
 
 require (
 	github.com/benbjohnson/immutable v0.4.3
@@ -8,7 +8,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/samber/lo v1.46.0
+	github.com/samber/lo v1.47.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 )

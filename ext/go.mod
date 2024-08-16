@@ -1,10 +1,10 @@
 module github.com/siyul-park/uniflow/ext
 
-go 1.22.6
+go 1.23.0
 
 require (
 	github.com/andybalholm/brotli v1.1.0
-	github.com/dop251/goja v0.0.0-20240806095544-3491d4a58fbe
+	github.com/dop251/goja v0.0.0-20240815170236-7d18bf7df119
 	github.com/evanw/esbuild v0.23.0
 	github.com/go-faker/faker/v4 v4.4.2
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -33,7 +33,7 @@ require (
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240812133136-8ffd90a71988 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240812133136-8ffd90a71988 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
