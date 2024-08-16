@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/dop251/goja v0.0.0-20240815170236-7d18bf7df119
-	github.com/evanw/esbuild v0.23.0
+	github.com/evanw/esbuild v0.23.1
 	github.com/go-faker/faker/v4 v4.4.2
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/cel-go v0.21.0
