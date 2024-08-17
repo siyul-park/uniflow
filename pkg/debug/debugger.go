@@ -170,7 +170,6 @@ func (d *Debugger) Unload(sym *symbol.Symbol) error {
 	return nil
 }
 
-// accept adds a process to the debugger and sets up its exit hook.
 func (d *Debugger) accept(proc *process.Process) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -203,7 +202,6 @@ func (d *Debugger) accept(proc *process.Process) {
 	}
 }
 
-// hooks returns inbound and outbound hooks for a process and symbol.
 func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
 	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
 		d.mu.Lock()
