@@ -22,7 +22,43 @@ func TestInPort_Open(t *testing.T) {
 	assert.Equal(t, r1, r2)
 }
 
-func TestInPort_AddAndRemoveListener(t *testing.T) {
+func TestInPort_Hook(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	in := NewIn()
+	defer in.Close()
+
+	done := make(chan struct{})
+	h := HookFunc(func(proc *process.Process) {
+		close(done)
+	})
+
+	ok := in.AddHook(h)
+	assert.True(t, ok)
+
+	ok = in.AddHook(h)
+	assert.False(t, ok)
+
+	_ = in.Open(proc)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+
+	ok = in.RemoveHook(h)
+	assert.True(t, ok)
+
+	ok = in.RemoveHook(h)
+	assert.False(t, ok)
+}
+
+func TestInPort_Listener(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -50,12 +86,6 @@ func TestInPort_AddAndRemoveListener(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
-
-	ok = in.RemoveListener(h)
-	assert.True(t, ok)
-
-	ok = in.RemoveListener(h)
-	assert.False(t, ok)
 }
 
 func BenchmarkInPort_Open(b *testing.B) {

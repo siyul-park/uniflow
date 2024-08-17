@@ -12,11 +12,12 @@ import (
 type OutPort struct {
 	ins       []*InPort
 	writers   map[*process.Process]*packet.Writer
+	hooks     []Hook
 	listeners []Listener
 	mu        sync.RWMutex
 }
 
-// Write sends the payload through OutPort, handles errors, and returns the processed result or any encountered error.
+// Write sends the payload through the OutPort and returns the result or an error.
 func Write(out *OutPort, payload types.Value) (types.Value, error) {
 	var err error
 
@@ -41,14 +42,43 @@ func Write(out *OutPort, payload types.Value) (types.Value, error) {
 	return payload, nil
 }
 
-// NewOut creates a new OutPort instance.
+// NewOut creates and returns a new OutPort instance.
 func NewOut() *OutPort {
 	return &OutPort{
 		writers: make(map[*process.Process]*packet.Writer),
 	}
 }
 
-// AddListener registers the listener to handle incoming data if not already registered.
+// AddHook adds a hook for packet processing if not already present.
+func (p *OutPort) AddHook(hook Hook) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, h := range p.hooks {
+		if h == hook {
+			return false
+		}
+	}
+
+	p.hooks = append(p.hooks, hook)
+	return true
+}
+
+// RemoveHook removes a hook from the port if present.
+func (p *OutPort) RemoveHook(hook Hook) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for i, h := range p.hooks {
+		if h == hook {
+			p.hooks = append(p.hooks[:i], p.hooks[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// AddListener registers a listener for outgoing data if not already present.
 func (p *OutPort) AddListener(listener Listener) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -63,20 +93,6 @@ func (p *OutPort) AddListener(listener Listener) bool {
 	return true
 }
 
-// RemoveListener unregisters the listener so it no longer handles incoming data.
-func (p *OutPort) RemoveListener(listener Listener) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	for i, l := range p.listeners {
-		if l == listener {
-			p.listeners = append(p.listeners[:i], p.listeners[i+1:]...)
-			return true
-		}
-	}
-	return false
-}
-
 // Links returns the number of input ports this port is connected to.
 func (p *OutPort) Links() int {
 	p.mu.RLock()
@@ -85,7 +101,7 @@ func (p *OutPort) Links() int {
 	return len(p.ins)
 }
 
-// Link connects the output port to an input port.
+// Link connects this output port to an input port.
 func (p *OutPort) Link(in *InPort) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -93,7 +109,7 @@ func (p *OutPort) Link(in *InPort) {
 	p.ins = append(p.ins, in)
 }
 
-// Unlink disconnects the output port from an input port.
+// Unlink disconnects this output port from an input port.
 func (p *OutPort) Unlink(in *InPort) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -106,10 +122,8 @@ func (p *OutPort) Unlink(in *InPort) {
 	}
 }
 
-// Open opens the output port for a given process and returns a writer.
-// If the process already has an associated writer, it returns the existing one.
-// Otherwise, it creates a new writer and associates it with the process.
-// It also connects the writer to all linked input ports and starts data listeners.
+// Open opens the output port for the given process and returns a writer.
+// It connects the writer to all linked input ports and starts data listeners.
 func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	writer, ok := func() (*packet.Writer, bool) {
 		p.mu.Lock()
@@ -137,25 +151,30 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 
 	if !ok {
 		p.mu.RLock()
-		defer p.mu.RUnlock()
 
 		for _, in := range p.ins {
 			reader := in.Open(proc)
 			writer.Link(reader)
 		}
 
+		hooks := p.hooks[:]
 		listeners := p.listeners[:]
-		go func() {
-			for i := len(listeners) - 1; i >= 0; i-- {
-				listeners[i].Accept(proc)
-			}
-		}()
+
+		p.mu.RUnlock()
+
+		for i := len(hooks) - 1; i >= 0; i-- {
+			hooks[i].Open(proc)
+		}
+
+		for _, listener := range listeners {
+			go listener.Accept(proc)
+		}
 	}
 
 	return writer
 }
 
-// Close closes all writers associated with the output port and clears linked input ports.
+// Close closes all writers and clears linked input ports, hooks, and listeners.
 func (p *OutPort) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -163,6 +182,9 @@ func (p *OutPort) Close() {
 	for _, writer := range p.writers {
 		writer.Close()
 	}
+
 	p.writers = make(map[*process.Process]*packet.Writer)
 	p.ins = nil
+	p.hooks = nil
+	p.listeners = nil
 }
