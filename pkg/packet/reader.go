@@ -71,31 +71,33 @@ func NewReader() *Reader {
 }
 
 // AddInboundHook adds a handler to process inbound packets.
-func (r *Reader) AddInboundHook(hook Hook) {
+func (r *Reader) AddInboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for _, h := range r.inboundHooks {
 		if h == hook {
-			return
+			return false
 		}
 	}
 
 	r.inboundHooks = append(r.inboundHooks, hook)
+	return true
 }
 
 // AddOutboundHook adds a handler to process outbound packets.
-func (r *Reader) AddOutboundHook(hook Hook) {
+func (r *Reader) AddOutboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for _, h := range r.outboundHooks {
 		if h == hook {
-			return
+			return false
 		}
 	}
 
 	r.outboundHooks = append(r.outboundHooks, hook)
+	return true
 }
 
 // Read returns the channel for reading packets from the reader.

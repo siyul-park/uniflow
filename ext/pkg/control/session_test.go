@@ -76,7 +76,7 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 	inPayload := types.NewMap(types.NewString("foo"), types.NewString("baz"))
 	inPck := packet.New(inPayload)
 
-	out.Accept(port.ListenFunc(func(proc *process.Process) {
+	out.AddListener(port.ListenFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		select {
@@ -126,7 +126,7 @@ func BenchmarkSessionNode_SendAndReceive(b *testing.B) {
 	inPayload := types.NewMap(types.NewString("foo"), types.NewString("baz"))
 	inPck := packet.New(inPayload)
 
-	out.Accept(port.ListenFunc(func(proc *process.Process) {
+	out.AddListener(port.ListenFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		for {

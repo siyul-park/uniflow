@@ -43,10 +43,10 @@ func NewCallNode() *CallNode {
 		errPort:  port.NewOut(),
 	}
 
-	n.inPort.Accept(port.ListenFunc(n.forward))
-	n.outPorts[0].Accept(port.ListenFunc(n.backward0))
-	n.outPorts[1].Accept(port.ListenFunc(n.backward1))
-	n.errPort.Accept(port.ListenFunc(n.catch))
+	n.inPort.AddListener(port.ListenFunc(n.forward))
+	n.outPorts[0].AddListener(port.ListenFunc(n.backward0))
+	n.outPorts[1].AddListener(port.ListenFunc(n.backward1))
+	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
 }

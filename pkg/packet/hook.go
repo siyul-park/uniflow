@@ -2,15 +2,21 @@ package packet
 
 // Hook defines an interface for handling packets.
 type Hook interface {
+	// Handle processes the given packet.
 	Handle(*Packet)
 }
 
-// HookFunc is a function type that implements the Handler interface.
-type HookFunc func(*Packet)
+type hook struct {
+	handle func(*Packet)
+}
 
-var _ Hook = HookFunc(nil)
+var _ Hook = (*hook)(nil)
 
-// Handle calls the underlying function represented by HandlerFunc with the provided packet.
-func (f HookFunc) Handle(pck *Packet) {
-	f(pck)
+// HookFunc creates a new Hook from the provided function.
+func HookFunc(handle func(*Packet)) Hook {
+	return &hook{handle: handle}
+}
+
+func (h *hook) Handle(pck *Packet) {
+	h.handle(pck)
 }

@@ -45,7 +45,7 @@ func TestOutPort_Link(t *testing.T) {
 	assert.Equal(t, 1, out.Links())
 }
 
-func TestOutPort_Accept(t *testing.T) {
+func TestOutPort_AddAndRemoveListener(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -57,7 +57,11 @@ func TestOutPort_Accept(t *testing.T) {
 		close(done)
 	})
 
-	out.Accept(h)
+	ok := out.AddListener(h)
+	assert.True(t, ok)
+
+	ok = out.AddListener(h)
+	assert.False(t, ok)
 
 	_ = out.Open(proc)
 
@@ -69,6 +73,12 @@ func TestOutPort_Accept(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
+
+	ok = out.RemoveListener(h)
+	assert.True(t, ok)
+
+	ok = out.RemoveListener(h)
+	assert.False(t, ok)
 }
 
 func BenchmarkOutPort_Open(b *testing.B) {

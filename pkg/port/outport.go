@@ -48,18 +48,33 @@ func NewOut() *OutPort {
 	}
 }
 
-// Accept registers a listener to handle incoming data.
-func (p *OutPort) Accept(listener Listener) {
+// AddListener registers the listener to handle incoming data if not already registered.
+func (p *OutPort) AddListener(listener Listener) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	for _, l := range p.listeners {
 		if l == listener {
-			return
+			return false
 		}
 	}
 
 	p.listeners = append(p.listeners, listener)
+	return true
+}
+
+// RemoveListener unregisters the listener so it no longer handles incoming data.
+func (p *OutPort) RemoveListener(listener Listener) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for i, l := range p.listeners {
+		if l == listener {
+			p.listeners = append(p.listeners[:i], p.listeners[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // Links returns the number of input ports this port is connected to.

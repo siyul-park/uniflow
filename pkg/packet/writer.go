@@ -98,31 +98,33 @@ func NewWriter() *Writer {
 }
 
 // AddInboundHook adds a handler to process inbound packets.
-func (w *Writer) AddInboundHook(hook Hook) {
+func (w *Writer) AddInboundHook(hook Hook) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	for _, h := range w.inboundHooks {
 		if h == hook {
-			return
+			return false
 		}
 	}
 
 	w.inboundHooks = append(w.inboundHooks, hook)
+	return true
 }
 
 // AddOutboundHook adds a handler to process outbound packets.
-func (w *Writer) AddOutboundHook(hook Hook) {
+func (w *Writer) AddOutboundHook(hook Hook) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	for _, h := range w.outboundHooks {
 		if h == hook {
-			return
+			return false
 		}
 	}
 
 	w.outboundHooks = append(w.outboundHooks, hook)
+	return true
 }
 
 // Link connects a reader to the writer.

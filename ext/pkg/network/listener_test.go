@@ -103,7 +103,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
 
-		out.Accept(port.ListenFunc(func(proc *process.Process) {
+		out.AddListener(port.ListenFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
@@ -134,7 +134,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
 
-		out.Accept(port.ListenFunc(func(proc *process.Process) {
+		out.AddListener(port.ListenFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
@@ -171,7 +171,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		out := port.NewIn()
 		n.Out(node.PortOut).Link(out)
 
-		out.Accept(port.ListenFunc(func(proc *process.Process) {
+		out.AddListener(port.ListenFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
@@ -206,7 +206,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		err := port.NewIn()
 		n.Out(node.PortErr).Link(err)
 
-		out.Accept(port.ListenFunc(func(proc *process.Process) {
+		out.AddListener(port.ListenFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)
 
 			for {
@@ -221,7 +221,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 				outReader.Receive(errPck)
 			}
 		}))
-		err.Accept(port.ListenFunc(func(proc *process.Process) {
+		err.AddListener(port.ListenFunc(func(proc *process.Process) {
 			errReader := err.Open(proc)
 
 			for {
@@ -260,7 +260,7 @@ func BenchmarkHTTPListenNode_ServeHTTP(b *testing.B) {
 	out := port.NewIn()
 	n.Out(node.PortOut).Link(out)
 
-	out.Accept(port.ListenFunc(func(proc *process.Process) {
+	out.AddListener(port.ListenFunc(func(proc *process.Process) {
 		outReader := out.Open(proc)
 
 		for {

@@ -45,9 +45,9 @@ func NewSessionNode() *SessionNode {
 		outPort: port.NewOut(),
 	}
 
-	n.ioPort.Accept(port.ListenFunc(n.session))
-	n.inPort.Accept(port.ListenFunc(n.forward))
-	n.outPort.Accept(port.ListenFunc(n.backward))
+	n.ioPort.AddListener(port.ListenFunc(n.session))
+	n.inPort.AddListener(port.ListenFunc(n.forward))
+	n.outPort.AddListener(port.ListenFunc(n.backward))
 
 	return n
 }

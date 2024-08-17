@@ -41,9 +41,9 @@ func NewForkNode() *ForkNode {
 		errPort: port.NewOut(),
 	}
 
-	n.inPort.Accept(port.ListenFunc(n.forward))
-	n.outPort.Accept(port.ListenFunc(n.backward))
-	n.errPort.Accept(port.ListenFunc(n.catch))
+	n.inPort.AddListener(port.ListenFunc(n.forward))
+	n.outPort.AddListener(port.ListenFunc(n.backward))
+	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
 }

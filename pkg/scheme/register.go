@@ -1,16 +1,22 @@
 package scheme
 
-// Registrar is an interface for registering types with a Scheme.
+// Register defines an interface for registering types with a Scheme.
 type Register interface {
+	// AddToScheme adds types to the given Scheme.
 	AddToScheme(*Scheme) error
 }
 
-// RegisterFunc is a function type that registers types with a Scheme.
-type RegisterFunc func(*Scheme) error
+type register struct {
+	addToScheme func(*Scheme) error
+}
 
-var _ Register = (RegisterFunc)(nil)
+var _ Register = (*register)(nil)
 
-// AddToScheme calls the RegisterFunc to register types with the Scheme.
-func (f RegisterFunc) AddToScheme(s *Scheme) error {
-	return f(s)
+// RegisterFunc creates a new Register from the provided function.
+func RegisterFunc(addToScheme func(*Scheme) error) Register {
+	return &register{addToScheme: addToScheme}
+}
+
+func (r *register) AddToScheme(s *Scheme) error {
+	return r.addToScheme(s)
 }
