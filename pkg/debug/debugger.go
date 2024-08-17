@@ -186,7 +186,6 @@ func (d *Debugger) accept(proc *process.Process) {
 			delete(d.frames, proc.ID())
 		}))
 
-		// Copy watchers slice to avoid concurrent modification issues.
 		watchers := d.watchers[:]
 
 		d.mu.Unlock()
