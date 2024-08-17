@@ -1,13 +1,12 @@
 package debug
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -46,6 +45,17 @@ func TestDebugger_Symbol(t *testing.T) {
 func TestDebugger_Process(t *testing.T) {
 	d := NewDebugger()
 
+	done := make(chan struct{})
+	d.AddListener(port.ListenFunc(func(proc *process.Process) {
+		defer close(done)
+
+		_, ok := d.Process(proc.ID())
+		assert.True(t, ok)
+
+		ids := d.Processes()
+		assert.Contains(t, ids, proc.ID())
+	}))
+
 	sym := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -66,20 +76,5 @@ func TestDebugger_Process(t *testing.T) {
 
 	in.Open(proc)
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-			return
-		default:
-			if _, ok := d.Process(proc.ID()); ok {
-				ids := d.Processes()
-				assert.Contains(t, ids, proc.ID())
-				return
-			}
-		}
-	}
+	<-done
 }

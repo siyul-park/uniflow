@@ -15,6 +15,7 @@ type Debugger struct {
 	processes map[uuid.UUID]*process.Process
 	inbounds  map[uuid.UUID]map[string]port.Listener
 	outbounds map[uuid.UUID]map[string]port.Listener
+	listeners []port.Listener
 	mu        sync.RWMutex
 }
 
@@ -29,6 +30,21 @@ func NewDebugger() *Debugger {
 		inbounds:  make(map[uuid.UUID]map[string]port.Listener),
 		outbounds: make(map[uuid.UUID]map[string]port.Listener),
 	}
+}
+
+// AddListener registers the listener to handle incoming data if not already registered.
+func (d *Debugger) AddListener(listener port.Listener) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	for _, l := range d.listeners {
+		if l == listener {
+			return false
+		}
+	}
+
+	d.listeners = append(d.listeners, listener)
+	return true
 }
 
 // Symbols returns a slice of all symbol IDs currently managed by the debugger.
@@ -138,5 +154,12 @@ func (d *Debugger) accept(proc *process.Process) {
 
 			delete(d.processes, proc.ID())
 		}))
+
+		listeners := d.listeners[:]
+		go func() {
+			for _, l := range listeners {
+				l.Accept(proc)
+			}
+		}()
 	}
 }
