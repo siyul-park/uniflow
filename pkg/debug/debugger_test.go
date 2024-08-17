@@ -20,6 +20,25 @@ func TestNewDebugger(t *testing.T) {
 	assert.NotNil(t, d)
 }
 
+func TestDebugger_Watch(t *testing.T) {
+	d := NewDebugger()
+
+	w := HandleProcessFunc(func(proc *process.Process) {
+	})
+
+	ok := d.Watch(w)
+	assert.True(t, ok)
+
+	ok = d.Watch(w)
+	assert.False(t, ok)
+
+	ok = d.Unwatch(w)
+	assert.True(t, ok)
+
+	ok = d.Unwatch(w)
+	assert.False(t, ok)
+}
+
 func TestDebugger_Symbol(t *testing.T) {
 	d := NewDebugger()
 
@@ -47,7 +66,7 @@ func TestDebugger_Process(t *testing.T) {
 	d := NewDebugger()
 
 	done := make(chan struct{})
-	d.AddWatcher(HandleProcessFunc(func(proc *process.Process) {
+	d.Watch(HandleProcessFunc(func(proc *process.Process) {
 		defer close(done)
 
 		_, ok := d.Process(proc.ID())
@@ -84,7 +103,7 @@ func TestDebuffer_Frames(t *testing.T) {
 	d := NewDebugger()
 
 	count := 0
-	d.AddWatcher(HandleFrameFunc(func(frame *Frame) {
+	d.Watch(HandleFrameFunc(func(frame *Frame) {
 		frames, ok := d.Frames(frame.Process.ID())
 		assert.True(t, ok)
 		assert.Contains(t, frames, frame)

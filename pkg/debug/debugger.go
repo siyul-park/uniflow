@@ -25,7 +25,7 @@ type Debugger struct {
 var _ symbol.LoadHook = (*Debugger)(nil)
 var _ symbol.UnloadHook = (*Debugger)(nil)
 
-// NewDebugger creates and returns a new Debugger instance.
+// NewDebugger creates and returns a new instance of Debugger.
 func NewDebugger() *Debugger {
 	return &Debugger{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
@@ -36,8 +36,8 @@ func NewDebugger() *Debugger {
 	}
 }
 
-// AddWatcher adds a watcher to the debugger. Returns false if the watcher already exists.
-func (d *Debugger) AddWatcher(watcher Watcher) bool {
+// Watch adds a watcher to the debugger. Returns false if the watcher is already registered.
+func (d *Debugger) Watch(watcher Watcher) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -51,7 +51,21 @@ func (d *Debugger) AddWatcher(watcher Watcher) bool {
 	return true
 }
 
-// Symbols returns a list of all symbol IDs managed by the debugger.
+// Unwatch removes a watcher from the debugger. Returns true if the watcher was successfully removed.
+func (d *Debugger) Unwatch(watcher Watcher) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	for i, w := range d.watchers {
+		if w == watcher {
+			d.watchers = append(d.watchers[:i], d.watchers[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Symbols returns a list of all symbol UUIDs managed by the debugger.
 func (d *Debugger) Symbols() []uuid.UUID {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -63,7 +77,7 @@ func (d *Debugger) Symbols() []uuid.UUID {
 	return ids
 }
 
-// Symbol retrieves a symbol by its ID.
+// Symbol retrieves a symbol by its UUID. Returns the symbol and a boolean indicating if it was found.
 func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -72,7 +86,7 @@ func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
 	return sym, exists
 }
 
-// Processes returns a list of all process IDs managed by the debugger.
+// Processes returns a list of all process UUIDs managed by the debugger.
 func (d *Debugger) Processes() []uuid.UUID {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -84,7 +98,7 @@ func (d *Debugger) Processes() []uuid.UUID {
 	return ids
 }
 
-// Process retrieves a process by its ID.
+// Process retrieves a process by its UUID. Returns the process and a boolean indicating if it was found.
 func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -93,7 +107,7 @@ func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
 	return proc, exists
 }
 
-// Frames retrieves all frames associated with a specific process ID.
+// Frames retrieves all frames associated with a specific process UUID. Returns the frames and a boolean indicating if they were found.
 func (d *Debugger) Frames(id uuid.UUID) ([]*Frame, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -186,7 +200,6 @@ func (d *Debugger) accept(proc *process.Process) {
 		}))
 
 		watchers := d.watchers[:]
-
 		d.mu.Unlock()
 
 		for i := len(watchers) - 1; i >= 0; i-- {
@@ -217,7 +230,6 @@ func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InP
 		d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
 
 		watchers := d.watchers[:]
-
 		d.mu.Unlock()
 
 		for i := len(watchers) - 1; i >= 0; i-- {
@@ -251,7 +263,6 @@ func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InP
 		}
 
 		watchers := d.watchers[:]
-
 		d.mu.Unlock()
 
 		for i := len(watchers) - 1; i >= 0; i-- {
