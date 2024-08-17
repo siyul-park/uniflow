@@ -38,6 +38,9 @@ func TestDebugger_Symbol(t *testing.T) {
 
 	_, ok := d.Symbol(sym.ID())
 	assert.True(t, ok)
+
+	ids := d.Symbols()
+	assert.Contains(t, ids, sym.ID())
 }
 
 func TestDebugger_Process(t *testing.T) {
@@ -73,6 +76,8 @@ func TestDebugger_Process(t *testing.T) {
 			return
 		default:
 			if _, ok := d.Process(proc.ID()); ok {
+				ids := d.Processes()
+				assert.Contains(t, ids, proc.ID())
 				return
 			}
 		}

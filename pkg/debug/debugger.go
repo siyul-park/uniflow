@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Debugger manages symbols, processes, and their listeners.
+// Debugger manages symbols, processes, and their associated listeners.
 type Debugger struct {
 	symbols   map[uuid.UUID]*symbol.Symbol
 	processes map[uuid.UUID]*process.Process
@@ -21,7 +21,7 @@ type Debugger struct {
 var _ symbol.LoadHook = (*Debugger)(nil)
 var _ symbol.UnloadHook = (*Debugger)(nil)
 
-// NewDebugger creates a new Debugger instance.
+// NewDebugger initializes and returns a new Debugger instance.
 func NewDebugger() *Debugger {
 	return &Debugger{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
@@ -29,6 +29,18 @@ func NewDebugger() *Debugger {
 		inbounds:  make(map[uuid.UUID]map[string]port.Listener),
 		outbounds: make(map[uuid.UUID]map[string]port.Listener),
 	}
+}
+
+// Symbols returns a slice of all symbol IDs currently managed by the debugger.
+func (d *Debugger) Symbols() []uuid.UUID {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	ids := make([]uuid.UUID, 0, len(d.symbols))
+	for id := range d.symbols {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 // Symbol retrieves a symbol by its ID.
@@ -40,6 +52,18 @@ func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
 	return sym, exists
 }
 
+// Processes returns a slice of all process IDs currently managed by the debugger.
+func (d *Debugger) Processes() []uuid.UUID {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	ids := make([]uuid.UUID, 0, len(d.processes))
+	for id := range d.processes {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 // Process retrieves a process by its ID.
 func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
 	d.mu.RLock()
@@ -49,7 +73,7 @@ func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
 	return proc, exists
 }
 
-// Load adds a symbol to the debugger and sets up listeners for its ports.
+// Load adds a symbol and its associated listeners to the debugger.
 func (d *Debugger) Load(sym *symbol.Symbol) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
