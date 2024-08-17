@@ -72,7 +72,6 @@ Env map[string][]Secret // 노드에 필요한 환경 변수를 지정합니다.
 ```go
 type MySnippetNodeSpec struct {
 	spec.Meta `map:",inline"`
-  Contents string
 }
 ```
 
