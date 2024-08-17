@@ -6,6 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -46,7 +47,7 @@ func TestDebugger_Process(t *testing.T) {
 	d := NewDebugger()
 
 	done := make(chan struct{})
-	d.AddListener(port.ListenFunc(func(proc *process.Process) {
+	d.AddWatcher(HandleProcessFunc(func(proc *process.Process) {
 		defer close(done)
 
 		_, ok := d.Process(proc.ID())
@@ -77,4 +78,50 @@ func TestDebugger_Process(t *testing.T) {
 	in.Open(proc)
 
 	<-done
+}
+
+func TestDebuffer_Frames(t *testing.T) {
+	d := NewDebugger()
+
+	count := 0
+	d.AddWatcher(HandleFrameFunc(func(frame *Frame) {
+		frames, ok := d.Frames(frame.Process.ID())
+		assert.True(t, ok)
+		assert.Contains(t, frames, frame)
+
+		count += 1
+	}))
+
+	sym := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			return inPck, nil
+		}),
+	}
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sym.In(node.PortIn))
+
+	d.Load(sym)
+	defer d.Unload(sym)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	writer := out.Open(proc)
+
+	pck := packet.New(nil)
+
+	writer.Write(pck)
+	assert.Equal(t, 1, count)
+
+	<-writer.Receive()
+	assert.Equal(t, 2, count)
 }

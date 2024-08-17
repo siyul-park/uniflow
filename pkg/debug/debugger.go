@@ -2,52 +2,56 @@ package debug
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Debugger manages symbols, processes, and their associated listeners.
+// Debugger manages symbols, processes, and their listeners.
 type Debugger struct {
 	symbols   map[uuid.UUID]*symbol.Symbol
 	processes map[uuid.UUID]*process.Process
-	inbounds  map[uuid.UUID]map[string]port.Listener
-	outbounds map[uuid.UUID]map[string]port.Listener
-	listeners []port.Listener
+	frames    map[uuid.UUID][]*Frame
+	inbounds  map[uuid.UUID]map[string]port.Hook
+	outbounds map[uuid.UUID]map[string]port.Hook
+	watchers  []Watcher
 	mu        sync.RWMutex
 }
 
 var _ symbol.LoadHook = (*Debugger)(nil)
 var _ symbol.UnloadHook = (*Debugger)(nil)
 
-// NewDebugger initializes and returns a new Debugger instance.
+// NewDebugger creates and returns a new Debugger instance.
 func NewDebugger() *Debugger {
 	return &Debugger{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
 		processes: make(map[uuid.UUID]*process.Process),
-		inbounds:  make(map[uuid.UUID]map[string]port.Listener),
-		outbounds: make(map[uuid.UUID]map[string]port.Listener),
+		frames:    make(map[uuid.UUID][]*Frame),
+		inbounds:  make(map[uuid.UUID]map[string]port.Hook),
+		outbounds: make(map[uuid.UUID]map[string]port.Hook),
 	}
 }
 
-// AddListener registers the listener to handle incoming data if not already registered.
-func (d *Debugger) AddListener(listener port.Listener) bool {
+// AddWatcher adds a watcher to the debugger. Returns false if the watcher already exists.
+func (d *Debugger) AddWatcher(watcher Watcher) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	for _, l := range d.listeners {
-		if l == listener {
+	for _, w := range d.watchers {
+		if w == watcher {
 			return false
 		}
 	}
 
-	d.listeners = append(d.listeners, listener)
+	d.watchers = append(d.watchers, watcher)
 	return true
 }
 
-// Symbols returns a slice of all symbol IDs currently managed by the debugger.
+// Symbols returns a list of all symbol IDs managed by the debugger.
 func (d *Debugger) Symbols() []uuid.UUID {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -68,7 +72,7 @@ func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
 	return sym, exists
 }
 
-// Processes returns a slice of all process IDs currently managed by the debugger.
+// Processes returns a list of all process IDs managed by the debugger.
 func (d *Debugger) Processes() []uuid.UUID {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -89,13 +93,22 @@ func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
 	return proc, exists
 }
 
+// Frames retrieves all frames associated with a specific process ID.
+func (d *Debugger) Frames(id uuid.UUID) ([]*Frame, bool) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	frames, exists := d.frames[id]
+	return frames, exists
+}
+
 // Load adds a symbol and its associated listeners to the debugger.
 func (d *Debugger) Load(sym *symbol.Symbol) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	inbounds := make(map[string]port.Listener)
-	outbounds := make(map[string]port.Listener)
+	inbounds := make(map[string]port.Hook)
+	outbounds := make(map[string]port.Hook)
 
 	d.symbols[sym.ID()] = sym
 	d.inbounds[sym.ID()] = inbounds
@@ -103,18 +116,34 @@ func (d *Debugger) Load(sym *symbol.Symbol) error {
 
 	for _, name := range sym.Ins() {
 		in := sym.In(name)
-		listener := port.ListenFunc(d.accept)
+		hook := port.HookFunc(func(proc *process.Process) {
+			d.accept(proc)
 
-		in.AddListener(listener)
-		inbounds[name] = listener
+			inboundHook, outboundHook := d.hooks(proc, sym, in, nil)
+
+			reader := in.Open(proc)
+			reader.AddInboundHook(inboundHook)
+			reader.AddOutboundHook(outboundHook)
+		})
+
+		in.AddHook(hook)
+		inbounds[name] = hook
 	}
 
 	for _, name := range sym.Outs() {
 		out := sym.Out(name)
-		listener := port.ListenFunc(d.accept)
+		hook := port.HookFunc(func(proc *process.Process) {
+			d.accept(proc)
 
-		out.AddListener(listener)
-		outbounds[name] = listener
+			inboundHook, outboundHook := d.hooks(proc, sym, nil, out)
+
+			writer := out.Open(proc)
+			writer.AddInboundHook(inboundHook)
+			writer.AddOutboundHook(outboundHook)
+		})
+
+		out.AddHook(hook)
+		outbounds[name] = hook
 	}
 
 	return nil
@@ -125,13 +154,13 @@ func (d *Debugger) Unload(sym *symbol.Symbol) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	for name, listener := range d.inbounds[sym.ID()] {
+	for name, hook := range d.inbounds[sym.ID()] {
 		in := sym.In(name)
-		in.RemoveListener(listener)
+		in.RemoveHook(hook)
 	}
-	for name, listener := range d.outbounds[sym.ID()] {
+	for name, hook := range d.outbounds[sym.ID()] {
 		out := sym.Out(name)
-		out.RemoveListener(listener)
+		out.RemoveHook(hook)
 	}
 
 	delete(d.inbounds, sym.ID())
@@ -141,6 +170,7 @@ func (d *Debugger) Unload(sym *symbol.Symbol) error {
 	return nil
 }
 
+// accept adds a process to the debugger and sets up its exit hook.
 func (d *Debugger) accept(proc *process.Process) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -153,13 +183,85 @@ func (d *Debugger) accept(proc *process.Process) {
 			defer d.mu.Unlock()
 
 			delete(d.processes, proc.ID())
+			delete(d.frames, proc.ID())
 		}))
 
-		listeners := d.listeners[:]
-		go func() {
-			for _, l := range listeners {
-				l.Accept(proc)
-			}
-		}()
+		// Copy watchers slice to avoid concurrent modification issues.
+		watchers := d.watchers[:]
+
+		d.mu.Unlock()
+
+		for i := len(watchers) - 1; i >= 0; i-- {
+			watcher := watchers[i]
+			watcher.HandleProcess(proc)
+		}
+
+		d.mu.Lock()
 	}
+
+	if _, exists := d.frames[proc.ID()]; !exists {
+		d.frames[proc.ID()] = nil
+	}
+}
+
+// hooks returns inbound and outbound hooks for a process and symbol.
+func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
+	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
+		d.mu.Lock()
+
+		frame := &Frame{
+			Process: proc,
+			Symbol:  sym,
+			InPort:  in,
+			OutPort: out,
+			InPck:   pck,
+			InTime:  time.Now(),
+		}
+		d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
+
+		watchers := d.watchers[:]
+
+		d.mu.Unlock()
+
+		for i := len(watchers) - 1; i >= 0; i-- {
+			watcher := watchers[i]
+			watcher.HandleFrame(frame)
+		}
+	})
+
+	outboundHook := packet.HookFunc(func(pck *packet.Packet) {
+		d.mu.Lock()
+
+		var frame *Frame
+		for _, f := range d.frames[proc.ID()] {
+			if f.Symbol == sym && (f.InPort == in || f.OutPort == out) && f.OutPck == nil {
+				f.OutPck = pck
+				f.OutTime = time.Now()
+				frame = f
+				break
+			}
+		}
+		if frame == nil {
+			frame = &Frame{
+				Process: proc,
+				Symbol:  sym,
+				InPort:  in,
+				OutPort: out,
+				OutPck:  pck,
+				OutTime: time.Now(),
+			}
+			d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
+		}
+
+		watchers := d.watchers[:]
+
+		d.mu.Unlock()
+
+		for i := len(watchers) - 1; i >= 0; i-- {
+			watcher := watchers[i]
+			watcher.HandleFrame(frame)
+		}
+	})
+
+	return inboundHook, outboundHook
 }

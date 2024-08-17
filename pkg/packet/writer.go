@@ -144,6 +144,10 @@ func (w *Writer) Write(pck *Packet) int {
 	case <-w.done:
 		return 0
 	default:
+		for _, hook := range w.outboundHooks {
+			hook.Handle(pck)
+		}
+
 		count := 0
 		receives := make([]*Packet, len(w.readers))
 		for i, r := range w.readers {
@@ -160,10 +164,6 @@ func (w *Writer) Write(pck *Packet) int {
 
 		if count > 0 {
 			w.receives = append(w.receives, receives)
-
-			for _, hook := range w.outboundHooks {
-				hook.Handle(pck)
-			}
 		}
 
 		return count
@@ -218,11 +218,11 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 			w.receives = w.receives[1:]
 			pck := Merge(receives)
 
-			w.in <- pck
-
 			for _, hook := range w.inboundHooks {
 				hook.Handle(pck)
 			}
+
+			w.in <- pck
 		}
 
 		return true
