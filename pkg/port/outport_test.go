@@ -45,7 +45,37 @@ func TestOutPort_Link(t *testing.T) {
 	assert.Equal(t, 1, out.Links())
 }
 
-func TestOutPort_AddAndRemoveListener(t *testing.T) {
+func TestOutPort_Hook(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	out := NewOut()
+	defer out.Close()
+
+	done := make(chan struct{})
+	h := HookFunc(func(proc *process.Process) {
+		close(done)
+	})
+
+	ok := out.AddHook(h)
+	assert.True(t, ok)
+
+	ok = out.AddHook(h)
+	assert.False(t, ok)
+
+	_ = out.Open(proc)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+}
+
+func TestOutPort_Listener(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -73,12 +103,6 @@ func TestOutPort_AddAndRemoveListener(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
-
-	ok = out.RemoveListener(h)
-	assert.True(t, ok)
-
-	ok = out.RemoveListener(h)
-	assert.False(t, ok)
 }
 
 func BenchmarkOutPort_Open(b *testing.B) {

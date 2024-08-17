@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -14,11 +15,12 @@ import (
 
 // Config defines configuration options for the Runtime.
 type Config struct {
-	Namespace   string         // Namespace defines the isolated execution environment for workflows.
-	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
-	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	SpecStore   spec.Store     // SpecStore is responsible for persisting symbols.
-	SecretStore secret.Store   // SpecStore is responsible for persisting symbols.
+	Namespace   string          // Namespace defines the isolated execution environment for workflows.
+	Hook        *hook.Hook      // Hook is a collection of hook functions for managing symbols.
+	Scheme      *scheme.Scheme  // Scheme defines the scheme and behaviors for symbols.
+	SpecStore   spec.Store      // SpecStore is responsible for persisting symbols.
+	SecretStore secret.Store    // SpecStore is responsible for persisting symbols.
+	Debugger    *debug.Debugger // Debugger provides debugging capabilities.
 }
 
 // Runtime represents an environment for executing Workflows.
@@ -49,9 +51,18 @@ func New(config Config) *Runtime {
 		config.SecretStore = secret.NewStore()
 	}
 
+	var loadHooks []symbol.LoadHook
+	var unloadHooks []symbol.UnloadHook
+	if config.Debugger != nil {
+		loadHooks = append(loadHooks, config.Debugger)
+		unloadHooks = append(unloadHooks, config.Debugger)
+	}
+	loadHooks = append(loadHooks, config.Hook)
+	unloadHooks = append(unloadHooks, config.Hook)
+
 	tb := symbol.NewTable(symbol.TableOptions{
-		LoadHooks:   []symbol.LoadHook{config.Hook},
-		UnloadHooks: []symbol.UnloadHook{config.Hook},
+		LoadHooks:   loadHooks,
+		UnloadHooks: unloadHooks,
 	})
 
 	ld := symbol.NewLoader(symbol.LoaderConfig{
