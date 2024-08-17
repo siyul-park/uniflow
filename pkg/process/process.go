@@ -42,13 +42,23 @@ func New() *Process {
 }
 
 // AddExitHook adds an exit hook to run when the process terminates.
-func (p *Process) AddExitHook(h ExitHook) {
+func (p *Process) AddExitHook(hook ExitHook) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.status != StatusTerminated {
-		p.exitHooks = append(p.exitHooks, h)
+	if p.status == StatusTerminated {
+		go hook.Exit(p.err)
+		return false
 	}
+
+	for _, h := range p.exitHooks {
+		if h == hook {
+			return false
+		}
+	}
+
+	p.exitHooks = append(p.exitHooks, hook)
+	return true
 }
 
 // ID returns the process's id.
@@ -96,7 +106,7 @@ func (p *Process) Wait() {
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
 
-	ctx, cancel := context.WithCancelCause(context.Background())
+	ctx, cancel := context.WithCancelCause(p.ctx)
 	child := &Process{
 		id:     uuid.Must(uuid.NewV7()),
 		data:   p.data.Fork(),
@@ -121,7 +131,7 @@ func (p *Process) Exit(err error) {
 		return
 	}
 
-	exitHooks := p.exitHooks
+	exitHooks := p.exitHooks[:]
 
 	p.data.Close()
 

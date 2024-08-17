@@ -22,7 +22,7 @@ func TestInPort_Open(t *testing.T) {
 	assert.Equal(t, r1, r2)
 }
 
-func TestInPort_Accept(t *testing.T) {
+func TestInPort_AddAndRemoveListener(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -34,7 +34,11 @@ func TestInPort_Accept(t *testing.T) {
 		close(done)
 	})
 
-	in.Accept(h)
+	ok := in.AddListener(h)
+	assert.True(t, ok)
+
+	ok = in.AddListener(h)
+	assert.False(t, ok)
 
 	_ = in.Open(proc)
 
@@ -46,6 +50,12 @@ func TestInPort_Accept(t *testing.T) {
 	case <-ctx.Done():
 		assert.NoError(t, ctx.Err())
 	}
+
+	ok = in.RemoveListener(h)
+	assert.True(t, ok)
+
+	ok = in.RemoveListener(h)
+	assert.False(t, ok)
 }
 
 func BenchmarkInPort_Open(b *testing.B) {

@@ -1,17 +1,21 @@
 package symbol
 
-// LoadHook is an interface for hooks that are called when a symbol is loaded.
+// LoadHook defines an interface for handling events when a symbol is loaded.
 type LoadHook interface {
-	// Load is called when a symbol is loaded.
 	Load(*Symbol) error
 }
 
-// LoadFunc is a function type that implements the LoadHook interface.
-type LoadFunc func(*Symbol) error
+type loadHook struct {
+	load func(*Symbol) error
+}
 
-var _ LoadHook = LoadFunc(nil)
+var _ LoadHook = (*loadHook)(nil)
 
-// Load implements the Load method of the LoadHook interface.
-func (f LoadFunc) Load(sym *Symbol) error {
-	return f(sym)
+// LoadFunc creates a new LoadHook from the provided function.
+func LoadFunc(load func(*Symbol) error) LoadHook {
+	return &loadHook{load: load}
+}
+
+func (h *loadHook) Load(sym *Symbol) error {
+	return h.load(sym)
 }

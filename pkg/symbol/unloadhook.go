@@ -1,17 +1,22 @@
 package symbol
 
-// UnloadHook is an interface for hooks that are called when a symbol is unloaded.
+// UnloadHook defines an interface for handling events when a symbol is unloaded.
 type UnloadHook interface {
 	// Unload is called when a symbol is unloaded.
 	Unload(*Symbol) error
 }
 
-// UnloadFunc is a function type that implements the UnloadHook interface.
-type UnloadFunc func(*Symbol) error
+type unloadHook struct {
+	unload func(*Symbol) error
+}
 
-var _ UnloadHook = UnloadFunc(nil)
+var _ UnloadHook = (*unloadHook)(nil)
 
-// Unload implements the Unload method of the UnloadHook interface.
-func (f UnloadFunc) Unload(sym *Symbol) error {
-	return f(sym)
+// UnloadFunc creates a new UnloadHook from the provided function.
+func UnloadFunc(unload func(*Symbol) error) UnloadHook {
+	return &unloadHook{unload: unload}
+}
+
+func (h *unloadHook) Unload(sym *Symbol) error {
+	return h.unload(sym)
 }

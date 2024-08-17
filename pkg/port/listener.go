@@ -2,18 +2,23 @@ package port
 
 import "github.com/siyul-park/uniflow/pkg/process"
 
-// Listener is an interface that defines a method to handle processes.
+// Listener is an interface for handling process events.
 type Listener interface {
 	// Accept is called to handle a process.
 	Accept(proc *process.Process)
 }
 
-// ListenFunc is an adapter that allows using ordinary functions as implementations of Listener.
-type ListenFunc func(proc *process.Process)
+type listener struct {
+	accept func(proc *process.Process)
+}
 
-var _ Listener = (ListenFunc)(nil)
+var _ Listener = (*listener)(nil)
 
-// Accept calls the underlying function represented by ListenFunc.
-func (f ListenFunc) Accept(proc *process.Process) {
-	f(proc)
+// ListenFunc creates a new Listener from the provided function.
+func ListenFunc(accept func(proc *process.Process)) Listener {
+	return &listener{accept: accept}
+}
+
+func (l *listener) Accept(proc *process.Process) {
+	l.accept(proc)
 }

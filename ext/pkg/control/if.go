@@ -57,16 +57,16 @@ func NewIfNode(condition func(any) (bool, error)) *IfNode {
 		errPort:   port.NewOut(),
 	}
 
-	n.inPort.Accept(port.ListenFunc(n.forward))
+	n.inPort.AddListener(port.ListenFunc(n.forward))
 
 	for i, outPort := range n.outPorts {
 		i := i
-		outPort.Accept(port.ListenFunc(func(proc *process.Process) {
+		outPort.AddListener(port.ListenFunc(func(proc *process.Process) {
 			n.backward(proc, i)
 		}))
 	}
 
-	n.errPort.Accept(port.ListenFunc(n.catch))
+	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
 }

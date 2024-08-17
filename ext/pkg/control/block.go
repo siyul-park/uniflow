@@ -91,8 +91,8 @@ func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 			}
 		}
 
-		inPort.Accept(n.forward(inPort, outPort))
-		outPort.Accept(n.backward(inPort, outPort))
+		inPort.AddListener(n.forward(inPort, outPort))
+		outPort.AddListener(n.backward(inPort, outPort))
 	}
 
 	return n
