@@ -1,8 +1,10 @@
 # 🏗️ 아키텍처
 
-각 노드 명세는 각 노드의 역할을 선언적으로 정의하며, 이러한 명세들이 서로 연결되어 워크플로우를 형성합니다. 각 워크플로우는 특정 네임스페이스에 정의되며, 각 런타임 환경은 하나의 네임스페이스를 실행합니다. 네임스페이스는 다른 네임스페이스에 정의된 노드를 참조할 수 없으며, 각각 격리되어 관리됩니다.
+작업을 처리하는 최소 단위인 노드를 기반으로 하여, 노드 명세는 각 노드가 동작할 역할을 정의하고, 이 노드들이 서로 연결되어 워크플로우를 형성합니다. 각 워크플로우는 하나의 런타임 안에서 사전에 정의된 네임스페이스에 연결되어 동작하며, 각 런타임 환경은 하나의 네임스페이스를 실행합니다.
 
-```plantext
+네임스페이스는 다른 네임스페이스에 정의된 노드를 임의적으로 참조할 수 없으며, 각각 격리되어 관리됩니다.
+
+```text
    +-------------------------------------------------+
    |                   Workflow A                    |
    |  +--------------------+ +--------------------+  |
@@ -105,7 +107,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: nodes.create
 
@@ -114,7 +116,7 @@
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: nodes.read
 
@@ -123,7 +125,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: nodes.update
 
@@ -132,7 +134,7 @@
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: nodes.delete
 
@@ -141,7 +143,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: secrets.create
 
@@ -150,7 +152,7 @@
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: secrets.read
 
@@ -159,7 +161,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: secrets.update
 
@@ -168,7 +170,7 @@
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: secrets.delete
 
@@ -177,7 +179,7 @@
   matches:
     - when: self == "unsupported type" || self == "unsupported value"
       port: out[0]
-    - when: 'true'
+    - when: "true"
       port: out[1]
   ports:
     out[0]:
@@ -220,7 +222,7 @@
 
 컴파일된 노드는 명세와 결합하여 심볼로 변환되며, 심볼 테이블에 저장됩니다. 심볼 테이블은 각 심볼의 포트를 노드 명세에 정의된 포트 연결 정보를 기반으로 연결합니다.
 
-```plantext
+```text
    +--------------------------+
    |         Database         |
    |  +--------------------+  |
@@ -229,13 +231,13 @@
    |  | Node Specification |  |
    |  +--------------------+  |   +-------------------+
    |  | Node Specification |  |-->|       Loader      |
-   |  +--------------------+  |   |  +-------------+  |  
-   +--------------------------+   |  |    Scheme   |  |   
+   |  +--------------------+  |   |  +-------------+  |
+   +--------------------------+   |  |    Scheme   |  |
    +--------------------------+   |  |  +-------+  |  |
    |         Database         |   |  |  | Codec |  |  |--+
    |  +--------+  +--------+  |   |  |  +-------+  |  |  |
    |  | Secret |  | Secret |  |-->|  +-------------+  |  |
-   |  +--------+  +--------+  |   +-------------------+  |   
+   |  +--------+  +--------+  |   +-------------------+  |
    |  +--------+  +--------+  |                          |
    |  | Secret |  | Secret |  |                          |
    |  +--------+  +--------+  |                          |
@@ -264,7 +266,7 @@
 
 연결된 노드는 새로운 프로세스가 해당 포트를 열었는지를 감시하며, 리더를 생성합니다. 생성된 리더는 대기 중인 패킷을 지속적으로 처리하고, 처리된 결과를 다음 노드에 전달하거나 반환합니다.
 
-```plantext
+```text
    +-----------------------+          +-----------------------+
    |        Node A         |          |        Node B         |
    |  +-----------------+  |          |  +-----------------+  |
