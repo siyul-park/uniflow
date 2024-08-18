@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBreakPoint_Next(t *testing.T) {
+func TestBreakpoint_Next(t *testing.T) {
 	proc := process.New()
 	sym := &symbol.Symbol{
 		Spec: &spec.Meta{
@@ -25,7 +25,7 @@ func TestBreakPoint_Next(t *testing.T) {
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	b := NewBreakPoint(
+	b := NewBreakpoint(
 		WithProcess(proc),
 		WithSymbol(sym),
 	)

@@ -8,8 +8,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// BreakPoint represents a synchronization point in a process where execution can be paused and resumed.
-type BreakPoint struct {
+// Breakpoint represents a synchronization point in a process where execution can be paused and resumed.
+type Breakpoint struct {
 	process *process.Process
 	symbol  *symbol.Symbol
 	inPort  *port.InPort
@@ -20,11 +20,11 @@ type BreakPoint struct {
 	mu      sync.RWMutex
 }
 
-var _ Watcher = (*BreakPoint)(nil)
+var _ Watcher = (*Breakpoint)(nil)
 
-// NewBreakPoint creates a new BreakPoint with optional configurations.
-func NewBreakPoint(options ...func(*BreakPoint)) *BreakPoint {
-	b := &BreakPoint{
+// NewBreakpoint creates a new Breakpoint with optional configurations.
+func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
+	b := &Breakpoint{
 		next: make(chan *Frame),
 		done: make(chan *Frame),
 	}
@@ -35,35 +35,35 @@ func NewBreakPoint(options ...func(*BreakPoint)) *BreakPoint {
 }
 
 // WithProcess configures the process associated with the breakpoint.
-func WithProcess(proc *process.Process) func(*BreakPoint) {
-	return func(b *BreakPoint) {
+func WithProcess(proc *process.Process) func(*Breakpoint) {
+	return func(b *Breakpoint) {
 		b.process = proc
 	}
 }
 
 // WithSymbol configures the symbol associated with the breakpoint.
-func WithSymbol(sym *symbol.Symbol) func(*BreakPoint) {
-	return func(b *BreakPoint) {
+func WithSymbol(sym *symbol.Symbol) func(*Breakpoint) {
+	return func(b *Breakpoint) {
 		b.symbol = sym
 	}
 }
 
 // WithInPort configures the input port associated with the breakpoint.
-func WithInPort(port *port.InPort) func(*BreakPoint) {
-	return func(b *BreakPoint) {
+func WithInPort(port *port.InPort) func(*Breakpoint) {
+	return func(b *Breakpoint) {
 		b.inPort = port
 	}
 }
 
 // WithOutPort configures the output port associated with the breakpoint.
-func WithOutPort(port *port.OutPort) func(*BreakPoint) {
-	return func(b *BreakPoint) {
+func WithOutPort(port *port.OutPort) func(*Breakpoint) {
+	return func(b *Breakpoint) {
 		b.outPort = port
 	}
 }
 
 // Next advances to the next frame and returns false if the channel is closed.
-func (b *BreakPoint) Next() bool {
+func (b *Breakpoint) Next() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -83,7 +83,7 @@ func (b *BreakPoint) Next() bool {
 }
 
 // Frame returns the current frame under lock protection.
-func (b *BreakPoint) Frame() *Frame {
+func (b *Breakpoint) Frame() *Frame {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -91,7 +91,7 @@ func (b *BreakPoint) Frame() *Frame {
 }
 
 // HandleFrame processes an incoming frame and synchronizes it.
-func (b *BreakPoint) HandleFrame(frame *Frame) {
+func (b *Breakpoint) HandleFrame(frame *Frame) {
 	if b.watch(frame) {
 		b.next <- frame
 		<-b.done
@@ -99,16 +99,24 @@ func (b *BreakPoint) HandleFrame(frame *Frame) {
 }
 
 // HandleProcess is currently a no-op but required by the Watcher interface.
-func (b *BreakPoint) HandleProcess(*process.Process) {
+func (b *Breakpoint) HandleProcess(*process.Process) {
 	// No operation; method required to satisfy the Watcher interface.
 }
 
-// Close closes the next channel to signal the end of the BreakPoint's lifecycle.
-func (b *BreakPoint) Close() {
+// Close closes the next channel to signal the end of the Breakpoint's lifecycle.
+func (b *Breakpoint) Close() {
 	close(b.next)
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.frame != nil {
+		b.done <- b.frame
+	}
+	b.frame = nil
 }
 
-func (b *BreakPoint) watch(frame *Frame) bool {
+func (b *Breakpoint) watch(frame *Frame) bool {
 	return (b.process == nil || b.process == frame.Process) &&
 		(b.symbol == nil || b.symbol == frame.Symbol) &&
 		(b.inPort == nil || b.inPort == frame.InPort) &&
