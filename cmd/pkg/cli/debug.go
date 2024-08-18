@@ -93,9 +93,9 @@ func (d *Debugger) Wait() {
 // View renders the UI state, including the prompt, any errors, and frame data.
 func (m *debugModel) View() string {
 	if m.view != nil {
-		return m.textInput.View() + "\n" + m.view.View()
+		return m.textInput.View() + "\n" + m.view.View() + "\n"
 	}
-	return m.textInput.View()
+	return m.textInput.View() + "\n"
 }
 
 // Init initializes the text input model.
@@ -150,6 +150,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.nextFrame()
 
 			case "continue", "c":
+				m.view = nil
 				if m.breakpoint != nil {
 					return m, m.nextFrame()
 				}
