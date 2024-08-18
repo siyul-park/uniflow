@@ -76,14 +76,14 @@ func (b *Breakpoint) Next() bool {
 // Done completes the current frame's processing.
 func (b *Breakpoint) Done() bool {
 	b.mu.Lock()
-	defer b.mu.Unlock()
+	frame := b.frame
+	b.frame = nil
+	b.mu.Unlock()
 
-	if b.frame == nil {
+	if frame == nil {
 		return false
 	}
-
-	b.done <- b.frame
-	b.frame = nil
+	b.done <- frame
 	return true
 }
 
@@ -97,33 +97,21 @@ func (b *Breakpoint) Frame() *Frame {
 
 // Process returns the process associated with the breakpoint.
 func (b *Breakpoint) Process() *process.Process {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
 	return b.process
 }
 
 // Symbol returns the symbol associated with the breakpoint.
 func (b *Breakpoint) Symbol() *symbol.Symbol {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
 	return b.symbol
 }
 
 // InPort returns the input port associated with the breakpoint.
 func (b *Breakpoint) InPort() *port.InPort {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
 	return b.inPort
 }
 
 // OutPort returns the output port associated with the breakpoint.
 func (b *Breakpoint) OutPort() *port.OutPort {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
 	return b.outPort
 }
 
