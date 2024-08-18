@@ -107,8 +107,6 @@ func (m *debugModel) Init() tea.Cmd {
 
 // Update processes user inputs and debugger events.
 func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmd := m.nextInput(msg)
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -117,7 +115,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			args := strings.Fields(m.input.Value())
 			if len(args) == 0 {
-				return m, cmd
+				return m, nil
 			}
 
 			m.input.SetValue("")
@@ -131,7 +129,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					sym = m.findSymbol(args[1])
 					if sym == nil {
 						m.view = &errDebugView{err: fmt.Errorf("symbol '%s' not found", args[1])}
-						return m, cmd
+						return m, nil
 					}
 				}
 
@@ -141,7 +139,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					inPort, outPort = m.findPort(sym, args[2])
 					if inPort == nil && outPort == nil {
 						m.view = &errDebugView{err: fmt.Errorf("port '%s' not found on symbol '%s'", args[2], sym.Name())}
-						return m, cmd
+						return m, nil
 					}
 				}
 
@@ -154,18 +152,17 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.debugger.Watch(m.breakpoint)
 				m.view = &breakpointDebugView{breakpoint: m.breakpoint}
 
-				cmd = tea.Batch(cmd, m.nextFrame())
-				return m, cmd
+				return m, m.nextFrame(m.breakpoint)
 			case "continue", "c":
 				m.view = nil
 				if m.breakpoint != nil {
 					m.view = &breakpointDebugView{breakpoint: m.breakpoint}
-					cmd = tea.Batch(cmd, m.nextFrame())
+					return m, m.nextFrame(m.breakpoint)
 				}
-				return m, cmd
+				return m, nil
 			case "delete", "d":
 				m.Close()
-				return m, cmd
+				return m, nil
 			case "info":
 				if len(args) > 1 {
 					switch args[1] {
@@ -191,17 +188,17 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
-				return m, cmd
+				return m, nil
 			}
 		}
 	case *debug.Frame:
 		if msg != nil {
 			m.view = &frameDebugView{frame: msg}
 		}
-		return m, cmd
+		return m, nil
 	}
 
-	return m, cmd
+	return m, m.nextInput(msg)
 }
 
 // Close resets the model state and stops watching the current breakpoint.
@@ -209,6 +206,7 @@ func (m *debugModel) Close() {
 	if m.breakpoint != nil {
 		m.debugger.Unwatch(m.breakpoint)
 		m.breakpoint.Close()
+		m.breakpoint = nil
 	}
 	m.view = nil
 }
@@ -219,10 +217,10 @@ func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-func (m *debugModel) nextFrame() tea.Cmd {
+func (m *debugModel) nextFrame(breakpoint *debug.Breakpoint) tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
-		m.breakpoint.Next()
-		return m.breakpoint.Frame()
+		breakpoint.Next()
+		return breakpoint.Frame()
 	})
 }
 
