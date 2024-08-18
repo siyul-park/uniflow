@@ -244,7 +244,6 @@ func (m *debugModel) findPort(sym *symbol.Symbol, name string) (*port.InPort, *p
 	return nil, nil
 }
 
-
 func (v *errDebugView) View() string {
 	return fmt.Sprintf("Error: %s.", v.err.Error())
 }
