@@ -82,6 +82,20 @@ func (b *Breakpoint) Next() bool {
 	return true
 }
 
+// Done completes the current frame's processing.
+func (b *Breakpoint) Done() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.frame == nil {
+		return false
+	}
+
+	b.done <- b.frame
+	b.frame = nil
+	return true
+}
+
 // Frame returns the current frame under lock protection.
 func (b *Breakpoint) Frame() *Frame {
 	b.mu.RLock()

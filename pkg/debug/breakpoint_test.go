@@ -15,6 +15,8 @@ import (
 
 func TestNewBreakpoint(t *testing.T) {
 	proc := process.New()
+	defer proc.Exit(nil)
+
 	sym := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -24,6 +26,7 @@ func TestNewBreakpoint(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
+	defer sym.Close()
 
 	b := NewBreakpoint(
 		WithProcess(proc),
@@ -41,6 +44,8 @@ func TestNewBreakpoint(t *testing.T) {
 
 func TestBreakpoint_Next(t *testing.T) {
 	proc := process.New()
+	defer proc.Exit(nil)
+
 	sym := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -50,6 +55,7 @@ func TestBreakpoint_Next(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
+	defer sym.Close()
 
 	b := NewBreakpoint(
 		WithProcess(proc),
@@ -66,4 +72,39 @@ func TestBreakpoint_Next(t *testing.T) {
 
 	assert.True(t, b.Next())
 	assert.Equal(t, frame, b.Frame())
+}
+
+func TestBreakpoint_Done(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	sym := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sym.Close()
+
+	b := NewBreakpoint(
+		WithProcess(proc),
+		WithSymbol(sym),
+	)
+	defer b.Close()
+
+	frame := &Frame{
+		Process: proc,
+		Symbol:  sym,
+	}
+
+	go b.HandleFrame(frame)
+
+	assert.True(t, b.Next())
+	assert.Equal(t, frame, b.Frame())
+	
+	assert.True(t, b.Done())
+	assert.Nil(t, b.Frame())
 }

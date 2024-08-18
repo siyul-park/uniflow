@@ -25,7 +25,7 @@ type Debugger struct {
 // debugModel represents the state and logic for the debugger UI.
 type debugModel struct {
 	view       debugView
-	textInput  textinput.Model
+	input      textinput.Model
 	debugger   *debug.Debugger
 	breakpoint *debug.Breakpoint
 }
@@ -58,14 +58,14 @@ func NewDebugger(debugger *debug.Debugger) *Debugger {
 	ti.Focus()
 
 	model := &debugModel{
-		textInput: ti,
-		debugger:  debugger,
+		input:    ti,
+		debugger: debugger,
 	}
 	program := tea.NewProgram(model)
 
 	go func() {
 		program.Wait()
-		model.clear()
+		model.Close()
 	}()
 
 	return &Debugger{
@@ -92,10 +92,11 @@ func (d *Debugger) Wait() {
 
 // View renders the UI state, including the prompt, any errors, and frame data.
 func (m *debugModel) View() string {
+	message := m.input.View() + "\n"
 	if m.view != nil {
-		return m.textInput.View() + "\n" + m.view.View() + "\n"
+		message += m.view.View() + "\n"
 	}
-	return m.textInput.View() + "\n"
+	return message
 }
 
 // Init initializes the text input model.
@@ -111,8 +112,8 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			args := strings.Fields(m.textInput.Value())
-			m.textInput.SetValue("")
+			args := strings.Fields(m.input.Value())
+			m.input.SetValue("")
 
 			if len(args) == 0 {
 				return m, nil
@@ -138,7 +139,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
-				m.clear()
+				m.Close()
 				m.breakpoint = debug.NewBreakpoint(
 					debug.WithSymbol(sym),
 					debug.WithInPort(inPort),
@@ -155,7 +156,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, m.nextFrame()
 				}
 			case "delete", "d":
-				m.clear()
+				m.Close()
 			case "info":
 				if len(args) > 1 {
 					switch args[1] {
@@ -188,8 +189,18 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	m.textInput, cmd = m.textInput.Update(msg)
+	m.input, cmd = m.input.Update(msg)
 	return m, cmd
+}
+
+// Close resets the model state and stops watching the current breakpoint.
+func (m *debugModel) Close() {
+	if m.breakpoint != nil {
+		m.debugger.Unwatch(m.breakpoint)
+		m.breakpoint.Close()
+	}
+	m.breakpoint = nil
+	m.view = nil
 }
 
 // findSymbol locates a symbol by its name or ID.
@@ -203,16 +214,12 @@ func (m *debugModel) findSymbol(key string) *symbol.Symbol {
 }
 
 // findPort locates an input or output port by its name.
-func (m *debugModel) findPort(sym *symbol.Symbol, portName string) (*port.InPort, *port.OutPort) {
-	for _, name := range sym.Ins() {
-		if name == portName {
-			return sym.In(name), nil
-		}
+func (m *debugModel) findPort(sym *symbol.Symbol, name string) (*port.InPort, *port.OutPort) {
+	if p := sym.In(name); p != nil {
+		return p, nil
 	}
-	for _, name := range sym.Outs() {
-		if name == portName {
-			return nil, sym.Out(name)
-		}
+	if p := sym.Out(name); p != nil {
+		return nil, p
 	}
 	return nil, nil
 }
@@ -223,16 +230,6 @@ func (m *debugModel) nextFrame() tea.Cmd {
 		m.breakpoint.Next()
 		return m.breakpoint.Frame()
 	})
-}
-
-// clear resets the model state and stops watching the current breakpoint.
-func (m *debugModel) clear() {
-	if m.breakpoint != nil {
-		m.debugger.Unwatch(m.breakpoint)
-		m.breakpoint.Close()
-	}
-	m.breakpoint = nil
-	m.view = nil
 }
 
 func (v *errDebugView) View() string {
@@ -267,12 +264,10 @@ func (v *breakpointDebugView) View() string {
 			break
 		}
 	}
-	if portName == "" {
-		for _, name := range sym.Outs() {
-			if sym.Out(name) == v.breakpoint.OutPort() {
-				portName = name
-				break
-			}
+	for _, name := range sym.Outs() {
+		if sym.Out(name) == v.breakpoint.OutPort() {
+			portName = name
+			break
 		}
 	}
 
