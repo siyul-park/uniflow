@@ -82,7 +82,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("continue")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Nil(t, m.view)
+		assert.Contains(t, m.View(), sym.Name())
 		assert.NotNil(t, m.breakpoint)
 	})
 
