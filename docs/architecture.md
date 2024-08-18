@@ -205,10 +205,10 @@ To modify node specifications, users can update the database using a Command-Lin
   language: json
   code: |
     {
-      'body': {
-        'error': 'Internal Server Error'
+      "body": {
+        "error": "Internal Server Error"
       },
-      'status': 500
+      "status": 500
     }
 ```
 

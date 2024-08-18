@@ -1,6 +1,6 @@
 # 🔧 사용자 확장
 
-사용자가 uniflow 시스템을 이해하고 사용하여 자신의 서비스를 확장하고 이를 런타임 환경에 통합하는 방법을 설명합니다.
+사용자가 uniflow 시스템을 이해하고 자신의 서비스를 런타임 환경에 추가하는 방법을 설명합니다.
 
 해당 가이드를 읽기 전에 [핵심 키워드](https://github.com/siyul-park/uniflow/blob/main/docs/key_concepts.md)와 [시스템 구조](https://github.com/siyul-park/uniflow/blob/main/docs/architecture.md)를 읽는 것을 권장합니다.
 
@@ -11,42 +11,6 @@
 ```shell
 go get github.com/siyul-park/uniflow
 ```
-
-## 워크플로우 이해하기
-
-원하는 서비스를 만들기 위해선 당연히 원하는 기능을 하는 노드들이 만들어져야겠지만, 설계적인 관점에서 보자면 노드들을 어떻게 구성할지에 대한 설계도가 필요하므로, 가장 먼저 워크플로우가 구성되어야 합니다. 물론 구조는 개발 도중 계속해서 바뀔 수 있고 최종적으로 만들어진 형태에서 다시 한번 수정이 이루어지는 경우가 많으므로, 개발에 익숙하다면 노드 개발이 모두 끝난 다음 작성해도 무방합니다. 여기서는 전체적인 개발 흐름을 설명하기 위해 먼저 워크플로우를 작성하는 방법으로 이야기를 해보겠습니다.
-
-examples 폴더 안에 있는 .yaml 워크플로우를 응용해도 되고, 처음부터 새로 워크플로우를 만들어도 됩니다. 이번 예시에서는 간단하게 ping 워크플로우를 응용하여 http 서버에서 POST 요청을 하면 날린 메시지를 그대로 서버에서 받아서 출력하는 서비스를 만들어보도록 하겠습니다.
-
-```yaml
-- kind: listener
-  name: listener
-  protocol: http
-  port: 8000
-  ports:
-    out:
-      - name: router
-        port: in
-
-- kind: router
-  name: router
-  routes:
-    - method: POST
-      path: /ping
-      port: out[0]
-  ports:
-    out[0]:
-      - name: pong
-        port: in
-
-# 직접 만들 노드입니다.
-- kind: my-snippet
-  name: pong
-```
-
-http 서버를 포트 8000번으로 열고, router를 in으로 받도록 작성하고, router는 pong을 in으로 받도록 작성합니다. (노드를 연결할 때는 name 필드를 기준으로 합니다.)
-
-이제 /ping 으로 POST 요청을 날리면 보낸 메시지를 받아 처리한 후 pong 요청을 서버에 돌려주는 my-snippet 노드를 직접 만들면 기본적인 구조가 완성됩니다.
 
 ## 새로운 노드 작성
 
@@ -71,7 +35,7 @@ Env map[string][]Secret // 노드에 필요한 환경 변수를 지정합니다.
 이 때 `spec.Meta`를 사용하면 간단하게 작성할 수 있습니다:
 
 ```go
-type MySnippetNodeSpec struct {
+type LoopBackNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 ```
@@ -81,7 +45,7 @@ type MySnippetNodeSpec struct {
 만약 추가로 받을 값이 필요하다면, 필수 항목을 제외하고 추가적인 항목을 작성하면 됩니다. 이후 워크플로우에서 노드를 사용할 때 추가 필드로 사용할 수 있게 되며, 환경 변수 등 초기 설정 값으로 받아들일 수 있습니다. 예시로 다양한 언어를 지원하기 위해 코드가 있는 code 필드와 어떤 코드인지에 대한 정보인 language 필드를 받고 싶다면, 이런 식으로 노드 명세에 추가가 가능합니다:
 
 ```go
-type MySnippetNodeSpec struct {
+type LoopBackNodeSpec struct {
 	spec.Meta `map:",inline"`
 
 	// 이 아래부터 추가되는 항목들은 워크플로우에서 사용할 수 있습니다.
@@ -93,7 +57,7 @@ type MySnippetNodeSpec struct {
 이후 이 두개의 값은 워크플로우에서 추가 필드로 인식되며, 넣은 값을 직접적으로 사용하거나 다른 노드에게 처리 과정을 지시할 수 있게 됩니다.
 
 ```yaml
-- kind: my-snippet
+- kind: loopback
   name: pong
   language: text # 언어 종류 필드
   code: pong # 소스 코드 필드
@@ -104,7 +68,7 @@ type MySnippetNodeSpec struct {
 이제 노드 유형을 정의합니다. 해당 유형이 정확하게 작성되어 있어야 런타임이 노드를 올바르게 인식할 수 있습니다:
 
 ```go
-const KindMySnippet = "my-snippet"
+const KindLoopBack = "loopback"
 ```
 
 ### 노드 타입 정의
@@ -112,7 +76,7 @@ const KindMySnippet = "my-snippet"
 이제 노드 명세를 기반으로 노드가 동작하기 위해 실제로 필요한 요소들을 정의해야 합니다. 쉽게 말해서 노드가 어떤 방식으로 통신할 것이고 어떠한 데이터를 받아들일 것인지에 대한 정보가 담겨 있어야 합니다:
 
 ```go
-type MySnippetNode struct {
+type LoopBackNode struct {
 	*node.OneToOneNode
 }
 ```
@@ -139,7 +103,7 @@ type Value interface {
 패킷 처리 함수는 정상적으로 처리된 결과를 첫 번째 반환값으로, 오류가 발생한 경우에는 두 번째 반환값으로 반환합니다:
 
 ```go
-func (n *MySnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *LoopBackNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	return inPck, nil
 }
 ```
@@ -149,8 +113,8 @@ func (n *MySnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packe
 이제 노드를 실제로 구현해 보겠습니다. 노드를 생성하는 함수를 정의하고, 패킷 처리 방식을 `OneToOneNode` 생성자에 전달합니다:
 
 ```go
-func NewMySnippetNode() *MySnippetNode {
-	n := &MySnippetNode{}
+func NewLoopBackNode() *LoopBackNode {
+	n := &LoopBackNode{}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 	return n
 }
@@ -161,11 +125,11 @@ func NewMySnippetNode() *MySnippetNode {
 노드가 의도대로 작동하는지 확인하기 위해 테스트를 작성합니다. 입력 패킷을 `in` 포트로 전송하고, `out` 포트에서 출력 패킷이 예상대로 나오는지에 대해 검증합니다:
 
 ```go
-func TestMySnippetNode_SendAndReceive(t *testing.T) {
+func TestLoopBackNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewMySnippetNode()
+	n := NewLoopBackNode()
 	defer n.Close()
 
 	out := port.NewOut()
@@ -201,9 +165,9 @@ assert가 성공하면, 하나의 노드로써 온전한 기능을 수행할 수
 노드 명세를 노드로 변환하는 코덱을 작성합니다.
 
 ```go
-func NewMySnippetNodeCodec() scheme.Codec {
+func NewLoopBackNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func() (node.Node, error) {
-		return NewMySnippetNode(), nil
+		return NewLoopBackNode(), nil
 	})
 }
 ```
@@ -215,8 +179,8 @@ func NewMySnippetNodeCodec() scheme.Codec {
 ```go
 func AddToScheme() scheme.Register {
 	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		s.AddKnownType(KindMySnippet, &MySnippetNodeSpec{})
-		s.AddCodec(KindMySnippet, NewMySnippetNodeCodec())
+		s.AddKnownType(KindLoopBack, &LoopBackNodeSpec{})
+		s.AddCodec(KindLoopBack, NewLoopBackNodeCodec())
 		return nil
 	})
 }
@@ -248,13 +212,15 @@ defer r.Close()
 
 워크플로우에 대한 모든 데이터는 이제 `r`에 있으니, 해당 변수를 목적에 따라 실행하면 모든 준비는 끝납니다.
 
-## 서비스와의 통합
+## 기존 서비스와 통합
 
-이렇게 만들어진 런타임 환경을 기존 서비스에 통합하는 방법에는 두 가지가 있습니다. 런타임이 계속해서 돌아가면서 운영되는 지속 실행 방법과, 한 번 실행하고 끝나는 단순 실행 방법이 있습니다.
+이제 이렇게 만들어진 런타임 환경을 기존 서비스에 추가하고, 다시 빌드해서 실행 파일을 만들어야 합니다.
+
+서비스를 추가하는 방법은 두 가지로, 런타임이 계속해서 돌아가면서 운영되는 지속 실행 방법과, 한 번 실행하고 끝나는 단순 실행 방법이 있습니다.
 
 ### 지속 실행
 
-런타임 환경을 지속적으로 유지하면 외부 요청에 신속하게 대응할 수 있습니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다.
+런타임 환경을 지속적으로 유지하면 외부 요청에 즉각적으로 대응할 수 있습니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다.
 
 ```go
 func main() {
@@ -296,7 +262,7 @@ func main() {
 
 ### 단순 실행
 
-런타임 환경을 지속적으로 유지함으로써 얻는 장점도 있지만, 필요할 때만 동작하기를 원하거나 간단하게 동작하기를 원할 수 있습니다. 이럴 때는 단순 실행을 목적으로 실행할 수 있습니다.
+런타임 환경을 지속적으로 유지함으로써 얻는 장점도 있지만, 필요할 때만 동작하기를 원하거나 간단하게 동작하기를 원할 수 있습니다. 이럴 때는 단순 실행을 목적으로 구성할 수 있습니다.
 
 ```go
 r := runtime.New(runtime.Config{
@@ -324,3 +290,37 @@ in.Link(sym.In(node.PortIn))
 payload := types.NewString(faker.Word())
 payload, err := port.Call(in, payload)
 ```
+
+## 워크플로우 작성하기
+
+이제 최종적으로 워크플로우 환경을 만들면 직접 만든 서비스를 사용할 수 있게 됩니다. 이번 예시에서는 간단하게 ping 워크플로우를 응용하여 http 서버에서 POST 요청을 하면 날린 메시지를 그대로 서버에서 받아서 출력하는 워크플로우를 작성해보겠습니다.
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  ports:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: POST
+      path: /ping
+      port: out[0]
+  ports:
+    out[0]:
+      - name: pong
+        port: in
+
+# 직접 만든 노드입니다.
+- kind: loopback
+  name: pong
+```
+
+http 서버를 포트 8000번으로 열고, router를 in으로 받도록 작성하고, router는 pong을 in으로 받도록 작성합니다. (노드를 연결할 때는 name 필드를 기준으로 합니다.)
+
+이제 아까 직접 만들었던 노드, /ping 으로 POST 요청을 날리면 보낸 메시지를 받아 처리한 후 pong 요청을 서버에 돌려주는 loopback을 추가해주면 됩니다.

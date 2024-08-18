@@ -207,10 +207,10 @@
   language: json
   code: |
     {
-      'body': {
-        'error': 'Internal Server Error'
+      "body": {
+        "error": "Internal Server Error"
       },
-      'status': 500
+      "status": 500
     }
 ```
 
