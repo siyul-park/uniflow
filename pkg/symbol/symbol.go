@@ -79,9 +79,12 @@ func (s *Symbol) In(name string) *port.InPort {
 	if s.ins == nil {
 		s.ins = make(map[string]*port.InPort)
 	}
-	p := s.Node.In(name)
-	if p != nil {
-		s.ins[name] = p
+
+	p, ok := s.ins[name]
+	if !ok {
+		if p = s.Node.In(name); p != nil {
+			s.ins[name] = p
+		}
 	}
 	return p
 }
@@ -100,9 +103,12 @@ func (s *Symbol) Out(name string) *port.OutPort {
 	if s.outs == nil {
 		s.outs = make(map[string]*port.OutPort)
 	}
-	p := s.Node.Out(name)
-	if p != nil {
-		s.outs[name] = p
+
+	p, ok := s.outs[name]
+	if !ok {
+		if p = s.Node.Out(name); p != nil {
+			s.outs[name] = p
+		}
 	}
 	return p
 }
