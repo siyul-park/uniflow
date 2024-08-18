@@ -52,7 +52,7 @@ var _ debugView = (*symbolDebugView)(nil)
 var _ debugView = (*symbolsDebugView)(nil)
 
 // NewDebugger initializes a new Debugger with an input model and UI.
-func NewDebugger(debugger *debug.Debugger) *Debugger {
+func NewDebugger(debugger *debug.Debugger, options ...tea.ProgramOption) *Debugger {
 	ti := textinput.New()
 	ti.Prompt = "(debug) "
 	ti.Focus()
@@ -61,12 +61,7 @@ func NewDebugger(debugger *debug.Debugger) *Debugger {
 		input:    ti,
 		debugger: debugger,
 	}
-	program := tea.NewProgram(model)
-
-	go func() {
-		program.Wait()
-		model.Close()
-	}()
+	program := tea.NewProgram(model, options...)
 
 	return &Debugger{
 		program: program,
@@ -77,6 +72,12 @@ func NewDebugger(debugger *debug.Debugger) *Debugger {
 // Run starts the debugger UI and blocks until it exits.
 func (d *Debugger) Run() error {
 	_, err := d.program.Run()
+
+	go func() {
+		d.program.Wait()
+		d.model.Close()
+	}()
+
 	return err
 }
 

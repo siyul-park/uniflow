@@ -22,18 +22,6 @@ type Breakpoint struct {
 
 var _ Watcher = (*Breakpoint)(nil)
 
-// NewBreakpoint creates a new Breakpoint with optional configurations.
-func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
-	b := &Breakpoint{
-		next: make(chan *Frame),
-		done: make(chan *Frame),
-	}
-	for _, opt := range options {
-		opt(b)
-	}
-	return b
-}
-
 // WithProcess sets the process associated with the breakpoint.
 func WithProcess(proc *process.Process) func(*Breakpoint) {
 	return func(b *Breakpoint) {
@@ -60,6 +48,18 @@ func WithOutPort(port *port.OutPort) func(*Breakpoint) {
 	return func(b *Breakpoint) {
 		b.outPort = port
 	}
+}
+
+// NewBreakpoint creates a new Breakpoint with optional configurations.
+func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
+	b := &Breakpoint{
+		next: make(chan *Frame),
+		done: make(chan *Frame),
+	}
+	for _, opt := range options {
+		opt(b)
+	}
+	return b
 }
 
 // Next advances to the next frame and returns false if the channel is closed.

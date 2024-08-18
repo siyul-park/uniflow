@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -150,7 +151,12 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}()
 
 		if enableDebug {
-			d := NewDebugger(debugger)
+			d := NewDebugger(
+				debugger,
+				tea.WithContext(ctx),
+				tea.WithInput(cmd.InOrStdin()),
+				tea.WithOutput(cmd.OutOrStdout()),
+			)
 
 			go func() {
 				d.Wait()
