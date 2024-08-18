@@ -5,7 +5,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -36,6 +38,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running")
 	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing node specs")
 	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
+	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode")
 
 	return cmd
 }
@@ -56,6 +59,11 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		}
 
 		fromSecrets, err := cmd.Flags().GetString(flagFromSecrets)
+		if err != nil {
+			return err
+		}
+
+		enableDebug, err := cmd.Flags().GetBool(flagDebug)
 		if err != nil {
 			return err
 		}
@@ -120,12 +128,18 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			}
 		}
 
+		var debugger *debug.Debugger
+		if enableDebug {
+			debugger = debug.NewDebugger()
+		}
+
 		r := runtime.New(runtime.Config{
 			Namespace:   namespace,
 			Scheme:      config.Scheme,
 			Hook:        config.Hook,
 			SpecStore:   config.SpecStore,
 			SecretStore: config.SecretStore,
+			Debugger:    debugger,
 		})
 
 		sigs := make(chan os.Signal, 1)
@@ -133,8 +147,30 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 		go func() {
 			<-sigs
-			_ = r.Close()
+			r.Close()
 		}()
+
+		if enableDebug {
+			d := NewDebugger(
+				debugger,
+				tea.WithContext(ctx),
+				tea.WithInput(cmd.InOrStdin()),
+				tea.WithOutput(cmd.OutOrStdout()),
+			)
+
+			go func() {
+				d.Wait()
+				r.Close()
+			}()
+
+			go func() {
+				<-sigs
+				d.Kill()
+			}()
+
+			go r.Listen(ctx)
+			return d.Run()
+		}
 
 		return r.Listen(ctx)
 	}
