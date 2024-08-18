@@ -218,6 +218,13 @@ func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+func (m *debugModel) nextFrame() tea.Cmd {
+	return tea.Cmd(func() tea.Msg {
+		m.breakpoint.Next()
+		return m.breakpoint.Frame()
+	})
+}
+
 func (m *debugModel) findSymbol(key string) *symbol.Symbol {
 	for _, id := range m.debugger.Symbols() {
 		if sym, ok := m.debugger.Symbol(id); ok && (sym.ID().String() == key || sym.Name() == key) {
@@ -237,12 +244,6 @@ func (m *debugModel) findPort(sym *symbol.Symbol, name string) (*port.InPort, *p
 	return nil, nil
 }
 
-func (m *debugModel) nextFrame() tea.Cmd {
-	return tea.Cmd(func() tea.Msg {
-		m.breakpoint.Next()
-		return m.breakpoint.Frame()
-	})
-}
 
 func (v *errDebugView) View() string {
 	return fmt.Sprintf("Error: %s.", v.err.Error())
