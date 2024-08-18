@@ -152,8 +152,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if enableDebug {
 			d := NewDebugger(debugger)
 
-			go r.Listen(ctx)
-
 			go func() {
 				d.Wait()
 				r.Close()
@@ -164,6 +162,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				d.Kill()
 			}()
 
+			go r.Listen(ctx)
 			return d.Run()
 		}
 
