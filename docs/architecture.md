@@ -2,7 +2,7 @@
 
 Each node specification declaratively defines the role of each node, and these specifications connect to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
 
-```plantext
+```text
    +-------------------------------------------------+
    |                   Workflow A                    |
    |  +--------------------+ +--------------------+  |
@@ -175,7 +175,7 @@ To modify node specifications, users can update the database using a Command-Lin
 - kind: switch
   name: catch
   matches:
-    - when: self == "unsupported type" || self == "unsupported value"
+    - when: self == 'unsupported type' || self == 'unsupported value'
       port: out[0]
     - when: 'true'
       port: out[1]
@@ -205,10 +205,10 @@ To modify node specifications, users can update the database using a Command-Lin
   language: json
   code: |
     {
-      "body": {
-        "error": "Internal Server Error"
+      'body': {
+        'error': 'Internal Server Error'
       },
-      "status": 500
+      'status': 500
     }
 ```
 
@@ -220,7 +220,7 @@ The loader tracks real-time changes to node specifications and secrets in the da
 
 The compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information defined in the node specifications.
 
-```plantext
+```text
    +--------------------------+
    |         Database         |
    |  +--------------------+  |
@@ -229,13 +229,13 @@ The compiled nodes are transformed into symbols and stored in a symbol table. Th
    |  | Node Specification |  |
    |  +--------------------+  |   +-------------------+
    |  | Node Specification |  |-->|       Loader      |
-   |  +--------------------+  |   |  +-------------+  |  
-   +--------------------------+   |  |    Scheme   |  |   
+   |  +--------------------+  |   |  +-------------+  |
+   +--------------------------+   |  |    Scheme   |  |
    +--------------------------+   |  |  +-------+  |  |
    |         Database         |   |  |  | Codec |  |  |--+
    |  +--------+  +--------+  |   |  |  +-------+  |  |  |
    |  | Secret |  | Secret |  |-->|  +-------------+  |  |
-   |  +--------+  +--------+  |   +-------------------+  |   
+   |  +--------+  +--------+  |   +-------------------+  |
    |  +--------+  +--------+  |                          |
    |  | Secret |  | Secret |  |                          |
    |  +--------+  +--------+  |                          |
@@ -264,7 +264,7 @@ Each node opens ports through processes and creates writers to send packets to c
 
 Connected nodes monitor whether a new process has opened the port and create readers accordingly. These readers continuously process waiting packets and pass the processed results to the next node or return them.
 
-```plantext
+```text
    +-----------------------+          +-----------------------+
    |        Node A         |          |        Node B         |
    |  +-----------------+  |          |  +-----------------+  |

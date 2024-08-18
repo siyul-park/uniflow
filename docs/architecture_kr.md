@@ -107,7 +107,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.create
 
@@ -116,7 +116,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: nodes.read
 
@@ -125,7 +125,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.update
 
@@ -134,7 +134,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: nodes.delete
 
@@ -143,7 +143,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.create
 
@@ -152,7 +152,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: secrets.read
 
@@ -161,7 +161,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.update
 
@@ -170,16 +170,16 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: secrets.delete
 
 - kind: switch
   name: catch
   matches:
-    - when: self == "unsupported type" || self == "unsupported value"
+    - when: self == 'unsupported type' || self == 'unsupported value'
       port: out[0]
-    - when: "true"
+    - when: 'true'
       port: out[1]
   ports:
     out[0]:
@@ -207,10 +207,10 @@
   language: json
   code: |
     {
-      "body": {
-        "error": "Internal Server Error"
+      'body': {
+        'error': 'Internal Server Error'
       },
-      "status": 500
+      'status': 500
     }
 ```
 
@@ -289,3 +289,4 @@
 프로세스가 종료되면, 정상 종료 여부를 확인한 후 열린 파일 디스크립터, 할당된 메모리, 데이터베이스 트랜잭션 등을 모두 해제합니다.
 
 부모 프로세스가 종료되면, 파생된 모든 자식 프로세스도 종료됩니다. 이때 부모 프로세스는 일반적으로 자식 프로세스가 모두 종료될 때까지 대기합니다.
+

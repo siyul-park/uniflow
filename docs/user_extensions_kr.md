@@ -12,11 +12,11 @@
 go get github.com/siyul-park/uniflow
 ```
 
-## 명세서 작성
+## 워크플로우 이해하기
 
-원하는 서비스를 만들기 위해선 가장 먼저 큰 틀을 잡을 명세서가 구성되어야 합니다. 명세서는 개발 도중 계속해서 바뀔 수 있고 최종적으로 만들어진 형태에서 다시 한번 수정이 이루어지는 경우가 많으므로, 구조에 익숙하다면 코드 구성이 모두 끝난 다음 작성해도 무방합니다.
+원하는 서비스를 만들기 위해선 당연히 원하는 기능을 하는 노드들이 만들어져야겠지만, 설계적인 관점에서 보자면 노드들을 어떻게 구성할지에 대한 설계도가 필요하므로, 가장 먼저 워크플로우가 구성되어야 합니다. 물론 구조는 개발 도중 계속해서 바뀔 수 있고 최종적으로 만들어진 형태에서 다시 한번 수정이 이루어지는 경우가 많으므로, 개발에 익숙하다면 노드 개발이 모두 끝난 다음 작성해도 무방합니다. 여기서는 전체적인 개발 흐름을 설명하기 위해 먼저 워크플로우를 작성하는 방법으로 이야기를 해보겠습니다.
 
-examples 폴더 안에 있는 .yaml 명세서를 응용해도 되고, 처음부터 새로 명세서를 만들어도 됩니다. 이번 예시에서는 간단하게 ping 명세서를 응용하여 http 서버에서 POST 요청을 하면 날린 메시지를 그대로 서버에서 받아서 출력하는 서비스를 만들어보도록 하겠습니다.
+examples 폴더 안에 있는 .yaml 워크플로우를 응용해도 되고, 처음부터 새로 워크플로우를 만들어도 됩니다. 이번 예시에서는 간단하게 ping 워크플로우를 응용하여 http 서버에서 POST 요청을 하면 날린 메시지를 그대로 서버에서 받아서 출력하는 서비스를 만들어보도록 하겠습니다.
 
 ```yaml
 - kind: listener
@@ -39,11 +39,12 @@ examples 폴더 안에 있는 .yaml 명세서를 응용해도 되고, 처음부�
       - name: pong
         port: in
 
+# 직접 만들 노드입니다.
 - kind: my-snippet
   name: pong
 ```
 
-http 서버를 8000번으로 잡고, router를 in으로 받도록 선언하고, router는 pong을 in으로 받도록 선언합니다. (노드를 연결할 때는 name 필드를 기준으로 합니다.)
+http 서버를 포트 8000번으로 열고, router를 in으로 받도록 작성하고, router는 pong을 in으로 받도록 작성합니다. (노드를 연결할 때는 name 필드를 기준으로 합니다.)
 
 이제 /ping 으로 POST 요청을 날리면 보낸 메시지를 받아 처리한 후 pong 요청을 서버에 돌려주는 my-snippet 노드를 직접 만들면 기본적인 구조가 완성됩니다.
 
@@ -51,7 +52,7 @@ http 서버를 8000번으로 잡고, router를 in으로 받도록 선언하고, 
 
 노드가 만들어지려면 크게 **구조 및 유형 정의 -> 동작 함수 정의 -> 생성 함수 정의** 의 3가지 과정을 거치게 됩니다.
 
-명세서에 사용할 수 있는 노드의 스펙을 먼저 선언한 다음, 노드 유형(kind)에 들어갈 이름을 정한 후, 노드가 할 일을 정의하는 동작 함수를 구현하고 이 노드를 생성하는 함수를 만들면 기본적인 노드 구성이 만들어집니다. 여기까지의 과정을 '노드 명세를 만든다' 라고 하며, 이후 이 명세를 실제 동작하는 노드로 변환해주는 코덱을 만들고 스키마에 등록시키는 과정을 거쳐, 최종적으로 런타임 환경과 연결하게 됩니다.
+노드의 스펙을 정의하고, 노드 유형(kind)에 들어갈 이름을 정한 후, 노드가 할 일을 정의하는 동작 함수를 구현하고 이 노드를 생성하는 함수를 만들면 기본적인 노드 구성이 만들어집니다. 여기까지의 과정을 '노드 명세를 만든다' 라고 하며, 이후 이 명세를 실제 동작하는 노드로 변환해주는 코덱을 만들고 스키마에 등록시키는 과정을 거쳐, 최종적으로 런타임 환경과 연결하게 됩니다.
 
 ### 노드 명세 정의
 
@@ -67,7 +68,7 @@ Ports map[string][]Port // 포트의 연결 방식을 정의합니다.
 Env map[string][]Secret // 노드에 필요한 환경 변수를 지정합니다.
 ```
 
-이 때 `spec.Meta`를 사용하면 간단하게 선언할 수 있습니다:
+이 때 `spec.Meta`를 사용하면 간단하게 작성할 수 있습니다:
 
 ```go
 type MySnippetNodeSpec struct {
@@ -75,28 +76,32 @@ type MySnippetNodeSpec struct {
 }
 ```
 
-만약 추가로 받을 값이 필요하다면, 필수 항목을 제외하고 추가적인 항목을 작성하면 됩니다. 이후 명세서에서 노드를 사용할 때 추가 필드로 사용할 수 있게 되며, 환경 변수 등 명세서에 선언할 때 초기 설정 값으로 받아들일 수 있습니다. 예시로 다양한 언어를 지원하기 위해 코드가 있는 code 필드와 어떤 코드인지에 대한 정보인 language 필드를 받고 싶다면, 이런 식으로 노드 명세에 추가가 가능합니다:
+#### 추가 필드 받기
+
+만약 추가로 받을 값이 필요하다면, 필수 항목을 제외하고 추가적인 항목을 작성하면 됩니다. 이후 워크플로우에서 노드를 사용할 때 추가 필드로 사용할 수 있게 되며, 환경 변수 등 초기 설정 값으로 받아들일 수 있습니다. 예시로 다양한 언어를 지원하기 위해 코드가 있는 code 필드와 어떤 코드인지에 대한 정보인 language 필드를 받고 싶다면, 이런 식으로 노드 명세에 추가가 가능합니다:
 
 ```go
 type MySnippetNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Language  string `map:"language,omitempty"` // <- 언어 종류
-	Code      string `map:"code"` // <- 소스 코드
+
+	// 이 아래부터 추가되는 항목들은 워크플로우에서 사용할 수 있습니다.
+	Language  string `map:"language,omitempty"` // 언어 종류
+	Code      string `map:"code"` // 소스 코드
 }
 ```
 
-이후 이 두개의 값은 명세서에서 추가 필드로 인식되며, 넣은 값을 직접적으로 사용하거나 다른 노드에게 처리 과정을 지시할 수 있게 됩니다.
+이후 이 두개의 값은 워크플로우에서 추가 필드로 인식되며, 넣은 값을 직접적으로 사용하거나 다른 노드에게 처리 과정을 지시할 수 있게 됩니다.
 
 ```yaml
 - kind: my-snippet
   name: pong
-  language: text # <- 언어 종류 필드
-  code: pong # <- 소스 코드 필드
+  language: text # 언어 종류 필드
+  code: pong # 소스 코드 필드
 ```
 
 ### 노드 유형 정의
 
-이제 노드 유형을 선언합니다. 해당 유형이 정확하게 선언되어 있어야 런타임이 노드를 올바르게 인식할 수 있습니다:
+이제 노드 유형을 정의합니다. 해당 유형이 정확하게 작성되어 있어야 런타임이 노드를 올바르게 인식할 수 있습니다:
 
 ```go
 const KindMySnippet = "my-snippet"
@@ -108,7 +113,7 @@ const KindMySnippet = "my-snippet"
 
 ```go
 type MySnippetNode struct {
-  *node.OneToOneNode
+	*node.OneToOneNode
 }
 ```
 
@@ -135,14 +140,7 @@ type Value interface {
 
 ```go
 func (n *MySnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	inPayload := inPck.Payload()
-	input := types.InterfaceOf(inPayload)
-
-  if outPayload, err := types.Encoder.Encode(input); err == nil {
-    return packet.New(outPayload), nil
-  } else {
-    return nil, packet.New(types.NewErorr(err))
-  }
+	return inPck, nil
 }
 ```
 
@@ -203,8 +201,8 @@ assert가 성공하면, 하나의 노드로써 온전한 기능을 수행할 수
 노드 명세를 노드로 변환하는 코덱을 작성합니다.
 
 ```go
-func NewMySnippetNodeCodec(module *language.Module) scheme.Codec {
-	return scheme.CodecWithType(func(spec *MySnippetNodeSpec) (node.Node, error) {
+func NewMySnippetNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func() (node.Node, error) {
 		return NewMySnippetNode(), nil
 	})
 }
