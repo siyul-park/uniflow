@@ -23,7 +23,7 @@ import (
 
 func TestNewDebugger(t *testing.T) {
 	d := NewDebugger(debug.NewDebugger())
-	assert.NotNil(t,d)
+	assert.NotNil(t, d)
 }
 
 func TestDebugModel_Update(t *testing.T) {

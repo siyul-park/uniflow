@@ -104,7 +104,7 @@ func TestBreakpoint_Done(t *testing.T) {
 
 	assert.True(t, b.Next())
 	assert.Equal(t, frame, b.Frame())
-	
+
 	assert.True(t, b.Done())
 	assert.Nil(t, b.Frame())
 }

@@ -86,7 +86,7 @@ func TestDebugger_Process(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-defer sym.Close()
+	defer sym.Close()
 
 	in := sym.In(node.PortIn)
 
@@ -125,7 +125,7 @@ func TestDebuffer_Frames(t *testing.T) {
 		}),
 	}
 	defer sym.Close()
-	
+
 	out := port.NewOut()
 	defer out.Close()
 
