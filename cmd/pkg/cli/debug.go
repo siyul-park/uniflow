@@ -178,7 +178,6 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						if m.breakpoint != nil && m.breakpoint.Frame() != nil {
 							m.view = &frameDebugView{frame: m.breakpoint.Frame()}
 						}
-
 					}
 				}
 			}
