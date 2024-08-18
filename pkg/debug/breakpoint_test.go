@@ -13,6 +13,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewBreakpoint(t *testing.T) {
+	proc := process.New()
+	sym := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+
+	b := NewBreakpoint(
+		WithProcess(proc),
+		WithSymbol(sym),
+		WithInPort(sym.In(node.PortIn)),
+		WithOutPort(sym.Out(node.PortOut)),
+	)
+	defer b.Close()
+
+	assert.Equal(t, proc, b.Process())
+	assert.Equal(t, sym, b.Symbol())
+	assert.Equal(t, sym.In(node.PortIn), b.InPort())
+	assert.Equal(t, sym.Out(node.PortOut), b.OutPort())
+}
+
 func TestBreakpoint_Next(t *testing.T) {
 	proc := process.New()
 	sym := &symbol.Symbol{

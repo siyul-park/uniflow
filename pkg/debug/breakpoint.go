@@ -34,28 +34,28 @@ func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
 	return b
 }
 
-// WithProcess configures the process associated with the breakpoint.
+// WithProcess sets the process associated with the breakpoint.
 func WithProcess(proc *process.Process) func(*Breakpoint) {
 	return func(b *Breakpoint) {
 		b.process = proc
 	}
 }
 
-// WithSymbol configures the symbol associated with the breakpoint.
+// WithSymbol sets the symbol associated with the breakpoint.
 func WithSymbol(sym *symbol.Symbol) func(*Breakpoint) {
 	return func(b *Breakpoint) {
 		b.symbol = sym
 	}
 }
 
-// WithInPort configures the input port associated with the breakpoint.
+// WithInPort sets the input port associated with the breakpoint.
 func WithInPort(port *port.InPort) func(*Breakpoint) {
 	return func(b *Breakpoint) {
 		b.inPort = port
 	}
 }
 
-// WithOutPort configures the output port associated with the breakpoint.
+// WithOutPort sets the output port associated with the breakpoint.
 func WithOutPort(port *port.OutPort) func(*Breakpoint) {
 	return func(b *Breakpoint) {
 		b.outPort = port
@@ -90,7 +90,39 @@ func (b *Breakpoint) Frame() *Frame {
 	return b.frame
 }
 
-// HandleFrame processes an incoming frame and synchronizes it.
+// Process returns the process associated with the breakpoint.
+func (b *Breakpoint) Process() *process.Process {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	return b.process
+}
+
+// Symbol returns the symbol associated with the breakpoint.
+func (b *Breakpoint) Symbol() *symbol.Symbol {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	return b.symbol
+}
+
+// InPort returns the input port associated with the breakpoint.
+func (b *Breakpoint) InPort() *port.InPort {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	return b.inPort
+}
+
+// OutPort returns the output port associated with the breakpoint.
+func (b *Breakpoint) OutPort() *port.OutPort {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	return b.outPort
+}
+
+// HandleFrame processes an incoming frame and synchronizes it with the breakpoint's criteria.
 func (b *Breakpoint) HandleFrame(frame *Frame) {
 	if b.watch(frame) {
 		b.next <- frame
@@ -98,12 +130,12 @@ func (b *Breakpoint) HandleFrame(frame *Frame) {
 	}
 }
 
-// HandleProcess is currently a no-op but required by the Watcher interface.
+// HandleProcess is a no-op but required by the Watcher interface.
 func (b *Breakpoint) HandleProcess(*process.Process) {
-	// No operation; method required to satisfy the Watcher interface.
+	// No operation; required for Watcher interface compliance.
 }
 
-// Close closes the next channel to signal the end of the Breakpoint's lifecycle.
+// Close closes the next channel and cleans up resources.
 func (b *Breakpoint) Close() {
 	close(b.next)
 
@@ -116,6 +148,7 @@ func (b *Breakpoint) Close() {
 	b.frame = nil
 }
 
+// watch checks if a frame matches the criteria of the breakpoint.
 func (b *Breakpoint) watch(frame *Frame) bool {
 	return (b.process == nil || b.process == frame.Process) &&
 		(b.symbol == nil || b.symbol == frame.Symbol) &&

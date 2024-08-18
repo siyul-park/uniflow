@@ -17,26 +17,49 @@ import (
 // Debugger manages the debugger UI using Bubble Tea.
 type Debugger struct {
 	program *tea.Program
-	model   *debuggerModel
+	model   *debugModel
 }
 
-type debuggerModel struct {
+// debugModel represents the state and logic for the debugger UI.
+type debugModel struct {
+	view       debugView
 	textInput  textinput.Model
 	debugger   *debug.Debugger
-	err        error
-	frame      *debug.Frame
 	breakpoint *debug.Breakpoint
 }
 
-var _ tea.Model = (*debuggerModel)(nil)
+// debugView defines an interface for different debug view types.
+type debugView interface {
+	View() string
+}
 
-// NewDebugger creates a new Debugger with an initialized UI and debugger.
+// errDebugView displays an error message.
+type errDebugView struct {
+	err error
+}
+
+// frameDebugView displays information about the current frame.
+type frameDebugView struct {
+	frame *debug.Frame
+}
+
+// breakpointDebugView displays information about the current breakpoint.
+type breakpointDebugView struct {
+	breakpoint *debug.Breakpoint
+}
+
+var _ tea.Model = (*debugModel)(nil)
+var _ debugView = (*errDebugView)(nil)
+var _ debugView = (*frameDebugView)(nil)
+var _ debugView = (*breakpointDebugView)(nil)
+
+// NewDebugger initializes a new Debugger with an input model and UI.
 func NewDebugger(debugger *debug.Debugger) *Debugger {
 	ti := textinput.New()
 	ti.Prompt = "(debug) "
 	ti.Focus()
 
-	model := &debuggerModel{
+	model := &debugModel{
 		textInput: ti,
 		debugger:  debugger,
 	}
@@ -70,41 +93,21 @@ func (d *Debugger) Wait() {
 }
 
 // View renders the UI state, including the prompt, any errors, and frame data.
-func (m *debuggerModel) View() string {
-	view := m.textInput.View()
-
-	if m.err != nil {
-		view += "\nError: " + m.err.Error()
-	} else if m.frame != nil {
-		view += "\n"
-
-		var pck *packet.Packet
-		if m.frame.OutPck != nil {
-			pck = m.frame.OutPck
-		} else if m.frame.InPck != nil {
-			pck = m.frame.InPck
-		}
-
-		data, err := json.MarshalIndent(types.InterfaceOf(pck.Payload()), "", "  ")
-		if err != nil {
-			view += "Error: " + err.Error()
-		} else {
-			view += string(data)
-		}
-	} else if m.breakpoint != nil {
-		view += "\nBreakpoint is set"
+func (m *debugModel) View() string {
+	message := m.textInput.View()
+	if m.view != nil {
+		message += "\n" + m.view.View()
 	}
-
-	return view
+	return message
 }
 
 // Init initializes the text input model.
-func (m *debuggerModel) Init() tea.Cmd {
+func (m *debugModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
 // Update processes user inputs and debugger events.
-func (m *debuggerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -124,39 +127,38 @@ func (m *debuggerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "quit", "q":
 				return m, tea.Quit
 			case "break", "b":
-				breakpoint, err := m.newBreakpoint(args)
+				breakpoint, err := m.createBreakpoint(args)
 				if err != nil {
-					m.err = err
+					m.view = &errDebugView{err: err}
 					break
 				}
 
 				m.clear()
 
+				m.view = &breakpointDebugView{breakpoint: breakpoint}
 				m.breakpoint = breakpoint
+
 				m.debugger.Watch(breakpoint)
 
-				return m, m.triggerNextFrame()
+				return m, m.nextFrame()
 			case "continue", "c":
-				m.err = nil
-				m.frame = nil
-
 				if m.breakpoint != nil {
-					return m, m.triggerNextFrame()
+					return m, m.nextFrame()
 				}
 			case "delete", "d":
 				m.clear()
 			}
 		}
 	case *debug.Frame:
-		m.err = nil
-		m.frame = msg
+		m.view = &frameDebugView{frame: msg}
 	}
 
 	m.textInput, cmd = m.textInput.Update(msg)
 	return m, cmd
 }
 
-func (m *debuggerModel) newBreakpoint(args []string) (*debug.Breakpoint, error) {
+// createBreakpoint creates a new breakpoint based on user input.
+func (m *debugModel) createBreakpoint(args []string) (*debug.Breakpoint, error) {
 	var sym *symbol.Symbol
 	if len(args) > 1 {
 		sym = m.findSymbol(args[1])
@@ -181,7 +183,8 @@ func (m *debuggerModel) newBreakpoint(args []string) (*debug.Breakpoint, error) 
 	), nil
 }
 
-func (m *debuggerModel) findSymbol(key string) *symbol.Symbol {
+// findSymbol locates a symbol by its name or ID.
+func (m *debugModel) findSymbol(key string) *symbol.Symbol {
 	for _, id := range m.debugger.Symbols() {
 		if s, ok := m.debugger.Symbol(id); ok && (s.ID().String() == key || s.Name() == key) {
 			return s
@@ -190,34 +193,92 @@ func (m *debuggerModel) findSymbol(key string) *symbol.Symbol {
 	return nil
 }
 
-func (m *debuggerModel) findPort(sym *symbol.Symbol, port string) (*port.InPort, *port.OutPort) {
+// findPort locates an input or output port by its name.
+func (m *debugModel) findPort(sym *symbol.Symbol, portName string) (*port.InPort, *port.OutPort) {
 	for _, name := range sym.Ins() {
-		if name == port {
+		if name == portName {
 			return sym.In(name), nil
 		}
 	}
 	for _, name := range sym.Outs() {
-		if name == port {
+		if name == portName {
 			return nil, sym.Out(name)
 		}
 	}
 	return nil, nil
 }
 
-func (m *debuggerModel) triggerNextFrame() tea.Cmd {
+// nextFrame advances to the next frame and returns it.
+func (m *debugModel) nextFrame() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		m.breakpoint.Next()
 		return m.breakpoint.Frame()
 	})
 }
 
-func (m *debuggerModel) clear() {
+// clear resets the model state and stops watching the current breakpoint.
+func (m *debugModel) clear() {
 	if m.breakpoint != nil {
 		m.debugger.Unwatch(m.breakpoint)
 		m.breakpoint.Close()
 	}
 
-	m.err = nil
-	m.frame = nil
 	m.breakpoint = nil
+	m.view = nil
+}
+
+// View returns the error message with an "Error:" prefix.
+func (v *errDebugView) View() string {
+	return "Error: " + v.err.Error() + "."
+}
+
+// View returns the frame's packet payload as formatted JSON.
+func (v *frameDebugView) View() string {
+	var pck *packet.Packet
+	if v.frame.OutPck != nil {
+		pck = v.frame.OutPck
+	} else if v.frame.InPck != nil {
+		pck = v.frame.InPck
+	}
+
+	data, err := json.MarshalIndent(types.InterfaceOf(pck.Payload()), "", "  ")
+	if err != nil {
+		return (&errDebugView{err: err}).View()
+	}
+	return string(data)
+}
+
+// View returns a message indicating where the breakpoint is set.
+func (v *breakpointDebugView) View() string {
+	bp := v.breakpoint
+	sym := bp.Symbol()
+	if sym == nil {
+		return "Breakpoint is set."
+	}
+
+	portName := ""
+	for _, name := range sym.Ins() {
+		if sym.In(name) == bp.InPort() {
+			portName = name
+			break
+		}
+	}
+	if portName == "" {
+		for _, name := range sym.Outs() {
+			if sym.Out(name) == bp.OutPort() {
+				portName = name
+				break
+			}
+		}
+	}
+
+	symbolName := sym.Name()
+	if symbolName == "" {
+		symbolName = sym.ID().String()
+	}
+
+	if portName == "" {
+		return fmt.Sprintf("Breakpoint set at symbol: %s.", symbolName)
+	}
+	return fmt.Sprintf("Breakpoint set at symbol: %s, port: %s.", symbolName, portName)
 }
