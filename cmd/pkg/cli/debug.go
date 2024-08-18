@@ -195,7 +195,9 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case *debug.Frame:
-		m.view = &frameDebugView{frame: msg}
+		if msg != nil {
+			m.view = &frameDebugView{frame: msg}
+		}
 		return m, cmd
 	}
 
@@ -208,7 +210,6 @@ func (m *debugModel) Close() {
 		m.debugger.Unwatch(m.breakpoint)
 		m.breakpoint.Close()
 	}
-	m.breakpoint = nil
 	m.view = nil
 }
 
