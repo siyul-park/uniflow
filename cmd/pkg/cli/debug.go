@@ -144,13 +144,15 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.Close()
+				
 				m.breakpoint = debug.NewBreakpoint(
 					debug.WithSymbol(sym),
 					debug.WithInPort(inPort),
 					debug.WithOutPort(outPort),
 				)
-				m.debugger.Watch(m.breakpoint)
 				m.view = &breakpointDebugView{breakpoint: m.breakpoint}
+
+				m.debugger.Watch(m.breakpoint)
 
 				return m, m.nextFrame(m.breakpoint)
 			case "continue", "c":
@@ -294,6 +296,10 @@ func (v *breakpointDebugView) View() string {
 }
 
 func (v *symbolDebugView) View() string {
+	if v.symbol == nil {
+		return ""
+	}
+
 	value, _ := types.Encoder.Encode(v.symbol.Spec)
 	data, err := json.Marshal(types.InterfaceOf(value))
 	if err != nil {
