@@ -64,22 +64,18 @@ func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
 
 // Next advances to the next frame and returns false if the channel is closed.
 func (b *Breakpoint) Next() bool {
+	b.Done()
+
+	frame, ok := <-b.next
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.frame != nil {
-		b.done <- b.frame
-	}
-
-	frame, ok := <-b.next
 	if !ok {
-		b.frame = nil
 		close(b.done)
-		return false
 	}
-
 	b.frame = frame
-	return true
+	return ok
 }
 
 // Done completes the current frame's processing.
