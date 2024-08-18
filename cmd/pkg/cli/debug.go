@@ -153,6 +153,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "continue", "c":
 				m.view = nil
 				if m.breakpoint != nil {
+					m.view = &breakpointDebugView{breakpoint: m.breakpoint}
 					return m, m.nextFrame()
 				}
 			case "delete", "d":
