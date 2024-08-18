@@ -67,14 +67,12 @@ func (b *Breakpoint) Next() bool {
 	b.Done()
 
 	frame, ok := <-b.next
-
 	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	if !ok {
 		close(b.done)
 	}
 	b.frame = frame
+	b.mu.Unlock()
 	return ok
 }
 
