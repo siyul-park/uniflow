@@ -7,6 +7,8 @@ const (
 	flagFromNodes   = "from-nodes"
 	flagFromSecrets = "from-secrets"
 
+	flagDebug = "debug"
+
 	flagCPUProfile = "cpuprofile"
 	flagMemProfile = "memprofile"
 )
