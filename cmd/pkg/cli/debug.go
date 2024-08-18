@@ -92,7 +92,7 @@ func (m *debuggerModel) View() string {
 			view += string(data)
 		}
 	} else if m.breakpoint != nil {
-		view += "\nBreakpoint is set."
+		view += "\nBreakpoint is set"
 	}
 
 	return view
