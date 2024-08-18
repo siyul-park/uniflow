@@ -227,6 +227,7 @@ func TestDebugModel_Update(t *testing.T) {
 		data, _ := json.Marshal(types.InterfaceOf(payload))
 		assert.Contains(t, m.View(), string(data))
 
+		m.breakpoint.Next()
 		m.breakpoint.Done()
 	})
 }
