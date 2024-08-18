@@ -106,6 +106,8 @@ func (m *debugModel) Init() tea.Cmd {
 
 // Update processes user inputs and debugger events.
 func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmd := m.nextInput(msg)
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -113,20 +115,23 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tea.KeyEnter:
 			args := strings.Fields(m.input.Value())
-			m.input.SetValue("")
-
 			if len(args) == 0 {
-				return m, nil
+				return m, cmd
 			}
+
+			m.input.SetValue("")
 
 			switch args[0] {
 			case "quit", "q":
 				return m, tea.Quit
 			case "break", "b":
-				sym := m.findSymbol(args[1])
-				if sym == nil {
-					m.view = &errDebugView{err: fmt.Errorf("symbol '%s' not found", args[1])}
-					return m, nil
+				var sym *symbol.Symbol
+				if len(args) > 1 {
+					sym = m.findSymbol(args[1])
+					if sym == nil {
+						m.view = &errDebugView{err: fmt.Errorf("symbol '%s' not found", args[1])}
+						return m, cmd
+					}
 				}
 
 				var inPort *port.InPort
@@ -135,7 +140,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					inPort, outPort = m.findPort(sym, args[2])
 					if inPort == nil && outPort == nil {
 						m.view = &errDebugView{err: fmt.Errorf("port '%s' not found on symbol '%s'", args[2], sym.Name())}
-						return m, nil
+						return m, cmd
 					}
 				}
 
@@ -148,16 +153,18 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.debugger.Watch(m.breakpoint)
 				m.view = &breakpointDebugView{breakpoint: m.breakpoint}
 
-				return m, m.nextFrame()
-
+				cmd = tea.Batch(cmd, m.nextFrame())
+				return m, cmd
 			case "continue", "c":
 				m.view = nil
 				if m.breakpoint != nil {
 					m.view = &breakpointDebugView{breakpoint: m.breakpoint}
-					return m, m.nextFrame()
+					cmd = tea.Batch(cmd, m.nextFrame())
 				}
+				return m, cmd
 			case "delete", "d":
 				m.Close()
+				return m, cmd
 			case "info":
 				if len(args) > 1 {
 					switch args[1] {
@@ -183,14 +190,14 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 					}
 				}
+				return m, cmd
 			}
 		}
 	case *debug.Frame:
 		m.view = &frameDebugView{frame: msg}
+		return m, cmd
 	}
 
-	var cmd tea.Cmd
-	m.input, cmd = m.input.Update(msg)
 	return m, cmd
 }
 
@@ -204,7 +211,12 @@ func (m *debugModel) Close() {
 	m.view = nil
 }
 
-// findSymbol locates a symbol by its name or ID.
+func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
+	var cmd tea.Cmd
+	m.input, cmd = m.input.Update(msg)
+	return cmd
+}
+
 func (m *debugModel) findSymbol(key string) *symbol.Symbol {
 	for _, id := range m.debugger.Symbols() {
 		if sym, ok := m.debugger.Symbol(id); ok && (sym.ID().String() == key || sym.Name() == key) {
@@ -214,7 +226,6 @@ func (m *debugModel) findSymbol(key string) *symbol.Symbol {
 	return nil
 }
 
-// findPort locates an input or output port by its name.
 func (m *debugModel) findPort(sym *symbol.Symbol, name string) (*port.InPort, *port.OutPort) {
 	if p := sym.In(name); p != nil {
 		return p, nil
@@ -225,7 +236,6 @@ func (m *debugModel) findPort(sym *symbol.Symbol, name string) (*port.InPort, *p
 	return nil, nil
 }
 
-// nextFrame advances to the next frame and returns it.
 func (m *debugModel) nextFrame() tea.Cmd {
 	return tea.Cmd(func() tea.Msg {
 		m.breakpoint.Next()
@@ -245,7 +255,7 @@ func (v *frameDebugView) View() string {
 		pck = v.frame.InPck
 	}
 
-	data, err := json.MarshalIndent(types.InterfaceOf(pck.Payload()), "", "  ")
+	data, err := json.Marshal(types.InterfaceOf(pck.Payload()))
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
@@ -285,7 +295,7 @@ func (v *breakpointDebugView) View() string {
 
 func (v *symbolDebugView) View() string {
 	value, _ := types.Encoder.Encode(v.symbol.Spec)
-	data, err := json.MarshalIndent(types.InterfaceOf(value), "", "  ")
+	data, err := json.Marshal(types.InterfaceOf(value))
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
