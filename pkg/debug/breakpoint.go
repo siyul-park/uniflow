@@ -68,9 +68,6 @@ func (b *Breakpoint) Next() bool {
 
 	frame, ok := <-b.next
 	b.mu.Lock()
-	if !ok {
-		close(b.done)
-	}
 	b.frame = frame
 	b.mu.Unlock()
 	return ok
@@ -145,15 +142,13 @@ func (b *Breakpoint) HandleProcess(*process.Process) {
 
 // Close closes the next channel and cleans up resources.
 func (b *Breakpoint) Close() {
-	close(b.next)
-
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.frame != nil {
-		b.done <- b.frame
-	}
 	b.frame = nil
+
+	close(b.next)
+	close(b.done)
 }
 
 // watch checks if a frame matches the criteria of the breakpoint.
