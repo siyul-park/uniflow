@@ -28,7 +28,7 @@ type debugModel struct {
 	view        debugView
 	input       textinput.Model
 	debugger    *debug.Debugger
-	stack       []*debug.Breakpoint
+	queue       []*debug.Breakpoint
 	breakpoints []*debug.Breakpoint
 }
 
@@ -163,15 +163,27 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.nextFrame(breakpoint)
 			case "continue", "c":
 				var breakpoint *debug.Breakpoint
-				if len(m.stack) > 0 {
-					breakpoint = m.stack[0]
-					m.stack = m.stack[1:]
+				if len(m.queue) > 0 {
+					breakpoint = m.queue[0]
+					m.queue = m.queue[1:]
 				}
 				if breakpoint == nil {
 					m.view = nil
 					return m, nil
 				}
-				m.view = nil
+
+				var frame *debug.Frame
+				if len(m.queue) > 0 {
+					breakpoint := m.queue[0]
+					frame = breakpoint.Frame()
+				}
+
+				if frame == nil {
+					m.view = nil
+				} else {
+					m.view = &frameDebugView{frame: frame}
+				}
+
 				return m, m.nextFrame(breakpoint)
 			case "delete", "d":
 				var breakpoint *debug.Breakpoint
@@ -179,9 +191,8 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if i, err := strconv.Atoi(args[1]); err == nil && i < len(m.breakpoints) {
 						breakpoint = m.breakpoints[i]
 					}
-				} else if len(m.stack) > 0 {
-					breakpoint = m.stack[0]
-					m.stack = m.stack[1:]
+				} else if len(m.queue) > 0 {
+					breakpoint = m.queue[0]
 				}
 				if breakpoint == nil {
 					m.view = nil
@@ -191,10 +202,10 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.debugger.Unwatch(breakpoint)
 				breakpoint.Close()
 
-				for i := 0; i < len(m.stack); i++ {
-					b := m.stack[i]
+				for i := 0; i < len(m.queue); i++ {
+					b := m.queue[i]
 					if b == breakpoint {
-						m.stack = append(m.stack[:i], m.stack[i+1:]...)
+						m.queue = append(m.queue[:i], m.queue[i+1:]...)
 						i--
 					}
 				}
@@ -208,17 +219,17 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				m.view = nil
 				return m, nil
-			case "breakpoints":
+			case "breakpoints", "bps":
 				m.view = &breakpointsDebugView{breakpoints: m.breakpoints}
 				return m, nil
-			case "breakpoint":
+			case "breakpoint", "bp":
 				var breakpoint *debug.Breakpoint
 				if len(args) > 1 {
 					if i, err := strconv.Atoi(args[1]); err == nil && i < len(m.breakpoints) {
 						breakpoint = m.breakpoints[i]
 					}
-				} else if len(m.stack) > 0 {
-					breakpoint = m.stack[0]
+				} else if len(m.queue) > 0 {
+					breakpoint = m.queue[0]
 				}
 				if breakpoint == nil {
 					m.view = nil
@@ -226,7 +237,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.view = &breakpointDebugView{breakpoint: breakpoint}
 				return m, nil
-			case "symbols":
+			case "symbols", "sbs":
 				var symbols []*symbol.Symbol
 				for _, id := range m.debugger.Symbols() {
 					if sym, ok := m.debugger.Symbol(id); ok {
@@ -235,12 +246,12 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.view = &symbolsDebugView{symbols: symbols}
 				return m, nil
-			case "symbol":
+			case "symbol", "sb":
 				var sym *symbol.Symbol
 				if len(args) > 1 {
 					sym = m.findSymbol(args[1])
-				} else if len(m.stack) > 0 {
-					breakpoint := m.stack[0]
+				} else if len(m.queue) > 0 {
+					breakpoint := m.queue[0]
 					frame := breakpoint.Frame()
 					if frame != nil {
 						sym = frame.Symbol
@@ -254,10 +265,10 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.view = &symbolDebugView{symbol: sym}
 				return m, nil
-			case "frame":
+			case "frame", "fm":
 				var frame *debug.Frame
-				if len(m.stack) > 0 {
-					breakpoint := m.stack[0]
+				if len(m.queue) > 0 {
+					breakpoint := m.queue[0]
 					frame = breakpoint.Frame()
 				}
 				if frame == nil {
@@ -269,8 +280,8 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case *debug.Breakpoint:
-		m.stack = append(m.stack, msg)
-		if len(m.stack) == 1 {
+		m.queue = append(m.queue, msg)
+		if len(m.queue) == 1 {
 			frame := msg.Frame()
 			if frame == nil {
 				m.view = nil
@@ -292,7 +303,7 @@ func (m *debugModel) Close() {
 	}
 
 	m.view = nil
-	m.stack = nil
+	m.queue = nil
 	m.breakpoints = nil
 }
 
