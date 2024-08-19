@@ -142,6 +142,7 @@ Percentage of the requests served within a certain time (ms)
 - [Getting Started](./docs/getting_started.md): Introduces CLI installation and workflow management.
 - [Key Concepts](./docs/key_concepts.md): Explains the fundamental concepts such as nodes, connections, ports, and packets.
 - [Architecture](./docs/architecture.md): Details the process of loading node specifications and executing workflows.
+- [Debugging](./docs/debugging.md): Offers guidance on using the debugger, including starting a debugging session, setting breakpoints, and examining state.
 - [User Extensions](./docs/user_extensions.md): Guides on adding new features and integrating with existing services.
 
 ## 🌐 Community and Support
