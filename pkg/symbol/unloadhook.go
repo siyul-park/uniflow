@@ -17,6 +17,6 @@ func UnloadFunc(unload func(*Symbol) error) UnloadHook {
 	return &unloadHook{unload: unload}
 }
 
-func (h *unloadHook) Unload(sym *Symbol) error {
-	return h.unload(sym)
+func (h *unloadHook) Unload(sb *Symbol) error {
+	return h.unload(sb)
 }

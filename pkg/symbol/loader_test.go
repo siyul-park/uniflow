@@ -332,9 +332,9 @@ func TestLoader_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sym, ok := table.Lookup(meta.GetID()); ok {
-						assert.Equal(t, meta.GetID(), sym.ID())
-						assert.Equal(t, sec.Data, sym.Env()["key"][0].Value)
+					if sb, ok := table.Lookup(meta.GetID()); ok {
+						assert.Equal(t, meta.GetID(), sb.ID())
+						assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
 						return
 					}
 
@@ -418,8 +418,8 @@ func TestLoader_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sym, ok := table.Lookup(meta.GetID()); ok {
-						if sec.Data == sym.Env()["key"][0].Value {
+					if sb, ok := table.Lookup(meta.GetID()); ok {
+						if sec.Data == sb.Env()["key"][0].Value {
 							return
 						}
 					}

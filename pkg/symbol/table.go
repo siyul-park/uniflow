@@ -45,18 +45,18 @@ func NewTable(opts ...TableOptions) *Table {
 }
 
 // Insert adds a new symbol to the table based on the provided spec.
-func (t *Table) Insert(sym *Symbol) error {
+func (t *Table) Insert(sb *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if sym.inbounds == nil {
-		sym.inbounds = make(map[string][]spec.Port)
+	if sb.inbounds == nil {
+		sb.inbounds = make(map[string][]spec.Port)
 	}
 
-	if _, err := t.free(sym.ID()); err != nil {
+	if _, err := t.free(sb.ID()); err != nil {
 		return err
 	}
-	if err := t.insert(sym); err != nil {
+	if err := t.insert(sb); err != nil {
 		return err
 	}
 	return nil
@@ -67,11 +67,11 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	sym, err := t.free(id)
+	sb, err := t.free(id)
 	if err != nil {
 		return false, err
 	}
-	return sym != nil, nil
+	return sb != nil, nil
 }
 
 // Lookup retrieves a symbol from the table by its ID.
@@ -79,8 +79,8 @@ func (t *Table) Lookup(id uuid.UUID) (*Symbol, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	sym, ok := t.symbols[id]
-	return sym, ok
+	sb, ok := t.symbols[id]
+	return sb, ok
 }
 
 // Keys returns all IDs of symbols in the table.
@@ -108,59 +108,59 @@ func (t *Table) Clear() error {
 	return nil
 }
 
-func (t *Table) insert(sym *Symbol) error {
-	t.symbols[sym.ID()] = sym
-	if sym.Name() != "" {
-		ns, ok := t.namespaces[sym.Namespace()]
+func (t *Table) insert(sb *Symbol) error {
+	t.symbols[sb.ID()] = sb
+	if sb.Name() != "" {
+		ns, ok := t.namespaces[sb.Namespace()]
 		if !ok {
 			ns = make(map[string]uuid.UUID)
-			t.namespaces[sym.Namespace()] = ns
+			t.namespaces[sb.Namespace()] = ns
 		}
-		ns[sym.Name()] = sym.ID()
+		ns[sb.Name()] = sb.ID()
 	}
 
-	t.links(sym)
-	return t.load(sym)
+	t.links(sb)
+	return t.load(sb)
 }
 
 func (t *Table) free(id uuid.UUID) (*Symbol, error) {
-	sym, ok := t.symbols[id]
+	sb, ok := t.symbols[id]
 	if !ok {
 		return nil, nil
 	}
 
-	if err := t.unload(sym); err != nil {
+	if err := t.unload(sb); err != nil {
 		return nil, err
 	}
-	t.unlinks(sym)
+	t.unlinks(sb)
 
-	if err := sym.Close(); err != nil {
+	if err := sb.Close(); err != nil {
 		return nil, err
 	}
 
-	if sym.Name() != "" {
-		if ns, ok := t.namespaces[sym.Namespace()]; ok {
-			delete(ns, sym.Name())
+	if sb.Name() != "" {
+		if ns, ok := t.namespaces[sb.Namespace()]; ok {
+			delete(ns, sb.Name())
 			if len(ns) == 0 {
-				delete(t.namespaces, sym.Namespace())
+				delete(t.namespaces, sb.Namespace())
 			}
 		}
 	}
 	delete(t.symbols, id)
 
-	return sym, nil
+	return sb, nil
 }
 
-func (t *Table) load(sym *Symbol) error {
-	linked := t.linked(sym)
-	for _, sym := range linked {
-		if t.active(sym) {
-			if err := t.init(sym); err != nil {
+func (t *Table) load(sb *Symbol) error {
+	linked := t.linked(sb)
+	for _, sb := range linked {
+		if t.active(sb) {
+			if err := t.init(sb); err != nil {
 				return err
 			}
 
 			for _, hook := range t.loadHooks {
-				if err := hook.Load(sym); err != nil {
+				if err := hook.Load(sb); err != nil {
 					return err
 				}
 			}
@@ -169,14 +169,14 @@ func (t *Table) load(sym *Symbol) error {
 	return nil
 }
 
-func (t *Table) unload(sym *Symbol) error {
-	linked := t.linked(sym)
+func (t *Table) unload(sb *Symbol) error {
+	linked := t.linked(sb)
 	for i := len(linked) - 1; i >= 0; i-- {
-		sym := linked[i]
-		if t.active(sym) {
+		sb := linked[i]
+		if t.active(sb) {
 			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
 				hook := t.unloadHooks[j]
-				if err := hook.Unload(sym); err != nil {
+				if err := hook.Unload(sb); err != nil {
 					return err
 				}
 			}
@@ -185,18 +185,18 @@ func (t *Table) unload(sym *Symbol) error {
 	return nil
 }
 
-func (t *Table) links(sym *Symbol) {
-	for name, ports := range sym.Ports() {
-		out := sym.Out(name)
+func (t *Table) links(sb *Symbol) {
+	for name, ports := range sb.Ports() {
+		out := sb.Out(name)
 
 		for _, port := range ports {
 			id := port.ID
 			if id == uuid.Nil {
-				id = t.lookup(sym.Namespace(), port.Name)
+				id = t.lookup(sb.Namespace(), port.Name)
 			}
 
 			if ref, ok := t.symbols[id]; ok {
-				if ref.Namespace() == sym.Namespace() {
+				if ref.Namespace() == sb.Namespace() {
 					if out != nil {
 						if in := ref.In(port.Port); in != nil {
 							out.Link(in)
@@ -204,7 +204,7 @@ func (t *Table) links(sym *Symbol) {
 					}
 
 					ref.inbounds[port.Port] = append(ref.inbounds[port.Port], spec.Port{
-						ID:   sym.ID(),
+						ID:   sb.ID(),
 						Name: port.Name,
 						Port: name,
 					})
@@ -214,7 +214,7 @@ func (t *Table) links(sym *Symbol) {
 	}
 
 	for _, ref := range t.symbols {
-		if ref.Namespace() != sym.Namespace() {
+		if ref.Namespace() != sb.Namespace() {
 			continue
 		}
 
@@ -222,14 +222,14 @@ func (t *Table) links(sym *Symbol) {
 			out := ref.Out(name)
 
 			for _, port := range ports {
-				if (port.ID == sym.ID()) || (port.Name != "" && port.Name == sym.Name()) {
+				if (port.ID == sb.ID()) || (port.Name != "" && port.Name == sb.Name()) {
 					if out != nil {
-						if in := sym.In(port.Port); in != nil {
+						if in := sb.In(port.Port); in != nil {
 							out.Link(in)
 						}
 					}
 
-					sym.inbounds[port.Port] = append(sym.inbounds[port.Port], spec.Port{
+					sb.inbounds[port.Port] = append(sb.inbounds[port.Port], spec.Port{
 						ID:   ref.ID(),
 						Name: port.Name,
 						Port: name,
@@ -240,12 +240,12 @@ func (t *Table) links(sym *Symbol) {
 	}
 }
 
-func (t *Table) unlinks(sym *Symbol) {
-	for name, ports := range sym.Ports() {
+func (t *Table) unlinks(sb *Symbol) {
+	for name, ports := range sb.Ports() {
 		for _, port := range ports {
 			id := port.ID
 			if id == uuid.Nil {
-				id = t.lookup(sym.Namespace(), port.Name)
+				id = t.lookup(sb.Namespace(), port.Name)
 			}
 
 			ref, ok := t.symbols[id]
@@ -255,7 +255,7 @@ func (t *Table) unlinks(sym *Symbol) {
 
 			var ports []spec.Port
 			for _, port := range ref.inbounds[port.Port] {
-				if port.ID != sym.ID() && port.Port != name {
+				if port.ID != sb.ID() && port.Port != name {
 					ports = append(ports, port)
 				}
 			}
@@ -269,14 +269,14 @@ func (t *Table) unlinks(sym *Symbol) {
 	}
 }
 
-func (t *Table) linked(sym *Symbol) []*Symbol {
-	nexts := []*Symbol{sym}
+func (t *Table) linked(sb *Symbol) []*Symbol {
+	nexts := []*Symbol{sb}
 
 	var linked []*Symbol
 	for len(nexts) > 0 {
-		sym := nexts[len(nexts)-1]
+		sb := nexts[len(nexts)-1]
 		ok := true
-		for _, ports := range sym.inbounds {
+		for _, ports := range sb.inbounds {
 			for _, port := range ports {
 				next := t.symbols[port.ID]
 				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {
@@ -290,7 +290,7 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 		}
 		if ok {
 			nexts = nexts[0 : len(nexts)-1]
-			linked = append(linked, sym)
+			linked = append(linked, sb)
 		}
 	}
 
@@ -298,27 +298,27 @@ func (t *Table) linked(sym *Symbol) []*Symbol {
 	return linked
 }
 
-func (t *Table) active(sym *Symbol) bool {
-	nexts := []*Symbol{sym}
+func (t *Table) active(sb *Symbol) bool {
+	nexts := []*Symbol{sb}
 	visits := map[*Symbol]struct{}{}
 	for len(nexts) > 0 {
-		sym := nexts[0]
+		sb := nexts[0]
 		nexts = nexts[1:]
 
-		if _, visit := visits[sym]; visit {
+		if _, visit := visits[sb]; visit {
 			continue
 		}
-		visits[sym] = struct{}{}
+		visits[sb] = struct{}{}
 
-		for _, ports := range sym.Ports() {
+		for _, ports := range sb.Ports() {
 			for _, port := range ports {
 				id := port.ID
 				if id == uuid.Nil {
-					id = t.lookup(sym.Namespace(), port.Name)
+					id = t.lookup(sb.Namespace(), port.Name)
 				}
 
 				ref, ok := t.symbols[id]
-				if !ok || ref.Namespace() != sym.Namespace() {
+				if !ok || ref.Namespace() != sb.Namespace() {
 					return false
 				}
 
@@ -329,19 +329,19 @@ func (t *Table) active(sym *Symbol) bool {
 	return true
 }
 
-func (t *Table) init(sym *Symbol) error {
+func (t *Table) init(sb *Symbol) error {
 	out := port.NewOut()
 	defer out.Close()
 
-	ports := sym.Ports()
+	ports := sb.Ports()
 	for _, port := range ports[node.PortInit] {
 		id := port.ID
 		if id == uuid.Nil {
-			id = t.lookup(sym.Namespace(), port.Name)
+			id = t.lookup(sb.Namespace(), port.Name)
 		}
 
 		if ref, ok := t.symbols[id]; ok {
-			if ref.Namespace() == sym.Namespace() {
+			if ref.Namespace() == sb.Namespace() {
 				if in := ref.In(port.Port); in != nil {
 					out.Link(in)
 				}
@@ -349,7 +349,7 @@ func (t *Table) init(sym *Symbol) error {
 		}
 	}
 
-	payload, err := types.Encoder.Encode(sym.Spec)
+	payload, err := types.Encoder.Encode(sb.Spec)
 	if err != nil {
 		return err
 	}

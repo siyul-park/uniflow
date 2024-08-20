@@ -36,17 +36,14 @@ func NewReader() *Reader {
 			case pck = <-r.in:
 			case <-r.done:
 				for {
-					if w := r.writer(); w == nil {
+					w := r.writer()
+					if w == nil {
 						break
-					} else {
-						pck := New(types.NewError(ErrDroppedPacket))
-
-						for _, hook := range r.outboundHooks {
-							hook.Handle(pck)
-						}
-
-						w.receive(pck, r)
 					}
+
+					pck := New(types.NewError(ErrDroppedPacket))
+					r.outboundHook(pck)
+					w.receive(pck, r)
 				}
 				return
 			}
@@ -108,15 +105,13 @@ func (r *Reader) Read() <-chan *Packet {
 
 // Receive receives a packet from a writer and forwards it to the reader's input channel.
 func (r *Reader) Receive(pck *Packet) bool {
-	if w := r.writer(); w == nil {
+	w := r.writer()
+	if w == nil {
 		return false
-	} else {
-		for _, hook := range r.outboundHooks {
-			hook.Handle(pck)
-		}
-
-		return w.receive(pck, r)
 	}
+
+	r.outboundHook(pck)
+	return w.receive(pck, r)
 }
 
 // Close closes the reader and releases its resources, stopping further packet processing.
@@ -139,15 +134,13 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	case <-r.done:
 		return false
 	default:
-		for _, hook := range r.inboundHooks {
-			hook.Handle(pck)
-		}
-
-		r.writers = append(r.writers, writer)
-		r.in <- pck
-
-		return true
 	}
+
+	r.inboundHook(pck)
+	r.writers = append(r.writers, writer)
+	r.in <- pck
+
+	return true
 }
 
 func (r *Reader) writer() *Writer {
@@ -162,4 +155,16 @@ func (r *Reader) writer() *Writer {
 	r.writers = r.writers[1:]
 
 	return writer
+}
+
+func (r *Reader) inboundHook(pck *Packet) {
+	for _, hook := range r.inboundHooks {
+		hook.Handle(pck)
+	}
+}
+
+func (r *Reader) outboundHook(pck *Packet) {
+	for _, hook := range r.outboundHooks {
+		hook.Handle(pck)
+	}
 }

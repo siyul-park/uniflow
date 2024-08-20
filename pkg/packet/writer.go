@@ -67,11 +67,7 @@ func NewWriter() *Writer {
 
 				for range receives {
 					pck := New(types.NewError(ErrDroppedPacket))
-
-					for _, hook := range w.inboundHooks {
-						hook.Handle(pck)
-					}
-
+					w.inboundHook(pck)
 					w.out <- pck
 				}
 				return
@@ -144,30 +140,35 @@ func (w *Writer) Write(pck *Packet) int {
 	case <-w.done:
 		return 0
 	default:
-		for _, hook := range w.outboundHooks {
-			hook.Handle(pck)
-		}
-
-		count := 0
-		receives := make([]*Packet, len(w.readers))
-		for i, r := range w.readers {
-			if r.write(New(pck.Payload()), w) {
-				count++
-			} else if len(w.receives) == 0 {
-				w.readers = append(w.readers[:i], w.readers[i+1:]...)
-				receives = append(receives[:i], receives[i+1:]...)
-				i--
-			} else {
-				receives[i] = None
-			}
-		}
-
-		if count > 0 {
-			w.receives = append(w.receives, receives)
-		}
-
-		return count
 	}
+
+	if len(w.readers) == 0 {
+		return 0
+	}
+
+	w.outboundHook(pck)
+
+	count := 0
+	receives := make([]*Packet, len(w.readers))
+	for i, r := range w.readers {
+		if r.write(New(pck.Payload()), w) {
+			count++
+		} else if len(w.receives) == 0 {
+			w.readers = append(w.readers[:i], w.readers[i+1:]...)
+			receives = append(receives[:i], receives[i+1:]...)
+			i--
+		} else {
+			receives[i] = None
+		}
+	}
+
+	if count > 0 {
+		w.receives = append(w.receives, receives)
+	} else {
+		w.inboundHook(New(types.NewError(ErrDroppedPacket)))
+	}
+
+	return count
 }
 
 // Receive returns the channel for receiving packets from the writer.
@@ -195,38 +196,37 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	case <-w.done:
 		return false
 	default:
-		index := w.indexOfReader(reader)
-		if index < 0 {
-			return false
-		}
-
-		head := w.indexOfHead(index)
-		if head < 0 {
-			return false
-		}
-
-		receives := w.receives[head]
-		receives[index] = pck
-
-		if head == 0 {
-			for _, pck := range receives {
-				if pck == nil {
-					return true
-				}
-			}
-
-			w.receives = w.receives[1:]
-			pck := Merge(receives)
-
-			for _, hook := range w.inboundHooks {
-				hook.Handle(pck)
-			}
-
-			w.in <- pck
-		}
-
-		return true
 	}
+
+	index := w.indexOfReader(reader)
+	if index < 0 {
+		return false
+	}
+
+	head := w.indexOfHead(index)
+	if head < 0 {
+		return false
+	}
+
+	receives := w.receives[head]
+	receives[index] = pck
+
+	if head == 0 {
+		for _, pck := range receives {
+			if pck == nil {
+				return true
+			}
+		}
+
+
+		pck := Merge(receives)
+
+		w.inboundHook(pck)
+		w.receives = w.receives[1:]
+		w.in <- pck
+	}
+
+	return true
 }
 
 func (w *Writer) indexOfReader(reader *Reader) int {
@@ -248,4 +248,16 @@ func (w *Writer) indexOfHead(index int) int {
 		}
 	}
 	return -1
+}
+
+func (w *Writer) inboundHook(pck *Packet) {
+	for _, hook := range w.inboundHooks {
+		hook.Handle(pck)
+	}
+}
+
+func (w *Writer) outboundHook(pck *Packet) {
+	for _, hook := range w.outboundHooks {
+		hook.Handle(pck)
+	}
 }

@@ -30,9 +30,9 @@ func WithProcess(proc *process.Process) func(*Breakpoint) {
 }
 
 // WithSymbol sets the symbol associated with the breakpoint.
-func WithSymbol(sym *symbol.Symbol) func(*Breakpoint) {
+func WithSymbol(sb *symbol.Symbol) func(*Breakpoint) {
 	return func(b *Breakpoint) {
-		b.symbol = sym
+		b.symbol = sb
 	}
 }
 

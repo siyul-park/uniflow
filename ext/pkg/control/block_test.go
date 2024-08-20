@@ -54,11 +54,11 @@ func TestNewBlockNode(t *testing.T) {
 }
 
 func TestBlockNode_Load(t *testing.T) {
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewBlockNode(sym)
+	n := NewBlockNode(sb)
 	defer n.Close()
 
 	count := 0
@@ -73,11 +73,11 @@ func TestBlockNode_Load(t *testing.T) {
 }
 
 func TestBlockNode_Unload(t *testing.T) {
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewBlockNode(sym)
+	n := NewBlockNode(sb)
 	defer n.Close()
 
 	count := 0

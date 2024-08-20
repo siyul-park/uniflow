@@ -280,12 +280,12 @@ symbols, _ := r.Load(ctx, &spec.Meta{
 	Name: "main",
 })
 
-sym := symbols[0]
+sb := symbols[0]
 
 in := port.NewOut()
 defer in.Close()
 
-in.Link(sym.In(node.PortIn))
+in.Link(sb.In(node.PortIn))
 
 payload := types.NewString(faker.Word())
 payload, err := port.Call(in, payload)
