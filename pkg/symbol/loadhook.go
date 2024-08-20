@@ -16,6 +16,6 @@ func LoadFunc(load func(*Symbol) error) LoadHook {
 	return &loadHook{load: load}
 }
 
-func (h *loadHook) Load(sym *Symbol) error {
-	return h.load(sym)
+func (h *loadHook) Load(sb *Symbol) error {
+	return h.load(sb)
 }

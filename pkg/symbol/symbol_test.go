@@ -33,21 +33,21 @@ func TestSymbol_Getter(t *testing.T) {
 		},
 	}
 
-	sym := &Symbol{
+	sb := &Symbol{
 		Spec: meta,
 		Node: n,
 	}
 
-	assert.Equal(t, meta.GetID(), sym.ID())
-	assert.Equal(t, meta.GetKind(), sym.Kind())
-	assert.Equal(t, meta.GetNamespace(), sym.Namespace())
-	assert.Equal(t, meta.GetName(), sym.Name())
-	assert.Equal(t, meta.GetAnnotations(), sym.Annotations())
-	assert.Equal(t, meta.GetPorts(), sym.Ports())
-	assert.Equal(t, meta.GetPorts(), sym.Links())
-	assert.Equal(t, meta.GetEnv(), sym.Env())
-	assert.Equal(t, n.In(node.PortIn), sym.In(node.PortIn))
-	assert.Equal(t, n.Out(node.PortOut), sym.Out(node.PortOut))
-	assert.Contains(t, sym.Ins(), node.PortIn)
-	assert.Contains(t, sym.Outs(), node.PortOut)
+	assert.Equal(t, meta.GetID(), sb.ID())
+	assert.Equal(t, meta.GetKind(), sb.Kind())
+	assert.Equal(t, meta.GetNamespace(), sb.Namespace())
+	assert.Equal(t, meta.GetName(), sb.Name())
+	assert.Equal(t, meta.GetAnnotations(), sb.Annotations())
+	assert.Equal(t, meta.GetPorts(), sb.Ports())
+	assert.Equal(t, meta.GetPorts(), sb.Links())
+	assert.Equal(t, meta.GetEnv(), sb.Env())
+	assert.Equal(t, n.In(node.PortIn), sb.In(node.PortIn))
+	assert.Equal(t, n.Out(node.PortOut), sb.Out(node.PortOut))
+	assert.Contains(t, sb.Ins(), node.PortIn)
+	assert.Contains(t, sb.Outs(), node.PortOut)
 }

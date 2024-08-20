@@ -34,7 +34,7 @@ func TestDebugModel_Update(t *testing.T) {
 		}
 		defer m.Close()
 
-		sym := &symbol.Symbol{
+		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -43,12 +43,12 @@ func TestDebugModel_Update(t *testing.T) {
 			},
 			Node: node.NewOneToOneNode(nil),
 		}
-		defer sym.Close()
+		defer sb.Close()
 
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
 
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		assert.Len(t, m.breakpoints, 1)
@@ -61,7 +61,7 @@ func TestDebugModel_Update(t *testing.T) {
 		}
 		defer m.Close()
 
-		sym := &symbol.Symbol{
+		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -70,12 +70,12 @@ func TestDebugModel_Update(t *testing.T) {
 			},
 			Node: node.NewOneToOneNode(nil),
 		}
-		defer sym.Close()
+		defer sb.Close()
 
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
 
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		m.input.SetValue("continue")
@@ -91,7 +91,7 @@ func TestDebugModel_Update(t *testing.T) {
 		}
 		defer m.Close()
 
-		sym := &symbol.Symbol{
+		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -100,12 +100,12 @@ func TestDebugModel_Update(t *testing.T) {
 			},
 			Node: node.NewOneToOneNode(nil),
 		}
-		defer sym.Close()
+		defer sb.Close()
 
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
 
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		m.input.SetValue(fmt.Sprintf("delete %d", 0))
@@ -121,7 +121,7 @@ func TestDebugModel_Update(t *testing.T) {
 		}
 		defer m.Close()
 
-		sym := &symbol.Symbol{
+		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -130,18 +130,48 @@ func TestDebugModel_Update(t *testing.T) {
 			},
 			Node: node.NewOneToOneNode(nil),
 		}
-		defer sym.Close()
+		defer sb.Close()
 
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
 
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		m.input.SetValue("breakpoints")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sym.Name())
+		assert.Contains(t, m.View(), sb.Name())
+	})
+
+	t.Run("breakpoint <breakpoint>", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		m.input.SetValue(fmt.Sprintf("breakpoint %d", 0))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), sb.Name())
 	})
 
 	t.Run("breakpoint", func(t *testing.T) {
@@ -151,7 +181,7 @@ func TestDebugModel_Update(t *testing.T) {
 		}
 		defer m.Close()
 
-		sym := &symbol.Symbol{
+		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -160,110 +190,20 @@ func TestDebugModel_Update(t *testing.T) {
 			},
 			Node: node.NewOneToOneNode(nil),
 		}
-		defer sym.Close()
-
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
-
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
-		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-		m.input.SetValue(fmt.Sprintf("breakpoint %d", 0))
-		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-		assert.Contains(t, m.View(), sym.Name())
-	})
-
-	t.Run("symbols", func(t *testing.T) {
-		m := &debugModel{
-			input:    textinput.New(),
-			debugger: debug.NewDebugger(),
-		}
-		defer m.Close()
-
-		sym := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Node: node.NewOneToOneNode(nil),
-		}
-		defer sym.Close()
-
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
-
-		m.input.SetValue("symbols")
-		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-		assert.Contains(t, m.View(), sym.Name())
-	})
-
-	t.Run("symbol", func(t *testing.T) {
-		m := &debugModel{
-			input:    textinput.New(),
-			debugger: debug.NewDebugger(),
-		}
-		defer m.Close()
-
-		sym := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Node: node.NewOneToOneNode(nil),
-		}
-		defer sym.Close()
-
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
-
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
-		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-		m.input.SetValue(fmt.Sprintf("symbol %s", sym.Name()))
-		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-		assert.Contains(t, m.View(), sym.Name())
-	})
-
-	t.Run("frame", func(t *testing.T) {
-		m := &debugModel{
-			input:    textinput.New(),
-			debugger: debug.NewDebugger(),
-		}
-		defer m.Close()
-
-		sym := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
-		}
-		defer sym.Close()
+		defer sb.Close()
 
 		out := port.NewOut()
 		defer out.Close()
 
-		out.Link(sym.In(node.PortIn))
+		out.Link(sb.In(node.PortIn))
 
-		m.debugger.Load(sym)
-		defer m.debugger.Unload(sym)
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
 
-		m.input.SetValue(fmt.Sprintf("break %s %s", sym.Name(), node.PortIn))
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		var payload types.Value
-
 		go func() {
 			proc := process.New()
 			defer proc.Exit(nil)
@@ -277,7 +217,333 @@ func TestDebugModel_Update(t *testing.T) {
 		}()
 
 		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
 
+		m.input.SetValue("breakpoint")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), sb.Name())
+
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("symbols", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue("symbols")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), sb.Name())
+	})
+
+	t.Run("symbol <symbol>", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		m.input.SetValue(fmt.Sprintf("symbol %s", sb.Name()))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), sb.Name())
+	})
+
+	t.Run("symbol", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		var payload types.Value
+		go func() {
+			proc := process.New()
+			defer proc.Exit(nil)
+
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue("symbol")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), sb.Name())
+
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("processes", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		proc := process.New()
+
+		var payload types.Value
+		go func() {
+			defer proc.Exit(nil)
+
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue("processes")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), proc.ID().String())
+
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("process <process>", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		proc := process.New()
+
+		var payload types.Value
+		go func() {
+			defer proc.Exit(nil)
+
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue(fmt.Sprintf("process %s", proc.ID()))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), proc.ID().String())
+
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("process", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		proc := process.New()
+
+		var payload types.Value
+		go func() {
+			defer proc.Exit(nil)
+
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue("process")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Contains(t, m.View(), proc.ID().String())
+
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("frame", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
+			}),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		var payload types.Value
+		go func() {
+			proc := process.New()
+			defer proc.Exit(nil)
+
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
 		m.Update(m.breakpoints[0])
 
 		m.input.SetValue("frame")

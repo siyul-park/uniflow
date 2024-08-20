@@ -38,12 +38,12 @@ func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
 }
 
 // Load executes all LoadHooks registered in the Hook on the provided symbol.
-func (h *Hook) Load(sym *symbol.Symbol) error {
+func (h *Hook) Load(sb *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for _, hook := range h.loadHooks {
-		if err := hook.Load(sym); err != nil {
+		if err := hook.Load(sb); err != nil {
 			return err
 		}
 	}
@@ -51,13 +51,13 @@ func (h *Hook) Load(sym *symbol.Symbol) error {
 }
 
 // Unload executes all UnloadHooks registered in the Hook on the provided symbol.
-func (h *Hook) Unload(sym *symbol.Symbol) error {
+func (h *Hook) Unload(sb *symbol.Symbol) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	for i := len(h.unloadHooks) - 1; i >= 0; i-- {
 		hook := h.unloadHooks[i]
-		if err := hook.Unload(sym); err != nil {
+		if err := hook.Unload(sb); err != nil {
 			return err
 		}
 	}

@@ -42,7 +42,7 @@ func TestDebugger_Watch(t *testing.T) {
 func TestDebugger_Symbol(t *testing.T) {
 	d := NewDebugger()
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -51,16 +51,16 @@ func TestDebugger_Symbol(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
-	d.Load(sym)
-	defer d.Unload(sym)
+	d.Load(sb)
+	defer d.Unload(sb)
 
-	_, ok := d.Symbol(sym.ID())
+	_, ok := d.Symbol(sb.ID())
 	assert.True(t, ok)
 
 	ids := d.Symbols()
-	assert.Contains(t, ids, sym.ID())
+	assert.Contains(t, ids, sb.ID())
 }
 
 func TestDebugger_Process(t *testing.T) {
@@ -77,7 +77,7 @@ func TestDebugger_Process(t *testing.T) {
 		assert.Contains(t, ids, proc.ID())
 	}))
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -86,12 +86,12 @@ func TestDebugger_Process(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
-	in := sym.In(node.PortIn)
+	in := sb.In(node.PortIn)
 
-	d.Load(sym)
-	defer d.Unload(sym)
+	d.Load(sb)
+	defer d.Unload(sb)
 
 	proc := process.New()
 	defer proc.Exit(nil)
@@ -113,7 +113,7 @@ func TestDebuffer_Frames(t *testing.T) {
 		count += 1
 	}))
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -124,15 +124,15 @@ func TestDebuffer_Frames(t *testing.T) {
 			return inPck, nil
 		}),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
 	out := port.NewOut()
 	defer out.Close()
 
-	out.Link(sym.In(node.PortIn))
+	out.Link(sb.In(node.PortIn))
 
-	d.Load(sym)
-	defer d.Unload(sym)
+	d.Load(sb)
+	defer d.Unload(sb)
 
 	proc := process.New()
 	defer proc.Exit(nil)

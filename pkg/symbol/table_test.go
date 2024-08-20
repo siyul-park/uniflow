@@ -395,13 +395,13 @@ func TestTable_LookupByID(t *testing.T) {
 		Namespace: resource.DefaultNamespace,
 	}
 
-	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
-	err := tb.Insert(sym)
+	sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
+	err := tb.Insert(sb)
 	assert.NoError(t, err)
 
-	r, ok := tb.Lookup(sym.ID())
+	r, ok := tb.Lookup(sb.ID())
 	assert.True(t, ok)
-	assert.Equal(t, sym, r)
+	assert.Equal(t, sb, r)
 }
 
 func TestTable_Keys(t *testing.T) {
@@ -417,12 +417,12 @@ func TestTable_Keys(t *testing.T) {
 		Name:      faker.UUIDHyphenated(),
 	}
 
-	sym := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
-	err := tb.Insert(sym)
+	sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
+	err := tb.Insert(sb)
 	assert.NoError(t, err)
 
 	ids := tb.Keys()
-	assert.Contains(t, ids, sym.ID())
+	assert.Contains(t, ids, sb.ID())
 }
 
 func TestTable_Hook(t *testing.T) {
@@ -534,8 +534,8 @@ func BenchmarkTable_Insert(b *testing.B) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		sym := &Symbol{Spec: meta}
-		_ = tb.Insert(sym)
+		sb := &Symbol{Spec: meta}
+		_ = tb.Insert(sb)
 	}
 }
 
@@ -554,8 +554,8 @@ func BenchmarkTable_Free(b *testing.B) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		sym := &Symbol{Spec: meta}
-		_ = tb.Insert(sym)
+		sb := &Symbol{Spec: meta}
+		_ = tb.Insert(sb)
 
 		b.StartTimer()
 

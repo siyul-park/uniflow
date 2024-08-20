@@ -104,8 +104,8 @@ func (n *BlockNode) Load(hook symbol.LoadHook) error {
 	defer n.mu.RUnlock()
 
 	for i := len(n.symbols) - 1; i >= 0; i-- {
-		sym := n.symbols[i]
-		if err := hook.Load(sym); err != nil {
+		sb := n.symbols[i]
+		if err := hook.Load(sb); err != nil {
 			return err
 		}
 	}
@@ -118,8 +118,8 @@ func (n *BlockNode) Unload(hook symbol.UnloadHook) error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	for _, sym := range n.symbols {
-		if err := hook.Unload(sym); err != nil {
+	for _, sb := range n.symbols {
+		if err := hook.Unload(sb); err != nil {
 			return err
 		}
 	}
@@ -166,8 +166,8 @@ func (n *BlockNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	for _, sym := range n.symbols {
-		if err := sym.Close(); err != nil {
+	for _, sb := range n.symbols {
+		if err := sb.Close(); err != nil {
 			return err
 		}
 	}

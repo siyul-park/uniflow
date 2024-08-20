@@ -17,7 +17,7 @@ func TestNewBreakpoint(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -26,27 +26,27 @@ func TestNewBreakpoint(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
 	b := NewBreakpoint(
 		WithProcess(proc),
-		WithSymbol(sym),
-		WithInPort(sym.In(node.PortIn)),
-		WithOutPort(sym.Out(node.PortOut)),
+		WithSymbol(sb),
+		WithInPort(sb.In(node.PortIn)),
+		WithOutPort(sb.Out(node.PortOut)),
 	)
 	defer b.Close()
 
 	assert.Equal(t, proc, b.Process())
-	assert.Equal(t, sym, b.Symbol())
-	assert.Equal(t, sym.In(node.PortIn), b.InPort())
-	assert.Equal(t, sym.Out(node.PortOut), b.OutPort())
+	assert.Equal(t, sb, b.Symbol())
+	assert.Equal(t, sb.In(node.PortIn), b.InPort())
+	assert.Equal(t, sb.Out(node.PortOut), b.OutPort())
 }
 
 func TestBreakpoint_Next(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -55,17 +55,17 @@ func TestBreakpoint_Next(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
 	b := NewBreakpoint(
 		WithProcess(proc),
-		WithSymbol(sym),
+		WithSymbol(sb),
 	)
 	defer b.Close()
 
 	frame := &Frame{
 		Process: proc,
-		Symbol:  sym,
+		Symbol:  sb,
 	}
 
 	go b.HandleFrame(frame)
@@ -78,7 +78,7 @@ func TestBreakpoint_Done(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	sym := &symbol.Symbol{
+	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
@@ -87,17 +87,17 @@ func TestBreakpoint_Done(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	defer sym.Close()
+	defer sb.Close()
 
 	b := NewBreakpoint(
 		WithProcess(proc),
-		WithSymbol(sym),
+		WithSymbol(sb),
 	)
 	defer b.Close()
 
 	frame := &Frame{
 		Process: proc,
-		Symbol:  sym,
+		Symbol:  sb,
 	}
 
 	go b.HandleFrame(frame)

@@ -88,22 +88,22 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 			continue
 		}
 
-		sym, ok := l.table.Lookup(decode.GetID())
-		if !ok || !reflect.DeepEqual(sym.Spec, decode) {
+		sb, ok := l.table.Lookup(decode.GetID())
+		if !ok || !reflect.DeepEqual(sb.Spec, decode) {
 			n, err := l.scheme.Compile(decode)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 
-			sym = &Symbol{Spec: decode, Node: n}
-			if err := l.table.Insert(sym); err != nil {
+			sb = &Symbol{Spec: decode, Node: n}
+			if err := l.table.Insert(sb); err != nil {
 				errs = append(errs, err)
 				continue
 			}
 		}
 
-		symbols = append(symbols, sym)
+		symbols = append(symbols, sb)
 	}
 
 	if len(errs) > 0 {
@@ -111,16 +111,16 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 	}
 
 	for _, id := range l.table.Keys() {
-		sym, ok := l.table.Lookup(id)
-		if ok && len(resource.Match(sym.Spec, examples...)) > 0 {
-			var sym *Symbol
+		sb, ok := l.table.Lookup(id)
+		if ok && len(resource.Match(sb.Spec, examples...)) > 0 {
+			var sb *Symbol
 			for _, s := range symbols {
 				if s.ID() == id {
-					sym = s
+					sb = s
 					break
 				}
 			}
-			if sym == nil {
+			if sb == nil {
 				if _, err := l.table.Free(id); err != nil {
 					return nil, err
 				}
@@ -223,9 +223,9 @@ func (l *Loader) Reconcile(ctx context.Context) error {
 
 			var examples []spec.Spec
 			for _, id := range l.table.Keys() {
-				sym, ok := l.table.Lookup(id)
-				if ok && l.scheme.IsBound(sym.Spec, secrets...) {
-					examples = append(examples, sym.Spec)
+				sb, ok := l.table.Lookup(id)
+				if ok && l.scheme.IsBound(sb.Spec, secrets...) {
+					examples = append(examples, sb.Spec)
 				}
 			}
 			for _, spc := range buffer {

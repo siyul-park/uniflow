@@ -82,8 +82,8 @@ func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	sym, exists := d.symbols[id]
-	return sym, exists
+	sb, exists := d.symbols[id]
+	return sb, exists
 }
 
 // Processes returns a list of all process UUIDs managed by the debugger.
@@ -117,23 +117,23 @@ func (d *Debugger) Frames(id uuid.UUID) ([]*Frame, bool) {
 }
 
 // Load adds a symbol and its associated listeners to the debugger.
-func (d *Debugger) Load(sym *symbol.Symbol) error {
+func (d *Debugger) Load(sb *symbol.Symbol) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	inbounds := make(map[string]port.Hook)
 	outbounds := make(map[string]port.Hook)
 
-	d.symbols[sym.ID()] = sym
-	d.inbounds[sym.ID()] = inbounds
-	d.outbounds[sym.ID()] = outbounds
+	d.symbols[sb.ID()] = sb
+	d.inbounds[sb.ID()] = inbounds
+	d.outbounds[sb.ID()] = outbounds
 
-	for _, name := range sym.Ins() {
-		in := sym.In(name)
+	for _, name := range sb.Ins() {
+		in := sb.In(name)
 		hook := port.HookFunc(func(proc *process.Process) {
 			d.accept(proc)
 
-			inboundHook, outboundHook := d.hooks(proc, sym, in, nil)
+			inboundHook, outboundHook := d.hooks(proc, sb, in, nil)
 
 			reader := in.Open(proc)
 			reader.AddInboundHook(inboundHook)
@@ -144,12 +144,12 @@ func (d *Debugger) Load(sym *symbol.Symbol) error {
 		inbounds[name] = hook
 	}
 
-	for _, name := range sym.Outs() {
-		out := sym.Out(name)
+	for _, name := range sb.Outs() {
+		out := sb.Out(name)
 		hook := port.HookFunc(func(proc *process.Process) {
 			d.accept(proc)
 
-			inboundHook, outboundHook := d.hooks(proc, sym, nil, out)
+			inboundHook, outboundHook := d.hooks(proc, sb, nil, out)
 
 			writer := out.Open(proc)
 			writer.AddInboundHook(inboundHook)
@@ -164,22 +164,22 @@ func (d *Debugger) Load(sym *symbol.Symbol) error {
 }
 
 // Unload removes a symbol and its associated listeners from the debugger.
-func (d *Debugger) Unload(sym *symbol.Symbol) error {
+func (d *Debugger) Unload(sb *symbol.Symbol) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	for name, hook := range d.inbounds[sym.ID()] {
-		in := sym.In(name)
+	for name, hook := range d.inbounds[sb.ID()] {
+		in := sb.In(name)
 		in.RemoveHook(hook)
 	}
-	for name, hook := range d.outbounds[sym.ID()] {
-		out := sym.Out(name)
+	for name, hook := range d.outbounds[sb.ID()] {
+		out := sb.Out(name)
 		out.RemoveHook(hook)
 	}
 
-	delete(d.inbounds, sym.ID())
-	delete(d.outbounds, sym.ID())
-	delete(d.symbols, sym.ID())
+	delete(d.inbounds, sb.ID())
+	delete(d.outbounds, sb.ID())
+	delete(d.symbols, sb.ID())
 
 	return nil
 }
@@ -215,13 +215,13 @@ func (d *Debugger) accept(proc *process.Process) {
 	}
 }
 
-func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
+func (d *Debugger) hooks(proc *process.Process, sb *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
 	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
 		d.mu.Lock()
 
 		frame := &Frame{
 			Process: proc,
-			Symbol:  sym,
+			Symbol:  sb,
 			InPort:  in,
 			OutPort: out,
 			InPck:   pck,
@@ -243,7 +243,7 @@ func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InP
 
 		var frame *Frame
 		for _, f := range d.frames[proc.ID()] {
-			if f.Symbol == sym && (f.InPort == in || f.OutPort == out) && f.OutPck == nil {
+			if f.Symbol == sb && (f.InPort == in || f.OutPort == out) && f.OutPck == nil {
 				f.OutPck = pck
 				f.OutTime = time.Now()
 				frame = f
@@ -253,7 +253,7 @@ func (d *Debugger) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InP
 		if frame == nil {
 			frame = &Frame{
 				Process: proc,
-				Symbol:  sym,
+				Symbol:  sb,
 				InPort:  in,
 				OutPort: out,
 				OutPck:  pck,
