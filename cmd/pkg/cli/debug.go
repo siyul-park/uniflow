@@ -387,7 +387,7 @@ func (v *frameDebugView) View() string {
 		pck = v.frame.InPck
 	}
 
-	data, err := json.Marshal(types.InterfaceOf(pck.Payload()))
+	data, err := json.MarshalIndent(types.InterfaceOf(pck.Payload()), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
@@ -395,7 +395,7 @@ func (v *frameDebugView) View() string {
 }
 
 func (v *breakpointDebugView) View() string {
-	data, err := json.Marshal(v.Interface())
+	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
@@ -444,7 +444,7 @@ func (v *breakpointsDebugView) View() string {
 }
 
 func (v *symbolDebugView) View() string {
-	data, err := json.Marshal(v.Interface())
+	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
@@ -477,7 +477,7 @@ func (v *symbolsDebugView) View() string {
 }
 
 func (v *processDebugView) View() string {
-	data, err := json.Marshal(v.Interface())
+	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
