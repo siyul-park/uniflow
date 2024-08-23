@@ -82,12 +82,7 @@ func (n *ForkNode) Close() error {
 func (n *ForkNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
-
+	for inPck := range inReader.Read() {
 		child := proc.Fork()
 		outWriter := n.outPort.Open(child)
 
@@ -100,12 +95,7 @@ func (n *ForkNode) backward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter.Receive() {
 		var err error
 		if v, ok := backPck.Payload().(types.Error); ok {
 			err = v.Unwrap()
@@ -123,12 +113,7 @@ func (n *ForkNode) backward(proc *process.Process) {
 func (n *ForkNode) catch(proc *process.Process) {
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range errWriter.Receive() {
 		var err error
 		if v, ok := backPck.Payload().(types.Error); ok {
 			err = v.Unwrap()

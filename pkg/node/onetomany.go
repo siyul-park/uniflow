@@ -108,11 +108,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	}
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
+	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
@@ -145,11 +141,7 @@ func (n *OneToManyNode) backward(proc *process.Process, index int) {
 
 	outWriter := n.outPorts[index].Open(proc)
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
+	for backPck := range outWriter.Receive() {
 		n.tracer.Receive(outWriter, backPck)
 	}
 }
@@ -160,11 +152,7 @@ func (n *OneToManyNode) catch(proc *process.Process) {
 
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
+	for backPck := range errWriter.Receive() {
 		n.tracer.Receive(errWriter, backPck)
 	}
 }

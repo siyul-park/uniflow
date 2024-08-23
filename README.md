@@ -24,7 +24,7 @@ Provide a personalized experience through your service and consistently expand i
 
 ### 🛠️ Build and Install
 
-**[Go 1.22](https://go.dev/doc/install)** or higher is required. Follow these steps to build the source code:
+**[Go 1.23](https://go.dev/doc/install)** or higher is required. Follow these steps to build the source code:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow

@@ -218,7 +218,6 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 			}
 		}
 
-
 		pck := Merge(receives)
 
 		w.inboundHook(pck)

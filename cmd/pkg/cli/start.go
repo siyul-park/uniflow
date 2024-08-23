@@ -145,11 +145,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-		go func() {
-			<-sigs
-			r.Close()
-		}()
-
 		if enableDebug {
 			d := NewDebugger(
 				debugger,
@@ -171,6 +166,11 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			go r.Listen(ctx)
 			return d.Run()
 		}
+
+		go func() {
+			<-sigs
+			r.Close()
+		}()
 
 		return r.Listen(ctx)
 	}

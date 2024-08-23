@@ -4,7 +4,7 @@ This guide provides detailed instructions on how to install, configure, and mana
 
 ## Installing from Source
 
-To begin, you need to set up the [CLI](../cmd/README.md) along with the [built-in extensions](../ext/README.md). Before starting the installation, ensure that [Go 1.22](https://go.dev/doc/install) or higher is installed on your system.
+To begin, you need to set up the [CLI](../cmd/README.md) along with the [built-in extensions](../ext/README.md). Before starting the installation, ensure that [Go 1.23](https://go.dev/doc/install) or higher is installed on your system.
 
 ### Cloning the Repository
 
