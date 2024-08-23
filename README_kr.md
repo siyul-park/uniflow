@@ -24,7 +24,7 @@
 
 ### 🛠️ 빌드 및 설치
 
-**[Go 1.22](https://go.dev/doc/install)** 이상이 필요합니다. 소스 코드를 빌드하려면 다음 단계를 따르세요:
+**[Go 1.23](https://go.dev/doc/install)** 이상이 필요합니다. 소스 코드를 빌드하려면 다음 단계를 따르세요:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow

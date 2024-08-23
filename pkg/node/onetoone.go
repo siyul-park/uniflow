@@ -73,11 +73,7 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
+	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
@@ -93,12 +89,7 @@ func (n *OneToOneNode) forward(proc *process.Process) {
 func (n *OneToOneNode) backward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter.Receive() {
 		n.tracer.Receive(outWriter, backPck)
 	}
 }
@@ -106,12 +97,7 @@ func (n *OneToOneNode) backward(proc *process.Process) {
 func (n *OneToOneNode) catch(proc *process.Process) {
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range errWriter.Receive() {
 		n.tracer.Receive(errWriter, backPck)
 	}
 }

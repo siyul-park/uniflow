@@ -90,12 +90,7 @@ func (n *SessionNode) Close() error {
 func (n *SessionNode) session(proc *process.Process) {
 	ioReader := n.ioPort.Open(proc)
 
-	for {
-		inPck, ok := <-ioReader.Read()
-		if !ok {
-			return
-		}
-
+	for inPck := range ioReader.Read() {
 		n.values.Store(proc, inPck.Payload())
 		ioReader.Receive(packet.None)
 	}
@@ -104,11 +99,7 @@ func (n *SessionNode) session(proc *process.Process) {
 func (n *SessionNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
+	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
 		parents := n.values.Keys()
@@ -156,12 +147,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 func (n *SessionNode) backward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter.Receive() {
 		n.tracer.Receive(outWriter, backPck)
 	}
 }

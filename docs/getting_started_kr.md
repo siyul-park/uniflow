@@ -4,7 +4,7 @@
 
 ## 소스에서 설치하기
 
-먼저 [내장된 확장 기능](../ext/README_kr.md)과 함께 제공되는 [CLI](../cmd/README_kr.md)를 설정해야 합니다. 설치를 시작하기 전에 시스템에 [Go 1.22](https://go.dev/doc/install) 이상이 설치되어 있는지 확인하세요.
+먼저 [내장된 확장 기능](../ext/README_kr.md)과 함께 제공되는 [CLI](../cmd/README_kr.md)를 설정해야 합니다. 설치를 시작하기 전에 시스템에 [Go 1.23](https://go.dev/doc/install) 이상이 설치되어 있는지 확인하세요.
 
 ### 리포지토리 클론
 

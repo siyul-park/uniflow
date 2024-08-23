@@ -97,11 +97,7 @@ func (n *CallNode) forward(proc *process.Process) {
 	outWriter1 := n.outPorts[1].Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
+	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
 		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
@@ -120,12 +116,7 @@ func (n *CallNode) forward(proc *process.Process) {
 func (n *CallNode) backward0(proc *process.Process) {
 	outWriter0 := n.outPorts[0].Open(proc)
 
-	for {
-		backPck, ok := <-outWriter0.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter0.Receive() {
 		n.tracer.Receive(outWriter0, backPck)
 	}
 }
@@ -133,12 +124,7 @@ func (n *CallNode) backward0(proc *process.Process) {
 func (n *CallNode) backward1(proc *process.Process) {
 	outWriter1 := n.outPorts[1].Open(proc)
 
-	for {
-		backPck, ok := <-outWriter1.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter1.Receive() {
 		n.tracer.Receive(outWriter1, backPck)
 	}
 }
@@ -146,12 +132,7 @@ func (n *CallNode) backward1(proc *process.Process) {
 func (n *CallNode) catch(proc *process.Process) {
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range errWriter.Receive() {
 		n.tracer.Receive(errWriter, backPck)
 	}
 }

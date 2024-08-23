@@ -175,12 +175,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 	ioReader := n.ioPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		inPck, ok := <-ioReader.Read()
-		if !ok {
-			return
-		}
-
+	for inPck := range ioReader.Read() {
 		if conn, err := n.action(proc, inPck); err != nil {
 			errPck := packet.New(types.NewError(err))
 			backPck := packet.WriteOrFallback(errWriter, errPck, errPck)
@@ -209,12 +204,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 		return
 	}
 
-	for {
-		inPck, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
-
+	for inPck := range inReader.Read() {
 		var inPayload *WebSocketPayload
 		if err := types.Decoder.Decode(inPck.Payload(), &inPayload); err != nil {
 			inPayload.Data = inPck.Payload()

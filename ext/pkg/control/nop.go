@@ -67,12 +67,7 @@ func (n *NOPNode) Close() error {
 func (n *NOPNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 
-	for {
-		_, ok := <-inReader.Read()
-		if !ok {
-			return
-		}
-
+	for range inReader.Read() {
 		inReader.Receive(packet.None)
 	}
 }

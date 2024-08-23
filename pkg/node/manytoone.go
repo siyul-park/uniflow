@@ -112,12 +112,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		return packet.NewReadGroup(inReaders), nil
 	})
 
-	for {
-		inPck, ok := <-inReaders[index].Read()
-		if !ok {
-			return
-		}
-
+	for inPck := range inReaders[index].Read() {
 		n.tracer.Read(inReaders[index], inPck)
 
 		if inPcks := readGroup.Read(inReaders[index], inPck); len(inPcks) < len(inReaders) {
@@ -140,12 +135,7 @@ func (n *ManyToOneNode) backward(proc *process.Process) {
 
 	outWriter := n.outPort.Open(proc)
 
-	for {
-		backPck, ok := <-outWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range outWriter.Receive() {
 		n.tracer.Receive(outWriter, backPck)
 	}
 }
@@ -156,12 +146,7 @@ func (n *ManyToOneNode) catch(proc *process.Process) {
 
 	errWriter := n.errPort.Open(proc)
 
-	for {
-		backPck, ok := <-errWriter.Receive()
-		if !ok {
-			return
-		}
-
+	for backPck := range errWriter.Receive() {
 		n.tracer.Receive(errWriter, backPck)
 	}
 }
