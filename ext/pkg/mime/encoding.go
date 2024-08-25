@@ -73,7 +73,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		return nil
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
-		if err := types.Decoder.Decode(value, &urlValues); err != nil {
+		if err := types.Unmarshal(value, &urlValues); err != nil {
 			return err
 		}
 		if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
@@ -156,7 +156,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 							header, _ := types.Pick[types.Value](element, "header")
 
 							h := textproto.MIMEHeader{}
-							_ = types.Decoder.Decode(header, &h)
+							_ = types.Unmarshal(header, &h)
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
@@ -259,7 +259,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		if err := d.Decode(&data); err != nil {
 			return nil, err
 		}
-		return types.Encoder.Encode(data)
+		return types.Marshal(data)
 	case ApplicationFormURLEncoded:
 		data, err := io.ReadAll(r)
 		if err != nil {
@@ -269,7 +269,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		if err != nil {
 			return nil, err
 		}
-		return types.Encoder.Encode(v)
+		return types.Marshal(v)
 	case TextPlain:
 		data, err := io.ReadAll(r)
 		if err != nil {
@@ -308,7 +308,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 			}
 		}
 
-		return types.Encoder.Encode(map[string]any{
+		return types.Marshal(map[string]any{
 			keyValues.String(): form.Value,
 			keyFiles.String():  files,
 		})

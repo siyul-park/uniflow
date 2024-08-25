@@ -123,7 +123,7 @@ func (n *ReadNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 
 	var length int
-	_ = types.Decoder.Decode(data, &length)
+	_ = types.Unmarshal(data, &length)
 
 	var buf []byte
 	var err error

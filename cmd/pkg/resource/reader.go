@@ -29,10 +29,10 @@ func (r *Reader) Read(value any) error {
 		return err
 	}
 
-	doc, err := types.Encoder.Encode(data)
+	doc, err := types.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	return types.Decoder.Decode(doc, value)
+	return types.Unmarshal(doc, value)
 }

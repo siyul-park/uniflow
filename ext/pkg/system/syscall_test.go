@@ -41,7 +41,7 @@ func TestCreateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(meta)
+	inPayload, _ := types.Marshal(meta)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -49,7 +49,7 @@ func TestCreateNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*spec.Meta
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -79,7 +79,7 @@ func TestReadNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(meta)
+	inPayload, _ := types.Marshal(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -87,7 +87,7 @@ func TestReadNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*spec.Meta
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -119,7 +119,7 @@ func TestUpdateNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(meta)
+	inPayload, _ := types.Marshal(meta)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -127,7 +127,7 @@ func TestUpdateNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*spec.Meta
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -159,7 +159,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(meta)
+	inPayload, _ := types.Marshal(meta)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -167,7 +167,7 @@ func TestDeleteNodes(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*spec.Meta
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -195,7 +195,7 @@ func TestCreateSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(sec)
+	inPayload, _ := types.Marshal(sec)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -203,7 +203,7 @@ func TestCreateSecrets(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*secret.Secret
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -231,7 +231,7 @@ func TestReadSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(sec)
+	inPayload, _ := types.Marshal(sec)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -239,7 +239,7 @@ func TestReadSecrets(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*secret.Secret
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -269,7 +269,7 @@ func TestUpdateSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(sec)
+	inPayload, _ := types.Marshal(sec)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -277,7 +277,7 @@ func TestUpdateSecrets(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*secret.Secret
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
@@ -307,7 +307,7 @@ func TestDeleteSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Encoder.Encode(sec)
+	inPayload, _ := types.Marshal(sec)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -315,7 +315,7 @@ func TestDeleteSecrets(t *testing.T) {
 	select {
 	case outPck := <-inWriter.Receive():
 		var outPayload []*secret.Secret
-		assert.NoError(t, types.Decoder.Decode(outPck.Payload(), &outPayload))
+		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}

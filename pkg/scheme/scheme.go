@@ -102,13 +102,13 @@ func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 
 // Bind processes the environment variables in the spec using the provided secrets.
 func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
-	doc, err := types.Encoder.Encode(spc)
+	doc, err := types.Marshal(spc)
 	if err != nil {
 		return nil, err
 	}
 
 	unstructured := &spec.Unstructured{}
-	if err := types.Decoder.Decode(doc, unstructured); err != nil {
+	if err := types.Unmarshal(doc, unstructured); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +169,7 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	doc, err := types.Encoder.Encode(spc)
+	doc, err := types.Marshal(spc)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 		return spc, nil
 	}
 
-	if err := types.Decoder.Decode(doc, structured); err != nil {
+	if err := types.Unmarshal(doc, structured); err != nil {
 		return nil, err
 	}
 

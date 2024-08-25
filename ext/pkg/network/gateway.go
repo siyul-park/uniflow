@@ -111,7 +111,7 @@ func (n *WebSocketUpgradeNode) upgrade(proc *process.Process, inPck *packet.Pack
 	defer n.mu.RUnlock()
 
 	var inPayload *HTTPPayload
-	if err := types.Decoder.Decode(inPck.Payload(), &inPayload); err != nil {
+	if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
 		return nil, err
 	}
 

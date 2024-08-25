@@ -114,7 +114,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = types.Encoder.Encode(&WebSocketPayload{
+	inPayload, _ = types.Marshal(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: types.NewString(faker.UUIDHyphenated()),
 	})
@@ -128,7 +128,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inPayload, _ = types.Encoder.Encode(&WebSocketPayload{
+	inPayload, _ = types.Marshal(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)
@@ -182,7 +182,7 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 
 	ioWriter.Write(inPck)
 
-	inPayload, _ = types.Encoder.Encode(&WebSocketPayload{
+	inPayload, _ = types.Marshal(&WebSocketPayload{
 		Type: websocket.TextMessage,
 		Data: types.NewString(faker.UUIDHyphenated()),
 	})
@@ -196,7 +196,7 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 		outReader.Receive(outPck)
 	}
 
-	inPayload, _ = types.Encoder.Encode(&WebSocketPayload{
+	inPayload, _ = types.Marshal(&WebSocketPayload{
 		Type: websocket.CloseMessage,
 	})
 	inPck = packet.New(inPayload)

@@ -92,7 +92,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Query:  make(url.Values),
 		Header: make(http.Header),
 	}
-	if err := types.Decoder.Decode(inPck.Payload(), req); err != nil {
+	if err := types.Unmarshal(inPck.Payload(), req); err != nil {
 		req.Body = inPck.Payload()
 	}
 	if req.Method == "" {
@@ -153,7 +153,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		Status: w.StatusCode,
 	}
 
-	outPayload, err := types.Encoder.Encode(res)
+	outPayload, err := types.Marshal(res)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

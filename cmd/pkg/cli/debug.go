@@ -456,10 +456,10 @@ func (v *symbolDebugView) Interface() map[string]any {
 		return nil
 	}
 
-	encoded, _ := types.Encoder.Encode(v.symbol.Spec)
+	encoded, _ := types.Marshal(v.symbol.Spec)
 
 	var decoded map[string]any
-	types.Decoder.Decode(encoded, &decoded)
+	types.Unmarshal(encoded, &decoded)
 	return decoded
 }
 
