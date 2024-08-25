@@ -108,6 +108,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
 
 - kind: block
   name: nodes_read
@@ -117,6 +126,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'null'
     - kind: native
       opcode: nodes.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: nodes_update
@@ -126,6 +144,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: nodes_delete
@@ -135,6 +162,14 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'null'
     - kind: native
       opcode: nodes.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
 
 - kind: block
   name: secrets_create
@@ -144,6 +179,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
 
 - kind: block
   name: secrets_read
@@ -153,6 +197,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'null'
     - kind: native
       opcode: secrets.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: secrets_update
@@ -162,6 +215,15 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: secrets_delete
@@ -171,6 +233,14 @@ To modify node specifications, users can update the database using a Command-Lin
       code: 'null'
     - kind: native
       opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
 
 - kind: switch
   name: catch
