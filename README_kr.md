@@ -147,8 +147,6 @@ Percentage of the requests served within a certain time (ms)
 
 ## 🌐 커뮤니티 및 지원
 
-프로젝트에 관한 질문이나 지원이 필요한 경우, 다음 채널을 이용해 주세요:
-
 - [토론 포럼](https://github.com/siyul-park/uniflow/discussions): 질문 및 피드백을 공유할 수 있습니다.
 - [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그 보고 및 기능 요청을 제출할 수 있습니다.
 

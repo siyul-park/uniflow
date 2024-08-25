@@ -10,15 +10,15 @@
 
 ## 📝 Overview
 
-**Uniflow** efficiently handles a wide range of tasks from short-term jobs to long-term processes. It allows for declarative definition and dynamic modification of data flows, leveraging [built-in extension capabilities](./ext/README.md) to easily implement complex workflows. Moreover, it offers flexibility to expand functionality by adding new nodes or removing existing ones as needed.
+**Uniflow** efficiently manages a wide range of tasks, from short-term jobs to long-term processes. It supports declarative definitions and dynamic modifications of data flows. With [built-in extension capabilities](./ext/README.md), you can easily implement complex workflows and extend functionalities by adding or removing nodes as needed.
 
-Provide a personalized experience through your service and consistently expand its capabilities.
+Deliver a personalized experience through your service and continually expand its capabilities.
 
 ## 🎯 Core Values
 
-- **Performance:** Achieve optimal throughput and minimal latency across various environments.
+- **Performance:** Optimize throughput and minimize latency across diverse environments.
 - **Flexibility:** Dynamically modify and adjust workflows in real-time.
-- **Extensibility:** Extend system functionality through new components.
+- **Extensibility:** Expand system functionality with new components.
 
 ## 🚀 Quick Start
 
@@ -39,7 +39,7 @@ After building, the executable will be located in the `dist` directory.
 
 ### ⚡ Running an Example
 
-Let's run a basic HTTP request handler example provided in [ping.yaml](./examples/ping.yaml):
+To run a basic HTTP request handler example provided in [ping.yaml](./examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -68,13 +68,13 @@ Let's run a basic HTTP request handler example provided in [ping.yaml](./example
   code: pong
 ```
 
-To execute the workflow, use the following command:
+To execute the workflow, use:
 
 ```sh
 uniflow start --from-nodes example/ping.yaml
 ```
 
-To verify it's working, call the HTTP endpoint:
+Verify it's working by calling the HTTP endpoint:
 
 ```sh
 curl localhost:8000/ping
@@ -83,18 +83,18 @@ pong#
 
 ## ⚙️ Configuration
 
-You can configure settings through the `.uniflow.toml` file or system environment variables.
+Settings can be configured through the `.uniflow.toml` file or system environment variables.
 
 | TOML Key              | Environment Variable Key | Example                    |
-|----------------------|--------------------------|---------------------------|
-| `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`   |
-| `database.name`      | `DATABASE.NAME`          | -                         |
-| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                   |
-| `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
+|-----------------------|--------------------------|----------------------------|
+| `database.url`        | `DATABASE.URL`           | `mem://` or `mongodb://`   |
+| `database.name`       | `DATABASE.NAME`          | -                          |
+| `collection.nodes`    | `COLLECTION.NODES`       | `nodes`                    |
+| `collection.secrets`  | `COLLECTION.SECRETS`     | `secrets`                  |
 
 ## 📊 Benchmark
 
-Here are the benchmark results conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) environment using the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). The benchmark measures the performance of the [ping.yaml](./examples/ping.yaml) workflow, consisting of `listener`, `router`, and `snippet` nodes.
+Here are benchmark results conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) environment using the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). The benchmark measures the performance of the [ping.yaml](./examples/ping.yaml) workflow, consisting of `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -139,17 +139,13 @@ Percentage of the requests served within a certain time (ms)
 
 ## 📚 Learn More
 
-Your list is well-written and clear. Here’s a slightly more polished version:
-
 - [Getting Started](./docs/getting_started.md): Introduces CLI installation and workflow management.
 - [Key Concepts](./docs/key_concepts.md): Explains fundamental concepts like nodes, connections, ports, and packets.
 - [Architecture](./docs/architecture.md): Details the process of loading node specifications and executing workflows.
 - [Debugging](./docs/debugging.md): Covers how to start a debugging session, set breakpoints, and inspect states for effective debugging.
-- [User Extensions](./docs/user_extensions.md): Provides guidance on adding new features and integrating with existing services.
+- [User Extensions](./docs/user_extensions.md): Guides on adding new features and integrating with existing services.
 
 ## 🌐 Community and Support
-
-For questions or support regarding the project, use the following channels:
 
 - [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
 - [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bug reports and feature requests.
@@ -182,4 +178,3 @@ This project is distributed under the [MIT License](./LICENSE). You are free to 
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
 [repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
 [repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
-```

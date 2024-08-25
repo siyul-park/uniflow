@@ -110,6 +110,15 @@
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
 
 - kind: block
   name: nodes_read
@@ -119,6 +128,15 @@
       code: 'null'
     - kind: native
       opcode: nodes.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: nodes_update
@@ -128,6 +146,15 @@
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: nodes_delete
@@ -137,6 +164,14 @@
       code: 'null'
     - kind: native
       opcode: nodes.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
 
 - kind: block
   name: secrets_create
@@ -146,6 +181,15 @@
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
 
 - kind: block
   name: secrets_read
@@ -155,6 +199,15 @@
       code: 'null'
     - kind: native
       opcode: secrets.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: secrets_update
@@ -164,6 +217,15 @@
       code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
 
 - kind: block
   name: secrets_delete
@@ -173,6 +235,14 @@
       code: 'null'
     - kind: native
       opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
 
 - kind: switch
   name: catch
