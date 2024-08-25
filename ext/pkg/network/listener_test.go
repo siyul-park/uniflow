@@ -146,7 +146,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 				inPayload := inPck.Payload()
 
 				var req *HTTPPayload
-				_ = types.Decoder.Decode(inPayload, &req)
+				_ = types.Unmarshal(inPayload, &req)
 
 				outPck := packet.New(req.Body)
 				outReader.Receive(outPck)

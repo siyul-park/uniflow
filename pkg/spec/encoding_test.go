@@ -23,7 +23,7 @@ func TestSpecDecoder_Decode(t *testing.T) {
 		},
 		Fields: map[string]any{},
 	}
-	v, _ := types.Encoder.Encode(unstructured)
+	v, _ := types.Marshal(unstructured)
 
 	var decoded Spec
 	err := dec.Decode(v, &decoded)

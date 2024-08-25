@@ -8,16 +8,21 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
+// Marshaler is an interface for types that can marshal themselves into a Value.
 type Marshaler interface {
 	Marshal() (Value, error)
 }
 
+// Unmarshaler is an interface for types that can unmarshal a Value into themselves.
 type Unmarshaler interface {
 	Unmarshal(Value) error
 }
 
 var (
+	// Encoder is a global encoding assembler used to encode values into the custom Value type.
 	Encoder = encoding.NewEncodeAssembler[any, Value]()
+
+	// Decoder is a global decoding assembler used to decode values from the custom Value type.
 	Decoder = encoding.NewDecodeAssembler[Value, any]()
 )
 
@@ -47,6 +52,16 @@ func init() {
 	Decoder.Add(newErrorDecoder())
 	Decoder.Add(newExpandedDecoder())
 	Decoder.Add(newShortcutDecoder())
+}
+
+// Marshal encodes the given value into a Value using the global Encoder.
+func Marshal(val any) (Value, error) {
+	return Encoder.Encode(val)
+}
+
+// Unmarshal decodes the given Value into the provided target using the global Decoder.
+func Unmarshal(data Value, v any) error {
+	return Decoder.Decode(data, v)
 }
 
 func newShortcutEncoder() encoding.EncodeCompiler[any, Value] {

@@ -103,7 +103,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	if remains := len(ins) - offset; remains == 1 {
 		in := reflect.New(n.operator.Type().In(offset))
-		if err := types.Decoder.Decode(inPayload, in.Interface()); err != nil {
+		if err := types.Unmarshal(inPayload, in.Interface()); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 		ins[offset] = in.Elem()
@@ -117,7 +117,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 		for i := offset; i < len(ins); i++ {
 			in := reflect.New(n.operator.Type().In(i))
-			if err := types.Decoder.Decode(arguments[i-offset], in.Interface()); err != nil {
+			if err := types.Unmarshal(arguments[i-offset], in.Interface()); err != nil {
 				return nil, packet.New(types.NewError(err))
 			}
 			ins[i] = in.Elem()
@@ -137,7 +137,7 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	outPayloads := make([]types.Value, len(outs))
 	for i, out := range outs {
-		if outPayload, err := types.Encoder.Encode(out.Interface()); err != nil {
+		if outPayload, err := types.Marshal(out.Interface()); err != nil {
 			return nil, packet.New(types.NewError(err))
 		} else {
 			outPayloads[i] = outPayload

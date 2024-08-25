@@ -55,7 +55,7 @@ func (n *SnippetNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 
 	if output, err := n.fn(input); err != nil {
 		return nil, packet.New(types.NewError(err))
-	} else if outPayload, err := types.Encoder.Encode(output); err != nil {
+	} else if outPayload, err := types.Marshal(output); err != nil {
 		return nil, packet.New(types.NewError(err))
 	} else {
 		return packet.New(outPayload), nil

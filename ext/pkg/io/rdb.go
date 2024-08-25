@@ -162,7 +162,7 @@ func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		results = append(results, result)
 	}
 
-	outPayload, err := types.Encoder.Encode(results)
+	outPayload, err := types.Marshal(results)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

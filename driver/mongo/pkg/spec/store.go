@@ -125,13 +125,13 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 			spc.SetNamespace(resource.DefaultNamespace)
 		}
 
-		doc, err := types.Encoder.Encode(spc)
+		doc, err := types.Marshal(spc)
 		if err != nil {
 			return 0, err
 		}
 
 		unstructured := &spec.Unstructured{}
-		if err := types.Decoder.Decode(doc, &unstructured); err != nil {
+		if err := types.Unmarshal(doc, &unstructured); err != nil {
 			return 0, err
 		}
 
@@ -184,13 +184,13 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 		spc.SetNamespace(exist.GetNamespace())
 
-		doc, err := types.Encoder.Encode(spc)
+		doc, err := types.Marshal(spc)
 		if err != nil {
 			return 0, err
 		}
 
 		unstructured := &spec.Unstructured{}
-		if err := types.Decoder.Decode(doc, &unstructured); err != nil {
+		if err := types.Unmarshal(doc, &unstructured); err != nil {
 			return 0, err
 		}
 

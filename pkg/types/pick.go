@@ -5,7 +5,7 @@ func Pick[T any](obj Value, paths ...any) (T, bool) {
 	var val T
 	cur := obj
 	for _, path := range paths {
-		p, err := Encoder.Encode(path)
+		p, err := Marshal(path)
 		if err != nil {
 			return val, false
 		}
@@ -37,6 +37,5 @@ func Pick[T any](obj Value, paths ...any) (T, bool) {
 	if v, ok := cur.(T); ok {
 		return v, true
 	}
-	err := Decoder.Decode(cur, &val)
-	return val, err == nil
+	return val, Unmarshal(cur, &val) == nil
 }
