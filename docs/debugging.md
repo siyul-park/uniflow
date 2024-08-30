@@ -1,86 +1,86 @@
 # 🛠️ Debugging
 
-Using the debugger, you can track the execution flow of your application in real-time from the command line, pausing at specific points to analyze the state in detail.
+Using a debugger allows you to trace the execution flow of an application in real-time from the command line. It also enables you to pause execution at specific points to analyze the system state in detail.
 
 ## Getting Started
 
-To start the debugger, use the `start` command with the `--debug` flag. This will activate the debugger, allowing you to precisely control the application's execution via the command-line interface.
+To run the debugger, use the `start` command with the `--debug` flag. This command will activate the debugger, allowing you to control the application's execution in detail via the command-line interface.
 
 ```sh
 ./dist/uniflow start --debug
 ```
 
-## Key Commands
+## Commands
 
-When the debugger is running, you can use various commands to efficiently carry out debugging tasks. Below are some key commands and their usage during the debugging process.
+While the debugger is running, various commands can be used to efficiently perform debugging tasks. Below is a list of commonly used commands during the debugging process and how to utilize them.
 
 ### Quit
 
-Use this command to end the debugging session. To exit the session and return to the command line, enter the following:
+Use this command to exit the debugging session and return to the command line.
 
 ```sh
 (debug) quit
 ```
 
-Alternatively, you can use the `q` command to exit the session.
+This command can also be executed using `q`.
 
 ### Break
 
-Set a breakpoint to stop code execution at a specific point. This allows you to analyze the state of the program mid-execution and identify issues.
+You can set breakpoints to stop code execution at specific points. This allows you to inspect the system state during execution and diagnose issues.
 
 ```sh
-(debug) break               # Set a breakpoint on all symbols
-(debug) break <symbol>      # Set a breakpoint on a specific symbol
-(debug) break <symbol> <port>  # Set a breakpoint on a specific port of a symbol
+(debug) break                 # Set a breakpoint on all symbols
+(debug) break <symbol>        # Set a breakpoint on a specific symbol
+(debug) break <symbol> <port> # Set a breakpoint on a specific port of a symbol
 ```
 
-You can also use the `b` command for the same purpose.
+This command can also be shortened to `b`.
 
 ### Continue
 
-Resume execution from the current breakpoint. This command allows the program to run until it hits the next breakpoint.
+Use this command to resume execution from a breakpoint. The program will continue running until it reaches the next breakpoint.
 
 ```sh
 (debug) continue
 ```
 
-This command can also be executed using the `c` command.
+This command can also be executed using `c`.
 
 ### Delete
 
-Remove a set breakpoint. Each breakpoint has a unique ID, which can be used to delete a specific breakpoint.
+This command deletes set breakpoints. Each breakpoint has a unique ID, which you can use to delete a specific breakpoint.
 
 ```sh
-(debug) delete  # Delete the current breakpoint
-(debug) delete <breakpoint>  # Delete a specific breakpoint
+(debug) delete              # Delete the current breakpoint
+(debug) delete <breakpoint> # Delete a specific breakpoint
 ```
 
-This command can also be executed using the `d` command.
+This command can also be shortened to `d`.
 
 ### Breakpoints
 
-List all currently set breakpoints. This command allows you to view the location and status of each breakpoint.
+This command lists all currently set breakpoints. It allows you to check the location and status of each breakpoint.
 
 ```sh
 (debug) breakpoints
 ```
 
-You can also use the `bps` command to achieve the same result.
+This command can also be executed using `bps`.
 
 ### Breakpoint
 
-Display detailed information about a specific breakpoint. Use the breakpoint's ID to check its status and other details.
+To view detailed information about a specific breakpoint, use this command. You can query the status of a breakpoint using its ID.
 
 ```sh
-(debug) breakpoint  # View details of the current breakpoint
-(debug) breakpoint <breakpoint>  # View details of a specific breakpoint
+(debug) breakpoint              # View details of the current breakpoint
+(debug) breakpoint <breakpoint> # View details of a specific breakpoint
 ```
 
-This command can also be used as `bp`.
+This command can also be shortened to `bp`.
 
 ### Symbols
 
-List all available symbols. Symbols represent the nodes currently being executed at runtime. This command helps you view the complete list of symbols.
+This command lists all currently available symbols. Symbols represent nodes running at runtime, and this command allows you to view the entire list of symbols.
 
 ```sh
 (debug) symbols
@@ -90,42 +90,53 @@ This command can also be executed using `sbs`.
 
 ### Symbol
 
-Display detailed information about a specific symbol. Enter the symbol's ID or name to view its status and related information.
+To view detailed information about a specific symbol, use this command. By entering the symbol's ID or name, you can check its status and related information.
 
 ```sh
-(debug) symbol  # View details of the current symbol
-(debug) symbol <symbol>  # View details of a specific symbol
+(debug) symbol              # View details of the current symbol
+(debug) symbol <symbol>     # View details of a specific symbol
 ```
 
-This command can also be executed using `sb`.
+This command can also be shortened to `sb`.
 
 ### Processes
 
-List all currently running processes. This command allows you to check the status of the processes active in the system.
+This command lists all currently running processes. Use it to check the status of processes operating within the system.
 
 ```sh
 (debug) processes
 ```
 
-You can also use the `procs` command for the same purpose.
+This command can also be executed using `procs`.
 
 ### Process
 
-Display detailed information about a specific process. Enter the process ID to view its status and related details.
+To view detailed information about a specific process, use this command. You can check the status and related information of a process by using its ID.
 
 ```sh
-(debug) process  # View details of the current process
-(debug) process <process>  # View details of a specific process
+(debug) process              # View details of the current process
+(debug) process <process>    # View details of a specific process
 ```
 
-This command can also be executed using `proc`.
+This command can also be shortened to `proc`.
+
+### Frames
+
+This command lists all currently active frames. Frames represent a specific execution state of the code, and this command allows you to view the status of the frames being processed.
+
+```sh
+(debug) frames              # View frame information of the current process
+(debug) frames <process>    # View frame information of a specific process
+```
+
+This command can also be executed using `frms`.
 
 ### Frame
 
-Display detailed information about the current frame. A frame represents a specific execution state in the code, and this command allows you to examine the current frame in detail.
+To view detailed information about the current frame, use this command. It allows you to closely inspect the state of the frame that is currently executing.
 
 ```sh
 (debug) frame
 ```
 
-This command can also be used as `fm`.
+This command can also be shortened to `frm`.

@@ -219,15 +219,26 @@ func (d *Debugger) hooks(proc *process.Process, sb *symbol.Symbol, in *port.InPo
 	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
 		d.mu.Lock()
 
-		frame := &Frame{
-			Process: proc,
-			Symbol:  sb,
-			InPort:  in,
-			OutPort: out,
-			InPck:   pck,
-			InTime:  time.Now(),
+		var frame *Frame
+		for _, f := range d.frames[proc.ID()] {
+			if f.Symbol == sb && (f.InPort == in || f.OutPort == out) && f.InPck == nil {
+				f.InPck = pck
+				f.InTime = time.Now()
+				frame = f
+				break
+			}
 		}
-		d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
+		if frame == nil {
+			frame = &Frame{
+				Process: proc,
+				Symbol:  sb,
+				InPort:  in,
+				OutPort: out,
+				InPck:   pck,
+				InTime:  time.Now(),
+			}
+			d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
+		}
 
 		watchers := d.watchers[:]
 		d.mu.Unlock()
