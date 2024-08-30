@@ -203,11 +203,12 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		var payload types.Value
-		go func() {
-			proc := process.New()
-			defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
+		var payload types.Value
+
+		go func() {
 			writer := out.Open(proc)
 
 			pck := packet.New(payload)
@@ -313,11 +314,12 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		var payload types.Value
-		go func() {
-			proc := process.New()
-			defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
+		var payload types.Value
+
+		go func() {
 			writer := out.Open(proc)
 
 			pck := packet.New(payload)
@@ -367,11 +369,11 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		proc := process.New()
+		defer proc.Exit(nil)
 
 		var payload types.Value
-		go func() {
-			defer proc.Exit(nil)
 
+		go func() {
 			writer := out.Open(proc)
 
 			pck := packet.New(payload)
@@ -421,11 +423,11 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		proc := process.New()
+		defer proc.Exit(nil)
 
 		var payload types.Value
-		go func() {
-			defer proc.Exit(nil)
 
+		go func() {
 			writer := out.Open(proc)
 
 			pck := packet.New(payload)
@@ -475,13 +477,12 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		proc := process.New()
+		defer proc.Exit(nil)
 
 		var payload types.Value
+
 		go func() {
-			defer proc.Exit(nil)
-
 			writer := out.Open(proc)
-
 			pck := packet.New(payload)
 
 			writer.Write(pck)
@@ -530,11 +531,12 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		var payload types.Value
-		go func() {
-			proc := process.New()
-			defer proc.Exit(nil)
+		proc := process.New()
+		defer proc.Exit(nil)
 
+		var payload types.Value
+
+		go func() {
 			writer := out.Open(proc)
 
 			pck := packet.New(payload)
@@ -550,6 +552,122 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data, _ := json.Marshal(types.InterfaceOf(payload))
+		assert.Contains(t, m.View(), string(data))
+
+		m.breakpoints[0].Next()
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("frames", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
+			}),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		var payload types.Value
+
+		go func() {
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue("frames")
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
+		assert.Contains(t, m.View(), string(data))
+
+		m.breakpoints[0].Next()
+		m.breakpoints[0].Done()
+	})
+
+	t.Run("frames <process>", func(t *testing.T) {
+		m := &debugModel{
+			input:    textinput.New(),
+			debugger: debug.NewDebugger(),
+		}
+		defer m.Close()
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+				return inPck, nil
+			}),
+		}
+		defer sb.Close()
+
+		out := port.NewOut()
+		defer out.Close()
+
+		out.Link(sb.In(node.PortIn))
+
+		m.debugger.Load(sb)
+		defer m.debugger.Unload(sb)
+
+		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		var payload types.Value
+
+		go func() {
+			writer := out.Open(proc)
+
+			pck := packet.New(payload)
+
+			writer.Write(pck)
+			<-writer.Receive()
+		}()
+
+		m.breakpoints[0].Next()
+		m.Update(m.breakpoints[0])
+
+		m.input.SetValue(fmt.Sprintf("frames %s", proc.ID()))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
 		assert.Contains(t, m.View(), string(data))
 
 		m.breakpoints[0].Next()

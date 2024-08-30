@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/debug"
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -43,6 +43,7 @@ type debugView interface {
 type (
 	errDebugView        struct{ err error }
 	frameDebugView      struct{ frame *debug.Frame }
+	framesDebugView     struct{ frames []*debug.Frame }
 	breakpointDebugView struct {
 		id         int
 		breakpoint *debug.Breakpoint
@@ -301,7 +302,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.view = &processDebugView{process: proc}
 				return m, nil
-			case "frame", "fm":
+			case "frame", "frm":
 				var frame *debug.Frame
 				if len(m.queue) > 0 {
 					breakpoint := m.queue[0]
@@ -312,6 +313,32 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				m.view = &frameDebugView{frame: frame}
+				return m, nil
+			case "frames", "frms":
+				var proc *process.Process
+				if len(args) > 1 {
+					id, _ := uuid.FromString(args[1])
+					proc, _ = m.debugger.Process(id)
+				} else if len(m.queue) > 0 {
+					breakpoint := m.queue[0]
+					frame := breakpoint.Frame()
+					if frame != nil {
+						proc = frame.Process
+					} else {
+						proc = breakpoint.Process()
+					}
+				}
+
+				var frames []*debug.Frame
+				if proc != nil {
+					frames, _ = m.debugger.Frames(proc.ID())
+				}
+
+				if frames == nil {
+					m.view = nil
+					return m, nil
+				}
+				m.view = &framesDebugView{frames: frames}
 				return m, nil
 			}
 		}
@@ -380,18 +407,73 @@ func (v *errDebugView) View() string {
 }
 
 func (v *frameDebugView) View() string {
-	var pck *packet.Packet
-	if v.frame.OutPck != nil {
-		pck = v.frame.OutPck
-	} else if v.frame.InPck != nil {
-		pck = v.frame.InPck
-	}
-
-	data, err := json.MarshalIndent(types.InterfaceOf(pck.Payload()), "", "    ")
+	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
 	return string(data)
+}
+
+func (v *frameDebugView) Interface() map[string]any {
+	value := map[string]any{}
+
+	if v.frame.Process != nil {
+		value["process"] = v.frame.Process.ID()
+	}
+
+	if v.frame.Symbol != nil {
+		if v.frame.Symbol.Name() != "" {
+			value["symbol"] = v.frame.Symbol.Name()
+		} else {
+			value["symbol"] = v.frame.Symbol.ID()
+		}
+
+		if v.frame.InPort != nil {
+			for _, name := range v.frame.Symbol.Ins() {
+				if v.frame.Symbol.In(name) == v.frame.InPort {
+					value["port"] = name
+					break
+				}
+			}
+		}
+
+		if v.frame.OutPort != nil {
+			for _, name := range v.frame.Symbol.Outs() {
+				if v.frame.Symbol.Out(name) == v.frame.OutPort {
+					value["port"] = name
+					break
+				}
+			}
+		}
+	}
+
+	if v.frame.InPck != nil {
+		value["input"] = types.InterfaceOf(v.frame.InPck.Payload())
+	}
+
+	if v.frame.OutPck != nil {
+		value["output"] = types.InterfaceOf(v.frame.OutPck.Payload())
+	}
+
+	if v.frame.InTime != (time.Time{}) && v.frame.OutTime != (time.Time{}) {
+		value["time"] = v.frame.OutTime.Sub(v.frame.InTime).Abs().String()
+	}
+
+	return value
+}
+
+func (v *framesDebugView) View() string {
+	buffer := bytes.NewBuffer(nil)
+	writer := resource.NewWriter(buffer)
+
+	values := make([]any, 0, len(v.frames))
+	for _, frm := range v.frames {
+		value := (&frameDebugView{frame: frm}).Interface()
+		values = append(values, value)
+	}
+
+	writer.Write(values)
+	return buffer.String()
 }
 
 func (v *breakpointDebugView) View() string {
