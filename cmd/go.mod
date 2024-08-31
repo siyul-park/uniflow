@@ -3,7 +3,7 @@ module github.com/siyul-park/uniflow/cmd
 go 1.23.0
 
 require (
-	github.com/go-faker/faker/v4 v4.4.2
+	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/mattn/go-sqlite3 v1.14.22
