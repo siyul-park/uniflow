@@ -18,7 +18,7 @@ import (
 )
 
 func TestReadNodeCodec_Decode(t *testing.T) {
-	codec := NewReadNodeCodec()
+	codec := NewReadNodeCodec(NewOSFileSystem())
 
 	spec := &ReadNodeSpec{
 		Filename: "stdin",

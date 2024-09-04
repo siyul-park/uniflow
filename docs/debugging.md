@@ -22,7 +22,7 @@ Use this command to exit the debugging session and return to the command line.
 (debug) quit
 ```
 
-This command can also be executed using `q`.
+This command can also be shortened to `q`.
 
 ### Break
 
@@ -44,7 +44,7 @@ Use this command to resume execution from a breakpoint. The program will continu
 (debug) continue
 ```
 
-This command can also be executed using `c`.
+This command can also be shortened to `c`.
 
 ### Delete
 
@@ -65,7 +65,7 @@ This command lists all currently set breakpoints. It allows you to check the loc
 (debug) breakpoints
 ```
 
-This command can also be executed using `bps`.
+This command can also be shortened to `bps`.
 
 ### Breakpoint
 
@@ -86,7 +86,7 @@ This command lists all currently available symbols. Symbols represent nodes runn
 (debug) symbols
 ```
 
-This command can also be executed using `sbs`.
+This command can also be shortened to `sbs`.
 
 ### Symbol
 
@@ -107,7 +107,7 @@ This command lists all currently running processes. Use it to check the status o
 (debug) processes
 ```
 
-This command can also be executed using `procs`.
+This command can also be shortened to `procs`.
 
 ### Process
 
@@ -129,7 +129,7 @@ This command lists all currently active frames. Frames represent a specific exec
 (debug) frames <process>    # View frame information of a specific process
 ```
 
-This command can also be executed using `frms`.
+This command can also be shortened to `frms`.
 
 ### Frame
 
