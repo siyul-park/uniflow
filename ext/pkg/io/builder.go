@@ -8,11 +8,11 @@ func AddToScheme(fs FileSystem) scheme.Register {
 		s.AddKnownType(KindSQL, &SQLNodeSpec{})
 		s.AddCodec(KindSQL, NewSQLNodeCodec())
 
-		s.AddKnownType(KindRead, &ReadNodeSpec{})
-		s.AddCodec(KindRead, NewReadNodeCodec(fs))
+		s.AddKnownType(KindPrint, &PrintNodeSpec{})
+		s.AddCodec(KindPrint, NewPrintNodeCodec(fs))
 
-		s.AddKnownType(KindWrite, &WriteNodeSpec{})
-		s.AddCodec(KindWrite, NewWriteNodeCodec(fs))
+		s.AddKnownType(KindScan, &ScanNodeSpec{})
+		s.AddCodec(KindScan, NewScanNodeCodec(fs))
 
 		return nil
 	})
