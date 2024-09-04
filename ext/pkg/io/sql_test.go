@@ -17,10 +17,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRDBNodeCodec_Decode(t *testing.T) {
-	codec := NewRDBNodeCodec()
+func TestSQLNodeCodec_Decode(t *testing.T) {
+	codec := NewSQLNodeCodec()
 
-	spec := &RDBNodeSpec{
+	spec := &SQLNodeSpec{
 		Driver: "sqlite3",
 		Source: ":memory:",
 	}
@@ -31,20 +31,20 @@ func TestRDBNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewRDBNode(t *testing.T) {
+func TestNewSQLNode(t *testing.T) {
 	db, _ := sqlx.Connect("sqlite3", ":memory:")
 	defer db.Close()
 
-	n := NewRDBNode(db)
+	n := NewSQLNode(db)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestRDBNode_Isolation(t *testing.T) {
+func TestSQLNode_Isolation(t *testing.T) {
 	db, _ := sqlx.Connect("sqlite3", ":memory:")
 	defer db.Close()
 
-	n := NewRDBNode(db)
+	n := NewSQLNode(db)
 	defer n.Close()
 
 	isolation := sql.LevelSerializable
@@ -52,7 +52,7 @@ func TestRDBNode_Isolation(t *testing.T) {
 	assert.Equal(t, isolation, n.Isolation())
 }
 
-func TestRDBNode_SendAndReceive(t *testing.T) {
+func TestSQLNode_SendAndReceive(t *testing.T) {
 	t.Run("RawSQL", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
@@ -60,7 +60,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
 		defer db.Close()
 
-		n := NewRDBNode(db)
+		n := NewSQLNode(db)
 		defer n.Close()
 
 		_, err := db.ExecContext(ctx,
@@ -117,7 +117,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 		db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
 		defer db.Close()
 
-		n := NewRDBNode(db)
+		n := NewSQLNode(db)
 		defer n.Close()
 
 		_, err := db.ExecContext(ctx,
@@ -171,7 +171,7 @@ func TestRDBNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
+func BenchmarkSQLNode_SendAndReceive(b *testing.B) {
 	db, _ := sqlx.Connect("sqlite3", "file::memory:?cache=shared")
 	defer db.Close()
 
@@ -182,7 +182,7 @@ func BenchmarkRDBNode_SendAndReceive(b *testing.B) {
 			")",
 	)
 
-	n := NewRDBNode(db)
+	n := NewSQLNode(db)
 	defer n.Close()
 
 	in := port.NewOut()
