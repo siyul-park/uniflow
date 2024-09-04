@@ -7,11 +7,11 @@ import (
 
 // FileSystem interface abstracts the file operations.
 type FileSystem interface {
-	OpenFile(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
+	Open(name string, flag int) (io.ReadWriteCloser, error)
 }
 
 // FileOpenFunc is a function type that matches the signature of os.OpenFile.
-type FileOpenFunc func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error)
+type FileOpenFunc func(name string, flag int) (io.ReadWriteCloser, error)
 
 type nopReadWriteCloser struct {
 	io.ReadWriter
@@ -21,7 +21,7 @@ var _ FileSystem = (FileOpenFunc)(nil)
 
 // NewOSFileSystem creates a new FileSystem that wraps os.OpenFile with special cases for stdin, stdout, and stderr.
 func NewOSFileSystem() FileSystem {
-	return FileOpenFunc(func(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+	return FileOpenFunc(func(name string, flag int) (io.ReadWriteCloser, error) {
 		switch name {
 		case "/dev/stdin", "stdin":
 			return &nopReadWriteCloser{os.Stdin}, nil
@@ -30,14 +30,14 @@ func NewOSFileSystem() FileSystem {
 		case "/dev/stderr", "stderr":
 			return &nopReadWriteCloser{os.Stderr}, nil
 		default:
-			return os.OpenFile(name, flag, perm)
+			return os.OpenFile(name, flag, 0666)
 		}
 	})
 }
 
-// OpenFile opens a file with the given name, flag, and permissions.
-func (f FileOpenFunc) OpenFile(name string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
-	return f(name, flag, perm)
+// Open opens a file with the given name, flag, and permissions.
+func (f FileOpenFunc) Open(name string, flag int) (io.ReadWriteCloser, error) {
+	return f(name, flag)
 }
 
 // Close is a no-op for ReadWriteCloserWrapper since stdin, stdout, and stderr shouldn't be closed.

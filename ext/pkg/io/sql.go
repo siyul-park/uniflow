@@ -55,7 +55,6 @@ func NewSQLNode(db *sqlx.DB) *SQLNode {
 		txs: process.NewLocal[*sqlx.Tx](),
 	}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
-
 	return n
 }
 

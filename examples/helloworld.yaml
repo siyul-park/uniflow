@@ -11,5 +11,5 @@
     - kind: snippet
       language: text
       code: Hello, World!
-    - kind: write
+    - kind: print
       filename: /dev/stdout
