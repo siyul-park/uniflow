@@ -37,8 +37,7 @@ type ReadNode struct {
 const KindRead = "read"
 
 // NewReadNodeCodec creates a codec for ReadNodeSpec to ReadNode conversion.
-func NewReadNodeCodec() scheme.Codec {
-	fs := NewOSFileSystem()
+func NewReadNodeCodec(fs FileSystem) scheme.Codec {
 	return scheme.CodecWithType(func(spec *ReadNodeSpec) (node.Node, error) {
 		n := NewReadNode(fs)
 		if spec.Filename != "" {

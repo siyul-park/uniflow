@@ -37,8 +37,7 @@ type WriteNode struct {
 const KindWrite = "write"
 
 // NewWriteNodeCodec creates a codec for WriteNodeSpec to WriteNode conversion.
-func NewWriteNodeCodec() scheme.Codec {
-	fs := NewOSFileSystem()
+func NewWriteNodeCodec(fs FileSystem) scheme.Codec {
 	return scheme.CodecWithType(func(spec *WriteNodeSpec) (node.Node, error) {
 		n := NewWriteNode(fs)
 		flag := os.O_WRONLY | os.O_CREATE

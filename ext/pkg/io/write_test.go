@@ -18,7 +18,7 @@ import (
 )
 
 func TestWriteNodeCodec_Decode(t *testing.T) {
-	codec := NewWriteNodeCodec()
+	codec := NewWriteNodeCodec(NewOSFileSystem())
 
 	spec := &WriteNodeSpec{
 		Filename: "stdout",

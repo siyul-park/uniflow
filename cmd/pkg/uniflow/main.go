@@ -119,7 +119,7 @@ func main() {
 	nativeTable.Store(system.CodeDeleteSecrets, system.DeleteSecrets(secretStore))
 
 	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
-	schemeBuilder.Register(io.AddToScheme())
+	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
 	schemeBuilder.Register(system.AddToScheme(nativeTable))
 
