@@ -15,16 +15,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// RDBNodeSpec holds the specifications for creating a RDBNode.
-type RDBNodeSpec struct {
+// SQLNodeSpec holds the specifications for creating a SQLNode.
+type SQLNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Driver    string             `map:"driver"`
 	Source    string             `map:"source"`
 	Isolation sql.IsolationLevel `map:"isolation,omitempty"`
 }
 
-// RDBNode represents a node for interacting with a relational database.
-type RDBNode struct {
+// SQLNode represents a node for interacting with a relational database.
+type SQLNode struct {
 	*node.OneToOneNode
 	db        *sqlx.DB
 	txs       *process.Local[*sqlx.Tx]
@@ -32,25 +32,25 @@ type RDBNode struct {
 	mu        sync.RWMutex
 }
 
-const KindRDB = "rdb"
+const KindSQL = "sql"
 
-// NewRDBNodeCodec creates a new codec for RDBNodeSpec.
-func NewRDBNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *RDBNodeSpec) (node.Node, error) {
+// NewSQLNodeCodec creates a new codec for SQLNodeSpec.
+func NewSQLNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *SQLNodeSpec) (node.Node, error) {
 		db, err := sqlx.Connect(spec.Driver, spec.Source)
 		if err != nil {
 			return nil, err
 		}
 
-		n := NewRDBNode(db)
+		n := NewSQLNode(db)
 		n.SetIsolation(spec.Isolation)
 		return n, nil
 	})
 }
 
-// NewRDBNode creates a new RDBNode.
-func NewRDBNode(db *sqlx.DB) *RDBNode {
-	n := &RDBNode{
+// NewSQLNode creates a new SQLNode.
+func NewSQLNode(db *sqlx.DB) *SQLNode {
+	n := &SQLNode{
 		db:  db,
 		txs: process.NewLocal[*sqlx.Tx](),
 	}
@@ -59,16 +59,16 @@ func NewRDBNode(db *sqlx.DB) *RDBNode {
 	return n
 }
 
-// Isolation returns the isolation level of the RDBNode.
-func (n *RDBNode) Isolation() sql.IsolationLevel {
+// Isolation returns the isolation level of the SQLNode.
+func (n *SQLNode) Isolation() sql.IsolationLevel {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.isolation
 }
 
-// SetIsolation sets the isolation level of the RDBNode.
-func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
+// SetIsolation sets the isolation level of the SQLNode.
+func (n *SQLNode) SetIsolation(isolation sql.IsolationLevel) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (n *RDBNode) SetIsolation(isolation sql.IsolationLevel) {
 }
 
 // Close closes resource associated with the node.
-func (n *RDBNode) Close() error {
+func (n *SQLNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -86,7 +86,7 @@ func (n *RDBNode) Close() error {
 	return n.db.Close()
 }
 
-func (n *RDBNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 

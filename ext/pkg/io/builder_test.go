@@ -13,7 +13,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme(NewOSFileSystem()).AddToScheme(s)
 	assert.NoError(t, err)
 
-	tests := []string{KindRDB, KindWrite}
+	tests := []string{KindSQL, KindWrite}
 
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
