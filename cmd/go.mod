@@ -6,7 +6,7 @@ require (
 	github.com/go-faker/faker/v4 v4.4.2
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.9
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/siyul-park/uniflow v0.9.0
 	github.com/siyul-park/uniflow/driver/mongo v0.9.0
 	github.com/siyul-park/uniflow/ext v0.9.0

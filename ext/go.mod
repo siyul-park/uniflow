@@ -12,7 +12,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/siyul-park/uniflow v0.9.0
