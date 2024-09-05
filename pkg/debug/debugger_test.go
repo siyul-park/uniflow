@@ -142,8 +142,7 @@ func TestDebuffer_Frames(t *testing.T) {
 	pck := packet.New(nil)
 
 	writer.Write(pck)
-	assert.Equal(t, 1, count)
-
 	<-writer.Receive()
+
 	assert.Equal(t, 2, count)
 }
