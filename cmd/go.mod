@@ -33,7 +33,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/benbjohnson/immutable v0.4.3 // indirect
-	github.com/charmbracelet/bubbles v0.18.0
+	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v0.27.0 // indirect
 	github.com/charmbracelet/x/ansi v0.1.4 // indirect
 	github.com/charmbracelet/x/input v0.1.0 // indirect
