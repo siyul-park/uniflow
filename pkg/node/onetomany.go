@@ -61,22 +61,20 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	}
 
 	if NameOfPort(name) == PortOut {
-		index, ok := IndexOfPort(name)
-		if ok {
-			for i := 0; i <= index; i++ {
-				if len(n.outPorts) <= i {
-					outPort := port.NewOut()
-					n.outPorts = append(n.outPorts, outPort)
-					if n.action != nil {
-						i := i
-						outPort.AddListener(port.ListenFunc(func(proc *process.Process) {
-							n.backward(proc, i)
-						}))
-					}
+		index, _ := IndexOfPort(name)
+		for i := 0; i <= index; i++ {
+			if len(n.outPorts) <= i {
+				outPort := port.NewOut()
+				n.outPorts = append(n.outPorts, outPort)
+				if n.action != nil {
+					i := i
+					outPort.AddListener(port.ListenFunc(func(proc *process.Process) {
+						n.backward(proc, i)
+					}))
 				}
 			}
-			return n.outPorts[index]
 		}
+		return n.outPorts[index]
 	}
 
 	return nil

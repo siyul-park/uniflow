@@ -45,22 +45,20 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 	defer n.mu.Unlock()
 
 	if NameOfPort(name) == PortIn {
-		index, ok := IndexOfPort(name)
-		if ok {
-			for i := 0; i <= index; i++ {
-				if len(n.inPorts) <= i {
-					inPort := port.NewIn()
-					n.inPorts = append(n.inPorts, inPort)
-					if n.action != nil {
-						i := i
-						inPort.AddListener(port.ListenFunc(func(proc *process.Process) {
-							n.forward(proc, i)
-						}))
-					}
+		index, _ := IndexOfPort(name)
+		for i := 0; i <= index; i++ {
+			if len(n.inPorts) <= i {
+				inPort := port.NewIn()
+				n.inPorts = append(n.inPorts, inPort)
+				if n.action != nil {
+					i := i
+					inPort.AddListener(port.ListenFunc(func(proc *process.Process) {
+						n.forward(proc, i)
+					}))
 				}
 			}
-			return n.inPorts[index]
 		}
+		return n.inPorts[index]
 	}
 
 	return nil
