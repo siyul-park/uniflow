@@ -114,7 +114,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 		n.tracer.Read(inReaders[index], inPck)
 
 		if inPcks := readGroup.Read(inReaders[index], inPck); len(inPcks) < len(inReaders) {
-			n.tracer.Transform(inPck, packet.None)
+			n.tracer.Reduce(inPck)
 		} else if outPck, errPck := n.action(proc, inPcks); errPck != nil {
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
@@ -122,7 +122,7 @@ func (n *ManyToOneNode) forward(proc *process.Process, index int) {
 			n.tracer.Transform(inPck, outPck)
 			n.tracer.Write(outWriter, outPck)
 		} else {
-			n.tracer.Transform(inPck, packet.None)
+			n.tracer.Reduce(inPck)
 		}
 	}
 }

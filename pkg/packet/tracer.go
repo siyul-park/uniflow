@@ -49,14 +49,18 @@ func (t *Tracer) Transform(source, target *Packet) {
 		return
 	}
 
-	if target != None {
-		t.sources[target] = append(t.sources[target], source)
-		t.targets[source] = append(t.targets[source], target)
-		t.receives[source] = append(t.receives[source], nil)
-	} else {
-		t.handle(source)
-		t.receive(source)
-	}
+	t.sources[target] = append(t.sources[target], source)
+	t.targets[source] = append(t.targets[source], target)
+	t.receives[source] = append(t.receives[source], nil)
+}
+
+// Reduce processes a packet and its subsequent transformations.
+func (t *Tracer) Reduce(pck *Packet) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.handle(pck)
+	t.receive(pck)
 }
 
 // Read logs a packet being read by a specific reader.
