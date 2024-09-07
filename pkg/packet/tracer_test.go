@@ -88,6 +88,31 @@ func TestTracer_Transform(t *testing.T) {
 	assert.Equal(t, pck3, pck4)
 }
 
+func TestTracer_Reduce(t *testing.T) {
+	w1 := NewWriter()
+	defer w1.Close()
+
+	r1 := NewReader()
+	defer r1.Close()
+
+	w1.Link(r1)
+
+	tr := NewTracer()
+	defer tr.Close()
+
+	pck1 := New(nil)
+
+	w1.Write(pck1)
+	<-r1.Read()
+
+	tr.Read(r1, pck1)
+	tr.Reduce(pck1)
+
+	pck2, ok := <-w1.Receive()
+	assert.True(t, ok)
+	assert.Equal(t, None, pck2)
+}
+
 func TestTracer_ReadAndWriteAndReceive(t *testing.T) {
 	w1 := NewWriter()
 	defer w1.Close()

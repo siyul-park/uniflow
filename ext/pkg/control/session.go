@@ -139,7 +139,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 			n.tracer.Write(outWriter, outPck)
 		}
 		if len(outPcks) == 0 {
-			n.tracer.Transform(inPck, packet.None)
+			n.tracer.Reduce(inPck)
 		}
 	}
 }

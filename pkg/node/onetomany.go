@@ -113,21 +113,22 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else {
-			count := 0
 			for i, outPck := range outPcks {
 				if i < len(outWriters) && outPck != nil {
 					n.tracer.Transform(inPck, outPck)
+				}
+			}
+
+			count := 0
+			for i, outPck := range outPcks {
+				if i < len(outWriters) && outPck != nil {
+					n.tracer.Write(outWriters[i], outPck)
 					count++
 				}
 			}
-			if count > 0 {
-				for i, outPck := range outPcks {
-					if i < len(outWriters) && outPck != nil {
-						n.tracer.Write(outWriters[i], outPck)
-					}
-				}
-			} else {
-				n.tracer.Transform(inPck, packet.None)
+
+			if count == 0 {
+				n.tracer.Reduce(inPck)
 			}
 		}
 	}
