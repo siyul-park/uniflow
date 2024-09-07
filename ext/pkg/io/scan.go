@@ -71,7 +71,7 @@ func NewDynScanNode(fs FileSystem) *DynScanNode {
 func (n *ScanNode) Close() error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	
+
 	if err := n.OneToOneNode.Close(); err != nil {
 		return err
 	}

@@ -63,7 +63,7 @@ func NewNativeTable() *NativeTable {
 func (t *NativeTable) Store(opcode string, fn any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	t.data[opcode] = fn
 }
 
@@ -71,7 +71,7 @@ func (t *NativeTable) Store(opcode string, fn any) {
 func (t *NativeTable) Load(opcode string) (any, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	
+
 	fn, ok := t.data[opcode]
 	if !ok {
 		return nil, ErrInvalidOperation

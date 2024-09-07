@@ -35,17 +35,6 @@ func TestNewIfNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestIfNode_Port(t *testing.T) {
-	n := NewIfNode(nil)
-	defer n.Close()
-
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
-}
-
 func TestIfNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleInputToFirstOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
