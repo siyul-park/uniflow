@@ -1,11 +1,21 @@
 package network
 
 import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/phayes/freeport"
@@ -17,6 +27,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/http2"
 )
 
 func TestListenNodeCodec_Decode(t *testing.T) {
@@ -57,29 +68,103 @@ func TestHTTPListenNode_Port(t *testing.T) {
 }
 
 func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
-	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	t.Run("TLS", func(t *testing.T) {
+		port, err := freeport.GetFreePort()
+		assert.NoError(t, err)
 
-	n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
-	defer n.Close()
+		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
+		defer n.Close()
 
-	err = n.Listen()
-	assert.NoError(t, err)
+		priv, _ := rsa.GenerateKey(rand.Reader, 2048)
 
-	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
-	assert.NoError(t, err)
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				Organization: []string{"Test Org"},
+			},
+			NotBefore:             time.Now(),
+			NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			BasicConstraintsValid: true,
+			IsCA:                  true,
+		}
 
-	err = n.Shutdown()
-	assert.NoError(t, err)
+		template.IPAddresses = append(template.IPAddresses, net.ParseIP("127.0.0.1"))
 
-	err = n.Listen()
-	assert.NoError(t, err)
+		derBytes, _ := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 
-	_, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
-	assert.NoError(t, err)
+		certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+		keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 
-	err = n.Shutdown()
-	assert.NoError(t, err)
+		err = n.TLS(string(certPEM), string(keyPEM))
+		assert.NoError(t, err)
+
+		err = n.Listen()
+		assert.NoError(t, err)
+
+		client := &http.Client{
+			Timeout: 5 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		}
+
+		_, err = client.Get(fmt.Sprintf("https://127.0.0.1:%d", port))
+		assert.NoError(t, err)
+
+		err = n.Shutdown()
+		assert.NoError(t, err)
+
+	})
+
+	t.Run("HTTP/1.1", func(t *testing.T) {
+		port, err := freeport.GetFreePort()
+		assert.NoError(t, err)
+
+		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
+		defer n.Close()
+
+		err = n.Listen()
+		assert.NoError(t, err)
+
+		client := http.Client{}
+
+		_, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
+		assert.NoError(t, err)
+
+		err = n.Shutdown()
+		assert.NoError(t, err)
+	})
+
+	t.Run("HTTP/2", func(t *testing.T) {
+		port, err := freeport.GetFreePort()
+		assert.NoError(t, err)
+
+		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
+		defer n.Close()
+
+		err = n.Listen()
+		assert.NoError(t, err)
+
+		client := http.Client{
+			Transport: &http2.Transport{
+				AllowHTTP: true,
+				DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+					var d net.Dialer
+					return d.DialContext(ctx, network, addr)
+				},
+			},
+		}
+
+		_, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
+		assert.NoError(t, err)
+
+		err = n.Shutdown()
+		assert.NoError(t, err)
+	})
 }
 
 func TestHTTPListenNode_ServeHTTP(t *testing.T) {

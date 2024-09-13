@@ -2,6 +2,7 @@ package network
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +19,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 // ListenNodeSpec holds the specifications for creating a ListenNode.
@@ -26,6 +29,8 @@ type ListenNodeSpec struct {
 	Protocol  string `map:"protocol"`
 	Host      string `map:"host,omitempty"`
 	Port      int    `map:"port"`
+	Cert      string `map:"cert,omitempty"`
+	Key       string `map:"key,omitempty"`
 }
 
 // HTTPListenNode represents a Node for handling HTTP requests.
@@ -52,7 +57,14 @@ func NewListenNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *ListenNodeSpec) (node.Node, error) {
 		switch spec.Protocol {
 		case ProtocolHTTP:
-			return NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port)), nil
+			n := NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
+			if spec.Cert != "" || spec.Key != "" {
+				if err := n.TLS(spec.Cert, spec.Key); err != nil {
+					n.Close()
+					return nil, err
+				}
+			}
+			return n, nil
 		}
 		return nil, errors.WithStack(ErrInvalidProtocol)
 	})
@@ -103,6 +115,24 @@ func (n *HTTPListenNode) Address() net.Addr {
 	return n.listener.Addr()
 }
 
+// TLS configures the HTTP server to use TLS with the provided certificate and key.
+func (n *HTTPListenNode) TLS(cert, key string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	certificate, err := tls.X509KeyPair([]byte(cert), []byte(key))
+	if err != nil {
+		return err
+	}
+
+	s := n.server
+	s.TLSConfig = new(tls.Config)
+	s.TLSConfig.Certificates = []tls.Certificate{certificate}
+	s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, "h2")
+
+	return nil
+}
+
 // Listen starts the HTTP server.
 func (n *HTTPListenNode) Listen() error {
 	n.mu.Lock()
@@ -116,6 +146,14 @@ func (n *HTTPListenNode) Listen() error {
 	if err != nil {
 		return err
 	}
+
+	if n.server.TLSConfig != nil {
+		listener = tls.NewListener(listener, n.server.TLSConfig)
+	} else if n.server.Handler == n {
+		h2s := &http2.Server{}
+		n.server.Handler = h2c.NewHandler(n, h2s)
+	}
+
 	n.listener = listener
 
 	go n.server.Serve(n.listener)
