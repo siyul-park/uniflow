@@ -1,11 +1,10 @@
-
 # 🔧 User Extensions
 
 This guide explains how to extend your service and integrate it into the runtime environment.
 
 ## Development Environment Setup
 
-First, initialize the [Go](https://go.dev) module and download the necessary dependencies.
+First, initialize the [Go](https://go.dev) module and download the necessary dependencies:
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -14,6 +13,8 @@ go get github.com/siyul-park/uniflow
 ## Adding a New Node
 
 To add new functionality, define the node specification and register the codec that converts this specification into a node.
+
+### Define Node Specification
 
 A node specification implements the `spec.Spec` interface and can be defined using `spec.Meta`:
 
@@ -30,7 +31,9 @@ Define the new node type:
 const KindText = "text"
 ```
 
-Now implement the node that performs the actual work. Use the provided `OneToOneNode` template to receive an input packet, process it, and send an output packet:
+### Implement the Node
+
+Create a node that performs the actual work. Use the `OneToOneNode` template to handle input packets, process them, and send output packets:
 
 ```go
 type TextNode struct {
@@ -50,7 +53,7 @@ func NewTextNode(contents string) *TextNode {
 }
 ```
 
-Implement the function that processes packets. This function uses the first return value on success and the second return value on error:
+Implement the packet processing function. This function returns the first value on success and the second value on error:
 
 ```go
 func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -59,7 +62,9 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 ```
 
-Write a test to ensure the node works as intended. Send an input packet to the `in` port and verify the output packet contains the `contents`:
+### Testing the Node
+
+Write a test to ensure the node functions correctly. Send an input packet to the `in` port and verify that the output packet contains the expected `contents`:
 
 ```go
 func TestTextNode_SendAndReceive(t *testing.T) {
@@ -95,7 +100,7 @@ func TestTextNode_SendAndReceive(t *testing.T) {
 
 ### Registering the Schema and Codec
 
-Create a codec that converts the node specification to a node and register it with the schema:
+Create a codec that converts the node specification into a node and register it with the schema:
 
 ```go
 func NewTextNodeCodec() scheme.Codec {
@@ -124,7 +129,7 @@ scheme, _ := builder.Build()
 
 ### Running the Runtime Environment
 
-Pass this schema to the runtime environment to execute workflows that include the extended node:
+Pass the schema to the runtime environment to execute workflows that include the extended node:
 
 ```go
 r := runtime.New(runtime.Config{
@@ -141,11 +146,11 @@ r.Listen(ctx)
 
 ## Service Integration
 
-There are two ways to integrate the runtime environment into your service.
+There are two ways to integrate the runtime environment into your service:
 
 ### Continuous Integration
 
-Maintain the runtime environment continuously to respond quickly to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution.
+Maintain the runtime environment continuously to respond quickly to external requests. Each runtime environment runs in an independent container, suitable for scenarios requiring continuous workflow execution:
 
 ```go
 func main() {
@@ -199,7 +204,7 @@ r := runtime.New(runtime.Config{
 })
 defer r.Close()
 
-r.Load(ctx) // Load All
+r.Load(ctx) // Load all
 
 symbols, _ := r.Load(ctx, &spec.Meta{
 	Name: "main",

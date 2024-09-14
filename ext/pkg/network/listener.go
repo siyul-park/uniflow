@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-// ListenNodeSpec holds the specifications for creating a ListenNode.
+// ListenNodeSpec defines the specifications for creating a ListenNode.
 type ListenNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string `map:"protocol"`

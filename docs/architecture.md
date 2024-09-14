@@ -1,6 +1,6 @@
 # 🏗️ Architecture
 
-Each node specification declaratively defines the role of each node, and these specifications connect to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes defined in other namespaces.
+Each node specification declaratively defines the role of each node, and these specifications connect to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes from other namespaces.
 
 ```text
    +-------------------------------------------------+
@@ -24,15 +24,15 @@ Each node specification declaratively defines the role of each node, and these s
    +-------------------------------------------------+
 ```
 
-The engine does not enforce the use of specific nodes. All nodes connect to the engine through extensions and can be freely added or removed according to the service needs.
+The engine does not enforce specific nodes. Nodes connect to the engine through extensions and can be freely added or removed based on service requirements.
 
-To effectively execute node specifications, two main processes—compilation and runtime—are employed. These processes help reduce complexity and optimize performance.
+To optimize execution, two key processes—compilation and runtime—are employed. These processes reduce complexity and improve performance.
 
 ## Workflow Modification
 
-The engine does not expose an API to users for modifying node specifications. Instead, the engine focuses solely on loading, compiling, and activating nodes to make them executable.
+The engine does not expose an API for directly modifying node specifications. Instead, it focuses on loading, compiling, and activating nodes to make them executable.
 
-To modify node specifications, users can update the database using a Command-Line Interface (CLI) or define workflows that provide an HTTP API to modify node specifications. Typically, such workflows are defined in the `system` namespace.
+Users can update node specifications by using a Command-Line Interface (CLI) or defining workflows that provide an HTTP API for modifications. Typically, these workflows are defined in the `system` namespace.
 
 ```yaml
 - kind: listener
@@ -105,7 +105,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: nodes.create
     - kind: snippet
@@ -123,7 +123,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: nodes.read
     - kind: snippet
@@ -141,7 +141,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: nodes.update
     - kind: snippet
@@ -159,7 +159,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: nodes.delete
     - kind: snippet
@@ -176,7 +176,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: secrets.create
     - kind: snippet
@@ -194,7 +194,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: secrets.read
     - kind: snippet
@@ -212,7 +212,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: "has(self.body) ? self.body : null"
     - kind: native
       opcode: secrets.update
     - kind: snippet
@@ -230,7 +230,7 @@ To modify node specifications, users can update the database using a Command-Lin
   specs:
     - kind: snippet
       language: json
-      code: 'null'
+      code: "null"
     - kind: native
       opcode: secrets.delete
     - kind: snippet
@@ -247,7 +247,7 @@ To modify node specifications, users can update the database using a Command-Lin
   matches:
     - when: self == 'unsupported type' || self == 'unsupported value'
       port: out[0]
-    - when: 'true'
+    - when: "true"
       port: out[1]
   ports:
     out[0]:
@@ -282,13 +282,13 @@ To modify node specifications, users can update the database using a Command-Lin
     }
 ```
 
-This approach ensures the runtime environment remains stable while allowing flexible system expansion as needed.
+This approach ensures runtime stability while allowing flexible system expansion.
 
 ## Compilation Process
 
-The loader tracks real-time changes to node specifications and secrets in the database through a change stream. When additions, modifications, or deletions occur, the loader detects these changes and dynamically reloads them from the database. The specifications are then compiled into executable forms using codecs defined in the schema. This process involves caching and optimization to enhance performance.
+The loader tracks changes to node specifications and secrets in real-time through a change stream. When additions, modifications, or deletions occur, the loader dynamically reloads the specifications from the database. These specifications are compiled into executable forms using codecs defined in the schema, with caching and optimization to enhance performance.
 
-The compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information defined in the node specifications.
+Compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information in the node specifications.
 
 ```text
    +--------------------------+
@@ -322,15 +322,15 @@ The compiled nodes are transformed into symbols and stored in a symbol table. Th
    +-------------------------+
 ```
 
-Once all nodes within a workflow are loaded into the symbol table and all ports are connected, the workflow executes load hooks sequentially from internal nodes to external nodes to activate them. Conversely, if a specific node is removed from the symbol table and becomes non-executable, unload hooks are executed in reverse order to deactivate all nodes that reference the affected node.
+Once all nodes in a workflow are loaded into the symbol table and ports are connected, load hooks are executed to activate nodes. If a node is removed, unload hooks deactivate dependent nodes.
 
-Any changes to node specifications in the database are propagated to all runtime environments through this process.
+Changes in node specifications propagate to all runtime environments.
 
 ## Runtime Process
 
-Activated nodes monitor sockets or files and execute workflows. Each node starts by spawning an independent process, isolating its execution flow from other processes. This approach ensures efficient resource management and minimizes impact on other tasks.
+Activated nodes monitor sockets or files and execute workflows. Each node spawns an independent process, isolating its execution flow from other nodes to optimize resource management.
 
-Each node opens ports through processes and creates writers to send packets to connected nodes. The payload of these packets is converted into common types used in the runtime for transmission.
+Nodes open ports through these processes and create writers to send packets to connected nodes. The payload is converted into common types for transmission. Connected nodes create readers to process waiting packets and pass the results to the next node or return them.
 
 Connected nodes monitor whether a new process has opened the port and create readers accordingly. These readers continuously process waiting packets and pass the processed results to the next node or return them.
 
@@ -350,10 +350,10 @@ Connected nodes monitor whether a new process has opened the port and create rea
    +-----------------------+          +-----------------------+
 ```
 
-A single reader processes and responds to all packets sequentially, and packets sent by writers must be returned as response packets. This mechanism ensures smooth communication between nodes and maintains data consistency and integrity.
+Each reader processes packets sequentially and responds. Writers must return packets as responses to ensure smooth node communication and data consistency.
 
-Nodes that execute workflows wait until responses for all sent packets are returned before terminating the process and releasing allocated resources. If an error occurs during packet processing, resulting in an error response, the node logs the error and terminates the process.
+Nodes wait for responses to all sent packets before terminating the process and releasing allocated resources. If an error occurs, the node logs the error and terminates.
 
-Upon process termination, the system verifies normal termination and releases all associated resources, including open file descriptors, allocated memory, and database transactions.
+Upon process termination, the system releases all associated resources, including open file descriptors, memory, and database transactions. When a parent process terminates, all child processes terminate as well. The parent process typically waits until all child processes have completed.
 
-When a parent process terminates, all derived child processes also terminate. Typically, the parent process waits until all child processes have terminated.
+This architecture ensures efficient node communication, data integrity, and stable execution across workflows.

@@ -10,12 +10,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// ForkNodeSpec holds the specifications for creating a ForkNode.
+// ForkNodeSpec defines the specification for creating a ForkNode.
 type ForkNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// ForkNode is a node that forks processes and manages packet forwarding between ports.
+// ForkNode asynchronously branches the data processing flow into separate processes.
 type ForkNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
@@ -75,7 +75,7 @@ func (n *ForkNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-
+	
 	return nil
 }
 

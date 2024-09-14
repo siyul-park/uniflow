@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SplitNodeSpec defines the specifications for creating a SpliteNode.
+// SplitNodeSpec defines the specifications for creating a SplitNode.
 type SplitNodeSpec struct {
 	spec.Meta `map:",inline"`
 }

@@ -10,16 +10,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// LoopNodeSpec holds the specifications for creating a LoopNode.
+// LoopNodeSpec defines the specifications for creating a LoopNode.
 type LoopNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// LoopNode represents a node that Loops over input data in batches.
+// LoopNode processes input data in batches, splitting packets into sub-packets and handling them accordingly.
 type LoopNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort
-	outPorts []*port.OutPort
+	outPorts [2]*port.OutPort
 	errPort  *port.OutPort
 }
 
@@ -39,7 +39,7 @@ func NewLoopNode() *LoopNode {
 	n := &LoopNode{
 		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
-		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
+		outPorts: [2]*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 

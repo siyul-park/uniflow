@@ -1,14 +1,14 @@
 # 🚀 Getting Started
 
-This guide provides detailed instructions on how to install, configure, and manage workflows using the [Command Line Interface (CLI)](../cmd/README.md). It covers the entire process from installation to workflow control and configuration.
+This guide provides detailed instructions on installing, configuring, and managing workflows using the [Command Line Interface (CLI)](../cmd/README.md). It covers the entire process from installation to workflow control and configuration.
 
 ## Installing from Source
 
-To begin, you need to set up the [CLI](../cmd/README.md) along with the [built-in extensions](../ext/README.md). Before starting the installation, ensure that [Go 1.23](https://go.dev/doc/install) or higher is installed on your system.
+To begin, set up the [CLI](../cmd/README.md) along with the [built-in extensions](../ext/README.md). Before starting the installation, ensure that [Go 1.23](https://go.dev/doc/install) or higher is installed on your system.
 
 ### Cloning the Repository
 
-To clone the source code, run the following command:
+To clone the source code, run:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -22,7 +22,7 @@ cd uniflow
 
 ### Installing Dependencies and Building
 
-To install dependencies and build the project, execute the following commands:
+To install dependencies and build the project, execute:
 
 ```sh
 make init
@@ -33,7 +33,7 @@ Once the build is complete, the executable will be located in the `dist` folder.
 
 ### Configuration
 
-You can flexibly modify settings via the `.uniflow.toml` file or system environment variables. Key configuration options include:
+You can modify settings flexibly via the `.uniflow.toml` file or system environment variables. Key configuration options include:
 
 | TOML Key              | Environment Variable Key  | Example                    |
 |-----------------------|----------------------------|----------------------------|
@@ -42,7 +42,7 @@ You can flexibly modify settings via the `.uniflow.toml` file or system environm
 | `collection.nodes`    | `COLLECTION.NODES`         | `nodes`                    |
 | `collection.secrets`  | `COLLECTION.SECRETS`       | `secrets`                  |
 
-If using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) so that the engine can track node specifications and secret changes. This requires setting up a [Replica Set](https://www.mongodb.com/docs/manual/replication/).
+If using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to allow the engine to track node specifications and secret changes. This requires setting up a [Replica Set](https://www.mongodb.com/docs/manual/replication/).
 
 ## Uniflow
 
@@ -50,7 +50,7 @@ If using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://ww
 
 ### Start
 
-The `start` command initiates the runtime with node specifications for a specific namespace. The basic usage is as follows:
+The `start` command initiates the runtime with node specifications for a specific namespace. Basic usage is as follows:
 
 ```sh
 ./dist/uniflow start --namespace default
@@ -68,7 +68,7 @@ To provide initial secrets, use the `--from-secrets` flag:
 ./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
 ```
 
-This command will execute all node specifications for the specified namespace. If no namespace is specified, the `default` namespace is used.
+This command executes all node specifications for the specified namespace. If no namespace is specified, the `default` namespace is used.
 
 ## Uniflowctl
 
@@ -124,7 +124,7 @@ This command displays all node specifications or secrets for the specified names
 
 ## HTTP API Integration
 
-To modify node specifications through the HTTP API, you need to set up a workflow that exposes this functionality. You can use the `native` node included in the [basic extensions](../ext/README.md):
+To modify node specifications through the HTTP API, set up a workflow that exposes this functionality. You can use the `native` node included in the [basic extensions](../ext/README.md):
 
 ```yaml
 kind: native

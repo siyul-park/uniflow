@@ -28,7 +28,7 @@ type PrintNode struct {
 	mu     sync.RWMutex
 }
 
-// DynPrintNode writes data to a file whose name and format are specified in the payload.
+// DynPrintNode writes data to a file whose name and format string are specified in the payload.
 type DynPrintNode struct {
 	*node.OneToOneNode
 	fs FileSystem

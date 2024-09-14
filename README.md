@@ -10,21 +10,21 @@
 
 ## 📝 Overview
 
-**Uniflow** efficiently manages a wide range of tasks, from short-term jobs to long-term processes. It supports declarative definitions and dynamic modifications of data flows. With [built-in extension capabilities](./ext/README.md), you can easily implement complex workflows and extend functionalities by adding or removing nodes as needed.
+**Uniflow** is designed to manage a wide range of tasks, from short-term jobs to long-term processes. It supports declarative workflow definitions and allows for dynamic changes to data flows. With [built-in extensions](./ext/README.md), you can implement complex workflows and add or remove nodes to expand its functionality as needed.
 
-Deliver a personalized experience through your service and continually expand its capabilities.
+This system empowers you to deliver customized experiences through your service and continuously enhance its capabilities.
 
 ## 🎯 Core Values
 
-- **Performance:** Optimize throughput and minimize latency across diverse environments.
-- **Flexibility:** Dynamically modify and adjust workflows in real-time.
-- **Extensibility:** Expand system functionality with new components.
+- **Performance:** Maximize throughput and minimize latency across various environments.
+- **Flexibility:** Modify and adjust workflows in real-time.
+- **Extensibility:** Easily extend functionality with new components.
 
 ## 🚀 Quick Start
 
 ### 🛠️ Build and Install
 
-**[Go 1.23](https://go.dev/doc/install)** or higher is required. Follow these steps to build the source code:
+To begin, install **[Go 1.23](https://go.dev/doc/install)** or later. Then, follow these steps to build the source code:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -35,11 +35,11 @@ make init
 make build
 ```
 
-After building, the executable will be located in the `dist` directory.
+The executable will be located in the `dist` directory after building.
 
 ### ⚡ Running an Example
 
-To run a basic HTTP request handler example provided in [ping.yaml](./examples/ping.yaml):
+To run a basic HTTP request handler example using [ping.yaml](./examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -68,13 +68,13 @@ To run a basic HTTP request handler example provided in [ping.yaml](./examples/p
   code: pong
 ```
 
-To execute the workflow, use:
+To start the workflow, run:
 
 ```sh
 uniflow start --from-nodes example/ping.yaml
 ```
 
-Verify it's working by calling the HTTP endpoint:
+Verify it's running by calling the HTTP endpoint:
 
 ```sh
 curl localhost:8000/ping
@@ -83,18 +83,18 @@ pong#
 
 ## ⚙️ Configuration
 
-Settings can be configured through the `.uniflow.toml` file or system environment variables.
+Settings can be adjusted via the `.uniflow.toml` file or environment variables.
 
-| TOML Key              | Environment Variable Key | Example                    |
-|-----------------------|--------------------------|----------------------------|
-| `database.url`        | `DATABASE.URL`           | `mem://` or `mongodb://`   |
-| `database.name`       | `DATABASE.NAME`          | -                          |
-| `collection.nodes`    | `COLLECTION.NODES`       | `nodes`                    |
-| `collection.secrets`  | `COLLECTION.SECRETS`     | `secrets`                  |
+| TOML Key             | Environment Variable Key | Example                   |
+|----------------------|--------------------------|---------------------------|
+| `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`   |
+| `database.name`      | `DATABASE.NAME`          | -                         |
+| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                   |
+| `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
 
 ## 📊 Benchmark
 
-Here are benchmark results conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) environment using the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). The benchmark measures the performance of the [ping.yaml](./examples/ping.yaml) workflow, consisting of `listener`, `router`, and `snippet` nodes.
+The benchmark below was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). It measures the performance of the [ping.yaml](./examples/ping.yaml) workflow, including `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -108,51 +108,51 @@ Server Port:            8000
 Document Path:          /ping
 Document Length:        4 bytes
 Concurrency Level:      1024
-Time taken for tests:   13.760 seconds
-Complete requests:      102400
+Time taken for tests:   122.866 seconds
+Complete requests:      1024000
 Failed requests:        0
-Total transferred:      12288000 bytes
-HTML transferred:       409600 bytes
-Requests per second:    7441.92 [#/sec] (mean)
-Time per request:       137.599 [ms] (mean)
-Time per request:       0.134 [ms] (mean, across all concurrent requests)
-Transfer rate:          872.10 [Kbytes/sec] received
+Total transferred:      122880000 bytes
+HTML transferred:       4096000 bytes
+Requests per second:    8334.29 [#/sec] (mean)
+Time per request:       122.866 [ms] (mean)
+Time per request:       0.120 [ms] (mean, across all concurrent requests)
+Transfer rate:          976.67 [Kbytes/sec] received
 
 Connection Times (ms)
               min  mean[+/-sd] median   max
-Connect:        0    1   3.1      0      34
-Processing:     0  136  58.2    137     550
-Waiting:        0  135  58.2    137     550
-Total:          0  137  58.0    139     553
+Connect:        0    2   3.8      0      56
+Processing:     0  121  53.4    121     593
+Waiting:        0  120  53.4    121     592
+Total:          0  123  53.3    123     594
 
 Percentage of the requests served within a certain time (ms)
-  50%    139
-  66%    162
-  75%    174
-  80%    181
-  90%    202
-  95%    223
-  98%    264
-  99%    295
- 100%    553 (longest request)
+  50%    123
+  66%    143
+  75%    155
+  80%    163
+  90%    185
+  95%    207
+  98%    240
+  99%    266
+ 100%    594 (longest request)
 ```
 
 ## 📚 Learn More
 
-- [Getting Started](./docs/getting_started.md): Introduces CLI installation and workflow management.
-- [Key Concepts](./docs/key_concepts.md): Explains fundamental concepts like nodes, connections, ports, and packets.
-- [Architecture](./docs/architecture.md): Details the process of loading node specifications and executing workflows.
-- [Debugging](./docs/debugging.md): Covers how to start a debugging session, set breakpoints, and inspect states for effective debugging.
-- [User Extensions](./docs/user_extensions.md): Guides on adding new features and integrating with existing services.
+- [Getting Started](./docs/getting_started.md): Learn how to install the CLI and manage workflows.
+- [Key Concepts](./docs/key_concepts.md): Understand nodes, connections, ports, and packets.
+- [Architecture](./docs/architecture.md): Explore how workflows are executed and node specifications are loaded.
+- [Debugging](./docs/debugging.md): Learn how to debug workflows, set breakpoints, and start sessions.
+- [User Extensions](./docs/user_extensions.md): Learn to add features and integrate with external services.
 
 ## 🌐 Community and Support
 
 - [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
-- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bug reports and feature requests.
+- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bug reports and request new features.
 
 ## 📜 License
 
-This project is distributed under the [MIT License](./LICENSE). You are free to use, modify, and distribute it under the terms of the license.
+This project is released under the [MIT License](./LICENSE). You are free to use, modify, and distribute it as per the terms of the license.
 
 <!-- Go -->
 

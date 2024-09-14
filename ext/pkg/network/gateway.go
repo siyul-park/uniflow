@@ -17,7 +17,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// GatewayNodeSpec holds the specifications for creating a GatewayNode.
+// GatewayNodeSpec defines the specifications for creating a GatewayNode.
 type GatewayNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string        `map:"protocol"`

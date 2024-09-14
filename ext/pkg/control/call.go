@@ -10,12 +10,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// CallNodeSpec holds the specifications for creating a CallNode.
+// CallNodeSpec holds the specification for creating a CallNode.
 type CallNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// CallNode redirects packets from the input port to the intermediate port for processing by connected nodes, then outputs the results to the output port.
+// CallNode processes an input packet and sends the result to multiple output ports.
 type CallNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort

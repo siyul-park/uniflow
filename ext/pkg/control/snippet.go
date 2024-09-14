@@ -10,14 +10,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SnippetNodeSpec holds the specifications for creating a SnippetNode.
+// SnippetNodeSpec defines the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Language  string `map:"language,omitempty"`
 	Code      string `map:"code"`
 }
 
-// SnippetNode represents a node that executes code snippets in various language.
+// SnippetNode represents a node that executes code snippets in various languages.
 type SnippetNode struct {
 	*node.OneToOneNode
 	fn func(any) (any, error)

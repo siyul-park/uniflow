@@ -29,7 +29,7 @@ type ScanNode struct {
 	mu     sync.RWMutex
 }
 
-// DynScanNode reads from a file whose name and format are specified in the payload.
+// DynScanNode reads from a file whose name and format string are specified in the payload.
 type DynScanNode struct {
 	*node.OneToOneNode
 	fs FileSystem

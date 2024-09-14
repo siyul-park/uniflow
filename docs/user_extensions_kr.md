@@ -1,6 +1,6 @@
 # 🔧 사용자 확장
 
-사용자가 uniflow 시스템을 이해하고 자신의 서비스를 런타임 환경에 추가하는 방법을 설명합니다.
+현재 대부분의 기능은 이미 uniflow의 노드들의 조합을 통해 구현할 수 있지만, 가끔 특수한 기능이나 추가적인 기능을 직접 구현해야 하는 상황이 생길 수 있습니다. 이런 상황에서 어떻게 기능을 만들고 적용하는지에 대한 가이드입니다.
 
 해당 가이드를 읽기 전에 [핵심 키워드](https://github.com/siyul-park/uniflow/blob/main/docs/key_concepts.md)와 [시스템 구조](https://github.com/siyul-park/uniflow/blob/main/docs/architecture.md)를 읽는 것을 권장합니다.
 
@@ -11,6 +11,32 @@
 ```shell
 go get github.com/siyul-park/uniflow
 ```
+
+## 워크플로우 작성하기
+
+새로운 기능을 워크플로우에 연결하려면 먼저 기능이 구현되어 있어야 하는 것이 정상이지만, 여기서는 설명을 편하게 하기 위해 전체적인 그림을 보여주는 느낌으로 최종적으로 완성되는 형태를 먼저 보여드리겠습니다.
+
+아주 간단하게 프록시 기능을 구현하여 http 요청을 하면 날린 메시지를 로드밸런싱하여 처리하는 워크플로우입니다.
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  ports:
+    out:
+      - name: proxy
+        port: in
+
+# 직접 만들 proxy 노드입니다.
+- kind: proxy
+  name: proxy
+  urls:
+    - https://backend1.com/
+    - https://backend2.com/
+```
+
+8000번 포트를 통해 http 요청을 넣으면, 프록시가 주어진 urls 중 하나를 선택하여 자동적으로 데이터를 처리하게 됩니다. 이제 이 proxy 노드를 만들면 됩니다.
 
 ## 새로운 노드 작성
 
@@ -35,32 +61,30 @@ Env map[string][]Secret // 노드에 필요한 환경 변수를 지정합니다.
 이 때 `spec.Meta`를 사용하면 간단하게 작성할 수 있습니다:
 
 ```go
-type LoopBackNodeSpec struct {
-	spec.Meta `map:",inline"`
+type ProxyNodeSpec struct {
+  spec.Meta `map:",inline"`
 }
 ```
 
 #### 추가 필드 받기
 
-만약 추가로 받을 값이 필요하다면, 필수 항목을 제외하고 추가적인 항목을 작성하면 됩니다. 이후 워크플로우에서 노드를 사용할 때 추가 필드로 사용할 수 있게 되며, 환경 변수 등 초기 설정 값으로 받아들일 수 있습니다. 예시로 다양한 언어를 지원하기 위해 코드가 있는 code 필드와 어떤 코드인지에 대한 정보인 language 필드를 받고 싶다면, 이런 식으로 노드 명세에 추가가 가능합니다:
+만약 추가로 받을 값이 필요하다면, 필수 항목을 제외하고 추가적인 항목을 작성하면 됩니다. 프록시 기능을 만들기 위해 URL 정보가 필요하다고 가정하면, 아래와 같이 URLS 필드를 선언하면 됩니다.
 
 ```go
-type LoopBackNodeSpec struct {
-	spec.Meta `map:",inline"`
-
-	// 이 아래부터 추가되는 항목들은 워크플로우에서 사용할 수 있습니다.
-	Language  string `map:"language,omitempty"` // 언어 종류
-	Code      string `map:"code"` // 소스 코드
+type ProxyNodeSpec struct {
+  spec.Meta `map:",inline"`
+  URLS      []string `map:"urls"`
 }
 ```
 
-이후 이 두개의 값은 워크플로우에서 추가 필드로 인식되며, 넣은 값을 직접적으로 사용하거나 다른 노드에게 처리 과정을 지시할 수 있게 됩니다.
+이 필드는 이후 워크플로우에서 노드를 사용할 때 추가 필드로 사용할 수 있게 되며, 환경 변수 등 초기 설정 값으로 받아들일 수 있습니다.
 
 ```yaml
-- kind: loopback
-  name: pong
-  language: text # 언어 종류 필드
-  code: pong # 소스 코드 필드
+- kind: proxy
+  name: proxy
+  urls:
+    - https://backend1.com/
+    - https://backend2.com/
 ```
 
 ### 노드 유형 정의
@@ -68,16 +92,17 @@ type LoopBackNodeSpec struct {
 이제 노드 유형을 정의합니다. 해당 유형이 정확하게 작성되어 있어야 런타임이 노드를 올바르게 인식할 수 있습니다:
 
 ```go
-const KindLoopBack = "loopback"
+const KindProxy = "proxy"
 ```
 
 ### 노드 타입 정의
 
-이제 노드 명세를 기반으로 노드가 동작하기 위해 실제로 필요한 요소들을 정의해야 합니다. 쉽게 말해서 노드가 어떤 방식으로 통신할 것이고 어떠한 데이터를 받아들일 것인지에 대한 정보가 담겨 있어야 합니다:
+이제 노드 명세를 기반으로 노드가 동작하기 위해 실제로 필요한 요소들을 정의해야 합니다. 쉽게 말해서 노드가 어떤 방식으로 통신할 것이고 어떠한 데이터를 가질 것인지에 대한 정보가 담겨 있어야 합니다:
 
 ```go
-type LoopBackNode struct {
-	*node.OneToOneNode
+type ProxyNode struct {
+  *node.OneToOneNode
+  proxy *httputil.ReverseProxy
 }
 ```
 
@@ -87,70 +112,163 @@ type LoopBackNode struct {
 
 ### 노드 동작 구현
 
-이제 노드가 입력 패킷을 처리하고, 그 결과를 출력 패킷으로 생성하는 방법을 구현합니다. 패킷은 데이터인 페이로드를 담고 있으며, 이 페이로드는 `types.Value` 인터페이스를 구현하는 여러 공용 데이터 타입 중 하나로 표현됩니다.
+이제 노드가 입력 패킷을 처리하고, 그 결과를 출력 패킷으로 생성하는 과정을 구현합니다. 패킷은 페이로드를 담고 있으며, 이 페이로드는 `types.Value` 인터페이스를 구현하는 여러 공용 데이터 타입 중 하나로 표현됩니다.
 
 ```go
 // Value는 원자적 데이터 타입을 표현하는 인터페이스입니다.
 type Value interface {
-	Kind() Kind              // Kind는 Value의 타입을 반환합니다.
-	Hash() uint64            // Hash는 Value의 해시 코드를 반환합니다.
-	Interface() any          // Interface는 Value를 일반 인터페이스로 반환합니다.
-	Equal(other Value) bool  // Equal은 이 Value와 다른 Value가 같은지를 확인합니다.
-	Compare(other Value) int // Compare는 이 Value와 다른 Value를 비교합니다.
+  Kind() Kind              // Kind는 Value의 타입을 반환합니다.
+  Hash() uint64            // Hash는 Value의 해시 코드를 반환합니다.
+  Interface() any          // Interface는 Value를 일반 인터페이스로 반환합니다.
+  Equal(other Value) bool  // Equal은 이 Value와 다른 Value가 같은지를 확인합니다.
+  Compare(other Value) int // Compare는 이 Value와 다른 Value를 비교합니다.
 }
 ```
 
-패킷 처리 함수는 정상적으로 처리된 결과를 첫 번째 반환값으로, 오류가 발생한 경우에는 두 번째 반환값으로 반환합니다:
+앞서 사용했던 예시를 계속 구현해봅시다. 프록시 기능을 만드려면 받은 패킷을 정해진 순서에 맞춰 URL을 바꾸어 서버에 요청할 수 있는 구조가 필요합니다. 이 때 들어오는 패킷은 서버에 직접적으로 리소스를 요청하는 구조이므로, 패킷 데이터만 가져다 직접 요청하고 응답값을 받는 형식으로 만들어야 합니다.
 
 ```go
-func (n *LoopBackNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	return inPck, nil
+func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+  // 페이로드를 다룰 수 있는 형태로 변경합니다.
+  req := HTTPPayload{}
+  if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
+    return nil, packet.New(types.NewError(err))
+  }
+
+  // body 데이터를 가져옵니다.
+  buf := bytes.NewBuffer(nil)
+  if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
+    return nil, packet.New(types.NewError(err))
+  }
+
+  // 이제 이 값을 기반으로 프록시 환경에서 사용할 Request 데이터를 만듭니다.
+  r := &http.Request{
+    Method: req.Method,
+    URL: &url.URL{
+      Scheme:   req.Scheme,
+      Host:     req.Host,
+      Path:     req.Path,
+      RawQuery: req.Query.Encode(),
+    },
+    Proto:  req.Protocol,
+    Header: req.Header,
+    Body:   io.NopCloser(buf),
+  }
+
+  // 프록시로 http 요청을 수행합니다.
+  w := httptest.NewRecorder()
+  n.proxy.ServeHTTP(w, r)
+
+  // 결과값 body를 가지고 옵니다.
+  body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header()))
+  if err != nil {
+    return nil, packet.New(types.NewError(err))
+  }
+
+  // 결과값 페이로드를 만듭니다.
+  res := &HTTPPayload{
+    Header: w.Header(),
+    Body:   body,
+    Status: w.Code,
+  }
+
+  // 이제 해당 결과를 보내줄 패킷 형태로 만들어 반환하면 됩니다.
+  outPayload, err := types.Encoder.Encode(res)
+  if err != nil {
+    return nil, packet.New(types.NewError(err))
+  }
+
+  return packet.New(outPayload), nil
 }
 ```
+
+> 들어오는 요청을 재구성하지 않고, 헤더 값만 살짝 수정하는 식으로 다른 방법을 생각할 수도 있습니다. 실제로 http listener에서 들어온 `proc` 객체에서 이미 `http.ResponseWriter`, `*http.Request` 두 값이 존재하고 이를 얻어올 수 있으나, 이 둘의 값을 함부로 건드리면 요청 응답의 전후처리가 불가능해질 수도 있습니다. 정말 필요한 상황이 아니라면 프로세스 구조를 건드리지 않는 것이 좋습니다.
+
+최종적으로 완성된 outPayload를 반환하면 동작 함수가 모두 완성됩니다. 반환할 때는 정상적으로 처리된 결과를 첫 번째 반환값으로, 오류가 발생한 경우에는 두 번째 반환값으로 반환합니다.
 
 ### 노드 생성
 
 이제 노드를 실제로 구현해 보겠습니다. 노드를 생성하는 함수를 정의하고, 패킷 처리 방식을 `OneToOneNode` 생성자에 전달합니다:
 
 ```go
-func NewLoopBackNode() *LoopBackNode {
-	n := &LoopBackNode{}
-	n.OneToOneNode = node.NewOneToOneNode(n.action)
-	return n
+func NewProxyNode(urls []*url.URL) *ProxyNode {
+  var index int
+  var mu sync.Mutex
+  proxy := &httputil.ReverseProxy{
+    Rewrite: func(pr *httputil.ProxyRequest) {
+      mu.Lock()
+      defer mu.Unlock()
+
+      index = (index + 1) % len(urls)
+      pr.SetURL(urls[index])
+      pr.SetXForwarded()
+    },
+  }
+
+  n := &ProxyNode{proxy: proxy}
+  n.OneToOneNode = node.NewOneToOneNode(n.action)
+  return n
 }
 ```
+
+예제에서는 설명을 위해 어떠한 추가 기능도 구현하지 않았지만, 상태 확인 등 완성도를 높일 수 있는 다양한 기능들을 추가할 수 있습니다.
 
 ### 테스트 작성
 
 노드가 의도대로 작동하는지 확인하기 위해 테스트를 작성합니다. 입력 패킷을 `in` 포트로 전송하고, `out` 포트에서 출력 패킷이 예상대로 나오는지에 대해 검증합니다:
 
 ```go
-func TestLoopBackNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+func TestProxyNode_SendAndReceive(t *testing.T) {
+  ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+  defer cancel()
 
-	n := NewLoopBackNode()
-	defer n.Close()
+  s1 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+    writer.WriteHeader(http.StatusOK)
+    writer.Write([]byte("Backend 1"))
+  }))
+  defer s1.Close()
 
-	out := port.NewOut()
-	out.Link(n.In(node.PortIn))
+  s2 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+    writer.WriteHeader(http.StatusOK)
+    writer.Write([]byte("Backend 2"))
+  }))
+  defer s2.Close()
 
-	proc := process.New()
-	defer proc.Exit(nil)
+  u1, _ := url.Parse(s1.URL)
+  u2, _ := url.Parse(s2.URL)
 
-	inWriter := in.Open(proc)
+  n := NewProxyNode([]*url.URL{u1, u2})
+  defer n.Close()
 
-	inPayload := types.NewString(faker.Word())
-	inPck := packet.New(inPayload)
+  in := port.NewOut()
+  in.Link(n.In(node.PortIn))
 
-	inWriter.Write(inPck)
+  proc := process.New()
+  defer proc.Exit(nil)
 
-	select {
-	case outPck := <-inWriter.Receive():
-		assert.Equal(t, inPayload, outPck.Payload())
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+  inWriter := in.Open(proc)
+
+  inPayload := types.NewMap(
+    types.NewString("method"), types.NewString(http.MethodGet),
+    types.NewString("scheme"), types.NewString("http"),
+    types.NewString("host"), types.NewString("test"),
+    types.NewString("path"), types.NewString("/"),
+    types.NewString("protocol"), types.NewString("HTTP/1.1"),
+    types.NewString("status"), types.NewInt(0),
+  )
+  inPck := packet.New(inPayload)
+
+  inWriter.Write(inPck)
+
+  select {
+  case outPck := <-inWriter.Receive():
+    payload := &HTTPPayload{}
+    err := types.Unmarshal(outPck.Payload(), payload)
+    assert.NoError(t, err)
+    assert.Contains(t, payload.Body.Interface(), "Backend")
+  case <-ctx.Done():
+    assert.Fail(t, ctx.Err().Error())
+  }
 }
 ```
 
@@ -165,10 +283,23 @@ assert가 성공하면, 하나의 노드로써 온전한 기능을 수행할 수
 노드 명세를 노드로 변환하는 코덱을 작성합니다.
 
 ```go
-func NewLoopBackNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func() (node.Node, error) {
-		return NewLoopBackNode(), nil
-	})
+func NewProxyNodeCodec() scheme.Codec {
+  return scheme.CodecWithType(func(spec *ProxyNodeSpec) (node.Node, error) {
+    urls := make([]*url.URL, 0, len(spec.URLS))
+    if len(urls) == 0 {
+      return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+    }
+
+    for _, u := range spec.URLS {
+      parsed, err := url.Parse(u)
+      if err != nil {
+        return nil, err
+      }
+      urls = append(urls, parsed)
+    }
+
+    return NewProxyNode(urls), nil
+  })
 }
 ```
 
@@ -178,11 +309,13 @@ func NewLoopBackNodeCodec() scheme.Codec {
 
 ```go
 func AddToScheme() scheme.Register {
-	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		s.AddKnownType(KindLoopBack, &LoopBackNodeSpec{})
-		s.AddCodec(KindLoopBack, NewLoopBackNodeCodec())
-		return nil
-	})
+  return scheme.RegisterFunc(func(s *scheme.Scheme) error {
+    ...
+    s.AddKnownType(KindProxy, &ProxyNodeSpec{})
+    s.AddCodec(KindProxy, NewProxyNodeCodec())
+    ...
+    return nil
+  })
 }
 ```
 
@@ -201,11 +334,11 @@ scheme, _ := builder.Build()
 
 ```go
 r := runtime.New(runtime.Config{
-	Namespace:   namespace,
-	Schema:      scheme,
-	Hook:        hook,
-	SpecStore:   specStore,
-	SecretStore: secretStore,
+  Namespace:   namespace,
+  Schema:      scheme,
+  Hook:        hook,
+  SpecStore:   specStore,
+  SecretStore: secretStore,
 })
 defer r.Close()
 ```
@@ -224,39 +357,39 @@ defer r.Close()
 
 ```go
 func main() {
-	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+  specStore := spec.NewStore()
+  secretStore := secret.NewStore()
 
-	schemeBuilder := scheme.NewBuilder()
-	hookBuilder := hook.NewBuilder()
+  schemeBuilder := scheme.NewBuilder()
+  hookBuilder := hook.NewBuilder()
 
-	scheme, err := schemeBuilder.Build()
-	if err != nil {
-		log.Fatal(err)
-	}
-	hook, err := hookBuilder.Build()
-	if err != nil {
-		log.Fatal(err)
-	}
+  scheme, err := schemeBuilder.Build()
+  if err != nil {
+    log.Fatal(err)
+  }
+  hook, err := hookBuilder.Build()
+  if err != nil {
+    log.Fatal(err)
+  }
 
-	r := runtime.New(runtime.Config{
-		Namespace:   "default",
-		Schema:      scheme,
-		Hook:        hook,
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-	})
-	defer r.Close()
+  r := runtime.New(runtime.Config{
+    Namespace:   "default",
+    Schema:      scheme,
+    Hook:        hook,
+    SpecStore:   specStore,
+    SecretStore: secretStore,
+  })
+  defer r.Close()
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, native.SIGINT, native.SIGTERM)
+  sigs := make(chan os.Signal, 1)
+  signal.Notify(sigs, native.SIGINT, native.SIGTERM)
 
-	go func() {
-		<-sigs
-		_ = r.Close()
-	}()
+  go func() {
+    <-sigs
+    _ = r.Close()
+  }()
 
-	r.Listen(context.TODO())
+  r.Listen(context.TODO())
 }
 ```
 
@@ -266,61 +399,27 @@ func main() {
 
 ```go
 r := runtime.New(runtime.Config{
-	Namespace:   "default",
-	Schema:      scheme,
-	Hook:        hook,
-	SpecStore:   specStore,
-	SecretStore: secretStore,
+  Namespace:   "default",
+  Schema:      scheme,
+  Hook:        hook,
+  SpecStore:   specStore,
+  SecretStore: secretStore,
 })
 defer r.Close()
 
 r.Load(ctx) // 모든 리소스 로드
 
 symbols, _ := r.Load(ctx, &spec.Meta{
-	Name: "main",
+  Name: "main",
 })
 
-sb := symbols[0]
+sym := symbols[0]
 
 in := port.NewOut()
 defer in.Close()
 
-in.Link(sb.In(node.PortIn))
+in.Link(sym.In(node.PortIn))
 
 payload := types.NewString(faker.Word())
 payload, err := port.Call(in, payload)
 ```
-
-## 워크플로우 작성하기
-
-이제 최종적으로 워크플로우 환경을 만들면 직접 만든 서비스를 사용할 수 있게 됩니다. 이번 예시에서는 간단하게 ping 워크플로우를 응용하여 http 서버에서 POST 요청을 하면 날린 메시지를 그대로 서버에서 받아서 출력하는 워크플로우를 작성해보겠습니다.
-
-```yaml
-- kind: listener
-  name: listener
-  protocol: http
-  port: 8000
-  ports:
-    out:
-      - name: router
-        port: in
-
-- kind: router
-  name: router
-  routes:
-    - method: POST
-      path: /ping
-      port: out[0]
-  ports:
-    out[0]:
-      - name: pong
-        port: in
-
-# 직접 만든 노드입니다.
-- kind: loopback
-  name: pong
-```
-
-http 서버를 포트 8000번으로 열고, router를 in으로 받도록 작성하고, router는 pong을 in으로 받도록 작성합니다. (노드를 연결할 때는 name 필드를 기준으로 합니다.)
-
-이제 아까 직접 만들었던 노드, /ping 으로 POST 요청을 날리면 보낸 메시지를 받아 처리한 후 pong 요청을 서버에 돌려주는 loopback을 추가해주면 됩니다.
