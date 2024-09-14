@@ -75,7 +75,7 @@ func (n *ForkNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-
+	
 	return nil
 }
 
