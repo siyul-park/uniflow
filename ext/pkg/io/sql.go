@@ -15,7 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// SQLNodeSpec holds the specifications for creating a SQLNode.
+// SQLNodeSpec defines the specifications for creating a SQLNode.
 type SQLNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Driver    string             `map:"driver"`

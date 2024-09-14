@@ -18,7 +18,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// HTTPNodeSpec holds the specifications for creating an HTTPNode.
+// HTTPNodeSpec defines the specifications for creating an HTTPNode.
 type HTTPNodeSpec struct {
 	spec.Meta `map:",inline"`
 	URL       string        `map:"url"`

@@ -17,7 +17,7 @@ type BlockNodeSpec struct {
 	Specs     []*spec.Unstructured `map:"specs"`
 }
 
-// BlockNode is a node that handles multiple sub-nodes.
+// BlockNode systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
 type BlockNode struct {
 	symbols   []*symbol.Symbol
 	inPorts   map[string]*port.InPort
@@ -36,14 +36,14 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(spec.Specs))
 		for _, spec := range spec.Specs {
-			spec, err := s.Decode(spec)
+			decodedSpec, err := s.Decode(spec)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
 				}
 				return nil, err
 			}
-			n, err := s.Compile(spec)
+			node, err := s.Compile(decodedSpec)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
@@ -51,15 +51,15 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				return nil, err
 			}
 			symbols = append(symbols, &symbol.Symbol{
-				Spec: spec,
-				Node: n,
+				Spec: decodedSpec,
+				Node: node,
 			})
 		}
 		return NewBlockNode(symbols...), nil
 	})
 }
 
-// BlockNodeSpec defines the specification for creating a BlockNode.
+// NewBlockNode creates a new BlockNode with the specified symbols.
 func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 	n := &BlockNode{
 		symbols:   nodes,
@@ -161,7 +161,7 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 	return nil
 }
 
-// Close closes all ports associated with the node.
+// Close closes all ports and sub-nodes associated with the BlockNode.
 func (n *BlockNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()

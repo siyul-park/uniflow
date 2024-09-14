@@ -4,7 +4,7 @@
 
 ## 개발 환경 설정
 
-먼저, [Go](https://go.dev) 모듈을 초기화하고 필요한 의존성을 다운로드합니다.
+먼저, [Go](https://go.dev) 모듈을 초기화하고 필요한 의존성을 다운로드합니다:
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -13,6 +13,8 @@ go get github.com/siyul-park/uniflow
 ## 새로운 노드 추가
 
 새로운 기능을 추가하려면 노드 명세를 정의하고 이를 노드로 변환하는 코덱을 스키마에 등록합니다.
+
+### 노드 명세 정의
 
 노드 명세는 `spec.Spec` 인터페이스를 구현하며, `spec.Meta`를 사용하여 정의할 수 있습니다:
 
@@ -29,7 +31,9 @@ type TextNodeSpec struct {
 const KindText = "text"
 ```
 
-이제 실제로 동작할 노드를 구현합니다. 기본 템플릿으로 제공되는 `OneToOneNode`를 사용하여 입력 패킷을 수신하고 처리한 후 출력 패킷을 전송합니다:
+### 노드 구현
+
+실제로 동작할 노드를 구현합니다. 기본 템플릿으로 제공되는 `OneToOneNode`를 사용하여 입력 패킷을 수신하고 처리한 후 출력 패킷을 전송합니다:
 
 ```go
 type TextNode struct {
@@ -57,6 +61,8 @@ func (n *TextNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	return outPck, nil
 }
 ```
+
+### 노드 테스트
 
 노드가 의도한 대로 작동하는지 확인하기 위해 테스트를 작성합니다. 입력 패킷을 `in` 포트로 전송하고, 출력 패킷이 `contents`를 포함하는지 확인합니다:
 
@@ -144,7 +150,7 @@ r.Listen(ctx)
 
 ### 지속적 통합
 
-외부 요청에 신속하게 대응하기 위해 런타임 환경을 지속적으로 유지합니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다.
+외부 요청에 신속하게 대응하기 위해 런타임 환경을 지속적으로 유지합니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다:
 
 ```go
 func main() {
@@ -198,7 +204,7 @@ r := runtime.New(runtime.Config{
 })
 defer r.Close()
 
-r.Load(ctx) // Load All
+r.Load(ctx) // 모든 워크플로우 로드
 
 symbols, _ := r.Load(ctx, &spec.Meta{
 	Name: "main",

@@ -28,9 +28,9 @@ env:
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.
 - `kind`: Specifies the type of node. This example is a `listener`. Additional fields may vary based on the node type.
-- `namespace`: The namespace to which the node belongs, default is `default`.
+- `namespace`: The namespace to which the node belongs; the default is `default`.
 - `name`: The name of the node, which must be unique within the namespace.
-- `annotations`: Additional metadata about the node. It can include user-defined key-value pairs like description and version.
+- `annotations`: Additional metadata about the node, including user-defined key-value pairs like description and version.
 - `protocol`: Specifies the protocol used by the listener. This field is required for `listener` nodes.
 - `port`: Specifies the port used by the listener. This field is required for `listener` nodes.
 - `ports`: Defines the connection scheme of ports. `out` defines an output port named `proxy`, which connects to the `in` port of another node.
@@ -51,9 +51,9 @@ data:
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.
-- `namespace`: The namespace to which the secret belongs, default is `default`.
+- `namespace`: The namespace to which the secret belongs; the default is `default`.
 - `name`: The name of the secret, which must be unique within the namespace.
-- `annotations`: Additional metadata about the secret. It can include user-defined key-value pairs like description and version.
+- `annotations`: Additional metadata about the secret, including user-defined key-value pairs like description and version.
 - `data`: Contains the secret data in key-value pairs.
 
 ## Node

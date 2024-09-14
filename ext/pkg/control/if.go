@@ -12,13 +12,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// IfNodeSpec holds specifications for creating an IfNode.
+// IfNodeSpec defines the specifications for creating an IfNode.
 type IfNodeSpec struct {
 	spec.Meta `map:",inline"`
 	When      string `map:"when"`
 }
 
-// IfNode represents a node that evaluates a condition and routes packets based on the result.
+// IfNode evaluates a condition and routes packets based on the result.
 type IfNode struct {
 	*node.OneToManyNode
 	condition func(any) (bool, error)
@@ -54,11 +54,12 @@ func (n *IfNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Pac
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 
-	if ok, err := n.condition(input); err != nil {
+	ok, err := n.condition(input)
+	if err != nil {
 		return nil, packet.New(types.NewError(err))
-	} else if ok {
-		return []*packet.Packet{inPck, nil}, nil
-	} else {
-		return []*packet.Packet{nil, inPck}, nil
 	}
+	if ok {
+		return []*packet.Packet{inPck, nil}, nil
+	}
+	return []*packet.Packet{nil, inPck}, nil
 }

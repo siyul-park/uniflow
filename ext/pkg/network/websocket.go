@@ -20,7 +20,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// WebSocketNodeSpec holds the specifications for creating a WebSocketNode.
+// WebSocketNodeSpec defines the specifications for creating a WebSocketNode.
 type WebSocketNodeSpec struct {
 	spec.Meta `map:",inline"`
 	URL       string        `map:"url"`

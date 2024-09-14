@@ -9,12 +9,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// MergeNodeSpec holds the specifications for creating a MergeNode.
+// MergeNodeSpec defines the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// MergeNode represents a node that Merges multiple input packets into a single output packet.
+// MergeNode represents a node that merges multiple input packets into a single output packet.
 type MergeNode struct {
 	*node.ManyToOneNode
 }

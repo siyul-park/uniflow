@@ -6,25 +6,25 @@
 [![check][repo_check_img]][repo_check_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-**고성능과 유연성을 겸비한 확장 가능한 범용 워크플로우 엔진.**
+**높은 성능과 뛰어난 유연성을 겸비한 확장 가능한 범용 워크플로우 엔진.**
 
 ## 📝 개요
 
-**Uniflow**는 단기 작업부터 장기 프로세스까지 다양한 작업을 효율적으로 처리합니다. 데이터 흐름을 선언적으로 정의하고 동적으로 수정할 수 있으며, [내장 확장 기능](./ext/README_kr.md)을 활용하여 복잡한 워크플로우도 쉽게 구현할 수 있습니다. 게다가 필요에 따라 새로운 노드를 추가하거나 기존 노드를 제거하여 기능을 유연하게 확장할 수 있습니다.
+**Uniflow**는 단기 작업부터 장기 프로세스까지 다양한 작업을 효율적으로 관리할 수 있는 워크플로우 엔진입니다. 데이터 흐름을 선언적으로 정의하며, 동적 수정이 가능해 업무 요구 사항에 맞게 유연하게 조정할 수 있습니다. 또한, [기본 확장 기능](./ext/README_kr.md)을 통해 복잡한 워크플로우를 구현하고, 필요에 따라 새로운 노드를 추가하거나 제거하여 기능을 확장할 수 있습니다.
 
-여러분의 서비스에 개인화된 경험을 제공하고, 지속적으로 기능을 확장해 나가세요.
+서비스에 개인 맞춤형 경험을 제공하고, 지속적으로 발전시킬 수 있는 기반을 마련하세요.
 
 ## 🎯 핵심 가치
 
-- **성능:** 다양한 환경에서 최적의 처리량과 최소 지연 시간을 실현합니다.
-- **유연성:** 워크플로우를 동적으로 수정하고 실시간으로 조정할 수 있습니다.
-- **확장성:** 새로운 컴포넌트를 통해 시스템 기능을 확장할 수 있습니다.
+- **성능:** 다양한 환경에서 최대의 처리량과 최소의 지연 시간을 달성합니다.
+- **유연성:** 실시간으로 워크플로우를 수정하고 조정할 수 있습니다.
+- **확장성:** 손쉽게 새로운 컴포넌트를 추가하여 기능을 확장할 수 있습니다.
 
 ## 🚀 빠른 시작
 
 ### 🛠️ 빌드 및 설치
 
-**[Go 1.23](https://go.dev/doc/install)** 이상이 필요합니다. 소스 코드를 빌드하려면 다음 단계를 따르세요:
+**[Go 1.23](https://go.dev/doc/install)** 이상을 설치한 후, 아래 단계를 통해 소스 코드를 빌드할 수 있습니다:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -39,7 +39,7 @@ make build
 
 ### ⚡ 예제 실행
 
-기본적인 HTTP 요청 처리 예제인 [ping.yaml](./examples/ping.yaml)을 실행해 보겠습니다:
+다음은 HTTP 요청 처리 예제인 [ping.yaml](./examples/ping.yaml)을 실행하는 방법입니다:
 
 ```yaml
 - kind: listener
@@ -68,22 +68,22 @@ make build
   code: pong
 ```
 
-워크플로우를 실행하려면 다음 명령어를 사용하세요:
+다음 명령어로 워크플로우를 실행합니다:
 
 ```sh
 uniflow start --from-nodes example/ping.yaml
 ```
 
-정상 작동 여부를 확인하기 위해 HTTP 엔드포인트를 호출해 보세요:
+정상 작동 여부를 확인하려면 HTTP 엔드포인트를 호출하세요:
 
 ```sh
 curl localhost:8000/ping
 pong#
 ```
 
-## ⚙️ 구성
+## ⚙️ 설정
 
-환경 설정은 `.uniflow.toml` 파일 또는 시스템 환경 변수를 통해 구성할 수 있습니다.
+환경 설정은 `.uniflow.toml` 파일 또는 시스템 환경 변수를 통해 관리할 수 있습니다.
 
 | TOML 키              | 환경 변수 키            | 예시                       |
 |----------------------|--------------------------|---------------------------|
@@ -94,7 +94,7 @@ pong#
 
 ## 📊 벤치마크
 
-**[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행된 벤치마크 결과입니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 측정했습니다.
+다음 벤치마크는 **[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행되었습니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 테스트했습니다.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -108,51 +108,51 @@ Server Port:            8000
 Document Path:          /ping
 Document Length:        4 bytes
 Concurrency Level:      1024
-Time taken for tests:   13.760 seconds
-Complete requests:      102400
+Time taken for tests:   122.866 seconds
+Complete requests:      1024000
 Failed requests:        0
-Total transferred:      12288000 bytes
-HTML transferred:       409600 bytes
-Requests per second:    7441.92 [#/sec] (mean)
-Time per request:       137.599 [ms] (mean)
-Time per request:       0.134 [ms] (mean, across all concurrent requests)
-Transfer rate:          872.10 [Kbytes/sec] received
+Total transferred:      122880000 bytes
+HTML transferred:       4096000 bytes
+Requests per second:    8334.29 [#/sec] (mean)
+Time per request:       122.866 [ms] (mean)
+Time per request:       0.120 [ms] (mean, across all concurrent requests)
+Transfer rate:          976.67 [Kbytes/sec] received
 
 Connection Times (ms)
               min  mean[+/-sd] median   max
-Connect:        0    1   3.1      0      34
-Processing:     0  136  58.2    137     550
-Waiting:        0  135  58.2    137     550
-Total:          0  137  58.0    139     553
+Connect:        0    2   3.8      0      56
+Processing:     0  121  53.4    121     593
+Waiting:        0  120  53.4    121     592
+Total:          0  123  53.3    123     594
 
 Percentage of the requests served within a certain time (ms)
-  50%    139
-  66%    162
-  75%    174
-  80%    181
-  90%    202
-  95%    223
-  98%    264
-  99%    295
- 100%    553 (longest request)
+  50%    123
+  66%    143
+  75%    155
+  80%    163
+  90%    185
+  95%    207
+  98%    240
+  99%    266
+ 100%    594 (longest request)
 ```
 
-## 📚 자세히 알아보기
+## 📚 더 알아보기
 
-- [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 소개합니다.
-- [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등의 기본 개념을 설명합니다.
-- [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 상세히 설명합니다.
-- [디버깅](./docs/debugging_kr.md): 디버깅 세션을 시작하고, 브레이크포인트를 설정한 후, 상태 조회를 통해 디버깅하는 과정을 다룹니다.
-- [사용자 확장](./docs/user_extensions_kr.md): 새로운 기능 추가 및 기존 서비스 통합 방법을 안내합니다.
+- [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 알아보세요.
+- [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등 주요 개념을 이해하세요.
+- [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 살펴보세요.
+- [디버깅](./docs/debugging_kr.md): 워크플로우 디버깅을 통해 문제를 해결하는 방법을 배우세요.
+- [사용자 확장](./docs/user_extensions_kr.md): 시스템 확장 및 기존 서비스와의 통합 방법을 안내합니다.
 
 ## 🌐 커뮤니티 및 지원
 
-- [토론 포럼](https://github.com/siyul-park/uniflow/discussions): 질문 및 피드백을 공유할 수 있습니다.
-- [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그 보고 및 기능 요청을 제출할 수 있습니다.
+- [토론 포럼](https://github.com/siyul-park/uniflow/discussions): 질문 및 피드백을 나눌 수 있습니다.
+- [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그를 신고하거나 기능 요청을 제출할 수 있습니다.
 
 ## 📜 라이센스
 
-이 프로젝트는 [MIT 라이센스](./LICENSE)에 따라 배포됩니다. 라이센스 조건에 따라 자유롭게 사용, 수정 및 배포가 가능합니다.
+이 프로젝트는 [MIT 라이센스](./LICENSE)에 따라 배포됩니다. 자유롭게 사용, 수정, 배포할 수 있습니다.
 
 <!-- Go -->
 
@@ -178,4 +178,3 @@ Percentage of the requests served within a certain time (ms)
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
 [repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
 [repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
-```
