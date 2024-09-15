@@ -39,15 +39,15 @@ func TestNewHTTPNode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestHTTP_SendAndReceive(t *testing.T) {
+func TestHTTPNode_SendAndReceive(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()
 
 	u, _ := url.Parse(s.URL)
-
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
 
 	n := NewHTTPNode(u)
 	defer n.Close()
