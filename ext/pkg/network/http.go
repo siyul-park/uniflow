@@ -95,6 +95,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	if err := types.Unmarshal(inPck.Payload(), req); err != nil {
 		req.Body = inPck.Payload()
 	}
+	
 	if req.Method == "" {
 		if req.Body == nil {
 			req.Method = http.MethodGet
