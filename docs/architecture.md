@@ -75,28 +75,28 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
       path: /v1/secrets
       port: out[7]
   ports:
-    out[0]:
+    out[0]: 
       - name: nodes_create
         port: in
-    out[1]:
+    out[1]: 
       - name: nodes_read
         port: in
-    out[2]:
+    out[2]: 
       - name: nodes_update
         port: in
-    out[3]:
+    out[3]: 
       - name: nodes_delete
         port: in
-    out[4]:
+    out[4]: 
       - name: secrets_create
         port: in
-    out[5]:
+    out[5]: 
       - name: secrets_read
         port: in
-    out[6]:
+    out[6]: 
       - name: secrets_update
         port: in
-    out[7]:
+    out[7]: 
       - name: secrets_delete
         port: in
 

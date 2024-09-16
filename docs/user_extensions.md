@@ -1,4 +1,4 @@
-## 🔧 User Extensions
+# 🔧 User Extensions
 
 While most functionalities can already createable through combinations of uniflow nodes, there may occasionally be situations where you need to implement special or additional features directly. This guide explains how to create and apply such features.
 
@@ -6,7 +6,7 @@ Before reading this guide, it's recommended to read the [Key Concepts](https://g
 
 ## Setting Up the Development Environment
 
-First, initialize a [Go](https://go.dev) module and install the necessary dependencies:
+First, initialize the [Go](https://go.dev) module and download the necessary dependencies:
 
 ```shell
 go get github.com/siyul-park/uniflow
@@ -125,9 +125,8 @@ type Value interface {
 
 Let's continue implementing the example we used earlier. To create a proxy function, we need a structure that can change the URL according to a predetermined order and request to the server with the received packet. Since the incoming packet is a structure that directly requests resources from the server, we need to create a format that requests with the packet data and receives the response value.
 
-```go
-func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-    // Convert the payload into a manageable form
+### Testing the Node
+Write a test to ensure the node functions correctly. Send an input packet to the `in` port and verify that the output packet contains the expected `contents`:
     req := HTTPPayload{}
     if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
         return nil, packet.New(types.NewError(err))
@@ -181,11 +180,7 @@ func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 
 > You might think of other way, such as modifying header values without reconstructing the incoming request. In fact, the `proc` object from the http listener already contains `http.ResponseWriter` and `*http.Request` values that can be retrieved, but tampering with these values carelessly could make it impossible to pre- and post-process requests and responses. Unless necessary, it's best not to tamper with the process structure.
 
-Now all we need to do is return the final completed payload, `outPayload`. When returning, return the normally processed result as the first return value `(packet, nil)`, and in case of an error, return it as the second return value `(nil, packet)`.
-
-### Node Creation
-
-We're done with action function. let's Define a function to create the node and pass the packet processing method to the `OneToOneNode` constructor:
+Create a codec that converts the node specification into a node and register it with the schema:
 
 ```go
 func NewProxyNode(urls []*url.URL) *ProxyNode {
@@ -407,6 +402,7 @@ sym := symbols[0]
 
 in := port.NewOut()
 defer in.Close()
+
 in.Link(sym.In(node.PortIn))
 
 payload := types.NewString(faker.Word())
