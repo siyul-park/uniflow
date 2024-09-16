@@ -108,9 +108,15 @@ func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 	}
 
 	res := &HTTPPayload{
-		Header: w.Header(),
-		Body:   body,
-		Status: w.Code,
+		Method:   req.Method,
+		Scheme:   req.Scheme,
+		Host:     req.Host,
+		Path:     req.Path,
+		Query:    req.Query,
+		Protocol: req.Protocol,
+		Header:   w.Header(),
+		Body:     body,
+		Status:   w.Code,
 	}
 
 	outPayload, err := types.Marshal(res)

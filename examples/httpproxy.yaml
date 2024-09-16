@@ -7,6 +7,6 @@
       - name: proxy
         port: in
 
-- kind: http
+- kind: proxy
   name: proxy
-  url: https://www.google.com/
+  urls: [https://www.google.com/]
