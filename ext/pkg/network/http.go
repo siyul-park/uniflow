@@ -16,6 +16,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"golang.org/x/net/http2"
 )
 
 // HTTPNodeSpec defines the specifications for creating an HTTPNode.
@@ -95,6 +96,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	if err := types.Unmarshal(inPck.Payload(), req); err != nil {
 		req.Body = inPck.Payload()
 	}
+
 	if req.Method == "" {
 		if req.Body == nil {
 			req.Method = http.MethodGet
@@ -135,7 +137,13 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 	r = r.WithContext(ctx)
 
-	client := &http.Client{}
+	transport := &http.Transport{}
+	http2.ConfigureTransport(transport)
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
 	w, err := client.Do(r)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
@@ -148,9 +156,15 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 
 	res := &HTTPPayload{
-		Header: w.Header,
-		Body:   body,
-		Status: w.StatusCode,
+		Method:   req.Method,
+		Scheme:   req.Scheme,
+		Host:     req.Host,
+		Path:     req.Path,
+		Query:    req.Query,
+		Protocol: req.Protocol,
+		Header:   w.Header,
+		Body:     body,
+		Status:   w.StatusCode,
 	}
 
 	outPayload, err := types.Marshal(res)
