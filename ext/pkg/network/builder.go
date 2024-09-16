@@ -36,6 +36,9 @@ func AddToScheme() scheme.Register {
 		s.AddKnownType(KindListener, &ListenNodeSpec{})
 		s.AddCodec(KindListener, NewListenNodeCodec())
 
+		s.AddKnownType(KindProxy, &ProxyNodeSpec{})
+		s.AddCodec(KindProxy, NewProxyNodeCodec())
+
 		s.AddKnownType(KindRouter, &RouteNodeSpec{})
 		s.AddCodec(KindRouter, NewRouteNodeCodec())
 
