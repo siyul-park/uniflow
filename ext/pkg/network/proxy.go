@@ -19,6 +19,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"golang.org/x/net/http2"
 )
 
 // ProxyNodeSpec defines the specifications for creating a ProxyNode.
@@ -57,7 +58,12 @@ func NewProxyNodeCodec() scheme.Codec {
 func NewProxyNode(urls []*url.URL) *ProxyNode {
 	var index int
 	var mu sync.Mutex
+
+	transport := &http.Transport{}
+	http2.ConfigureTransport(transport)
+
 	proxy := &httputil.ReverseProxy{
+		Transport: transport,
 		Rewrite: func(r *httputil.ProxyRequest) {
 			mu.Lock()
 			defer mu.Unlock()

@@ -137,9 +137,11 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 	r = r.WithContext(ctx)
 
-	client := &http.Client{}
-	if req.Protocol == "HTTP/2" {
-		client.Transport = &http2.Transport{}
+	transport := &http.Transport{}
+	http2.ConfigureTransport(transport)
+
+	client := &http.Client{
+		Transport: transport,
 	}
 
 	w, err := client.Do(r)
