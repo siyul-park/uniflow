@@ -103,7 +103,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.create
     - kind: snippet
@@ -121,7 +121,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: nodes.read
     - kind: snippet
@@ -139,7 +139,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: nodes.update
     - kind: snippet
@@ -157,7 +157,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: nodes.delete
     - kind: snippet
@@ -174,7 +174,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.create
     - kind: snippet
@@ -192,7 +192,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: secrets.read
     - kind: snippet
@@ -210,7 +210,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: "has(self.body) ? self.body : null"
+      code: 'has(self.body) ? self.body : null'
     - kind: native
       opcode: secrets.update
     - kind: snippet
@@ -228,7 +228,7 @@
   specs:
     - kind: snippet
       language: json
-      code: "null"
+      code: 'null'
     - kind: native
       opcode: secrets.delete
     - kind: snippet
@@ -243,9 +243,9 @@
 - kind: switch
   name: catch
   matches:
-    - when: self == 'unsupported type' || self == 'unsupported value'
+    - when: self == "unsupported type" || self == "unsupported value"
       port: out[0]
-    - when: "true"
+    - when: 'true'
       port: out[1]
   ports:
     out[0]:
@@ -281,9 +281,7 @@
 ```
 
 이 접근 방식은 안정적인 런타임 환경을 유지하면서 시스템을 유연하게 확장할 수 있도록 합니다.
-이 접근 방식은 안정적인 런타임 환경을 유지하면서 시스템을 유연하게 확장할 수 있도록 합니다.
 
-### 컴파일 과정
 ### 컴파일 과정
 
 로더는 데이터베이스의 변경 스트림을 통해 실시간으로 노드 명세와 시크릿의 변경 사항을 추적합니다. 추가, 수정, 삭제가 발생하면 로더는 해당 명세를 다시 로드하고, 스키마에 정의된 코덱을 활용해 실행 가능한 형태로 컴파일합니다. 캐싱과 최적화 과정도 함께 수행되어 성능을 개선합니다.
