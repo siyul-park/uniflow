@@ -267,22 +267,22 @@ func TestProxyNode_SendAndReceive(t *testing.T) {
 
 ```go
 func NewProxyNodeCodec() scheme.Codec {
-  return scheme.CodecWithType(func(spec *ProxyNodeSpec) (node.Node, error) {
-    urls := make([]*url.URL, 0, len(spec.URLs))
-    if len(spec.URLs) == 0 {
-      return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-    }
+	return scheme.CodecWithType(func(spec *ProxyNodeSpec) (node.Node, error) {
+		urls := make([]*url.URL, 0, len(spec.URLs))
+		if len(spec.URLs) == 0 {
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		}
 
-    for _, u := range spec.URLs {
-      parsed, err := url.Parse(u)
-      if err != nil {
-        return nil, err
-      }
-      urls = append(urls, parsed)
-    }
+		for _, u := range spec.URLs {
+			parsed, err := url.Parse(u)
+			if err != nil {
+				return nil, err
+			}
+			urls = append(urls, parsed)
+		}	
 
-    return NewProxyNode(urls), nil
-  })
+		return NewProxyNode(urls), nil
+	})
 }
 ```
 
@@ -294,11 +294,11 @@ func NewProxyNodeCodec() scheme.Codec {
 
 ```go
 func AddToScheme() scheme.Register {
-  return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-    s.AddKnownType(KindProxy, &ProxyNodeSpec{})
-    s.AddCodec(KindProxy, NewProxyNodeCodec())
-    return nil
-  })
+	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
+		s.AddKnownType(KindProxy, &ProxyNodeSpec{})
+		s.AddCodec(KindProxy, NewProxyNodeCodec())
+		return nil
+	})
 }
 ```
 
@@ -319,11 +319,11 @@ scheme, _ := builder.Build()
 
 ```go
 r := runtime.New(runtime.Config{
-  Namespace:   namespace,
-  Schema:      scheme,
-  Hook:        hook,
-  SpecStore:   specStore,
-  SecretStore: secretStore,
+	Namespace:   namespace,
+	Schema:      scheme,
+	Hook:        hook,
+	SpecStore:   specStore,
+	SecretStore: secretStore,
 })
 defer r.Close()
 ```
@@ -340,39 +340,39 @@ defer r.Close()
 
 ```go
 func main() {
-  specStore := spec.NewStore()
-  secretStore := secret.NewStore()
+	specStore := spec.NewStore()
+	secretStore := secret.NewStore()
 
-  schemeBuilder := scheme.NewBuilder()
-  hookBuilder := hook.NewBuilder()
+	schemeBuilder := scheme.NewBuilder()
+	hookBuilder := hook.NewBuilder()
 
-  scheme, err := schemeBuilder.Build()
-  if err != nil {
-    log.Fatal(err)
-  }
-  hook, err := hookBuilder.Build()
-  if err != nil {
-    log.Fatal(err)
-  }
+	scheme, err := schemeBuilder.Build()
+	if err != nil {
+		log.Fatal(err)
+	}
+	hook, err := hookBuilder.Build()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  r := runtime.New(runtime.Config{
-    Namespace:   "default",
-    Schema:      scheme,
-    Hook:        hook,
-    SpecStore:   specStore,
-    SecretStore: secretStore,
-  })
-  defer r.Close()
+	r := runtime.New(runtime.Config{
+		Namespace:   "default",
+		Schema:      scheme,
+		Hook:        hook,
+		SpecStore:   specStore,
+		SecretStore: secretStore,
+	})
+	defer r.Close()
 
-  sigs := make(chan os.Signal, 1)
-  signal.Notify(sigs, os.Interrupt, os.Kill)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-  go func() {
-    <-sigs
-    _ = r.Close()
-  }()
+	go func() {
+		<-sigs
+		_ = r.Close()
+	}()
 
-  r.Listen(context.TODO())
+	r.Listen(context.TODO())
 }
 ```
 
@@ -384,18 +384,18 @@ func main() {
 
 ```go
 r := runtime.New(runtime.Config{
-  Namespace:   "default",
-  Schema:      scheme,
-  Hook:        hook,
-  SpecStore:   specStore,
-  SecretStore: secretStore,
+	Namespace:   "default",
+	Schema:      scheme,
+	Hook:        hook,
+	SpecStore:   specStore,
+	SecretStore: secretStore,
 })
 defer r.Close()
 
 r.Load(ctx) // 모든 리소스 로드
 
 symbols, _ := r.Load(ctx, &spec.Meta{
-  Name: "main",
+	Name: "main",
 })
 
 sb := symbols[0]
