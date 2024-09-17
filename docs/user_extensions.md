@@ -1,22 +1,20 @@
 # 🔧 User Extensions
 
-While most functionalities can already createable through combinations of uniflow nodes, there may occasionally be situations where you need to implement special or additional features directly. This guide explains how to create and apply such features.
+While most functionalities can be implemented by combining existing nodes, sometimes new features may be required. In such cases, you can extend functionality by adding new nodes at runtime.
 
-Before reading this guide, it's recommended to read the [Key Concepts](https://github.com/siyul-park/uniflow/blob/main/docs/key_concepts.md) and [System Architecture](https://github.com/siyul-park/uniflow/blob/main/docs/architecture.md).
+Before reading this guide, it is recommended to review the [Key Concepts](./key_concepts.md) and [Architecture](./architecture.md).
 
 ## Setting Up the Development Environment
 
-First, initialize the [Go](https://go.dev) module and download the necessary dependencies:
+Initialize the Go module and install necessary dependencies.
 
 ```shell
 go get github.com/siyul-park/uniflow
 ```
 
-## Writing a Workflow
+## Creating a Workflow
 
-To connect a new node to a workflow, the node should be implemented first.
-
-but for now, (for ease of explanation) we'll show the final completed form to give an overall picture. Here's a simple workflow that implements a proxy feature to load balance HTTP requests:
+Here is a simple example of a workflow that provides proxy functionality. This workflow receives HTTP requests and performs load balancing across multiple backend servers.
 
 ```yaml
 - kind: listener
@@ -28,7 +26,6 @@ but for now, (for ease of explanation) we'll show the final completed form to gi
       - name: proxy
         port: in
 
-# This is the proxy node we'll create
 - kind: proxy
   name: proxy
   urls:
@@ -36,48 +33,38 @@ but for now, (for ease of explanation) we'll show the final completed form to gi
     - https://backend2.com/
 ```
 
-When an HTTP request is made to port 8000, the proxy will automatically select one of the given URLs to process the data. Now, we need to create this proxy node.
+In this YAML configuration, HTTP requests coming into port 8000 are handled by the proxy node, which selects one of the backend servers specified in the `urls` for processing the request.
 
-## Creating a New Node
+## Adding a Node
 
-To create a node, we generally go through three steps: **Define structure and type -> Define action function -> Define creation function**. After defining the node's specifications and deciding on a name for the node type (called 'kind'), implement the action function that defines what the node will do, and create a function to generate this node.
+To support a new node, you need to define the node specification, implement the node, and then connect the node at runtime.
 
-we can call these steps as 'creating a node specification'. After this, create a codec that converts this specification into an actual functioning node, register it with the schema, and finally connect it to the runtime environment.
+Define the node's specification and type (kind), implement the node's behavior function, and create a function to instantiate the node. After that, create a codec to convert the specification into an operational node and register it with the schema for runtime integration.
 
-### Defining Node Specifications
+### Define Node Specification
 
-The node specification should conform to the `spec.Spec` interface. The following items are required:
-
-```go
-ID uuid.UUID // Unique identifier in UUID format
-Kind string // Specifies the type of node
-Namespace string // Specifies the namespace the node belongs to
-Name string // Specifies the name of the node, which must be unique within the same namespace
-Annotations map[string]string // Additional metadata for the node
-Ports map[string][]Port // Defines how ports are connected
-Env map[string][]Secret // Specifies environment variables needed for the node
-```
-
-You can use `spec.Meta` to write this simply:
+Node specifications should conform to the `spec.Spec` interface. The following fields are required:
 
 ```go
-type ProxyNodeSpec struct {
-    spec.Meta `map:",inline"`
-}
+ID uuid.UUID // Unique identifier in UUID format.
+Kind string // Specifies the type of the node.
+Namespace string // Specifies the namespace the node belongs to.
+Name string // Specifies the name of the node, which must be unique within the same namespace.
+Annotations map[string]string // Additional metadata about the node.
+Ports map[string][]Port // Defines the port connections.
+Env map[string][]Secret // Specifies environment variables required by the node.
 ```
 
-#### Adding Additional Fields
-
-If you need to receive additional values, you can add extra fields. Assuming we need URL information to create the proxy functionality, we can declare a URLS field like this:
+You can simplify this with `spec.Meta`:
 
 ```go
 type ProxyNodeSpec struct {
-    spec.Meta `map:",inline"`
-    URLS []string `map:"urls"`
+	spec.Meta `map:",inline"`
+	URLs      []string `map:"urls"`
 }
 ```
 
-This field can be used as an additional field when using the node in a workflow later, and can be accepted as initial configuration values such as environment variables.
+The specification includes fields like UUID, node kind, namespace, and additional settings such as `URLs`.
 
 ```yaml
 - kind: proxy
@@ -87,323 +74,336 @@ This field can be used as an additional field when using the node in a workflow 
     - https://backend2.com/
 ```
 
-### Defining Node Type
+### Define Node Type
 
-Now we define the node type. This type must be accurately written for the runtime to correctly recognize the node:
+Define the node type so that it can be recognized at runtime. Here is the definition for the proxy node type.
 
 ```go
 const KindProxy = "proxy"
 ```
 
-### Defining Node Structure
+### Define Node Implementation
 
-Based on the node specification, now we need to define the elements actually needed for the node to function. In simple terms, it should contain information about how the node will communicate and what data it will hold:
+Based on the node specification, define the actual behavior of the node. This should include details on how the node communicates and processes data:
 
 ```go
 type ProxyNode struct {
-    *node.OneToOneNode
-    proxy *httputil.ReverseProxy
+  *node.OneToOneNode
+  proxy *httputil.ReverseProxy
 }
 ```
 
-For nodes to communicate, a communication standard must be defined. uniflow supports `ZeroToOne`, `OneToOne`, `OneToMany`, `ManyToOne`, and `Other` standards. The `OneToOneNode` template used here supports a 1:1 structure and helps easily implement nodes that receive packets from the input port, process them, and transfer them to the output port.
+Next, select the communication specification for the node. Supported specifications include `ZeroToOne`, `OneToOne`, `OneToMany`, `ManyToOne`, and `Other`.
 
-### Implementing Node Action
+The `OneToOneNode` template supports 1:1 structure, which simplifies the implementation of nodes that receive packets from an input port and directly pass them to an output port.
 
-Now we implement the process of the node handling input packets and generating output packets as a result. Packets contain payloads, and these payloads are represented by one of several common data types that implement the `types.Value` interface.
+Implement the process for handling input packets and generating output packets. Packets contain payloads, which are represented by one of the public data types implementing the `types.Value` interface.
 
 ```go
 // Value is an interface representing atomic data types.
 type Value interface {
-    Kind() Kind // Kind returns the type of the Value.
-    Hash() uint64 // Hash returns the hash code of the Value.
-    Interface() any // Interface returns the Value as a general interface.
-    Equal(other Value) bool // Equal checks if this Value is the same as another Value.
-    Compare(other Value) int // Compare compares this Value with another Value.
+  Kind() Kind              // Kind returns the type of the Value.
+  Hash() uint64            // Hash returns the hash code of the Value.
+  Interface() any          // Interface returns the Value as a general interface.
+  Equal(other Value) bool  // Equal checks if this Value is equal to another Value.
+  Compare(other Value) int // Compare compares this Value with another Value.
 }
 ```
 
-Let's continue implementing the example we used earlier. To create a proxy function, we need a structure that can change the URL according to a predetermined order and request to the server with the received packet. Since the incoming packet is a structure that directly requests resources from the server, we need to create a format that requests with the packet data and receives the response value.
+To implement the proxy functionality, the node should be able to modify URLs according to a predetermined order and send requests to the server. The implementation should handle direct requests using packet data and process the responses.
 
-### Testing the Node
-Write a test to ensure the node functions correctly. Send an input packet to the `in` port and verify that the output packet contains the expected `contents`:
-    req := HTTPPayload{}
-    if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
-        return nil, packet.New(types.NewError(err))
-    }
+```go
+func (n *ProxyNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	req := &HTTPPayload{}
+	if err := types.Unmarshal(inPck.Payload(), req); err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
 
-    // Get the body data
-    buf := bytes.NewBuffer(nil)
-    if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
-        return nil, packet.New(types.NewError(err))
-    }
+	buf := bytes.NewBuffer(nil)
+	if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
 
-    // Now create Request data to use in the proxy environment based on this value
-    r := &http.Request{
-        Method: req.Method,
-        URL: &url.URL{
-            Scheme:   req.Scheme,
-            Host:     req.Host,
-            Path:     req.Path,
-            RawQuery: req.Query.Encode(),
-        },
-        Proto:  req.Protocol,
-        Header: req.Header,
-        Body:   io.NopCloser(buf),
-    }
+	r := &http.Request{
+		Method: req.Method,
+		URL: &url.URL{
+			Scheme:   req.Scheme,
+			Host:     req.Host,
+			Path:     req.Path,
+			RawQuery: req.Query.Encode(),
+		},
+		Proto:  req.Protocol,
+		Header: req.Header,
+		Body:   io.NopCloser(buf),
+	}
+	w := httptest.NewRecorder()
 
-    // Perform HTTP request through proxy
-    w := httptest.NewRecorder()
-    n.proxy.ServeHTTP(w, r)
+	n.proxy.ServeHTTP(w, r)
 
-    // Get the result body
-    body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header()))
-    if err != nil {
-        return nil, packet.New(types.NewError(err))
-    }
+	body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header()))
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
 
-    // Create result payload
-    res := &HTTPPayload{
-        Header: w.Header(),
-        Body:   body,
-        Status: w.Code,
-    }
+	res := &HTTPPayload{
+		Method:   req.Method,
+		Scheme:   req.Scheme,
+		Host:     req.Host,
+		Path:     req.Path,
+		Query:    req.Query,
+		Protocol: req.Protocol,
+		Header:   w.Header(),
+		Body:     body,
+		Status:   w.Code,
+	}
 
-    // Now create and return the packet to send this result
-    outPayload, err := types.Encoder.Encode(res)
-    if err != nil {
-        return nil, packet.New(types.NewError(err))
-    }
-    return packet.New(outPayload), nil
+	outPayload, err := types.Marshal(res)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+	return packet.New(outPayload), nil
 }
 ```
 
-> You might think of other way, such as modifying header values without reconstructing the incoming request. In fact, the `proc` object from the http listener already contains `http.ResponseWriter` and `*http.Request` values that can be retrieved, but tampering with these values carelessly could make it impossible to pre- and post-process requests and responses. Unless necessary, it's best not to tamper with the process structure.
-
-Create a codec that converts the node specification into a node and register it with the schema:
+Finally, define a function to create and configure the node for actual operation.
 
 ```go
 func NewProxyNode(urls []*url.URL) *ProxyNode {
-    var index int
-    var mu sync.Mutex
+	var index int
+	var mu sync.Mutex
 
-    proxy := &httputil.ReverseProxy{
-        Rewrite: func(pr *httputil.ProxyRequest) {
-            mu.Lock()
-            defer mu.Unlock()
-            index = (index + 1) % len(urls)
-            pr.SetURL(urls[index])
-            pr.SetXForwarded()
-        },
-    }
+	transport := &http.Transport{}
+	http2.ConfigureTransport(transport)
 
-    n := &ProxyNode{proxy: proxy}
-    n.OneToOneNode = node.NewOneToOneNode(n.action)
-    return n
+	proxy := &httputil.ReverseProxy{
+		Transport: transport,
+		Rewrite: func(r *httputil.ProxyRequest) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			index = (index + 1) % len(urls)
+
+			r.SetURL(urls[index])
+			r.SetXForwarded()
+		},
+	}
+
+	n := &ProxyNode{proxy: proxy}
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
+	return n
 }
 ```
-
-In this example, any additional features are not included such as health-check. (for explanation purposes) but you can add various features that can improve completeness.
 
 ### Writing Tests
 
-Write tests to verify that the node works as intended. Send an input packet to the `in` port and verify that the output packet comes out as expected from the `out` port:
+Write tests to ensure the node operates as expected. Send an input packet through the `in` port and verify that the output packet from the `out` port meets expectations.
 
 ```go
 func TestProxyNode_SendAndReceive(t *testing.T) {
-    ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-    defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-    s1 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-        writer.WriteHeader(http.StatusOK)
-        writer.Write([]byte("Backend 1"))
-    }))
-    defer s1.Close()
+	s1 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("Backend 1"))
+	}))
+	defer s1.Close()
 
-    s2 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-        writer.WriteHeader(http.StatusOK)
-        writer.Write([]byte("Backend 2"))
-    }))
-    defer s2.Close()
+	s2 := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("Backend 2"))
+	}))
+	defer s2.Close()
 
-    u1, _ := url.Parse(s1.URL)
-    u2, _ := url.Parse(s2.URL)
+	u1, _ := url.Parse(s1.URL)
+	u2, _ := url.Parse(s2.URL)
 
-    n := NewProxyNode([]*url.URL{u1, u2})
-    defer n.Close()
+	n := NewProxyNode([]*url.URL{u1, u2})
+	defer n.Close()
 
-    in := port.NewOut()
-    in.Link(n.In(node.PortIn))
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-    proc := process.New()
-    defer proc.Exit(nil)
+	proc := process.New()
+	defer proc.Exit(nil)
 
-    inWriter := in.Open(proc)
+	inWriter := in.Open(proc)
 
-    inPayload := types.NewMap(
-        types.NewString("method"), types.NewString(http.MethodGet),
-        types.NewString("scheme"), types.NewString("http"),
-        types.NewString("host"), types.NewString("test"),
-        types.NewString("path"), types.NewString("/"),
-        types.NewString("protocol"), types.NewString("HTTP/1.1"),
-        types.NewString("status"), types.NewInt(0),
-    )
-    inPck := packet.New(inPayload)
-    inWriter.Write(inPck)
+	inPayload := types.NewMap(
+		types.NewString("method"), types.NewString(http.MethodGet),
+		types.NewString("scheme"), types.NewString("http"),
+		types.NewString("host"), types.NewString("test"),
+		types.NewString("path"), types.NewString("/"),
+		types.NewString("query"), types.NewMap(),
+		types.NewString("protocol"), types.NewString("HTTP/1.1"),
+		types.NewString("header"), types.NewMap(),
+		types.NewString("body"), types.NewBytes([]byte("")),
+	)
+	inWriter.Send(packet.New(inPayload))
 
-    select {
-    case outPck := <-inWriter.Receive():
-        payload := &HTTPPayload{}
-        err := types.Unmarshal(outPck.Payload(), payload)
-        assert.NoError(t, err)
-        assert.Contains(t, payload.Body.Interface(), "Backend")
-    case <-ctx.Done():
-        assert.Fail(t, ctx.Err().Error())
-    }
+	pck, err := inWriter.Receive(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	payload := &HTTPPayload{}
+	if err := types.Unmarshal(pck.Payload(), payload); err != nil {
+		t.Fatal(err)
+	}
+
+	if payload.Status != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, payload.Status)
+	}
 }
 ```
 
-If the assert succeeds, you can confirm that it can perform a complete function as a single node.
+## Runtime Integration
 
-## Connecting to Runtime
+Now that you have created a node and schema, you need to integrate them into the runtime environment. This process involves creating a codec to convert node specifications into actual node objects, registering the schema, and setting up the runtime environment for execution.
 
-The content explained so far was about how to create a single node. Now, to connect the node to the system, we need to create a codec, connect it to the schema, and then the node can perform the desired task when executed.
+### Creating the Codec
 
-### Creating a Codec
-
-Write a codec that converts the node specification into a node:
+The codec is responsible for converting node specifications into actual node objects. Here's how you can create a codec for the `ProxyNode`:
 
 ```go
 func NewProxyNodeCodec() scheme.Codec {
-    return scheme.CodecWithType(func(spec *ProxyNodeSpec) (node.Node, error) {
-        urls := make([]*url.URL, 0, len(spec.URLS))
-        if len(urls) == 0 {
-            return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-        }
-        for _, u := range spec.URLS {
-            parsed, err := url.Parse(u)
-            if err != nil {
-                return nil, err
-            }
-            urls = append(urls, parsed)
-        }
-        return NewProxyNode(urls), nil
-    })
+  return scheme.CodecWithType(func(spec *ProxyNodeSpec) (node.Node, error) {
+    urls := make([]*url.URL, 0, len(spec.URLs))
+    if len(spec.URLs) == 0 {
+      return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+    }
+
+    for _, u := range spec.URLs {
+      parsed, err := url.Parse(u)
+      if err != nil {
+        return nil, err
+      }
+      urls = append(urls, parsed)
+    }
+
+    return NewProxyNode(urls), nil
+  })
 }
 ```
 
-### Creating and Adding Schema
+This codec function takes a `ProxyNodeSpec` specification, parses the URLs, and creates a `ProxyNode` using the `NewProxyNode` function. It returns an error if something goes wrong during this process.
 
-Create a schema generation function so that the specification and type used when creating the node can be recognized and used externally:
+### Creating and Adding the Schema
+
+To make your node type recognizable by the system, you need to create and register a schema. This step allows the system to identify and use your new node type.
 
 ```go
 func AddToScheme() scheme.Register {
-    return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-        ...
-        s.AddKnownType(KindProxy, &ProxyNodeSpec{})
-        s.AddCodec(KindProxy, NewProxyNodeCodec())
-        ...
-        return nil
-    })
+  return scheme.RegisterFunc(func(s *scheme.Scheme) error {
+    s.AddKnownType(KindProxy, &ProxyNodeSpec{})
+    s.AddCodec(KindProxy, NewProxyNodeCodec())
+    return nil
+  })
 }
 ```
 
-Pass this defined `scheme.Register` to `scheme.Builder` to create a schema:
+The `AddToScheme` function registers the `ProxyNodeSpec` and its codec with the schema, allowing the system to recognize and work with the `KindProxy` node type.
+
+To actually build the schema, you need to pass the `scheme.Register` to a `scheme.Builder` and build it:
 
 ```go
 builder := scheme.NewBuilder()
 builder.Register(AddToScheme())
+
 scheme, _ := builder.Build()
 ```
 
 ### Running the Runtime Environment
 
-Now, if you pass this schema to the runtime environment, you can run a workflow that includes the node you created directly:
+With the schema created and registered, you can now set up the runtime environment and run workflows that include your new node type. Initialize the runtime environment with the schema and other required components:
 
 ```go
 r := runtime.New(runtime.Config{
-    Namespace:   namespace,
-    Schema:      scheme,
-    Hook:        hook,
-    SpecStore:   specStore,
-    SecretStore: secretStore,
+  Namespace:   namespace,
+  Schema:      scheme,
+  Hook:        hook,
+  SpecStore:   specStore,
+  SecretStore: secretStore,
 })
 defer r.Close()
 ```
 
-All data about the workflow is now in `r`, so all preparations are complete if you run this variable according to your purpose.
+This code creates a new runtime environment using the provided schema, hook, specification store, and secret store. The `defer` statement ensures that resources are cleaned up when done.
 
-## Integrating with Existing Services
+## Integration with Existing Services
 
-Now you need to add this runtime environment to your existing service, rebuild it, and create an executable file. There are two ways to add services: continuous execution where the runtime keeps running and operating, and simple execution that runs once and ends.
+To integrate the runtime environment with existing services and build an executable, you need to set up the environment to run continuously or in a simpler execution mode.
 
 ### Continuous Execution
 
-Continuously maintaining the runtime environment allows for immediate response to external requests. Each runtime environment runs in an independent container and is suitable for scenarios requiring continuous workflow execution.
+Running the runtime environment continuously allows it to handle external requests promptly. This approach is suitable for scenarios where ongoing workflow execution is needed.
 
 ```go
 func main() {
-    specStore := spec.NewStore()
-    secretStore := secret.NewStore()
-    schemeBuilder := scheme.NewBuilder()
-    hookBuilder := hook.NewBuilder()
+  specStore := spec.NewStore()
+  secretStore := secret.NewStore()
 
-    scheme, err := schemeBuilder.Build()
-    if err != nil {
-        log.Fatal(err)
-    }
+  schemeBuilder := scheme.NewBuilder()
+  hookBuilder := hook.NewBuilder()
 
-    hook, err := hookBuilder.Build()
-    if err != nil {
-        log.Fatal(err)
-    }
+  scheme, err := schemeBuilder.Build()
+  if err != nil {
+    log.Fatal(err)
+  }
+  hook, err := hookBuilder.Build()
+  if err != nil {
+    log.Fatal(err)
+  }
 
-    r := runtime.New(runtime.Config{
-        Namespace:   "default",
-        Schema:      scheme,
-        Hook:        hook,
-        SpecStore:   specStore,
-        SecretStore: secretStore,
-    })
-    defer r.Close()
-
-    sigs := make(chan os.Signal, 1)
-    signal.Notify(sigs, native.SIGINT, native.SIGTERM)
-
-    go func() {
-        <-sigs
-        _ = r.Close()
-    }()
-
-    r.Listen(context.TODO())
-}
-```
-
-### Simple Execution
-
-While there are advantages to continuously maintaining the runtime environment, you might want it to operate only when needed or to operate simply. In this case, you can configure it for simple execution.
-
-```go
-r := runtime.New(runtime.Config{
+  r := runtime.New(runtime.Config{
     Namespace:   "default",
     Schema:      scheme,
     Hook:        hook,
     SpecStore:   specStore,
     SecretStore: secretStore,
+  })
+  defer r.Close()
+
+  sigs := make(chan os.Signal, 1)
+  signal.Notify(sigs, os.Interrupt, os.Kill)
+
+  go func() {
+    <-sigs
+    _ = r.Close()
+  }()
+
+  r.Listen(context.TODO())
+}
+```
+
+This code keeps the runtime environment running and responsive to external signals. It uses `os.Signal` to listen for termination signals and safely shuts down the environment.
+
+### Simple Execution
+
+In some cases, you may prefer a simpler execution mode where the runtime environment runs only when needed and then exits. This approach is useful for scenarios where you don't need continuous operation.
+
+```go
+r := runtime.New(runtime.Config{
+  Namespace:   "default",
+  Schema:      scheme,
+  Hook:        hook,
+  SpecStore:   specStore,
+  SecretStore: secretStore,
 })
 defer r.Close()
 
 r.Load(ctx) // Load all resources
 
 symbols, _ := r.Load(ctx, &spec.Meta{
-    Name: "main",
+  Name: "main",
 })
-sym := symbols[0]
+
+sb := symbols[0]
 
 in := port.NewOut()
 defer in.Close()
 
-in.Link(sym.In(node.PortIn))
+in.Link(sb.In(node.PortIn))
 
 payload := types.NewString(faker.Word())
 payload, err := port.Call(in, payload)
