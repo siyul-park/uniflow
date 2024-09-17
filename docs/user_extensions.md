@@ -88,8 +88,8 @@ Based on the node specification, define the actual behavior of the node. This sh
 
 ```go
 type ProxyNode struct {
-  *node.OneToOneNode
-  proxy *httputil.ReverseProxy
+	*node.OneToOneNode
+	proxy *httputil.ReverseProxy
 }
 ```
 
@@ -102,11 +102,11 @@ Implement the process for handling input packets and generating output packets. 
 ```go
 // Value is an interface representing atomic data types.
 type Value interface {
-  Kind() Kind              // Kind returns the type of the Value.
-  Hash() uint64            // Hash returns the hash code of the Value.
-  Interface() any          // Interface returns the Value as a general interface.
-  Equal(other Value) bool  // Equal checks if this Value is equal to another Value.
-  Compare(other Value) int // Compare compares this Value with another Value.
+	Kind() Kind              // Kind returns the type of the Value.
+	Hash() uint64            // Hash returns the hash code of the Value.
+	Interface() any          // Interface returns the Value as a general interface.
+	Equal(other Value) bool  // Equal checks if this Value is equal to another Value.
+	Compare(other Value) int // Compare compares this Value with another Value.
 }
 ```
 

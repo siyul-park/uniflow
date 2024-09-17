@@ -88,8 +88,8 @@ const KindProxy = "proxy"
 
 ```go
 type ProxyNode struct {
-  *node.OneToOneNode
-  proxy *httputil.ReverseProxy
+	*node.OneToOneNode
+	proxy *httputil.ReverseProxy
 }
 ```
 
@@ -102,11 +102,11 @@ type ProxyNode struct {
 ```go
 // Value는 원자적 데이터 타입을 표현하는 인터페이스입니다.
 type Value interface {
-  Kind() Kind              // Kind는 Value의 타입을 반환합니다.
-  Hash() uint64            // Hash는 Value의 해시 코드를 반환합니다.
-  Interface() any          // Interface는 Value를 일반 인터페이스로 반환합니다.
-  Equal(other Value) bool  // Equal은 이 Value와 다른 Value가 같은지를 확인합니다.
-  Compare(other Value) int // Compare는 이 Value와 다른 Value를 비교합니다.
+	Kind() Kind              // Kind는 Value의 타입을 반환합니다.
+	Hash() uint64            // Hash는 Value의 해시 코드를 반환합니다.
+	Interface() any          // Interface는 Value를 일반 인터페이스로 반환합니다.
+	Equal(other Value) bool  // Equal은 이 Value와 다른 Value가 같은지를 확인합니다.
+	Compare(other Value) int // Compare는 이 Value와 다른 Value를 비교합니다.
 }
 ```
 
