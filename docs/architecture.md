@@ -75,28 +75,28 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
       path: /v1/secrets
       port: out[7]
   ports:
-    out[0]: 
+    out[0]:
       - name: nodes_create
         port: in
-    out[1]: 
+    out[1]:
       - name: nodes_read
         port: in
-    out[2]: 
+    out[2]:
       - name: nodes_update
         port: in
-    out[3]: 
+    out[3]:
       - name: nodes_delete
         port: in
-    out[4]: 
+    out[4]:
       - name: secrets_create
         port: in
-    out[5]: 
+    out[5]:
       - name: secrets_read
         port: in
-    out[6]: 
+    out[6]:
       - name: secrets_update
         port: in
-    out[7]: 
+    out[7]:
       - name: secrets_delete
         port: in
 
@@ -118,7 +118,168 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
           };
         }
 
-# Additional blocks for reading, updating, deleting nodes and secrets
+- kind: block
+  name: nodes_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: nodes.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: nodes_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: nodes.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: nodes_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: nodes.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
+- kind: block
+  name: secrets_create
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: secrets.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
+
+- kind: block
+  name: secrets_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: secrets.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: secrets.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
+- kind: switch
+  name: catch
+  matches:
+    - when: self == "unsupported type" || self == "unsupported value"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  ports:
+    out[0]:
+      - name: status_400
+        port: in
+    out[1]:
+      - name: status_500
+        port: in
+
+- kind: snippet
+  name: status_400
+  language: javascript
+  code: |
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: status_500
+  language: json
+  code: |
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }
 ```
 
 This approach ensures runtime stability while allowing flexible system expansion.
@@ -141,11 +302,24 @@ Compiled nodes are transformed into symbols and stored in a symbol table. The sy
    |  +--------------------+  |   |  +-------------+  |
    +--------------------------+   |  |    Scheme   |  |
    +--------------------------+   |  |  +-------+  |  |
-   |         Database         |   |  |  | Codec |  |  |
-   |  +--------+  +--------+  |   |  |  +-------+  |  |
-   |  | Secret |  | Secret |  |-->|  +-------------+  |
-   |  +--------+  +--------+  |   +-------------------+
-   +--------------------------+ 
+   |         Database         |   |  |  | Codec |  |  |--+
+   |  +--------+  +--------+  |   |  |  +-------+  |  |  |
+   |  | Secret |  | Secret |  |-->|  +-------------+  |  |
+   |  +--------+  +--------+  |   +-------------------+  |
+   |  +--------+  +--------+  |                          |
+   |  | Secret |  | Secret |  |                          |
+   |  +--------+  +--------+  |                          |
+   +--------------------------+                          |
+   +-------------------------+                           |
+   |      Symbol Table       |                           |
+   |  +--------+ +--------+  |                           |
+   |  | Symbol | | Symbol |<-----------------------------+
+   |  +--------+ +--------+  |
+   |           \|/           |
+   |  +--------+ +--------+  |
+   |  | Symbol | | Symbol |  |
+   |  +--------+ +--------+  |
+   +-------------------------+
 ```
 
 Once all nodes in a workflow are loaded into the symbol table and ports are connected, load hooks are executed to activate nodes. If a node is removed, unload hooks deactivate dependent nodes.
@@ -157,6 +331,8 @@ Changes in node specifications propagate to all runtime environments.
 Activated nodes monitor sockets or files and execute workflows. Each node spawns an independent process, isolating its execution flow from other nodes to optimize resource management.
 
 Nodes open ports through these processes and create writers to send packets to connected nodes. The payload is converted into common types for transmission. Connected nodes create readers to process waiting packets and pass the results to the next node or return them.
+
+Connected nodes monitor whether a new process has opened the port and create readers accordingly. These readers continuously process waiting packets and pass the processed results to the next node or return them.
 
 ```text
    +-----------------------+          +-----------------------+

@@ -1,6 +1,8 @@
-### 🏗️ 아키텍처
+# 🏗️ 아키텍처
 
-각 노드 명세는 각 노드의 역할을 선언적으로 정의하며, 이러한 명세들이 서로 연결되어 워크플로우를 형성합니다. 워크플로우는 특정 네임스페이스에 정의되고, 각 런타임 환경은 하나의 네임스페이스를 실행합니다. 네임스페이스는 다른 네임스페이스에 정의된 노드를 참조할 수 없으며, 각 네임스페이스는 독립적으로 격리되어 관리됩니다.
+작업을 처리하는 최소 단위인 노드를 기반으로 하여, 노드 명세는 각 노드가 동작할 역할을 정의하고, 이 노드들이 서로 연결되어 워크플로우를 형성합니다. 각 워크플로우는 하나의 런타임 안에서 사전에 정의된 네임스페이스에 연결되어 동작하며, 각 런타임 환경은 하나의 네임스페이스를 실행합니다.
+
+네임스페이스는 다른 네임스페이스에 정의된 노드를 임의적으로 참조할 수 없으며, 각각 격리되어 관리됩니다.
 
 ```text
    +-------------------------------------------------+
@@ -113,6 +115,169 @@
             status: 201
           };
         }
+
+- kind: block
+  name: nodes_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: nodes.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: nodes_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: nodes.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: nodes_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: nodes.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
+- kind: block
+  name: secrets_create
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: secrets.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
+
+- kind: block
+  name: secrets_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: secrets.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: secrets.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
+- kind: switch
+  name: catch
+  matches:
+    - when: self == "unsupported type" || self == "unsupported value"
+      port: out[0]
+    - when: 'true'
+      port: out[1]
+  ports:
+    out[0]:
+      - name: status_400
+        port: in
+    out[1]:
+      - name: status_500
+        port: in
+
+- kind: snippet
+  name: status_400
+  language: javascript
+  code: |
+    export default function (args) {
+      return {
+        body: {
+          error: args.error()
+        },
+        status: 400
+      };
+    }
+
+- kind: snippet
+  name: status_500
+  language: json
+  code: |
+    {
+      "body": {
+        "error": "Internal Server Error"
+      },
+      "status": 500
+    }
 ```
 
 이 접근 방식은 안정적인 런타임 환경을 유지하면서 시스템을 유연하게 확장할 수 있도록 합니다.
@@ -121,6 +286,10 @@
 
 로더는 데이터베이스의 변경 스트림을 통해 실시간으로 노드 명세와 시크릿의 변경 사항을 추적합니다. 추가, 수정, 삭제가 발생하면 로더는 해당 명세를 다시 로드하고, 스키마에 정의된 코덱을 활용해 실행 가능한 형태로 컴파일합니다. 캐싱과 최적화 과정도 함께 수행되어 성능을 개선합니다.
 
+컴파일된 노드는 명세와 결합하여 심볼로 변환되며, 심볼 테이블에 저장됩니다. 심볼 테이블은 각 심볼의 포트를 노드 명세에 정의된 포트 연결 정보를 기반으로 연결합니다.
+로더는 데이터베이스의 변경 스트림을 통해 실시간으로 노드 명세와 시크릿의 변경 사항을 추적합니다. 추가, 수정, 삭제가 발생하면 로더는 해당 명세를 다시 로드하고, 스키마에 정의된 코덱을 활용해 실행 가능한 형태로 컴파일합니다. 캐싱과 최적화 과정도 함께 수행되어 성능을 개선합니다.
+
+```text
 ```text
    +--------------------------+
    |         Database         |
@@ -132,12 +301,27 @@
    |  | Node Specification |  |-->|       Loader      |
    |  +--------------------+  |   |  +-------------+  |
    +--------------------------+   |  |    Scheme   |  |
+   |  +--------------------+  |   |  +-------------+  |
+   +--------------------------+   |  |    Scheme   |  |
    +--------------------------+   |  |  +-------+  |  |
-   |         Database         |   |  |  | Codec |  |  |
-   |  +--------+  +--------+  |   |  |  +-------+  |  |
-   |  | Secret |  | Secret |  |-->|  +-------------+  |
-   |  +--------+  +--------+  |
-   +--------------------------+
+   |         Database         |   |  |  | Codec |  |  |--+
+   |  +--------+  +--------+  |   |  |  +-------+  |  |  |
+   |  | Secret |  | Secret |  |-->|  +-------------+  |  |
+   |  +--------+  +--------+  |   +-------------------+  |
+   |  +--------+  +--------+  |                          |
+   |  | Secret |  | Secret |  |                          |
+   |  +--------+  +--------+  |                          |
+   +--------------------------+                          |
+   +-------------------------+                           |
+   |      Symbol Table       |                           |
+   |  +--------+ +--------+  |                           |
+   |  | Symbol | | Symbol |<-----------------------------+
+   |  +--------+ +--------+  |
+   |           \|/           |
+   |  +--------+ +--------+  |
+   |  | Symbol | | Symbol |  |
+   |  +--------+ +--------+  |
+   +-------------------------+
 ```
 
 컴파일된 노드는 심볼 테이블에 저장되어, 각 심볼이 정의된 포트에 따라 연결됩니다. 워크플로우의 모든 노드가 심볼 테이블에 로드되면, 노드를 활성화하기 위한 순차적 작업이 실행됩니다. 노드가 제거되면 비활성화 작업도 순차적으로 실행됩니다.
@@ -146,6 +330,7 @@
 
 활성화된 노드는 워크플로우를 실행하며, 독립적인 프로세스를 통해 리소스를 관리하고 다른 작업에 영향을 주지 않도록 합니다. 각 노드는 프로세스 간 통신을 통해 패킷을 주고받으며, 페이로드는 공용 타입으로 변환되어 전송됩니다.
 
+```text
 ```text
    +-----------------------+          +-----------------------+
    |        Node A         |          |        Node B         |
