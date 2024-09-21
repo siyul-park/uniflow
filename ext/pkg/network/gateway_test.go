@@ -139,14 +139,14 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-ioWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

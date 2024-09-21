@@ -54,7 +54,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -89,14 +89,14 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			assert.Equal(t, inPayload, outPck.Payload())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -131,14 +131,14 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

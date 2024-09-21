@@ -77,14 +77,14 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader.Receive(outPck)
 			case <-ctx.Done():
-				assert.Fail(t, "timeout")
+				assert.Fail(t, ctx.Err().Error())
 			}
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -125,7 +125,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 				assert.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader0.Receive(outPck)
 			case <-ctx.Done():
-				assert.Fail(t, "timeout")
+				assert.Fail(t, ctx.Err().Error())
 			}
 		}
 
@@ -133,13 +133,13 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader1.Read():
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -176,14 +176,14 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 				backPck := packet.New(types.NewError(errors.New(faker.Sentence())))
 				outReader0.Receive(backPck)
 			case <-ctx.Done():
-				assert.Fail(t, "timeout")
+				assert.Fail(t, ctx.Err().Error())
 			}
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

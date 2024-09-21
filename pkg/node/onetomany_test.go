@@ -54,7 +54,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -89,14 +89,14 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 			assert.Equal(t, inPayload, outPck.Payload())
 			outReader0.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -135,7 +135,7 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 			assert.Equal(t, inPayload, outPck.Payload())
 			outReader0.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
@@ -143,14 +143,14 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 			assert.Equal(t, inPayload, outPck.Payload())
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -185,14 +185,14 @@ func TestOneToManyNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }

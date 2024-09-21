@@ -54,7 +54,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		select {
 		case <-inWriter0.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -100,21 +100,21 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, outPck)
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter0.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter1.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -160,21 +160,21 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 			assert.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter0.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter1.Receive():
 			assert.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, "timeout")
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 }
