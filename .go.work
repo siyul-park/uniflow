@@ -8,7 +8,7 @@ use (
 )
 
 replace (
-	github.com/siyul-park/uniflow v0.9.0 => ./
+	github.com/siyul-park/uniflow v0.10.0 => ./
 	github.com/siyul-park/uniflow/cmd v0.9.0 => ./cmd/
 	github.com/siyul-park/uniflow/ext v0.9.0 => ./ext/
 	github.com/siyul-park/uniflow/driver/mongo v0.9.0 => ./driver/mongo/

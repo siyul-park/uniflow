@@ -5,7 +5,7 @@ go 1.23.1
 require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/siyul-park/uniflow v0.9.0
+	github.com/siyul-park/uniflow v0.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tryvium-travels/memongo v0.12.0
 	go.mongodb.org/mongo-driver v1.17.0
