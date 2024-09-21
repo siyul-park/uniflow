@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/siyul-park/uniflow v0.10.0
 	github.com/siyul-park/uniflow/driver/mongo v0.9.0
-	github.com/siyul-park/uniflow/ext v0.9.0
+	github.com/siyul-park/uniflow/ext v0.10.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
@@ -25,6 +25,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
+	golang.org/x/net v0.29.0 // indirect
 )
 
 require (
