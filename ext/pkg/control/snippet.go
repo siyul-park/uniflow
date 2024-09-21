@@ -38,7 +38,9 @@ func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 			return nil, err
 		}
 
-		return NewSnippetNode(program.Run), nil
+		return NewSnippetNode(func(arg any) (any, error) {
+			return program.Run(arg)
+		}), nil
 	})
 }
 
