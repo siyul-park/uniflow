@@ -10,7 +10,7 @@
 
 - **in**: Receives input packets and converts them into arguments for the specified function call. The payload of the packet is adjusted to match the function's parameters.
 - **out**: Returns the result of the function call. If the function returns multiple values, the result is output as an array.
-- **error**: Returns any errors encountered during the function call. If an error occurs, it outputs the error message.
+- **error**: Returns any errors encountered during the function call.
 
 ## Example
 

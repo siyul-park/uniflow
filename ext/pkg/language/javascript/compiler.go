@@ -66,7 +66,7 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 			},
 		}
 
-		return language.RunFunc(func(env any) (any, error) {
+		return language.RunFunc(func(args ...any) (any, error) {
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 
@@ -90,7 +90,12 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				return nil, nil
 			}
 
-			if result, err := run(goja.Undefined(), vm.ToValue(env)); err != nil {
+			values := make([]goja.Value, 0, len(args))
+			for _, arg := range args {
+				values = append(values, vm.ToValue(arg))
+			}
+
+			if result, err := run(goja.Undefined(), values...); err != nil {
 				return nil, err
 			} else {
 				return result.Export(), nil

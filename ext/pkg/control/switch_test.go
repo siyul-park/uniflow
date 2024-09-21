@@ -76,7 +76,7 @@ func TestSwitchNode_SendAndReceive(t *testing.T) {
 	case backPck := <-inWriter.Receive():
 		assert.NotNil(t, backPck)
 	case <-ctx.Done():
-		assert.Fail(t, "timeout")
+		assert.Fail(t, ctx.Err().Error())
 	}
 }
 

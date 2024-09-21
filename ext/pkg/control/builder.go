@@ -61,6 +61,9 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 		s.AddKnownType(KindNOP, &NOPNodeSpec{})
 		s.AddCodec(KindNOP, NewNOPNodeCodec())
 
+		s.AddKnownType(KindReduce, &ReduceNodeSpec{})
+		s.AddCodec(KindReduce, NewReduceNodeCodec(expr))
+
 		s.AddKnownType(KindSession, &SessionNodeSpec{})
 		s.AddCodec(KindSession, NewSessionNodeCodec())
 

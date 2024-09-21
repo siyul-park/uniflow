@@ -23,7 +23,16 @@ func NewCompiler(opts ...cel.EnvOption) language.Compiler {
 		if err != nil {
 			return nil, err
 		}
-		return language.RunFunc(func(env any) (any, error) {
+		return language.RunFunc(func(args ...any) (any, error) {
+			var env any
+			if len(args) == 0 {
+				env = nil
+			} else if len(args) == 1 {
+				env = args[0]
+			} else {
+				env = args
+			}
+
 			val, _, err := prg.Eval(map[string]any{
 				"self": env,
 			})

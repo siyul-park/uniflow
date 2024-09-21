@@ -8,39 +8,40 @@
 
 데이터 흐름을 정밀하게 제어합니다.
 
-- **[Call 노드](./docs/call_node_kr.md)**: 입력 패킷을 처리하고 결과를 여러 출력 포트로 전달합니다. 데이터 처리 흐름을 재사용할 수 있습니다.
+- **[Call 노드](./docs/call_node_kr.md)**: 입력 패킷을 처리하고 결과를 여러 출력 포트로 전달하여 데이터 흐름을 재사용합니다.
 - **[Block 노드](./docs/block_node_kr.md)**: 복잡한 데이터 처리 흐름을 체계적으로 관리하며, 여러 하위 노드를 순차적으로 실행합니다.
-- **[Fork 노드](./docs/fork_node_kr.md)**: 데이터 흐름을 비동기적으로 분기시켜 독립적인 작업을 병렬로 수행합니다.
-- **[If 노드](./docs/if_node_kr.md)**: 주어진 조건을 평가하여 패킷을 두 경로로 분기합니다. 조건에 따라 적절한 경로로 패킷을 전달합니다.
-- **[Loop 노드](./docs/loop_node_kr.md)**: 입력 패킷을 여러 하위 패킷으로 나누어 반복적으로 처리합니다. 반복 처리가 필요한 작업에 적합합니다.
-- **[Merge 노드](./docs/merge_node_kr.md)**: 여러 입력 패킷을 하나의 출력 패킷으로 통합합니다. 다양한 소스에서 수집된 데이터를 병합하여 처리합니다.
-- **[NOP 노드](./docs/nop_node_kr.md)**: 입력 패킷을 아무 처리 없이 비어 있는 패킷으로 응답합니다. 데이터 처리 흐름의 마지막 단계에서 사용됩니다.
-- **[Session 노드](./docs/session_node_kr.md)**: 프로세스에서 사용되는 정보를 저장하고 관리하며, 프로세스가 활성 상태인 동안 세션을 지속적으로 유지합니다.
-- **[Snippet 노드](./docs/snippet_node_kr.md)**: 다양한 프로그래밍 언어로 작성된 코드 스니펫을 실행하여 입력 패킷을 처리합니다. 복잡한 데이터 처리 로직을 유연하게 적용할 수 있습니다.
-- **[Split 노드](./docs/split_node_kr.md)**: 입력 패킷을 여러 개로 나누어 처리합니다. 데이터를 지정된 형식에 따라 분할하고, 각 패킷을 다양한 경로로 전달합니다.
-- **[Switch 노드](./docs/switch_node_kr.md)**: 입력 패킷을 조건에 따라 여러 포트 중 하나로 분기합니다. 지정된 조건을 평가하여 적절한 포트로 패킷을 전달합니다.
+- **[Fork 노드](./docs/fork_node_kr.md)**: 데이터 흐름을 비동기적으로 분기하여 독립적인 작업을 병렬로 수행합니다.
+- **[If 노드](./docs/if_node_kr.md)**: 조건을 평가하여 패킷을 두 경로로 분기합니다.
+- **[Loop 노드](./docs/loop_node_kr.md)**: 입력 패킷을 여러 하위 패킷으로 나누어 반복 처리합니다.
+- **[Merge 노드](./docs/merge_node_kr.md)**: 여러 입력 패킷을 하나로 통합합니다.
+- **[NOP 노드](./docs/nop_node_kr.md)**: 입력 패킷을 처리하지 않고 빈 패킷으로 응답합니다.
+- **[Reduce 노드](./docs/reduce_node_kr.md)**: 입력 데이터를 반복적으로 연산하여 하나의 출력 값을 생성합니다. 데이터 집계에 유용합니다.
+- **[Session 노드](./docs/session_node_kr.md)**: 프로세스 정보를 저장하고 관리하여 세션을 유지합니다.
+- **[Snippet 노드](./docs/snippet_node_kr.md)**: 다양한 프로그래밍 언어로 작성된 코드 스니펫을 실행하여 입력 패킷을 처리합니다.
+- **[Split 노드](./docs/split_node_kr.md)**: 입력 패킷을 여러 개로 나누어 처리합니다.
+- **[Switch 노드](./docs/switch_node_kr.md)**: 입력 패킷을 조건에 따라 여러 포트 중 하나로 분기합니다.
 
 ### **IO**
 
 외부 데이터 소스와의 상호작용을 지원합니다.
 
-- **[Print 노드](./docs/print_node_kr.md)**: 입력된 데이터를 파일에 출력합니다. 디버깅이나 데이터 흐름 모니터링에 유용합니다.
+- **[Print 노드](./docs/print_node_kr.md)**: 입력된 데이터를 파일에 출력하여 디버깅이나 데이터 흐름 모니터링에 사용됩니다.
 - **[Scan 노드](./docs/scan_node_kr.md)**: 다양한 형식의 입력 데이터를 스캔하고 필요한 데이터를 추출하여 처리합니다.
-- **[SQL 노드](./docs/sql_node_kr.md)**: 관계형 데이터베이스와 상호작용하여 SQL 쿼리를 실행하고 결과를 패킷으로 반환합니다. 데이터베이스 연결 및 트랜잭션 격리 수준 설정이 가능합니다.
+- **[SQL 노드](./docs/sql_node_kr.md)**: 관계형 데이터베이스와 상호작용하여 SQL 쿼리를 실행하고 결과를 패킷으로 반환합니다.
 
 ### **Network**
 
-다양한 네트워크 프로토콜을 지원하여 네트워크 관련 작업을 원활하게 수행합니다.
+다양한 네트워크 프로토콜을 지원하여 네트워크 작업을 원활하게 수행합니다.
 
-- **[HTTP 노드](./docs/http_node_kr.md)**: HTTP 요청을 처리하고 응답을 반환합니다. 웹 서비스와의 통신에 적합합니다.
-- **[WebSocket 노드](./docs/websocket_node_kr.md)**: WebSocket 연결을 설정하고 메시지를 송수신합니다. WebSocket 서버와의 연결을 관리합니다.
-- **[Gateway 노드](./docs/gateway_node_kr.md)**: HTTP 연결을 WebSocket 연결로 업그레이드하여 실시간 데이터 통신을 지원합니다.
-- **[Listener 노드](./docs/listener_node_kr.md)**: 지정된 프로토콜과 포트에서 들어오는 네트워크 요청을 수신하고 처리합니다. HTTP 서버 역할을 합니다.
-- **[Proxy 노드](./docs/proxy_node_kr.md)**: HTTP 요청을 다른 서버로 프록시하여 중계하고, 응답을 반환합니다. 로드 밸런싱 및 API 게이트웨이 역할에 적합합니다.
-- **[Router 노드](./docs/router_node_kr.md)**: 입력 패킷을 조건에 따라 여러 출력 포트로 라우팅합니다. HTTP 메서드와 경로에 기반하여 패킷을 분기합니다.
+- **[HTTP 노드](./docs/http_node_kr.md)**: HTTP 요청을 처리하고 응답을 반환하여 웹 서비스와 통신합니다.
+- **[WebSocket 노드](./docs/websocket_node_kr.md)**: WebSocket 연결을 설정하고 메시지를 송수신합니다.
+- **[Gateway 노드](./docs/gateway_node_kr.md)**: HTTP 연결을 WebSocket으로 업그레이드하여 실시간 데이터 통신을 지원합니다.
+- **[Listener 노드](./docs/listener_node_kr.md)**: 지정된 프로토콜과 포트에서 네트워크 요청을 수신합니다.
+- **[Proxy 노드](./docs/proxy_node_kr.md)**: HTTP 요청을 다른 서버로 프록시하여 응답을 반환합니다.
+- **[Router 노드](./docs/router_node_kr.md)**: 입력 패킷을 조건에 따라 여러 출력 포트로 라우팅합니다.
 
 ### **System**
 
 시스템 구성 요소를 관리하고 최적화합니다.
 
-- **[Native 노드](./docs/native_node_kr.md)**: 시스템 내부에서 함수 호출 작업을 수행하고, 그 결과를 패킷으로 변환하여 반환합니다.
+- **[Native 노드](./docs/native_node_kr.md)**: 시스템 내부에서 함수 호출을 수행하고 결과를 패킷으로 반환합니다.
