@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/andybalholm/brotli v1.1.0
-	github.com/dop251/goja v0.0.0-20240828124009-016eb7256539
+	github.com/dop251/goja v0.0.0-20240919115326-6c7d1df7ff05
 	github.com/evanw/esbuild v0.23.1
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
