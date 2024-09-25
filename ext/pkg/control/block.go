@@ -36,14 +36,14 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(spec.Specs))
 		for _, spec := range spec.Specs {
-			decodedSpec, err := s.Decode(spec)
+			decoded, err := s.Decode(spec)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
 				}
 				return nil, err
 			}
-			node, err := s.Compile(decodedSpec)
+			node, err := s.Compile(decoded)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
@@ -51,7 +51,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				return nil, err
 			}
 			symbols = append(symbols, &symbol.Symbol{
-				Spec: decodedSpec,
+				Spec: decoded,
 				Node: node,
 			})
 		}
@@ -91,8 +91,8 @@ func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 			}
 		}
 
-		inPort.AddListener(n.forward(inPort, outPort))
-		outPort.AddListener(n.backward(inPort, outPort))
+		inPort.AddListener(n.inbound(inPort, outPort))
+		outPort.AddListener(n.outbound(inPort, outPort))
 	}
 
 	return n
@@ -188,7 +188,7 @@ func (n *BlockNode) Close() error {
 	return nil
 }
 
-func (n *BlockNode) forward(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *BlockNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
@@ -206,7 +206,7 @@ func (n *BlockNode) forward(inPort *port.InPort, outPort *port.OutPort) port.Lis
 	})
 }
 
-func (n *BlockNode) backward(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *BlockNode) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
