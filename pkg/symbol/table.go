@@ -30,7 +30,6 @@ type Table struct {
 func NewTable(opts ...TableOptions) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
-
 	for _, opt := range opts {
 		loadHooks = append(loadHooks, opt.LoadHooks...)
 		unloadHooks = append(unloadHooks, opt.UnloadHooks...)
@@ -110,6 +109,7 @@ func (t *Table) Clear() error {
 
 func (t *Table) insert(sb *Symbol) error {
 	t.symbols[sb.ID()] = sb
+
 	if sb.Name() != "" {
 		ns, ok := t.namespaces[sb.Namespace()]
 		if !ok {
@@ -146,6 +146,7 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 			}
 		}
 	}
+
 	delete(t.symbols, id)
 
 	return sb, nil
@@ -270,16 +271,17 @@ func (t *Table) unlinks(sb *Symbol) {
 }
 
 func (t *Table) linked(sb *Symbol) []*Symbol {
-	nexts := []*Symbol{sb}
-
 	var linked []*Symbol
+
+	nexts := []*Symbol{sb}
 	for len(nexts) > 0 {
 		sb := nexts[len(nexts)-1]
 		ok := true
 		for _, ports := range sb.inbounds {
 			for _, port := range ports {
 				next := t.symbols[port.ID]
-				if ok = slices.Contains(nexts, next) || slices.Contains(linked, next); !ok {
+				ok = slices.Contains(nexts, next) || slices.Contains(linked, next)
+				if !ok {
 					nexts = append(nexts, next)
 					break
 				}
@@ -362,5 +364,5 @@ func (t *Table) lookup(namespace, name string) uuid.UUID {
 	if ns, ok := t.namespaces[namespace]; ok {
 		return ns[name]
 	}
-	return uuid.UUID{}
+	return uuid.Nil
 }

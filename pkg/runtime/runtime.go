@@ -25,12 +25,13 @@ type Config struct {
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
-	namespace   string
-	scheme      *scheme.Scheme
-	specStore   spec.Store
-	secretStore secret.Store
-	table       *symbol.Table
-	loader      *symbol.Loader
+	namespace    string
+	scheme       *scheme.Scheme
+	specStore    spec.Store
+	secretStore  secret.Store
+	symbolTable  *symbol.Table
+	symbolLoader *symbol.Loader
+	reconciler   *Reconciler
 }
 
 // New creates a new Runtime instance with the specified configuration.
@@ -60,25 +61,33 @@ func New(config Config) *Runtime {
 	loadHooks = append(loadHooks, config.Hook)
 	unloadHooks = append(unloadHooks, config.Hook)
 
-	tb := symbol.NewTable(symbol.TableOptions{
+	symbolTable := symbol.NewTable(symbol.TableOptions{
 		LoadHooks:   loadHooks,
 		UnloadHooks: unloadHooks,
 	})
-
-	ld := symbol.NewLoader(symbol.LoaderConfig{
+	symbolLoader := symbol.NewLoader(symbol.LoaderConfig{
 		Scheme:      config.Scheme,
 		SpecStore:   config.SpecStore,
 		SecretStore: config.SecretStore,
-		Table:       tb,
+		Table:       symbolTable,
+	})
+
+	reconciler := NewReconiler(ReconcilerConfig{
+		Scheme:       config.Scheme,
+		SpecStore:    config.SpecStore,
+		SecretStore:  config.SecretStore,
+		SymbolTable:  symbolTable,
+		SymbolLoader: symbolLoader,
 	})
 
 	return &Runtime{
-		namespace:   config.Namespace,
-		scheme:      config.Scheme,
-		specStore:   config.SpecStore,
-		secretStore: config.SecretStore,
-		table:       tb,
-		loader:      ld,
+		namespace:    config.Namespace,
+		scheme:       config.Scheme,
+		specStore:    config.SpecStore,
+		secretStore:  config.SecretStore,
+		symbolTable:  symbolTable,
+		symbolLoader: symbolLoader,
+		reconciler:   reconciler,
 	}
 }
 
@@ -96,7 +105,7 @@ func (r *Runtime) Load(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbo
 		}
 	}
 
-	return r.loader.Load(ctx, specs...)
+	return r.symbolLoader.Load(ctx, specs...)
 }
 
 // Store adds a spec to the Runtime and returns the corresponding symbol.
@@ -135,7 +144,7 @@ func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symb
 		}
 	}
 
-	return r.loader.Load(ctx, specs...)
+	return r.symbolLoader.Load(ctx, specs...)
 }
 
 // Delete removes a spec from the Runtime and returns whether it was successfully deleted.
@@ -163,7 +172,7 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 	}
 
 	for _, spc := range specs {
-		if _, err := r.table.Free(spc.GetID()); err != nil {
+		if _, err := r.symbolTable.Free(spc.GetID()); err != nil {
 			return 0, err
 		}
 	}
@@ -172,20 +181,19 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Listen starts the loader's watch process and reconciles symbols.
 func (r *Runtime) Listen(ctx context.Context) error {
-	spc := &spec.Meta{Namespace: r.namespace}
-	if err := r.loader.Watch(ctx, spc); err != nil {
+	if err := r.reconciler.Watch(ctx, &resource.Meta{Namespace: r.namespace}); err != nil {
 		return err
 	}
-	if _, err := r.loader.Load(ctx, spc); err != nil {
+	if _, err := r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace}); err != nil {
 		return err
 	}
-	return r.loader.Reconcile(ctx)
+	return r.reconciler.Reconcile(ctx)
 }
 
 // Close shuts down the Runtime by closing the loader and clearing the symbol table.
 func (r *Runtime) Close() error {
-	if err := r.loader.Close(); err != nil {
+	if err := r.reconciler.Close(); err != nil {
 		return err
 	}
-	return r.table.Clear()
+	return r.symbolTable.Clear()
 }
