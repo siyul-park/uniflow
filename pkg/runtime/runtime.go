@@ -73,6 +73,7 @@ func New(config Config) *Runtime {
 	})
 
 	reconciler := NewReconiler(ReconcilerConfig{
+		Namespace:    config.Namespace,
 		Scheme:       config.Scheme,
 		SpecStore:    config.SpecStore,
 		SecretStore:  config.SecretStore,
@@ -181,7 +182,7 @@ func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 // Listen starts the loader's watch process and reconciles symbols.
 func (r *Runtime) Listen(ctx context.Context) error {
-	if err := r.reconciler.Watch(ctx, &resource.Meta{Namespace: r.namespace}); err != nil {
+	if err := r.reconciler.Watch(ctx); err != nil {
 		return err
 	}
 	if _, err := r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace}); err != nil {

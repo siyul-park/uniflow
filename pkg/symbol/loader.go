@@ -41,6 +41,7 @@ func NewLoader(config LoaderConfig) *Loader {
 // Load loads a spec.Spec by ID and its linked specs into the symbol table.
 func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error) {
 	examples := specs
+
 	specs, err := l.specStore.Load(ctx, examples...)
 	if err != nil {
 		return nil, err

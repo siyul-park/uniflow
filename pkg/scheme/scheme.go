@@ -32,12 +32,28 @@ func New() *Scheme {
 	}
 }
 
-// AddKnownType associates a spec type with a kind.
-func (s *Scheme) AddKnownType(kind string, spc spec.Spec) {
+// AddKnownType associates a spec type with a kind and returns true if successful.
+func (s *Scheme) AddKnownType(kind string, spc spec.Spec) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, exists := s.types[kind]; exists {
+		return false
+	}
 	s.types[kind] = reflect.TypeOf(spc)
+	return true
+}
+
+// RemoveKnownType removes the spec type associated with a kind.
+func (s *Scheme) RemoveKnownType(kind string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.types[kind]; exists {
+		delete(s.types, kind)
+		return true
+	}
+	return false
 }
 
 // KnownType retrieves the type of the spec associated with the given kind.
@@ -49,12 +65,28 @@ func (s *Scheme) KnownType(kind string) (reflect.Type, bool) {
 	return typ, exists
 }
 
-// AddCodec associates a codec with a specific kind.
-func (s *Scheme) AddCodec(kind string, codec Codec) {
+// AddCodec associates a codec with a specific kind and returns true if successful.
+func (s *Scheme) AddCodec(kind string, codec Codec) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, exists := s.codecs[kind]; exists {
+		return false
+	}
 	s.codecs[kind] = codec
+	return true
+}
+
+// RemoveCodec removes the codec associated with a kind.
+func (s *Scheme) RemoveCodec(kind string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.codecs[kind]; exists {
+		delete(s.codecs, kind)
+		return true
+	}
+	return false
 }
 
 // Codec retrieves the codec associated with the given kind.
@@ -82,7 +114,7 @@ func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
 func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 	for _, vals := range spc.GetEnv() {
 		for _, val := range vals {
-			examples := make([]*secret.Secret, 0, 1)
+			examples := make([]*secret.Secret, 0, 2)
 			if val.ID != uuid.Nil {
 				examples = append(examples, &secret.Secret{ID: val.ID})
 			}

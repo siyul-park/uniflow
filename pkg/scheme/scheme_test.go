@@ -1,7 +1,6 @@
 package scheme
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -16,11 +15,23 @@ func TestScheme_KnownType(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
 
-	s.AddKnownType(kind, &spec.Meta{})
-
-	typ, ok := s.KnownType(kind)
+	ok := s.AddKnownType(kind, &spec.Meta{})
 	assert.True(t, ok)
-	assert.Equal(t, reflect.TypeOf(&spec.Meta{}), typ)
+
+	_, ok = s.KnownType(kind)
+	assert.True(t, ok)
+
+	ok = s.AddKnownType(kind, &spec.Meta{})
+	assert.False(t, ok)
+
+	ok = s.RemoveKnownType(kind)
+	assert.True(t, ok)
+
+	_, ok = s.KnownType(kind)
+	assert.False(t, ok)
+
+	ok = s.RemoveKnownType(kind)
+	assert.False(t, ok)
 }
 
 func TestScheme_Codec(t *testing.T) {
@@ -31,10 +42,23 @@ func TestScheme_Codec(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	})
 
-	s.AddCodec(kind, c)
-
-	_, ok := s.Codec(kind)
+	ok := s.AddCodec(kind, c)
 	assert.True(t, ok)
+
+	_, ok = s.Codec(kind)
+	assert.True(t, ok)
+
+	ok = s.AddCodec(kind, c)
+	assert.False(t, ok)
+
+	ok = s.RemoveCodec(kind)
+	assert.True(t, ok)
+
+	_, ok = s.Codec(kind)
+	assert.False(t, ok)
+
+	ok = s.RemoveCodec(kind)
+	assert.False(t, ok)
 }
 
 func TestScheme_Bind(t *testing.T) {

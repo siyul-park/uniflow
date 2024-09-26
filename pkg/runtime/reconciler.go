@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -14,6 +13,7 @@ import (
 
 // ReconcilerConfig holds the configuration for the Reconciler.
 type ReconcilerConfig struct {
+	Namespace    string
 	Scheme       *scheme.Scheme
 	SpecStore    spec.Store
 	SecretStore  secret.Store
@@ -23,6 +23,7 @@ type ReconcilerConfig struct {
 
 // Reconciler is responsible for reconciling resources and managing state.
 type Reconciler struct {
+	namespace    string
 	scheme       *scheme.Scheme
 	specStore    spec.Store
 	secretStore  secret.Store
@@ -36,6 +37,7 @@ type Reconciler struct {
 // NewReconiler creates a new instance of Reconciler with the provided configuration.
 func NewReconiler(config ReconcilerConfig) *Reconciler {
 	return &Reconciler{
+		namespace:    config.Namespace,
 		scheme:       config.Scheme,
 		specStore:    config.SpecStore,
 		secretStore:  config.SecretStore,
@@ -45,19 +47,12 @@ func NewReconiler(config ReconcilerConfig) *Reconciler {
 }
 
 // Watch starts watching the specified resources for updates.
-func (r *Reconciler) Watch(ctx context.Context, resources ...resource.Resource) error {
+func (r *Reconciler) Watch(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.specStream == nil {
-		specs := make([]spec.Spec, 0, len(resources))
-		for _, rsc := range resources {
-			specs = append(specs, &spec.Meta{
-				Namespace: rsc.GetNamespace(),
-			})
-		}
-
-		specStream, err := r.specStore.Watch(ctx, specs...)
+		specStream, err := r.specStore.Watch(ctx, &spec.Meta{Namespace: r.namespace})
 		if err != nil {
 			return err
 		}
@@ -77,14 +72,7 @@ func (r *Reconciler) Watch(ctx context.Context, resources ...resource.Resource) 
 	}
 
 	if r.secretStream == nil {
-		secrets := make([]*secret.Secret, 0, len(resources))
-		for _, rsc := range resources {
-			secrets = append(secrets, &secret.Secret{
-				Namespace: rsc.GetNamespace(),
-			})
-		}
-
-		secretStream, err := r.secretStore.Watch(ctx, secrets...)
+		secretStream, err := r.secretStore.Watch(ctx, &secret.Secret{Namespace: r.namespace})
 		if err != nil {
 			return err
 		}
