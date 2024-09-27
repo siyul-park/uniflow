@@ -195,8 +195,8 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		proc.Exit(ctx.Err())
 	}()
 
-	proc.Data().Store(KeyHTTPResponseWriter, w)
-	proc.Data().Store(KeyHTTPRequest, r)
+	proc.Store(KeyHTTPResponseWriter, w)
+	proc.Store(KeyHTTPRequest, r)
 
 	outWriter := n.outPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
@@ -233,7 +233,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err = errors.New(http.StatusText(res.Status))
 		}
 
-		if w, ok := proc.Data().LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
+		if w, ok := proc.LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			n.negotiate(req, res)
 			_ = n.write(w, res)
 		}

@@ -203,5 +203,5 @@ func (r *Runtime) Close() error {
 		r.secretStream = nil
 	}
 
-	return r.symbolTable.Clear()
+	return r.symbolTable.Close()
 }

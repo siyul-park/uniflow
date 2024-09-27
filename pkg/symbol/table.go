@@ -94,8 +94,8 @@ func (t *Table) Keys() []uuid.UUID {
 	return ids
 }
 
-// Clear frees all symbols associated with the table.
-func (t *Table) Clear() error {
+// Close frees all symbols associated with the table.
+func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

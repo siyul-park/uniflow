@@ -17,7 +17,7 @@ func TestTable_Insert(t *testing.T) {
 	t.Run("Link By ID", func(t *testing.T) {
 		t.Run("Unlinked", func(t *testing.T) {
 			tb := NewTable()
-			defer tb.Clear()
+			defer tb.Close()
 
 			meta1 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -83,7 +83,7 @@ func TestTable_Insert(t *testing.T) {
 
 		t.Run("Linked", func(t *testing.T) {
 			tb := NewTable()
-			defer tb.Clear()
+			defer tb.Close()
 
 			id := uuid.Must(uuid.NewV7())
 
@@ -154,7 +154,7 @@ func TestTable_Insert(t *testing.T) {
 	t.Run("Link By Name", func(t *testing.T) {
 		t.Run("Unlinked", func(t *testing.T) {
 			tb := NewTable()
-			defer tb.Clear()
+			defer tb.Close()
 
 			meta1 := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -223,7 +223,7 @@ func TestTable_Insert(t *testing.T) {
 
 		t.Run("Linked", func(t *testing.T) {
 			tb := NewTable()
-			defer tb.Clear()
+			defer tb.Close()
 
 			id := uuid.Must(uuid.NewV7())
 
@@ -298,7 +298,7 @@ func TestTable_Free(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
-	defer tb.Clear()
+	defer tb.Close()
 
 	meta1 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -387,7 +387,7 @@ func TestTable_LookupByID(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
-	defer tb.Clear()
+	defer tb.Close()
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -408,7 +408,7 @@ func TestTable_Keys(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
-	defer tb.Clear()
+	defer tb.Close()
 
 	meta := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -445,7 +445,7 @@ func TestTable_Hook(t *testing.T) {
 			}),
 		},
 	})
-	defer tb.Clear()
+	defer tb.Close()
 
 	meta1 := &spec.Meta{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -525,7 +525,7 @@ func BenchmarkTable_Insert(b *testing.B) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
-	defer tb.Clear()
+	defer tb.Close()
 
 	for i := 0; i < b.N; i++ {
 		meta := &spec.Meta{
@@ -543,7 +543,7 @@ func BenchmarkTable_Free(b *testing.B) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
-	defer tb.Clear()
+	defer tb.Close()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()

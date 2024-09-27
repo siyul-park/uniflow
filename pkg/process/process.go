@@ -11,7 +11,7 @@ import (
 type Process struct {
 	parent    *Process
 	id        uuid.UUID
-	data      *Data
+	data      map[string]any
 	status    Status
 	err       error
 	ctx       context.Context
@@ -35,30 +35,10 @@ func New() *Process {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	return &Process{
 		id:        uuid.Must(uuid.NewV7()),
-		data:      newData(),
+		data:      make(map[string]any),
 		ctx:       ctx,
 		exitHooks: []ExitHook{ExitFunc(cancel)},
 	}
-}
-
-// AddExitHook adds an exit hook to run when the process terminates.
-func (p *Process) AddExitHook(hook ExitHook) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.status == StatusTerminated {
-		go hook.Exit(p.err)
-		return false
-	}
-
-	for _, h := range p.exitHooks {
-		if h == hook {
-			return false
-		}
-	}
-
-	p.exitHooks = append(p.exitHooks, hook)
-	return true
 }
 
 // ID returns the process's id.
@@ -66,9 +46,48 @@ func (p *Process) ID() uuid.UUID {
 	return p.id
 }
 
-// Data returns the process's data.
-func (p *Process) Data() *Data {
-	return p.data
+// Load retrieves the value for the given key.
+func (p *Process) Load(key string) any {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	
+	return p.data[key]
+}
+
+// Store stores the value under the given key.
+func (p *Process) Store(key string, val any) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	
+	p.data[key] = val
+}
+
+// Delete removes the value for the given key.
+func (p *Process) Delete(key string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	
+	if _, ok := p.data[key]; ok {
+		delete(p.data, key)
+		return true
+	}
+	return false
+}
+
+// LoadAndDelete retrieves and deletes the value for the given key.
+func (p *Process) LoadAndDelete(key string) any {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if val, ok := p.data[key]; ok {
+		delete(p.data, key)
+		return val
+	}
+
+	if p.parent == nil {
+		return nil
+	}
+	return p.parent.LoadAndDelete(key)
 }
 
 // Status returns the current status of the process.
@@ -109,7 +128,7 @@ func (p *Process) Fork() *Process {
 	ctx, cancel := context.WithCancelCause(p.ctx)
 	child := &Process{
 		id:     uuid.Must(uuid.NewV7()),
-		data:   p.data.Fork(),
+		data:   make(map[string]any), // Initialize child data map
 		ctx:    ctx,
 		parent: p,
 		exitHooks: []ExitHook{
@@ -122,7 +141,7 @@ func (p *Process) Fork() *Process {
 	return child
 }
 
-// Exit terminates the process with the provided error, closes data resources, and runs exit hooks.
+// Exit terminates the process with the provided error and runs exit hooks.
 func (p *Process) Exit(err error) {
 	p.mu.Lock()
 
@@ -132,9 +151,7 @@ func (p *Process) Exit(err error) {
 	}
 
 	exitHooks := p.exitHooks[:]
-
-	p.data.Close()
-
+	p.data = make(map[string]any)
 	p.status = StatusTerminated
 	p.err = err
 	p.exitHooks = nil
@@ -145,4 +162,24 @@ func (p *Process) Exit(err error) {
 		h := exitHooks[i]
 		h.Exit(err)
 	}
+}
+
+// AddExitHook adds an exit hook to run when the process terminates.
+func (p *Process) AddExitHook(hook ExitHook) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.status == StatusTerminated {
+		go hook.Exit(p.err)
+		return false
+	}
+
+	for _, h := range p.exitHooks {
+		if h == hook {
+			return false
+		}
+	}
+
+	p.exitHooks = append(p.exitHooks, hook)
+	return true
 }

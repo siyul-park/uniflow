@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,10 +14,72 @@ func TestNewProcess(t *testing.T) {
 	defer proc.Exit(nil)
 
 	assert.NotZero(t, proc.ID())
-	assert.NotNil(t, proc.Data())
 	assert.NotNil(t, proc.Context())
 	assert.Equal(t, nil, proc.Err())
 	assert.Equal(t, StatusRunning, proc.Status())
+}
+
+func TestProcess_Load(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	k := faker.UUIDHyphenated()
+	v := faker.UUIDHyphenated()
+
+	r := proc.Load(k)
+	assert.Nil(t, r)
+
+	proc.Store(k, v)
+
+	r = proc.Load(k)
+	assert.Equal(t, v, r)
+}
+
+func TestProcess_Store(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	k := faker.UUIDHyphenated()
+	v1 := faker.UUIDHyphenated()
+	v2 := faker.UUIDHyphenated()
+
+	proc.Store(k, v1)
+	proc.Store(k, v2)
+
+	r := proc.Load(k)
+	assert.Equal(t, v2, r)
+}
+
+func TestProcess_Delete(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	k := faker.UUIDHyphenated()
+	v := faker.UUIDHyphenated()
+
+	ok := proc.Delete(k)
+	assert.False(t, ok)
+
+	proc.Store(k, v)
+
+	ok = proc.Delete(k)
+	assert.True(t, ok)
+}
+
+func TestProcess_LoadAndDelete(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	k := faker.UUIDHyphenated()
+	v := faker.UUIDHyphenated()
+
+	proc.Store(k, v)
+
+	r := proc.LoadAndDelete(k)
+	assert.Equal(t, v, r)
+
+	r = proc.Load(k)
+	assert.Nil(t, r)
 }
 
 func TestProcess_Exit(t *testing.T) {

@@ -31,7 +31,7 @@ func TestLoader_Load(t *testing.T) {
 		secretStore := secret.NewStore()
 
 		table := NewTable()
-		defer table.Clear()
+		defer table.Close()
 
 		loader := NewLoader(LoaderConfig{
 			Table:       table,
@@ -93,7 +93,7 @@ func TestLoader_Load(t *testing.T) {
 		secretStore := secret.NewStore()
 
 		table := NewTable()
-		defer table.Clear()
+		defer table.Close()
 
 		loader := NewLoader(LoaderConfig{
 			Table:       table,
@@ -132,7 +132,7 @@ func TestLoader_Load(t *testing.T) {
 		secretStore := secret.NewStore()
 
 		table := NewTable()
-		defer table.Clear()
+		defer table.Close()
 
 		loader := NewLoader(LoaderConfig{
 			Table:       table,
@@ -176,7 +176,7 @@ func TestLoader_Load(t *testing.T) {
 		secretStore := secret.NewStore()
 
 		table := NewTable()
-		defer table.Clear()
+		defer table.Close()
 
 		loader := NewLoader(LoaderConfig{
 			Table:       table,
@@ -224,7 +224,7 @@ func TestLoader_Load(t *testing.T) {
 		secretStore := secret.NewStore()
 
 		table := NewTable()
-		defer table.Clear()
+		defer table.Close()
 
 		loader := NewLoader(LoaderConfig{
 			Table:       table,
