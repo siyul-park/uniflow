@@ -1,10 +1,13 @@
 package debug
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -12,35 +15,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewDebugger(t *testing.T) {
-	d := NewDebugger()
-	assert.NotNil(t, d)
-}
+func TestDebugger_AddBreakpoint(t *testing.T) {
+	a := agent.New()
+	defer a.Close()
 
-func TestDebugger_Watch(t *testing.T) {
-	d := NewDebugger()
-
-	w := HandleProcessFunc(func(proc *process.Process) {
-	})
-
-	ok := d.Watch(w)
-	assert.True(t, ok)
-
-	ok = d.Watch(w)
-	assert.False(t, ok)
-
-	ok = d.Unwatch(w)
-	assert.True(t, ok)
-
-	ok = d.Unwatch(w)
-	assert.False(t, ok)
-}
-
-func TestDebugger_Symbol(t *testing.T) {
-	d := NewDebugger()
+	d := NewDebugger(a)
+	defer d.Close()
 
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
@@ -53,29 +37,21 @@ func TestDebugger_Symbol(t *testing.T) {
 	}
 	defer sb.Close()
 
-	d.Load(sb)
-	defer d.Unload(sb)
+	bp := NewBreakpoint(WithSymbol(sb))
 
-	_, ok := d.Symbol(sb.ID())
+	ok := d.AddBreakpoint(bp)
 	assert.True(t, ok)
 
-	ids := d.Symbols()
-	assert.Contains(t, ids, sb.ID())
+	ok = d.AddBreakpoint(bp)
+	assert.False(t, ok)
 }
 
-func TestDebugger_Process(t *testing.T) {
-	d := NewDebugger()
+func TestDebugger_RemoveBreakpoint(t *testing.T) {
+	a := agent.New()
+	defer a.Close()
 
-	done := make(chan struct{})
-	d.Watch(HandleProcessFunc(func(proc *process.Process) {
-		defer close(done)
-
-		_, ok := d.Process(proc.ID())
-		assert.True(t, ok)
-
-		ids := d.Processes()
-		assert.Contains(t, ids, proc.ID())
-	}))
+	d := NewDebugger(a)
+	defer d.Close()
 
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
@@ -88,30 +64,23 @@ func TestDebugger_Process(t *testing.T) {
 	}
 	defer sb.Close()
 
-	in := sb.In(node.PortIn)
+	bp := NewBreakpoint(WithSymbol(sb))
 
-	d.Load(sb)
-	defer d.Unload(sb)
+	d.AddBreakpoint(bp)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+	ok := d.RemoveBreakpoint(bp)
+	assert.True(t, ok)
 
-	in.Open(proc)
-
-	<-done
+	ok = d.RemoveBreakpoint(bp)
+	assert.False(t, ok)
 }
 
-func TestDebuffer_Frames(t *testing.T) {
-	d := NewDebugger()
+func TestDebugger_Breakpoints(t *testing.T) {
+	a := agent.New()
+	defer a.Close()
 
-	count := 0
-	d.Watch(HandleFrameFunc(func(frame *Frame) {
-		frames, ok := d.Frames(frame.Process.ID())
-		assert.True(t, ok)
-		assert.Contains(t, frames, frame)
-
-		count += 1
-	}))
+	d := NewDebugger(a)
+	defer d.Close()
 
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
@@ -120,29 +89,334 @@ func TestDebuffer_Frames(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
-		Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-			return inPck, nil
-		}),
+		Node: node.NewOneToOneNode(nil),
 	}
 	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	bps := d.Breakpoints()
+	assert.Len(t, bps, 1)
+}
+
+func TestDebugger_Pause(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
 
 	out := port.NewOut()
 	defer out.Close()
 
 	out.Link(sb.In(node.PortIn))
 
-	d.Load(sb)
-	defer d.Unload(sb)
+	a.Load(sb)
+	defer a.Unload(sb)
 
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	writer := out.Open(proc)
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
 
-	pck := packet.New(nil)
+		pck := packet.New(payload)
 
-	writer.Write(pck)
-	<-writer.Receive()
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
 
-	assert.Equal(t, 2, count)
+	ok := d.Pause(ctx)
+	assert.True(t, ok)
+
+	d.RemoveBreakpoint(bp)
+}
+
+func TestDebugger_Step(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sb.In(node.PortIn))
+
+	a.Load(sb)
+	defer a.Unload(sb)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
+
+		pck := packet.New(payload)
+
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
+
+	ok := d.Step(ctx)
+	assert.True(t, ok)
+
+	d.RemoveBreakpoint(bp)
+}
+
+func TestDebugger_Breakpoint(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sb.In(node.PortIn))
+
+	a.Load(sb)
+	defer a.Unload(sb)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
+
+		pck := packet.New(payload)
+
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
+
+	d.Pause(ctx)
+
+	cur := d.Breakpoint()
+	assert.Equal(t, bp, cur)
+
+	d.RemoveBreakpoint(bp)
+}
+
+func TestDebugger_Frame(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sb.In(node.PortIn))
+
+	a.Load(sb)
+	defer a.Unload(sb)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
+
+		pck := packet.New(payload)
+
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
+
+	d.Pause(ctx)
+
+	cur := d.Frame()
+	assert.NotNil(t, cur)
+
+	d.RemoveBreakpoint(bp)
+}
+
+func TestDebugger_Process(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sb.In(node.PortIn))
+
+	a.Load(sb)
+	defer a.Unload(sb)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
+
+		pck := packet.New(payload)
+
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
+
+	d.Pause(ctx)
+
+	cur := d.Process()
+	assert.Equal(t, proc, cur)
+
+	d.RemoveBreakpoint(bp)
+}
+
+func TestDebugger_Symbol(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	a := agent.New()
+	defer a.Close()
+
+	d := NewDebugger(a)
+	defer d.Close()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	bp := NewBreakpoint(WithSymbol(sb))
+
+	d.AddBreakpoint(bp)
+
+	out := port.NewOut()
+	defer out.Close()
+
+	out.Link(sb.In(node.PortIn))
+
+	a.Load(sb)
+	defer a.Unload(sb)
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	var payload types.Value
+	go func() {
+		writer := out.Open(proc)
+
+		pck := packet.New(payload)
+
+		writer.Write(pck)
+		<-writer.Receive()
+	}()
+
+	d.Pause(ctx)
+
+	cur := d.Symbol()
+	assert.Equal(t, sb, cur)
+
+	d.RemoveBreakpoint(bp)
 }

@@ -33,14 +33,14 @@ func New() *Scheme {
 }
 
 // AddKnownType associates a spec type with a kind and returns true if successful.
-func (s *Scheme) AddKnownType(kind string, spc spec.Spec) bool {
+func (s *Scheme) AddKnownType(kind string, sp spec.Spec) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, exists := s.types[kind]; exists {
 		return false
 	}
-	s.types[kind] = reflect.TypeOf(spc)
+	s.types[kind] = reflect.TypeOf(sp)
 	return true
 }
 
@@ -99,27 +99,27 @@ func (s *Scheme) Codec(kind string) (Codec, bool) {
 }
 
 // Compile decodes the given spec into node using the associated codec.
-func (s *Scheme) Compile(spc spec.Spec) (node.Node, error) {
+func (s *Scheme) Compile(sp spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	codec, exists := s.Codec(spc.GetKind())
+	codec, exists := s.Codec(sp.GetKind())
 	if !exists {
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	}
-	return codec.Compile(spc)
+	return codec.Compile(sp)
 }
 
 // IsBound checks if the spec is bound to any of the provided secrets.
-func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
-	for _, vals := range spc.GetEnv() {
+func (s *Scheme) IsBound(sp spec.Spec, secrets ...*secret.Secret) bool {
+	for _, vals := range sp.GetEnv() {
 		for _, val := range vals {
 			examples := make([]*secret.Secret, 0, 2)
 			if val.ID != uuid.Nil {
 				examples = append(examples, &secret.Secret{ID: val.ID})
 			}
 			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: spc.GetNamespace(), Name: val.Name})
+				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
 			}
 
 			for _, sec := range secrets {
@@ -133,8 +133,8 @@ func (s *Scheme) IsBound(spc spec.Spec, secrets ...*secret.Secret) bool {
 }
 
 // Bind processes the environment variables in the spec using the provided secrets.
-func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
-	doc, err := types.Marshal(spc)
+func (s *Scheme) Bind(sp spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
+	doc, err := types.Marshal(sp)
 	if err != nil {
 		return nil, err
 	}
@@ -197,18 +197,18 @@ func (s *Scheme) Bind(spc spec.Spec, secrets ...*secret.Secret) (spec.Spec, erro
 }
 
 // Decode converts the provided spec.Spec into a structured representation using reflection and encoding utilities.
-func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
+func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	doc, err := types.Marshal(spc)
+	doc, err := types.Marshal(sp)
 	if err != nil {
 		return nil, err
 	}
 
-	typ, exists := s.types[spc.GetKind()]
+	typ, exists := s.types[sp.GetKind()]
 	if !exists {
-		return spc, nil
+		return sp, nil
 	}
 
 	val := reflect.New(typ).Elem()
@@ -218,7 +218,7 @@ func (s *Scheme) Decode(spc spec.Spec) (spec.Spec, error) {
 
 	structured, ok := val.Interface().(spec.Spec)
 	if !ok {
-		return spc, nil
+		return sp, nil
 	}
 
 	if err := types.Unmarshal(doc, structured); err != nil {

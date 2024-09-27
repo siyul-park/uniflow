@@ -61,9 +61,9 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			for _, spc := range specs {
-				if spc.GetNamespace() == "" {
-					spc.SetNamespace(namespace)
+			for _, sp := range specs {
+				if sp.GetNamespace() == "" {
+					sp.SetNamespace(namespace)
 				}
 			}
 
@@ -74,12 +74,12 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 			var inserts []spec.Spec
 			var updates []spec.Spec
-			for _, spc := range specs {
-				if match := resourcebase.Match(spc, exists...); len(match) > 0 {
-					spc.SetID(match[0].GetID())
-					updates = append(updates, spc)
+			for _, sp := range specs {
+				if match := resourcebase.Match(sp, exists...); len(match) > 0 {
+					sp.SetID(match[0].GetID())
+					updates = append(updates, sp)
 				} else {
-					inserts = append(inserts, spc)
+					inserts = append(inserts, sp)
 				}
 			}
 

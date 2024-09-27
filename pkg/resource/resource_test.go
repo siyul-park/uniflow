@@ -26,7 +26,7 @@ func TestMatch(t *testing.T) {
 	id1 := uuid.Must(uuid.NewV7())
 	id2 := uuid.Must(uuid.NewV7())
 
-	spc := &Meta{ID: id1, Namespace: "default", Name: "node1"}
+	sp := &Meta{ID: id1, Namespace: "default", Name: "node1"}
 	examples := []*Meta{
 		{ID: id1, Namespace: "default", Name: "node1"},
 		{ID: id1},
@@ -38,5 +38,5 @@ func TestMatch(t *testing.T) {
 
 	expeced := []*Meta{examples[0], examples[1], examples[2]}
 
-	assert.Equal(t, expeced, Match(spc, examples...))
+	assert.Equal(t, expeced, Match(sp, examples...))
 }

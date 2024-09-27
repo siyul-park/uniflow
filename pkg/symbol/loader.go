@@ -39,24 +39,24 @@ func NewLoader(config LoaderConfig) *Loader {
 }
 
 // Load loads a spec.Spec by ID and its linked specs into the symbol table.
-func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error) {
+func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	examples := specs
 
 	specs, err := l.specStore.Load(ctx, examples...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var secrets []*secret.Secret
-	for _, spc := range specs {
-		for _, vals := range spc.GetEnv() {
+	for _, sp := range specs {
+		for _, vals := range sp.GetEnv() {
 			for _, val := range vals {
 				if val.ID == uuid.Nil && val.Name == "" {
 					continue
 				}
 				secrets = append(secrets, &secret.Secret{
 					ID:        val.ID,
-					Namespace: spc.GetNamespace(),
+					Namespace: sp.GetNamespace(),
 					Name:      val.Name,
 				})
 			}
@@ -66,14 +66,14 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 	if len(secrets) > 0 {
 		secrets, err = l.secretStore.Load(ctx, secrets...)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	var symbols []*Symbol
 	var errs []error
-	for _, spc := range specs {
-		bind, err := l.scheme.Bind(spc, secrets...)
+	for _, sp := range specs {
+		bind, err := l.scheme.Bind(sp, secrets...)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -110,23 +110,23 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) ([]*Symbol, error
 	for _, id := range l.table.Keys() {
 		sb, ok := l.table.Lookup(id)
 		if ok && len(resource.Match(sb.Spec, examples...)) > 0 {
-			var sb *Symbol
+			exists := false
 			for _, s := range symbols {
 				if s.ID() == id {
-					sb = s
+					exists = true
 					break
 				}
 			}
-			if sb == nil {
+			if !exists {
 				if _, err := l.table.Free(id); err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
 	}
 
 	if len(errs) > 0 {
-		return nil, errors.Join(errs...)
+		return errors.Join(errs...)
 	}
-	return symbols, nil
+	return nil
 }

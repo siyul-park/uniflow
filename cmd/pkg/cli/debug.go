@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -27,11 +29,10 @@ type Debugger struct {
 
 // debugModel represents the state and logic for the debugger UI.
 type debugModel struct {
-	view        debugView
-	input       textinput.Model
-	debugger    *debug.Debugger
-	queue       []*debug.Breakpoint
-	breakpoints []*debug.Breakpoint
+	view     debugView
+	input    textinput.Model
+	agent    *agent.Agent
+	debugger *debug.Debugger
 }
 
 // debugView defines an interface for different debug view types.
@@ -42,8 +43,8 @@ type debugView interface {
 // Various debug view types
 type (
 	errDebugView        struct{ err error }
-	frameDebugView      struct{ frame *debug.Frame }
-	framesDebugView     struct{ frames []*debug.Frame }
+	frameDebugView      struct{ frame *agent.Frame }
+	framesDebugView     struct{ frames []*agent.Frame }
 	breakpointDebugView struct {
 		id         int
 		breakpoint *debug.Breakpoint
@@ -66,14 +67,15 @@ var _ debugView = (*processDebugView)(nil)
 var _ debugView = (*processesDebugView)(nil)
 
 // NewDebugger initializes a new Debugger with an input model and UI.
-func NewDebugger(debugger *debug.Debugger, options ...tea.ProgramOption) *Debugger {
+func NewDebugger(agent *agent.Agent, options ...tea.ProgramOption) *Debugger {
 	ti := textinput.New()
 	ti.Prompt = "(debug) "
 	ti.Focus()
 
 	model := &debugModel{
 		input:    ti,
-		debugger: debugger,
+		agent:    agent,
+		debugger: debug.NewDebugger(agent),
 	}
 	program := tea.NewProgram(model, options...)
 
@@ -157,181 +159,132 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
-				breakpoint := debug.NewBreakpoint(
+				bp := debug.NewBreakpoint(
 					debug.WithSymbol(sb),
 					debug.WithInPort(inPort),
 					debug.WithOutPort(outPort),
 				)
-				m.debugger.Watch(breakpoint)
+				m.debugger.AddBreakpoint(bp)
 
-				m.breakpoints = append(m.breakpoints, breakpoint)
-				m.view = &breakpointDebugView{id: len(m.breakpoints) - 1, breakpoint: breakpoint}
+				bps := m.debugger.Breakpoints()
+				m.view = &breakpointDebugView{id: len(bps) - 1, breakpoint: bp}
 
-				return m, m.nextFrame(breakpoint)
+				return m, tea.Cmd(func() tea.Msg {
+					if m.debugger.Pause(context.Background()) {
+						if m.debugger.Breakpoint() == bp {
+							return m.debugger.Frame()
+						}
+					}
+					return nil
+				})
 			case "continue", "c":
-				var breakpoint *debug.Breakpoint
-				if len(m.queue) > 0 {
-					breakpoint = m.queue[0]
-					m.queue = m.queue[1:]
-				}
-				if breakpoint == nil {
-					m.view = nil
-					return m, nil
-				}
+				m.view = nil
 
-				var frame *debug.Frame
-				if len(m.queue) > 0 {
-					breakpoint := m.queue[0]
-					frame = breakpoint.Frame()
-				}
-
-				if frame == nil {
-					m.view = nil
-				} else {
-					m.view = &frameDebugView{frame: frame}
-				}
-
-				return m, m.nextFrame(breakpoint)
+				return m, tea.Cmd(func() tea.Msg {
+					if m.debugger.Step(context.Background()) {
+						return m.debugger.Frame()
+					}
+					return nil
+				})
 			case "delete", "d":
-				var breakpoint *debug.Breakpoint
+				bps := m.debugger.Breakpoints()
+
+				var bp *debug.Breakpoint
 				if len(args) > 1 {
-					if i, err := strconv.Atoi(args[1]); err == nil && i < len(m.breakpoints) {
-						breakpoint = m.breakpoints[i]
+					if i, err := strconv.Atoi(args[1]); err == nil && i < len(bps) {
+						bp = bps[i]
 					}
-				} else if len(m.queue) > 0 {
-					breakpoint = m.queue[0]
-				}
-				if breakpoint == nil {
-					m.view = nil
-					return m, nil
+				} else {
+					bp = m.debugger.Breakpoint()
 				}
 
-				m.debugger.Unwatch(breakpoint)
-				breakpoint.Close()
-
-				for i := 0; i < len(m.queue); i++ {
-					b := m.queue[i]
-					if b == breakpoint {
-						m.queue = append(m.queue[:i], m.queue[i+1:]...)
-						i--
-					}
-				}
-				for i := 0; i < len(m.breakpoints); i++ {
-					b := m.breakpoints[i]
-					if b == breakpoint {
-						m.breakpoints = append(m.breakpoints[:i], m.breakpoints[i+1:]...)
-						i--
-					}
-				}
+				m.debugger.RemoveBreakpoint(bp)
 
 				m.view = nil
 				return m, nil
 			case "breakpoints", "bps":
-				m.view = &breakpointsDebugView{breakpoints: m.breakpoints}
+				bps := m.debugger.Breakpoints()
+
+				m.view = &breakpointsDebugView{breakpoints: bps}
 				return m, nil
 			case "breakpoint", "bp":
-				var breakpoint *debug.Breakpoint
+				bps := m.debugger.Breakpoints()
+
+				var bp *debug.Breakpoint
 				if len(args) > 1 {
-					if i, err := strconv.Atoi(args[1]); err == nil && i < len(m.breakpoints) {
-						breakpoint = m.breakpoints[i]
+					if i, err := strconv.Atoi(args[1]); err == nil && i < len(bps) {
+						bp = bps[i]
 					}
-				} else if len(m.queue) > 0 {
-					breakpoint = m.queue[0]
+				} else {
+					bp = m.debugger.Breakpoint()
 				}
-				if breakpoint == nil {
+				if bp == nil {
 					m.view = nil
 					return m, nil
 				}
-				m.view = &breakpointDebugView{breakpoint: breakpoint}
+
+				m.view = &breakpointDebugView{breakpoint: bp}
 				return m, nil
 			case "symbols", "sbs":
-				var symbols []*symbol.Symbol
-				for _, id := range m.debugger.Symbols() {
-					if sb, ok := m.debugger.Symbol(id); ok {
-						symbols = append(symbols, sb)
-					}
-				}
-				m.view = &symbolsDebugView{symbols: symbols}
+				sbs := m.agent.Symbols()
+
+				m.view = &symbolsDebugView{symbols: sbs}
 				return m, nil
 			case "symbol", "sb":
 				var sb *symbol.Symbol
 				if len(args) > 1 {
 					sb = m.findSymbol(args[1])
-				} else if len(m.queue) > 0 {
-					breakpoint := m.queue[0]
-					frame := breakpoint.Frame()
-					if frame != nil {
-						sb = frame.Symbol
-					} else {
-						sb = breakpoint.Symbol()
-					}
+				} else {
+					sb = m.debugger.Symbol()
 				}
 				if sb == nil {
 					m.view = nil
 					return m, nil
 				}
+
 				m.view = &symbolDebugView{symbol: sb}
 				return m, nil
 			case "processes", "procs":
-				var procs []*process.Process
-				for _, id := range m.debugger.Processes() {
-					if proc, ok := m.debugger.Process(id); ok {
-						procs = append(procs, proc)
-					}
-				}
+				procs := m.agent.Processes()
+
 				m.view = &processesDebugView{processes: procs}
 				return m, nil
-
 			case "process", "proc":
 				var proc *process.Process
 				if len(args) > 1 {
 					id, _ := uuid.FromString(args[1])
-					proc, _ = m.debugger.Process(id)
-				} else if len(m.queue) > 0 {
-					breakpoint := m.queue[0]
-					frame := breakpoint.Frame()
-					if frame != nil {
-						proc = frame.Process
-					} else {
-						proc = breakpoint.Process()
-					}
+					proc, _ = m.agent.Process(id)
+				} else {
+					proc = m.debugger.Process()
 				}
 				if proc == nil {
 					m.view = nil
 					return m, nil
 				}
+
 				m.view = &processDebugView{process: proc}
 				return m, nil
 			case "frame", "frm":
-				var frame *debug.Frame
-				if len(m.queue) > 0 {
-					breakpoint := m.queue[0]
-					frame = breakpoint.Frame()
-				}
+				frame := m.debugger.Frame()
 				if frame == nil {
 					m.view = nil
 					return m, nil
 				}
+
 				m.view = &frameDebugView{frame: frame}
 				return m, nil
 			case "frames", "frms":
 				var proc *process.Process
 				if len(args) > 1 {
 					id, _ := uuid.FromString(args[1])
-					proc, _ = m.debugger.Process(id)
-				} else if len(m.queue) > 0 {
-					breakpoint := m.queue[0]
-					frame := breakpoint.Frame()
-					if frame != nil {
-						proc = frame.Process
-					} else {
-						proc = breakpoint.Process()
-					}
+					proc, _ = m.agent.Process(id)
+				} else {
+					proc = m.debugger.Process()
 				}
 
-				var frames []*debug.Frame
+				var frames []*agent.Frame
 				if proc != nil {
-					frames, _ = m.debugger.Frames(proc.ID())
+					frames, _ = m.agent.Frames(proc.ID())
 				}
 
 				if frames == nil {
@@ -342,15 +295,11 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
-	case *debug.Breakpoint:
-		m.queue = append(m.queue, msg)
-		if len(m.queue) == 1 {
-			frame := msg.Frame()
-			if frame == nil {
-				m.view = nil
-			} else {
-				m.view = &frameDebugView{frame: frame}
-			}
+	case *agent.Frame:
+		if msg == nil {
+			m.view = nil
+		} else {
+			m.view = &frameDebugView{frame: msg}
 		}
 		return m, nil
 	}
@@ -360,14 +309,9 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // Close resets the model state and stops watching the current breakpoint.
 func (m *debugModel) Close() {
-	for _, b := range m.breakpoints {
-		m.debugger.Unwatch(b)
-		b.Close()
-	}
-
 	m.view = nil
-	m.queue = nil
-	m.breakpoints = nil
+	m.debugger.Close()
+	m.agent.Close()
 }
 
 func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
@@ -376,16 +320,9 @@ func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-func (m *debugModel) nextFrame(breakpoint *debug.Breakpoint) tea.Cmd {
-	return tea.Cmd(func() tea.Msg {
-		breakpoint.Next()
-		return breakpoint
-	})
-}
-
 func (m *debugModel) findSymbol(key string) *symbol.Symbol {
-	for _, id := range m.debugger.Symbols() {
-		if sb, ok := m.debugger.Symbol(id); ok && (sb.ID().String() == key || sb.Name() == key) {
+	for _, sb := range m.agent.Symbols() {
+		if sb.ID().String() == key || sb.Name() == key {
 			return sb
 		}
 	}

@@ -7,7 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/debug"
+	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -128,18 +128,24 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		var debugger *debug.Debugger
+		h := config.Hook
+		if h == nil {
+			h = hook.New()
+		}
+
+		var agt *agent.Agent
 		if enableDebug {
-			debugger = debug.NewDebugger()
+			agt = agent.New()
+			h.AddLoadHook(agt)
+			h.AddUnloadHook(agt)
 		}
 
 		r := runtime.New(runtime.Config{
 			Namespace:   namespace,
 			Scheme:      config.Scheme,
-			Hook:        config.Hook,
+			Hook:        h,
 			SpecStore:   config.SpecStore,
 			SecretStore: config.SecretStore,
-			Debugger:    debugger,
 		})
 
 		sigs := make(chan os.Signal, 1)
@@ -147,7 +153,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 		if enableDebug {
 			d := NewDebugger(
-				debugger,
+				agt,
 				tea.WithContext(ctx),
 				tea.WithInput(cmd.InOrStdin()),
 				tea.WithOutput(cmd.OutOrStdout()),
@@ -163,7 +169,13 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 				d.Kill()
 			}()
 
-			go r.Listen(ctx)
+			if err := r.Watch(ctx); err != nil {
+				return err
+			}
+			if err := r.Load(ctx); err != nil {
+				return err
+			}
+			go r.Reconcile(ctx)
 			return d.Run()
 		}
 
@@ -172,6 +184,12 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			r.Close()
 		}()
 
-		return r.Listen(ctx)
+		if err := r.Watch(ctx); err != nil {
+			return err
+		}
+		if err := r.Load(ctx); err != nil {
+			return err
+		}
+		return r.Reconcile(ctx)
 	}
 }

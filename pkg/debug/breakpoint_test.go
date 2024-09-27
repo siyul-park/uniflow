@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -63,12 +64,12 @@ func TestBreakpoint_Next(t *testing.T) {
 	)
 	defer b.Close()
 
-	frame := &Frame{
+	frame := &agent.Frame{
 		Process: proc,
 		Symbol:  sb,
 	}
 
-	go b.HandleFrame(frame)
+	go b.OnFrame(frame)
 
 	assert.True(t, b.Next())
 	assert.Equal(t, frame, b.Frame())
@@ -95,12 +96,12 @@ func TestBreakpoint_Done(t *testing.T) {
 	)
 	defer b.Close()
 
-	frame := &Frame{
+	frame := &agent.Frame{
 		Process: proc,
 		Symbol:  sb,
 	}
 
-	go b.HandleFrame(frame)
+	go b.OnFrame(frame)
 
 	assert.True(t, b.Next())
 	assert.Equal(t, frame, b.Frame())

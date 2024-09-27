@@ -101,11 +101,11 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 
 	var result []spec.Spec
 	for cursor.Next(ctx) {
-		spc := &spec.Unstructured{}
-		if err := cursor.Decode(&spc); err != nil {
+		sp := &spec.Unstructured{}
+		if err := cursor.Decode(&sp); err != nil {
 			return nil, err
 		}
-		result = append(result, spc)
+		result = append(result, sp)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -117,15 +117,15 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 // Store saves the given Specs into the database.
 func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 	var docs []any
-	for _, spc := range specs {
-		if spc.GetID() == uuid.Nil {
-			spc.SetID(uuid.Must(uuid.NewV7()))
+	for _, sp := range specs {
+		if sp.GetID() == uuid.Nil {
+			sp.SetID(uuid.Must(uuid.NewV7()))
 		}
-		if spc.GetNamespace() == "" {
-			spc.SetNamespace(resource.DefaultNamespace)
+		if sp.GetNamespace() == "" {
+			sp.SetNamespace(resource.DefaultNamespace)
 		}
 
-		doc, err := types.Marshal(spc)
+		doc, err := types.Marshal(sp)
 		if err != nil {
 			return 0, err
 		}
@@ -151,11 +151,11 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 // Swap updates existing Specs in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 	ids := make([]uuid.UUID, len(specs))
-	for i, spc := range specs {
-		if spc.GetID() == uuid.Nil {
-			spc.SetID(uuid.Must(uuid.NewV7()))
+	for i, sp := range specs {
+		if sp.GetID() == uuid.Nil {
+			sp.SetID(uuid.Must(uuid.NewV7()))
 		}
-		ids[i] = spc.GetID()
+		ids[i] = sp.GetID()
 	}
 
 	filter := bson.M{"_id": bson.M{"$in": ids}}
@@ -168,23 +168,23 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 	exists := make(map[uuid.UUID]spec.Spec)
 	for cursor.Next(ctx) {
-		spc := &spec.Unstructured{}
-		if err := cursor.Decode(spc); err != nil {
+		sp := &spec.Unstructured{}
+		if err := cursor.Decode(sp); err != nil {
 			return 0, err
 		}
-		exists[spc.GetID()] = spc
+		exists[sp.GetID()] = sp
 	}
 
 	count := 0
-	for _, spc := range specs {
-		exist, ok := exists[spc.GetID()]
+	for _, sp := range specs {
+		exist, ok := exists[sp.GetID()]
 		if !ok {
 			continue
 		}
 
-		spc.SetNamespace(exist.GetNamespace())
+		sp.SetNamespace(exist.GetNamespace())
 
-		doc, err := types.Marshal(spc)
+		doc, err := types.Marshal(sp)
 		if err != nil {
 			return 0, err
 		}

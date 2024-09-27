@@ -75,9 +75,8 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta2)
 		specStore.Store(ctx, meta3)
 
-		res, err := loader.Load(ctx, meta1, meta2, meta3)
+		err := loader.Load(ctx, meta1, meta2, meta3)
 		assert.NoError(t, err)
-		assert.NotNil(t, res)
 
 		_, ok := table.Lookup(meta1.GetID())
 		assert.True(t, ok)
@@ -121,15 +120,11 @@ func TestLoader_Load(t *testing.T) {
 		secretStore.Store(ctx, sec)
 		specStore.Store(ctx, meta)
 
-		res1, err := loader.Load(ctx, meta)
+		err := loader.Load(ctx, meta)
 		assert.NoError(t, err)
-		assert.NotNil(t, res1)
 
-		res2, err := loader.Load(ctx, meta)
+		err = loader.Load(ctx, meta)
 		assert.NoError(t, err)
-		assert.NotNil(t, res2)
-
-		assert.Equal(t, res1, res2)
 	})
 
 	t.Run("ReloadAfterDelete", func(t *testing.T) {
@@ -164,15 +159,13 @@ func TestLoader_Load(t *testing.T) {
 		secretStore.Store(ctx, sec)
 		specStore.Store(ctx, meta)
 
-		res1, err := loader.Load(ctx, meta)
+		err := loader.Load(ctx, meta)
 		assert.NoError(t, err)
-		assert.NotNil(t, res1)
 
 		specStore.Delete(ctx, meta)
 
-		res2, err := loader.Load(ctx, meta)
+		err = loader.Load(ctx, meta)
 		assert.NoError(t, err)
-		assert.Nil(t, res2)
 
 		_, ok := table.Lookup(meta.GetID())
 		assert.False(t, ok)
@@ -219,9 +212,8 @@ func TestLoader_Load(t *testing.T) {
 		secretStore.Store(ctx, sec2)
 		specStore.Store(ctx, meta)
 
-		res, err := loader.Load(ctx, meta)
+		err := loader.Load(ctx, meta)
 		assert.NoError(t, err)
-		assert.NotNil(t, res)
 
 		_, ok := table.Lookup(meta.GetID())
 		assert.True(t, ok)
@@ -258,7 +250,7 @@ func TestLoader_Load(t *testing.T) {
 
 		specStore.Store(ctx, meta)
 
-		_, err := loader.Load(ctx, meta)
+		err := loader.Load(ctx, meta)
 		assert.Error(t, err)
 
 		_, ok := table.Lookup(meta.GetID())

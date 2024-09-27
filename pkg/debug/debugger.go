@@ -1,286 +1,190 @@
 package debug
 
 import (
+	"context"
 	"sync"
-	"time"
 
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Debugger manages symbols, processes, and their listeners.
+// Debugger manages breakpoints and the debugging process.
 type Debugger struct {
-	symbols   map[uuid.UUID]*symbol.Symbol
-	processes map[uuid.UUID]*process.Process
-	frames    map[uuid.UUID][]*Frame
-	inbounds  map[uuid.UUID]map[string]port.Hook
-	outbounds map[uuid.UUID]map[string]port.Hook
-	watchers  []Watcher
-	mu        sync.RWMutex
+	agent       *agent.Agent
+	breakpoints []*Breakpoint
+	current     *Breakpoint
+	nexts       chan *Breakpoint
+	done        chan struct{}
+	mu          sync.RWMutex
 }
 
-var _ symbol.LoadHook = (*Debugger)(nil)
-var _ symbol.UnloadHook = (*Debugger)(nil)
-
-// NewDebugger creates and returns a new instance of Debugger.
-func NewDebugger() *Debugger {
+// NewDebugger creates a new Debugger instance with the specified agent.
+func NewDebugger(agent *agent.Agent) *Debugger {
 	return &Debugger{
-		symbols:   make(map[uuid.UUID]*symbol.Symbol),
-		processes: make(map[uuid.UUID]*process.Process),
-		frames:    make(map[uuid.UUID][]*Frame),
-		inbounds:  make(map[uuid.UUID]map[string]port.Hook),
-		outbounds: make(map[uuid.UUID]map[string]port.Hook),
+		agent: agent,
+		nexts: make(chan *Breakpoint),
+		done:  make(chan struct{}),
 	}
 }
 
-// Watch adds a watcher to the debugger. Returns false if the watcher is already registered.
-func (d *Debugger) Watch(watcher Watcher) bool {
+// AddBreakpoint adds a breakpoint and starts monitoring it.
+func (d *Debugger) AddBreakpoint(bp *Breakpoint) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	for _, w := range d.watchers {
-		if w == watcher {
+	for _, b := range d.breakpoints {
+		if b == bp {
 			return false
 		}
 	}
 
-	d.watchers = append(d.watchers, watcher)
+	d.breakpoints = append(d.breakpoints, bp)
+	d.agent.Watch(bp)
+
+	go d.next(bp)
 	return true
 }
 
-// Unwatch removes a watcher from the debugger. Returns true if the watcher was successfully removed.
-func (d *Debugger) Unwatch(watcher Watcher) bool {
+// RemoveBreakpoint deletes the specified breakpoint.
+func (d *Debugger) RemoveBreakpoint(bp *Breakpoint) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	for i, w := range d.watchers {
-		if w == watcher {
-			d.watchers = append(d.watchers[:i], d.watchers[i+1:]...)
+	for i, b := range d.breakpoints {
+		if b == bp {
+			d.breakpoints = append(d.breakpoints[:i], d.breakpoints[i+1:]...)
+			d.agent.Unwatch(bp)
+
+			bp.Close()
 			return true
 		}
 	}
 	return false
 }
 
-// Symbols returns a list of all symbol UUIDs managed by the debugger.
-func (d *Debugger) Symbols() []uuid.UUID {
+// Breakpoints returns all registered breakpoints.
+func (d *Debugger) Breakpoints() []*Breakpoint {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	ids := make([]uuid.UUID, 0, len(d.symbols))
-	for id := range d.symbols {
-		ids = append(ids, id)
+	if len(d.breakpoints) == 0 {
+		return nil
 	}
-	return ids
+	return append([]*Breakpoint(nil), d.breakpoints...)
 }
 
-// Symbol retrieves a symbol by its UUID. Returns the symbol and a boolean indicating if it was found.
-func (d *Debugger) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
+// Pause blocks until a breakpoint is hit or monitoring is done.
+func (d *Debugger) Pause(ctx context.Context) bool {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	sb, exists := d.symbols[id]
-	return sb, exists
-}
-
-// Processes returns a list of all process UUIDs managed by the debugger.
-func (d *Debugger) Processes() []uuid.UUID {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	ids := make([]uuid.UUID, 0, len(d.processes))
-	for id := range d.processes {
-		ids = append(ids, id)
-	}
-	return ids
-}
-
-// Process retrieves a process by its UUID. Returns the process and a boolean indicating if it was found.
-func (d *Debugger) Process(id uuid.UUID) (*process.Process, bool) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	proc, exists := d.processes[id]
-	return proc, exists
-}
-
-// Frames retrieves all frames associated with a specific process UUID. Returns the frames and a boolean indicating if they were found.
-func (d *Debugger) Frames(id uuid.UUID) ([]*Frame, bool) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	frames, exists := d.frames[id]
-	return frames, exists
-}
-
-// Load adds a symbol and its associated listeners to the debugger.
-func (d *Debugger) Load(sb *symbol.Symbol) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	inbounds := make(map[string]port.Hook)
-	outbounds := make(map[string]port.Hook)
-
-	d.symbols[sb.ID()] = sb
-	d.inbounds[sb.ID()] = inbounds
-	d.outbounds[sb.ID()] = outbounds
-
-	for _, name := range sb.Ins() {
-		in := sb.In(name)
-		hook := port.HookFunc(func(proc *process.Process) {
-			d.accept(proc)
-
-			inboundHook, outboundHook := d.hooks(proc, sb, in, nil)
-
-			reader := in.Open(proc)
-			reader.AddInboundHook(inboundHook)
-			reader.AddOutboundHook(outboundHook)
-		})
-
-		in.AddHook(hook)
-		inbounds[name] = hook
+	if d.current != nil {
+		return true
 	}
 
-	for _, name := range sb.Outs() {
-		out := sb.Out(name)
-		hook := port.HookFunc(func(proc *process.Process) {
-			d.accept(proc)
+	select {
+	case d.current = <-d.nexts:
+		return true
+	case <-d.done:
+		return false
+	case <-ctx.Done():
+		return false
+	}
+}
 
-			inboundHook, outboundHook := d.hooks(proc, sb, nil, out)
+// Step continues execution until the next breakpoint is hit.
+func (d *Debugger) Step(ctx context.Context) bool {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 
-			writer := out.Open(proc)
-			writer.AddInboundHook(inboundHook)
-			writer.AddOutboundHook(outboundHook)
-		})
-
-		out.AddHook(hook)
-		outbounds[name] = hook
+	if d.current != nil {
+		go d.next(d.current)
 	}
 
+	select {
+	case d.current = <-d.nexts:
+		return true
+	case <-d.done:
+		return false
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// Breakpoint returns the currently active breakpoint.
+func (d *Debugger) Breakpoint() *Breakpoint {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	return d.current
+}
+
+// Frame returns the frame of the current breakpoint.
+func (d *Debugger) Frame() *agent.Frame {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	if d.current != nil {
+		return d.current.Frame()
+	}
 	return nil
 }
 
-// Unload removes a symbol and its associated listeners from the debugger.
-func (d *Debugger) Unload(sb *symbol.Symbol) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+// Process retrieves the process linked to the current breakpoint.
+func (d *Debugger) Process() *process.Process {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 
-	for name, hook := range d.inbounds[sb.ID()] {
-		in := sb.In(name)
-		in.RemoveHook(hook)
+	if d.current != nil {
+		frame := d.current.Frame()
+		if frame != nil {
+			return frame.Process
+		}
 	}
-	for name, hook := range d.outbounds[sb.ID()] {
-		out := sb.Out(name)
-		out.RemoveHook(hook)
-	}
-
-	delete(d.inbounds, sb.ID())
-	delete(d.outbounds, sb.ID())
-	delete(d.symbols, sb.ID())
-
 	return nil
 }
 
-func (d *Debugger) accept(proc *process.Process) {
+// Symbol retrieves the symbol for the frame at the current breakpoint.
+func (d *Debugger) Symbol() *symbol.Symbol {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	if d.current != nil {
+		frame := d.current.Frame()
+		if frame != nil {
+			return frame.Symbol
+		}
+		return d.current.Symbol()
+	}
+	return nil
+}
+
+// Close stops monitoring breakpoints and releases resources.
+func (d *Debugger) Close() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	if _, exists := d.processes[proc.ID()]; !exists {
-		d.processes[proc.ID()] = proc
+	select {
+	case <-d.done:
+		return
+	default:
+		close(d.done)
 
-		proc.AddExitHook(process.ExitFunc(func(err error) {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-
-			delete(d.processes, proc.ID())
-			delete(d.frames, proc.ID())
-		}))
-
-		watchers := d.watchers[:]
-		d.mu.Unlock()
-
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.HandleProcess(proc)
+		for _, bp := range d.breakpoints {
+			bp.Close()
 		}
+		d.breakpoints = nil
 
-		d.mu.Lock()
-	}
-
-	if _, exists := d.frames[proc.ID()]; !exists {
-		d.frames[proc.ID()] = nil
+		close(d.nexts)
 	}
 }
 
-func (d *Debugger) hooks(proc *process.Process, sb *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
-	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
-		d.mu.Lock()
-
-		var frame *Frame
-		for _, f := range d.frames[proc.ID()] {
-			if f.Symbol == sb && (f.InPort == in || f.OutPort == out) && f.InPck == nil {
-				f.InPck = pck
-				f.InTime = time.Now()
-				frame = f
-				break
-			}
+func (d *Debugger) next(bp *Breakpoint) {
+	if bp.Next() {
+		select {
+		case d.nexts <- bp:
+		case <-d.done:
 		}
-		if frame == nil {
-			frame = &Frame{
-				Process: proc,
-				Symbol:  sb,
-				InPort:  in,
-				OutPort: out,
-				InPck:   pck,
-				InTime:  time.Now(),
-			}
-			d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
-		}
-
-		watchers := d.watchers[:]
-		d.mu.Unlock()
-
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.HandleFrame(frame)
-		}
-	})
-
-	outboundHook := packet.HookFunc(func(pck *packet.Packet) {
-		d.mu.Lock()
-
-		var frame *Frame
-		for _, f := range d.frames[proc.ID()] {
-			if f.Symbol == sb && (f.InPort == in || f.OutPort == out) && f.OutPck == nil {
-				f.OutPck = pck
-				f.OutTime = time.Now()
-				frame = f
-				break
-			}
-		}
-		if frame == nil {
-			frame = &Frame{
-				Process: proc,
-				Symbol:  sb,
-				InPort:  in,
-				OutPort: out,
-				OutPck:  pck,
-				OutTime: time.Now(),
-			}
-			d.frames[proc.ID()] = append(d.frames[proc.ID()], frame)
-		}
-
-		watchers := d.watchers[:]
-		d.mu.Unlock()
-
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.HandleFrame(frame)
-		}
-	})
-
-	return inboundHook, outboundHook
+	}
 }

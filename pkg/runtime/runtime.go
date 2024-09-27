@@ -2,9 +2,9 @@ package runtime
 
 import (
 	"context"
+	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -15,12 +15,11 @@ import (
 
 // Config defines configuration options for the Runtime.
 type Config struct {
-	Namespace   string          // Namespace defines the isolated execution environment for workflows.
-	Hook        *hook.Hook      // Hook is a collection of hook functions for managing symbols.
-	Scheme      *scheme.Scheme  // Scheme defines the scheme and behaviors for symbols.
-	SpecStore   spec.Store      // SpecStore is responsible for persisting symbols.
-	SecretStore secret.Store    // SpecStore is responsible for persisting symbols.
-	Debugger    *debug.Debugger // Debugger provides debugging capabilities.
+	Namespace   string         // Namespace defines the isolated execution environment for workflows.
+	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
+	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
+	SpecStore   spec.Store     // SpecStore is responsible for persisting specifications.
+	SecretStore secret.Store   // SecretStore is responsible for persisting secrets.
 }
 
 // Runtime represents an environment for executing Workflows.
@@ -29,9 +28,11 @@ type Runtime struct {
 	scheme       *scheme.Scheme
 	specStore    spec.Store
 	secretStore  secret.Store
+	specStream   spec.Stream
+	secretStream secret.Stream
 	symbolTable  *symbol.Table
 	symbolLoader *symbol.Loader
-	reconciler   *Reconciler
+	mu           sync.RWMutex
 }
 
 // New creates a new Runtime instance with the specified configuration.
@@ -52,33 +53,15 @@ func New(config Config) *Runtime {
 		config.SecretStore = secret.NewStore()
 	}
 
-	var loadHooks []symbol.LoadHook
-	var unloadHooks []symbol.UnloadHook
-	if config.Debugger != nil {
-		loadHooks = append(loadHooks, config.Debugger)
-		unloadHooks = append(unloadHooks, config.Debugger)
-	}
-	loadHooks = append(loadHooks, config.Hook)
-	unloadHooks = append(unloadHooks, config.Hook)
-
 	symbolTable := symbol.NewTable(symbol.TableOptions{
-		LoadHooks:   loadHooks,
-		UnloadHooks: unloadHooks,
+		LoadHooks:   []symbol.LoadHook{config.Hook},
+		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 	symbolLoader := symbol.NewLoader(symbol.LoaderConfig{
 		Scheme:      config.Scheme,
 		SpecStore:   config.SpecStore,
 		SecretStore: config.SecretStore,
 		Table:       symbolTable,
-	})
-
-	reconciler := NewReconiler(ReconcilerConfig{
-		Namespace:    config.Namespace,
-		Scheme:       config.Scheme,
-		SpecStore:    config.SpecStore,
-		SecretStore:  config.SecretStore,
-		SymbolTable:  symbolTable,
-		SymbolLoader: symbolLoader,
 	})
 
 	return &Runtime{
@@ -88,113 +71,137 @@ func New(config Config) *Runtime {
 		secretStore:  config.SecretStore,
 		symbolTable:  symbolTable,
 		symbolLoader: symbolLoader,
-		reconciler:   reconciler,
 	}
 }
 
-// LookupByID retrieves a symbol by ID from the table or loads it from the store if not found.
-func (r *Runtime) Load(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbol, error) {
-	if len(specs) == 0 {
-		specs = append(specs, &spec.Meta{
-			Namespace: r.namespace,
-		})
-	}
-
-	for _, spc := range specs {
-		if spc.GetNamespace() != r.namespace {
-			spc.SetNamespace(r.namespace)
-		}
-	}
-
-	return r.symbolLoader.Load(ctx, specs...)
+// Load loads symbols from the spec store into the symbol table.
+func (r *Runtime) Load(ctx context.Context) error {
+	return r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace})
 }
 
-// Store adds a spec to the Runtime and returns the corresponding symbol.
-func (r *Runtime) Store(ctx context.Context, specs ...spec.Spec) ([]*symbol.Symbol, error) {
-	if len(specs) == 0 {
-		return nil, nil
-	}
+// Watch sets up watchers for specification and secret changes.
+func (r *Runtime) Watch(ctx context.Context) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	for _, spc := range specs {
-		if spc.GetID() == uuid.Nil {
-			spc.SetID(uuid.Must(uuid.NewV7()))
-		}
-		if spc.GetNamespace() != r.namespace {
-			spc.SetNamespace(r.namespace)
+	if r.specStream != nil {
+		if err := r.specStream.Close(); err != nil {
+			return err
 		}
 	}
-
-	exists := make(map[uuid.UUID]spec.Spec)
-	if specs, err := r.specStore.Load(ctx, specs...); err != nil {
-		return nil, err
-	} else {
-		for _, spc := range specs {
-			exists[spc.GetID()] = spc
-		}
-	}
-
-	for _, spc := range specs {
-		if _, ok := exists[spc.GetID()]; ok {
-			if _, err := r.specStore.Swap(ctx, spc); err != nil {
-				return nil, err
-			}
-		} else {
-			if _, err := r.specStore.Store(ctx, spc); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return r.symbolLoader.Load(ctx, specs...)
-}
-
-// Delete removes a spec from the Runtime and returns whether it was successfully deleted.
-func (r *Runtime) Delete(ctx context.Context, specs ...spec.Spec) (int, error) {
-	if len(specs) == 0 {
-		specs = append(specs, &spec.Meta{
-			Namespace: r.namespace,
-		})
-	}
-
-	for _, spc := range specs {
-		if spc.GetNamespace() != r.namespace {
-			spc.SetNamespace(r.namespace)
-		}
-	}
-
-	specs, err := r.specStore.Load(ctx, specs...)
+	specStream, err := r.specStore.Watch(ctx, &spec.Meta{Namespace: r.namespace})
 	if err != nil {
-		return 0, err
-	}
-
-	count, err := r.specStore.Delete(ctx, specs...)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, spc := range specs {
-		if _, err := r.symbolTable.Free(spc.GetID()); err != nil {
-			return 0, err
-		}
-	}
-	return count, nil
-}
-
-// Listen starts the loader's watch process and reconciles symbols.
-func (r *Runtime) Listen(ctx context.Context) error {
-	if err := r.reconciler.Watch(ctx); err != nil {
 		return err
 	}
-	if _, err := r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace}); err != nil {
+	r.specStream = specStream
+
+	if r.secretStream != nil {
+		if err := r.secretStream.Close(); err != nil {
+			return err
+		}
+	}
+	secretStream, err := r.secretStore.Watch(ctx, &secret.Secret{Namespace: r.namespace})
+	if err != nil {
 		return err
 	}
-	return r.reconciler.Reconcile(ctx)
+	r.secretStream = secretStream
+
+	return nil
 }
 
-// Close shuts down the Runtime by closing the loader and clearing the symbol table.
+// Reconcile reconciles the state of symbols based on changes in specifications and secrets.
+func (r *Runtime) Reconcile(ctx context.Context) error {
+	r.mu.RLock()
+
+	specStream := r.specStream
+	secretStream := r.secretStream
+
+	r.mu.RUnlock()
+
+	if specStream == nil || secretStream == nil {
+		return nil
+	}
+
+	unloaded := make(map[uuid.UUID]spec.Spec)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event, ok := <-specStream.Next():
+			if !ok {
+				return nil
+			}
+
+			specs, err := r.specStore.Load(ctx, &spec.Meta{ID: event.ID})
+			if err != nil {
+				return err
+			}
+			if len(specs) == 0 {
+				specs = append(specs, &spec.Meta{ID: event.ID})
+			}
+
+			for _, sp := range specs {
+				if err := r.symbolLoader.Load(ctx, sp); err != nil {
+					unloaded[sp.GetID()] = sp
+				} else {
+					delete(unloaded, sp.GetID())
+				}
+			}
+		case event, ok := <-secretStream.Next():
+			if !ok {
+				return nil
+			}
+
+			secrets, err := r.secretStore.Load(ctx, &secret.Secret{ID: event.ID})
+			if err != nil {
+				return err
+			}
+			if len(secrets) == 0 {
+				secrets = append(secrets, &secret.Secret{ID: event.ID})
+			}
+
+			bounded := make(map[uuid.UUID]spec.Spec)
+			for _, id := range r.symbolTable.Keys() {
+				sb, ok := r.symbolTable.Lookup(id)
+				if ok && r.scheme.IsBound(sb.Spec, secrets...) {
+					bounded[sb.Spec.GetID()] = sb.Spec
+				}
+			}
+			for _, sp := range unloaded {
+				if r.scheme.IsBound(sp, secrets...) {
+					bounded[sp.GetID()] = sp
+				}
+			}
+
+			for _, sp := range bounded {
+				if err := r.symbolLoader.Load(ctx, sp); err != nil {
+					unloaded[sp.GetID()] = sp
+				} else {
+					delete(unloaded, sp.GetID())
+				}
+			}
+		}
+	}
+}
+
+// Close shuts down the Runtime by closing streams and clearing the symbol table.
 func (r *Runtime) Close() error {
-	if err := r.reconciler.Close(); err != nil {
-		return err
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.specStream != nil {
+		if err := r.specStream.Close(); err != nil {
+			return err
+		}
+		r.specStream = nil
 	}
+	if r.secretStream != nil {
+		if err := r.secretStream.Close(); err != nil {
+			return err
+		}
+		r.secretStream = nil
+	}
+
 	return r.symbolTable.Clear()
 }

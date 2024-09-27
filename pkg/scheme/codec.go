@@ -10,11 +10,11 @@ import (
 // Codec defines the interface for decoding spec.Spec into a node.Node.
 type Codec interface {
 	// Compile compiles the given spec.Spec into a node.Node.
-	Compile(spc spec.Spec) (node.Node, error)
+	Compile(sp spec.Spec) (node.Node, error)
 }
 
 // CodecFunc represents a function type that implements the Codec interface.
-type CodecFunc func(spc spec.Spec) (node.Node, error)
+type CodecFunc func(sp spec.Spec) (node.Node, error)
 
 // CodecWithType creates a new CodecFunc for the specified type T.
 func CodecWithType[T spec.Spec](compile func(spec T) (node.Node, error)) Codec {
@@ -27,6 +27,6 @@ func CodecWithType[T spec.Spec](compile func(spec T) (node.Node, error)) Codec {
 }
 
 // Compile implements the Compile method for CodecFunc.
-func (f CodecFunc) Compile(spc spec.Spec) (node.Node, error) {
-	return f(spc)
+func (f CodecFunc) Compile(sp spec.Spec) (node.Node, error) {
+	return f(sp)
 }
