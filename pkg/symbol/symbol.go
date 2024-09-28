@@ -1,6 +1,8 @@
 package symbol
 
 import (
+	"sync"
+
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -14,6 +16,7 @@ type Symbol struct {
 	inbounds map[string][]spec.Port
 	ins      map[string]*port.InPort
 	outs     map[string]*port.OutPort
+	mu       sync.RWMutex
 }
 
 var _ node.Node = (*Symbol)(nil)
@@ -66,16 +69,22 @@ func (s *Symbol) Env() map[string][]spec.Secret {
 }
 
 // Ins returns the input ports associated with the Symbol.
-func (s *Symbol) Ins() []string {
-	ins := make([]string, 0, len(s.ins))
-	for name := range s.ins {
-		ins = append(ins, name)
+func (s *Symbol) Ins() map[string]*port.InPort {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ins := make(map[string]*port.InPort, len(s.ins))
+	for name, in := range s.ins {
+		ins[name] = in
 	}
 	return ins
 }
 
 // In returns the input port with the specified name, caching the result.
 func (s *Symbol) In(name string) *port.InPort {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.ins == nil {
 		s.ins = make(map[string]*port.InPort)
 	}
@@ -90,16 +99,22 @@ func (s *Symbol) In(name string) *port.InPort {
 }
 
 // Outs returns the output ports associated with the Symbol.
-func (s *Symbol) Outs() []string {
-	outs := make([]string, 0, len(s.outs))
-	for name := range s.outs {
-		outs = append(outs, name)
+func (s *Symbol) Outs() map[string]*port.OutPort {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	outs := make(map[string]*port.OutPort, len(s.outs))
+	for name, out := range s.outs {
+		outs[name] = out
 	}
 	return outs
 }
 
 // Out returns the output port with the specified name, caching the result.
 func (s *Symbol) Out(name string) *port.OutPort {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.outs == nil {
 		s.outs = make(map[string]*port.OutPort)
 	}
@@ -115,5 +130,11 @@ func (s *Symbol) Out(name string) *port.OutPort {
 
 // Close frees all resources held by the Symbol.
 func (s *Symbol) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.ins = nil
+	s.outs = nil
+
 	return s.Node.Close()
 }

@@ -22,7 +22,6 @@ type Agent struct {
 	mu        sync.RWMutex
 }
 
-// Ensure Agent implements LoadHook and UnloadHook interfaces.
 var _ symbol.LoadHook = (*Agent)(nil)
 var _ symbol.UnloadHook = (*Agent)(nil)
 
@@ -117,7 +116,7 @@ func (a *Agent) Frames(id uuid.UUID) ([]*Frame, bool) {
 	if !exists {
 		return nil, false
 	}
-	return append([]*Frame(nil), frames...), true
+	return frames[:], true
 }
 
 // Load adds a symbol and its hooks to the agent.
@@ -132,8 +131,7 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 	a.inbounds[sym.ID()] = inbounds
 	a.outbounds[sym.ID()] = outbounds
 
-	for _, name := range sym.Ins() {
-		in := sym.In(name)
+	for name, in := range sym.Ins() {
 		hook := port.HookFunc(func(proc *process.Process) {
 			a.accept(proc)
 
@@ -148,8 +146,7 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 		inbounds[name] = hook
 	}
 
-	for _, name := range sym.Outs() {
-		out := sym.Out(name)
+	for name, out := range sym.Outs() {
 		hook := port.HookFunc(func(proc *process.Process) {
 			a.accept(proc)
 
@@ -202,9 +199,10 @@ func (a *Agent) Close() {
 // accept registers a process and notifies watchers.
 func (a *Agent) accept(proc *process.Process) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 
-	if _, exists := a.processes[proc.ID()]; !exists {
+	_, exists := a.processes[proc.ID()]
+
+	if !exists {
 		a.processes[proc.ID()] = proc
 
 		proc.AddExitHook(process.ExitFunc(func(err error) {
@@ -215,12 +213,19 @@ func (a *Agent) accept(proc *process.Process) {
 			delete(a.frames, proc.ID())
 		}))
 
-		for _, watcher := range a.watchers {
-			watcher.OnProcess(proc)
-		}
-
 		if _, exists := a.frames[proc.ID()]; !exists {
 			a.frames[proc.ID()] = nil
+		}
+	}
+
+	watchers := a.watchers[:]
+
+	a.mu.Unlock()
+
+	if !exists {
+		for i := len(watchers) - 1; i >= 0; i-- {
+			watcher := watchers[i]
+			watcher.OnProcess(proc)
 		}
 	}
 }
@@ -251,6 +256,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 		}
 
 		watchers := a.watchers[:]
+
 		a.mu.Unlock()
 
 		for i := len(watchers) - 1; i >= 0; i-- {
@@ -284,6 +290,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 		}
 
 		watchers := a.watchers[:]
+
 		a.mu.Unlock()
 
 		for i := len(watchers) - 1; i >= 0; i-- {

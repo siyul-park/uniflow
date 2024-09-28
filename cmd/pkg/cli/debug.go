@@ -366,8 +366,8 @@ func (v *frameDebugView) Interface() map[string]any {
 		}
 
 		if v.frame.InPort != nil {
-			for _, name := range v.frame.Symbol.Ins() {
-				if v.frame.Symbol.In(name) == v.frame.InPort {
+			for name, in := range v.frame.Symbol.Ins() {
+				if in == v.frame.InPort {
 					value["port"] = name
 					break
 				}
@@ -375,8 +375,8 @@ func (v *frameDebugView) Interface() map[string]any {
 		}
 
 		if v.frame.OutPort != nil {
-			for _, name := range v.frame.Symbol.Outs() {
-				if v.frame.Symbol.Out(name) == v.frame.OutPort {
+			for name, out := range v.frame.Symbol.Outs() {
+				if out == v.frame.OutPort {
 					value["port"] = name
 					break
 				}
@@ -431,14 +431,14 @@ func (v *breakpointDebugView) Interface() map[string]any {
 			value["symbol"] = sb.Name()
 		}
 
-		for _, name := range sb.Ins() {
-			if sb.In(name) == v.breakpoint.InPort() {
+		for name, in := range sb.Ins() {
+			if in == v.breakpoint.InPort() {
 				value["port"] = name
 				break
 			}
 		}
-		for _, name := range sb.Outs() {
-			if sb.Out(name) == v.breakpoint.OutPort() {
+		for name, out := range sb.Outs() {
+			if out == v.breakpoint.OutPort() {
 				value["port"] = name
 				break
 			}

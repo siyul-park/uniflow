@@ -50,7 +50,7 @@ func (p *Process) ID() uuid.UUID {
 func (p *Process) Load(key string) any {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	
+
 	return p.data[key]
 }
 
@@ -58,7 +58,7 @@ func (p *Process) Load(key string) any {
 func (p *Process) Store(key string, val any) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	p.data[key] = val
 }
 
@@ -66,7 +66,7 @@ func (p *Process) Store(key string, val any) {
 func (p *Process) Delete(key string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	if _, ok := p.data[key]; ok {
 		delete(p.data, key)
 		return true

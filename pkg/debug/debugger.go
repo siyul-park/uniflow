@@ -68,16 +68,13 @@ func (d *Debugger) Breakpoints() []*Breakpoint {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	if len(d.breakpoints) == 0 {
-		return nil
-	}
-	return append([]*Breakpoint(nil), d.breakpoints...)
+	return d.breakpoints[:]
 }
 
 // Pause blocks until a breakpoint is hit or monitoring is done.
 func (d *Debugger) Pause(ctx context.Context) bool {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	if d.current != nil {
 		return true
@@ -95,8 +92,8 @@ func (d *Debugger) Pause(ctx context.Context) bool {
 
 // Step continues execution until the next breakpoint is hit.
 func (d *Debugger) Step(ctx context.Context) bool {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	if d.current != nil {
 		go d.next(d.current)
