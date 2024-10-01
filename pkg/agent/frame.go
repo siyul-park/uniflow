@@ -9,14 +9,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Frame represents a processing frame that links a process to its input and output packets.
+// Frame represents a processing unit that links a process with its input and output packets.
 type Frame struct {
-	Process *process.Process // The process associated with this frame.
-	Symbol  *symbol.Symbol   // The symbol being processed.
-	InPort  *port.InPort     // The input port that received the packet.
-	OutPort *port.OutPort    // The output port that will send the packet.
-	InPck   *packet.Packet   // The input packet being processed.
-	OutPck  *packet.Packet   // The output packet generated from processing.
-	InTime  time.Time        // The timestamp when the input packet was received.
-	OutTime time.Time        // The timestamp when the output packet was sent.
+	Process *process.Process // The associated process handling this frame.
+	Symbol  *symbol.Symbol   // The symbol or metadata relevant to the current processing state.
+
+	InPort  *port.InPort  // Input port that receives the packet.
+	OutPort *port.OutPort // Output port that sends the processed packet.
+
+	InPck  *packet.Packet // The incoming packet being processed.
+	OutPck *packet.Packet // The outgoing packet generated after processing.
+
+	InTime  time.Time // Timestamp when the input packet was received.
+	OutTime time.Time // Timestamp when the output packet was sent.
 }

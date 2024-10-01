@@ -23,7 +23,7 @@ func TestEncodeAssembler_Compile(t *testing.T) {
 	a := NewEncodeAssembler[any, any]()
 	a.Add(EncodeCompilerFunc[any, any](func(typ reflect.Type) (Encoder[any, any], error) {
 		if typ.Kind() == reflect.String {
-			return EncodeFunc[any, any](func(source any) (any, error) {
+			return EncodeFunc(func(source any) (any, error) {
 				return source, nil
 			}), nil
 		}
@@ -40,7 +40,7 @@ func TestEncodeAssembler_Encode(t *testing.T) {
 	a := NewEncodeAssembler[any, any]()
 	a.Add(EncodeCompilerFunc[any, any](func(typ reflect.Type) (Encoder[any, any], error) {
 		if typ.Kind() == reflect.String {
-			return EncodeFunc[any, any](func(source any) (any, error) {
+			return EncodeFunc(func(source any) (any, error) {
 				return source, nil
 			}), nil
 		}
@@ -66,7 +66,7 @@ func TestDecodeAssembler_Compile(t *testing.T) {
 	a := NewDecodeAssembler[any, any]()
 	a.Add(DecodeCompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.String {
-			return DecodeFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
+			return DecodeFunc(func(source any, target unsafe.Pointer) error {
 				return nil
 			}), nil
 		}
@@ -83,7 +83,7 @@ func TestDecodeAssembler_Decode(t *testing.T) {
 	a := NewDecodeAssembler[any, any]()
 	a.Add(DecodeCompilerFunc[any](func(typ reflect.Type) (Decoder[any, unsafe.Pointer], error) {
 		if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.String {
-			return DecodeFunc[any, unsafe.Pointer](func(source any, target unsafe.Pointer) error {
+			return DecodeFunc(func(source any, target unsafe.Pointer) error {
 				if s, ok := source.(*string); ok {
 					*(*string)(target) = *s
 					return nil

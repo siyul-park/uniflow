@@ -56,8 +56,9 @@ func (n *LoopNode) In(name string) *port.InPort {
 	switch name {
 	case node.PortIn:
 		return n.inPort
+	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -74,8 +75,8 @@ func (n *LoopNode) Out(name string) *port.OutPort {
 				return n.outPorts[index]
 			}
 		}
+		return nil
 	}
-	return nil
 }
 
 // Close closes all ports associated with the node.
@@ -86,7 +87,6 @@ func (n *LoopNode) Close() error {
 	}
 	n.errPort.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

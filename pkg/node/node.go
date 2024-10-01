@@ -4,10 +4,7 @@ import "github.com/siyul-park/uniflow/pkg/port"
 
 // Node represents a unit that processes packets with input and output ports.
 type Node interface {
-	// In returns the input port identified by 'name'.
-	In(name string) *port.InPort
-	// Out returns the output port identified by 'name'.
-	Out(name string) *port.OutPort
-	// Close terminates the node and returns any encountered error.
-	Close() error
+	In(name string) *port.InPort   // Returns the input port by name.
+	Out(name string) *port.OutPort // Returns the output port by name.
+	Close() error                  // Closes the node and returns any error.
 }

@@ -57,8 +57,8 @@ func (n *CallNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -87,7 +87,6 @@ func (n *CallNode) Close() error {
 	}
 	n.errPort.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

@@ -46,7 +46,6 @@ func (a *Agent) Watch(watcher Watcher) bool {
 			return false
 		}
 	}
-
 	a.watchers = append(a.watchers, watcher)
 	return true
 }
@@ -78,12 +77,11 @@ func (a *Agent) Symbols() []*symbol.Symbol {
 }
 
 // Symbol retrieves a symbol by UUID, returning the symbol and a boolean indicating existence.
-func (a *Agent) Symbol(id uuid.UUID) (*symbol.Symbol, bool) {
+func (a *Agent) Symbol(id uuid.UUID) *symbol.Symbol {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	sym, exists := a.symbols[id]
-	return sym, exists
+	return a.symbols[id]
 }
 
 // Processes returns all managed processes.
@@ -99,24 +97,19 @@ func (a *Agent) Processes() []*process.Process {
 }
 
 // Process retrieves a process by UUID, returning the process and a boolean indicating existence.
-func (a *Agent) Process(id uuid.UUID) (*process.Process, bool) {
+func (a *Agent) Process(id uuid.UUID) *process.Process {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	proc, exists := a.processes[id]
-	return proc, exists
+	return a.processes[id]
 }
 
 // Frames retrieves frames for a specific process UUID, returning frames and a boolean indicating existence.
-func (a *Agent) Frames(id uuid.UUID) ([]*Frame, bool) {
+func (a *Agent) Frames(id uuid.UUID) []*Frame {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	frames, exists := a.frames[id]
-	if !exists {
-		return nil, false
-	}
-	return frames[:], true
+	return append([]*Frame(nil), a.frames[id]...)
 }
 
 // Load adds a symbol and its hooks to the agent.
@@ -200,33 +193,33 @@ func (a *Agent) Close() {
 func (a *Agent) accept(proc *process.Process) {
 	a.mu.Lock()
 
-	_, exists := a.processes[proc.ID()]
-
-	if !exists {
-		a.processes[proc.ID()] = proc
-
-		proc.AddExitHook(process.ExitFunc(func(err error) {
-			a.mu.Lock()
-			defer a.mu.Unlock()
-
-			delete(a.processes, proc.ID())
-			delete(a.frames, proc.ID())
-		}))
-
-		if _, exists := a.frames[proc.ID()]; !exists {
-			a.frames[proc.ID()] = nil
-		}
+	_, ok := a.processes[proc.ID()]
+	if ok {
+		a.mu.Unlock()
+		return
 	}
 
-	watchers := a.watchers[:]
+	a.processes[proc.ID()] = proc
+
+	proc.AddExitHook(process.ExitFunc(func(err error) {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+
+		delete(a.processes, proc.ID())
+		delete(a.frames, proc.ID())
+	}))
+
+	if _, ok := a.frames[proc.ID()]; !ok {
+		a.frames[proc.ID()] = nil
+	}
+
+	watchers := a.watchers
 
 	a.mu.Unlock()
 
-	if !exists {
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.OnProcess(proc)
-		}
+	for i := len(watchers) - 1; i >= 0; i-- {
+		watcher := watchers[i]
+		watcher.OnProcess(proc)
 	}
 }
 
@@ -255,7 +248,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 			a.frames[proc.ID()] = append(a.frames[proc.ID()], frame)
 		}
 
-		watchers := a.watchers[:]
+		watchers := a.watchers
 
 		a.mu.Unlock()
 
@@ -289,7 +282,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 			a.frames[proc.ID()] = append(a.frames[proc.ID()], frame)
 		}
 
-		watchers := a.watchers[:]
+		watchers := a.watchers
 
 		a.mu.Unlock()
 

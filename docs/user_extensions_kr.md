@@ -334,12 +334,10 @@ defer r.Close()
 
 이제 만든 런타임 환경을 기존 서비스에 통합하고, 다시 빌드하여 실행 파일을 생성해야 합니다.
 
-### 지속 실행
-
-런타임 환경을 지속적으로 유지하면 외부 요청에 즉시 대응할 수 있습니다. 각 런타임 환경은 독립적인 컨테이너에서 실행되며, 지속적인 워크플로우 실행이 필요한 시나리오에 적합합니다.
-
 ```go
 func main() {
+	ctx := context.TODO()
+
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
@@ -372,39 +370,10 @@ func main() {
 		_ = r.Close()
 	}()
 
-	r.Listen(context.TODO())
+	r.Watch(ctx)
+	r.Load(ctx)
+	r.Reconcile(ctx)
 }
 ```
 
 위 코드에서는 런타임 환경을 지속적으로 실행하여 외부 신호에 반응하도록 설정합니다. `os.Signal`을 통해 종료 신호를 수신하면 런타임 환경을 안전하게 종료합니다.
-
-### 단순 실행
-
-때로는 런타임 환경을 지속적으로 유지하는 대신, 필요할 때만 실행하고 종료하는 간단한 방식이 더 적합할 수 있습니다. 이럴 때는 단순 실행 방식을 사용할 수 있습니다.
-
-```go
-r := runtime.New(runtime.Config{
-	Namespace:   "default",
-	Schema:      scheme,
-	Hook:        hook,
-	SpecStore:   specStore,
-	SecretStore: secretStore,
-})
-defer r.Close()
-
-r.Load(ctx) // 모든 리소스 로드
-
-symbols, _ := r.Load(ctx, &spec.Meta{
-	Name: "main",
-})
-
-sb := symbols[0]
-
-in := port.NewOut()
-defer in.Close()
-
-in.Link(sb.In(node.PortIn))
-
-payload := types.NewString(faker.Word())
-payload, err := port.Call(in, payload)
-```

@@ -14,24 +14,25 @@ type Debugger struct {
 	agent       *agent.Agent
 	breakpoints []*Breakpoint
 	current     *Breakpoint
-	nexts       chan *Breakpoint
+	in          chan *Breakpoint
 	done        chan struct{}
-	mu          sync.RWMutex
+	rmu         sync.RWMutex
+	wmu         sync.RWMutex
 }
 
 // NewDebugger creates a new Debugger instance with the specified agent.
 func NewDebugger(agent *agent.Agent) *Debugger {
 	return &Debugger{
 		agent: agent,
-		nexts: make(chan *Breakpoint),
+		in:    make(chan *Breakpoint),
 		done:  make(chan struct{}),
 	}
 }
 
 // AddBreakpoint adds a breakpoint and starts monitoring it.
 func (d *Debugger) AddBreakpoint(bp *Breakpoint) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.wmu.Lock()
+	defer d.wmu.Unlock()
 
 	for _, b := range d.breakpoints {
 		if b == bp {
@@ -48,8 +49,8 @@ func (d *Debugger) AddBreakpoint(bp *Breakpoint) bool {
 
 // RemoveBreakpoint deletes the specified breakpoint.
 func (d *Debugger) RemoveBreakpoint(bp *Breakpoint) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.wmu.Lock()
+	defer d.wmu.Unlock()
 
 	for i, b := range d.breakpoints {
 		if b == bp {
@@ -65,23 +66,23 @@ func (d *Debugger) RemoveBreakpoint(bp *Breakpoint) bool {
 
 // Breakpoints returns all registered breakpoints.
 func (d *Debugger) Breakpoints() []*Breakpoint {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.wmu.RLock()
+	defer d.wmu.RUnlock()
 
 	return d.breakpoints[:]
 }
 
 // Pause blocks until a breakpoint is hit or monitoring is done.
 func (d *Debugger) Pause(ctx context.Context) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.rmu.Lock()
+	defer d.rmu.Unlock()
 
 	if d.current != nil {
 		return true
 	}
 
 	select {
-	case d.current = <-d.nexts:
+	case d.current = <-d.in:
 		return true
 	case <-d.done:
 		return false
@@ -92,15 +93,15 @@ func (d *Debugger) Pause(ctx context.Context) bool {
 
 // Step continues execution until the next breakpoint is hit.
 func (d *Debugger) Step(ctx context.Context) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.rmu.Lock()
+	defer d.rmu.Unlock()
 
 	if d.current != nil {
 		go d.next(d.current)
 	}
 
 	select {
-	case d.current = <-d.nexts:
+	case d.current = <-d.in:
 		return true
 	case <-d.done:
 		return false
@@ -111,16 +112,16 @@ func (d *Debugger) Step(ctx context.Context) bool {
 
 // Breakpoint returns the currently active breakpoint.
 func (d *Debugger) Breakpoint() *Breakpoint {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.rmu.RLock()
+	defer d.rmu.RUnlock()
 
 	return d.current
 }
 
 // Frame returns the frame of the current breakpoint.
 func (d *Debugger) Frame() *agent.Frame {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.rmu.RLock()
+	defer d.rmu.RUnlock()
 
 	if d.current != nil {
 		return d.current.Frame()
@@ -130,8 +131,8 @@ func (d *Debugger) Frame() *agent.Frame {
 
 // Process retrieves the process linked to the current breakpoint.
 func (d *Debugger) Process() *process.Process {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.rmu.RLock()
+	defer d.rmu.RUnlock()
 
 	if d.current != nil {
 		frame := d.current.Frame()
@@ -144,8 +145,8 @@ func (d *Debugger) Process() *process.Process {
 
 // Symbol retrieves the symbol for the frame at the current breakpoint.
 func (d *Debugger) Symbol() *symbol.Symbol {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.rmu.RLock()
+	defer d.rmu.RUnlock()
 
 	if d.current != nil {
 		frame := d.current.Frame()
@@ -159,28 +160,32 @@ func (d *Debugger) Symbol() *symbol.Symbol {
 
 // Close stops monitoring breakpoints and releases resources.
 func (d *Debugger) Close() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.wmu.Lock()
+	defer d.wmu.Unlock()
 
 	select {
 	case <-d.done:
 		return
 	default:
-		close(d.done)
-
-		for _, bp := range d.breakpoints {
-			bp.Close()
-		}
-		d.breakpoints = nil
-
-		close(d.nexts)
 	}
+
+	close(d.done)
+
+	for _, bp := range d.breakpoints {
+		bp.Close()
+	}
+	d.breakpoints = nil
+
+	d.rmu.Lock()
+	defer d.rmu.Unlock()
+
+	d.current = nil
 }
 
 func (d *Debugger) next(bp *Breakpoint) {
 	if bp.Next() {
 		select {
-		case d.nexts <- bp:
+		case d.in <- bp:
 		case <-d.done:
 		}
 	}

@@ -15,10 +15,12 @@ type Breakpoint struct {
 	symbol  *symbol.Symbol
 	inPort  *port.InPort
 	outPort *port.OutPort
-	frame   *agent.Frame
-	next    chan *agent.Frame
-	done    chan *agent.Frame
-	mu      sync.RWMutex
+	current *agent.Frame
+	in      chan *agent.Frame
+	out     chan *agent.Frame
+	done    chan struct{}
+	rmu     sync.RWMutex
+	wmu     sync.Mutex
 }
 
 var _ agent.Watcher = (*Breakpoint)(nil)
@@ -26,8 +28,9 @@ var _ agent.Watcher = (*Breakpoint)(nil)
 // NewBreakpoint creates a new Breakpoint with optional configurations.
 func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
 	b := &Breakpoint{
-		next: make(chan *agent.Frame),
-		done: make(chan *agent.Frame),
+		in:   make(chan *agent.Frame),
+		out:  make(chan *agent.Frame),
+		done: make(chan struct{}),
 	}
 	for _, opt := range options {
 		opt(b)
@@ -59,35 +62,45 @@ func WithOutPort(port *port.OutPort) func(*Breakpoint) {
 func (b *Breakpoint) Next() bool {
 	b.Done()
 
-	frame, ok := <-b.next
+	b.rmu.Lock()
+	defer b.rmu.Unlock()
 
-	b.mu.Lock()
-	b.frame = frame
-	b.mu.Unlock()
-	return ok
+	if b.current != nil {
+		return false
+	}
+
+	select {
+	case b.current = <-b.in:
+		return true
+	case <-b.done:
+		return false
+	}
 }
 
 // Done completes the current frame's processing.
 func (b *Breakpoint) Done() bool {
-	b.mu.Lock()
-	frame := b.frame
-	b.frame = nil
-	b.mu.Unlock()
+	b.rmu.Lock()
+	defer b.rmu.Unlock()
 
-	if frame == nil {
-		return false
+	if b.current == nil {
+		return true
 	}
 
-	b.done <- frame
-	return true
+	select {
+	case b.out <- b.current:
+		b.current = nil
+		return true
+	case <-b.done:
+		return false
+	}
 }
 
 // Frame returns the current frame under lock protection.
 func (b *Breakpoint) Frame() *agent.Frame {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
+	b.rmu.RLock()
+	defer b.rmu.RUnlock()
 
-	return b.frame
+	return b.current
 }
 
 // Process returns the associated process.
@@ -113,8 +126,15 @@ func (b *Breakpoint) OutPort() *port.OutPort {
 // OnFrame processes an incoming frame and synchronizes it.
 func (b *Breakpoint) OnFrame(frame *agent.Frame) {
 	if b.matches(frame) {
-		b.next <- frame
-		<-b.done
+		select {
+		case b.in <- frame:
+		case <-b.done:
+		}
+
+		select {
+		case <-b.out:
+		case <-b.done:
+		}
 	}
 }
 
@@ -123,13 +143,21 @@ func (b *Breakpoint) OnProcess(*process.Process) {}
 
 // Close cleans up resources.
 func (b *Breakpoint) Close() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.wmu.Lock()
+	defer b.wmu.Unlock()
 
-	b.frame = nil
+	select {
+	case <-b.done:
+		return
+	default:
+	}
 
-	close(b.next)
 	close(b.done)
+
+	b.rmu.Lock()
+	defer b.rmu.Unlock()
+
+	b.current = nil
 }
 
 func (b *Breakpoint) matches(frame *agent.Frame) bool {

@@ -220,7 +220,7 @@ func (s *store[T]) match(resource T, examples ...T) bool {
 }
 
 func (s *store[T]) insert(res T) bool {
-	if _, exists := s.data[res.GetID()]; exists {
+	if _, ok := s.data[res.GetID()]; ok {
 		return false
 	}
 

@@ -17,11 +17,8 @@ func TestAddToScheme(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
-			_, ok := s.KnownType(tt)
-			assert.True(t, ok)
-
-			_, ok = s.Codec(tt)
-			assert.True(t, ok)
+			assert.NotNil(t, s.KnownType(tt))
+			assert.NotNil(t, s.Codec(tt))
 		})
 	}
 }

@@ -116,7 +116,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sb, ok := a.Symbol(meta.GetID()); ok {
+					if sb := a.Symbol(meta.GetID()); sb != nil {
 						assert.Equal(t, meta.GetID(), sb.ID())
 						assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
 						return
@@ -135,7 +135,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if _, ok := a.Symbol(meta.GetID()); !ok {
+					if sb := a.Symbol(meta.GetID()); sb == nil {
 						return
 					}
 				}
@@ -206,7 +206,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if sb, ok := a.Symbol(meta.GetID()); ok {
+					if sb := a.Symbol(meta.GetID()); sb != nil {
 						if sec.Data == sb.Env()["key"][0].Value {
 							return
 						}
@@ -225,7 +225,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 					assert.NoError(t, ctx.Err())
 					return
 				default:
-					if _, ok := a.Symbol(meta.GetID()); !ok {
+					if sb := a.Symbol(meta.GetID()); sb == nil {
 						return
 					}
 				}

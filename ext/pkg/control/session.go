@@ -60,9 +60,8 @@ func (n *SessionNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -71,9 +70,8 @@ func (n *SessionNode) Out(name string) *port.OutPort {
 	case node.PortOut:
 		return n.outPort
 	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Close closes all ports and associated resources of the node.
@@ -83,7 +81,6 @@ func (n *SessionNode) Close() error {
 	n.outPort.Close()
 	n.values.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

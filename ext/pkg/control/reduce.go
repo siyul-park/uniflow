@@ -68,8 +68,8 @@ func (n *ReduceNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output or error port based on the name.
@@ -80,8 +80,8 @@ func (n *ReduceNode) Out(name string) *port.OutPort {
 	case node.PortErr:
 		return n.errPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 func (n *ReduceNode) Close() error {
@@ -89,7 +89,6 @@ func (n *ReduceNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

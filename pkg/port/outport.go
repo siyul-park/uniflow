@@ -59,7 +59,6 @@ func (p *OutPort) AddHook(hook Hook) bool {
 			return false
 		}
 	}
-
 	p.hooks = append(p.hooks, hook)
 	return true
 }
@@ -88,7 +87,6 @@ func (p *OutPort) AddListener(listener Listener) bool {
 			return false
 		}
 	}
-
 	p.listeners = append(p.listeners, listener)
 	return true
 }
@@ -123,7 +121,6 @@ func (p *OutPort) Unlink(in *InPort) {
 }
 
 // Open opens the output port for the given process and returns a writer.
-// It connects the writer to all linked input ports and starts data listeners.
 func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	writer, ok := func() (*packet.Writer, bool) {
 		p.mu.Lock()

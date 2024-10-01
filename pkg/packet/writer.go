@@ -118,7 +118,6 @@ func (w *Writer) AddOutboundHook(hook Hook) bool {
 			return false
 		}
 	}
-
 	w.outboundHooks = append(w.outboundHooks, hook)
 	return true
 }

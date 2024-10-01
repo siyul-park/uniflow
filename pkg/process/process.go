@@ -166,20 +166,19 @@ func (p *Process) Exit(err error) {
 
 // AddExitHook adds an exit hook to run when the process terminates.
 func (p *Process) AddExitHook(hook ExitHook) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.status == StatusTerminated {
-		go hook.Exit(p.err)
+	if p.Status() == StatusTerminated {
+		hook.Exit(p.Err())
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	for _, h := range p.exitHooks {
 		if h == hook {
 			return false
 		}
 	}
-
 	p.exitHooks = append(p.exitHooks, hook)
 	return true
 }

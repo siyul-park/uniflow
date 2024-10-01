@@ -17,18 +17,14 @@ func TestScheme_KnownType(t *testing.T) {
 
 	ok := s.AddKnownType(kind, &spec.Meta{})
 	assert.True(t, ok)
-
-	_, ok = s.KnownType(kind)
-	assert.True(t, ok)
+	assert.NotNil(t, s.KnownType(kind))
 
 	ok = s.AddKnownType(kind, &spec.Meta{})
 	assert.False(t, ok)
 
 	ok = s.RemoveKnownType(kind)
 	assert.True(t, ok)
-
-	_, ok = s.KnownType(kind)
-	assert.False(t, ok)
+	assert.Nil(t, s.KnownType(kind))
 
 	ok = s.RemoveKnownType(kind)
 	assert.False(t, ok)
@@ -44,18 +40,14 @@ func TestScheme_Codec(t *testing.T) {
 
 	ok := s.AddCodec(kind, c)
 	assert.True(t, ok)
-
-	_, ok = s.Codec(kind)
-	assert.True(t, ok)
+	assert.NotNil(t, s.Codec(kind))
 
 	ok = s.AddCodec(kind, c)
 	assert.False(t, ok)
 
 	ok = s.RemoveCodec(kind)
 	assert.True(t, ok)
-
-	_, ok = s.Codec(kind)
-	assert.False(t, ok)
+	assert.Nil(t, s.Codec(kind))
 
 	ok = s.RemoveCodec(kind)
 	assert.False(t, ok)

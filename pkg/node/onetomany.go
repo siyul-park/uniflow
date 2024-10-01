@@ -47,8 +47,8 @@ func (n *OneToManyNode) In(name string) *port.InPort {
 	case PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -76,7 +76,6 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 		}
 		return n.outPorts[index]
 	}
-
 	return nil
 }
 
@@ -91,7 +90,6 @@ func (n *OneToManyNode) Close() error {
 	}
 	n.errPort.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

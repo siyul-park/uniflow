@@ -46,14 +46,14 @@ func UpdateNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, 
 
 func DeleteNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
 	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
-		exists, err := s.Load(ctx, specs...)
+		ok, err := s.Load(ctx, specs...)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := s.Delete(ctx, exists...); err != nil {
+		if _, err := s.Delete(ctx, ok...); err != nil {
 			return nil, err
 		}
-		return exists, nil
+		return ok, nil
 	}
 }
 
@@ -84,13 +84,13 @@ func UpdateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*s
 
 func DeleteSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
 	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
-		exists, err := s.Load(ctx, secrets...)
+		ok, err := s.Load(ctx, secrets...)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := s.Delete(ctx, exists...); err != nil {
+		if _, err := s.Delete(ctx, ok...); err != nil {
 			return nil, err
 		}
-		return exists, nil
+		return ok, nil
 	}
 }

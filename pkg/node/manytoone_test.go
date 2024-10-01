@@ -21,7 +21,7 @@ func TestNewManyToOneNode(t *testing.T) {
 
 func TestManyToOneNode_Port(t *testing.T) {
 	n := NewManyToOneNode(nil)
-	assert.NotNil(t, n)
+	defer n.Close()
 
 	assert.NotNil(t, n.In(PortWithIndex(PortIn, 0)))
 	assert.NotNil(t, n.Out(PortOut))

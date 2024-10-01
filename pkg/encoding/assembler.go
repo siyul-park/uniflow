@@ -68,21 +68,22 @@ func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[S, T], error)
 		return enc.(Encoder[S, T]), nil
 	}
 
-	encoderGroup := NewEncoderGroup[S, T]()
-	a.encoders.Store(typ, encoderGroup)
-
+	encoders := make([]Encoder[S, T], 0, len(a.compilers))
 	for _, compiler := range a.compilers {
 		if enc, err := compiler.Compile(typ); err == nil {
-			encoderGroup.Add(enc)
+			encoders = append(encoders, enc)
 		}
 	}
-
-	if encoderGroup.Len() == 0 {
-		a.encoders.Delete(typ)
+	if len(encoders) == 0 {
 		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
-	return encoderGroup, nil
+	group := NewEncoderGroup[S, T]()
+	for _, enc := range encoders {
+		group.Add(enc)
+	}
+	a.encoders.Store(typ, group)
+	return group, nil
 }
 
 // NewDecodeAssembler creates a new DecodeAssembler instance.
@@ -127,7 +128,7 @@ func (a *DecodeAssembler[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 		return dec.(Decoder[S, unsafe.Pointer]), nil
 	}
 
-	var decoders []Decoder[S, unsafe.Pointer]
+	decoders := make([]Decoder[S, unsafe.Pointer], 0, len(a.compilers))
 	for _, compiler := range a.compilers {
 		if dec, err := compiler.Compile(typ); err == nil {
 			decoders = append(decoders, dec)
@@ -137,11 +138,10 @@ func (a *DecodeAssembler[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
-	decoderGroup := NewDecoderGroup[S, unsafe.Pointer]()
+	group := NewDecoderGroup[S, unsafe.Pointer]()
 	for _, dec := range decoders {
-		decoderGroup.Add(dec)
+		group.Add(dec)
 	}
-
-	a.decoders.Store(typ, decoderGroup)
-	return decoderGroup, nil
+	a.decoders.Store(typ, group)
+	return group, nil
 }

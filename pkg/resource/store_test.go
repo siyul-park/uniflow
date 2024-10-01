@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,6 +34,7 @@ func TestStore_Watch(t *testing.T) {
 	meta := &Meta{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	_, _ = st.Store(ctx, meta)
@@ -47,10 +49,14 @@ func TestStore_Load(t *testing.T) {
 	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 	meta2 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -69,10 +75,14 @@ func TestStore_Store(t *testing.T) {
 	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 	meta2 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -91,10 +101,14 @@ func TestStore_Swap(t *testing.T) {
 	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 	meta2 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
@@ -117,10 +131,14 @@ func TestStore_Delete(t *testing.T) {
 	st := NewStore[*Meta]()
 
 	meta1 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 	meta2 := &Meta{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)

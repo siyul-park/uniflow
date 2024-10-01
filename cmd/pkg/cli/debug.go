@@ -253,7 +253,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var proc *process.Process
 				if len(args) > 1 {
 					id, _ := uuid.FromString(args[1])
-					proc, _ = m.agent.Process(id)
+					proc = m.agent.Process(id)
 				} else {
 					proc = m.debugger.Process()
 				}
@@ -277,14 +277,14 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var proc *process.Process
 				if len(args) > 1 {
 					id, _ := uuid.FromString(args[1])
-					proc, _ = m.agent.Process(id)
+					proc = m.agent.Process(id)
 				} else {
 					proc = m.debugger.Process()
 				}
 
 				var frames []*agent.Frame
 				if proc != nil {
-					frames, _ = m.agent.Frames(proc.ID())
+					frames = m.agent.Frames(proc.ID())
 				}
 
 				if frames == nil {

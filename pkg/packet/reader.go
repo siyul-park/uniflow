@@ -93,7 +93,6 @@ func (r *Reader) AddOutboundHook(hook Hook) bool {
 			return false
 		}
 	}
-
 	r.outboundHooks = append(r.outboundHooks, hook)
 	return true
 }

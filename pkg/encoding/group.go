@@ -34,11 +34,17 @@ func NewEncoderGroup[S, T any]() *EncoderGroup[S, T] {
 }
 
 // Add adds an encoder to the group.
-func (g *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) {
+func (g *EncoderGroup[S, T]) Add(encoder Encoder[S, T]) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
+	for _, enc := range g.encoders {
+		if enc == encoder {
+			return false
+		}
+	}
 	g.encoders = append(g.encoders, encoder)
+	return true
 }
 
 // Len returns the number of encoders in the group.
@@ -67,11 +73,17 @@ func (g *EncoderGroup[S, T]) Encode(source S) (T, error) {
 }
 
 // Add adds a decoder to the group.
-func (g *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) {
+func (g *DecoderGroup[S, T]) Add(decoder Decoder[S, T]) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
+	for _, dec := range g.decoders {
+		if dec == decoder {
+			return false
+		}
+	}
 	g.decoders = append(g.decoders, decoder)
+	return true
 }
 
 // Len returns the number of decoders in the group.

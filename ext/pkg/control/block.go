@@ -109,7 +109,6 @@ func (n *BlockNode) Load(hook symbol.LoadHook) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -123,7 +122,6 @@ func (n *BlockNode) Unload(hook symbol.UnloadHook) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -184,7 +182,6 @@ func (n *BlockNode) Close() error {
 	for _, outPort := range n._outPorts {
 		outPort.Close()
 	}
-
 	return nil
 }
 
@@ -193,12 +190,7 @@ func (n *BlockNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Lis
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
 
-		for {
-			inPck, ok := <-reader.Read()
-			if !ok {
-				return
-			}
-
+		for inPck := range reader.Read() {
 			if writer.Write(inPck) == 0 {
 				reader.Receive(inPck)
 			}
@@ -211,12 +203,7 @@ func (n *BlockNode) outbound(inPort *port.InPort, outPort *port.OutPort) port.Li
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
 
-		for {
-			backPck, ok := <-writer.Receive()
-			if !ok {
-				return
-			}
-
+		for backPck := range writer.Receive() {
 			reader.Receive(backPck)
 		}
 	})

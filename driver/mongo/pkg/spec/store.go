@@ -166,18 +166,18 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 	}
 	defer cursor.Close(ctx)
 
-	exists := make(map[uuid.UUID]spec.Spec)
+	ok := make(map[uuid.UUID]spec.Spec)
 	for cursor.Next(ctx) {
 		sp := &spec.Unstructured{}
 		if err := cursor.Decode(sp); err != nil {
 			return 0, err
 		}
-		exists[sp.GetID()] = sp
+		ok[sp.GetID()] = sp
 	}
 
 	count := 0
 	for _, sp := range specs {
-		exist, ok := exists[sp.GetID()]
+		exist, ok := ok[sp.GetID()]
 		if !ok {
 			continue
 		}

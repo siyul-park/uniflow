@@ -11,9 +11,9 @@ func NewBuilder(registers ...Register) Builder {
 }
 
 // AddToHooks adds all registered hook functions to the provided Hook instance.
-func (b Builder) AddToHooks(h *Hook) error {
+func (b Builder) AddToHooks(hook *Hook) error {
 	for _, f := range b {
-		if err := f.AddToHooks(h); err != nil {
+		if err := f.AddToHooks(hook); err != nil {
 			return err
 		}
 	}

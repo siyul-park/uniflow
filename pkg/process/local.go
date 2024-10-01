@@ -21,14 +21,14 @@ func NewLocal[T any]() *Local[T] {
 func (l *Local[T]) Watch(proc *Process, watch func(T)) {
 	l.mu.Lock()
 
-	v, exists := l.data[proc]
-	if !exists {
+	v, ok := l.data[proc]
+	if !ok {
 		l.watches[proc] = append(l.watches[proc], watch)
 	}
 
 	l.mu.Unlock()
 
-	if exists {
+	if ok {
 		watch(v)
 	}
 }
@@ -50,24 +50,24 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	val, exists := l.data[proc]
-	return val, exists
+	val, ok := l.data[proc]
+	return val, ok
 }
 
 // Store associates a value with the specified process.
 func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
 
-	_, exists := l.data[proc]
+	_, ok := l.data[proc]
 
 	l.data[proc] = val
-	if !exists {
+	if !ok {
 		proc.AddExitHook(ExitFunc(func(err error) {
 			l.Delete(proc)
 		}))
 	}
 
-	watches := l.watches[proc]
+	watches := l.watches[proc][:]
 	delete(l.watches, proc)
 
 	l.mu.Unlock()
@@ -82,12 +82,12 @@ func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	_, exists := l.data[proc]
+	_, ok := l.data[proc]
 
 	delete(l.data, proc)
 	delete(l.watches, proc)
 
-	return exists
+	return ok
 }
 
 // LoadOrStore retrieves the value for the specified process or stores a new value if absent.
@@ -95,7 +95,7 @@ func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) 
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if v, exists := l.data[proc]; exists {
+	if v, ok := l.data[proc]; ok {
 		return v, nil
 	}
 

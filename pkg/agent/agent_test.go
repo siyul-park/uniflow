@@ -52,11 +52,8 @@ func TestAgent_Symbol(t *testing.T) {
 	a.Load(sb)
 	defer a.Unload(sb)
 
-	_, ok := a.Symbol(sb.ID())
-	assert.True(t, ok)
-
-	sbs := a.Symbols()
-	assert.Contains(t, sbs, sb)
+	assert.Equal(t, sb, a.Symbol(sb.ID()))
+	assert.Contains(t, a.Symbols(), sb)
 }
 
 func TestAgent_Process(t *testing.T) {
@@ -67,11 +64,8 @@ func TestAgent_Process(t *testing.T) {
 	a.Watch(NewProcessWatcher(func(proc *process.Process) {
 		defer close(done)
 
-		_, ok := a.Process(proc.ID())
-		assert.True(t, ok)
-
-		procs := a.Processes()
-		assert.Contains(t, procs, proc)
+		assert.Equal(t, proc, a.Process(proc.ID()))
+		assert.Contains(t, a.Processes(), proc)
 	}))
 
 	sb := &symbol.Symbol{
@@ -86,6 +80,7 @@ func TestAgent_Process(t *testing.T) {
 	defer sb.Close()
 
 	in := sb.In(node.PortIn)
+	out := sb.Out(node.PortOut)
 
 	a.Load(sb)
 	defer a.Unload(sb)
@@ -94,6 +89,7 @@ func TestAgent_Process(t *testing.T) {
 	defer proc.Exit(nil)
 
 	in.Open(proc)
+	out.Open(proc)
 
 	<-done
 }
@@ -104,11 +100,9 @@ func TestAgent_Frames(t *testing.T) {
 
 	count := 0
 	a.Watch(NewFrameWatcher(func(frame *Frame) {
-		frames, ok := a.Frames(frame.Process.ID())
-		assert.True(t, ok)
-		assert.Contains(t, frames, frame)
-
 		count += 1
+
+		assert.Contains(t, a.Frames(frame.Process.ID()), frame)
 	}))
 
 	sb := &symbol.Symbol{
@@ -124,10 +118,14 @@ func TestAgent_Frames(t *testing.T) {
 	}
 	defer sb.Close()
 
-	out := port.NewOut()
+	in := port.NewOut()
+	defer in.Close()
+
+	out := port.NewIn()
 	defer out.Close()
 
-	out.Link(sb.In(node.PortIn))
+	in.Link(sb.In(node.PortIn))
+	sb.Out(node.PortOut).Link(out)
 
 	a.Load(sb)
 	defer a.Unload(sb)
@@ -135,12 +133,16 @@ func TestAgent_Frames(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
-	writer := out.Open(proc)
+	inWriter := in.Open(proc)
+	outReader := out.Open(proc)
 
 	pck := packet.New(nil)
 
-	writer.Write(pck)
-	<-writer.Receive()
+	inWriter.Write(pck)
+	<-outReader.Read()
 
-	assert.Equal(t, 2, count)
+	outReader.Receive(pck)
+	<-inWriter.Receive()
+
+	assert.Equal(t, 4, count)
 }

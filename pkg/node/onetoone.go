@@ -42,8 +42,8 @@ func (n *OneToOneNode) In(name string) *port.InPort {
 	case PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output port for the specified name.
@@ -54,8 +54,8 @@ func (n *OneToOneNode) Out(name string) *port.OutPort {
 	case PortErr:
 		return n.errPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Close closes all ports and releases resources.
@@ -64,7 +64,6 @@ func (n *OneToOneNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

@@ -32,12 +32,11 @@ func (p *InPort) AddHook(hook Hook) bool {
 			return false
 		}
 	}
-
 	p.hooks = append(p.hooks, hook)
 	return true
 }
 
-// RemoveHook removes a hook from the port if it exists.
+// RemoveHook removes a hook from the port if it ok.
 func (p *InPort) RemoveHook(hook Hook) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -61,18 +60,16 @@ func (p *InPort) AddListener(listener Listener) bool {
 			return false
 		}
 	}
-
 	p.listeners = append(p.listeners, listener)
 	return true
 }
 
 // Open prepares the input port for a given process and returns a reader.
-// If a reader for the process already exists, it is returned. Otherwise, a new reader is created.
 func (p *InPort) Open(proc *process.Process) *packet.Reader {
 	p.mu.Lock()
 
-	reader, exists := p.readers[proc]
-	if exists {
+	reader, ok := p.readers[proc]
+	if ok {
 		p.mu.Unlock()
 		return reader
 	}

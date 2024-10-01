@@ -167,7 +167,6 @@ func (n *WebSocketConnNode) Close() error {
 	n.outPort.Close()
 	n.errPort.Close()
 	n.conns.Close()
-
 	return nil
 }
 

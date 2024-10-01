@@ -67,7 +67,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 				}
 			}
 
-			exists, err := config.SpecStore.Load(ctx, specs...)
+			ok, err := config.SpecStore.Load(ctx, specs...)
 			if err != nil {
 				return err
 			}
@@ -75,7 +75,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			var inserts []spec.Spec
 			var updates []spec.Spec
 			for _, sp := range specs {
-				if match := resourcebase.Match(sp, exists...); len(match) > 0 {
+				if match := resourcebase.Match(sp, ok...); len(match) > 0 {
 					sp.SetID(match[0].GetID())
 					updates = append(updates, sp)
 				} else {
@@ -103,7 +103,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 				}
 			}
 
-			exists, err := config.SecretStore.Load(ctx, secrets...)
+			ok, err := config.SecretStore.Load(ctx, secrets...)
 			if err != nil {
 				return err
 			}
@@ -111,7 +111,7 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 			var inserts []*secret.Secret
 			var updates []*secret.Secret
 			for _, sec := range secrets {
-				if match := resourcebase.Match(sec, exists...); len(match) > 0 {
+				if match := resourcebase.Match(sec, ok...); len(match) > 0 {
 					sec.SetID(match[0].GetID())
 					updates = append(updates, sec)
 				} else {

@@ -60,7 +60,6 @@ func (n *ManyToOneNode) In(name string) *port.InPort {
 		}
 		return n.inPorts[index]
 	}
-
 	return nil
 }
 
@@ -74,9 +73,9 @@ func (n *ManyToOneNode) Out(name string) *port.OutPort {
 		return n.outPort
 	case PortErr:
 		return n.errPort
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Close closes all ports and releases resources.
@@ -91,7 +90,6 @@ func (n *ManyToOneNode) Close() error {
 	n.errPort.Close()
 	n.readGroups.Close()
 	n.tracer.Close()
-
 	return nil
 }
 

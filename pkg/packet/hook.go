@@ -1,8 +1,8 @@
 package packet
 
-// Hook defines an interface for handling packets.
+// Hook defines an interface for processing packets.
 type Hook interface {
-	// Handle processes the given packet.
+	// Handle processes the specified packet.
 	Handle(*Packet)
 }
 
@@ -12,7 +12,7 @@ type hook struct {
 
 var _ Hook = (*hook)(nil)
 
-// HookFunc creates a new Hook from the provided function.
+// HookFunc creates a new Hook using the provided function.
 func HookFunc(handle func(*Packet)) Hook {
 	return &hook{handle: handle}
 }

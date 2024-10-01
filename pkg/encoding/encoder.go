@@ -6,12 +6,18 @@ type Encoder[S, T any] interface {
 	Encode(source S) (T, error)
 }
 
-// EncodeFunc is a function type that implements the Encoder interface.
-type EncodeFunc[S, T any] func(source S) (T, error)
+type encoder[S, T any] struct {
+	encode func(source S) (T, error)
+}
 
-var _ Encoder[any, any] = (EncodeFunc[any, any])(nil)
+var _ Encoder[any, any] = (*encoder[any, any])(nil)
 
-// Encode calls the underlying function to perform encoding.
-func (f EncodeFunc[S, T]) Encode(source S) (T, error) {
-	return f(source)
+// EncodeFunc creates an Encoder instance from a provided function.
+func EncodeFunc[S, T any](encode func(source S) (T, error)) Encoder[S, T] {
+	return &encoder[S, T]{encode: encode}
+}
+
+// Encode calls the underlying encode function.
+func (e *encoder[S, T]) Encode(source S) (T, error) {
+	return e.encode(source)
 }

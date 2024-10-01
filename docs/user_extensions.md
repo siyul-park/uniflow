@@ -334,12 +334,10 @@ This code creates a new runtime environment using the provided schema, hook, spe
 
 To integrate the runtime environment with existing services and build an executable, you need to set up the environment to run continuously or in a simpler execution mode.
 
-### Continuous Execution
-
-Running the runtime environment continuously allows it to handle external requests promptly. This approach is suitable for scenarios where ongoing workflow execution is needed.
-
 ```go
 func main() {
+	ctx := context.TODO()
+
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
@@ -372,39 +370,10 @@ func main() {
 		_ = r.Close()
 	}()
 
-	r.Listen(context.TODO())
+	r.Watch(ctx)
+	r.Load(ctx)
+	r.Reconcile(ctx)
 }
 ```
 
 This code keeps the runtime environment running and responsive to external signals. It uses `os.Signal` to listen for termination signals and safely shuts down the environment.
-
-### Simple Execution
-
-In some cases, you may prefer a simpler execution mode where the runtime environment runs only when needed and then exits. This approach is useful for scenarios where you don't need continuous operation.
-
-```go
-r := runtime.New(runtime.Config{
-	Namespace:   "default",
-	Schema:      scheme,
-	Hook:        hook,
-	SpecStore:   specStore,
-	SecretStore: secretStore,
-})
-defer r.Close()
-
-r.Load(ctx) // Load all resources
-
-symbols, _ := r.Load(ctx, &spec.Meta{
-	Name: "main",
-})
-
-sb := symbols[0]
-
-in := port.NewOut()
-defer in.Close()
-
-in.Link(sb.In(node.PortIn))
-
-payload := types.NewString(faker.Word())
-payload, err := port.Call(in, payload)
-```

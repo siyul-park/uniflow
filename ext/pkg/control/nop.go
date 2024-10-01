@@ -47,8 +47,8 @@ func (n *NOPNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns nil as NOPNode does not have any output port.
@@ -59,7 +59,6 @@ func (n *NOPNode) Out(name string) *port.OutPort {
 // Close closes all ports associated with the node.
 func (n *NOPNode) Close() error {
 	n.inPort.Close()
-
 	return nil
 }
 

@@ -54,8 +54,8 @@ func (n *ForkNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -66,8 +66,8 @@ func (n *ForkNode) Out(name string) *port.OutPort {
 	case node.PortErr:
 		return n.errPort
 	default:
+		return nil
 	}
-	return nil
 }
 
 // Close closes all ports associated with the node.
@@ -75,7 +75,6 @@ func (n *ForkNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-
 	return nil
 }
 

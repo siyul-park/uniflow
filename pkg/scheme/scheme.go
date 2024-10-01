@@ -37,7 +37,7 @@ func (s *Scheme) AddKnownType(kind string, sp spec.Spec) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.types[kind]; exists {
+	if _, ok := s.types[kind]; ok {
 		return false
 	}
 	s.types[kind] = reflect.TypeOf(sp)
@@ -49,7 +49,7 @@ func (s *Scheme) RemoveKnownType(kind string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.types[kind]; exists {
+	if _, ok := s.types[kind]; ok {
 		delete(s.types, kind)
 		return true
 	}
@@ -57,12 +57,11 @@ func (s *Scheme) RemoveKnownType(kind string) bool {
 }
 
 // KnownType retrieves the type of the spec associated with the given kind.
-func (s *Scheme) KnownType(kind string) (reflect.Type, bool) {
+func (s *Scheme) KnownType(kind string) reflect.Type {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	typ, exists := s.types[kind]
-	return typ, exists
+	return s.types[kind]
 }
 
 // AddCodec associates a codec with a specific kind and returns true if successful.
@@ -70,7 +69,7 @@ func (s *Scheme) AddCodec(kind string, codec Codec) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.codecs[kind]; exists {
+	if _, ok := s.codecs[kind]; ok {
 		return false
 	}
 	s.codecs[kind] = codec
@@ -82,7 +81,7 @@ func (s *Scheme) RemoveCodec(kind string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.codecs[kind]; exists {
+	if _, ok := s.codecs[kind]; ok {
 		delete(s.codecs, kind)
 		return true
 	}
@@ -90,12 +89,11 @@ func (s *Scheme) RemoveCodec(kind string) bool {
 }
 
 // Codec retrieves the codec associated with the given kind.
-func (s *Scheme) Codec(kind string) (Codec, bool) {
+func (s *Scheme) Codec(kind string) Codec {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	codec, exists := s.codecs[kind]
-	return codec, exists
+	return s.codecs[kind]
 }
 
 // Compile decodes the given spec into node using the associated codec.
@@ -103,8 +101,8 @@ func (s *Scheme) Compile(sp spec.Spec) (node.Node, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	codec, exists := s.Codec(sp.GetKind())
-	if !exists {
+	codec := s.Codec(sp.GetKind())
+	if codec == nil {
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	}
 	return codec.Compile(sp)
@@ -206,8 +204,8 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 		return nil, err
 	}
 
-	typ, exists := s.types[sp.GetKind()]
-	if !exists {
+	typ, ok := s.types[sp.GetKind()]
+	if !ok {
 		return sp, nil
 	}
 

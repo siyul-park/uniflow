@@ -110,14 +110,14 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	for _, id := range l.table.Keys() {
 		sb, ok := l.table.Lookup(id)
 		if ok && len(resource.Match(sb.Spec, examples...)) > 0 {
-			exists := false
+			ok := false
 			for _, s := range symbols {
 				if s.ID() == id {
-					exists = true
+					ok = true
 					break
 				}
 			}
-			if !exists {
+			if !ok {
 				if _, err := l.table.Free(id); err != nil {
 					return err
 				}

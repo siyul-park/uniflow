@@ -99,9 +99,8 @@ func (n *HTTPListenNode) Out(name string) *port.OutPort {
 	case node.PortErr:
 		return n.errPort
 	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Address returns the listener address if available.
@@ -157,7 +156,6 @@ func (n *HTTPListenNode) Listen() error {
 	n.listener = listener
 
 	go n.server.Serve(n.listener)
-
 	return nil
 }
 
@@ -325,8 +323,6 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 	}
 	w.WriteHeader(status)
 
-	if _, err := io.Copy(w, buf); err != nil {
-		return err
-	}
-	return nil
+	_, err := io.Copy(w, buf)
+	return err
 }

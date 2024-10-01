@@ -152,18 +152,18 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 	}
 	defer cursor.Close(ctx)
 
-	exists := make(map[uuid.UUID]*secret.Secret)
+	ok := make(map[uuid.UUID]*secret.Secret)
 	for cursor.Next(ctx) {
 		sec := &secret.Secret{}
 		if err := cursor.Decode(&sec); err != nil {
 			return 0, err
 		}
-		exists[sec.GetID()] = sec
+		ok[sec.GetID()] = sec
 	}
 
 	count := 0
 	for _, sec := range secrets {
-		exist, ok := exists[sec.GetID()]
+		exist, ok := ok[sec.GetID()]
 		if !ok {
 			continue
 		}
