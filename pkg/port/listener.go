@@ -8,15 +8,26 @@ type Listener interface {
 	Accept(proc *process.Process)
 }
 
+// Listeners is a slice of Listener interfaces, allowing multiple listeners to handle processes concurrently.
+type Listeners []Listener
+
 type listener struct {
 	accept func(proc *process.Process)
 }
 
+var _ Listener = (Listeners)(nil)
 var _ Listener = (*listener)(nil)
 
 // ListenFunc creates a new Listener from the provided function.
 func ListenFunc(accept func(proc *process.Process)) Listener {
 	return &listener{accept: accept}
+}
+
+func (l Listeners) Accept(proc *process.Process) {
+	for _, listener := range l {
+		listener := listener
+		go listener.Accept(proc)
+	}
 }
 
 func (l *listener) Accept(proc *process.Process) {

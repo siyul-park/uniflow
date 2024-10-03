@@ -63,7 +63,6 @@ func CreateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*s
 			return nil, err
 		}
 		return s.Load(ctx, secrets...)
-
 	}
 }
 

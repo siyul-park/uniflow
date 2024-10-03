@@ -12,8 +12,8 @@ import (
 type OutPort struct {
 	ins       []*InPort
 	writers   map[*process.Process]*packet.Writer
-	hooks     []Hook
-	listeners []Listener
+	hooks     Hooks
+	listeners Listeners
 	mu        sync.RWMutex
 }
 
@@ -154,18 +154,13 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 			writer.Link(reader)
 		}
 
-		hooks := p.hooks[:]
-		listeners := p.listeners[:]
+		hooks := p.hooks
+		listeners := p.listeners
 
 		p.mu.RUnlock()
 
-		for i := len(hooks) - 1; i >= 0; i-- {
-			hooks[i].Open(proc)
-		}
-
-		for _, listener := range listeners {
-			go listener.Accept(proc)
-		}
+		hooks.Open(proc)
+		listeners.Accept(proc)
 	}
 
 	return writer

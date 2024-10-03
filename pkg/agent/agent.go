@@ -18,7 +18,7 @@ type Agent struct {
 	frames    map[uuid.UUID][]*Frame
 	inbounds  map[uuid.UUID]map[string]port.Hook
 	outbounds map[uuid.UUID]map[string]port.Hook
-	watchers  []Watcher
+	watchers  Watchers
 	mu        sync.RWMutex
 }
 
@@ -252,10 +252,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 
 		a.mu.Unlock()
 
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.OnFrame(frame)
-		}
+		watchers.OnFrame(frame)
 	})
 
 	outboundHook := packet.HookFunc(func(pck *packet.Packet) {
@@ -286,10 +283,7 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 
 		a.mu.Unlock()
 
-		for i := len(watchers) - 1; i >= 0; i-- {
-			watcher := watchers[i]
-			watcher.OnFrame(frame)
-		}
+		watchers.OnFrame(frame)
 	})
 
 	return inboundHook, outboundHook

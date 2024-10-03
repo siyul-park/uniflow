@@ -15,7 +15,7 @@ type Process struct {
 	status    Status
 	err       error
 	ctx       context.Context
-	exitHooks []ExitHook
+	exitHooks ExitHooks
 	wait      sync.WaitGroup
 	mu        sync.RWMutex
 }
@@ -128,7 +128,7 @@ func (p *Process) Fork() *Process {
 	ctx, cancel := context.WithCancelCause(p.ctx)
 	child := &Process{
 		id:     uuid.Must(uuid.NewV7()),
-		data:   make(map[string]any), // Initialize child data map
+		data:   make(map[string]any),
 		ctx:    ctx,
 		parent: p,
 		exitHooks: []ExitHook{
@@ -150,7 +150,8 @@ func (p *Process) Exit(err error) {
 		return
 	}
 
-	exitHooks := p.exitHooks[:]
+	exitHooks := p.exitHooks
+
 	p.data = make(map[string]any)
 	p.status = StatusTerminated
 	p.err = err
@@ -158,10 +159,7 @@ func (p *Process) Exit(err error) {
 
 	p.mu.Unlock()
 
-	for i := len(exitHooks) - 1; i >= 0; i-- {
-		h := exitHooks[i]
-		h.Exit(err)
-	}
+	exitHooks.Exit(err)
 }
 
 // AddExitHook adds an exit hook to run when the process terminates.

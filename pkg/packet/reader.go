@@ -8,13 +8,13 @@ import (
 
 // Reader represents a packet reader that manages incoming packets from multiple writers.
 type Reader struct {
-	writers       []*Writer
-	in            chan *Packet
-	out           chan *Packet
-	done          chan struct{}
-	inboundHooks  []Hook
-	outboundHooks []Hook
-	mu            sync.Mutex
+	writers   []*Writer
+	in        chan *Packet
+	out       chan *Packet
+	done      chan struct{}
+	inbounds  Hooks
+	outbounds Hooks
+	mu        sync.Mutex
 }
 
 // NewReader creates a new Reader instance and starts its processing loop.
@@ -35,16 +35,6 @@ func NewReader() *Reader {
 			select {
 			case pck = <-r.in:
 			case <-r.done:
-				for {
-					w := r.writer()
-					if w == nil {
-						break
-					}
-
-					pck := New(types.NewError(ErrDroppedPacket))
-					r.outboundHook(pck)
-					w.receive(pck, r)
-				}
 				return
 			}
 
@@ -73,13 +63,12 @@ func (r *Reader) AddInboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, h := range r.inboundHooks {
+	for _, h := range r.inbounds {
 		if h == hook {
 			return false
 		}
 	}
-
-	r.inboundHooks = append(r.inboundHooks, hook)
+	r.inbounds = append(r.inbounds, hook)
 	return true
 }
 
@@ -88,12 +77,12 @@ func (r *Reader) AddOutboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, h := range r.outboundHooks {
+	for _, h := range r.outbounds {
 		if h == hook {
 			return false
 		}
 	}
-	r.outboundHooks = append(r.outboundHooks, hook)
+	r.outbounds = append(r.outbounds, hook)
 	return true
 }
 
@@ -104,12 +93,20 @@ func (r *Reader) Read() <-chan *Packet {
 
 // Receive receives a packet from a writer and forwards it to the reader's input channel.
 func (r *Reader) Receive(pck *Packet) bool {
-	w := r.writer()
-	if w == nil {
+	r.mu.Lock()
+
+	if len(r.writers) == 0 {
+		r.mu.Unlock()
 		return false
 	}
 
-	r.outboundHook(pck)
+	w := r.writers[0]
+	r.writers = r.writers[1:]
+
+	r.outbounds.Handle(pck)
+
+	r.mu.Unlock()
+
 	return w.receive(pck, r)
 }
 
@@ -120,9 +117,21 @@ func (r *Reader) Close() {
 
 	select {
 	case <-r.done:
+		return
 	default:
-		close(r.done)
 	}
+
+	pck := New(types.NewError(ErrDroppedPacket))
+	for _, w := range r.writers {
+		r.outbounds.Handle(pck)
+		go w.receive(pck, r)
+	}
+
+	close(r.done)
+
+	r.writers = nil
+	r.inbounds = nil
+	r.outbounds = nil
 }
 
 func (r *Reader) write(pck *Packet, writer *Writer) bool {
@@ -135,35 +144,8 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	default:
 	}
 
-	r.inboundHook(pck)
 	r.writers = append(r.writers, writer)
+	r.inbounds.Handle(pck)
 	r.in <- pck
-
 	return true
-}
-
-func (r *Reader) writer() *Writer {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if len(r.writers) == 0 {
-		return nil
-	}
-
-	writer := r.writers[0]
-	r.writers = r.writers[1:]
-
-	return writer
-}
-
-func (r *Reader) inboundHook(pck *Packet) {
-	for _, hook := range r.inboundHooks {
-		hook.Handle(pck)
-	}
-}
-
-func (r *Reader) outboundHook(pck *Packet) {
-	for _, hook := range r.outboundHooks {
-		hook.Handle(pck)
-	}
 }

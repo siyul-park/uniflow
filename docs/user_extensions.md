@@ -313,7 +313,7 @@ builder.Register(AddToScheme())
 scheme, _ := builder.Build()
 ```
 
-### Running the Runtime Environment
+## Running the Runtime Environment
 
 With the schema created and registered, you can now set up the runtime environment and run workflows that include your new node type. Initialize the runtime environment with the schema and other required components:
 
@@ -330,11 +330,6 @@ defer r.Close()
 
 This code creates a new runtime environment using the provided schema, hook, specification store, and secret store. The `defer` statement ensures that resources are cleaned up when done.
 
-## Integration with Existing Services
-
-To integrate the runtime environment with existing services and build an executable, you need to set up the environment to run continuously or in a simpler execution mode.
-
-```go
 func main() {
 	ctx := context.TODO()
 
@@ -374,6 +369,3 @@ func main() {
 	r.Load(ctx)
 	r.Reconcile(ctx)
 }
-```
-
-This code keeps the runtime environment running and responsive to external signals. It uses `os.Signal` to listen for termination signals and safely shuts down the environment.

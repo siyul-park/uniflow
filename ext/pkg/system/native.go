@@ -139,11 +139,11 @@ func (n *NativeNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 
 	outPayloads := make([]types.Value, len(outs))
 	for i, out := range outs {
-		if outPayload, err := types.Marshal(out.Interface()); err != nil {
+		outPayload, err := types.Marshal(out.Interface())
+		if err != nil {
 			return nil, packet.New(types.NewError(err))
-		} else {
-			outPayloads[i] = outPayload
 		}
+		outPayloads[i] = outPayload
 	}
 
 	if len(outPayloads) == 0 {

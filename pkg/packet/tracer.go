@@ -9,7 +9,7 @@ import (
 
 // Tracer tracks the lifecycle and transformations of packets as they pass through readers and writers.
 type Tracer struct {
-	hooks    map[*Packet][]Hook
+	hooks    map[*Packet]Hooks
 	sources  map[*Packet][]*Packet
 	targets  map[*Packet][]*Packet
 	receives map[*Packet][]*Packet
@@ -22,7 +22,7 @@ type Tracer struct {
 // NewTracer initializes a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
-		hooks:    make(map[*Packet][]Hook),
+		hooks:    make(map[*Packet]Hooks),
 		sources:  make(map[*Packet][]*Packet),
 		targets:  make(map[*Packet][]*Packet),
 		receives: make(map[*Packet][]*Packet),
@@ -136,7 +136,7 @@ func (t *Tracer) Close() {
 		reader.Receive(New(types.NewError(ErrDroppedPacket)))
 	}
 
-	t.hooks = make(map[*Packet][]Hook)
+	t.hooks = make(map[*Packet]Hooks)
 	t.sources = make(map[*Packet][]*Packet)
 	t.targets = make(map[*Packet][]*Packet)
 	t.receives = make(map[*Packet][]*Packet)
@@ -229,9 +229,7 @@ func (t *Tracer) handle(pck *Packet) {
 		delete(t.receives, pck)
 
 		t.mu.Unlock()
-		for _, hook := range hooks {
-			hook.Handle(merged)
-		}
+		hooks.Handle(merged)
 		t.mu.Lock()
 	}
 }

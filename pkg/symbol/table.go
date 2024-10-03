@@ -21,8 +21,8 @@ type TableOptions struct {
 type Table struct {
 	symbols     map[uuid.UUID]*Symbol
 	namespaces  map[string]map[string]uuid.UUID
-	loadHooks   []LoadHook
-	unloadHooks []UnloadHook
+	loadHooks   LoadHooks
+	unloadHooks UnloadHooks
 	mu          sync.RWMutex
 }
 
@@ -159,11 +159,8 @@ func (t *Table) load(sb *Symbol) error {
 			if err := t.init(sb); err != nil {
 				return err
 			}
-
-			for _, hook := range t.loadHooks {
-				if err := hook.Load(sb); err != nil {
-					return err
-				}
+			if err := t.loadHooks.Load(sb); err != nil {
+				return err
 			}
 		}
 	}
@@ -175,11 +172,8 @@ func (t *Table) unload(sb *Symbol) error {
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
 		if t.active(sb) {
-			for j := len(t.unloadHooks) - 1; j >= 0; j-- {
-				hook := t.unloadHooks[j]
-				if err := hook.Unload(sb); err != nil {
-					return err
-				}
+			if err := t.unloadHooks.Unload(sb); err != nil {
+				return err
 			}
 		}
 	}

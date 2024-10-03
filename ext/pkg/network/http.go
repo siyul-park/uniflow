@@ -29,6 +29,7 @@ type HTTPNodeSpec struct {
 // HTTPNode represents a node for making HTTP client requests.
 type HTTPNode struct {
 	*node.OneToOneNode
+	client  *http.Client
 	url     *url.URL
 	timeout time.Duration
 	mu      sync.RWMutex
@@ -65,7 +66,14 @@ func NewHTTPNodeCodec() scheme.Codec {
 
 // NewHTTPNode creates a new HTTPNode instance.
 func NewHTTPNode(url *url.URL) *HTTPNode {
-	n := &HTTPNode{url: url}
+	transport := &http.Transport{}
+	http2.ConfigureTransport(transport)
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	n := &HTTPNode{client: client, url: url}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 	return n
 }
@@ -137,14 +145,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	}
 	r = r.WithContext(ctx)
 
-	transport := &http.Transport{}
-	http2.ConfigureTransport(transport)
-
-	client := &http.Client{
-		Transport: transport,
-	}
-
-	w, err := client.Do(r)
+	w, err := n.client.Do(r)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

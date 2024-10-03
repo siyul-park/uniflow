@@ -10,8 +10,8 @@ import (
 // InPort represents an input port used for receiving data.
 type InPort struct {
 	readers   map[*process.Process]*packet.Reader
-	hooks     []Hook
-	listeners []Listener
+	hooks     Hooks
+	listeners Listeners
 	mu        sync.RWMutex
 }
 
@@ -85,20 +85,13 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 		reader.Close()
 	}))
 
-	hooks := p.hooks[:]
-	listeners := p.listeners[:]
+	hooks := p.hooks
+	listeners := p.listeners
 
 	p.mu.Unlock()
 
-	for i := len(hooks) - 1; i >= 0; i-- {
-		hook := hooks[i]
-		hook.Open(proc)
-	}
-
-	for _, listener := range listeners {
-		listener := listener
-		go listener.Accept(proc)
-	}
+	hooks.Open(proc)
+	listeners.Accept(proc)
 
 	return reader
 }
