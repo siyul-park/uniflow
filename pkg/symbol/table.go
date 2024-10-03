@@ -21,6 +21,7 @@ type TableOptions struct {
 type Table struct {
 	symbols     map[uuid.UUID]*Symbol
 	namespaces  map[string]map[string]uuid.UUID
+	refences    map[uuid.UUID]map[string][]spec.Port
 	loadHooks   LoadHooks
 	unloadHooks UnloadHooks
 	mu          sync.RWMutex
@@ -38,6 +39,7 @@ func NewTable(opts ...TableOptions) *Table {
 	return &Table{
 		symbols:     make(map[uuid.UUID]*Symbol),
 		namespaces:  make(map[string]map[string]uuid.UUID),
+		refences:    make(map[uuid.UUID]map[string][]spec.Port),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
 	}
@@ -48,17 +50,10 @@ func (t *Table) Insert(sb *Symbol) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if sb.inbounds == nil {
-		sb.inbounds = make(map[string][]spec.Port)
-	}
-
 	if _, err := t.free(sb.ID()); err != nil {
 		return err
 	}
-	if err := t.insert(sb); err != nil {
-		return err
-	}
-	return nil
+	return t.insert(sb)
 }
 
 // Free removes a symbol from the table by its ID.
@@ -74,12 +69,11 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 }
 
 // Lookup retrieves a symbol from the table by its ID.
-func (t *Table) Lookup(id uuid.UUID) (*Symbol, bool) {
+func (t *Table) Lookup(id uuid.UUID) *Symbol {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	sb, ok := t.symbols[id]
-	return sb, ok
+	return t.symbols[id]
 }
 
 // Keys returns all IDs of symbols in the table.
@@ -198,7 +192,13 @@ func (t *Table) links(sb *Symbol) {
 						}
 					}
 
-					ref.inbounds[port.Port] = append(ref.inbounds[port.Port], spec.Port{
+					refences := t.refences[ref.ID()]
+					if refences == nil {
+						refences = make(map[string][]spec.Port)
+						t.refences[ref.ID()] = refences
+					}
+
+					refences[port.Port] = append(refences[port.Port], spec.Port{
 						ID:   sb.ID(),
 						Name: port.Name,
 						Port: name,
@@ -224,7 +224,13 @@ func (t *Table) links(sb *Symbol) {
 						}
 					}
 
-					sb.inbounds[port.Port] = append(sb.inbounds[port.Port], spec.Port{
+					refences := t.refences[sb.ID()]
+					if refences == nil {
+						refences = make(map[string][]spec.Port)
+						t.refences[sb.ID()] = refences
+					}
+
+					refences[port.Port] = append(refences[port.Port], spec.Port{
 						ID:   ref.ID(),
 						Name: port.Name,
 						Port: name,
@@ -248,20 +254,28 @@ func (t *Table) unlinks(sb *Symbol) {
 				continue
 			}
 
+			refences := t.refences[ref.ID()]
+			if refences == nil {
+				refences = make(map[string][]spec.Port)
+				t.refences[ref.ID()] = refences
+			}
+
 			var ports []spec.Port
-			for _, port := range ref.inbounds[port.Port] {
+			for _, port := range refences[port.Port] {
 				if port.ID != sb.ID() && port.Port != name {
 					ports = append(ports, port)
 				}
 			}
 
 			if len(ports) > 0 {
-				ref.inbounds[port.Port] = ports
+				refences[port.Port] = ports
 			} else {
-				delete(ref.inbounds, port.Port)
+				delete(refences, port.Port)
 			}
 		}
 	}
+
+	delete(t.refences, sb.ID())
 }
 
 func (t *Table) linked(sb *Symbol) []*Symbol {
@@ -271,7 +285,7 @@ func (t *Table) linked(sb *Symbol) []*Symbol {
 	for len(nexts) > 0 {
 		sb := nexts[len(nexts)-1]
 		ok := true
-		for _, ports := range sb.inbounds {
+		for _, ports := range t.refences[sb.ID()] {
 			for _, port := range ports {
 				next := t.symbols[port.ID]
 				ok = slices.Contains(nexts, next) || slices.Contains(linked, next)

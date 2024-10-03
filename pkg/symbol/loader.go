@@ -85,8 +85,8 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 			continue
 		}
 
-		sb, ok := l.table.Lookup(decode.GetID())
-		if !ok || !reflect.DeepEqual(sb.Spec, decode) {
+		sb := l.table.Lookup(decode.GetID())
+		if sb == nil || !reflect.DeepEqual(sb.Spec, decode) {
 			n, err := l.scheme.Compile(decode)
 			if err != nil {
 				errs = append(errs, err)
@@ -108,8 +108,8 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	}
 
 	for _, id := range l.table.Keys() {
-		sb, ok := l.table.Lookup(id)
-		if ok && len(resource.Match(sb.Spec, examples...)) > 0 {
+		sb := l.table.Lookup(id)
+		if sb != nil && len(resource.Match(sb.Spec, examples...)) > 0 {
 			ok := false
 			for _, s := range symbols {
 				if s.ID() == id {

@@ -77,15 +77,9 @@ func TestLoader_Load(t *testing.T) {
 
 		err := loader.Load(ctx, meta1, meta2, meta3)
 		assert.NoError(t, err)
-
-		_, ok := table.Lookup(meta1.GetID())
-		assert.True(t, ok)
-
-		_, ok = table.Lookup(meta2.GetID())
-		assert.True(t, ok)
-
-		_, ok = table.Lookup(meta3.GetID())
-		assert.True(t, ok)
+		assert.NotNil(t, table.Lookup(meta1.GetID()))
+		assert.NotNil(t, table.Lookup(meta2.GetID()))
+		assert.NotNil(t, table.Lookup(meta3.GetID()))
 	})
 
 	t.Run("ReloadWithSameID", func(t *testing.T) {
@@ -166,9 +160,7 @@ func TestLoader_Load(t *testing.T) {
 
 		err = loader.Load(ctx, meta)
 		assert.NoError(t, err)
-
-		_, ok := table.Lookup(meta.GetID())
-		assert.False(t, ok)
+		assert.Nil(t, table.Lookup(meta.GetID()))
 	})
 
 	t.Run("LoadMultipleSecrets", func(t *testing.T) {
@@ -214,9 +206,7 @@ func TestLoader_Load(t *testing.T) {
 
 		err := loader.Load(ctx, meta)
 		assert.NoError(t, err)
-
-		_, ok := table.Lookup(meta.GetID())
-		assert.True(t, ok)
+		assert.NotNil(t, table.Lookup(meta.GetID()))
 	})
 
 	t.Run("LoadNonExistSecret", func(t *testing.T) {
@@ -252,8 +242,6 @@ func TestLoader_Load(t *testing.T) {
 
 		err := loader.Load(ctx, meta)
 		assert.Error(t, err)
-
-		_, ok := table.Lookup(meta.GetID())
-		assert.False(t, ok)
+		assert.Nil(t, table.Lookup(meta.GetID()))
 	})
 }

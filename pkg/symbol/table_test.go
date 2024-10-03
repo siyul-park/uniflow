@@ -383,7 +383,7 @@ func TestTable_Free(t *testing.T) {
 	assert.Equal(t, 0, p3.Links())
 }
 
-func TestTable_LookupByID(t *testing.T) {
+func TestTable_Lookup(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
 	tb := NewTable()
@@ -396,12 +396,10 @@ func TestTable_LookupByID(t *testing.T) {
 	}
 
 	sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
+
 	err := tb.Insert(sb)
 	assert.NoError(t, err)
-
-	r, ok := tb.Lookup(sb.ID())
-	assert.True(t, ok)
-	assert.Equal(t, sb, r)
+	assert.Equal(t, sb, tb.Lookup(sb.ID()))
 }
 
 func TestTable_Keys(t *testing.T) {
