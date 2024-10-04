@@ -22,7 +22,7 @@ func TestInPort_Open(t *testing.T) {
 	assert.Equal(t, r1, r2)
 }
 
-func TestInPort_Hook(t *testing.T) {
+func TestInPort_OpenHook(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -30,14 +30,14 @@ func TestInPort_Hook(t *testing.T) {
 	defer in.Close()
 
 	done := make(chan struct{})
-	h := HookFunc(func(proc *process.Process) {
+	h := OpenHookFunc(func(proc *process.Process) {
 		close(done)
 	})
 
-	ok := in.AddHook(h)
+	ok := in.AddOpenHook(h)
 	assert.True(t, ok)
 
-	ok = in.AddHook(h)
+	ok = in.AddOpenHook(h)
 	assert.False(t, ok)
 
 	_ = in.Open(proc)
@@ -51,11 +51,38 @@ func TestInPort_Hook(t *testing.T) {
 		assert.NoError(t, ctx.Err())
 	}
 
-	ok = in.RemoveHook(h)
+	ok = in.RemoveOpenHook(h)
 	assert.True(t, ok)
 
-	ok = in.RemoveHook(h)
+	ok = in.RemoveOpenHook(h)
 	assert.False(t, ok)
+}
+
+func TestInPort_CloseHook(t *testing.T) {
+	in := NewIn()
+	defer in.Close()
+
+	done := make(chan struct{})
+	h := CloseHookFunc(func() {
+		close(done)
+	})
+
+	ok := in.AddCloseHook(h)
+	assert.True(t, ok)
+
+	ok = in.AddCloseHook(h)
+	assert.False(t, ok)
+
+	in.Close()
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
 }
 
 func TestInPort_Listener(t *testing.T) {

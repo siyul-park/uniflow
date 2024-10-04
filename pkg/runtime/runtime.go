@@ -53,7 +53,7 @@ func New(config Config) *Runtime {
 		config.SecretStore = secret.NewStore()
 	}
 
-	symbolTable := symbol.NewTable(symbol.TableOptions{
+	symbolTable := symbol.NewTable(symbol.TableOption{
 		LoadHooks:   []symbol.LoadHook{config.Hook},
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})

@@ -27,7 +27,7 @@ func TestWrite(t *testing.T) {
 
 	outPck := New(nil)
 
-	backPck := Write(w, outPck)
+	backPck := Send(w, outPck)
 	assert.Equal(t, outPck, backPck)
 }
 
@@ -53,7 +53,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := New(nil)
 
-		backPck := WriteOrFallback(w, outPck, None)
+		backPck := SendOrFallback(w, outPck, None)
 		assert.Equal(t, outPck, backPck)
 	})
 
@@ -63,7 +63,7 @@ func TestCallOrReturn(t *testing.T) {
 
 		outPck := New(nil)
 
-		backPck := WriteOrFallback(w, outPck, None)
+		backPck := SendOrFallback(w, outPck, None)
 		assert.Equal(t, None, backPck)
 	})
 }

@@ -16,8 +16,8 @@ type Agent struct {
 	symbols   map[uuid.UUID]*symbol.Symbol
 	processes map[uuid.UUID]*process.Process
 	frames    map[uuid.UUID][]*Frame
-	inbounds  map[uuid.UUID]map[string]port.Hook
-	outbounds map[uuid.UUID]map[string]port.Hook
+	inbounds  map[uuid.UUID]map[string]port.OpenHook
+	outbounds map[uuid.UUID]map[string]port.OpenHook
 	watchers  Watchers
 	mu        sync.RWMutex
 }
@@ -31,8 +31,8 @@ func New() *Agent {
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
 		processes: make(map[uuid.UUID]*process.Process),
 		frames:    make(map[uuid.UUID][]*Frame),
-		inbounds:  make(map[uuid.UUID]map[string]port.Hook),
-		outbounds: make(map[uuid.UUID]map[string]port.Hook),
+		inbounds:  make(map[uuid.UUID]map[string]port.OpenHook),
+		outbounds: make(map[uuid.UUID]map[string]port.OpenHook),
 	}
 }
 
@@ -117,15 +117,15 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	inbounds := make(map[string]port.Hook)
-	outbounds := make(map[string]port.Hook)
+	inbounds := make(map[string]port.OpenHook)
+	outbounds := make(map[string]port.OpenHook)
 
 	a.symbols[sym.ID()] = sym
 	a.inbounds[sym.ID()] = inbounds
 	a.outbounds[sym.ID()] = outbounds
 
 	for name, in := range sym.Ins() {
-		hook := port.HookFunc(func(proc *process.Process) {
+		hook := port.OpenHookFunc(func(proc *process.Process) {
 			a.accept(proc)
 
 			inboundHook, outboundHook := a.hooks(proc, sym, in, nil)
@@ -135,12 +135,12 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 			reader.AddOutboundHook(outboundHook)
 		})
 
-		in.AddHook(hook)
+		in.AddOpenHook(hook)
 		inbounds[name] = hook
 	}
 
 	for name, out := range sym.Outs() {
-		hook := port.HookFunc(func(proc *process.Process) {
+		hook := port.OpenHookFunc(func(proc *process.Process) {
 			a.accept(proc)
 
 			inboundHook, outboundHook := a.hooks(proc, sym, nil, out)
@@ -150,7 +150,7 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 			writer.AddOutboundHook(outboundHook)
 		})
 
-		out.AddHook(hook)
+		out.AddOpenHook(hook)
 		outbounds[name] = hook
 	}
 
@@ -164,11 +164,11 @@ func (a *Agent) Unload(sym *symbol.Symbol) error {
 
 	for name, hook := range a.inbounds[sym.ID()] {
 		in := sym.In(name)
-		in.RemoveHook(hook)
+		in.RemoveOpenHook(hook)
 	}
 	for name, hook := range a.outbounds[sym.ID()] {
 		out := sym.Out(name)
-		out.RemoveHook(hook)
+		out.RemoveOpenHook(hook)
 	}
 
 	delete(a.inbounds, sym.ID())
