@@ -11,8 +11,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// TableOptions holds configurations for a Table instance.
-type TableOptions struct {
+// TableOption holds configurations for a Table instance.
+type TableOption struct {
 	LoadHooks   []LoadHook   // LoadHooks are functions executed when symbols are loaded.
 	UnloadHooks []UnloadHook // UnloadHooks are functions executed when symbols are unloaded.
 }
@@ -28,7 +28,7 @@ type Table struct {
 }
 
 // NewTable creates a new Table instance.
-func NewTable(opts ...TableOptions) *Table {
+func NewTable(opts ...TableOption) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
 	for _, opt := range opts {
@@ -186,10 +186,9 @@ func (t *Table) links(sb *Symbol) {
 
 			if ref, ok := t.symbols[id]; ok {
 				if ref.Namespace() == sb.Namespace() {
-					if out != nil {
-						if in := ref.In(port.Port); in != nil {
-							out.Link(in)
-						}
+					in := ref.In(port.Port)
+					if out != nil && in != nil {
+						out.Link(in)
 					}
 
 					refences := t.refences[ref.ID()]
@@ -218,10 +217,9 @@ func (t *Table) links(sb *Symbol) {
 
 			for _, port := range ports {
 				if (port.ID == sb.ID()) || (port.Name != "" && port.Name == sb.Name()) {
-					if out != nil {
-						if in := sb.In(port.Port); in != nil {
-							out.Link(in)
-						}
+					in := sb.In(port.Port)
+					if out != nil && in != nil {
+						out.Link(in)
 					}
 
 					refences := t.refences[sb.ID()]
@@ -280,17 +278,16 @@ func (t *Table) unlinks(sb *Symbol) {
 
 func (t *Table) linked(sb *Symbol) []*Symbol {
 	var linked []*Symbol
-
-	nexts := []*Symbol{sb}
-	for len(nexts) > 0 {
-		sb := nexts[len(nexts)-1]
+	paths := []*Symbol{sb}
+	for len(paths) > 0 {
+		sb := paths[len(paths)-1]
 		ok := true
 		for _, ports := range t.refences[sb.ID()] {
 			for _, port := range ports {
 				next := t.symbols[port.ID]
-				ok = slices.Contains(nexts, next) || slices.Contains(linked, next)
+				ok = slices.Contains(paths, next) || slices.Contains(linked, next)
 				if !ok {
-					nexts = append(nexts, next)
+					paths = append(paths, next)
 					break
 				}
 			}
@@ -299,11 +296,10 @@ func (t *Table) linked(sb *Symbol) []*Symbol {
 			}
 		}
 		if ok {
-			nexts = nexts[0 : len(nexts)-1]
+			paths = paths[0 : len(paths)-1]
 			linked = append(linked, sb)
 		}
 	}
-
 	slices.Reverse(linked)
 	return linked
 }
@@ -364,7 +360,7 @@ func (t *Table) init(sb *Symbol) error {
 		return err
 	}
 
-	_, err = port.Write(out, payload)
+	_, err = port.Send(out, payload)
 	return err
 }
 

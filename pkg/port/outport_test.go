@@ -13,7 +13,7 @@ func TestWrite(t *testing.T) {
 	out := NewOut()
 	defer out.Close()
 
-	res, err := Write(out, nil)
+	res, err := Send(out, nil)
 	assert.NoError(t, err)
 	assert.Nil(t, res)
 }
@@ -45,7 +45,7 @@ func TestOutPort_Link(t *testing.T) {
 	assert.Equal(t, 1, out.Links())
 }
 
-func TestOutPort_Hook(t *testing.T) {
+func TestOutPort_OpenHook(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)
 
@@ -53,17 +53,44 @@ func TestOutPort_Hook(t *testing.T) {
 	defer out.Close()
 
 	done := make(chan struct{})
-	h := HookFunc(func(proc *process.Process) {
+	h := OpenHookFunc(func(proc *process.Process) {
 		close(done)
 	})
 
-	ok := out.AddHook(h)
+	ok := out.AddOpenHook(h)
 	assert.True(t, ok)
 
-	ok = out.AddHook(h)
+	ok = out.AddOpenHook(h)
 	assert.False(t, ok)
 
 	_ = out.Open(proc)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		assert.NoError(t, ctx.Err())
+	}
+}
+
+func TestOutPort_CloseHook(t *testing.T) {
+	out := NewOut()
+	defer out.Close()
+
+	done := make(chan struct{})
+	h := CloseHookFunc(func() {
+		close(done)
+	})
+
+	ok := out.AddCloseHook(h)
+	assert.True(t, ok)
+
+	ok = out.AddCloseHook(h)
+	assert.False(t, ok)
+
+	out.Close()
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

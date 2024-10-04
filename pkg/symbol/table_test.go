@@ -429,7 +429,7 @@ func TestTable_Hook(t *testing.T) {
 	loaded := 0
 	unloaded := 0
 
-	tb := NewTable(TableOptions{
+	tb := NewTable(TableOption{
 		LoadHooks: []LoadHook{
 			LoadFunc(func(_ *Symbol) error {
 				loaded += 1
