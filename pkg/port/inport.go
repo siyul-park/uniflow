@@ -143,5 +143,4 @@ func (p *InPort) Close() {
 	for _, reader := range readers {
 		reader.Close()
 	}
-
 }
