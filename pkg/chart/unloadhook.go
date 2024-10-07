@@ -1,14 +1,15 @@
 package chart
 
-// UnloadHook defines an interface for handling events when a symbol is unloaded.
+// UnloadHook defines an interface for handling the unloading of a chart.
 type UnloadHook interface {
-	// Unload is called when a symbol is unloaded and may return an error.
+	// Unload is called when a chart is unloaded and may return an error.
 	Unload(*Chart) error
 }
 
-// UnloadHooks is a slice of UnloadHook interfaces, processed in reverse order.
+// UnloadHooks is a slice of UnloadHook, processed in reverse order.
 type UnloadHooks []UnloadHook
 
+// unloadHook wraps an unload function to implement UnloadHook.
 type unloadHook struct {
 	unload func(*Chart) error
 }
@@ -16,7 +17,7 @@ type unloadHook struct {
 var _ UnloadHook = (UnloadHooks)(nil)
 var _ UnloadHook = (*unloadHook)(nil)
 
-// UnloadFunc creates a new UnloadHook from the provided function.
+// UnloadFunc creates an UnloadHook from the given function.
 func UnloadFunc(unload func(*Chart) error) UnloadHook {
 	return &unloadHook{unload: unload}
 }

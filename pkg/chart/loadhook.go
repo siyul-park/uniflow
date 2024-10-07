@@ -1,12 +1,11 @@
 package chart
 
-// LoadHook defines an interface for handling events when a symbol is loaded.
+// LoadHook defines an interface for handling the loading of a chart.
 type LoadHook interface {
-	// Load is called to handle the loading of a symbol and may return an error.
+	// Load processes the loading of a chart and may return an error.
 	Load(*Chart) error
 }
 
-// LoadHooks is a slice of LoadHook interfaces, processed sequentially.
 type LoadHooks []LoadHook
 
 type loadHook struct {
@@ -16,7 +15,7 @@ type loadHook struct {
 var _ LoadHook = (LoadHooks)(nil)
 var _ LoadHook = (*loadHook)(nil)
 
-// LoadFunc creates a new LoadHook from the provided function.
+// LoadFunc creates a LoadHook from the given function.
 func LoadFunc(load func(*Chart) error) LoadHook {
 	return &loadHook{load: load}
 }

@@ -13,6 +13,7 @@ type TableOption struct {
 	UnloadHooks []UnloadHook // UnloadHooks are functions executed when symbols are unloaded.
 }
 
+// Table manages charts and their references, allowing insertion, lookup, and removal.
 type Table struct {
 	charts      map[uuid.UUID]*Chart
 	namespaces  map[string]map[string]uuid.UUID
@@ -22,6 +23,7 @@ type Table struct {
 	mu          sync.RWMutex
 }
 
+// NewTable creates and returns a new Table instance with the provided options.
 func NewTable(opts ...TableOption) *Table {
 	var loadHooks []LoadHook
 	var unloadHooks []UnloadHook
@@ -39,6 +41,7 @@ func NewTable(opts ...TableOption) *Table {
 	}
 }
 
+// Insert adds a new chart to the table, freeing the previous chart if it exists.
 func (t *Table) Insert(chrt *Chart) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -49,6 +52,7 @@ func (t *Table) Insert(chrt *Chart) error {
 	return t.insert(chrt)
 }
 
+// Free removes a chart from the table based on its UUID and unloads it.
 func (t *Table) Free(id uuid.UUID) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -60,6 +64,7 @@ func (t *Table) Free(id uuid.UUID) (bool, error) {
 	return chrt != nil, nil
 }
 
+// Lookup retrieves a chart from the table based on its UUID.
 func (t *Table) Lookup(id uuid.UUID) *Chart {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -67,6 +72,7 @@ func (t *Table) Lookup(id uuid.UUID) *Chart {
 	return t.charts[id]
 }
 
+// Close removes all charts from the table and unloads them.
 func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
