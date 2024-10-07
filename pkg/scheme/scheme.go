@@ -2,6 +2,7 @@ package scheme
 
 import (
 	"reflect"
+	"slices"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -26,6 +27,23 @@ func New() *Scheme {
 		types:  make(map[string]reflect.Type),
 		codecs: make(map[string]Codec),
 	}
+}
+
+// Kinds returns all unique kinds from types and codecs.
+func (s *Scheme) Kinds() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	kinds := make([]string, 0, len(s.types))
+	for kind := range s.types {
+		kinds = append(kinds, kind)
+	}
+	for kind := range s.codecs {
+		if !slices.Contains(kinds, kind) {
+			kinds = append(kinds, kind)
+		}
+	}
+	return kinds
 }
 
 // AddKnownType associates a spec type with a kind and returns true if successful.

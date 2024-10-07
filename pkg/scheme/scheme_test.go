@@ -10,6 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestScheme_Kinds(t *testing.T) {
+	s := New()
+	kind := faker.UUIDHyphenated()
+
+	c := CodecFunc(func(spec spec.Spec) (node.Node, error) {
+		return node.NewOneToOneNode(nil), nil
+	})
+
+	s.AddKnownType(kind, &spec.Meta{})
+	s.AddCodec(kind, c)
+
+	kinds := s.Kinds()
+	assert.Contains(t, kinds, kind)
+}
+
 func TestScheme_KnownType(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
