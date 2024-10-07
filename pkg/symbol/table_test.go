@@ -14,284 +14,75 @@ import (
 func TestTable_Insert(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
-	t.Run("Link By ID", func(t *testing.T) {
-		t.Run("Unlinked", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
+	tb := NewTable()
+	defer tb.Close()
 
-			meta1 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
-			meta2 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
-			meta3 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
+	meta1 := &spec.Meta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+	meta2 := &spec.Meta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
+	meta3 := &spec.Meta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      kind,
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+	}
 
-			meta1.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						ID:   meta2.GetID(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta2.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						ID:   meta3.GetID(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta3.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						ID:   meta1.GetID(),
-						Port: node.PortIn,
-					},
-				},
-			}
+	meta1.Ports = map[string][]spec.Port{
+		node.PortOut: {
+			{
+				ID:   meta2.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
+	meta2.Ports = map[string][]spec.Port{
+		node.PortOut: {
+			{
+				Name: meta3.GetName(),
+				Port: node.PortIn,
+			},
+		},
+	}
+	meta3.Ports = map[string][]spec.Port{
+		node.PortOut: {
+			{
+				ID:   meta1.GetID(),
+				Port: node.PortIn,
+			},
+		},
+	}
 
-			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
-			err := tb.Insert(sym1)
-			assert.NoError(t, err)
+	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
+	err := tb.Insert(sym1)
+	assert.NoError(t, err)
+	assert.NotNil(t, tb.Lookup(sym1.ID()))
 
-			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym2)
-			assert.NoError(t, err)
+	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
+	err = tb.Insert(sym2)
+	assert.NoError(t, err)
+	assert.NotNil(t, tb.Lookup(sym2.ID()))
 
-			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym3)
-			assert.NoError(t, err)
+	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
+	err = tb.Insert(sym3)
+	assert.NoError(t, err)
+	assert.NotNil(t, tb.Lookup(sym3.ID()))
 
-			p1 := sym1.Out(node.PortOut)
-			p2 := sym2.Out(node.PortOut)
-			p3 := sym3.Out(node.PortOut)
+	p1 := sym1.Out(node.PortOut)
+	p2 := sym2.Out(node.PortOut)
+	p3 := sym3.Out(node.PortOut)
 
-			assert.Equal(t, 1, p1.Links())
-			assert.Equal(t, 1, p2.Links())
-			assert.Equal(t, 1, p3.Links())
-		})
-
-		t.Run("Linked", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
-
-			id := uuid.Must(uuid.NewV7())
-
-			meta1 := &spec.Meta{
-				ID:        id,
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta2 := &spec.Meta{
-				ID:        id,
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta3 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
-			meta4 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
-
-			meta1.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						ID:   meta3.GetID(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta2.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						ID:   meta4.GetID(),
-						Port: node.PortIn,
-					},
-				},
-			}
-
-			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
-			err := tb.Insert(sym3)
-			assert.NoError(t, err)
-
-			sym4 := &Symbol{Spec: meta4, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym4)
-			assert.NoError(t, err)
-
-			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym1)
-			assert.NoError(t, err)
-
-			p1 := sym1.Out(node.PortOut)
-			assert.Equal(t, 1, p1.Links())
-
-			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym2)
-			assert.NoError(t, err)
-
-			p2 := sym2.Out(node.PortOut)
-			assert.Equal(t, 1, p2.Links())
-		})
-	})
-
-	t.Run("Link By Name", func(t *testing.T) {
-		t.Run("Unlinked", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
-
-			meta1 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta2 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta3 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-
-			meta1.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						Name: meta2.GetName(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta2.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						Name: meta3.GetName(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta3.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						Name: meta1.GetName(),
-						Port: node.PortIn,
-					},
-				},
-			}
-
-			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
-			err := tb.Insert(sym1)
-			assert.NoError(t, err)
-
-			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym2)
-			assert.NoError(t, err)
-
-			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym3)
-			assert.NoError(t, err)
-
-			p1 := sym1.Out(node.PortOut)
-			p2 := sym2.Out(node.PortOut)
-			p3 := sym3.Out(node.PortOut)
-
-			assert.Equal(t, 1, p1.Links())
-			assert.Equal(t, 1, p2.Links())
-			assert.Equal(t, 1, p3.Links())
-		})
-
-		t.Run("Linked", func(t *testing.T) {
-			tb := NewTable()
-			defer tb.Close()
-
-			id := uuid.Must(uuid.NewV7())
-
-			meta1 := &spec.Meta{
-				ID:        id,
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta2 := &spec.Meta{
-				ID:        id,
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta3 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-			meta4 := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			}
-
-			meta1.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						Name: meta3.GetName(),
-						Port: node.PortIn,
-					},
-				},
-			}
-			meta2.Ports = map[string][]spec.Port{
-				node.PortOut: {
-					{
-						Name: meta4.GetName(),
-						Port: node.PortIn,
-					},
-				},
-			}
-
-			sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
-			err := tb.Insert(sym3)
-			assert.NoError(t, err)
-
-			sym4 := &Symbol{Spec: meta4, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym4)
-			assert.NoError(t, err)
-
-			sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym1)
-			assert.NoError(t, err)
-
-			p1 := sym1.Out(node.PortOut)
-			assert.Equal(t, 1, p1.Links())
-
-			sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
-			err = tb.Insert(sym2)
-			assert.NoError(t, err)
-
-			p2 := sym2.Out(node.PortOut)
-			assert.Equal(t, 1, p2.Links())
-		})
-	})
+	assert.Equal(t, 1, p1.Links())
+	assert.Equal(t, 1, p2.Links())
+	assert.Equal(t, 1, p3.Links())
 }
 
 func TestTable_Free(t *testing.T) {

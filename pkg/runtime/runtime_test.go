@@ -14,6 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,11 +70,16 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		h := hook.New()
 
-		a := agent.New()
-		defer a.Close()
+		symbols := make(chan *symbol.Symbol)
 
-		h.AddLoadHook(a)
-		h.AddUnloadHook(a)
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
 
 		r := New(Config{
 			Scheme:      s,
@@ -109,38 +115,24 @@ func TestRuntime_Reconcile(t *testing.T) {
 		secretStore.Store(ctx, sec)
 		specStore.Store(ctx, meta)
 
-		func() {
-			for {
-				select {
-				case <-ctx.Done():
-					assert.NoError(t, ctx.Err())
-					return
-				default:
-					if sb := a.Symbol(meta.GetID()); sb != nil {
-						assert.Equal(t, meta.GetID(), sb.ID())
-						assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
-						return
-					}
-
-				}
-			}
-		}()
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+			assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
 
 		specStore.Delete(ctx, meta)
 
-		func() {
-			for {
-				select {
-				case <-ctx.Done():
-					assert.NoError(t, ctx.Err())
-					return
-				default:
-					if sb := a.Symbol(meta.GetID()); sb == nil {
-						return
-					}
-				}
-			}
-		}()
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
 	})
 
 	t.Run("ReconcileLoadedSecret", func(t *testing.T) {
