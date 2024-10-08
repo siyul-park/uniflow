@@ -104,6 +104,9 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	}
 
 	if len(errs) > 0 {
+		for _, sb := range symbols {
+			sb.Close()
+		}
 		symbols = nil
 	}
 
