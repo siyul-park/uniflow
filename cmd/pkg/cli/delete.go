@@ -99,7 +99,6 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 			_, err := config.SecretStore.Delete(ctx, secrets...)
 			return err
 		}
-
 		return nil
 	}
 }

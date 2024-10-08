@@ -166,7 +166,6 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 			return writer.Write(secrets)
 		}
-
 		return nil
 	}
 }
