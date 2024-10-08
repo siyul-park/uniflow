@@ -69,8 +69,9 @@ func TestLinker_Load(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, s.Kinds(), chrt.GetName())
 
-	_, err = s.Compile(meta)
+	n, err := s.Compile(meta)
 	assert.NoError(t, err)
+	assert.NotNil(t, n)
 }
 
 func TestLinker_Unload(t *testing.T) {

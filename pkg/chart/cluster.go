@@ -40,8 +40,8 @@ func (n *ClusterNode) Inbound(name string, prt *port.InPort) {
 	inPort := port.NewIn()
 	outPort := port.NewOut()
 
-	n.inPorts[node.PortErr] = inPort
-	n._outPorts[node.PortErr] = outPort
+	n.inPorts[name] = inPort
+	n._outPorts[name] = outPort
 
 	outPort.Link(prt)
 
@@ -57,8 +57,8 @@ func (n *ClusterNode) Outbound(name string, prt *port.OutPort) {
 	inPort := port.NewIn()
 	outPort := port.NewOut()
 
-	n._inPorts[node.PortErr] = inPort
-	n.outPorts[node.PortErr] = outPort
+	n._inPorts[name] = inPort
+	n.outPorts[name] = outPort
 
 	prt.Link(inPort)
 

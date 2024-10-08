@@ -54,7 +54,11 @@ func (l *Linker) Load(chrt *Chart) error {
 				}
 				return nil, err
 			}
-			symbols = append(symbols, &symbol.Symbol{Spec: sp, Node: n})
+
+			symbols = append(symbols, &symbol.Symbol{
+				Spec: sp,
+				Node: n,
+			})
 		}
 
 		var loadHooks []symbol.LoadHook
@@ -80,10 +84,11 @@ func (l *Linker) Load(chrt *Chart) error {
 		}
 
 		n := NewClusterNode(table)
+
 		for name, ports := range chrt.GetPorts() {
 			for _, port := range ports {
 				for _, sb := range symbols {
-					if (sb.ID() == port.ID) || (sb.Name() != "" && sb.Name() == port.Name) {
+					if sb.ID() == port.ID || sb.Name() == port.Name {
 						if in := sb.In(port.Port); in != nil {
 							n.Inbound(name, in)
 						}
@@ -94,6 +99,7 @@ func (l *Linker) Load(chrt *Chart) error {
 				}
 			}
 		}
+
 		return n, nil
 	})
 
