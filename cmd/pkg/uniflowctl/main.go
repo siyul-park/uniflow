@@ -8,6 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
 	mongochart "github.com/siyul-park/uniflow/driver/mongo/pkg/chart"
+	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongosecret "github.com/siyul-park/uniflow/driver/mongo/pkg/secret"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/chart"
@@ -52,6 +53,13 @@ func main() {
 	}
 	if collectionSecrets == "" {
 		collectionSecrets = "secrets"
+	}
+
+	if strings.HasPrefix(databaseURL, "memongodb://") {
+		server := mongoserver.New()
+		defer server.Stop()
+
+		databaseURL = server.URI()
 	}
 
 	var chartStore chart.Store
