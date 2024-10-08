@@ -49,6 +49,17 @@ type Value struct {
 	Value any `json:"value" bson:"value" yaml:"value" map:"value"`
 }
 
+// Key constants for commonly used fields.
+const (
+	KeyID          = "id"
+	KeyNamespace   = "namespace"
+	KeyName        = "name"
+	KeyAnnotations = "annotations"
+	KetSpecs       = "specs"
+	KeyPorts       = "ports"
+	KeyEnv         = "env"
+)
+
 var _ resource.Resource = (*Chart)(nil)
 
 // IsBound checks whether any of the secrets are bound to the chart.
@@ -63,8 +74,8 @@ func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
 				examples = append(examples, &secret.Secret{Namespace: c.GetNamespace(), Name: val.Name})
 			}
 
-			for _, sec := range secrets {
-				if len(resource.Match(sec, examples...)) > 0 {
+			for _, scrt := range secrets {
+				if len(resource.Match(scrt, examples...)) > 0 {
 					return true
 				}
 			}
@@ -84,24 +95,24 @@ func (c *Chart) Bind(secrets ...*secret.Secret) error {
 					Name:      val.Name,
 				}
 
-				var sec *secret.Secret
+				var scrt *secret.Secret
 				for _, s := range secrets {
 					if len(resource.Match(s, example)) > 0 {
-						sec = s
+						scrt = s
 						break
 					}
 				}
-				if sec == nil {
+				if scrt == nil {
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}
 
-				v, err := template.Execute(val.Value, sec.Data)
+				v, err := template.Execute(val.Value, scrt.Data)
 				if err != nil {
 					return err
 				}
 
-				val.ID = sec.GetID()
-				val.Name = sec.GetName()
+				val.ID = scrt.GetID()
+				val.Name = scrt.GetName()
 				val.Value = v
 
 				vals[i] = val

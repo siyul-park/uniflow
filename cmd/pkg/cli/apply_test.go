@@ -72,13 +72,13 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		filename := "secrets.json"
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}
 
-		data, err := json.Marshal(sec)
+		data, err := json.Marshal(scrt)
 		assert.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -102,11 +102,11 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
-		results, err := secretStore.Load(ctx, sec)
+		results, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
 
-		assert.Contains(t, output.String(), sec.Name)
+		assert.Contains(t, output.String(), scrt.Name)
 	})
 
 	t.Run("UpdateNodeSpec", func(t *testing.T) {
@@ -163,16 +163,16 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		filename := "secrets.json"
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}
 
-		_, err := secretStore.Store(ctx, sec)
+		_, err := secretStore.Store(ctx, scrt)
 		assert.NoError(t, err)
 
-		data, err := json.Marshal(sec)
+		data, err := json.Marshal(scrt)
 		assert.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -196,10 +196,10 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
-		results, err := secretStore.Load(ctx, sec)
+		results, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
 
-		assert.Contains(t, output.String(), sec.Name)
+		assert.Contains(t, output.String(), scrt.Name)
 	})
 }

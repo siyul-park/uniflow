@@ -40,7 +40,7 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -49,7 +49,7 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    sec.GetID(),
+						ID:    scrt.GetID(),
 						Value: faker.Word(),
 					},
 				},
@@ -70,7 +70,7 @@ func TestLoader_Load(t *testing.T) {
 			Ports:     map[string][]spec.Port{node.PortIO: {{Name: meta2.GetName(), Port: node.PortIO}}},
 		}
 
-		secretStore.Store(ctx, sec)
+		secretStore.Store(ctx, scrt)
 		specStore.Store(ctx, meta1)
 		specStore.Store(ctx, meta2)
 		specStore.Store(ctx, meta3)
@@ -96,7 +96,7 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -104,14 +104,14 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    sec.GetID(),
+						ID:    scrt.GetID(),
 						Value: faker.Word(),
 					},
 				},
 			},
 		}
 
-		secretStore.Store(ctx, sec)
+		secretStore.Store(ctx, scrt)
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)
@@ -135,7 +135,7 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -143,14 +143,14 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    sec.GetID(),
+						ID:    scrt.GetID(),
 						Value: faker.Word(),
 					},
 				},
 			},
 		}
 
-		secretStore.Store(ctx, sec)
+		secretStore.Store(ctx, scrt)
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)

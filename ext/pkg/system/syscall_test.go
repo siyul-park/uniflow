@@ -182,7 +182,7 @@ func TestCreateSecrets(t *testing.T) {
 	n, _ := NewNativeNode(CreateSecrets(st))
 	defer n.Close()
 
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
@@ -195,7 +195,7 @@ func TestCreateSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Marshal(sec)
+	inPayload, _ := types.Marshal(scrt)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -218,7 +218,7 @@ func TestReadSecrets(t *testing.T) {
 	n, _ := NewNativeNode(ReadSecrets(st))
 	defer n.Close()
 
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
@@ -231,7 +231,7 @@ func TestReadSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Marshal(sec)
+	inPayload, _ := types.Marshal(scrt)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)
@@ -254,12 +254,12 @@ func TestUpdateSecrets(t *testing.T) {
 	n, _ := NewNativeNode(UpdateSecrets(st))
 	defer n.Close()
 
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 
-	_, _ = st.Store(ctx, sec)
+	_, _ = st.Store(ctx, scrt)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -269,7 +269,7 @@ func TestUpdateSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Marshal(sec)
+	inPayload, _ := types.Marshal(scrt)
 	inPck := packet.New(types.NewSlice(inPayload))
 
 	inWriter.Write(inPck)
@@ -292,12 +292,12 @@ func TestDeleteSecrets(t *testing.T) {
 	n, _ := NewNativeNode(DeleteSecrets(st))
 	defer n.Close()
 
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.Word(),
 	}
 
-	_, _ = st.Store(ctx, sec)
+	_, _ = st.Store(ctx, scrt)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
@@ -307,7 +307,7 @@ func TestDeleteSecrets(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload, _ := types.Marshal(sec)
+	inPayload, _ := types.Marshal(scrt)
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

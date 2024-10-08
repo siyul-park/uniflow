@@ -116,9 +116,9 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 					return err
 				}
 
-				for _, sec := range secrets {
-					if sec.GetNamespace() == "" {
-						sec.SetNamespace(namespace)
+				for _, scrt := range secrets {
+					if scrt.GetNamespace() == "" {
+						scrt.SetNamespace(namespace)
 					}
 				}
 

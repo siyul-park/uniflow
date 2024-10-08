@@ -26,7 +26,7 @@ func TestLinker_Load(t *testing.T) {
 		Scheme: s,
 	})
 
-	sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+	scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 	chrt := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
@@ -40,7 +40,7 @@ func TestLinker_Load(t *testing.T) {
 		Env: map[string][]Value{
 			"key1": {
 				{
-					ID:    sec.GetID(),
+					ID:    scrt.GetID(),
 					Value: faker.Word(),
 				},
 			},

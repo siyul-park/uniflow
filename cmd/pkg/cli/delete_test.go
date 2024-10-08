@@ -68,13 +68,13 @@ func TestDeleteCommand_Execute(t *testing.T) {
 
 		filename := "secrets.json"
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}
 
-		data, err := json.Marshal(sec)
+		data, err := json.Marshal(scrt)
 		assert.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -84,7 +84,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		_, err = file.Write(data)
 		assert.NoError(t, err)
 
-		_, err = secretStore.Store(ctx, sec)
+		_, err = secretStore.Store(ctx, scrt)
 		assert.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
@@ -98,7 +98,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
-		rSecret, err := secretStore.Load(ctx, sec)
+		rSecret, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, rSecret, 0)
 	})

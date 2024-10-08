@@ -51,13 +51,13 @@ func TestGetCommand_Execute(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.Word(),
 		}
 
-		_, err := secretStore.Store(ctx, sec)
+		_, err := secretStore.Store(ctx, scrt)
 		assert.NoError(t, err)
 
 		output := new(bytes.Buffer)
@@ -73,6 +73,6 @@ func TestGetCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
-		assert.Contains(t, output.String(), sec.Name)
+		assert.Contains(t, output.String(), scrt.Name)
 	})
 }

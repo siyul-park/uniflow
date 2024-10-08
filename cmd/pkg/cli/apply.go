@@ -97,9 +97,9 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 				return err
 			}
 
-			for _, sec := range secrets {
-				if sec.GetNamespace() == "" {
-					sec.SetNamespace(namespace)
+			for _, scrt := range secrets {
+				if scrt.GetNamespace() == "" {
+					scrt.SetNamespace(namespace)
 				}
 			}
 
@@ -110,12 +110,12 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 
 			var inserts []*secret.Secret
 			var updates []*secret.Secret
-			for _, sec := range secrets {
-				if match := resourcebase.Match(sec, ok...); len(match) > 0 {
-					sec.SetID(match[0].GetID())
-					updates = append(updates, sec)
+			for _, scrt := range secrets {
+				if match := resourcebase.Match(scrt, ok...); len(match) > 0 {
+					scrt.SetID(match[0].GetID())
+					updates = append(updates, scrt)
 				} else {
-					inserts = append(inserts, sec)
+					inserts = append(inserts, scrt)
 				}
 			}
 

@@ -235,7 +235,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		go r.Reconcile(ctx)
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			ID:   uuid.Must(uuid.NewV7()),
 			Data: faker.Word(),
 		}
@@ -246,7 +246,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    sec.GetID(),
+						ID:    scrt.GetID(),
 						Value: "{{ . }}",
 					},
 				},
@@ -254,18 +254,18 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}
 
 		specStore.Store(ctx, meta)
-		secretStore.Store(ctx, sec)
+		secretStore.Store(ctx, scrt)
 
 		select {
 		case sb := <-symbols:
 			assert.Equal(t, meta.GetID(), sb.ID())
-			assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
+			assert.Equal(t, scrt.Data, sb.Env()["key"][0].Value)
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
 			return
 		}
 
-		secretStore.Delete(ctx, sec)
+		secretStore.Delete(ctx, scrt)
 
 		select {
 		case sb := <-symbols:

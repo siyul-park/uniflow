@@ -75,9 +75,9 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 				return err
 			}
 
-			for _, sec := range secrets {
-				if sec.GetNamespace() == "" {
-					sec.SetNamespace(namespace)
+			for _, scrt := range secrets {
+				if scrt.GetNamespace() == "" {
+					scrt.SetNamespace(namespace)
 				}
 			}
 

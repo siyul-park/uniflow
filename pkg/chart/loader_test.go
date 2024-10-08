@@ -28,7 +28,7 @@ func TestLoader_Load(t *testing.T) {
 		SecretStore: secretStore,
 	})
 
-	sec := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+	scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 	chrt1 := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
@@ -37,7 +37,7 @@ func TestLoader_Load(t *testing.T) {
 		Env: map[string][]Value{
 			"key": {
 				{
-					ID:    sec.GetID(),
+					ID:    scrt.GetID(),
 					Value: faker.Word(),
 				},
 			},
@@ -56,7 +56,7 @@ func TestLoader_Load(t *testing.T) {
 		},
 	}
 
-	secretStore.Store(ctx, sec)
+	secretStore.Store(ctx, scrt)
 
 	chartStore.Store(ctx, chrt1)
 	chartStore.Store(ctx, chrt2)

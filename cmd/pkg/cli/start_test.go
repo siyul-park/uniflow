@@ -93,13 +93,13 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		filename := "nodes.json"
 
-		sec := &secret.Secret{
+		scrt := &secret.Secret{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: resource.DefaultNamespace,
 			Data:      faker.Word(),
 		}
 
-		data, _ := json.Marshal(sec)
+		data, _ := json.Marshal(scrt)
 
 		f, _ := fs.Create(filename)
 		f.Write(data)
@@ -128,7 +128,7 @@ func TestStartCommand_Execute(t *testing.T) {
 			assert.Fail(t, ctx.Err().Error())
 			return
 		default:
-			if r, _ := secretStore.Load(ctx, sec); len(r) > 0 {
+			if r, _ := secretStore.Load(ctx, scrt); len(r) > 0 {
 				return
 			}
 		}

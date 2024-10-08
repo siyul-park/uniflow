@@ -1,4 +1,4 @@
-package secret
+package chart
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -58,14 +58,14 @@ func TestStore_Watch(t *testing.T) {
 		}
 	}()
 
-	scrt := &secret.Secret{
+	chrt := &chart.Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 	}
 
-	_, _ = st.Store(ctx, scrt)
-	_, _ = st.Store(ctx, scrt)
-	_, _ = st.Delete(ctx, scrt)
+	_, _ = st.Store(ctx, chrt)
+	_, _ = st.Store(ctx, chrt)
+	_, _ = st.Delete(ctx, chrt)
 }
 
 func TestStore_Load(t *testing.T) {
@@ -80,18 +80,18 @@ func TestStore_Load(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	chrt1 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	scrt2 := &secret.Secret{
+	chrt2 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, scrt1, scrt2)
+	count, err := st.Store(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, scrt1, scrt2)
+	loaded, err := st.Load(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -108,18 +108,18 @@ func TestStore_Store(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	chrt1 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	scrt2 := &secret.Secret{
+	chrt2 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, scrt1, scrt2)
+	count, err := st.Store(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, scrt1, scrt2)
+	loaded, err := st.Load(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -136,22 +136,22 @@ func TestStore_Swap(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	chrt1 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	scrt2 := &secret.Secret{
+	chrt2 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, scrt1, scrt2)
+	count, err := st.Store(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Swap(ctx, scrt1, scrt2)
+	count, err = st.Swap(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, scrt1, scrt2)
+	loaded, err := st.Load(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 2)
 }
@@ -168,22 +168,22 @@ func TestMemStore_Delete(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	chrt1 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	scrt2 := &secret.Secret{
+	chrt2 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
-	count, err := st.Store(ctx, scrt1, scrt2)
+	count, err := st.Store(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	count, err = st.Delete(ctx, scrt1, scrt2)
+	count, err = st.Delete(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	loaded, err := st.Load(ctx, scrt1, scrt2)
+	loaded, err := st.Load(ctx, chrt1, chrt2)
 	assert.NoError(t, err)
 	assert.Len(t, loaded, 0)
 }

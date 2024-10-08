@@ -36,7 +36,7 @@ func TestChart_IsBound(t *testing.T) {
 }
 
 func TestChart_Bind(t *testing.T) {
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: "foo",
 	}
@@ -46,14 +46,14 @@ func TestChart_Bind(t *testing.T) {
 		Env: map[string][]Value{
 			"FOO": {
 				{
-					ID:    sec.ID,
+					ID:    scrt.ID,
 					Value: "{{ . }}",
 				},
 			},
 		},
 	}
 
-	err := chrt.Bind(sec)
+	err := chrt.Bind(scrt)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Value)
 }

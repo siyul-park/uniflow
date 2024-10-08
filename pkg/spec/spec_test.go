@@ -35,7 +35,7 @@ func TestIsBound(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
-	sec := &secret.Secret{
+	scrt := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: "foo",
 	}
@@ -46,17 +46,17 @@ func TestBind(t *testing.T) {
 		Env: map[string][]Value{
 			"FOO": {
 				{
-					ID:    sec.ID,
+					ID:    scrt.ID,
 					Value: "{{ . }}",
 				},
 			},
 		},
 	}
 
-	bind, err := Bind(meta, sec)
+	bind, err := Bind(meta, scrt)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Value)
-	assert.True(t, IsBound(bind, sec))
+	assert.True(t, IsBound(bind, scrt))
 }
 
 func TestMeta_GetSet(t *testing.T) {
