@@ -102,7 +102,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"key": {
 					{
 						ID:    sec.GetID(),
@@ -178,7 +178,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"key": {
 					{
 						ID:    sec.GetID(),

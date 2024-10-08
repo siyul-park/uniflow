@@ -73,7 +73,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	var symbols []*Symbol
 	var errs []error
 	for _, sp := range specs {
-		bind, err := l.scheme.Bind(sp, secrets...)
+		bind, err := spec.Bind(sp, secrets...)
 		if err != nil {
 			errs = append(errs, err)
 			continue

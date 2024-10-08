@@ -5,8 +5,59 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestIsBound(t *testing.T) {
+	sec1 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+	sec2 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
+	meta := &Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+		Env: map[string][]Value{
+			"FOO": {
+				{
+					ID:    sec1.ID,
+					Value: "foo",
+				},
+			},
+		},
+	}
+
+	assert.True(t, IsBound(meta, sec1))
+	assert.False(t, IsBound(meta, sec2))
+}
+
+func TestBind(t *testing.T) {
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: "foo",
+	}
+
+	meta := &Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+		Env: map[string][]Value{
+			"FOO": {
+				{
+					ID:    sec.ID,
+					Value: "{{ . }}",
+				},
+			},
+		},
+	}
+
+	bind, err := Bind(meta, sec)
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Value)
+	assert.True(t, IsBound(bind, sec))
+}
 
 func TestMeta_GetSet(t *testing.T) {
 	meta := &Meta{
@@ -16,7 +67,7 @@ func TestMeta_GetSet(t *testing.T) {
 		Name:        faker.Word(),
 		Annotations: map[string]string{"key": "value"},
 		Ports:       map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:         map[string][]Secret{"env1": {{Name: "secret1", Value: "value1"}}},
+		Env:         map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}},
 	}
 
 	assert.Equal(t, meta.ID, meta.GetID())

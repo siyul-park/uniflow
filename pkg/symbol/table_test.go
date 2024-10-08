@@ -62,16 +62,17 @@ func TestTable_Insert(t *testing.T) {
 	}
 
 	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
+	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
+	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
+
 	err := tb.Insert(sym1)
 	assert.NoError(t, err)
 	assert.NotNil(t, tb.Lookup(sym1.ID()))
 
-	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym2)
 	assert.NoError(t, err)
 	assert.NotNil(t, tb.Lookup(sym2.ID()))
 
-	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym3)
 	assert.NoError(t, err)
 	assert.NotNil(t, tb.Lookup(sym3.ID()))
@@ -133,16 +134,12 @@ func TestTable_Free(t *testing.T) {
 	}
 
 	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
-	err := tb.Insert(sym1)
-	assert.NoError(t, err)
-
 	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
-	err = tb.Insert(sym2)
-	assert.NoError(t, err)
-
 	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
-	err = tb.Insert(sym3)
-	assert.NoError(t, err)
+
+	tb.Insert(sym1)
+	tb.Insert(sym2)
+	tb.Insert(sym3)
 
 	p1 := sym1.Out(node.PortOut)
 	p2 := sym2.Out(node.PortOut)
@@ -188,8 +185,7 @@ func TestTable_Lookup(t *testing.T) {
 
 	sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 
-	err := tb.Insert(sb)
-	assert.NoError(t, err)
+	tb.Insert(sb)
 	assert.Equal(t, sb, tb.Lookup(sb.ID()))
 }
 
@@ -205,10 +201,9 @@ func TestTable_Keys(t *testing.T) {
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 	}
-
 	sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
-	err := tb.Insert(sb)
-	assert.NoError(t, err)
+
+	tb.Insert(sb)
 
 	ids := tb.Keys()
 	assert.Contains(t, ids, sb.ID())
@@ -276,19 +271,21 @@ func TestTable_Hook(t *testing.T) {
 			},
 		},
 	}
+
 	sym1 := &Symbol{Spec: meta1, Node: node.NewOneToOneNode(nil)}
+	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
+	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
+
 	err := tb.Insert(sym1)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, loaded)
 	assert.Equal(t, 0, unloaded)
 
-	sym2 := &Symbol{Spec: meta2, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym2)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, loaded)
 	assert.Equal(t, 0, unloaded)
 
-	sym3 := &Symbol{Spec: meta3, Node: node.NewOneToOneNode(nil)}
 	err = tb.Insert(sym3)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, loaded)

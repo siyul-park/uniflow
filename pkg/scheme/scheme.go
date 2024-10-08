@@ -4,14 +4,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -103,92 +99,6 @@ func (s *Scheme) Compile(sp spec.Spec) (node.Node, error) {
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	}
 	return codec.Compile(sp)
-}
-
-// IsBound checks if the spec is bound to any of the provided secrets.
-func (s *Scheme) IsBound(sp spec.Spec, secrets ...*secret.Secret) bool {
-	for _, vals := range sp.GetEnv() {
-		for _, val := range vals {
-			examples := make([]*secret.Secret, 0, 2)
-			if val.ID != uuid.Nil {
-				examples = append(examples, &secret.Secret{ID: val.ID})
-			}
-			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
-			}
-
-			for _, sec := range secrets {
-				if len(resource.Match(sec, examples...)) > 0 {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// Bind processes the environment variables in the spec using the provided secrets.
-func (s *Scheme) Bind(sp spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
-	doc, err := types.Marshal(sp)
-	if err != nil {
-		return nil, err
-	}
-
-	unstructured := &spec.Unstructured{}
-	if err := types.Unmarshal(doc, unstructured); err != nil {
-		return nil, err
-	}
-
-	env := map[string]any{}
-	for key, vals := range unstructured.GetEnv() {
-		for i, val := range vals {
-			if val.ID != uuid.Nil || val.Name != "" {
-				example := &secret.Secret{
-					ID:        val.ID,
-					Namespace: unstructured.GetNamespace(),
-					Name:      val.Name,
-				}
-
-				var sec *secret.Secret
-				for _, s := range secrets {
-					if len(resource.Match(s, example)) > 0 {
-						sec = s
-						break
-					}
-				}
-				if sec == nil {
-					continue
-				}
-
-				v, err := template.Execute(val.Value, sec.Data)
-				if err != nil {
-					return nil, err
-				}
-
-				val.ID = sec.GetID()
-				val.Name = sec.GetName()
-				val.Value = v
-
-				vals[i] = val
-			}
-
-			env[key] = val.Value
-		}
-
-		if _, ok := env[key]; !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-	}
-
-	if len(env) > 0 {
-		fields, err := template.Execute(unstructured.Fields, env)
-		if err != nil {
-			return nil, err
-		}
-		unstructured.Fields = fields.(map[string]any)
-	}
-
-	return unstructured, nil
 }
 
 // Decode converts the provided spec.Spec into a structured representation using reflection and encoding utilities.

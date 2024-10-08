@@ -6,7 +6,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,36 +52,6 @@ func TestScheme_Codec(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestScheme_Bind(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-
-	sec := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: "foo",
-	}
-
-	meta := &spec.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
-		Env: map[string][]spec.Secret{
-			"FOO": {
-				{
-					ID:    sec.ID,
-					Value: "{{ . }}",
-				},
-			},
-		},
-	}
-
-	bind, err := s.Bind(meta, sec)
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Value)
-	assert.True(t, s.IsBound(bind, sec))
-}
-
 func TestScheme_Decode(t *testing.T) {
 	s := New()
 	kind := faker.UUIDHyphenated()
@@ -93,7 +62,7 @@ func TestScheme_Decode(t *testing.T) {
 		Meta: spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: kind,
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"FOO": {
 					{
 						Value: "foo",
@@ -126,34 +95,4 @@ func TestScheme_Compile(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
-}
-
-func TestScheme_IsBound(t *testing.T) {
-	s := New()
-	kind := faker.UUIDHyphenated()
-
-	s.AddKnownType(kind, &spec.Meta{})
-
-	sec1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
-	}
-	sec2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
-	}
-
-	meta := &spec.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
-		Env: map[string][]spec.Secret{
-			"FOO": {
-				{
-					ID:    sec1.ID,
-					Value: "foo",
-				},
-			},
-		},
-	}
-
-	assert.True(t, s.IsBound(meta, sec1))
-	assert.False(t, s.IsBound(meta, sec2))
 }

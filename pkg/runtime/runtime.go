@@ -164,12 +164,12 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			bounded := make(map[uuid.UUID]spec.Spec)
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
-				if sb != nil && r.scheme.IsBound(sb.Spec, secrets...) {
+				if sb != nil && spec.IsBound(sb.Spec, secrets...) {
 					bounded[sb.Spec.GetID()] = sb.Spec
 				}
 			}
 			for _, sp := range unloaded {
-				if r.scheme.IsBound(sp, secrets...) {
+				if spec.IsBound(sp, secrets...) {
 					bounded[sp.GetID()] = sp
 				}
 			}

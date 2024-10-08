@@ -2,7 +2,12 @@ package spec
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/template"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Spec defines the behavior and connections of each node.
@@ -32,9 +37,9 @@ type Spec interface {
 	// SetPorts assigns port connections to the node.
 	SetPorts(val map[string][]Port)
 	// GetEnv retrieves the environment secrets for the node.
-	GetEnv() map[string][]Secret
+	GetEnv() map[string][]Value
 	// SetEnv assigns environment secrets to the node.
-	SetEnv(val map[string][]Secret)
+	SetEnv(val map[string][]Value)
 }
 
 // Meta contains metadata for node specifications.
@@ -52,7 +57,7 @@ type Meta struct {
 	// Ports define connections to other nodes.
 	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
 	// Env contains sensitive data associated with the node.
-	Env map[string][]Secret `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
+	Env map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Port represents a network port or connection on a node.
@@ -65,8 +70,8 @@ type Port struct {
 	Port string `json:"port" bson:"port" yaml:"port" map:"port"`
 }
 
-// Secret represents a sensitive piece of data associated with a node.
-type Secret struct {
+// Value represents a sensitive piece of data associated with a node.
+type Value struct {
 	// ID is the unique identifier of the secret.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Name is the human-readable name of the secret.
@@ -77,6 +82,92 @@ type Secret struct {
 
 var _ resource.Resource = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
+
+// IsBound checks if the spec is bound to any of the provided secrets.
+func IsBound(sp Spec, secrets ...*secret.Secret) bool {
+	for _, vals := range sp.GetEnv() {
+		for _, val := range vals {
+			examples := make([]*secret.Secret, 0, 2)
+			if val.ID != uuid.Nil {
+				examples = append(examples, &secret.Secret{ID: val.ID})
+			}
+			if val.Name != "" {
+				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
+			}
+
+			for _, sec := range secrets {
+				if len(resource.Match(sec, examples...)) > 0 {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// Bind processes the environment variables in the spec using the provided secrets.
+func Bind(sp Spec, secrets ...*secret.Secret) (Spec, error) {
+	doc, err := types.Marshal(sp)
+	if err != nil {
+		return nil, err
+	}
+
+	unstructured := &Unstructured{}
+	if err := types.Unmarshal(doc, unstructured); err != nil {
+		return nil, err
+	}
+
+	env := map[string]any{}
+	for key, vals := range unstructured.GetEnv() {
+		for i, val := range vals {
+			if val.ID != uuid.Nil || val.Name != "" {
+				example := &secret.Secret{
+					ID:        val.ID,
+					Namespace: unstructured.GetNamespace(),
+					Name:      val.Name,
+				}
+
+				var sec *secret.Secret
+				for _, s := range secrets {
+					if len(resource.Match(s, example)) > 0 {
+						sec = s
+						break
+					}
+				}
+				if sec == nil {
+					continue
+				}
+
+				v, err := template.Execute(val.Value, sec.Data)
+				if err != nil {
+					return nil, err
+				}
+
+				val.ID = sec.GetID()
+				val.Name = sec.GetName()
+				val.Value = v
+
+				vals[i] = val
+			}
+
+			env[key] = val.Value
+		}
+
+		if _, ok := env[key]; !ok {
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+		}
+	}
+
+	if len(env) > 0 {
+		fields, err := template.Execute(unstructured.Fields, env)
+		if err != nil {
+			return nil, err
+		}
+		unstructured.Fields = fields.(map[string]any)
+	}
+
+	return unstructured, nil
+}
 
 // GetID returns the node's unique identifier.
 func (m *Meta) GetID() uuid.UUID {
@@ -139,11 +230,11 @@ func (m *Meta) SetPorts(val map[string][]Port) {
 }
 
 // GetEnv returns the node's environment secrets.
-func (m *Meta) GetEnv() map[string][]Secret {
+func (m *Meta) GetEnv() map[string][]Value {
 	return m.Env
 }
 
 // SetEnv sets the node's environment secrets.
-func (m *Meta) SetEnv(val map[string][]Secret) {
+func (m *Meta) SetEnv(val map[string][]Value) {
 	m.Env = val
 }

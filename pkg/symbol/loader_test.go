@@ -46,7 +46,7 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"key": {
 					{
 						ID:    sec.GetID(),
@@ -101,7 +101,7 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"key": {
 					{
 						ID:    sec.GetID(),
@@ -140,7 +140,7 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"key": {
 					{
 						ID:    sec.GetID(),
@@ -184,7 +184,7 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"sec1": {
 					{
 						ID:    sec1.GetID(),
@@ -228,7 +228,7 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Secret{
+			Env: map[string][]spec.Value{
 				"nonexist": {
 					{
 						ID:    uuid.Must(uuid.NewV7()),
