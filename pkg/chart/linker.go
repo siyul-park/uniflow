@@ -119,7 +119,22 @@ func (l *Linker) Load(chrt *Chart) error {
 			}
 		}
 
-		return nil, nil
+		n := NewClusterNode(table)
+		for name, ports := range chrt.GetPorts() {
+			for _, port := range ports {
+				for _, sb := range symbols {
+					if (sb.ID() == port.ID) || (sb.Name() != "" && sb.Name() == port.Name) {
+						if in := sb.In(port.Port); in != nil {
+							n.Inbound(name, in)
+						}
+						if out := sb.Out(port.Port); out != nil {
+							n.Outbound(name, out)
+						}
+					}
+				}
+			}
+		}
+		return n, nil
 	})
 
 	l.scheme.AddKnownType(chrt.GetName(), &spec.Unstructured{})

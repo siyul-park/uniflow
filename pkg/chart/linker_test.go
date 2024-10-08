@@ -34,6 +34,7 @@ func TestLinker_Load(t *testing.T) {
 		Specs: []spec.Spec{
 			&spec.Meta{
 				Kind: kind,
+				Name: "dummy",
 			},
 		},
 		Env: map[string][]Value{
@@ -46,6 +47,14 @@ func TestLinker_Load(t *testing.T) {
 			"key2": {
 				{
 					Value: "{{ .id }}",
+				},
+			},
+		},
+		Ports: map[string][]Port{
+			node.PortIn: {
+				{
+					Name: "dummy",
+					Port: node.PortIn,
 				},
 			},
 		},
