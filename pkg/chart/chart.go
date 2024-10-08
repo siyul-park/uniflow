@@ -22,7 +22,7 @@ type Chart struct {
 	// Additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	// Specifications that define the nodes and their configurations within the chart.
-	Specs []spec.Spec `json:"specs" bson:"specs" yaml:"specs" map:"specs"`
+	Specs []spec.Spec `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
 	// Node connections within the chart.
 	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
 	// Sensitive configuration data or secrets.

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -11,6 +12,7 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
+	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
 	FS          afero.Fs
@@ -22,7 +24,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Use:       "apply",
 		Short:     "Apply resources to the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argNodes, argSecrets},
+		ValidArgs: []string{argCharts, argNodes, argSecrets},
 		RunE:      runApplyCommand(config),
 	}
 
@@ -55,6 +57,42 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
 		switch args[0] {
+		case argCharts:
+			var charts []*chart.Chart
+			if err := reader.Read(&charts); err != nil {
+				return err
+			}
+
+			for _, scrt := range charts {
+				if scrt.GetNamespace() == "" {
+					scrt.SetNamespace(namespace)
+				}
+			}
+
+			ok, err := config.ChartStore.Load(ctx, charts...)
+			if err != nil {
+				return err
+			}
+
+			var inserts []*chart.Chart
+			var updates []*chart.Chart
+			for _, chrt := range charts {
+				if match := resourcebase.Match(chrt, ok...); len(match) > 0 {
+					chrt.SetID(match[0].GetID())
+					updates = append(updates, chrt)
+				} else {
+					inserts = append(inserts, chrt)
+				}
+			}
+
+			if _, err := config.ChartStore.Store(ctx, inserts...); err != nil {
+				return err
+			}
+			if _, err := config.ChartStore.Swap(ctx, updates...); err != nil {
+				return err
+			}
+
+			return writer.Write(charts)
 		case argNodes:
 			var specs []spec.Spec
 			if err := reader.Read(&specs); err != nil {

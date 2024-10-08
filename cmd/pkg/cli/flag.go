@@ -4,6 +4,7 @@ const (
 	flagNamespace = "namespace"
 	flagFilename  = "filename"
 
+	flagFromCharts  = "from-charts"
 	flagFromNodes   = "from-nodes"
 	flagFromSecrets = "from-secrets"
 

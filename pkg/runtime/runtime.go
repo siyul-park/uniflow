@@ -281,6 +281,12 @@ func (r *Runtime) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if r.chartStream != nil {
+		if err := r.chartStream.Close(); err != nil {
+			return err
+		}
+		r.chartStream = nil
+	}
 	if r.specStream != nil {
 		if err := r.specStream.Close(); err != nil {
 			return err
@@ -294,5 +300,8 @@ func (r *Runtime) Close() error {
 		r.secretStream = nil
 	}
 
+	if err := r.chartTable.Close(); err != nil {
+		return err
+	}
 	return r.symbolTable.Close()
 }
