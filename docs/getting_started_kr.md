@@ -39,6 +39,7 @@ make build
 |----------------------|-------------------------|----------------------------|
 | `database.url`       | `DATABASE.URL`          | `mem://` 또는 `mongodb://` |
 | `database.name`      | `DATABASE.NAME`         | -                          |
+| `collection.charts`  | `COLLECTION.CHARTS`     | `charts`                   |
 | `collection.nodes`   | `COLLECTION.NODES`      | `nodes`                    |
 | `collection.secrets` | `COLLECTION.SECRETS`    | `secrets`                  |
 

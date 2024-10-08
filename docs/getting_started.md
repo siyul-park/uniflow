@@ -39,6 +39,7 @@ Settings can be modified using the `.uniflow.toml` file or system environment va
 |----------------------|--------------------------|-----------------------------|
 | `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`    |
 | `database.name`      | `DATABASE.NAME`          | -                           |
+| `collection.charts`  | `COLLECTION.CHARTS`      | `charts`                    |
 | `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                     |
 | `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                   |
 

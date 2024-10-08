@@ -58,7 +58,7 @@ data:
 
 ## Chart
 
-A chart defines a node that combines multiple node specifications to perform more complex operations. Charts are used to set up interactions between nodes.
+A chart defines a node that combines multiple nodes to perform more complex operations. Charts are used to set up interactions between nodes.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
