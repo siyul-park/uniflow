@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsBound(t *testing.T) {
+func TestChart_IsBound(t *testing.T) {
 	sec1 := &secret.Secret{
 		ID: uuid.Must(uuid.NewV7()),
 	}
@@ -31,11 +31,11 @@ func TestIsBound(t *testing.T) {
 		},
 	}
 
-	assert.True(t, IsBound(chrt, sec1))
-	assert.False(t, IsBound(chrt, sec2))
+	assert.True(t, chrt.IsBound(sec1))
+	assert.False(t, chrt.IsBound(sec2))
 }
 
-func TestBind(t *testing.T) {
+func TestChart_Bind(t *testing.T) {
 	sec := &secret.Secret{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: "foo",
@@ -53,10 +53,43 @@ func TestBind(t *testing.T) {
 		},
 	}
 
-	bind, err := Bind(chrt, sec)
+	err := chrt.Bind(sec)
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Value)
-	assert.True(t, IsBound(bind, sec))
+	assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Value)
+}
+
+func TestChart_Build(t *testing.T) {
+	chrt := &Chart{
+		ID:   uuid.Must(uuid.NewV7()),
+		Name: faker.UUIDHyphenated(),
+		Specs: []spec.Spec{
+			&spec.Unstructured{
+				Meta: spec.Meta{
+					ID:   uuid.Must(uuid.NewV7()),
+					Kind: faker.UUIDHyphenated(),
+				},
+				Fields: map[string]any{
+					"foo": "{{ .FOO }}",
+				},
+			},
+		},
+		Env: map[string][]Value{
+			"FOO": {
+				{
+					Value: "foo",
+				},
+			},
+		},
+	}
+
+	meta := &spec.Meta{
+		Kind:      chrt.GetName(),
+		Namespace: resource.DefaultNamespace,
+	}
+
+	specs, err := chrt.Build(meta)
+	assert.NoError(t, err)
+	assert.Len(t, specs, 1)
 }
 
 func TestChart_GetSet(t *testing.T) {

@@ -3,14 +3,11 @@ package chart
 import (
 	"slices"
 
-	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/siyul-park/uniflow/pkg/template"
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // LinkerConfig holds the hook and scheme configuration.
@@ -43,58 +40,21 @@ func (l *Linker) Load(chrt *Chart) error {
 	}
 
 	codec := scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
-		doc, err := types.Marshal(sp)
+		specs, err := chrt.Build(sp)
 		if err != nil {
 			return nil, err
 		}
 
-		env := map[string][]spec.Value{}
-		for key, vals := range chrt.GetEnv() {
-			for _, val := range vals {
-				if val.ID == uuid.Nil && val.Name == "" {
-					v, err := template.Execute(val.Value, types.InterfaceOf(doc))
-					if err != nil {
-						return nil, err
-					}
-					val.Value = v
-				}
-				env[key] = append(env[key], spec.Value{Value: val.Value})
-			}
-		}
-
-		symbols := make([]*symbol.Symbol, 0, len(chrt.GetSpecs()))
-		for _, sp := range chrt.GetSpecs() {
-			doc, err := types.Marshal(sp)
-			if err != nil {
-				return nil, err
-			}
-
-			unstructured := &spec.Unstructured{}
-			if err := types.Unmarshal(doc, unstructured); err != nil {
-				return nil, err
-			}
-
-			unstructured.SetEnv(env)
-
-			bind, err := spec.Bind(unstructured)
-			if err != nil {
-				return nil, err
-			}
-
-			decode, err := l.scheme.Decode(bind)
-			if err != nil {
-				return nil, err
-			}
-
-			n, err := l.scheme.Compile(decode)
+		symbols := make([]*symbol.Symbol, 0, len(specs))
+		for _, sp := range specs {
+			n, err := l.scheme.Compile(sp)
 			if err != nil {
 				for _, sb := range symbols {
 					sb.Close()
 				}
 				return nil, err
 			}
-
-			symbols = append(symbols, &symbol.Symbol{Spec: decode, Node: n})
+			symbols = append(symbols, &symbol.Symbol{Spec: sp, Node: n})
 		}
 
 		var loadHooks []symbol.LoadHook

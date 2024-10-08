@@ -8,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/template"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
@@ -51,15 +52,15 @@ type Value struct {
 var _ resource.Resource = (*Chart)(nil)
 
 // IsBound checks whether any of the secrets are bound to the chart.
-func IsBound(chrt *Chart, secrets ...*secret.Secret) bool {
-	for _, vals := range chrt.GetEnv() {
+func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
+	for _, vals := range c.GetEnv() {
 		for _, val := range vals {
 			examples := make([]*secret.Secret, 0, 2)
 			if val.ID != uuid.Nil {
 				examples = append(examples, &secret.Secret{ID: val.ID})
 			}
 			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: chrt.GetNamespace(), Name: val.Name})
+				examples = append(examples, &secret.Secret{Namespace: c.GetNamespace(), Name: val.Name})
 			}
 
 			for _, sec := range secrets {
@@ -73,13 +74,13 @@ func IsBound(chrt *Chart, secrets ...*secret.Secret) bool {
 }
 
 // Bind binds the chart's environment variables to the provided secrets.
-func Bind(chrt *Chart, secrets ...*secret.Secret) (*Chart, error) {
-	for _, vals := range chrt.GetEnv() {
+func (c *Chart) Bind(secrets ...*secret.Secret) error {
+	for _, vals := range c.GetEnv() {
 		for i, val := range vals {
 			if val.ID != uuid.Nil || val.Name != "" {
 				example := &secret.Secret{
 					ID:        val.ID,
-					Namespace: chrt.GetNamespace(),
+					Namespace: c.GetNamespace(),
 					Name:      val.Name,
 				}
 
@@ -91,12 +92,12 @@ func Bind(chrt *Chart, secrets ...*secret.Secret) (*Chart, error) {
 					}
 				}
 				if sec == nil {
-					return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}
 
 				v, err := template.Execute(val.Value, sec.Data)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 				val.ID = sec.GetID()
@@ -107,7 +108,54 @@ func Bind(chrt *Chart, secrets ...*secret.Secret) (*Chart, error) {
 			}
 		}
 	}
-	return chrt, nil
+	return nil
+}
+
+// Build constructs a specs based on the given spec.
+func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
+	doc, err := types.Marshal(sp)
+	if err != nil {
+		return nil, err
+	}
+
+	data := types.InterfaceOf(doc)
+
+	env := map[string][]spec.Value{}
+	for key, vals := range c.GetEnv() {
+		for _, val := range vals {
+			if val.ID == uuid.Nil && val.Name == "" {
+				v, err := template.Execute(val.Value, data)
+				if err != nil {
+					return nil, err
+				}
+				val.Value = v
+			}
+			env[key] = append(env[key], spec.Value{Value: val.Value})
+		}
+	}
+
+	specs := make([]spec.Spec, 0, len(c.GetSpecs()))
+	for _, sp := range c.GetSpecs() {
+		doc, err := types.Marshal(sp)
+		if err != nil {
+			return nil, err
+		}
+
+		unstructured := &spec.Unstructured{}
+		if err := types.Unmarshal(doc, unstructured); err != nil {
+			return nil, err
+		}
+
+		unstructured.SetEnv(env)
+
+		bind, err := spec.Bind(unstructured)
+		if err != nil {
+			return nil, err
+		}
+
+		specs = append(specs, bind)
+	}
+	return specs, nil
 }
 
 // GetID returns the chart's ID.

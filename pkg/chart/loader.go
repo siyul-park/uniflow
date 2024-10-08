@@ -65,7 +65,7 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 
 	var errs []error
 	for _, chrt := range charts {
-		if chrt, err := Bind(chrt, secrets...); err != nil {
+		if err := chrt.Bind(secrets...); err != nil {
 			errs = append(errs, err)
 		} else if err := l.table.Insert(chrt); err != nil {
 			errs = append(errs, err)
