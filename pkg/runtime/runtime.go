@@ -5,12 +5,14 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"golang.org/x/exp/slices"
 )
 
 // Config defines configuration options for the Runtime.
@@ -18,20 +20,25 @@ type Config struct {
 	Namespace   string         // Namespace defines the isolated execution environment for workflows.
 	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
 	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	SpecStore   spec.Store     // SpecStore is responsible for persisting specifications.
-	SecretStore secret.Store   // SecretStore is responsible for persisting secrets.
+	ChartStore  chart.Store
+	SpecStore   spec.Store   // SpecStore is responsible for persisting specifications.
+	SecretStore secret.Store // SecretStore is responsible for persisting secrets.
 }
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace    string
 	scheme       *scheme.Scheme
+	chartStore   chart.Store
 	specStore    spec.Store
 	secretStore  secret.Store
+	chartStream  chart.Stream
 	specStream   spec.Stream
 	secretStream secret.Stream
 	symbolTable  *symbol.Table
 	symbolLoader *symbol.Loader
+	chartTable   *chart.Table
+	chartLoader  *chart.Loader
 	mu           sync.RWMutex
 }
 
@@ -46,6 +53,9 @@ func New(config Config) *Runtime {
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
 	}
+	if config.ChartStore == nil {
+		config.ChartStore = chart.NewStore()
+	}
 	if config.SpecStore == nil {
 		config.SpecStore = spec.NewStore()
 	}
@@ -58,19 +68,44 @@ func New(config Config) *Runtime {
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 	symbolLoader := symbol.NewLoader(symbol.LoaderConfig{
+		Table:       symbolTable,
 		Scheme:      config.Scheme,
 		SpecStore:   config.SpecStore,
 		SecretStore: config.SecretStore,
-		Table:       symbolTable,
 	})
+
+	chartLinker := chart.NewLinker(chart.LinkerConfig{
+		Hook:   config.Hook,
+		Scheme: config.Scheme,
+	})
+	chartTable := chart.NewTable(chart.TableOption{
+		LoadHooks:   []chart.LoadHook{chartLinker},
+		UnloadHooks: []chart.UnloadHook{chartLinker},
+	})
+	chartLoader := chart.NewLoader(chart.LoaderConfig{
+		Table:       chartTable,
+		ChartStore:  config.ChartStore,
+		SecretStore: config.SecretStore,
+	})
+
+	for _, kind := range config.Scheme.Kinds() {
+		chartTable.Insert(&chart.Chart{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: config.Namespace,
+			Name:      kind,
+		})
+	}
 
 	return &Runtime{
 		namespace:    config.Namespace,
 		scheme:       config.Scheme,
+		chartStore:   config.ChartStore,
 		specStore:    config.SpecStore,
 		secretStore:  config.SecretStore,
 		symbolTable:  symbolTable,
 		symbolLoader: symbolLoader,
+		chartTable:   chartTable,
+		chartLoader:  chartLoader,
 	}
 }
 
@@ -83,6 +118,17 @@ func (r *Runtime) Load(ctx context.Context) error {
 func (r *Runtime) Watch(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if r.chartStream != nil {
+		if err := r.chartStream.Close(); err != nil {
+			return err
+		}
+	}
+	chartStream, err := r.chartStore.Watch(ctx, &chart.Chart{Namespace: r.namespace})
+	if err != nil {
+		return err
+	}
+	r.chartStream = chartStream
 
 	if r.specStream != nil {
 		if err := r.specStream.Close(); err != nil {
@@ -113,12 +159,13 @@ func (r *Runtime) Watch(ctx context.Context) error {
 func (r *Runtime) Reconcile(ctx context.Context) error {
 	r.mu.RLock()
 
+	chartStream := r.chartStream
 	specStream := r.specStream
 	secretStream := r.secretStream
 
 	r.mu.RUnlock()
 
-	if specStream == nil || secretStream == nil {
+	if chartStream == nil || specStream == nil || secretStream == nil {
 		return nil
 	}
 
@@ -128,6 +175,48 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case event, ok := <-chartStream.Next():
+			if !ok {
+				return nil
+			}
+
+			charts, err := r.chartStore.Load(ctx, &chart.Chart{ID: event.ID})
+			if err != nil {
+				return err
+			}
+			if len(charts) == 0 {
+				if chrt := r.chartTable.Lookup(event.ID); chrt != nil {
+					charts = append(charts, chrt)
+				} else {
+					charts = append(charts, &chart.Chart{ID: event.ID})
+				}
+			}
+
+			for _, chrt := range charts {
+				r.chartLoader.Load(ctx, chrt)
+			}
+
+			kinds := make([]string, 0, len(charts))
+			for _, chrt := range charts {
+				kinds = append(kinds, chrt.GetName())
+			}
+
+			for _, id := range r.symbolTable.Keys() {
+				sb := r.symbolTable.Lookup(id)
+				if sb != nil && slices.Contains(kinds, sb.Kind()) {
+					r.symbolTable.Free(sb.ID())
+					unloaded[sb.ID()] = sb.Spec
+				}
+			}
+			for _, sp := range unloaded {
+				if slices.Contains(kinds, sp.GetKind()) {
+					if err := r.symbolLoader.Load(ctx, sp); err != nil {
+						unloaded[sp.GetID()] = sp
+					} else {
+						delete(unloaded, sp.GetID())
+					}
+				}
+			}
 		case event, ok := <-specStream.Next():
 			if !ok {
 				return nil
@@ -138,7 +227,9 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				return err
 			}
 			if len(specs) == 0 {
-				specs = append(specs, &spec.Meta{ID: event.ID})
+				if sb := r.symbolTable.Lookup(event.ID); sb != nil {
+					specs = append(specs, sb.Spec)
+				}
 			}
 
 			for _, sp := range specs {
@@ -165,7 +256,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
 				if sb != nil && spec.IsBound(sb.Spec, secrets...) {
-					bounded[sb.Spec.GetID()] = sb.Spec
+					bounded[sb.ID()] = sb.Spec
 				}
 			}
 			for _, sp := range unloaded {

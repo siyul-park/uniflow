@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/agent"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -30,11 +30,13 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
+	chartStore := chart.NewStore()
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
 
 	r := New(Config{
 		Scheme:      s,
+		ChartStore:  chartStore,
 		SpecStore:   specStore,
 		SecretStore: secretStore,
 	})
@@ -53,23 +55,18 @@ func TestRuntime_Load(t *testing.T) {
 }
 
 func TestRuntime_Reconcile(t *testing.T) {
-	t.Run("ReconcileLoadedSpec", func(t *testing.T) {
+	t.Run("Chart", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
 		s := scheme.New()
 		kind := faker.UUIDHyphenated()
 
-		s.AddKnownType(kind, &spec.Meta{})
-		s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-			return node.NewOneToOneNode(nil), nil
-		}))
-
+		chartStore := chart.NewStore()
 		specStore := spec.NewStore()
 		secretStore := secret.NewStore()
 
 		h := hook.New()
-
 		symbols := make(chan *symbol.Symbol)
 
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
@@ -84,6 +81,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		r := New(Config{
 			Scheme:      s,
 			Hook:        h,
+			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
 		})
@@ -94,31 +92,92 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		go r.Reconcile(ctx)
 
-		sec := &secret.Secret{
-			ID:   uuid.Must(uuid.NewV7()),
-			Data: faker.Word(),
-		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Value{
-				"key": {
-					{
-						ID:    sec.GetID(),
-						Value: "{{ . }}",
-					},
-				},
-			},
+		}
+		chrt := &chart.Chart{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      kind,
 		}
 
-		secretStore.Store(ctx, sec)
+		specStore.Store(ctx, meta)
+		chartStore.Store(ctx, chrt)
+
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
+
+		chartStore.Delete(ctx, chrt)
+
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
+	})
+
+	t.Run("Spec", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		s := scheme.New()
+		kind := faker.UUIDHyphenated()
+
+		s.AddKnownType(kind, &spec.Meta{})
+		s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
+			return node.NewOneToOneNode(nil), nil
+		}))
+
+		chartStore := chart.NewStore()
+		specStore := spec.NewStore()
+		secretStore := secret.NewStore()
+
+		h := hook.New()
+		symbols := make(chan *symbol.Symbol)
+
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+
+		r := New(Config{
+			Scheme:      s,
+			Hook:        h,
+			ChartStore:  chartStore,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+		})
+		defer r.Close()
+
+		err := r.Watch(ctx)
+		assert.NoError(t, err)
+
+		go r.Reconcile(ctx)
+
+		meta := &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+		}
+
 		specStore.Store(ctx, meta)
 
 		select {
 		case sb := <-symbols:
 			assert.Equal(t, meta.GetID(), sb.ID())
-			assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
 			return
@@ -135,7 +194,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}
 	})
 
-	t.Run("ReconcileLoadedSecret", func(t *testing.T) {
+	t.Run("Secret", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
@@ -147,20 +206,26 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
+		chartStore := chart.NewStore()
 		specStore := spec.NewStore()
 		secretStore := secret.NewStore()
 
 		h := hook.New()
+		symbols := make(chan *symbol.Symbol)
 
-		a := agent.New()
-		defer a.Close()
-
-		h.AddLoadHook(a)
-		h.AddUnloadHook(a)
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
 
 		r := New(Config{
 			Scheme:      s,
 			Hook:        h,
+			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
 		})
@@ -191,59 +256,23 @@ func TestRuntime_Reconcile(t *testing.T) {
 		specStore.Store(ctx, meta)
 		secretStore.Store(ctx, sec)
 
-		func() {
-			for {
-				select {
-				case <-ctx.Done():
-					assert.NoError(t, ctx.Err())
-					return
-				default:
-					if sb := a.Symbol(meta.GetID()); sb != nil {
-						if sec.Data == sb.Env()["key"][0].Value {
-							return
-						}
-					}
-
-				}
-			}
-		}()
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+			assert.Equal(t, sec.Data, sb.Env()["key"][0].Value)
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
 
 		secretStore.Delete(ctx, sec)
 
-		func() {
-			for {
-				select {
-				case <-ctx.Done():
-					assert.NoError(t, ctx.Err())
-					return
-				default:
-					if sb := a.Symbol(meta.GetID()); sb == nil {
-						return
-					}
-				}
-			}
-		}()
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+			return
+		}
 	})
-}
-
-func BenchmarkNewRuntime(b *testing.B) {
-	kind := faker.UUIDHyphenated()
-
-	s := scheme.New()
-	s.AddKnownType(kind, &spec.Meta{})
-	s.AddCodec(kind, scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
-
-	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
-
-	for i := 0; i < b.N; i++ {
-		r := New(Config{
-			Scheme:      s,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-		})
-		r.Close()
-	}
 }
