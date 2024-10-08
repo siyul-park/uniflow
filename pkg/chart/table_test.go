@@ -89,6 +89,29 @@ func TestTable_Lookup(t *testing.T) {
 	assert.Equal(t, chrt, tb.Lookup(chrt.GetID()))
 }
 
+func TestTable_Keys(t *testing.T) {
+	tb := NewTable()
+	defer tb.Close()
+
+	chrt := &Chart{
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+		Specs: []spec.Spec{
+			&spec.Meta{
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+		},
+	}
+
+	tb.Insert(chrt)
+
+	ids := tb.Keys()
+	assert.Contains(t, ids, chrt.GetID())
+}
+
 func TestTable_Hook(t *testing.T) {
 	loaded := 0
 	unloaded := 0

@@ -2,17 +2,21 @@ package chart
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/template"
 )
 
-// Chart defines how multiple nodes are combined into a cluster node.
+// Chart defines the structure that combines multiple nodes into a cluster node.
 type Chart struct {
 	// Unique identifier of the chart.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Logical grouping or environment.
 	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-	// Name of the chart or cluster node (required).
+	// Name of the chart or cluster node.
 	Name string `json:"name" bson:"name" yaml:"name" map:"name"`
 	// Additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
@@ -21,7 +25,7 @@ type Chart struct {
 	// Node connections within the chart.
 	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
 	// Sensitive configuration data or secrets.
-	Env map[string][]Secret `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
+	Env map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Port represents a connection point for a node.
@@ -34,8 +38,8 @@ type Port struct {
 	Port string `json:"port" bson:"port" yaml:"port" map:"port"`
 }
 
-// Secret represents a sensitive value for a node.
-type Secret struct {
+// Value represents a sensitive value for a node.
+type Value struct {
 	// Unique identifier of the secret.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Name of the secret.
@@ -45,6 +49,66 @@ type Secret struct {
 }
 
 var _ resource.Resource = (*Chart)(nil)
+
+// IsBound checks whether any of the secrets are bound to the chart.
+func IsBound(chrt *Chart, secrets ...*secret.Secret) bool {
+	for _, vals := range chrt.GetEnv() {
+		for _, val := range vals {
+			examples := make([]*secret.Secret, 0, 2)
+			if val.ID != uuid.Nil {
+				examples = append(examples, &secret.Secret{ID: val.ID})
+			}
+			if val.Name != "" {
+				examples = append(examples, &secret.Secret{Namespace: chrt.GetNamespace(), Name: val.Name})
+			}
+
+			for _, sec := range secrets {
+				if len(resource.Match(sec, examples...)) > 0 {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// Bind binds the chart's environment variables to the provided secrets.
+func Bind(chrt *Chart, secrets ...*secret.Secret) (*Chart, error) {
+	for _, vals := range chrt.GetEnv() {
+		for i, val := range vals {
+			if val.ID != uuid.Nil || val.Name != "" {
+				example := &secret.Secret{
+					ID:        val.ID,
+					Namespace: chrt.GetNamespace(),
+					Name:      val.Name,
+				}
+
+				var sec *secret.Secret
+				for _, s := range secrets {
+					if len(resource.Match(s, example)) > 0 {
+						sec = s
+						break
+					}
+				}
+				if sec == nil {
+					return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+				}
+
+				v, err := template.Execute(val.Value, sec.Data)
+				if err != nil {
+					return nil, err
+				}
+
+				val.ID = sec.GetID()
+				val.Name = sec.GetName()
+				val.Value = v
+
+				vals[i] = val
+			}
+		}
+	}
+	return chrt, nil
+}
 
 // GetID returns the chart's ID.
 func (c *Chart) GetID() uuid.UUID {
@@ -107,11 +171,11 @@ func (c *Chart) SetPorts(val map[string][]Port) {
 }
 
 // GetEnv returns the chart's environment data.
-func (c *Chart) GetEnv() map[string][]Secret {
+func (c *Chart) GetEnv() map[string][]Value {
 	return c.Env
 }
 
 // SetEnv sets the chart's environment data.
-func (c *Chart) SetEnv(val map[string][]Secret) {
+func (c *Chart) SetEnv(val map[string][]Value) {
 	c.Env = val
 }

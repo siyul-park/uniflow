@@ -72,6 +72,18 @@ func (t *Table) Lookup(id uuid.UUID) *Chart {
 	return t.charts[id]
 }
 
+// Keys returns all IDs of charts in the table.
+func (t *Table) Keys() []uuid.UUID {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	var ids []uuid.UUID
+	for id := range t.charts {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 // Close removes all charts from the table and unloads them.
 func (t *Table) Close() error {
 	t.mu.Lock()
