@@ -1,10 +1,10 @@
 # 📚 Key Concepts
 
-This guide provides detailed explanations of the key terms and concepts used in the system.
+This guide provides a detailed explanation of the key terms and concepts used within the system.
 
 ## Node Specification
 
-A node specification declaratively defines the behavior and connections of each node. The engine compiles this specification into executable nodes.
+A node specification declaratively define how each node operates and connects. The engine compiles these specifications into executable nodes.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01a
@@ -27,18 +27,18 @@ env:
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.
-- `kind`: Specifies the type of node. This example is a `listener`. Additional fields may vary based on the node type.
-- `namespace`: The namespace to which the node belongs; the default is `default`.
-- `name`: The name of the node, which must be unique within the namespace.
-- `annotations`: Additional metadata about the node, including user-defined key-value pairs like description and version.
-- `protocol`: Specifies the protocol used by the listener. This field is required for `listener` nodes.
-- `port`: Specifies the port used by the listener. This field is required for `listener` nodes.
-- `ports`: Defines the connection scheme of ports. `out` defines an output port named `proxy`, which connects to the `in` port of another node.
-- `env`: Specifies environment variables needed by the node. Here, `PORT` is dynamically set from a secret.
+- `kind`: Specifies the type of the node. Additional fields may vary based on the node type.
+- `namespace`: Specifies the namespace to which the node belongs, defaulting to `default`.
+- `name`: Specifies the name of the node, which must be unique within the same namespace.
+- `annotations`: Additional metadata for the node, including user-defined key-value pairs such as description and version.
+- `protocol`: Specifies the protocol used by the listener. This is an additional required field for nodes of the `listener` type.
+- `port`: Specifies the port used by the listener. This is an additional required field for nodes of the `listener` type.
+- `ports`: Defines how the ports are connected. `out` defines an output port named `proxy`, which connects to the `in` port of another node.
+- `env`: Specifies the environment variables required by the node. In this case, `PORT` is dynamically set from a secret.
 
 ## Secret
 
-A secret securely stores sensitive information needed by nodes, such as passwords and API keys.
+A secret securely store sensitive information needed by nodes, such as passwords and API keys.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
@@ -51,65 +51,100 @@ data:
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.
-- `namespace`: The namespace to which the secret belongs; the default is `default`.
-- `name`: The name of the secret, which must be unique within the namespace.
-- `annotations`: Additional metadata about the secret, including user-defined key-value pairs like description and version.
-- `data`: Contains the secret data in key-value pairs.
+- `namespace`: Specifies the namespace to which the secret belongs, defaulting to `default`.
+- `name`: Specifies the name of the secret, which must be unique within the same namespace.
+- `annotations`: Additional metadata for the secret, including user-defined key-value pairs such as description and version.
+- `data`: Contains the secret data structured as key-value pairs.
+
+## Chart
+
+A chart defines a node that combines multiple node specifications to perform more complex operations. Charts are used to set up interactions between nodes.
+
+```yaml
+id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
+namespace: default
+name: sqlite
+annotations:
+  version: "v1.0.0"
+specs:
+  - kind: sql
+    name: sql
+    driver: sqlite3
+    source: file::{{ .FILENAME }}:?cache=shared
+ports:
+  in:
+    - name: sql
+      port: in      
+  out:
+    - name: sql
+      port: out
+env:
+  FILENAME:
+      value: "{{ .filename }}"
+```
+
+- `id`: A unique identifier in UUID format. UUID V7 is recommended.
+- `namespace`: Specifies the namespace to which the chart belongs, defaulting to `default`.
+- `name`: Specifies the name of the chart, which must be unique within the same namespace. This name becomes the type of the node specification.
+- `annotations`: Additional metadata for the chart, including user-defined key-value pairs such as description and version.
+- `specs`: Defines the node specifications that make up the chart.
+- `ports`: Defines how the chart's ports connect. It specifies how external ports should connect to internal nodes.
+- `env`: Specifies the environment variables required by the chart. If `id` and `name` are empty, this is used as an argument for node specifications that utilize this chart.
 
 ## Node
 
-A node is an entity that processes data, exchanging packets through connected ports to execute workflows. Each node has an independent processing loop and communicates asynchronously with other nodes.
+A node is an object that processes data, executing workflows by sending and receiving packets through connected ports. Each node has its own independent processing loop and communicates asynchronously with other nodes.
 
-Nodes are classified based on their packet processing methods:
-- `ZeroToOne`: Generates initial packets to start a workflow.
-- `OneToOne`: Receives a packet from an input port, processes it, and sends it to an output port.
-- `OneToMany`: Receives a packet from an input port and sends it to multiple output ports.
-- `ManyToOne`: Receives packets from multiple input ports and sends a single packet to an output port.
-- `Other`: Includes nodes that manage state and interactions beyond simple packet forwarding.
+Nodes are classified based on how they process packets:
+- `ZeroToOne`: A node that generates an initial packet to start the workflow.
+- `OneToOne`: A node that receives packets from an input port, processes them, and sends them to an output port.
+- `OneToMany`: A node that receives packets from an input port and sends them to multiple output ports.
+- `ManyToOne`: A node that receives packets from multiple input ports and sends them to a single output port.
+- `Other`: A node that includes state management and interaction beyond simple packet forwarding.
 
 ## Port
 
-Ports are connection points for exchanging packets between nodes. There are two types of ports: `InPort` and `OutPort`. Packets sent to a port are delivered to all connected ports.
+Ports are connection points for sending and receiving packets between nodes. There are two types of ports: `InPort` and `OutPort`, and packets are transmitted by connecting them. A packet sent to one port is forwarded to all connected ports.
 
-Common port names include:
-- `init`: A special port used to initialize a node. When the node becomes available, workflows connected to the `init` port are executed.
-- `io`: Processes and immediately returns packets.
-- `in`: Receives packets for processing and sends results to `out` or `error`. If `out` or `error` ports are not connected, the result is returned directly.
-- `out`: Sends processed packets. The results can be sent back to another `in` port.
-- `error`: Sends packets containing error information. Error handling results can be sent back to an `in` port.
+Commonly used port names include:
+- `init`: A special port used to initialize nodes. When the node becomes available, the workflow connected to the `init` port executes.
+- `io`: Processes packets and returns them immediately.
+- `in`: Receives packets for processing and sends the results to `out` or `error`. If there are no connected `out` or `error` ports, the result is returned directly.
+- `out`: Sends processed packets. The transmitted result can be sent to other `in` ports.
+- `error`: Sends errors encountered during packet processing. Error handling results can be sent back to an `in` port.
 
-When multiple ports with the same role are needed, they can be expressed as `in[0]`, `in[1]`, `out[0]`, `out[1]`, etc.
+When multiple ports with the same role are needed, they are expressed as `in[0]`, `in[1]`, `out[0]`, `out[1]`, etc.
 
 ## Packet
 
-A packet is a unit of data exchanged between ports. Each packet contains a payload, which nodes process and transmit.
+A packet is a unit of data exchanged between ports. Each packet includes a payload, which the node processes before transmission.
 
-Nodes must return response packets in the order of received request packets. When connected to multiple ports, all response packets are collected and returned as a new response packet.
+Nodes must return response packets in the order of the request packets. If connected to multiple ports, all response packets are gathered and returned as a single new response packet.
 
-A special `None` packet indicates no response, simply acknowledging the packet's acceptance.
+A special `None` packet indicates that there is no response, merely indicating that the packet was accepted.
 
 ## Process
 
-A process is the fundamental unit of execution, managed independently. Processes can have parent processes, and when a parent process terminates, its child processes also terminate.
+A process is the basic unit of execution, managed independently. A process may have a parent process, and when the parent terminates, the child process also terminates.
 
-Processes have their own storage to retain values that are difficult to transmit via packets. This storage operates using a Copy-On-Write (COW) mechanism to efficiently share data from parent processes.
+Processes maintain their own storage to store values that are difficult to transmit as packets. This storage operates on a Copy-On-Write (COW) basis, efficiently sharing data from the parent process.
 
-A new workflow begins by creating a process. When a process ends, all resources used by it are released.
+A new workflow is initiated by creating a process. When the process terminates, all resources used are released.
 
-Processes can have multiple root packets, but root packets must originate from the same node. If they come from different nodes, a new child process must be created to handle them.
+Processes can have two or more root packets, but the root packets must be generated by the same node. If generated by different nodes, a new child process must be created to handle them.
 
 ## Workflow
 
-A workflow is defined as a directed graph with multiple interconnected nodes. Each node processes data, and packets flow between nodes.
+A workflow is defined as a directed graph, a structure where multiple nodes are interconnected. In this graph, each node is responsible for data processing, and packets are transmitted between nodes.
 
-Workflows consist of multiple stages, with data processed and transmitted according to defined rules at each stage. Data can be processed sequentially or in parallel during this process.
+Workflows consist of multiple stages, where data is processed and passed according to defined rules. In this process, data can be processed sequentially or in parallel.
 
-For example, given initial data, it is processed by the first node and then forwarded to the next node. Each node receives input, processes it, and sends the processed result to the next stage.
+For example, given initial data, it is processed by the first node before being passed to the next node. Each node receives input, processes it, and sends the result to the next stage.
 
 ## Namespace
 
-A namespace manages workflows in isolation, providing an independent execution environment. Each namespace can contain multiple workflows, and nodes within a namespace cannot reference nodes from another namespace. Each namespace independently manages its data and resources.
+A namespace serves to isolate and manage workflows, offering independent execution environments. It can house multiple workflows, ensuring that nodes within a namespace cannot reference nodes from other namespaces. Each namespace independently manages its own data and resources, allowing for streamlined operations and clear boundaries between workflows.
 
 ## Runtime Environment
 
-A runtime environment is an independent space where each namespace is executed. The engine loads all nodes within the namespace to build the environment and execute workflows. This prevents conflicts during workflow execution and ensures a stable execution environment.
+The runtime environment provides an independent execution context for each namespace, ensuring that workflows within namespaces operate without interference. This environment includes the necessary resources and configurations for the execution of nodes and processes, facilitating the smooth operation of workflows within the system.

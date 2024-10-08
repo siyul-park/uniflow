@@ -111,6 +111,9 @@ func New(config Config) *Runtime {
 
 // Load loads symbols from the spec store into the symbol table.
 func (r *Runtime) Load(ctx context.Context) error {
+	if err := r.chartLoader.Load(ctx, &chart.Chart{Namespace: r.namespace}); err != nil {
+		return err
+	}
 	return r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace})
 }
 
