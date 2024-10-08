@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -11,6 +12,7 @@ import (
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
+	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
 	FS          afero.Fs
@@ -22,7 +24,7 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		Use:       "delete",
 		Short:     "Delete resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argNodes, argSecrets},
+		ValidArgs: []string{argCharts, argNodes, argSecrets},
 		RunE:      runDeleteCommand(config),
 	}
 
@@ -54,6 +56,20 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 		reader := resource.NewReader(file)
 
 		switch args[0] {
+		case argCharts:
+			var charts []*chart.Chart
+			if err := reader.Read(&charts); err != nil {
+				return err
+			}
+
+			for _, chrt := range charts {
+				if chrt.GetNamespace() == "" {
+					chrt.SetNamespace(namespace)
+				}
+			}
+
+			_, err := config.ChartStore.Delete(ctx, charts...)
+			return err
 		case argNodes:
 			var specs []spec.Spec
 			if err := reader.Read(&specs); err != nil {
@@ -68,7 +84,6 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 			_, err := config.SpecStore.Delete(ctx, specs...)
 			return err
-
 		case argSecrets:
 			var secrets []*secret.Secret
 			if err := reader.Read(&secrets); err != nil {

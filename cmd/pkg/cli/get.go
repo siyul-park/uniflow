@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -10,6 +11,7 @@ import (
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
+	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
 }
