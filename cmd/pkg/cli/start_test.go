@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,6 +40,43 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
+
+	t.Run(flagDebug, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		output := new(bytes.Buffer)
+
+		cmd := NewStartCommand(StartConfig{
+			Scheme:      s,
+			Hook:        h,
+			FS:          fs,
+			ChartStore:  chartStore,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetContext(ctx)
+
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagDebug)})
+
+		go func() {
+			_ = cmd.Execute()
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				assert.Fail(t, ctx.Err().Error())
+				return
+			default:
+				if strings.Contains(output.String(), "debug") {
+					return
+				}
+			}
+		}
+	})
 
 	t.Run(flagFromCharts, func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)

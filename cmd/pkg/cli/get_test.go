@@ -8,7 +8,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/chart"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
@@ -24,9 +23,8 @@ func TestGetCommand_Execute(t *testing.T) {
 		defer cancel()
 
 		chrt := &chart.Chart{
-			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
-			Name:      faker.Word(),
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.Word(),
 		}
 
 		_, err := chartStore.Store(ctx, chrt)
@@ -56,9 +54,8 @@ func TestGetCommand_Execute(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
-			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
+			Kind: kind,
+			Name: faker.UUIDHyphenated(),
 		}
 
 		_, err := specStore.Store(ctx, meta)
@@ -86,9 +83,8 @@ func TestGetCommand_Execute(t *testing.T) {
 		defer cancel()
 
 		scrt := &secret.Secret{
-			Namespace: resource.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
-			Data:      faker.Word(),
+			Name: faker.UUIDHyphenated(),
+			Data: faker.Word(),
 		}
 
 		_, err := secretStore.Store(ctx, scrt)

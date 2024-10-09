@@ -87,7 +87,7 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 			}
 			if !ok {
 				if _, err := l.table.Free(id); err != nil {
-					return err
+					errs = append(errs, err)
 				}
 			}
 		}
