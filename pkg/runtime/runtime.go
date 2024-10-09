@@ -202,7 +202,6 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				sb := r.symbolTable.Lookup(id)
 				if sb != nil && slices.Contains(kinds, sb.Kind()) {
 					bounded[sb.ID()] = sb.Spec
-					r.symbolTable.Free(sb.ID())
 				}
 			}
 			for _, sp := range unloaded {
@@ -211,15 +210,17 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				}
 			}
 
+			for _, sp := range bounded {
+				r.symbolTable.Free(sp.GetID())
+			}
+
 			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
 
 			for _, sp := range bounded {
-				if slices.Contains(kinds, sp.GetKind()) {
-					if err := r.symbolLoader.Load(ctx, sp); err != nil {
-						unloaded[sp.GetID()] = sp
-					} else {
-						delete(unloaded, sp.GetID())
-					}
+				if err := r.symbolLoader.Load(ctx, sp); err != nil {
+					unloaded[sp.GetID()] = sp
+				} else {
+					delete(unloaded, sp.GetID())
 				}
 			}
 		case event, ok := <-specStream.Next():
