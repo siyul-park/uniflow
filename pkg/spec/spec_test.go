@@ -59,7 +59,7 @@ func TestBind(t *testing.T) {
 	assert.True(t, IsBound(bind, scrt))
 }
 
-func TestMeta_GetSet(t *testing.T) {
+func TestMeta_Get(t *testing.T) {
 	meta := &Meta{
 		ID:          uuid.Must(uuid.NewV7()),
 		Kind:        faker.Word(),

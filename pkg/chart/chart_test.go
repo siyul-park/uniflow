@@ -92,7 +92,7 @@ func TestChart_Build(t *testing.T) {
 	assert.Len(t, specs, 1)
 }
 
-func TestChart_GetSet(t *testing.T) {
+func TestChart_Get(t *testing.T) {
 	chrt := &Chart{
 		ID:          uuid.Must(uuid.NewV7()),
 		Namespace:   "default",

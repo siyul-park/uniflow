@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecret_GetSet(t *testing.T) {
+func TestSecret_Get(t *testing.T) {
 	scrt := &Secret{
 		ID:          uuid.Must(uuid.NewV7()),
 		Namespace:   "default",
