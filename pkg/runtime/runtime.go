@@ -75,12 +75,13 @@ func New(config Config) *Runtime {
 	})
 
 	chartLinker := chart.NewLinker(chart.LinkerConfig{
-		Hook:   config.Hook,
-		Scheme: config.Scheme,
+		LoadHooks:   []symbol.LoadHook{config.Hook},
+		UnloadHooks: []symbol.UnloadHook{config.Hook},
+		Scheme:      config.Scheme,
 	})
 	chartTable := chart.NewTable(chart.TableOption{
-		LoadHooks:   []chart.LoadHook{chartLinker},
-		UnloadHooks: []chart.UnloadHook{chartLinker},
+		LinkHooks:   []chart.LinkHook{chartLinker, config.Hook},
+		UnlinkHooks: []chart.UnlinkHook{chartLinker, config.Hook},
 	})
 	chartLoader := chart.NewLoader(chart.LoaderConfig{
 		Table:       chartTable,

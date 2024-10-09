@@ -3,41 +3,43 @@ package chart
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// LinkerConfig holds the hook and scheme configuration.
+// LinkerConfig holds the configuration for the linker, including the scheme and hooks for loading/unloading symbols.
 type LinkerConfig struct {
-	Hook   *hook.Hook     // Manages symbol lifecycle events.
-	Scheme *scheme.Scheme // Defines symbol and node behavior.
+	Scheme      *scheme.Scheme      // Specifies the scheme, which defines symbol and node behavior.
+	LoadHooks   []symbol.LoadHook   // A list of hooks to be executed when symbols are loaded.
+	UnloadHooks []symbol.UnloadHook // A list of hooks to be executed when symbols are unloaded.
 }
 
 // Linker manages chart loading and unloading.
 type Linker struct {
-	hook   *hook.Hook
-	scheme *scheme.Scheme
-	codecs map[string]scheme.Codec
-	mu     sync.RWMutex
+	scheme      *scheme.Scheme
+	codecs      map[string]scheme.Codec
+	loadHooks   []symbol.LoadHook
+	unloadHooks []symbol.UnloadHook
+	mu          sync.RWMutex
 }
 
-var _ LoadHook = (*Linker)(nil)
-var _ UnloadHook = (*Linker)(nil)
+var _ LinkHook = (*Linker)(nil)
+var _ UnlinkHook = (*Linker)(nil)
 
 // NewLinker creates a new Linker.
 func NewLinker(config LinkerConfig) *Linker {
 	return &Linker{
-		hook:   config.Hook,
-		scheme: config.Scheme,
-		codecs: make(map[string]scheme.Codec),
+		scheme:      config.Scheme,
+		codecs:      make(map[string]scheme.Codec),
+		loadHooks:   config.LoadHooks,
+		unloadHooks: config.UnloadHooks,
 	}
 }
 
-// Load loads the chart, creating nodes and symbols.
-func (l *Linker) Load(chrt *Chart) error {
+// Link loads the chart, creating nodes and symbols.
+func (l *Linker) Link(chrt *Chart) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -70,16 +72,9 @@ func (l *Linker) Load(chrt *Chart) error {
 			})
 		}
 
-		var loadHooks []symbol.LoadHook
-		var unloadHook []symbol.UnloadHook
-		if l.hook != nil {
-			loadHooks = append(loadHooks, l.hook)
-			unloadHook = append(unloadHook, l.hook)
-		}
-
 		table := symbol.NewTable(symbol.TableOption{
-			LoadHooks:   loadHooks,
-			UnloadHooks: unloadHook,
+			LoadHooks:   l.loadHooks,
+			UnloadHooks: l.unloadHooks,
 		})
 
 		for _, sb := range symbols {
@@ -118,8 +113,8 @@ func (l *Linker) Load(chrt *Chart) error {
 	return nil
 }
 
-// Unload removes the chart from the scheme.
-func (l *Linker) Unload(chrt *Chart) error {
+// Unlink removes the chart from the scheme.
+func (l *Linker) Unlink(chrt *Chart) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

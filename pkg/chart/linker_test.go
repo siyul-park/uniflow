@@ -65,7 +65,7 @@ func TestLinker_Load(t *testing.T) {
 		Namespace: resource.DefaultNamespace,
 	}
 
-	err := l.Load(chrt)
+	err := l.Link(chrt)
 	assert.NoError(t, err)
 	assert.Contains(t, s.Kinds(), chrt.GetName())
 
@@ -88,9 +88,9 @@ func TestLinker_Unload(t *testing.T) {
 		Specs:     []spec.Spec{},
 	}
 
-	l.Load(chrt)
+	l.Link(chrt)
 
-	err := l.Unload(chrt)
+	err := l.Unlink(chrt)
 	assert.NoError(t, err)
 	assert.NotContains(t, s.Kinds(), chrt.GetName())
 }

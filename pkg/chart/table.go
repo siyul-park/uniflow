@@ -9,8 +9,8 @@ import (
 
 // TableOption holds configurations for a Table instance.
 type TableOption struct {
-	LoadHooks   []LoadHook   // LoadHooks are functions executed when symbols are loaded.
-	UnloadHooks []UnloadHook // UnloadHooks are functions executed when symbols are unloaded.
+	LinkHooks   []LinkHook   // LoadHooks are functions executed when symbols are loaded.
+	UnlinkHooks []UnlinkHook // UnloadHooks are functions executed when symbols are unloaded.
 }
 
 // Table manages charts and their references, allowing insertion, lookup, and removal.
@@ -18,26 +18,26 @@ type Table struct {
 	charts      map[uuid.UUID]*Chart
 	namespaces  map[string]map[string]uuid.UUID
 	refences    map[uuid.UUID][]uuid.UUID
-	loadHooks   LoadHooks
-	unloadHooks UnloadHooks
+	linkHooks   LinkHooks
+	unlinkHooks UnlinkHooks
 	mu          sync.RWMutex
 }
 
 // NewTable creates and returns a new Table instance with the provided options.
 func NewTable(opts ...TableOption) *Table {
-	var loadHooks []LoadHook
-	var unloadHooks []UnloadHook
+	var linkHooks []LinkHook
+	var unlinkHooks []UnlinkHook
 	for _, opt := range opts {
-		loadHooks = append(loadHooks, opt.LoadHooks...)
-		unloadHooks = append(unloadHooks, opt.UnloadHooks...)
+		linkHooks = append(linkHooks, opt.LinkHooks...)
+		unlinkHooks = append(unlinkHooks, opt.UnlinkHooks...)
 	}
 
 	return &Table{
 		charts:      make(map[uuid.UUID]*Chart),
 		namespaces:  make(map[string]map[string]uuid.UUID),
 		refences:    make(map[uuid.UUID][]uuid.UUID),
-		loadHooks:   loadHooks,
-		unloadHooks: unloadHooks,
+		linkHooks:   linkHooks,
+		unlinkHooks: unlinkHooks,
 	}
 }
 
@@ -150,7 +150,7 @@ func (t *Table) load(chrt *Chart) error {
 	linked := t.linked(chrt)
 	for _, sb := range linked {
 		if t.active(sb) {
-			if err := t.loadHooks.Load(sb); err != nil {
+			if err := t.linkHooks.Link(sb); err != nil {
 				return err
 			}
 		}
@@ -163,7 +163,7 @@ func (t *Table) unload(chrt *Chart) error {
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
 		if t.active(sb) {
-			if err := t.unloadHooks.Unload(sb); err != nil {
+			if err := t.unlinkHooks.Unlink(sb); err != nil {
 				return err
 			}
 		}

@@ -150,14 +150,14 @@ func TestTable_Hook(t *testing.T) {
 	unloaded := 0
 
 	tb := NewTable(TableOption{
-		LoadHooks: []LoadHook{
-			LoadFunc(func(_ *Chart) error {
+		LinkHooks: []LinkHook{
+			LinkFunc(func(_ *Chart) error {
 				loaded += 1
 				return nil
 			}),
 		},
-		UnloadHooks: []UnloadHook{
-			UnloadFunc(func(_ *Chart) error {
+		UnlinkHooks: []UnlinkHook{
+			UnlinkFunc(func(_ *Chart) error {
 				unloaded += 1
 				return nil
 			}),
