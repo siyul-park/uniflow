@@ -32,6 +32,7 @@ func NewLoader(config LoaderConfig) *Loader {
 	}
 }
 
+// Load loads charts and binds them with secrets, then inserts them into the table.
 func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 	examples := charts
 
