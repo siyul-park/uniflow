@@ -43,6 +43,7 @@ func (l *Linker) Load(chrt *Chart) error {
 
 	kind := chrt.GetName()
 	codec := l.codecs[kind]
+
 	if l.scheme.Codec(kind) != codec {
 		return nil
 	}
@@ -96,7 +97,7 @@ func (l *Linker) Load(chrt *Chart) error {
 		for name, ports := range chrt.GetPorts() {
 			for _, port := range ports {
 				for _, sb := range symbols {
-					if sb.ID() == port.ID || sb.Name() == port.Name {
+					if port.Name == "" || sb.ID() == port.ID || sb.Name() == port.Name {
 						if in := sb.In(port.Port); in != nil {
 							n.Inbound(name, in)
 						}
@@ -124,6 +125,7 @@ func (l *Linker) Unload(chrt *Chart) error {
 
 	kind := chrt.GetName()
 	codec := l.codecs[kind]
+
 	if l.scheme.Codec(kind) != codec {
 		return nil
 	}

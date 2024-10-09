@@ -64,23 +64,22 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 	}
 
 	var errs []error
+	loaded := make([]*Chart, 0, len(charts))
 	for _, chrt := range charts {
 		if err := chrt.Bind(secrets...); err != nil {
 			errs = append(errs, err)
 		} else if err := l.table.Insert(chrt); err != nil {
 			errs = append(errs, err)
+		} else {
+			loaded = append(loaded, chrt)
 		}
-	}
-
-	if len(errs) > 0 {
-		charts = nil
 	}
 
 	for _, id := range l.table.Keys() {
 		chrt := l.table.Lookup(id)
 		if chrt != nil && len(resource.Match(chrt, examples...)) > 0 {
 			ok := false
-			for _, c := range charts {
+			for _, c := range loaded {
 				if c.GetID() == id {
 					ok = true
 					break

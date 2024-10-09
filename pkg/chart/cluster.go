@@ -37,16 +37,26 @@ func (n *ClusterNode) Inbound(name string, prt *port.InPort) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	inPort := port.NewIn()
-	outPort := port.NewOut()
+	inPort, ok1 := n.inPorts[name]
+	if !ok1 {
+		inPort = port.NewIn()
+		n.inPorts[name] = inPort
+	}
 
-	n.inPorts[name] = inPort
-	n._outPorts[name] = outPort
+	outPort, ok2 := n._outPorts[name]
+	if !ok2 {
+		outPort = port.NewOut()
+		n._outPorts[name] = outPort
+	}
+
+	if !ok1 {
+		inPort.AddListener(n.inbound(inPort, outPort))
+	}
+	if !ok2 {
+		outPort.AddListener(n.outbound(inPort, outPort))
+	}
 
 	outPort.Link(prt)
-
-	inPort.AddListener(n.inbound(inPort, outPort))
-	outPort.AddListener(n.outbound(inPort, outPort))
 }
 
 // Outbound sets up an output port and links it to the provided port.
@@ -54,16 +64,26 @@ func (n *ClusterNode) Outbound(name string, prt *port.OutPort) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	inPort := port.NewIn()
-	outPort := port.NewOut()
+	inPort, ok1 := n._inPorts[name]
+	if !ok1 {
+		inPort = port.NewIn()
+		n._inPorts[name] = inPort
+	}
 
-	n._inPorts[name] = inPort
-	n.outPorts[name] = outPort
+	outPort, ok2 := n.outPorts[name]
+	if !ok2 {
+		outPort = port.NewOut()
+		n.outPorts[name] = outPort
+	}
+
+	if !ok1 {
+		inPort.AddListener(n.inbound(inPort, outPort))
+	}
+	if !ok2 {
+		outPort.AddListener(n.outbound(inPort, outPort))
+	}
 
 	prt.Link(inPort)
-
-	inPort.AddListener(n.inbound(inPort, outPort))
-	outPort.AddListener(n.outbound(inPort, outPort))
 }
 
 // In returns the input port by name.

@@ -64,7 +64,7 @@ var _ resource.Resource = (*Chart)(nil)
 
 // IsBound checks whether any of the secrets are bound to the chart.
 func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
-	for _, vals := range c.GetEnv() {
+	for _, vals := range c.Env {
 		for _, val := range vals {
 			examples := make([]*secret.Secret, 0, 2)
 			if val.ID != uuid.Nil {
@@ -86,7 +86,7 @@ func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
 
 // Bind binds the chart's environment variables to the provided secrets.
 func (c *Chart) Bind(secrets ...*secret.Secret) error {
-	for _, vals := range c.GetEnv() {
+	for _, vals := range c.Env {
 		for i, val := range vals {
 			if val.ID != uuid.Nil || val.Name != "" {
 				example := &secret.Secret{
@@ -132,7 +132,7 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 	data := types.InterfaceOf(doc)
 
 	env := map[string][]spec.Value{}
-	for key, vals := range c.GetEnv() {
+	for key, vals := range c.Env {
 		for _, val := range vals {
 			if val.ID == uuid.Nil && val.Name == "" {
 				v, err := template.Execute(val.Value, data)
@@ -145,8 +145,8 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 		}
 	}
 
-	specs := make([]spec.Spec, 0, len(c.GetSpecs()))
-	for _, sp := range c.GetSpecs() {
+	specs := make([]spec.Spec, 0, len(c.Specs))
+	for _, sp := range c.Specs {
 		doc, err := types.Marshal(sp)
 		if err != nil {
 			return nil, err
