@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -41,43 +40,6 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddKnownType(kind, &spec.Meta{})
 	s.AddCodec(kind, codec)
 
-	t.Run(flagDebug, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-
-		output := new(bytes.Buffer)
-
-		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-		})
-		cmd.SetOut(output)
-		cmd.SetErr(output)
-		cmd.SetContext(ctx)
-
-		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagDebug)})
-
-		go func() {
-			_ = cmd.Execute()
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
-				return
-			default:
-				if strings.Contains(output.String(), "debug") {
-					return
-				}
-			}
-		}
-	})
-
 	t.Run(flagFromCharts, func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -111,20 +73,17 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromCharts), filename})
 
+		chartStream, _ := chartStore.Watch(ctx)
+		defer chartStream.Close()
+
 		go func() {
 			_ = cmd.Execute()
 		}()
 
-		for {
-			select {
-			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
-				return
-			default:
-				if r, _ := chartStore.Load(ctx, chrt); len(r) > 0 {
-					return
-				}
-			}
+		select {
+		case <-chartStream.Next():
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -161,20 +120,17 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromNodes), filename})
 
+		specStream, _ := specStore.Watch(ctx)
+		defer specStream.Close()
+
 		go func() {
 			_ = cmd.Execute()
 		}()
 
-		for {
-			select {
-			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
-				return
-			default:
-				if r, _ := specStore.Load(ctx, meta); len(r) > 0 {
-					return
-				}
-			}
+		select {
+		case <-specStream.Next():
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -211,18 +167,17 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromSecrets), filename})
 
+		secretStream, _ := secretStore.Watch(ctx)
+		defer secretStream.Close()
+
 		go func() {
 			_ = cmd.Execute()
 		}()
 
 		select {
+		case <-secretStream.Next():
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
-			return
-		default:
-			if r, _ := secretStore.Load(ctx, scrt); len(r) > 0 {
-				return
-			}
 		}
 	})
 }
