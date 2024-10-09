@@ -7,16 +7,24 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
-// Codec defines the interface for decoding spec.Spec into a node.Node.
+// Codec defines the interface for converting a spec.Spec into a node.Node.
 type Codec interface {
-	// Compile compiles the given spec.Spec into a node.Node.
+	// Compile converts the given spec.Spec into a node.Node.
 	Compile(sp spec.Spec) (node.Node, error)
 }
 
-// CodecFunc represents a function type that implements the Codec interface.
-type CodecFunc func(sp spec.Spec) (node.Node, error)
+type codec struct {
+	compile func(sp spec.Spec) (node.Node, error)
+}
 
-// CodecWithType creates a new CodecFunc for the specified type T.
+var _ Codec = (*codec)(nil)
+
+// CodecFunc takes a compile function and returns a struct that implements the Codec interface.
+func CodecFunc(compile func(sp spec.Spec) (node.Node, error)) Codec {
+	return &codec{compile: compile}
+}
+
+// CodecWithType creates a Codec that works with a specific type T.
 func CodecWithType[T spec.Spec](compile func(spec T) (node.Node, error)) Codec {
 	return CodecFunc(func(spec spec.Spec) (node.Node, error) {
 		if converted, ok := spec.(T); ok {
@@ -26,7 +34,6 @@ func CodecWithType[T spec.Spec](compile func(spec T) (node.Node, error)) Codec {
 	})
 }
 
-// Compile implements the Compile method for CodecFunc.
-func (f CodecFunc) Compile(sp spec.Spec) (node.Node, error) {
-	return f(sp)
+func (c *codec) Compile(sp spec.Spec) (node.Node, error) {
+	return c.compile(sp)
 }

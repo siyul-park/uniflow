@@ -20,9 +20,9 @@ type Config struct {
 	Namespace   string         // Namespace defines the isolated execution environment for workflows.
 	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
 	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	ChartStore  chart.Store
-	SpecStore   spec.Store   // SpecStore is responsible for persisting specifications.
-	SecretStore secret.Store // SecretStore is responsible for persisting secrets.
+	ChartStore  chart.Store    // ChartStore is responsible for persisting charts.
+	SpecStore   spec.Store     // SpecStore is responsible for persisting specifications.
+	SecretStore secret.Store   // SecretStore is responsible for persisting secrets.
 }
 
 // Runtime represents an environment for executing Workflows.
@@ -183,20 +183,13 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			charts, err := r.chartStore.Load(ctx, &chart.Chart{ID: event.ID})
-			if err != nil {
-				return err
-			}
+			charts := r.chartTable.Links(event.ID)
 			if len(charts) == 0 {
-				if chrt := r.chartTable.Lookup(event.ID); chrt != nil {
-					charts = append(charts, chrt)
-				} else {
-					charts = append(charts, &chart.Chart{ID: event.ID})
+				var err error
+				charts, err = r.chartStore.Load(ctx, &chart.Chart{ID: event.ID})
+				if err != nil {
+					return err
 				}
-			}
-
-			for _, chrt := range charts {
-				r.chartLoader.Load(ctx, chrt)
 			}
 
 			kinds := make([]string, 0, len(charts))
@@ -204,14 +197,23 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				kinds = append(kinds, chrt.GetName())
 			}
 
+			bounded := make(map[uuid.UUID]spec.Spec)
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
 				if sb != nil && slices.Contains(kinds, sb.Kind()) {
+					bounded[sb.ID()] = sb.Spec
 					r.symbolTable.Free(sb.ID())
-					unloaded[sb.ID()] = sb.Spec
 				}
 			}
 			for _, sp := range unloaded {
+				if slices.Contains(kinds, sp.GetKind()) {
+					bounded[sp.GetID()] = sp
+				}
+			}
+
+			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
+
+			for _, sp := range bounded {
 				if slices.Contains(kinds, sp.GetKind()) {
 					if err := r.symbolLoader.Load(ctx, sp); err != nil {
 						unloaded[sp.GetID()] = sp

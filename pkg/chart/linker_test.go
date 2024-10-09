@@ -88,10 +88,7 @@ func TestLinker_Unload(t *testing.T) {
 		Specs:     []spec.Spec{},
 	}
 
-	s.AddKnownType(chrt.GetName(), &spec.Meta{})
-	s.AddCodec(chrt.GetName(), scheme.CodecFunc(func(spec spec.Spec) (node.Node, error) {
-		return node.NewOneToOneNode(nil), nil
-	}))
+	l.Load(chrt)
 
 	err := l.Unload(chrt)
 	assert.NoError(t, err)

@@ -1,7 +1,7 @@
 package chart
 
 import (
-	"slices"
+	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -20,6 +20,8 @@ type LinkerConfig struct {
 type Linker struct {
 	hook   *hook.Hook
 	scheme *scheme.Scheme
+	codecs map[string]scheme.Codec
+	mu     sync.RWMutex
 }
 
 var _ LoadHook = (*Linker)(nil)
@@ -30,16 +32,22 @@ func NewLinker(config LinkerConfig) *Linker {
 	return &Linker{
 		hook:   config.Hook,
 		scheme: config.Scheme,
+		codecs: make(map[string]scheme.Codec),
 	}
 }
 
 // Load loads the chart, creating nodes and symbols.
 func (l *Linker) Load(chrt *Chart) error {
-	if slices.Contains(l.scheme.Kinds(), chrt.GetName()) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	kind := chrt.GetName()
+	codec := l.codecs[kind]
+	if l.scheme.Codec(kind) != codec {
 		return nil
 	}
 
-	codec := scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
+	codec = scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
 		specs, err := chrt.Build(sp)
 		if err != nil {
 			return nil, err
@@ -103,16 +111,25 @@ func (l *Linker) Load(chrt *Chart) error {
 		return n, nil
 	})
 
-	l.scheme.AddKnownType(chrt.GetName(), &spec.Unstructured{})
-	l.scheme.AddCodec(chrt.GetName(), codec)
-
+	l.scheme.AddKnownType(kind, &spec.Unstructured{})
+	l.scheme.AddCodec(kind, codec)
+	l.codecs[kind] = codec
 	return nil
 }
 
 // Unload removes the chart from the scheme.
 func (l *Linker) Unload(chrt *Chart) error {
-	l.scheme.RemoveKnownType(chrt.GetName())
-	l.scheme.RemoveCodec(chrt.GetName())
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
+	kind := chrt.GetName()
+	codec := l.codecs[kind]
+	if l.scheme.Codec(kind) != codec {
+		return nil
+	}
+
+	l.scheme.RemoveKnownType(kind)
+	l.scheme.RemoveCodec(kind)
+	delete(l.codecs, kind)
 	return nil
 }

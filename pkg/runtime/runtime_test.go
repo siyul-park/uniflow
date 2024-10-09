@@ -40,7 +40,6 @@ func TestRuntime_Load(t *testing.T) {
 		SpecStore:   specStore,
 		SecretStore: secretStore,
 	})
-
 	defer r.Close()
 
 	meta := &spec.Meta{

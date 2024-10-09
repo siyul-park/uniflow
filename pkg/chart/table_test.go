@@ -89,6 +89,39 @@ func TestTable_Lookup(t *testing.T) {
 	assert.Equal(t, chrt, tb.Lookup(chrt.GetID()))
 }
 
+func TestTable_Links(t *testing.T) {
+	tb := NewTable()
+	defer tb.Close()
+
+	chrt1 := &Chart{
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+		Specs:     []spec.Spec{},
+	}
+	chrt2 := &Chart{
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+		Specs: []spec.Spec{
+			&spec.Meta{
+				Kind:      chrt1.GetName(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+		},
+	}
+
+	tb.Insert(chrt1)
+	tb.Insert(chrt2)
+
+	links := tb.Links(chrt1.GetID())
+	assert.Equal(t, []*Chart{chrt1, chrt2}, links)
+
+	links = tb.Links(chrt2.GetID())
+	assert.Equal(t, []*Chart{chrt2}, links)
+}
+
 func TestTable_Keys(t *testing.T) {
 	tb := NewTable()
 	defer tb.Close()

@@ -72,6 +72,18 @@ func (t *Table) Lookup(id uuid.UUID) *Chart {
 	return t.charts[id]
 }
 
+// Links returns the charts linked to the chart specified by its UUID.
+func (t *Table) Links(id uuid.UUID) []*Chart {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	chrt, ok := t.charts[id]
+	if !ok {
+		return nil
+	}
+	return t.linked(chrt)
+}
+
 // Keys returns all IDs of charts in the table.
 func (t *Table) Keys() []uuid.UUID {
 	t.mu.RLock()
