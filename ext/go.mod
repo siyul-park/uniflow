@@ -3,7 +3,7 @@ module github.com/siyul-park/uniflow/ext
 go 1.23.1
 
 require (
-	github.com/andybalholm/brotli v1.1.0
+	github.com/andybalholm/brotli v1.1.1
 	github.com/dop251/goja v0.0.0-20240927123429-241b342198c2
 	github.com/evanw/esbuild v0.24.0
 	github.com/go-faker/faker/v4 v4.5.0
