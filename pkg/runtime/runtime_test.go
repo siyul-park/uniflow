@@ -110,7 +110,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 
 		chartStore.Delete(ctx, chrt)
@@ -120,7 +119,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 	})
 
@@ -179,7 +177,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 
 		specStore.Delete(ctx, meta)
@@ -189,7 +186,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 	})
 
@@ -261,7 +257,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, scrt.Data, sb.Env()["key"][0].Value)
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 
 		secretStore.Delete(ctx, scrt)
@@ -271,7 +266,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
-			return
 		}
 	})
 }
