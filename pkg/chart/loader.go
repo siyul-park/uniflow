@@ -75,6 +75,10 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 		}
 	}
 
+	if len(errs) > 0 {
+		loaded = nil
+	}
+
 	for _, id := range l.table.Keys() {
 		chrt := l.table.Lookup(id)
 		if chrt != nil && len(resource.Match(chrt, examples...)) > 0 {
