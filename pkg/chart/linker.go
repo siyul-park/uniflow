@@ -107,7 +107,6 @@ func (l *Linker) Link(chrt *Chart) error {
 		return n, nil
 	})
 
-	l.scheme.AddKnownType(kind, &spec.Unstructured{})
 	l.scheme.AddCodec(kind, codec)
 	l.codecs[kind] = codec
 	return nil
@@ -125,7 +124,6 @@ func (l *Linker) Unlink(chrt *Chart) error {
 		return nil
 	}
 
-	l.scheme.RemoveKnownType(kind)
 	l.scheme.RemoveCodec(kind)
 	delete(l.codecs, kind)
 	return nil

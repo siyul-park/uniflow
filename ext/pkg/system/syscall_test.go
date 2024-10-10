@@ -11,26 +11,23 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateNodes(t *testing.T) {
+func TestCreateResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
+	st := resource.NewStore[*resource.Meta]()
 
-	st := spec.NewStore()
-
-	n, _ := NewNativeNode(CreateNodes(st))
+	n, _ := NewNativeNode(CreateResource(st))
 	defer n.Close()
 
-	meta := &spec.Meta{
+	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		Name: faker.Word(),
 	}
 
 	in := port.NewOut()
@@ -48,27 +45,25 @@ func TestCreateNodes(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*spec.Meta
+		var outPayload []*resource.Meta
 		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 }
 
-func TestReadNodes(t *testing.T) {
+func TestReadResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
+	st := resource.NewStore[*resource.Meta]()
 
-	st := spec.NewStore()
-
-	n, _ := NewNativeNode(ReadNodes(st))
+	n, _ := NewNativeNode(ReadResource(st))
 	defer n.Close()
 
-	meta := &spec.Meta{
+	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		Name: faker.Word(),
 	}
 
 	in := port.NewOut()
@@ -86,27 +81,25 @@ func TestReadNodes(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*spec.Meta
+		var outPayload []*resource.Meta
 		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 }
 
-func TestUpdateNodes(t *testing.T) {
+func TestUpdateResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
+	st := resource.NewStore[*resource.Meta]()
 
-	st := spec.NewStore()
-
-	n, _ := NewNativeNode(UpdateNodes(st))
+	n, _ := NewNativeNode(UpdateResource(st))
 	defer n.Close()
 
-	meta := &spec.Meta{
+	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		Name: faker.Word(),
 	}
 
 	_, _ = st.Store(ctx, meta)
@@ -126,27 +119,25 @@ func TestUpdateNodes(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*spec.Meta
+		var outPayload []*resource.Meta
 		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 }
 
-func TestDeleteNodes(t *testing.T) {
+func TestDeleteResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	kind := faker.UUIDHyphenated()
+	st := resource.NewStore[*resource.Meta]()
 
-	st := spec.NewStore()
-
-	n, _ := NewNativeNode(DeleteNodes(st))
+	n, _ := NewNativeNode(DeleteResource(st))
 	defer n.Close()
 
-	meta := &spec.Meta{
+	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Kind: kind,
+		Name: faker.Word(),
 	}
 
 	_, _ = st.Store(ctx, meta)
@@ -166,155 +157,7 @@ func TestDeleteNodes(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		var outPayload []*spec.Meta
-		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
-
-func TestCreateSecrets(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := secret.NewStore()
-
-	n, _ := NewNativeNode(CreateSecrets(st))
-	defer n.Close()
-
-	scrt := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: faker.Word(),
-	}
-
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
-
-	proc := process.New()
-	defer proc.Exit(nil)
-
-	inWriter := in.Open(proc)
-
-	inPayload, _ := types.Marshal(scrt)
-	inPck := packet.New(types.NewSlice(inPayload))
-
-	inWriter.Write(inPck)
-
-	select {
-	case outPck := <-inWriter.Receive():
-		var outPayload []*secret.Secret
-		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
-
-func TestReadSecrets(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := secret.NewStore()
-
-	n, _ := NewNativeNode(ReadSecrets(st))
-	defer n.Close()
-
-	scrt := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: faker.Word(),
-	}
-
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
-
-	proc := process.New()
-	defer proc.Exit(nil)
-
-	inWriter := in.Open(proc)
-
-	inPayload, _ := types.Marshal(scrt)
-	inPck := packet.New(inPayload)
-
-	inWriter.Write(inPck)
-
-	select {
-	case outPck := <-inWriter.Receive():
-		var outPayload []*secret.Secret
-		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
-
-func TestUpdateSecrets(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := secret.NewStore()
-
-	n, _ := NewNativeNode(UpdateSecrets(st))
-	defer n.Close()
-
-	scrt := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: faker.Word(),
-	}
-
-	_, _ = st.Store(ctx, scrt)
-
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
-
-	proc := process.New()
-	defer proc.Exit(nil)
-
-	inWriter := in.Open(proc)
-
-	inPayload, _ := types.Marshal(scrt)
-	inPck := packet.New(types.NewSlice(inPayload))
-
-	inWriter.Write(inPck)
-
-	select {
-	case outPck := <-inWriter.Receive():
-		var outPayload []*secret.Secret
-		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
-
-func TestDeleteSecrets(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := secret.NewStore()
-
-	n, _ := NewNativeNode(DeleteSecrets(st))
-	defer n.Close()
-
-	scrt := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: faker.Word(),
-	}
-
-	_, _ = st.Store(ctx, scrt)
-
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
-
-	proc := process.New()
-	defer proc.Exit(nil)
-
-	inWriter := in.Open(proc)
-
-	inPayload, _ := types.Marshal(scrt)
-	inPck := packet.New(inPayload)
-
-	inWriter.Write(inPck)
-
-	select {
-	case outPck := <-inWriter.Receive():
-		var outPayload []*secret.Secret
+		var outPayload []*resource.Meta
 		assert.NoError(t, types.Unmarshal(outPck.Payload(), &outPayload))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())

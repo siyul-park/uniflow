@@ -62,18 +62,6 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
     - method: DELETE
       path: /v1/nodes
       port: out[3]
-    - method: POST
-      path: /v1/secrets
-      port: out[4]
-    - method: GET
-      path: /v1/secrets
-      port: out[5]
-    - method: PATCH
-      path: /v1/secrets
-      port: out[6]
-    - method: DELETE
-      path: /v1/secrets
-      port: out[7]
   ports:
     out[0]:
       - name: nodes_create
@@ -86,18 +74,6 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
         port: in
     out[3]:
       - name: nodes_delete
-        port: in
-    out[4]:
-      - name: secrets_create
-        port: in
-    out[5]:
-      - name: secrets_read
-        port: in
-    out[6]:
-      - name: secrets_update
-        port: in
-    out[7]:
-      - name: secrets_delete
         port: in
 
 - kind: block
@@ -162,77 +138,6 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
       code: 'null'
     - kind: native
       opcode: nodes.delete
-    - kind: snippet
-      language: javascript
-      code: |
-        export default function (args) {
-          return {
-            status: 204
-          };
-        }
-
-- kind: block
-  name: secrets_create
-  specs:
-    - kind: snippet
-      language: cel
-      code: 'has(self.body) ? self.body : null'
-    - kind: native
-      opcode: secrets.create
-    - kind: snippet
-      language: javascript
-      code: |
-        export default function (args) {
-          return {
-            body: args,
-            status: 201
-          };
-        }
-
-- kind: block
-  name: secrets_read
-  specs:
-    - kind: snippet
-      language: json
-      code: 'null'
-    - kind: native
-      opcode: secrets.read
-    - kind: snippet
-      language: javascript
-      code: |
-        export default function (args) {
-          return {
-            body: args,
-            status: 200
-          };
-        }
-
-- kind: block
-  name: secrets_update
-  specs:
-    - kind: snippet
-      language: cel
-      code: 'has(self.body) ? self.body : null'
-    - kind: native
-      opcode: secrets.update
-    - kind: snippet
-      language: javascript
-      code: |
-        export default function (args) {
-          return {
-            body: args,
-            status: 200
-          };
-        }
-
-- kind: block
-  name: secrets_delete
-  specs:
-    - kind: snippet
-      language: json
-      code: 'null'
-    - kind: native
-      opcode: secrets.delete
     - kind: snippet
       language: javascript
       code: |

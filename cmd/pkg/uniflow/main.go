@@ -43,6 +43,23 @@ const (
 	flagCollectionSecrets = "collection.secrets"
 )
 
+const (
+	opCreateCharts = "charts.create"
+	opReadCharts   = "charts.read"
+	opUpdateCharts = "charts.update"
+	opDeleteCharts = "charts.delete"
+
+	opCreateNodes = "nodes.create"
+	opReadNodes   = "nodes.read"
+	opUpdateNodes = "nodes.update"
+	opDeleteNodes = "nodes.delete"
+
+	opCreateSecrets = "secrets.create"
+	opReadSecrets   = "secrets.read"
+	opUpdateSecrets = "secrets.update"
+	opDeleteSecrets = "secrets.delete"
+)
+
 func init() {
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
@@ -122,14 +139,18 @@ func main() {
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
 	nativeTable := system.NewNativeTable()
-	nativeTable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	nativeTable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	nativeTable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	nativeTable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
-	nativeTable.Store(system.CodeCreateSecrets, system.CreateSecrets(secretStore))
-	nativeTable.Store(system.CodeReadSecrets, system.ReadSecrets(secretStore))
-	nativeTable.Store(system.CodeUpdateSecrets, system.UpdateSecrets(secretStore))
-	nativeTable.Store(system.CodeDeleteSecrets, system.DeleteSecrets(secretStore))
+	nativeTable.Store(opCreateCharts, system.CreateResource(chartStore))
+	nativeTable.Store(opReadCharts, system.ReadResource(chartStore))
+	nativeTable.Store(opUpdateCharts, system.UpdateResource(chartStore))
+	nativeTable.Store(opDeleteCharts, system.DeleteResource(chartStore))
+	nativeTable.Store(opCreateNodes, system.CreateResource(specStore))
+	nativeTable.Store(opReadNodes, system.ReadResource(specStore))
+	nativeTable.Store(opUpdateNodes, system.UpdateResource(specStore))
+	nativeTable.Store(opDeleteNodes, system.DeleteResource(specStore))
+	nativeTable.Store(opCreateSecrets, system.CreateResource(secretStore))
+	nativeTable.Store(opReadSecrets, system.ReadResource(secretStore))
+	nativeTable.Store(opUpdateSecrets, system.UpdateResource(secretStore))
+	nativeTable.Store(opDeleteSecrets, system.DeleteResource(secretStore))
 
 	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
