@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/agent"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -22,6 +23,7 @@ import (
 type StartConfig struct {
 	Scheme      *scheme.Scheme
 	Hook        *hook.Hook
+	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
 	FS          afero.Fs
@@ -36,7 +38,8 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running")
-	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing node specs")
+	cmd.PersistentFlags().String(flagFromCharts, "", "Specify the file path containing charts")
+	cmd.PersistentFlags().String(flagFromNodes, "", "Specify the file path containing specs")
 	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
 	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode")
 
@@ -49,6 +52,11 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		ctx := cmd.Context()
 
 		namespace, err := cmd.Flags().GetString(flagNamespace)
+		if err != nil {
+			return err
+		}
+
+		fromCharts, err := cmd.Flags().GetString(flagFromCharts)
 		if err != nil {
 			return err
 		}
@@ -66,6 +74,36 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		enableDebug, err := cmd.Flags().GetBool(flagDebug)
 		if err != nil {
 			return err
+		}
+
+		if fromCharts != "" {
+			charts, err := config.ChartStore.Load(ctx, &chart.Chart{Namespace: namespace})
+			if err != nil {
+				return err
+			}
+
+			if len(charts) == 0 {
+				file, err := config.FS.Open(fromCharts)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+
+				reader := resource.NewReader(file)
+				if err := reader.Read(&charts); err != nil {
+					return err
+				}
+
+				for _, chrt := range charts {
+					if chrt.GetNamespace() == "" {
+						chrt.SetNamespace(namespace)
+					}
+				}
+
+				if _, err := config.ChartStore.Store(ctx, charts...); err != nil {
+					return err
+				}
+			}
 		}
 
 		if fromNodes != "" {
@@ -116,9 +154,9 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 					return err
 				}
 
-				for _, sec := range secrets {
-					if sec.GetNamespace() == "" {
-						sec.SetNamespace(namespace)
+				for _, scrt := range secrets {
+					if scrt.GetNamespace() == "" {
+						scrt.SetNamespace(namespace)
 					}
 				}
 
@@ -144,6 +182,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			Namespace:   namespace,
 			Scheme:      config.Scheme,
 			Hook:        h,
+			ChartStore:  config.ChartStore,
 			SpecStore:   config.SpecStore,
 			SecretStore: config.SecretStore,
 		})

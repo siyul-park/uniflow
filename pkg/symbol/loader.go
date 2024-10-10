@@ -104,6 +104,9 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	}
 
 	if len(errs) > 0 {
+		for _, sb := range symbols {
+			sb.Close()
+		}
 		symbols = nil
 	}
 
@@ -119,7 +122,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 			}
 			if !ok {
 				if _, err := l.table.Free(id); err != nil {
-					return err
+					errs = append(errs, err)
 				}
 			}
 		}

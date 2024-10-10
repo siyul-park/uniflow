@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecret_GetSet(t *testing.T) {
-	sec := &Secret{
+func TestSecret_Get(t *testing.T) {
+	scrt := &Secret{
 		ID:          uuid.Must(uuid.NewV7()),
 		Namespace:   "default",
 		Name:        faker.Word(),
@@ -17,9 +17,9 @@ func TestSecret_GetSet(t *testing.T) {
 		Data:        faker.Word(),
 	}
 
-	assert.Equal(t, sec.ID, sec.GetID())
-	assert.Equal(t, sec.Namespace, sec.GetNamespace())
-	assert.Equal(t, sec.Name, sec.GetName())
-	assert.Equal(t, sec.Annotations, sec.GetAnnotations())
-	assert.Equal(t, sec.Data, sec.GetData())
+	assert.Equal(t, scrt.ID, scrt.GetID())
+	assert.Equal(t, scrt.Namespace, scrt.GetNamespace())
+	assert.Equal(t, scrt.Name, scrt.GetName())
+	assert.Equal(t, scrt.Annotations, scrt.GetAnnotations())
+	assert.Equal(t, scrt.Data, scrt.GetData())
 }

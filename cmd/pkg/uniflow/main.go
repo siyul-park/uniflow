@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
+	mongochart "github.com/siyul-park/uniflow/driver/mongo/pkg/chart"
 	mongosecret "github.com/siyul-park/uniflow/driver/mongo/pkg/secret"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
@@ -21,6 +22,7 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/ext/pkg/network"
 	"github.com/siyul-park/uniflow/ext/pkg/system"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
@@ -36,14 +38,31 @@ const configFile = ".uniflow.toml"
 const (
 	flagDatabaseURL       = "database.url"
 	flagDatabaseName      = "database.name"
+	flagCollectionCharts  = "collection.charts"
 	flagCollectionNodes   = "collection.nodes"
 	flagCollectionSecrets = "collection.secrets"
+)
+
+const (
+	opCreateCharts = "charts.create"
+	opReadCharts   = "charts.read"
+	opUpdateCharts = "charts.update"
+	opDeleteCharts = "charts.delete"
+
+	opCreateNodes = "nodes.create"
+	opReadNodes   = "nodes.read"
+	opUpdateNodes = "nodes.update"
+	opDeleteNodes = "nodes.delete"
+
+	opCreateSecrets = "secrets.create"
+	opReadSecrets   = "secrets.read"
+	opUpdateSecrets = "secrets.update"
+	opDeleteSecrets = "secrets.delete"
 )
 
 func init() {
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
-
 	viper.ReadInConfig()
 }
 
@@ -51,10 +70,14 @@ func main() {
 	ctx := context.Background()
 
 	databaseURL := viper.GetString(flagDatabaseURL)
-	databaseName := viper.GetString(flagDatabaseName)
+	databaseName := viper.GetString(flagCollectionCharts)
+	collectionCharts := viper.GetString(flagCollectionNodes)
 	collectionNodes := viper.GetString(flagCollectionNodes)
 	collectionSecrets := viper.GetString(flagCollectionSecrets)
 
+	if collectionCharts == "" {
+		collectionCharts = "charts"
+	}
 	if collectionNodes == "" {
 		collectionNodes = "nodes"
 	}
@@ -69,6 +92,7 @@ func main() {
 		databaseURL = server.URI()
 	}
 
+	var chartStore chart.Store
 	var specStore spec.Store
 	var secretStore secret.Store
 	if strings.HasPrefix(databaseURL, "mongodb://") {
@@ -81,7 +105,13 @@ func main() {
 		}
 		defer client.Disconnect(ctx)
 
-		collection := client.Database(databaseName).Collection(collectionNodes)
+		collection := client.Database(databaseName).Collection(collectionCharts)
+		chartStore = mongochart.NewStore(collection)
+		if err := chartStore.(*mongochart.Store).Index(ctx); err != nil {
+			log.Fatal(err)
+		}
+
+		collection = client.Database(databaseName).Collection(collectionNodes)
 		specStore = mongospec.NewStore(collection)
 		if err := specStore.(*mongospec.Store).Index(ctx); err != nil {
 			log.Fatal(err)
@@ -109,14 +139,18 @@ func main() {
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
 	nativeTable := system.NewNativeTable()
-	nativeTable.Store(system.CodeCreateNodes, system.CreateNodes(specStore))
-	nativeTable.Store(system.CodeReadNodes, system.ReadNodes(specStore))
-	nativeTable.Store(system.CodeUpdateNodes, system.UpdateNodes(specStore))
-	nativeTable.Store(system.CodeDeleteNodes, system.DeleteNodes(specStore))
-	nativeTable.Store(system.CodeCreateSecrets, system.CreateSecrets(secretStore))
-	nativeTable.Store(system.CodeReadSecrets, system.ReadSecrets(secretStore))
-	nativeTable.Store(system.CodeUpdateSecrets, system.UpdateSecrets(secretStore))
-	nativeTable.Store(system.CodeDeleteSecrets, system.DeleteSecrets(secretStore))
+	nativeTable.Store(opCreateCharts, system.CreateResource(chartStore))
+	nativeTable.Store(opReadCharts, system.ReadResource(chartStore))
+	nativeTable.Store(opUpdateCharts, system.UpdateResource(chartStore))
+	nativeTable.Store(opDeleteCharts, system.DeleteResource(chartStore))
+	nativeTable.Store(opCreateNodes, system.CreateResource(specStore))
+	nativeTable.Store(opReadNodes, system.ReadResource(specStore))
+	nativeTable.Store(opUpdateNodes, system.UpdateResource(specStore))
+	nativeTable.Store(opDeleteNodes, system.DeleteResource(specStore))
+	nativeTable.Store(opCreateSecrets, system.CreateResource(secretStore))
+	nativeTable.Store(opReadSecrets, system.ReadResource(secretStore))
+	nativeTable.Store(opUpdateSecrets, system.UpdateResource(secretStore))
+	nativeTable.Store(opDeleteSecrets, system.DeleteResource(secretStore))
 
 	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
@@ -145,6 +179,7 @@ func main() {
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
 		Scheme:      scheme,
 		Hook:        hook,
+		ChartStore:  chartStore,
 		SpecStore:   specStore,
 		SecretStore: secretStore,
 		FS:          fs,

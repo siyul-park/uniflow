@@ -37,6 +37,18 @@
     - method: DELETE
       path: /v1/secrets
       port: out[7]
+    - method: POST
+      path: /v1/charts
+      port: out[8]
+    - method: GET
+      path: /v1/charts
+      port: out[9]
+    - method: PATCH
+      path: /v1/charts
+      port: out[10]
+    - method: DELETE
+      path: /v1/charts
+      port: out[11]
   ports:
     out[0]:
       - name: nodes_create
@@ -61,6 +73,18 @@
         port: in
     out[7]:
       - name: secrets_delete
+        port: in
+    out[8]:
+      - name: charts_create
+        port: in
+    out[9]:
+      - name: charts_read
+        port: in
+    out[10]:
+      - name: charts_update
+        port: in
+    out[11]:
+      - name: charts_delete
         port: in
 
 - kind: block
@@ -196,6 +220,77 @@
       code: 'null'
     - kind: native
       opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
+- kind: block
+  name: charts_create
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: charts.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 201
+          };
+        }
+
+- kind: block
+  name: charts_read
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: charts.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: charts_update
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.body) ? self.body : null'
+    - kind: native
+      opcode: charts.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            body: args,
+            status: 200
+          };
+        }
+
+- kind: block
+  name: charts_delete
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: charts.delete
     - kind: snippet
       language: javascript
       code: |

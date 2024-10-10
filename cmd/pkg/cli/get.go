@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -10,6 +11,7 @@ import (
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
+	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
 }
@@ -20,7 +22,7 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		Use:       "get",
 		Short:     "Get resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argNodes, argSecrets},
+		ValidArgs: []string{argCharts, argNodes, argSecrets},
 		RunE:      runGetCommand(config),
 	}
 
@@ -41,26 +43,28 @@ func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) err
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
 		switch args[0] {
+		case argCharts:
+			charts, err := config.ChartStore.Load(ctx, &chart.Chart{Namespace: namespace})
+			if err != nil {
+				return err
+			}
+
+			return writer.Write(charts)
 		case argNodes:
-			specs, err := config.SpecStore.Load(ctx, &spec.Meta{
-				Namespace: namespace,
-			})
+			specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
 			if err != nil {
 				return err
 			}
 
 			return writer.Write(specs)
 		case argSecrets:
-			secrets, err := config.SecretStore.Load(ctx, &secret.Secret{
-				Namespace: namespace,
-			})
+			secrets, err := config.SecretStore.Load(ctx, &secret.Secret{Namespace: namespace})
 			if err != nil {
 				return err
 			}
 
 			return writer.Write(secrets)
 		}
-
 		return nil
 	}
 }

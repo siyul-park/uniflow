@@ -10,7 +10,8 @@
 |----------------------|--------------------------|----------------------------|
 | `database.url`       | `DATABASE.URL`           | `mem://` 또는 `mongodb://` |
 | `database.name`      | `DATABASE.NAME`          | -                          |
+| `collection.charts`  | `COLLECTION.CHARTS`      | `charts`                   |
 | `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                    |
 | `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                  |
 
-[MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 노드 명세의 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 변경 스트림을 이용하려면 [복제본 세트](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication)를 설정하세요.
+[MongoDB](https://www.mongodb.com/)를 사용할 경우, 엔진이 리소스의 변경을 추적할 수 있도록 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 변경 스트림을 이용하려면 [복제본 세트](https://www.mongodb.com/ko-kr/docs/manual/replication/#std-label-replication)를 설정하세요.

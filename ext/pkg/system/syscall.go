@@ -3,91 +3,44 @@ package system
 import (
 	"context"
 
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/resource"
 )
 
-const (
-	CodeCreateNodes = "nodes.create"
-	CodeReadNodes   = "nodes.read"
-	CodeUpdateNodes = "nodes.update"
-	CodeDeleteNodes = "nodes.delete"
-
-	CodeCreateSecrets = "secrets.create"
-	CodeReadSecrets   = "secrets.read"
-	CodeUpdateSecrets = "secrets.update"
-	CodeDeleteSecrets = "secrets.delete"
-)
-
-func CreateNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
-	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
-		if _, err := s.Store(ctx, specs...); err != nil {
+// CreateResource is a generic function to store and load resources.
+func CreateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
+	return func(ctx context.Context, resources []T) ([]T, error) {
+		if _, err := store.Store(ctx, resources...); err != nil {
 			return nil, err
 		}
-		return s.Load(ctx, specs...)
-
+		return store.Load(ctx, resources...)
 	}
 }
 
-func ReadNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
-	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
-		return s.Load(ctx, specs...)
+// ReadResource is a generic function to load resources.
+func ReadResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
+	return func(ctx context.Context, resources []T) ([]T, error) {
+		return store.Load(ctx, resources...)
 	}
 }
 
-func UpdateNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
-	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
-		if _, err := s.Swap(ctx, specs...); err != nil {
+// UpdateResource is a generic function to swap and load resources.
+func UpdateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
+	return func(ctx context.Context, resources []T) ([]T, error) {
+		if _, err := store.Swap(ctx, resources...); err != nil {
 			return nil, err
 		}
-		return s.Load(ctx, specs...)
+		return store.Load(ctx, resources...)
 	}
 }
 
-func DeleteNodes(s spec.Store) func(context.Context, []spec.Spec) ([]spec.Spec, error) {
-	return func(ctx context.Context, specs []spec.Spec) ([]spec.Spec, error) {
-		ok, err := s.Load(ctx, specs...)
+// DeleteResource is a generic function to load and delete resources.
+func DeleteResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
+	return func(ctx context.Context, resources []T) ([]T, error) {
+		ok, err := store.Load(ctx, resources...)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := s.Delete(ctx, ok...); err != nil {
-			return nil, err
-		}
-		return ok, nil
-	}
-}
-
-func CreateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
-	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
-		if _, err := s.Store(ctx, secrets...); err != nil {
-			return nil, err
-		}
-		return s.Load(ctx, secrets...)
-	}
-}
-
-func ReadSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
-	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
-		return s.Load(ctx, secrets...)
-	}
-}
-
-func UpdateSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
-	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
-		if _, err := s.Swap(ctx, secrets...); err != nil {
-			return nil, err
-		}
-		return s.Load(ctx, secrets...)
-	}
-}
-
-func DeleteSecrets(s secret.Store) func(context.Context, []*secret.Secret) ([]*secret.Secret, error) {
-	return func(ctx context.Context, secrets []*secret.Secret) ([]*secret.Secret, error) {
-		ok, err := s.Load(ctx, secrets...)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := s.Delete(ctx, ok...); err != nil {
+		if _, err := store.Delete(ctx, ok...); err != nil {
 			return nil, err
 		}
 		return ok, nil

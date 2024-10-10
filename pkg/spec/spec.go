@@ -95,8 +95,8 @@ func IsBound(sp Spec, secrets ...*secret.Secret) bool {
 				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
 			}
 
-			for _, sec := range secrets {
-				if len(resource.Match(sec, examples...)) > 0 {
+			for _, scrt := range secrets {
+				if len(resource.Match(scrt, examples...)) > 0 {
 					return true
 				}
 			}
@@ -127,24 +127,24 @@ func Bind(sp Spec, secrets ...*secret.Secret) (Spec, error) {
 					Name:      val.Name,
 				}
 
-				var sec *secret.Secret
+				var scrt *secret.Secret
 				for _, s := range secrets {
 					if len(resource.Match(s, example)) > 0 {
-						sec = s
+						scrt = s
 						break
 					}
 				}
-				if sec == nil {
+				if scrt == nil {
 					continue
 				}
 
-				v, err := template.Execute(val.Value, sec.Data)
+				v, err := template.Execute(val.Value, scrt.Data)
 				if err != nil {
 					return nil, err
 				}
 
-				val.ID = sec.GetID()
-				val.Name = sec.GetName()
+				val.ID = scrt.GetID()
+				val.Name = scrt.GetName()
 				val.Value = v
 
 				vals[i] = val

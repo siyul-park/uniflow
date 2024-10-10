@@ -10,7 +10,8 @@ Before running commands, configure your system using environment variables. You 
 |-----------------------|----------------------------|----------------------------|
 | `database.url`        | `DATABASE.URL`             | `mem://` or `mongodb://`   |
 | `database.name`       | `DATABASE.NAME`            | -                          |
+| `collection.charts`   | `COLLECTION.CHARTS`        | `charts`                   |
 | `collection.nodes`    | `COLLECTION.NODES`         | `nodes`                    |
 | `collection.secrets`  | `COLLECTION.SECRETS`       | `secrets`                  |
 
-If using [MongoDB](https://www.mongodb.com/), ensure that [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled so that the engine can track changes to node specifications. To utilize Change Streams, set up a [Replica Set](https://www.mongodb.com/docs/manual/replication/#std-label-replication).
+If using [MongoDB](https://www.mongodb.com/), ensure that [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) are enabled so that the engine can track changes to resources. To utilize Change Streams, set up a [Replica Set](https://www.mongodb.com/docs/manual/replication/#std-label-replication).
