@@ -1,6 +1,9 @@
 package control
 
 import (
+	"context"
+	"time"
+
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -14,13 +17,14 @@ import (
 // ReduceNodeSpec defines the specifications for creating a ReduceNode.
 type ReduceNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Action    string `map:"action"`
-	Init      any    `map:"init,omitempty"`
+	Action    string        `map:"action"`
+	Init      any           `map:"init,omitempty"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 // ReduceNode performs a reduction operation using the provided action.
 type ReduceNode struct {
-	action  func(any, any, int) (any, error)
+	action  func(context.Context, any, any, int) (any, error)
 	init    any
 	tracer  *packet.Tracer
 	inPort  *port.InPort
@@ -38,14 +42,20 @@ func NewReduceNodeCodec(compiler language.Compiler) scheme.Codec {
 			return nil, err
 		}
 
-		return NewReduceNode(func(acc, cur any, index int) (any, error) {
-			return program.Run(acc, cur, index)
+		return NewReduceNode(func(ctx context.Context, acc, cur any, index int) (any, error) {
+			if spec.Timeout != 0 {
+				var cancel func()
+				ctx, cancel = context.WithTimeout(ctx, spec.Timeout)
+				defer cancel()
+			}
+
+			return program.Run(ctx, acc, cur, index)
 		}, spec.Init), nil
 	})
 }
 
 // NewReduceNode creates a new ReduceNode with the provided action and initial value.
-func NewReduceNode(action func(any, any, int) (any, error), init any) *ReduceNode {
+func NewReduceNode(action func(context.Context, any, any, int) (any, error), init any) *ReduceNode {
 	n := &ReduceNode{
 		action:  action,
 		init:    init,
@@ -107,7 +117,7 @@ func (n *ReduceNode) forward(proc *process.Process) {
 		n.tracer.Read(inReader, inPck)
 		cur := types.InterfaceOf(inPck.Payload())
 
-		if v, err := n.action(acc, cur, i); err != nil {
+		if v, err := n.action(proc.Context(), acc, cur, i); err != nil {
 			errPck := packet.New(types.NewError(err))
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)

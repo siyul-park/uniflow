@@ -43,7 +43,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewSnippetNode(func(input any) (any, error) {
+	n := NewSnippetNode(func(_ context.Context, input any) (any, error) {
 		return input, nil
 	})
 	defer n.Close()
@@ -70,7 +70,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkSnippetNode_SendAndReceive(b *testing.B) {
-	n := NewSnippetNode(func(input any) (any, error) {
+	n := NewSnippetNode(func(_ context.Context, input any) (any, error) {
 		return input, nil
 	})
 	defer n.Close()

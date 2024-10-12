@@ -1,7 +1,9 @@
 package control
 
 import (
+	"context"
 	"reflect"
+	"time"
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -15,13 +17,14 @@ import (
 // IfNodeSpec defines the specifications for creating an IfNode.
 type IfNodeSpec struct {
 	spec.Meta `map:",inline"`
-	When      string `map:"when"`
+	When      string        `map:"when"`
+	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 // IfNode evaluates a condition and routes packets based on the result.
 type IfNode struct {
 	*node.OneToManyNode
-	condition func(any) (bool, error)
+	condition func(context.Context, any) (bool, error)
 }
 
 const KindIf = "if"
@@ -33,8 +36,14 @@ func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		return NewIfNode(func(env any) (bool, error) {
-			res, err := program.Run(env)
+		return NewIfNode(func(ctx context.Context, env any) (bool, error) {
+			if spec.Timeout != 0 {
+				var cancel func()
+				ctx, cancel = context.WithTimeout(ctx, spec.Timeout)
+				defer cancel()
+			}
+
+			res, err := program.Run(ctx, env)
 			if err != nil {
 				return false, err
 			}
@@ -44,17 +53,17 @@ func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
 }
 
 // NewIfNode creates a new IfNode instance.
-func NewIfNode(condition func(any) (bool, error)) *IfNode {
+func NewIfNode(condition func(context.Context, any) (bool, error)) *IfNode {
 	n := &IfNode{condition: condition}
 	n.OneToManyNode = node.NewOneToManyNode(n.action)
 	return n
 }
 
-func (n *IfNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
+func (n *IfNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.Packet, *packet.Packet) {
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 
-	ok, err := n.condition(input)
+	ok, err := n.condition(proc.Context(), input)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

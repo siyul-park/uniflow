@@ -1,6 +1,7 @@
 package json
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
@@ -14,7 +15,7 @@ func NewCompiler() language.Compiler {
 		if err := json.Unmarshal([]byte(code), &data); err != nil {
 			return nil, err
 		}
-		return language.RunFunc(func(_ ...any) (any, error) {
+		return language.RunFunc(func(_ context.Context, _ ...any) (any, error) {
 			return data, nil
 		}), nil
 	})

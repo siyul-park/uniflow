@@ -40,7 +40,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewIfNode(func(_ any) (bool, error) {
+		n := NewIfNode(func(_ context.Context, _ any) (bool, error) {
 			return true, nil
 		})
 		defer n.Close()
@@ -82,7 +82,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewIfNode(func(_ any) (bool, error) {
+		n := NewIfNode(func(_ context.Context, _ any) (bool, error) {
 			return false, nil
 		})
 		defer n.Close()
@@ -124,7 +124,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewIfNode(func(_ any) (bool, error) {
+		n := NewIfNode(func(_ context.Context, _ any) (bool, error) {
 			return false, errors.New(faker.Sentence())
 		})
 		defer n.Close()
@@ -163,7 +163,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkIfNode_SendAndReceive(b *testing.B) {
-	n := NewIfNode(func(_ any) (bool, error) {
+	n := NewIfNode(func(_ context.Context, _ any) (bool, error) {
 		return true, nil
 	})
 	defer n.Close()

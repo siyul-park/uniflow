@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -10,7 +11,7 @@ import (
 func TestModule_StoreAndLoad(t *testing.T) {
 	lang := faker.Word()
 	c := CompileFunc(func(s string) (Program, error) {
-		return RunFunc(func(_ ...any) (any, error) {
+		return RunFunc(func(_ context.Context, _ ...any) (any, error) {
 			return nil, nil
 		}), nil
 	})

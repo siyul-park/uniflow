@@ -1,9 +1,10 @@
 package text
 
 import (
+	"context"
 	"testing"
+	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,12 +15,13 @@ func TestCompiler_Compile(t *testing.T) {
 }
 
 func TestProgram_Run(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
 	c := NewCompiler()
 	p, _ := c.Compile("foo")
 
-	env := faker.Word()
-
-	res, err := p.Run(env)
+	res, err := p.Run(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", res)
 }

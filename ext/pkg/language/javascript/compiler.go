@@ -1,6 +1,7 @@
 package javascript
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"strings"
@@ -66,7 +67,7 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 			},
 		}
 
-		return language.RunFunc(func(args ...any) (any, error) {
+		return language.RunFunc(func(ctx context.Context, args ...any) (any, error) {
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 
@@ -95,12 +96,22 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				values = append(values, vm.ToValue(arg))
 			}
 
+			done := make(chan struct{})
+			defer close(done)
+
+			go func() {
+				select {
+				case <-ctx.Done():
+					vm.Interrupt(ctx.Err())
+				case <-done:
+				}
+			}()
+
 			if result, err := run(goja.Undefined(), values...); err != nil {
 				return nil, err
 			} else {
 				return result.Export(), nil
 			}
-
 		}), nil
 	})
 }

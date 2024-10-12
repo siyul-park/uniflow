@@ -26,7 +26,7 @@ func TestReduceNodeCodec_Decode(t *testing.T) {
 }
 
 func TestNewReduceNode(t *testing.T) {
-	n := NewReduceNode(func(a1, a2 any, i int) (any, error) {
+	n := NewReduceNode(func(_ context.Context, a1, a2 any, i int) (any, error) {
 		return a1, nil
 	}, nil)
 	assert.NotNil(t, n)
@@ -34,7 +34,7 @@ func TestNewReduceNode(t *testing.T) {
 }
 
 func TestReduceNode_Port(t *testing.T) {
-	n := NewReduceNode(func(a1, a2 any, i int) (any, error) {
+	n := NewReduceNode(func(_ context.Context, a1, a2 any, i int) (any, error) {
 		return a1, nil
 	}, nil)
 	defer n.Close()
@@ -48,7 +48,7 @@ func TestReduceNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewReduceNode(func(a1, a2 any, i int) (any, error) {
+	n := NewReduceNode(func(_ context.Context, a1, a2 any, i int) (any, error) {
 		return a2, nil
 	}, nil)
 	defer n.Close()
@@ -107,7 +107,7 @@ func TestReduceNode_SendAndReceive(t *testing.T) {
 }
 
 func BenchmarkReduceNode_SendAndReceive(b *testing.B) {
-	n := NewReduceNode(func(a1, a2 any, i int) (any, error) {
+	n := NewReduceNode(func(_ context.Context, a1, a2 any, i int) (any, error) {
 		return a2, nil
 	}, nil)
 	defer n.Close()

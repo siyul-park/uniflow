@@ -1,6 +1,8 @@
 package cel
 
 import (
+	"context"
+
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/ext"
 	"github.com/siyul-park/uniflow/ext/pkg/language"
@@ -23,7 +25,7 @@ func NewCompiler(opts ...cel.EnvOption) language.Compiler {
 		if err != nil {
 			return nil, err
 		}
-		return language.RunFunc(func(args ...any) (any, error) {
+		return language.RunFunc(func(ctx context.Context, args ...any) (any, error) {
 			var env any
 			if len(args) == 0 {
 				env = nil
@@ -33,7 +35,7 @@ func NewCompiler(opts ...cel.EnvOption) language.Compiler {
 				env = args
 			}
 
-			val, _, err := prg.Eval(map[string]any{
+			val, _, err := prg.ContextEval(ctx, map[string]any{
 				"self": env,
 			})
 			if err != nil {
