@@ -26,9 +26,9 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{specs, secrets, charts},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:   runApplyCommand(config.SpecStore, config.FS, spec.New),
-			secrets: runApplyCommand(config.SecretStore, config.FS, secret.New),
-			charts:  runApplyCommand(config.ChartStore, config.FS, chart.New),
+			specs:   runApplyCommand(config.SpecStore, config.FS),
+			secrets: runApplyCommand(config.SecretStore, config.FS),
+			charts:  runApplyCommand(config.ChartStore, config.FS),
 		}),
 	}
 
@@ -38,7 +38,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	return cmd
 }
 
-func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -76,7 +76,7 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 			return err
 		}
 		if len(resources) == 0 {
-			resources = append(resources, zero())
+			return nil
 		}
 
 		for _, rsc := range resources {

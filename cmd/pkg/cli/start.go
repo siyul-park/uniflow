@@ -47,9 +47,9 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 
 // runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
-	applySpecs := runApplyCommand(config.SpecStore, config.FS, spec.New, alias(flagFilename, flagFromSpecs))
-	applySecrets := runApplyCommand(config.SecretStore, config.FS, secret.New, alias(flagFilename, flagFromSecrets))
-	applyCharts := runApplyCommand(config.ChartStore, config.FS, chart.New, alias(flagFilename, flagFromCharts))
+	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
+	applySecrets := runApplyCommand(config.SecretStore, config.FS, alias(flagFilename, flagFromSecrets))
+	applyCharts := runApplyCommand(config.ChartStore, config.FS, alias(flagFilename, flagFromCharts))
 
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
