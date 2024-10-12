@@ -71,7 +71,7 @@ To run a basic HTTP request handler example using [ping.yaml](./examples/ping.ya
 To start the workflow, run:
 
 ```sh
-uniflow start --from-nodes example/ping.yaml
+uniflow start --from-specs example/ping.yaml
 ```
 
 Verify it's running by calling the HTTP endpoint:

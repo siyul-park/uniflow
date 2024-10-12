@@ -44,7 +44,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -78,7 +77,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -115,7 +113,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -152,7 +149,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -189,7 +185,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -229,7 +224,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -287,7 +281,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -321,7 +314,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -361,7 +353,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -422,7 +413,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -484,7 +474,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -545,7 +534,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -606,7 +594,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -670,7 +657,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -734,7 +720,6 @@ func TestDebugModel_Update(t *testing.T) {
 			agent:    a,
 			debugger: d,
 		}
-		defer m.Close()
 
 		sb := &symbol.Symbol{
 			Spec: &spec.Meta{

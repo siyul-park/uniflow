@@ -57,10 +57,10 @@ make build
 ./dist/uniflow start --namespace default
 ```
 
-네임스페이스가 비어 있을 경우, 초기 노드 명세를 `--from-nodes` 플래그로 제공할 수 있습니다:
+네임스페이스가 비어 있을 경우, 초기 노드 명세를 `--from-specs` 플래그로 제공할 수 있습니다:
 
 ```sh
-./dist/uniflow start --namespace default --from-nodes examples/nodes.yaml
+./dist/uniflow start --namespace default --from-specs examples/nodes.yaml
 ```
 
 초기 시크릿 파일은 `--from-secrets` 플래그로 설정할 수 있습니다:

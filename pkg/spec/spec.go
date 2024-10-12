@@ -83,6 +83,11 @@ type Value struct {
 var _ resource.Resource = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
 
+// New creates and returns a new instance of Spec.
+func New() Spec {
+	return &Meta{}
+}
+
 // IsBound checks if the spec is bound to any of the provided secrets.
 func IsBound(sp Spec, secrets ...*secret.Secret) bool {
 	for _, vals := range sp.GetEnv() {

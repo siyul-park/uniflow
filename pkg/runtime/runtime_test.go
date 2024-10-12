@@ -30,15 +30,15 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	chartStore := chart.NewStore()
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
+	chartStore := chart.NewStore()
 
 	r := New(Config{
 		Scheme:      s,
-		ChartStore:  chartStore,
 		SpecStore:   specStore,
 		SecretStore: secretStore,
+		ChartStore:  chartStore,
 	})
 	defer r.Close()
 
@@ -54,74 +54,6 @@ func TestRuntime_Load(t *testing.T) {
 }
 
 func TestRuntime_Reconcile(t *testing.T) {
-	t.Run("Chart", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-
-		s := scheme.New()
-		kind := faker.UUIDHyphenated()
-
-		chartStore := chart.NewStore()
-		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
-
-		h := hook.New()
-		symbols := make(chan *symbol.Symbol)
-
-		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			symbols <- sb
-			return nil
-		}))
-		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			symbols <- sb
-			return nil
-		}))
-
-		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-		})
-		defer r.Close()
-
-		err := r.Watch(ctx)
-		assert.NoError(t, err)
-
-		go r.Reconcile(ctx)
-
-		meta := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
-		}
-		chrt := &chart.Chart{
-			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
-			Name:      kind,
-		}
-
-		specStore.Store(ctx, meta)
-		chartStore.Store(ctx, chrt)
-
-		select {
-		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		}
-
-		chartStore.Delete(ctx, chrt)
-
-		select {
-		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		}
-	})
-
 	t.Run("Spec", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -134,9 +66,9 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		chartStore := chart.NewStore()
 		specStore := spec.NewStore()
 		secretStore := secret.NewStore()
+		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -153,9 +85,9 @@ func TestRuntime_Reconcile(t *testing.T) {
 		r := New(Config{
 			Scheme:      s,
 			Hook:        h,
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 		})
 		defer r.Close()
 
@@ -201,9 +133,9 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		chartStore := chart.NewStore()
 		specStore := spec.NewStore()
 		secretStore := secret.NewStore()
+		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -220,9 +152,9 @@ func TestRuntime_Reconcile(t *testing.T) {
 		r := New(Config{
 			Scheme:      s,
 			Hook:        h,
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 		})
 
 		err := r.Watch(ctx)
@@ -260,6 +192,74 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}
 
 		secretStore.Delete(ctx, scrt)
+
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+		}
+	})
+
+	t.Run("Chart", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		s := scheme.New()
+		kind := faker.UUIDHyphenated()
+
+		specStore := spec.NewStore()
+		secretStore := secret.NewStore()
+		chartStore := chart.NewStore()
+
+		h := hook.New()
+		symbols := make(chan *symbol.Symbol)
+
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
+
+		r := New(Config{
+			Scheme:      s,
+			Hook:        h,
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			ChartStore:  chartStore,
+		})
+		defer r.Close()
+
+		err := r.Watch(ctx)
+		assert.NoError(t, err)
+
+		go r.Reconcile(ctx)
+
+		meta := &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+		}
+		chrt := &chart.Chart{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      kind,
+		}
+
+		specStore.Store(ctx, meta)
+		chartStore.Store(ctx, chrt)
+
+		select {
+		case sb := <-symbols:
+			assert.Equal(t, meta.GetID(), sb.ID())
+		case <-ctx.Done():
+			assert.NoError(t, ctx.Err())
+		}
+
+		chartStore.Delete(ctx, chrt)
 
 		select {
 		case sb := <-symbols:

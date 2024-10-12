@@ -62,6 +62,11 @@ const (
 
 var _ resource.Resource = (*Chart)(nil)
 
+// New creates and returns a new instance of Chart.
+func New() *Chart {
+	return &Chart{}
+}
+
 // IsBound checks whether any of the secrets are bound to the chart.
 func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
 	for _, vals := range c.Env {

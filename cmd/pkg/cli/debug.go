@@ -23,8 +23,9 @@ import (
 
 // Debugger manages the debugger UI using Bubble Tea.
 type Debugger struct {
-	program *tea.Program
-	model   *debugModel
+	agent    *agent.Agent
+	debugger *debug.Debugger
+	program  *tea.Program
 }
 
 // debugModel represents the state and logic for the debugger UI.
@@ -72,16 +73,18 @@ func NewDebugger(agent *agent.Agent, options ...tea.ProgramOption) *Debugger {
 	ti.Prompt = "(debug) "
 	ti.Focus()
 
+	debugger := debug.NewDebugger(agent)
 	model := &debugModel{
 		input:    ti,
 		agent:    agent,
-		debugger: debug.NewDebugger(agent),
+		debugger: debugger,
 	}
 	program := tea.NewProgram(model, options...)
 
 	return &Debugger{
-		program: program,
-		model:   model,
+		agent:    agent,
+		debugger: debugger,
+		program:  program,
 	}
 }
 
@@ -91,7 +94,7 @@ func (d *Debugger) Run() error {
 
 	go func() {
 		d.program.Wait()
-		d.model.Close()
+		d.debugger.Close()
 	}()
 
 	return err
@@ -305,13 +308,6 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, m.nextInput(msg)
-}
-
-// Close resets the model state and stops watching the current breakpoint.
-func (m *debugModel) Close() {
-	m.view = nil
-	m.debugger.Close()
-	m.agent.Close()
 }
 
 func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {

@@ -30,6 +30,11 @@ const (
 
 var _ resource.Resource = (*Secret)(nil)
 
+// New creates and returns a new instance of Secret.
+func New() *Secret {
+	return &Secret{}
+}
+
 // GetID returns the secret's unique identifier.
 func (s *Secret) GetID() uuid.UUID {
 	return s.ID

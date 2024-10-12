@@ -14,40 +14,11 @@ import (
 )
 
 func TestGetCommand_Execute(t *testing.T) {
-	chartStore := chart.NewStore()
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
+	chartStore := chart.NewStore()
 
-	t.Run("GetChart", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		chrt := &chart.Chart{
-			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
-		}
-
-		_, err := chartStore.Store(ctx, chrt)
-		assert.NoError(t, err)
-
-		output := new(bytes.Buffer)
-
-		cmd := NewGetCommand(GetConfig{
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-		})
-		cmd.SetOut(output)
-		cmd.SetErr(output)
-		cmd.SetArgs([]string{argCharts})
-
-		err = cmd.Execute()
-		assert.NoError(t, err)
-
-		assert.Contains(t, output.String(), chrt.Name)
-	})
-
-	t.Run("GetNodeSpec", func(t *testing.T) {
+	t.Run("GetSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -64,13 +35,13 @@ func TestGetCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewGetCommand(GetConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argNodes})
+		cmd.SetArgs([]string{specs})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -93,17 +64,46 @@ func TestGetCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewGetCommand(GetConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argSecrets})
+		cmd.SetArgs([]string{secrets})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
 
 		assert.Contains(t, output.String(), scrt.Name)
+	})
+
+	t.Run("GetChart", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		chrt := &chart.Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.Word(),
+		}
+
+		_, err := chartStore.Store(ctx, chrt)
+		assert.NoError(t, err)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewGetCommand(GetConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			ChartStore:  chartStore,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetArgs([]string{charts})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		assert.Contains(t, output.String(), chrt.Name)
 	})
 }

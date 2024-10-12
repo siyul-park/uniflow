@@ -25,12 +25,11 @@ func newSpecDecoder(decoder *encoding.DecodeAssembler[types.Value, any]) encodin
 					return nil, err
 				}
 
-				return encoding.DecodeFunc[types.Value, unsafe.Pointer](func(source types.Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source types.Value, target unsafe.Pointer) error {
 					unstructured := &Unstructured{}
 					if err := child.Decode(source, unsafe.Pointer(&unstructured)); err != nil {
 						return err
 					}
-
 					*(*Spec)(target) = unstructured
 					return nil
 				}), nil

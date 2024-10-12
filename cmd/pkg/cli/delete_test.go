@@ -16,58 +16,17 @@ import (
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
-	chartStore := chart.NewStore()
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
+	chartStore := chart.NewStore()
 
 	fs := afero.NewMemMapFs()
 
-	t.Run("DeleteChart", func(t *testing.T) {
+	t.Run("DeleteSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		filename := "chart.json"
-
-		chrt := &chart.Chart{
-			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
-		}
-
-		data, err := json.Marshal(chrt)
-		assert.NoError(t, err)
-
-		file, err := fs.Create(filename)
-		assert.NoError(t, err)
-		defer file.Close()
-
-		_, err = file.Write(data)
-		assert.NoError(t, err)
-
-		_, err = chartStore.Store(ctx, chrt)
-		assert.NoError(t, err)
-
-		cmd := NewDeleteCommand(DeleteConfig{
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			FS:          fs,
-		})
-
-		cmd.SetArgs([]string{argCharts, fmt.Sprintf("--%s", flagFilename), filename})
-
-		err = cmd.Execute()
-		assert.NoError(t, err)
-
-		r, err := chartStore.Load(ctx, chrt)
-		assert.NoError(t, err)
-		assert.Len(t, r, 0)
-	})
-
-	t.Run("DeleteNodeSpec", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		filename := "nodes.json"
+		filename := "specs.json"
 
 		kind := faker.UUIDHyphenated()
 
@@ -90,13 +49,13 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		assert.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 
-		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{specs, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -131,13 +90,13 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		assert.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 
-		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{secrets, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -145,5 +104,46 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		rSecret, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, rSecret, 0)
+	})
+
+	t.Run("DeleteChart", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		filename := "charts.json"
+
+		chrt := &chart.Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.Word(),
+		}
+
+		data, err := json.Marshal(chrt)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		_, err = chartStore.Store(ctx, chrt)
+		assert.NoError(t, err)
+
+		cmd := NewDeleteCommand(DeleteConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			ChartStore:  chartStore,
+			FS:          fs,
+		})
+
+		cmd.SetArgs([]string{charts, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		r, err := chartStore.Load(ctx, chrt)
+		assert.NoError(t, err)
+		assert.Len(t, r, 0)
 	})
 }

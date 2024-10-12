@@ -12,9 +12,9 @@ import (
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
+	ChartStore  chart.Store
 	FS          afero.Fs
 }
 
@@ -24,8 +24,12 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		Use:       "delete",
 		Short:     "Delete resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argCharts, argNodes, argSecrets},
-		RunE:      runDeleteCommand(config),
+		ValidArgs: []string{specs, secrets, charts},
+		RunE: runs(map[string]func(cmd *cobra.Command) error{
+			specs:   runDeleteCommand(config.SpecStore, config.FS, spec.New),
+			secrets: runDeleteCommand(config.SecretStore, config.FS, secret.New),
+			charts:  runDeleteCommand(config.ChartStore, config.FS, chart.New),
+		}),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
@@ -34,20 +38,31 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 	return cmd
 }
 
-func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+func runDeleteCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+	flags := map[string]string{
+		flagNamespace: flagNamespace,
+		flagFilename:  flagFilename,
+	}
+	for _, init := range alias {
+		init(flags)
+	}
+
+	return func(cmd *cobra.Command) error {
 		ctx := cmd.Context()
 
-		namespace, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flags[flagNamespace])
 		if err != nil {
 			return err
 		}
-		filename, err := cmd.Flags().GetString(flagFilename)
+		filename, err := cmd.Flags().GetString(flags[flagFilename])
 		if err != nil {
 			return err
+		}
+		if filename == "" {
+			return nil
 		}
 
-		file, err := config.FS.Open(filename)
+		file, err := fs.Open(filename)
 		if err != nil {
 			return err
 		}
@@ -55,50 +70,21 @@ func runDeleteCommand(config DeleteConfig) func(cmd *cobra.Command, args []strin
 
 		reader := resource.NewReader(file)
 
-		switch args[0] {
-		case argCharts:
-			var charts []*chart.Chart
-			if err := reader.Read(&charts); err != nil {
-				return err
-			}
-
-			for _, chrt := range charts {
-				if chrt.GetNamespace() == "" {
-					chrt.SetNamespace(namespace)
-				}
-			}
-
-			_, err := config.ChartStore.Delete(ctx, charts...)
-			return err
-		case argNodes:
-			var specs []spec.Spec
-			if err := reader.Read(&specs); err != nil {
-				return err
-			}
-
-			for _, sp := range specs {
-				if sp.GetNamespace() == "" {
-					sp.SetNamespace(namespace)
-				}
-			}
-
-			_, err := config.SpecStore.Delete(ctx, specs...)
-			return err
-		case argSecrets:
-			var secrets []*secret.Secret
-			if err := reader.Read(&secrets); err != nil {
-				return err
-			}
-
-			for _, scrt := range secrets {
-				if scrt.GetNamespace() == "" {
-					scrt.SetNamespace(namespace)
-				}
-			}
-
-			_, err := config.SecretStore.Delete(ctx, secrets...)
+		var resources []T
+		if err := reader.Read(&resources); err != nil {
 			return err
 		}
-		return nil
+		if len(resources) == 0 {
+			resources = append(resources, zero())
+		}
+
+		for _, rsc := range resources {
+			if rsc.GetNamespace() == "" {
+				rsc.SetNamespace(namespace)
+			}
+		}
+
+		_, err = store.Delete(ctx, resources...)
+		return err
 	}
 }

@@ -12,9 +12,9 @@ import (
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	ChartStore  chart.Store
 	SpecStore   spec.Store
 	SecretStore secret.Store
+	ChartStore  chart.Store
 	FS          afero.Fs
 }
 
@@ -24,8 +24,12 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Use:       "apply",
 		Short:     "Apply resources to the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argCharts, argNodes, argSecrets},
-		RunE:      runApplyCommand(config),
+		ValidArgs: []string{specs, secrets, charts},
+		RunE: runs(map[string]func(cmd *cobra.Command) error{
+			specs:   runApplyCommand(config.SpecStore, config.FS, spec.New),
+			secrets: runApplyCommand(config.SecretStore, config.FS, secret.New),
+			charts:  runApplyCommand(config.ChartStore, config.FS, chart.New),
+		}),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
@@ -34,20 +38,31 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	return cmd
 }
 
-func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+	flags := map[string]string{
+		flagNamespace: flagNamespace,
+		flagFilename:  flagFilename,
+	}
+	for _, init := range alias {
+		init(flags)
+	}
+
+	return func(cmd *cobra.Command) error {
 		ctx := cmd.Context()
 
-		namespace, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flags[flagNamespace])
 		if err != nil {
 			return err
 		}
-		filename, err := cmd.Flags().GetString(flagFilename)
+		filename, err := cmd.Flags().GetString(flags[flagFilename])
 		if err != nil {
 			return err
+		}
+		if filename == "" {
+			return nil
 		}
 
-		file, err := config.FS.Open(filename)
+		file, err := fs.Open(filename)
 		if err != nil {
 			return err
 		}
@@ -56,116 +71,49 @@ func runApplyCommand(config ApplyConfig) func(cmd *cobra.Command, args []string)
 		reader := resource.NewReader(file)
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		switch args[0] {
-		case argCharts:
-			var charts []*chart.Chart
-			if err := reader.Read(&charts); err != nil {
-				return err
-			}
-
-			for _, scrt := range charts {
-				if scrt.GetNamespace() == "" {
-					scrt.SetNamespace(namespace)
-				}
-			}
-
-			ok, err := config.ChartStore.Load(ctx, charts...)
-			if err != nil {
-				return err
-			}
-
-			var inserts []*chart.Chart
-			var updates []*chart.Chart
-			for _, chrt := range charts {
-				if match := resourcebase.Match(chrt, ok...); len(match) > 0 {
-					chrt.SetID(match[0].GetID())
-					updates = append(updates, chrt)
-				} else {
-					inserts = append(inserts, chrt)
-				}
-			}
-
-			if _, err := config.ChartStore.Store(ctx, inserts...); err != nil {
-				return err
-			}
-			if _, err := config.ChartStore.Swap(ctx, updates...); err != nil {
-				return err
-			}
-
-			return writer.Write(charts)
-		case argNodes:
-			var specs []spec.Spec
-			if err := reader.Read(&specs); err != nil {
-				return err
-			}
-
-			for _, sp := range specs {
-				if sp.GetNamespace() == "" {
-					sp.SetNamespace(namespace)
-				}
-			}
-
-			ok, err := config.SpecStore.Load(ctx, specs...)
-			if err != nil {
-				return err
-			}
-
-			var inserts []spec.Spec
-			var updates []spec.Spec
-			for _, sp := range specs {
-				if match := resourcebase.Match(sp, ok...); len(match) > 0 {
-					sp.SetID(match[0].GetID())
-					updates = append(updates, sp)
-				} else {
-					inserts = append(inserts, sp)
-				}
-			}
-
-			if _, err := config.SpecStore.Store(ctx, inserts...); err != nil {
-				return err
-			}
-			if _, err := config.SpecStore.Swap(ctx, updates...); err != nil {
-				return err
-			}
-
-			return writer.Write(specs)
-		case argSecrets:
-			var secrets []*secret.Secret
-			if err := reader.Read(&secrets); err != nil {
-				return err
-			}
-
-			for _, scrt := range secrets {
-				if scrt.GetNamespace() == "" {
-					scrt.SetNamespace(namespace)
-				}
-			}
-
-			ok, err := config.SecretStore.Load(ctx, secrets...)
-			if err != nil {
-				return err
-			}
-
-			var inserts []*secret.Secret
-			var updates []*secret.Secret
-			for _, scrt := range secrets {
-				if match := resourcebase.Match(scrt, ok...); len(match) > 0 {
-					scrt.SetID(match[0].GetID())
-					updates = append(updates, scrt)
-				} else {
-					inserts = append(inserts, scrt)
-				}
-			}
-
-			if _, err := config.SecretStore.Store(ctx, inserts...); err != nil {
-				return err
-			}
-			if _, err := config.SecretStore.Swap(ctx, updates...); err != nil {
-				return err
-			}
-
-			return writer.Write(secrets)
+		var resources []T
+		if err := reader.Read(&resources); err != nil {
+			return err
 		}
-		return nil
+		if len(resources) == 0 {
+			resources = append(resources, zero())
+		}
+
+		for _, rsc := range resources {
+			if rsc.GetNamespace() == "" {
+				rsc.SetNamespace(namespace)
+			}
+		}
+
+		loads, err := store.Load(ctx, resources...)
+		if err != nil {
+			return err
+		}
+
+		var inserts []T
+		var updates []T
+		for _, rsc := range resources {
+			exists := false
+			for _, r := range loads {
+				if len(resourcebase.Match(r, rsc)) > 0 {
+					rsc.SetID(r.GetID())
+					updates = append(updates, rsc)
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				inserts = append(inserts, rsc)
+			}
+		}
+
+		if _, err := store.Store(ctx, inserts...); err != nil {
+			return err
+		}
+		if _, err := store.Swap(ctx, updates...); err != nil {
+			return err
+		}
+
+		return writer.Write(resources)
 	}
 }

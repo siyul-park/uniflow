@@ -17,106 +17,17 @@ import (
 )
 
 func TestApplyCommand_Execute(t *testing.T) {
-	chartStore := chart.NewStore()
 	specStore := spec.NewStore()
 	secretStore := secret.NewStore()
+	chartStore := chart.NewStore()
 
 	fs := afero.NewMemMapFs()
 
-	t.Run("InsertChart", func(t *testing.T) {
+	t.Run("InsertSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		filename := "chart.json"
-
-		chrt := &chart.Chart{
-			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
-		}
-
-		data, err := json.Marshal(chrt)
-		assert.NoError(t, err)
-
-		file, err := fs.Create(filename)
-		assert.NoError(t, err)
-		defer file.Close()
-
-		_, err = file.Write(data)
-		assert.NoError(t, err)
-
-		output := new(bytes.Buffer)
-
-		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			FS:          fs,
-		})
-		cmd.SetOut(output)
-		cmd.SetErr(output)
-		cmd.SetArgs([]string{argCharts, fmt.Sprintf("--%s", flagFilename), filename})
-
-		err = cmd.Execute()
-		assert.NoError(t, err)
-
-		results, err := chartStore.Load(ctx, chrt)
-		assert.NoError(t, err)
-		assert.Len(t, results, 1)
-
-		assert.Contains(t, output.String(), chrt.Name)
-	})
-
-	t.Run("UpdateChart", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		filename := "chart.json"
-
-		chrt := &chart.Chart{
-			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
-		}
-
-		_, err := chartStore.Store(ctx, chrt)
-		assert.NoError(t, err)
-
-		data, err := json.Marshal(chrt)
-		assert.NoError(t, err)
-
-		file, err := fs.Create(filename)
-		assert.NoError(t, err)
-		defer file.Close()
-
-		_, err = file.Write(data)
-		assert.NoError(t, err)
-
-		output := new(bytes.Buffer)
-
-		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			FS:          fs,
-		})
-		cmd.SetOut(output)
-		cmd.SetErr(output)
-		cmd.SetArgs([]string{argCharts, fmt.Sprintf("--%s", flagFilename), filename})
-
-		err = cmd.Execute()
-		assert.NoError(t, err)
-
-		results, err := chartStore.Load(ctx, chrt)
-		assert.NoError(t, err)
-		assert.Len(t, results, 1)
-
-		assert.Contains(t, output.String(), chrt.Name)
-	})
-
-	t.Run("InsertNodeSpec", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		filename := "nodes.json"
+		filename := "specs.json"
 
 		kind := faker.UUIDHyphenated()
 
@@ -138,14 +49,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{specs, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -153,15 +64,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 		results, err := specStore.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
-
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("UpdateNodeSpec", func(t *testing.T) {
+	t.Run("UpdateSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		filename := "nodes.json"
+		filename := "specs.json"
 
 		kind := faker.UUIDHyphenated()
 
@@ -186,14 +96,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argNodes, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{specs, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -201,7 +111,6 @@ func TestApplyCommand_Execute(t *testing.T) {
 		results, err := specStore.Load(ctx, meta)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
-
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
@@ -229,14 +138,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{secrets, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -244,7 +153,6 @@ func TestApplyCommand_Execute(t *testing.T) {
 		results, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
-
 		assert.Contains(t, output.String(), scrt.Name)
 	})
 
@@ -275,14 +183,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewApplyCommand(ApplyConfig{
-			ChartStore:  chartStore,
 			SpecStore:   specStore,
 			SecretStore: secretStore,
+			ChartStore:  chartStore,
 			FS:          fs,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{argSecrets, fmt.Sprintf("--%s", flagFilename), filename})
+		cmd.SetArgs([]string{secrets, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -290,7 +198,93 @@ func TestApplyCommand_Execute(t *testing.T) {
 		results, err := secretStore.Load(ctx, scrt)
 		assert.NoError(t, err)
 		assert.Len(t, results, 1)
-
 		assert.Contains(t, output.String(), scrt.Name)
+	})
+
+	t.Run("InsertChart", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		filename := "charts.json"
+
+		chrt := &chart.Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.Word(),
+		}
+
+		data, err := json.Marshal(chrt)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			ChartStore:  chartStore,
+			FS:          fs,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetArgs([]string{charts, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		results, err := chartStore.Load(ctx, chrt)
+		assert.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Contains(t, output.String(), chrt.Name)
+	})
+
+	t.Run("UpdateChart", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		filename := "charts.json"
+
+		chrt := &chart.Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.Word(),
+		}
+
+		_, err := chartStore.Store(ctx, chrt)
+		assert.NoError(t, err)
+
+		data, err := json.Marshal(chrt)
+		assert.NoError(t, err)
+
+		file, err := fs.Create(filename)
+		assert.NoError(t, err)
+		defer file.Close()
+
+		_, err = file.Write(data)
+		assert.NoError(t, err)
+
+		output := new(bytes.Buffer)
+
+		cmd := NewApplyCommand(ApplyConfig{
+			SpecStore:   specStore,
+			SecretStore: secretStore,
+			ChartStore:  chartStore,
+			FS:          fs,
+		})
+		cmd.SetOut(output)
+		cmd.SetErr(output)
+		cmd.SetArgs([]string{charts, fmt.Sprintf("--%s", flagFilename), filename})
+
+		err = cmd.Execute()
+		assert.NoError(t, err)
+
+		results, err := chartStore.Load(ctx, chrt)
+		assert.NoError(t, err)
+		assert.Len(t, results, 1)
+		assert.Contains(t, output.String(), chrt.Name)
 	})
 }

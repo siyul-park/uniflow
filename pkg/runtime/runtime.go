@@ -20,21 +20,21 @@ type Config struct {
 	Namespace   string         // Namespace defines the isolated execution environment for workflows.
 	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
 	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	ChartStore  chart.Store    // ChartStore is responsible for persisting charts.
 	SpecStore   spec.Store     // SpecStore is responsible for persisting specifications.
 	SecretStore secret.Store   // SecretStore is responsible for persisting secrets.
+	ChartStore  chart.Store    // ChartStore is responsible for persisting charts.
 }
 
 // Runtime represents an environment for executing Workflows.
 type Runtime struct {
 	namespace    string
 	scheme       *scheme.Scheme
-	chartStore   chart.Store
 	specStore    spec.Store
 	secretStore  secret.Store
-	chartStream  chart.Stream
+	chartStore   chart.Store
 	specStream   spec.Stream
 	secretStream secret.Stream
+	chartStream  chart.Stream
 	symbolTable  *symbol.Table
 	symbolLoader *symbol.Loader
 	chartTable   *chart.Table
@@ -53,14 +53,14 @@ func New(config Config) *Runtime {
 	if config.Scheme == nil {
 		config.Scheme = scheme.New()
 	}
-	if config.ChartStore == nil {
-		config.ChartStore = chart.NewStore()
-	}
 	if config.SpecStore == nil {
 		config.SpecStore = spec.NewStore()
 	}
 	if config.SecretStore == nil {
 		config.SecretStore = secret.NewStore()
+	}
+	if config.ChartStore == nil {
+		config.ChartStore = chart.NewStore()
 	}
 
 	symbolTable := symbol.NewTable(symbol.TableOption{
@@ -100,9 +100,9 @@ func New(config Config) *Runtime {
 	return &Runtime{
 		namespace:    config.Namespace,
 		scheme:       config.Scheme,
-		chartStore:   config.ChartStore,
 		specStore:    config.SpecStore,
 		secretStore:  config.SecretStore,
+		chartStore:   config.ChartStore,
 		symbolTable:  symbolTable,
 		symbolLoader: symbolLoader,
 		chartTable:   chartTable,
@@ -122,17 +122,6 @@ func (r *Runtime) Load(ctx context.Context) error {
 func (r *Runtime) Watch(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	if r.chartStream != nil {
-		if err := r.chartStream.Close(); err != nil {
-			return err
-		}
-	}
-	chartStream, err := r.chartStore.Watch(ctx, &chart.Chart{Namespace: r.namespace})
-	if err != nil {
-		return err
-	}
-	r.chartStream = chartStream
 
 	if r.specStream != nil {
 		if err := r.specStream.Close(); err != nil {
@@ -156,6 +145,17 @@ func (r *Runtime) Watch(ctx context.Context) error {
 	}
 	r.secretStream = secretStream
 
+	if r.chartStream != nil {
+		if err := r.chartStream.Close(); err != nil {
+			return err
+		}
+	}
+	chartStream, err := r.chartStore.Watch(ctx, &chart.Chart{Namespace: r.namespace})
+	if err != nil {
+		return err
+	}
+	r.chartStream = chartStream
+
 	return nil
 }
 
@@ -163,13 +163,13 @@ func (r *Runtime) Watch(ctx context.Context) error {
 func (r *Runtime) Reconcile(ctx context.Context) error {
 	r.mu.RLock()
 
-	chartStream := r.chartStream
 	specStream := r.specStream
 	secretStream := r.secretStream
+	chartStream := r.chartStream
 
 	r.mu.RUnlock()
 
-	if chartStream == nil || specStream == nil || secretStream == nil {
+	if specStream == nil || secretStream == nil || chartStream == nil {
 		return nil
 	}
 
@@ -179,51 +179,6 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case event, ok := <-chartStream.Next():
-			if !ok {
-				return nil
-			}
-
-			charts := r.chartTable.Links(event.ID)
-			if len(charts) == 0 {
-				var err error
-				charts, err = r.chartStore.Load(ctx, &chart.Chart{ID: event.ID})
-				if err != nil {
-					return err
-				}
-			}
-
-			kinds := make([]string, 0, len(charts))
-			for _, chrt := range charts {
-				kinds = append(kinds, chrt.GetName())
-			}
-
-			bounded := make(map[uuid.UUID]spec.Spec)
-			for _, id := range r.symbolTable.Keys() {
-				sb := r.symbolTable.Lookup(id)
-				if sb != nil && slices.Contains(kinds, sb.Kind()) {
-					bounded[sb.ID()] = sb.Spec
-				}
-			}
-			for _, sp := range unloaded {
-				if slices.Contains(kinds, sp.GetKind()) {
-					bounded[sp.GetID()] = sp
-				}
-			}
-
-			for _, sp := range bounded {
-				r.symbolTable.Free(sp.GetID())
-			}
-
-			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
-
-			for _, sp := range bounded {
-				if err := r.symbolLoader.Load(ctx, sp); err != nil {
-					unloaded[sp.GetID()] = sp
-				} else {
-					delete(unloaded, sp.GetID())
-				}
-			}
 		case event, ok := <-specStream.Next():
 			if !ok {
 				return nil
@@ -279,6 +234,51 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 					delete(unloaded, sp.GetID())
 				}
 			}
+		case event, ok := <-chartStream.Next():
+			if !ok {
+				return nil
+			}
+
+			charts := r.chartTable.Links(event.ID)
+			if len(charts) == 0 {
+				var err error
+				charts, err = r.chartStore.Load(ctx, &chart.Chart{ID: event.ID})
+				if err != nil {
+					return err
+				}
+			}
+
+			kinds := make([]string, 0, len(charts))
+			for _, chrt := range charts {
+				kinds = append(kinds, chrt.GetName())
+			}
+
+			bounded := make(map[uuid.UUID]spec.Spec)
+			for _, id := range r.symbolTable.Keys() {
+				sb := r.symbolTable.Lookup(id)
+				if sb != nil && slices.Contains(kinds, sb.Kind()) {
+					bounded[sb.ID()] = sb.Spec
+				}
+			}
+			for _, sp := range unloaded {
+				if slices.Contains(kinds, sp.GetKind()) {
+					bounded[sp.GetID()] = sp
+				}
+			}
+
+			for _, sp := range bounded {
+				r.symbolTable.Free(sp.GetID())
+			}
+
+			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
+
+			for _, sp := range bounded {
+				if err := r.symbolLoader.Load(ctx, sp); err != nil {
+					unloaded[sp.GetID()] = sp
+				} else {
+					delete(unloaded, sp.GetID())
+				}
+			}
 		}
 	}
 }
@@ -288,12 +288,6 @@ func (r *Runtime) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.chartStream != nil {
-		if err := r.chartStream.Close(); err != nil {
-			return err
-		}
-		r.chartStream = nil
-	}
 	if r.specStream != nil {
 		if err := r.specStream.Close(); err != nil {
 			return err
@@ -305,6 +299,12 @@ func (r *Runtime) Close() error {
 			return err
 		}
 		r.secretStream = nil
+	}
+	if r.chartStream != nil {
+		if err := r.chartStream.Close(); err != nil {
+			return err
+		}
+		r.chartStream = nil
 	}
 
 	if err := r.chartTable.Close(); err != nil {

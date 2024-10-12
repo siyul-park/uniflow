@@ -22,8 +22,12 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		Use:       "get",
 		Short:     "Get resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{argCharts, argNodes, argSecrets},
-		RunE:      runGetCommand(config),
+		ValidArgs: []string{specs, secrets, charts},
+		RunE: runs(map[string]func(cmd *cobra.Command) error{
+			specs:   runGetCommand(config.SpecStore, spec.New),
+			secrets: runGetCommand(config.SecretStore, secret.New),
+			charts:  runGetCommand(config.ChartStore, chart.New),
+		}),
 	}
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use all namespace")
@@ -31,40 +35,32 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 	return cmd
 }
 
-func runGetCommand(config GetConfig) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+func runGetCommand[T resourcebase.Resource](store resourcebase.Store[T], zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+	flags := map[string]string{
+		flagNamespace: flagNamespace,
+	}
+	for _, init := range alias {
+		init(flags)
+	}
+
+	return func(cmd *cobra.Command) error {
 		ctx := cmd.Context()
 
-		namespace, err := cmd.Flags().GetString(flagNamespace)
+		namespace, err := cmd.Flags().GetString(flags[flagNamespace])
 		if err != nil {
 			return err
 		}
 
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		switch args[0] {
-		case argCharts:
-			charts, err := config.ChartStore.Load(ctx, &chart.Chart{Namespace: namespace})
-			if err != nil {
-				return err
-			}
+		rsc := zero()
+		rsc.SetNamespace(namespace)
 
-			return writer.Write(charts)
-		case argNodes:
-			specs, err := config.SpecStore.Load(ctx, &spec.Meta{Namespace: namespace})
-			if err != nil {
-				return err
-			}
-
-			return writer.Write(specs)
-		case argSecrets:
-			secrets, err := config.SecretStore.Load(ctx, &secret.Secret{Namespace: namespace})
-			if err != nil {
-				return err
-			}
-
-			return writer.Write(secrets)
+		resources, err := store.Load(ctx, rsc)
+		if err != nil {
+			return err
 		}
-		return nil
+
+		return writer.Write(resources)
 	}
 }

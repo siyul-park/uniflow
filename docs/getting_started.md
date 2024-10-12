@@ -57,10 +57,10 @@ The `start` command executes all node specifications in the specified namespace.
 ./dist/uniflow start --namespace default
 ```
 
-If the namespace is empty, you can provide an initial node specification using the `--from-nodes` flag:
+If the namespace is empty, you can provide an initial node specification using the `--from-specs` flag:
 
 ```sh
-./dist/uniflow start --namespace default --from-nodes examples/nodes.yaml
+./dist/uniflow start --namespace default --from-specs examples/nodes.yaml
 ```
 
 You can specify an initial secrets file with the `--from-secrets` flag:
