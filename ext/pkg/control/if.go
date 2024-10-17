@@ -43,11 +43,14 @@ func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
 				defer cancel()
 			}
 
-			res, err := program.Run(ctx, env)
+			res, err := program.Run(ctx, []any{env})
 			if err != nil {
 				return false, err
 			}
-			return !reflect.ValueOf(res).IsZero(), nil
+			if len(res) == 0 {
+				return false, nil
+			}
+			return !reflect.ValueOf(res[0]).IsZero(), nil
 		}), nil
 	})
 }

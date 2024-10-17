@@ -26,7 +26,7 @@ func TestProgram_Run(t *testing.T) {
 		return args;
 	}`)
 
-	args := faker.Word()
+	args := []any{faker.Word()}
 
 	res, err := p.Run(ctx, args)
 	assert.NoError(t, err)

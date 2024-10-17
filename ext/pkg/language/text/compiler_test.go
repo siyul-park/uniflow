@@ -21,7 +21,7 @@ func TestProgram_Run(t *testing.T) {
 	c := NewCompiler()
 	p, _ := c.Compile("foo")
 
-	res, err := p.Run(ctx)
+	res, err := p.Run(ctx, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", res)
+	assert.Equal(t, []any{"foo"}, res)
 }

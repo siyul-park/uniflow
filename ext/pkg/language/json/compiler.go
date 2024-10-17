@@ -15,8 +15,8 @@ func NewCompiler() language.Compiler {
 		if err := json.Unmarshal([]byte(code), &data); err != nil {
 			return nil, err
 		}
-		return language.RunFunc(func(_ context.Context, _ ...any) (any, error) {
-			return data, nil
+		return language.RunFunc(func(_ context.Context, _ []any) ([]any, error) {
+			return []any{data}, nil
 		}), nil
 	})
 }

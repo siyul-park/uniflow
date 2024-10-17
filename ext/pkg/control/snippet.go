@@ -49,7 +49,14 @@ func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 				defer cancel()
 			}
 
-			return program.Run(ctx, arg)
+			res, err := program.Run(ctx, []any{arg})
+			if err != nil {
+				return nil, err
+			}
+			if len(res) == 0 {
+				return nil, nil
+			}
+			return res[0], nil
 		}), nil
 	})
 }

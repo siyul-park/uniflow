@@ -49,7 +49,14 @@ func NewReduceNodeCodec(compiler language.Compiler) scheme.Codec {
 				defer cancel()
 			}
 
-			return program.Run(ctx, acc, cur, index)
+			res, err := program.Run(ctx, []any{acc, cur, index})
+			if err != nil {
+				return nil, err
+			}
+			if len(res) == 0 {
+				return nil, nil
+			}
+			return res[0], nil
 		}, spec.Init), nil
 	})
 }
