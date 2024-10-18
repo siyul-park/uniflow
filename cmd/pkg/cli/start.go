@@ -95,6 +95,8 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 			h.AddLoadHook(a)
 			h.AddUnloadHook(a)
+			h.AddLinkHook(a)
+			h.AddUnlinkHook(a)
 
 			d := NewDebugger(
 				a,

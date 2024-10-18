@@ -54,7 +54,7 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
-	defer proc.Wait()
+	defer proc.Join()
 
 	inWriter := in.Open(proc)
 
@@ -95,7 +95,7 @@ func BenchmarkForkNode_SendAndReceive(b *testing.B) {
 
 	proc := process.New()
 	defer proc.Exit(nil)
-	defer proc.Wait()
+	defer proc.Join()
 
 	inWriter := in.Open(proc)
 

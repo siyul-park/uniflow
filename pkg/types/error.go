@@ -72,7 +72,7 @@ func newErrorEncoder() encoding.EncodeCompiler[any, Value] {
 
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ != nil && typ.ConvertibleTo(typeError) {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := source.(error)
 				return NewError(s), nil
 			}), nil
@@ -87,7 +87,7 @@ func newErrorDecoder() encoding.DecodeCompiler[Value] {
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().ConvertibleTo(typeError) {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						t := reflect.NewAt(typ.Elem(), target)
 						t.Elem().Set(reflect.ValueOf(s.Interface()))
@@ -96,7 +96,7 @@ func newErrorDecoder() encoding.DecodeCompiler[Value] {
 					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						*(*any)(target) = s.Interface()
 						return nil

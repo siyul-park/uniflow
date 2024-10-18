@@ -266,7 +266,7 @@ func (i Int64) Compare(other Value) int {
 func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ != nil && typ.Kind() == reflect.Int {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int); ok {
 					return NewInt(s), nil
 				} else {
@@ -274,7 +274,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Int8 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int8); ok {
 					return NewInt8(s), nil
 				} else {
@@ -282,7 +282,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Int16 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int16); ok {
 					return NewInt16(s), nil
 				} else {
@@ -290,7 +290,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Int32 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int32); ok {
 					return NewInt32(s), nil
 				} else {
@@ -298,7 +298,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Int64 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int64); ok {
 					return NewInt64(s), nil
 				} else {
@@ -338,7 +338,7 @@ func newIntegerDecoder() encoding.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newIntegerDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.String {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Integer); ok {
 						*(*string)(target) = fmt.Sprint(s.Interface())
 						return nil
@@ -346,7 +346,7 @@ func newIntegerDecoder() encoding.DecodeCompiler[Value] {
 					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Integer); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -360,7 +360,7 @@ func newIntegerDecoder() encoding.DecodeCompiler[Value] {
 }
 
 func newIntegerDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
-	return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+	return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Integer); ok {
 			*(*T)(target) = T(s.Int())
 			return nil

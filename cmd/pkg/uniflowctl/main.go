@@ -31,6 +31,10 @@ const (
 )
 
 func init() {
+	viper.SetDefault(flagCollectionCharts, "charts")
+	viper.SetDefault(flagCollectionNodes, "nodes")
+	viper.SetDefault(flagCollectionSecrets, "secrets")
+
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
 	viper.ReadInConfig()
@@ -40,20 +44,10 @@ func main() {
 	ctx := context.Background()
 
 	databaseURL := viper.GetString(flagDatabaseURL)
-	databaseName := viper.GetString(flagCollectionCharts)
-	collectionCharts := viper.GetString(flagCollectionNodes)
+	databaseName := viper.GetString(flagDatabaseName)
+	collectionCharts := viper.GetString(flagCollectionCharts)
 	collectionNodes := viper.GetString(flagCollectionNodes)
 	collectionSecrets := viper.GetString(flagCollectionSecrets)
-
-	if collectionCharts == "" {
-		collectionCharts = "charts"
-	}
-	if collectionNodes == "" {
-		collectionNodes = "nodes"
-	}
-	if collectionSecrets == "" {
-		collectionSecrets = "secrets"
-	}
 
 	if strings.HasPrefix(databaseURL, "memongodb://") {
 		server := mongoserver.New()

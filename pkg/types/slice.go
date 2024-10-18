@@ -169,7 +169,7 @@ func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Enc
 				valueEncoder = encoder
 			}
 
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := reflect.ValueOf(source)
 
 				values := make([]Value, 0, s.Len())
@@ -212,7 +212,7 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Dec
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					t := reflect.NewAt(typ.Elem(), target).Elem()
 					if s, ok := source.(Slice); ok {
 						for i := 0; i < s.Len(); i++ {
@@ -225,7 +225,7 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Dec
 					return setElement(source, t, 0)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Slice); ok {
 						*(*any)(target) = s.Interface()
 						return nil

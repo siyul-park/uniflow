@@ -128,8 +128,5 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		}
 	}
 
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-	return nil
+	return errors.Join(errs...)
 }

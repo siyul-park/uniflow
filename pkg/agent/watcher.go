@@ -1,6 +1,8 @@
 package agent
 
-import "github.com/siyul-park/uniflow/pkg/process"
+import (
+	"github.com/siyul-park/uniflow/pkg/process"
+)
 
 // Watcher defines methods for handling Frame and Process events.
 type Watcher interface {

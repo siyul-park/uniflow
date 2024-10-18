@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -92,6 +93,21 @@ func TestAgent_Process(t *testing.T) {
 	out.Open(proc)
 
 	<-done
+}
+
+func TestAgent_Chart(t *testing.T) {
+	a := New()
+	defer a.Close()
+
+	chrt := &chart.Chart{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
+	a.Link(chrt)
+	defer a.Unlink(chrt)
+
+	assert.Equal(t, chrt, a.Chart(chrt.GetID()))
+	assert.Contains(t, a.Charts(), chrt)
 }
 
 func TestAgent_Frames(t *testing.T) {

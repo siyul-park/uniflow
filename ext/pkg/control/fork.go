@@ -104,7 +104,7 @@ func (n *ForkNode) backward(proc *process.Process) {
 			continue
 		}
 
-		proc.Wait()
+		proc.Join()
 		proc.Exit(err)
 	}
 }
@@ -118,7 +118,7 @@ func (n *ForkNode) catch(proc *process.Process) {
 			err = v.Unwrap()
 		}
 
-		proc.Wait()
+		proc.Join()
 		proc.Exit(err)
 	}
 }

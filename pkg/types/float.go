@@ -119,7 +119,7 @@ func (f Float64) Compare(other Value) int {
 func newFloatEncoder() encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ != nil && typ.Kind() == reflect.Float32 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(float32); ok {
 					return NewFloat32(s), nil
 				} else {
@@ -127,7 +127,7 @@ func newFloatEncoder() encoding.EncodeCompiler[any, Value] {
 				}
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Float64 {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(float64); ok {
 					return NewFloat64(s), nil
 				} else {
@@ -167,7 +167,7 @@ func newFloatDecoder() encoding.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Uint64 {
 				return newFloatDecoderWithType[uint64](), nil
 			} else if typ.Elem().Kind() == reflect.String {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Float); ok {
 						*(*string)(target) = fmt.Sprint(s.Interface())
 						return nil
@@ -175,7 +175,7 @@ func newFloatDecoder() encoding.DecodeCompiler[Value] {
 					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
-				return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Float); ok {
 						*(*any)(target) = s.Interface()
 						return nil
@@ -189,7 +189,7 @@ func newFloatDecoder() encoding.DecodeCompiler[Value] {
 }
 
 func newFloatDecoderWithType[T constraints.Integer | constraints.Float]() encoding.Decoder[Value, unsafe.Pointer] {
-	return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+	return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 		if s, ok := source.(Float); ok {
 			*(*T)(target) = T(s.Float())
 			return nil

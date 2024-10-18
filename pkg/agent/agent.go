@@ -5,16 +5,18 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Agent manages symbols, processes, and their hooks.
+// Agent manages symbols, processes, charts, and hooks for ports and packets.
 type Agent struct {
 	symbols   map[uuid.UUID]*symbol.Symbol
 	processes map[uuid.UUID]*process.Process
+	charts    map[uuid.UUID]*chart.Chart
 	frames    map[uuid.UUID][]*Frame
 	inbounds  map[uuid.UUID]map[string]port.OpenHook
 	outbounds map[uuid.UUID]map[string]port.OpenHook
@@ -24,19 +26,22 @@ type Agent struct {
 
 var _ symbol.LoadHook = (*Agent)(nil)
 var _ symbol.UnloadHook = (*Agent)(nil)
+var _ chart.LinkHook = (*Agent)(nil)
+var _ chart.UnlinkHook = (*Agent)(nil)
 
-// New creates a new Agent instance.
+// New initializes and returns a new Agent.
 func New() *Agent {
 	return &Agent{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
 		processes: make(map[uuid.UUID]*process.Process),
+		charts:    make(map[uuid.UUID]*chart.Chart),
 		frames:    make(map[uuid.UUID][]*Frame),
 		inbounds:  make(map[uuid.UUID]map[string]port.OpenHook),
 		outbounds: make(map[uuid.UUID]map[string]port.OpenHook),
 	}
 }
 
-// Watch registers a watcher, returning false if already registered.
+// Watch registers a new watcher. Returns false if the watcher is already registered.
 func (a *Agent) Watch(watcher Watcher) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -50,7 +55,7 @@ func (a *Agent) Watch(watcher Watcher) bool {
 	return true
 }
 
-// Unwatch unregisters a watcher, returning true if successfully removed.
+// Unwatch removes a watcher. Returns true if the watcher is successfully removed.
 func (a *Agent) Unwatch(watcher Watcher) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -64,19 +69,19 @@ func (a *Agent) Unwatch(watcher Watcher) bool {
 	return false
 }
 
-// Symbols returns all managed symbols.
+// Symbols returns a list of all registered symbols.
 func (a *Agent) Symbols() []*symbol.Symbol {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	sbs := make([]*symbol.Symbol, 0, len(a.symbols))
-	for _, sb := range a.symbols {
-		sbs = append(sbs, sb)
+	symbols := make([]*symbol.Symbol, 0, len(a.symbols))
+	for _, sym := range a.symbols {
+		symbols = append(symbols, sym)
 	}
-	return sbs
+	return symbols
 }
 
-// Symbol retrieves a symbol by UUID, returning the symbol and a boolean indicating existence.
+// Symbol returns a symbol by UUID.
 func (a *Agent) Symbol(id uuid.UUID) *symbol.Symbol {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -84,7 +89,7 @@ func (a *Agent) Symbol(id uuid.UUID) *symbol.Symbol {
 	return a.symbols[id]
 }
 
-// Processes returns all managed processes.
+// Processes returns a list of all registered processes.
 func (a *Agent) Processes() []*process.Process {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -96,7 +101,7 @@ func (a *Agent) Processes() []*process.Process {
 	return procs
 }
 
-// Process retrieves a process by UUID, returning the process and a boolean indicating existence.
+// Process returns a process by UUID.
 func (a *Agent) Process(id uuid.UUID) *process.Process {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -104,7 +109,27 @@ func (a *Agent) Process(id uuid.UUID) *process.Process {
 	return a.processes[id]
 }
 
-// Frames retrieves frames for a specific process UUID, returning frames and a boolean indicating existence.
+// Charts returns a list of all registered charts.
+func (a *Agent) Charts() []*chart.Chart {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	charts := make([]*chart.Chart, 0, len(a.charts))
+	for _, ch := range a.charts {
+		charts = append(charts, ch)
+	}
+	return charts
+}
+
+// Chart returns a chart by UUID.
+func (a *Agent) Chart(id uuid.UUID) *chart.Chart {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	return a.charts[id]
+}
+
+// Frames returns the frames associated with a specific process UUID.
 func (a *Agent) Frames(id uuid.UUID) []*Frame {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
@@ -112,7 +137,7 @@ func (a *Agent) Frames(id uuid.UUID) []*Frame {
 	return append([]*Frame(nil), a.frames[id]...)
 }
 
-// Load adds a symbol and its hooks to the agent.
+// Load registers a symbol and its associated hooks for inbound and outbound ports.
 func (a *Agent) Load(sym *symbol.Symbol) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -157,7 +182,7 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 	return nil
 }
 
-// Unload removes a symbol and its hooks from the agent.
+// Unload removes a symbol and its hooks.
 func (a *Agent) Unload(sym *symbol.Symbol) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -178,13 +203,34 @@ func (a *Agent) Unload(sym *symbol.Symbol) error {
 	return nil
 }
 
-// Close releases all resources and clears symbols, processes, and watchers.
+// Link registers a chart.
+func (a *Agent) Link(chrt *chart.Chart) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.charts[chrt.GetID()] = chrt
+
+	return nil
+}
+
+// Unlink removes a chart.
+func (a *Agent) Unlink(chrt *chart.Chart) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	delete(a.charts, chrt.GetID())
+
+	return nil
+}
+
+// Close clears all symbols, processes, and registered watchers.
 func (a *Agent) Close() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	a.symbols = make(map[uuid.UUID]*symbol.Symbol)
 	a.processes = make(map[uuid.UUID]*process.Process)
+	a.charts = make(map[uuid.UUID]*chart.Chart)
 	a.frames = make(map[uuid.UUID][]*Frame)
 	a.watchers = nil
 }
@@ -193,14 +239,12 @@ func (a *Agent) Close() {
 func (a *Agent) accept(proc *process.Process) {
 	a.mu.Lock()
 
-	_, ok := a.processes[proc.ID()]
-	if ok {
+	if _, ok := a.processes[proc.ID()]; ok {
 		a.mu.Unlock()
 		return
 	}
 
 	a.processes[proc.ID()] = proc
-
 	proc.AddExitHook(process.ExitFunc(func(err error) {
 		a.mu.Lock()
 		defer a.mu.Unlock()
@@ -217,12 +261,10 @@ func (a *Agent) accept(proc *process.Process) {
 
 	a.mu.Unlock()
 
-	for i := len(watchers) - 1; i >= 0; i-- {
-		watcher := watchers[i]
-		watcher.OnProcess(proc)
-	}
+	watchers.OnProcess(proc)
 }
 
+// hooks sets up hooks for a symbol's inbound and outbound ports.
 func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort, out *port.OutPort) (packet.Hook, packet.Hook) {
 	inboundHook := packet.HookFunc(func(pck *packet.Packet) {
 		a.mu.Lock()

@@ -126,7 +126,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 			}
 
 			for _, child := range children {
-				child.Wait()
+				child.Join()
 				child.Exit(err)
 			}
 		}))

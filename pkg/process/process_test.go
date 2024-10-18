@@ -125,7 +125,7 @@ func TestProcess_Wait(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		child.Wait()
+		child.Join()
 		close(done)
 	}()
 
@@ -137,7 +137,7 @@ func TestProcess_Wait(t *testing.T) {
 
 	done = make(chan struct{})
 	go func() {
-		proc.Wait()
+		proc.Join()
 		close(done)
 	}()
 

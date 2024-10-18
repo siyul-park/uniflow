@@ -189,7 +189,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		<-ctx.Done()
-		proc.Wait()
+		proc.Join()
 		proc.Exit(ctx.Err())
 	}()
 
@@ -238,7 +238,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		proc.Wait()
+		proc.Join()
 		proc.Exit(err)
 	}()
 }

@@ -256,7 +256,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 			outPck := packet.New(outPayload)
 			packet.Send(outWriter, outPck)
 
-			proc.Wait()
+			proc.Join()
 			proc.Exit(nil)
 			return
 		}
@@ -279,7 +279,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 		outPck := packet.New(outPayload)
 		packet.Send(outWriter, outPck)
 
-		child.Wait()
+		child.Join()
 		child.Exit(nil)
 	}
 }

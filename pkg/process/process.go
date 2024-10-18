@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// Process represents an individual execution unit with its own data and termination handling.
+// Process represents a unit of execution with its own data, status, and exit handling.
 type Process struct {
 	parent    *Process
 	id        uuid.UUID
@@ -20,12 +20,12 @@ type Process struct {
 	mu        sync.RWMutex
 }
 
-// Status represents the current state of a process.
+// Status represents the current state of the process.
 type Status int
 
 const (
-	StatusRunning    Status = iota // Indicates the process is running.
-	StatusTerminated               // Indicates the process has terminated.
+	StatusRunning Status = iota
+	StatusTerminated
 )
 
 var _ ExitHook = (*Process)(nil)
@@ -41,32 +41,29 @@ func New() *Process {
 	}
 }
 
-// ID returns the process's id.
+// ID returns the unique ID of the process.
 func (p *Process) ID() uuid.UUID {
 	return p.id
 }
 
-// Load retrieves the value for the given key.
+// Load retrieves the value associated with the given key.
 func (p *Process) Load(key string) any {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-
 	return p.data[key]
 }
 
-// Store stores the value under the given key.
+// Store saves the given value under the specified key.
 func (p *Process) Store(key string, val any) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
 	p.data[key] = val
 }
 
-// Delete removes the value for the given key.
+// Delete removes the value associated with the specified key.
 func (p *Process) Delete(key string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
 	if _, ok := p.data[key]; ok {
 		delete(p.data, key)
 		return true
@@ -74,7 +71,7 @@ func (p *Process) Delete(key string) bool {
 	return false
 }
 
-// LoadAndDelete retrieves and deletes the value for the given key.
+// LoadAndDelete retrieves and deletes the value associated with the given key.
 func (p *Process) LoadAndDelete(key string) any {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -94,7 +91,6 @@ func (p *Process) LoadAndDelete(key string) any {
 func (p *Process) Status() Status {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-
 	return p.status
 }
 
@@ -102,7 +98,6 @@ func (p *Process) Status() Status {
 func (p *Process) Err() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-
 	return p.err
 }
 
@@ -116,8 +111,8 @@ func (p *Process) Parent() *Process {
 	return p.parent
 }
 
-// Wait blocks until all child processes complete.
-func (p *Process) Wait() {
+// Join blocks until all child processes have completed.
+func (p *Process) Join() {
 	p.wait.Wait()
 }
 
@@ -162,7 +157,7 @@ func (p *Process) Exit(err error) {
 	exitHooks.Exit(err)
 }
 
-// AddExitHook adds an exit hook to run when the process terminates.
+// AddExitHook adds an exit hook to be executed when the process terminates.
 func (p *Process) AddExitHook(hook ExitHook) bool {
 	if p.Status() == StatusTerminated {
 		hook.Exit(p.Err())

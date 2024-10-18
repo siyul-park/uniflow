@@ -98,8 +98,5 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 		}
 	}
 
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-	return nil
+	return errors.Join(errs...)
 }

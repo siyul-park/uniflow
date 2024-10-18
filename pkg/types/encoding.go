@@ -69,7 +69,7 @@ func newShortcutEncoder() encoding.EncodeCompiler[any, Value] {
 
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ != nil && typ.ConvertibleTo(typeValue) {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := source.(Value)
 				return s, nil
 			}), nil
@@ -83,7 +83,7 @@ func newShortcutDecoder() encoding.DecodeCompiler[Value] {
 
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer && typ.Elem().ConvertibleTo(typeValue) {
-			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				*(*Value)(target) = source
 				return nil
 			}), nil
@@ -97,7 +97,7 @@ func newExpandedEncoder() encoding.EncodeCompiler[any, Value] {
 
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer && typ.ConvertibleTo(typeMarshaler) {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := source.(Marshaler)
 				return s.Marshal()
 			}), nil
@@ -111,7 +111,7 @@ func newExpandedDecoder() encoding.DecodeCompiler[Value] {
 
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.ConvertibleTo(typeUnmarshaler) {
-			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target).Interface().(Unmarshaler)
 				return t.Unmarshal(source)
 			}), nil
@@ -123,7 +123,7 @@ func newExpandedDecoder() encoding.DecodeCompiler[Value] {
 func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
 		if typ == nil {
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				return nil, nil
 			}), nil
 		} else if typ.Kind() == reflect.Pointer {
@@ -132,7 +132,7 @@ func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.E
 				return nil, err
 			}
 
-			return encoding.EncodeFunc[any, Value](func(source any) (Value, error) {
+			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if source == nil {
 					return nil, nil
 				}
@@ -147,7 +147,7 @@ func newPointerEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.E
 func newPointerDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.DecodeCompiler[Value] {
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ == nil {
-			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				return nil
 			}), nil
 		} else if typ.Kind() == reflect.Pointer && typ.Elem().Kind() == reflect.Pointer {
@@ -156,7 +156,7 @@ func newPointerDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.D
 				return nil, err
 			}
 
-			return encoding.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
+			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				t := reflect.NewAt(typ.Elem(), target)
 				if t.Elem().IsNil() {
 					zero := reflect.New(t.Type().Elem().Elem())
