@@ -166,26 +166,27 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	writer = packet.NewWriter()
 	p.writers[proc] = writer
 
-	for _, in := range p.ins {
-		reader := in.Open(proc)
-		writer.Link(reader)
-	}
-
+	ins := p.ins
 	openHooks := p.openHooks
 	listeners := p.listeners
 
 	p.mu.Unlock()
 
+	openHooks.Open(proc)
+	listeners.Accept(proc)
+
 	proc.AddExitHook(process.ExitFunc(func(_ error) {
 		p.mu.Lock()
-		defer p.mu.Unlock()
-
 		delete(p.writers, proc)
+		p.mu.Unlock()
+
 		writer.Close()
 	}))
 
-	openHooks.Open(proc)
-	listeners.Accept(proc)
+	for _, in := range ins {
+		reader := in.Open(proc)
+		writer.Link(reader)
+	}
 
 	return writer
 }

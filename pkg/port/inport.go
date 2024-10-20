@@ -113,9 +113,9 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 
 	proc.AddExitHook(process.ExitFunc(func(_ error) {
 		p.mu.Lock()
-		defer p.mu.Unlock()
-
 		delete(p.readers, proc)
+		p.mu.Unlock()
+
 		reader.Close()
 	}))
 
