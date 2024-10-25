@@ -97,9 +97,6 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		assert.NoError(t, err)
 		defer conn.Close()
 
-		// conn.SetWriteDeadline(time.Now().Add(time.Second))
-		// conn.SetReadDeadline(time.Now().Add(time.Second))
-
 		msg := faker.UUIDHyphenated()
 
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))

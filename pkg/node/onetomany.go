@@ -59,7 +59,6 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	if name == PortErr {
 		return n.errPort
 	}
-
 	if NameOfPort(name) == PortOut {
 		index, _ := IndexOfPort(name)
 		for i := 0; i <= index; i++ {

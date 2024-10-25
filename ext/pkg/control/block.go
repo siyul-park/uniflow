@@ -1,14 +1,13 @@
 package control
 
 import (
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"sync"
 )
 
 // BlockNodeSpec defines the specification for creating a BlockNode.
@@ -35,15 +34,15 @@ var _ node.Node = (*BlockNode)(nil)
 func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(spec.Specs))
-		for _, spec := range spec.Specs {
-			decoded, err := s.Decode(spec)
+		for _, sp := range spec.Specs {
+			decoded, err := s.Decode(sp)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
 				}
 				return nil, err
 			}
-			node, err := s.Compile(decoded)
+			n, err := s.Compile(decoded)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
@@ -52,7 +51,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 			}
 			symbols = append(symbols, &symbol.Symbol{
 				Spec: decoded,
-				Node: node,
+				Node: n,
 			})
 		}
 		return NewBlockNode(symbols...), nil
@@ -70,12 +69,12 @@ func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 	}
 
 	for i := 1; i < len(n.symbols); i++ {
-		out := n.symbols[i-1].Out(node.PortOut)
-		in := n.symbols[i].In(node.PortIn)
-		if out == nil || in == nil {
+		outPort := n.symbols[i-1].Out(node.PortOut)
+		inPort := n.symbols[i].In(node.PortIn)
+		if outPort == nil || inPort == nil {
 			break
 		}
-		out.Link(in)
+		outPort.Link(inPort)
 	}
 
 	if len(n.symbols) > 1 {
@@ -169,7 +168,6 @@ func (n *BlockNode) Close() error {
 			return err
 		}
 	}
-
 	for _, inPort := range n.inPorts {
 		inPort.Close()
 	}

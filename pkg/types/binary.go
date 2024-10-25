@@ -46,7 +46,7 @@ func (b Binary) Bytes() []byte {
 	return b.value
 }
 
-// Kind returns the type of the binary data.
+// kind returns the type of the binary data.
 func (b Binary) Kind() Kind {
 	return KindBinary
 }

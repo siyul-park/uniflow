@@ -1,4 +1,4 @@
-// This code is adapted from the "github.com/labstack/echo" project, specifically the file "router.go," which is licensed under the MIT License.
+// Package network This code is adapted from the "github.com/labstack/echo" project, specifically the file "router.go," which is licensed under the MIT License.
 package network
 
 import (
@@ -213,11 +213,11 @@ func (n *RouteNode) insert(method, path string, kind routeKind, paramNames []str
 		prefixLen := len(cur.prefix)
 		lcpLen := 0
 
-		max := prefixLen
-		if searchLen < max {
-			max = searchLen
+		m := prefixLen
+		if searchLen < m {
+			m = searchLen
 		}
-		for ; lcpLen < max && search[lcpLen] == cur.prefix[lcpLen]; lcpLen++ {
+		for ; lcpLen < m && search[lcpLen] == cur.prefix[lcpLen]; lcpLen++ {
 		}
 
 		if lcpLen == 0 {
@@ -319,7 +319,7 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 		search               = path
 		searchIndex          = 0
 		paramIndex           int
-		paramValues          = []string{}
+		paramValues          []string
 	)
 
 	backtrackToNextRouteKind := func(fromKind routeKind) (nextRouteKind routeKind, valid bool) {
@@ -356,11 +356,11 @@ func (n *RouteNode) find(method, path string) (*route, []string) {
 			searchLen := len(search)
 			prefixLen = len(bestMatchedRoute.prefix)
 
-			max := prefixLen
-			if searchLen < max {
-				max = searchLen
+			m := prefixLen
+			if searchLen < m {
+				m = searchLen
 			}
-			for ; lcpLen < max && search[lcpLen] == bestMatchedRoute.prefix[lcpLen]; lcpLen++ {
+			for ; lcpLen < m && search[lcpLen] == bestMatchedRoute.prefix[lcpLen]; lcpLen++ {
 			}
 		}
 

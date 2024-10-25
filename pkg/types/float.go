@@ -83,7 +83,7 @@ func (f Float64) Float() float64 {
 	return f.value
 }
 
-// Kind returns the type of the float data.
+// kind returns the type of the float data.
 func (f Float64) Kind() Kind {
 	return KindFloat64
 }

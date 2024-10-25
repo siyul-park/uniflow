@@ -52,7 +52,7 @@ func (n *NOPNode) In(name string) *port.InPort {
 }
 
 // Out returns nil as NOPNode does not have any output port.
-func (n *NOPNode) Out(name string) *port.OutPort {
+func (n *NOPNode) Out(_ string) *port.OutPort {
 	return nil
 }
 
@@ -62,7 +62,6 @@ func (n *NOPNode) Close() error {
 	return nil
 }
 
-// forward forwards incoming packets.
 func (n *NOPNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 

@@ -39,7 +39,7 @@ func NewManyToOneNode(action func(*process.Process, []*packet.Packet) (*packet.P
 	return n
 }
 
-// Out returns the output port with the specified name.
+// In Out returns the input port with the specified name.
 func (n *ManyToOneNode) In(name string) *port.InPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()

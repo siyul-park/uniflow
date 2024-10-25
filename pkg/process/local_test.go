@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLocal_Watch(t *testing.T) {
+func TestLocal_AddStoreHook(t *testing.T) {
 	l := NewLocal[string]()
 	defer l.Close()
 
@@ -15,19 +15,27 @@ func TestLocal_Watch(t *testing.T) {
 	defer proc.Exit(nil)
 
 	count := 0
-	l.Watch(proc, func(_ string) {
+	h := StoreFunc(func(_ string) {
 		count++
 	})
+
+	ok := l.AddStoreHook(proc, h)
+	assert.True(t, ok)
 
 	v := faker.UUIDHyphenated()
 
 	l.Store(proc, v)
 	assert.Equal(t, 1, count)
 
-	l.Watch(proc, func(_ string) {
-		count++
-	})
+	ok = l.RemoveStoreHook(proc, h)
+	assert.False(t, ok)
+
+	ok = l.AddStoreHook(proc, h)
+	assert.True(t, ok)
 	assert.Equal(t, 2, count)
+
+	ok = l.RemoveStoreHook(proc, h)
+	assert.False(t, ok)
 }
 
 func TestLocal_Keys(t *testing.T) {

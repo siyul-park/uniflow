@@ -101,7 +101,7 @@ func (u Uint8) Uint() uint64 {
 	return uint64(u.value)
 }
 
-// Kind returns the type of the unsigned integer data.
+// kind returns the type of the unsigned integer data.
 func (u Uint8) Kind() Kind {
 	return KindUint8
 }
@@ -144,7 +144,7 @@ func (u Uint16) Uint() uint64 {
 	return uint64(u.value)
 }
 
-// Kind returns the type of the unsigned integer data.
+// kind returns the type of the unsigned integer data.
 func (u Uint16) Kind() Kind {
 	return KindUint16
 }
@@ -187,7 +187,7 @@ func (u Uint32) Uint() uint64 {
 	return uint64(u.value)
 }
 
-// Kind returns the type of the unsigned integer data.
+// kind returns the type of the unsigned integer data.
 func (u Uint32) Kind() Kind {
 	return KindUint32
 }
@@ -230,7 +230,7 @@ func (u Uint64) Uint() uint64 {
 	return u.value
 }
 
-// Kind returns the type of the unsigned integer data.
+// kind returns the type of the unsigned integer data.
 func (u Uint64) Kind() Kind {
 	return KindUint64
 }

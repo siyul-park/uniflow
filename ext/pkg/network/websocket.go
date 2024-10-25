@@ -37,12 +37,12 @@ type WebSocketNode struct {
 
 // WebSocketConnNode represents a node for handling WebSocket connections.
 type WebSocketConnNode struct {
-	action  func(*process.Process, *packet.Packet) (*websocket.Conn, error)
-	conns   *process.Local[*websocket.Conn]
-	ioPort  *port.InPort
-	inPort  *port.InPort
-	outPort *port.OutPort
-	errPort *port.OutPort
+	action      func(*process.Process, *packet.Packet) (*websocket.Conn, error)
+	connections *process.Local[*websocket.Conn]
+	ioPort      *port.InPort
+	inPort      *port.InPort
+	outPort     *port.OutPort
+	errPort     *port.OutPort
 }
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
@@ -58,12 +58,12 @@ var _ node.Node = (*WebSocketConnNode)(nil)
 // NewWebSocketNodeCodec creates a new codec for WebSocketNodeSpec.
 func NewWebSocketNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *WebSocketNodeSpec) (node.Node, error) {
-		url, err := url.Parse(spec.URL)
+		parsed, err := url.Parse(spec.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		n := NewWebSocketNode(url)
+		n := NewWebSocketNode(parsed)
 		n.SetTimeout(spec.Timeout)
 		return n, nil
 	})
@@ -90,7 +90,7 @@ func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
 	n.dialer.HandshakeTimeout = timeout
 }
 
-func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
+func (n *WebSocketNode) connect(_ *process.Process, inPck *packet.Packet) (*websocket.Conn, error) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -120,12 +120,12 @@ func (n *WebSocketNode) connect(proc *process.Process, inPck *packet.Packet) (*w
 // NewWebSocketConnNode creates a new WebSocketConnNode.
 func NewWebSocketConnNode(action func(*process.Process, *packet.Packet) (*websocket.Conn, error)) *WebSocketConnNode {
 	n := &WebSocketConnNode{
-		action:  action,
-		conns:   process.NewLocal[*websocket.Conn](),
-		ioPort:  port.NewIn(),
-		inPort:  port.NewIn(),
-		outPort: port.NewOut(),
-		errPort: port.NewOut(),
+		action:      action,
+		connections: process.NewLocal[*websocket.Conn](),
+		ioPort:      port.NewIn(),
+		inPort:      port.NewIn(),
+		outPort:     port.NewOut(),
+		errPort:     port.NewOut(),
 	}
 
 	n.ioPort.AddListener(port.ListenFunc(n.connect))
@@ -142,9 +142,8 @@ func (n *WebSocketConnNode) In(name string) *port.InPort {
 	case node.PortIn:
 		return n.inPort
 	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Out returns the output port with the specified name.
@@ -155,9 +154,8 @@ func (n *WebSocketConnNode) Out(name string) *port.OutPort {
 	case node.PortErr:
 		return n.errPort
 	default:
+		return nil
 	}
-
-	return nil
 }
 
 // Close closes all ports of the WebSocketConnNode.
@@ -166,7 +164,7 @@ func (n *WebSocketConnNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-	n.conns.Close()
+	n.connections.Close()
 	return nil
 }
 
@@ -180,7 +178,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 			backPck := packet.SendOrFallback(errWriter, errPck, errPck)
 			ioReader.Receive(backPck)
 		} else {
-			n.conns.Store(proc, conn)
+			n.connections.Store(proc, conn)
 
 			child := proc.Fork()
 			child.AddExitHook(process.ExitFunc(func(_ error) {
@@ -198,7 +196,7 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	errWriter := n.errPort.Open(proc)
 
-	conn, ok := n.conn(proc)
+	conn, ok := n.connection(proc)
 	if !ok {
 		return
 	}
@@ -233,14 +231,14 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 }
 
 func (n *WebSocketConnNode) produce(proc *process.Process) {
-	conn, ok := n.conn(proc)
+	conn, ok := n.connection(proc)
 	if !ok {
 		return
 	}
 
 	for {
 		typ, p, err := conn.ReadMessage()
-		if err != nil {
+		if err != nil || typ == websocket.CloseMessage {
 			outWriter := n.outPort.Open(proc)
 
 			var data types.Value
@@ -284,19 +282,25 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 	}
 }
 
-func (n *WebSocketConnNode) conn(proc *process.Process) (*websocket.Conn, bool) {
-	conns := make(chan *websocket.Conn, 1)
-	defer close(conns)
+func (n *WebSocketConnNode) connection(proc *process.Process) (*websocket.Conn, bool) {
+	connections := make(chan *websocket.Conn)
+	defer close(connections)
 
-	p := proc
-	for ; p != nil; p = p.Parent() {
-		n.conns.Watch(p, func(conn *websocket.Conn) {
-			conns <- conn
-		})
+	hook := process.StoreFunc(func(conn *websocket.Conn) {
+		connections <- conn
+	})
+
+	for p := proc; p != nil; p = p.Parent() {
+		go n.connections.AddStoreHook(p, hook)
 	}
+	defer func() {
+		for p := proc; p != nil; p = p.Parent() {
+			n.connections.RemoveStoreHook(p, hook)
+		}
+	}()
 
 	select {
-	case con := <-conns:
+	case con := <-connections:
 		return con, true
 	case <-proc.Context().Done():
 		return nil, false

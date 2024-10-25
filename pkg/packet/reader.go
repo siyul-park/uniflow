@@ -63,13 +63,18 @@ func (r *Reader) AddInboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, h := range r.inbounds {
-		if h == hook {
-			return false
+	select {
+	case <-r.done:
+		return false
+	default:
+		for _, h := range r.inbounds {
+			if h == hook {
+				return false
+			}
 		}
+		r.inbounds = append(r.inbounds, hook)
+		return true
 	}
-	r.inbounds = append(r.inbounds, hook)
-	return true
 }
 
 // AddOutboundHook adds a handler to process outbound packets.
@@ -77,13 +82,18 @@ func (r *Reader) AddOutboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, h := range r.outbounds {
-		if h == hook {
-			return false
+	select {
+	case <-r.done:
+		return false
+	default:
+		for _, h := range r.outbounds {
+			if h == hook {
+				return false
+			}
 		}
+		r.outbounds = append(r.outbounds, hook)
+		return true
 	}
-	r.outbounds = append(r.outbounds, hook)
-	return true
 }
 
 // Read returns the channel for reading packets from the reader.

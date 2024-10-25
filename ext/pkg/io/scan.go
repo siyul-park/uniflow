@@ -78,7 +78,7 @@ func (n *ScanNode) Close() error {
 	return n.reader.Close()
 }
 
-func (n *ScanNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *ScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -87,13 +87,13 @@ func (n *ScanNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	dyns, err := parseFormat(format)
+	ptrs, err := arguments(format)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 
-	args := make([]any, 0, len(dyns))
-	for _, v := range dyns {
+	args := make([]any, 0, len(ptrs))
+	for _, v := range ptrs {
 		args = append(args, v.Interface())
 	}
 
@@ -102,19 +102,19 @@ func (n *ScanNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		return nil, packet.New(types.NewError(err))
 	}
 
-	vals := make([]any, 0, len(dyns))
-	for _, v := range dyns {
-		vals = append(vals, v.Elem().Interface())
+	values := make([]any, 0, len(ptrs))
+	for _, v := range ptrs {
+		values = append(values, v.Elem().Interface())
 	}
 
-	payload, err := types.Marshal(vals)
+	payload, err := types.Marshal(values)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 	return packet.New(payload), nil
 }
 
-func (n *DynScanNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *DynScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -134,13 +134,13 @@ func (n *DynScanNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	}
 	defer reader.Close()
 
-	dyns, err := parseFormat(format)
+	ptrs, err := arguments(format)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 
-	args := make([]any, 0, len(dyns))
-	for _, v := range dyns {
+	args := make([]any, 0, len(ptrs))
+	for _, v := range ptrs {
 		args = append(args, v.Interface())
 	}
 
@@ -149,20 +149,20 @@ func (n *DynScanNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		return nil, packet.New(types.NewError(err))
 	}
 
-	vals := make([]any, 0, len(dyns))
-	for _, v := range dyns {
-		vals = append(vals, v.Elem().Interface())
+	values := make([]any, 0, len(ptrs))
+	for _, v := range ptrs {
+		values = append(values, v.Elem().Interface())
 	}
 
-	payload, err := types.Marshal(vals)
+	payload, err := types.Marshal(values)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 	return packet.New(payload), nil
 }
 
-func parseFormat(format string) ([]reflect.Value, error) {
-	var dyns []reflect.Value
+func arguments(format string) ([]reflect.Value, error) {
+	var ptrs []reflect.Value
 	runes := []rune(format)
 	for i := 0; i < len(runes); i++ {
 		if runes[i] == '%' {
@@ -170,20 +170,20 @@ func parseFormat(format string) ([]reflect.Value, error) {
 			if i < len(runes) {
 				switch runes[i] {
 				case 't':
-					dyns = append(dyns, reflect.New(reflect.TypeOf(false)))
+					ptrs = append(ptrs, reflect.New(reflect.TypeOf(false)))
 				case 'b', 'e', 'E', 'f', 'F', 'g', 'G', 'x', 'X':
-					dyns = append(dyns, reflect.New(reflect.TypeOf(0.0)))
+					ptrs = append(ptrs, reflect.New(reflect.TypeOf(0.0)))
 				case 'd', 'o', 'O', 'U':
-					dyns = append(dyns, reflect.New(reflect.TypeOf(0)))
+					ptrs = append(ptrs, reflect.New(reflect.TypeOf(0)))
 				case 's':
-					dyns = append(dyns, reflect.New(reflect.TypeOf("")))
+					ptrs = append(ptrs, reflect.New(reflect.TypeOf("")))
 				case 'c':
-					dyns = append(dyns, reflect.New(reflect.TypeOf(byte(0))))
+					ptrs = append(ptrs, reflect.New(reflect.TypeOf(byte(0))))
 				default:
 					return nil, encoding.ErrUnsupportedValue
 				}
 			}
 		}
 	}
-	return dyns, nil
+	return ptrs, nil
 }

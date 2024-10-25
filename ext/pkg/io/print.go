@@ -77,11 +77,11 @@ func (n *PrintNode) Close() error {
 	return n.writer.Close()
 }
 
-func (n *PrintNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *PrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var vals []any
+	var args []any
 	format, ok := types.Pick[string](inPck.Payload())
 	if !ok {
 		payload, ok := inPck.Payload().(types.Slice)
@@ -93,18 +93,18 @@ func (n *PrintNode) action(proc *process.Process, inPck *packet.Packet) (*packet
 			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 		}
 		for i := 1; i < payload.Len(); i++ {
-			vals = append(vals, types.InterfaceOf(payload.Get(i)))
+			args = append(args, types.InterfaceOf(payload.Get(i)))
 		}
 	}
 
-	num, err := fmt.Fprintf(n.writer, format, vals...)
+	num, err := fmt.Fprintf(n.writer, format, args...)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 	return packet.New(types.NewInt(num)), nil
 }
 
-func (n *DynPrintNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *DynPrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -123,9 +123,9 @@ func (n *DynPrintNode) action(proc *process.Process, inPck *packet.Packet) (*pac
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	var vals []any
+	var args []any
 	for i := 2; i < payload.Len(); i++ {
-		vals = append(vals, types.InterfaceOf(payload.Get(i)))
+		args = append(args, types.InterfaceOf(payload.Get(i)))
 	}
 
 	writer, err := n.fs.Open(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE)
@@ -134,7 +134,7 @@ func (n *DynPrintNode) action(proc *process.Process, inPck *packet.Packet) (*pac
 	}
 	defer writer.Close()
 
-	num, err := fmt.Fprintf(writer, format, vals...)
+	num, err := fmt.Fprintf(writer, format, args...)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

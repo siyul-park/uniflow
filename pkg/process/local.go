@@ -2,38 +2,62 @@ package process
 
 import "sync"
 
-// Local provides a concurrent cache for storing data associated with processes.
+// Local provides a concurrent cache for process-specific data.
 type Local[T any] struct {
-	data    map[*Process]T
-	watches map[*Process][]func(T)
-	mu      sync.RWMutex
+	data       map[*Process]T
+	storeHooks map[*Process]StoreHooks[T]
+	mu         sync.RWMutex
 }
 
-// NewLocal creates and returns a new Local cache instance.
+// NewLocal creates a new Local cache instance.
 func NewLocal[T any]() *Local[T] {
 	return &Local[T]{
-		data:    make(map[*Process]T),
-		watches: make(map[*Process][]func(T)),
+		data:       make(map[*Process]T),
+		storeHooks: make(map[*Process]StoreHooks[T]),
 	}
 }
 
-// Watch adds a watcher for the specified process.
-func (l *Local[T]) Watch(proc *Process, watch func(T)) {
+// AddStoreHook adds a store hook for the given process.
+func (l *Local[T]) AddStoreHook(proc *Process, hook StoreHook[T]) bool {
 	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	v, ok := l.data[proc]
-	if !ok {
-		l.watches[proc] = append(l.watches[proc], watch)
+	if _, ok := l.data[proc]; ok {
+		l.mu.Unlock()
+		hook.Store(l.data[proc])
+		l.mu.Lock()
+		return true
 	}
 
-	l.mu.Unlock()
-
-	if ok {
-		watch(v)
+	for _, h := range l.storeHooks[proc] {
+		if h == hook {
+			return false
+		}
 	}
+	l.storeHooks[proc] = append(l.storeHooks[proc], hook)
+	return true
 }
 
-// Keys returns a slice of all processes in the cache.
+// RemoveStoreHook removes a specific store hook for the given process.
+func (l *Local[T]) RemoveStoreHook(proc *Process, hook StoreHook[T]) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	hooks, ok := l.storeHooks[proc]
+	if !ok {
+		return false
+	}
+
+	for i, h := range hooks {
+		if h == hook {
+			l.storeHooks[proc] = append(hooks[:i], hooks[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Keys returns all processes in the cache.
 func (l *Local[T]) Keys() []*Process {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -45,7 +69,7 @@ func (l *Local[T]) Keys() []*Process {
 	return keys
 }
 
-// Load retrieves the value associated with the specified process.
+// Load retrieves the value for the given process.
 func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -54,7 +78,7 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 	return val, ok
 }
 
-// Store associates a value with the specified process.
+// Store sets the value for the given process.
 func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
 
@@ -67,17 +91,15 @@ func (l *Local[T]) Store(proc *Process, val T) {
 		}))
 	}
 
-	watches := l.watches[proc][:]
-	delete(l.watches, proc)
+	storeHooks := l.storeHooks[proc]
+	delete(l.storeHooks, proc)
 
 	l.mu.Unlock()
 
-	for _, watch := range watches {
-		watch(val)
-	}
+	storeHooks.Store(val)
 }
 
-// Delete removes the specified process and its associated value from the cache.
+// Delete removes the process and its data from the cache.
 func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -85,12 +107,12 @@ func (l *Local[T]) Delete(proc *Process) bool {
 	_, ok := l.data[proc]
 
 	delete(l.data, proc)
-	delete(l.watches, proc)
+	delete(l.storeHooks, proc)
 
 	return ok
 }
 
-// LoadOrStore retrieves the value for the specified process or stores a new value if absent.
+// LoadOrStore retrieves or stores a value for the given process.
 func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -109,25 +131,23 @@ func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) 
 		l.Delete(proc)
 	}))
 
-	watches := l.watches[proc]
-	delete(l.watches, proc)
+	storeHooks := l.storeHooks[proc]
+	delete(l.storeHooks, proc)
 
 	l.mu.Unlock()
 
-	for _, watch := range watches {
-		watch(v)
-	}
+	storeHooks.Store(v)
 
 	l.mu.Lock()
 
 	return v, nil
 }
 
-// Close clears the entire cache, removing all processes and their values.
+// Close clears all cached data and hooks.
 func (l *Local[T]) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	l.data = make(map[*Process]T)
-	l.watches = make(map[*Process][]func(T))
+	l.storeHooks = make(map[*Process]StoreHooks[T])
 }

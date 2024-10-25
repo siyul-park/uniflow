@@ -35,8 +35,7 @@ const (
 	KindString
 )
 
-// KindOf returns the Kind of the provided Value.
-// If the Value is nil, it returns KindInvalid.
+// KindOf returns the kind of the provided Value.
 func KindOf(v Value) Kind {
 	if v == nil {
 		return KindInvalid
@@ -45,7 +44,6 @@ func KindOf(v Value) Kind {
 }
 
 // HashOf returns the hash code of the provided Value.
-// If the Value is nil, it returns 0.
 func HashOf(v Value) uint64 {
 	if v == nil {
 		return 0
@@ -54,7 +52,6 @@ func HashOf(v Value) uint64 {
 }
 
 // InterfaceOf converts a Value to a generic interface.
-// Nil Values are converted to nil interfaces.
 func InterfaceOf(v Value) any {
 	if v == nil {
 		return nil
@@ -63,7 +60,6 @@ func InterfaceOf(v Value) any {
 }
 
 // Equal checks equality between two Values.
-// It returns true if both Values are nil or equal; otherwise, false.
 func Equal(x, y Value) bool {
 	if x == nil && y == nil {
 		return true
@@ -74,11 +70,7 @@ func Equal(x, y Value) bool {
 	return x.Equal(y)
 }
 
-// Compare compares two Values and returns:
-// -1 if x is less than y,
-// 0 if x equals y,
-// 1 if x is greater than y.
-// Nil Values are considered equal to each other.
+// Compare compares two Values and returns.
 func Compare(x, y Value) int {
 	if x == nil && y == nil {
 		return 0

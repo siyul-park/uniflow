@@ -84,7 +84,7 @@ func NewHTTPListenNode(address string) *HTTPListenNode {
 }
 
 // In returns the input port with the specified name.
-func (n *HTTPListenNode) In(name string) *port.InPort {
+func (n *HTTPListenNode) In(_ string) *port.InPort {
 	return nil
 }
 
@@ -233,7 +233,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if w, ok := proc.LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			n.negotiate(req, res)
-			_ = n.write(w, res)
+			n.write(w, res)
 		}
 	}
 
@@ -245,8 +245,8 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Close closes all ports and stops the HTTP server.
 func (n *HTTPListenNode) Close() error {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
 	n.outPort.Close()
 	n.errPort.Close()

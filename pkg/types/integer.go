@@ -101,7 +101,7 @@ func (i Int8) Int() int64 {
 	return int64(i.value)
 }
 
-// Kind returns the type of the integer data.
+// kind returns the type of the integer data.
 func (i Int8) Kind() Kind {
 	return KindInt8
 }
@@ -144,7 +144,7 @@ func (i Int16) Int() int64 {
 	return int64(i.value)
 }
 
-// Kind returns the type of the integer data.
+// kind returns the type of the integer data.
 func (i Int16) Kind() Kind {
 	return KindInt16
 }
@@ -187,7 +187,7 @@ func (i Int32) Int() int64 {
 	return int64(i.value)
 }
 
-// Kind returns the type of the integer data.
+// kind returns the type of the integer data.
 func (i Int32) Kind() Kind {
 	return KindInt32
 }
@@ -230,7 +230,7 @@ func (i Int64) Int() int64 {
 	return i.value
 }
 
-// Kind returns the type of the integer data.
+// kind returns the type of the integer data.
 func (i Int64) Kind() Kind {
 	return KindInt64
 }
