@@ -27,7 +27,7 @@ type WebSocketNodeSpec struct {
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
-// WebSocketNode represents a node for establishing WebSocket client connections.
+// WebSocketNode represents a node for establishing WebSocket client connection.
 type WebSocketNode struct {
 	*WebSocketConnNode
 	dialer *websocket.Dialer
@@ -35,14 +35,14 @@ type WebSocketNode struct {
 	mu     sync.RWMutex
 }
 
-// WebSocketConnNode represents a node for handling WebSocket connections.
+// WebSocketConnNode represents a node for handling WebSocket connection.
 type WebSocketConnNode struct {
-	action      func(*process.Process, *packet.Packet) (*websocket.Conn, error)
-	connections *process.Local[*websocket.Conn]
-	ioPort      *port.InPort
-	inPort      *port.InPort
-	outPort     *port.OutPort
-	errPort     *port.OutPort
+	action  func(*process.Process, *packet.Packet) (*websocket.Conn, error)
+	conns   *process.Local[*websocket.Conn]
+	ioPort  *port.InPort
+	inPort  *port.InPort
+	outPort *port.OutPort
+	errPort *port.OutPort
 }
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
@@ -82,7 +82,7 @@ func NewWebSocketNode(url *url.URL) *WebSocketNode {
 	return n
 }
 
-// SetTimeout sets the handshake timeout for WebSocket connections.
+// SetTimeout sets the handshake timeout for WebSocket conns.
 func (n *WebSocketNode) SetTimeout(timeout time.Duration) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -120,12 +120,12 @@ func (n *WebSocketNode) connect(_ *process.Process, inPck *packet.Packet) (*webs
 // NewWebSocketConnNode creates a new WebSocketConnNode.
 func NewWebSocketConnNode(action func(*process.Process, *packet.Packet) (*websocket.Conn, error)) *WebSocketConnNode {
 	n := &WebSocketConnNode{
-		action:      action,
-		connections: process.NewLocal[*websocket.Conn](),
-		ioPort:      port.NewIn(),
-		inPort:      port.NewIn(),
-		outPort:     port.NewOut(),
-		errPort:     port.NewOut(),
+		action:  action,
+		conns:   process.NewLocal[*websocket.Conn](),
+		ioPort:  port.NewIn(),
+		inPort:  port.NewIn(),
+		outPort: port.NewOut(),
+		errPort: port.NewOut(),
 	}
 
 	n.ioPort.AddListener(port.ListenFunc(n.connect))
@@ -164,7 +164,7 @@ func (n *WebSocketConnNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
 	n.errPort.Close()
-	n.connections.Close()
+	n.conns.Close()
 	return nil
 }
 
@@ -178,7 +178,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 			backPck := packet.SendOrFallback(errWriter, errPck, errPck)
 			ioReader.Receive(backPck)
 		} else {
-			n.connections.Store(proc, conn)
+			n.conns.Store(proc, conn)
 
 			child := proc.Fork()
 			child.AddExitHook(process.ExitFunc(func(_ error) {
@@ -283,25 +283,25 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 }
 
 func (n *WebSocketConnNode) connection(proc *process.Process) (*websocket.Conn, bool) {
-	connections := make(chan *websocket.Conn)
-	defer close(connections)
+	conns := make(chan *websocket.Conn)
+	defer close(conns)
 
 	hook := process.StoreFunc(func(conn *websocket.Conn) {
-		connections <- conn
+		conns <- conn
 	})
 
 	for p := proc; p != nil; p = p.Parent() {
-		go n.connections.AddStoreHook(p, hook)
+		go n.conns.AddStoreHook(p, hook)
 	}
 	defer func() {
 		for p := proc; p != nil; p = p.Parent() {
-			n.connections.RemoveStoreHook(p, hook)
+			n.conns.RemoveStoreHook(p, hook)
 		}
 	}()
 
 	select {
-	case con := <-connections:
-		return con, true
+	case conn := <-conns:
+		return conn, true
 	case <-proc.Context().Done():
 		return nil, false
 	}

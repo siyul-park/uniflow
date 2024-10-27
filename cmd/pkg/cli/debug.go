@@ -172,23 +172,23 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				bps := m.debugger.Breakpoints()
 				m.view = &breakpointDebugView{id: len(bps) - 1, breakpoint: bp}
 
-				return m, tea.Cmd(func() tea.Msg {
+				return m, func() tea.Msg {
 					if m.debugger.Pause(context.Background()) {
 						if m.debugger.Breakpoint() == bp {
 							return m.debugger.Frame()
 						}
 					}
 					return nil
-				})
+				}
 			case "continue", "c":
 				m.view = nil
 
-				return m, tea.Cmd(func() tea.Msg {
+				return m, func() tea.Msg {
 					if m.debugger.Step(context.Background()) {
 						return m.debugger.Frame()
 					}
 					return nil
-				})
+				}
 			case "delete", "d":
 				bps := m.debugger.Breakpoints()
 

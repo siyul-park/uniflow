@@ -66,10 +66,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 				outPort := port.NewOut()
 				n.outPorts = append(n.outPorts, outPort)
 				if n.action != nil {
-					i := i
-					outPort.AddListener(port.ListenFunc(func(proc *process.Process) {
-						n.backward(proc, i)
-					}))
+					outPort.AddListener(n.backward(i))
 				}
 			}
 		}
@@ -131,21 +128,22 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *OneToManyNode) backward(proc *process.Process, index int) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+func (n *OneToManyNode) backward(index int) port.Listener {
+	return port.ListenFunc(func(proc *process.Process) {
+		n.mu.RLock()
+		defer n.mu.RUnlock()
 
-	outWriter := n.outPorts[index].Open(proc)
+		outPort := n.outPorts[index]
 
-	for backPck := range outWriter.Receive() {
-		n.tracer.Receive(outWriter, backPck)
-	}
+		outWriter := outPort.Open(proc)
+
+		for backPck := range outWriter.Receive() {
+			n.tracer.Receive(outWriter, backPck)
+		}
+	})
 }
 
 func (n *OneToManyNode) catch(proc *process.Process) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	errWriter := n.errPort.Open(proc)
 
 	for backPck := range errWriter.Receive() {

@@ -119,7 +119,7 @@ func (s *store[T]) Watch(ctx context.Context, resources ...T) (Stream, error) {
 }
 
 // Load implements the Store interface, loading resources matching the criteria.
-func (s *store[T]) Load(ctx context.Context, resources ...T) ([]T, error) {
+func (s *store[T]) Load(_ context.Context, resources ...T) ([]T, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -133,7 +133,7 @@ func (s *store[T]) Load(ctx context.Context, resources ...T) ([]T, error) {
 }
 
 // Store implements the Store interface, storing new resources.
-func (s *store[T]) Store(ctx context.Context, resources ...T) (int, error) {
+func (s *store[T]) Store(_ context.Context, resources ...T) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -162,7 +162,7 @@ func (s *store[T]) Store(ctx context.Context, resources ...T) (int, error) {
 }
 
 // Swap implements the Store interface, swapping existing resources with new ones.
-func (s *store[T]) Swap(ctx context.Context, resources ...T) (int, error) {
+func (s *store[T]) Swap(_ context.Context, resources ...T) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -196,7 +196,7 @@ func (s *store[T]) Swap(ctx context.Context, resources ...T) (int, error) {
 }
 
 // Delete implements the Store interface, deleting resources matching the criteria.
-func (s *store[T]) Delete(ctx context.Context, resources ...T) (int, error) {
+func (s *store[T]) Delete(_ context.Context, resources ...T) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

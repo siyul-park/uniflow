@@ -31,14 +31,6 @@ func SendOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
 	return <-writer.Receive()
 }
 
-// Discard discards all packets received by the writer.
-func Discard(writer *Writer) {
-	go func() {
-		for range writer.Receive() {
-		}
-	}()
-}
-
 // NewWriter creates a new Writer instance and starts its processing loop.
 func NewWriter() *Writer {
 	w := &Writer{

@@ -69,7 +69,7 @@ func (d *Debugger) Breakpoints() []*Breakpoint {
 	d.wmu.RLock()
 	defer d.wmu.RUnlock()
 
-	return d.breakpoints[:]
+	return append([]*Breakpoint(nil), d.breakpoints...)
 }
 
 // Pause blocks until a breakpoint is hit or monitoring is done.

@@ -29,8 +29,8 @@ func TestDetectTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
-			types := DetectTypes(tt.when)
-			assert.Greater(t, len(types), 0)
+			detects := DetectTypes(tt.when)
+			assert.Greater(t, len(detects), 0)
 		})
 	}
 }

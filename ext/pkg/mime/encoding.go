@@ -34,8 +34,8 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 	encode := header.Get(HeaderContentEncoding)
 
 	if typ == "" {
-		if types := DetectTypes(value); len(types) > 0 {
-			typ = types[0]
+		if detects := DetectTypes(value); len(detects) > 0 {
+			typ = detects[0]
 			header.Set(HeaderContentType, typ)
 		}
 	}
@@ -160,8 +160,8 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
-								if types := DetectTypes(data); len(types) > 0 {
-									typ = types[0]
+								if detects := DetectTypes(data); len(detects) > 0 {
+									typ = detects[0]
 									h.Set(HeaderContentType, typ)
 								}
 							}
@@ -292,9 +292,9 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 				if err != nil {
 					return nil, err
 				}
-				defer file.Close()
 
 				data, err := Decode(file, fh.Header)
+				file.Close()
 				if err != nil {
 					return nil, err
 				}

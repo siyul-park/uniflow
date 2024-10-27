@@ -44,8 +44,8 @@ func NewLoopNode() *LoopNode {
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
-	n.outPorts[0].AddListener(port.ListenFunc(n.backward0))
-	n.outPorts[1].AddListener(port.ListenFunc(n.backward1))
+	n.outPorts[0].AddListener(n.backward(0))
+	n.outPorts[1].AddListener(n.backward(1))
 	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
@@ -130,20 +130,14 @@ func (n *LoopNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *LoopNode) backward0(proc *process.Process) {
-	outWriter0 := n.outPorts[0].Open(proc)
+func (n *LoopNode) backward(index int) port.Listener {
+	return port.ListenFunc(func(proc *process.Process) {
+		outWriter := n.outPorts[index].Open(proc)
 
-	for backPck := range outWriter0.Receive() {
-		n.tracer.Receive(outWriter0, backPck)
-	}
-}
-
-func (n *LoopNode) backward1(proc *process.Process) {
-	outWriter1 := n.outPorts[1].Open(proc)
-
-	for backPck := range outWriter1.Receive() {
-		n.tracer.Receive(outWriter1, backPck)
-	}
+		for backPck := range outWriter.Receive() {
+			n.tracer.Receive(outWriter, backPck)
+		}
+	})
 }
 
 func (n *LoopNode) catch(proc *process.Process) {
