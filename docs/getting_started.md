@@ -45,6 +45,50 @@ Settings can be modified using the `.uniflow.toml` file or system environment va
 
 If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 
+## Running an Example
+
+To run a basic HTTP request handler example using [ping.yaml](./examples/ping.yaml):
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  ports:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  ports:
+    out[0]:
+      - name: pong
+        port: in
+
+- kind: snippet
+  name: pong
+  language: text
+  code: pong
+```
+
+To start the workflow, run:
+
+```sh
+uniflow start --from-specs example/ping.yaml
+```
+
+Verify it's running by calling the HTTP endpoint:
+
+```sh
+curl localhost:8000/ping
+pong#
+```
+
 ## Using Uniflow
 
 `uniflow` is primarily used to start and manage the runtime environment.

@@ -330,6 +330,7 @@ defer r.Close()
 
 This code creates a new runtime environment using the provided schema, hook, specification store, and secret store. The `defer` statement ensures that resources are cleaned up when done.
 
+```go
 func main() {
 	ctx := context.TODO()
 
@@ -369,3 +370,4 @@ func main() {
 	r.Load(ctx)
 	r.Reconcile(ctx)
 }
+```

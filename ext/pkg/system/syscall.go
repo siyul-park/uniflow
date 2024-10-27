@@ -36,13 +36,13 @@ func UpdateResource[T resource.Resource](store resource.Store[T]) func(context.C
 // DeleteResource is a generic function to load and delete resources.
 func DeleteResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
 	return func(ctx context.Context, resources []T) ([]T, error) {
-		ok, err := store.Load(ctx, resources...)
+		exists, err := store.Load(ctx, resources...)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := store.Delete(ctx, ok...); err != nil {
+		if _, err := store.Delete(ctx, exists...); err != nil {
 			return nil, err
 		}
-		return ok, nil
+		return exists, nil
 	}
 }

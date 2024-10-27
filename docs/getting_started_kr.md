@@ -45,6 +45,51 @@ make build
 
 만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기 위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
 
+## 예제 실행
+
+다음은 HTTP 요청 처리 예제인 [ping.yaml](./examples/ping.yaml)을 실행하는 방법입니다:
+
+```yaml
+- kind: listener
+  name: listener
+  protocol: http
+  port: 8000
+  ports:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /ping
+      port: out[0]
+  ports:
+    out[0]:
+      - name: pong
+        port: in
+
+- kind: snippet
+  name: pong
+  language: text
+  code: pong
+```
+
+다음 명령어로 워크플로우를 실행합니다:
+
+```sh
+uniflow start --from-specs example/ping.yaml
+```
+
+정상 작동 여부를 확인하려면 HTTP 엔드포인트를 호출하세요:
+
+```sh
+curl localhost:8000/ping
+pong#
+```
+
+
 ## Uniflow 사용하기
 
 `uniflow`는 주로 런타임 환경을 시작하고 관리하는 명령어입니다.
@@ -64,7 +109,6 @@ make build
 ```
 
 초기 시크릿 파일은 `--from-secrets` 플래그로 설정할 수 있습니다:
-
 ```sh
 ./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
 ```
