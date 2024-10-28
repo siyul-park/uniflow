@@ -23,7 +23,7 @@ ports:
 env:
   PORT:
     - name: network
-      value: "{{ .PORT }}"
+      data: "{{ .PORT }}"
 ```
 
 - `id`: UUID 형식의 고유 식별자입니다. UUID V7을 권장합니다.

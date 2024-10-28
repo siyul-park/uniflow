@@ -80,7 +80,7 @@ func TestScheme_Decode(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"FOO": {
 					{
-						Value: "foo",
+						Data: "foo",
 					},
 				},
 			},

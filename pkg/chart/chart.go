@@ -93,7 +93,7 @@ func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
 func (c *Chart) Bind(secrets ...*secret.Secret) error {
 	for _, vals := range c.Env {
 		for i, val := range vals {
-			if val.ID != uuid.Nil || val.Name != "" {
+			if val.IsIdentified() {
 				example := &secret.Secret{
 					ID:        val.ID,
 					Namespace: c.GetNamespace(),
@@ -139,14 +139,14 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 	env := map[string][]spec.Value{}
 	for key, vals := range c.Env {
 		for _, val := range vals {
-			if val.ID == uuid.Nil && val.Name == "" {
+			if val.IsIdentified() {
 				v, err := template.Execute(val.Value, data)
 				if err != nil {
 					return nil, err
 				}
 				val.Value = v
 			}
-			env[key] = append(env[key], spec.Value{Value: val.Value})
+			env[key] = append(env[key], spec.Value{Data: val.Value})
 		}
 	}
 
@@ -242,4 +242,9 @@ func (c *Chart) GetEnv() map[string][]Value {
 // SetEnv sets the chart's environment data.
 func (c *Chart) SetEnv(val map[string][]Value) {
 	c.Env = val
+}
+
+// IsIdentified checks whether the Value instance has a unique identifier or name.
+func (v *Value) IsIdentified() bool {
+	return v.ID != uuid.Nil || v.Name != ""
 }

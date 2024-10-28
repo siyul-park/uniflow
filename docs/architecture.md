@@ -38,7 +38,7 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
 - kind: listener
   name: listener
   protocol: http
-  port: 8000
+  port: '{{ .PORT }}'
   ports:
     out:
       - name: router
@@ -46,6 +46,9 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
     error:
       - name: catch
         port: in
+  env:
+    PORT:
+      data: '{{ .PORT }}'
 
 - kind: router
   name: router

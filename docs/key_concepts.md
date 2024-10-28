@@ -23,7 +23,7 @@ ports:
 env:
   PORT:
     - name: network
-      value: "{{ .PORT }}"
+      data: "{{ .PORT }}"
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.

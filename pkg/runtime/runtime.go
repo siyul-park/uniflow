@@ -17,12 +17,13 @@ import (
 
 // Config defines configuration options for the Runtime.
 type Config struct {
-	Namespace   string         // Namespace defines the isolated execution environment for workflows.
-	Hook        *hook.Hook     // Hook is a collection of hook functions for managing symbols.
-	Scheme      *scheme.Scheme // Scheme defines the scheme and behaviors for symbols.
-	SpecStore   spec.Store     // SpecStore is responsible for persisting specifications.
-	SecretStore secret.Store   // SecretStore is responsible for persisting secrets.
-	ChartStore  chart.Store    // ChartStore is responsible for persisting charts.
+	Namespace   string            // Namespace defines the isolated execution environment for workflows.
+	Environment map[string]string // Environment holds the variables for the loader.
+	Hook        *hook.Hook        // Hook is a collection of hook functions for managing symbols.
+	Scheme      *scheme.Scheme    // Scheme defines the scheme and behaviors for symbols.
+	SpecStore   spec.Store        // SpecStore is responsible for persisting specifications.
+	SecretStore secret.Store      // SecretStore is responsible for persisting secrets.
+	ChartStore  chart.Store       // ChartStore is responsible for persisting charts.
 }
 
 // Runtime represents an environment for executing Workflows.
@@ -68,6 +69,7 @@ func New(config Config) *Runtime {
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
 	})
 	symbolLoader := symbol.NewLoader(symbol.LoaderConfig{
+		Environment: config.Environment,
 		Table:       symbolTable,
 		Scheme:      config.Scheme,
 		SpecStore:   config.SpecStore,

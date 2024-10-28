@@ -173,8 +173,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    scrt.GetID(),
-						Value: "{{ . }}",
+						ID:   scrt.GetID(),
+						Data: "{{ . }}",
 					},
 				},
 			},
@@ -186,7 +186,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		select {
 		case sb := <-symbols:
 			assert.Equal(t, meta.GetID(), sb.ID())
-			assert.Equal(t, scrt.Data, sb.Env()["key"][0].Value)
+			assert.Equal(t, scrt.Data, sb.Env()["key"][0].Data)
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
 		}

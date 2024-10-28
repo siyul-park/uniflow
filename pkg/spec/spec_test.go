@@ -23,8 +23,8 @@ func TestIsBound(t *testing.T) {
 		Env: map[string][]Value{
 			"FOO": {
 				{
-					ID:    sec1.ID,
-					Value: "foo",
+					ID:   sec1.ID,
+					Data: "foo",
 				},
 			},
 		},
@@ -46,8 +46,8 @@ func TestBind(t *testing.T) {
 		Env: map[string][]Value{
 			"FOO": {
 				{
-					ID:    scrt.ID,
-					Value: "{{ . }}",
+					ID:   scrt.ID,
+					Data: "{{ . }}",
 				},
 			},
 		},
@@ -55,7 +55,7 @@ func TestBind(t *testing.T) {
 
 	bind, err := Bind(meta, scrt)
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Value)
+	assert.Equal(t, "foo", bind.GetEnv()["FOO"][0].Data)
 	assert.True(t, IsBound(bind, scrt))
 }
 
@@ -67,7 +67,7 @@ func TestMeta_Get(t *testing.T) {
 		Name:        faker.Word(),
 		Annotations: map[string]string{"key": "value"},
 		Ports:       map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:         map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}},
+		Env:         map[string][]Value{"env1": {{Name: "secret1", Data: "value1"}}},
 	}
 
 	assert.Equal(t, meta.ID, meta.GetID())

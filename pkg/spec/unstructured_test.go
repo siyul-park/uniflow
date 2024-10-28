@@ -46,7 +46,7 @@ func TestUnstructured_GetSet(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, ports, val)
 
-	env := map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}}
+	env := map[string][]Value{"env1": {{Name: "secret1", Data: "value1"}}}
 	unstructured.Set(KeyEnv, env)
 	val, ok = unstructured.Get(KeyEnv)
 	assert.True(t, ok)

@@ -76,8 +76,8 @@ type Value struct {
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Name is the human-readable name of the secret.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	// Value is the sensitive value of the secret.
-	Value any `json:"value" bson:"value" yaml:"value" map:"value"`
+	// Data is the sensitive value of the secret.
+	Data any `json:"data" bson:"data" yaml:"data" map:"data"`
 }
 
 var _ resource.Resource = (Spec)(nil)
@@ -125,37 +125,35 @@ func Bind(sp Spec, secrets ...*secret.Secret) (Spec, error) {
 	env := map[string]any{}
 	for key, vals := range unstructured.GetEnv() {
 		for i, val := range vals {
-			if val.ID != uuid.Nil || val.Name != "" {
-				example := &secret.Secret{
-					ID:        val.ID,
-					Namespace: unstructured.GetNamespace(),
-					Name:      val.Name,
-				}
+			example := &secret.Secret{
+				ID:        val.ID,
+				Namespace: unstructured.GetNamespace(),
+				Name:      val.Name,
+			}
 
-				var scrt *secret.Secret
-				for _, s := range secrets {
-					if len(resource.Match(s, example)) > 0 {
-						scrt = s
-						break
-					}
+			var scrt *secret.Secret
+			for _, s := range secrets {
+				if (!s.IsIdentified() && !val.IsIdentified()) || len(resource.Match(s, example)) > 0 {
+					scrt = s
+					break
 				}
-				if scrt == nil {
-					continue
-				}
+			}
 
-				v, err := template.Execute(val.Value, scrt.Data)
+			if scrt != nil {
+				v, err := template.Execute(val.Data, scrt.Data)
 				if err != nil {
 					return nil, err
 				}
 
 				val.ID = scrt.GetID()
 				val.Name = scrt.GetName()
-				val.Value = v
-
+				val.Data = v
 				vals[i] = val
 			}
 
-			env[key] = val.Value
+			if !val.IsIdentified() || scrt != nil {
+				env[key] = val.Data
+			}
 		}
 
 		if _, ok := env[key]; !ok {
@@ -242,4 +240,9 @@ func (m *Meta) GetEnv() map[string][]Value {
 // SetEnv sets the node's environment secrets.
 func (m *Meta) SetEnv(val map[string][]Value) {
 	m.Env = val
+}
+
+// IsIdentified checks whether the Value instance has a unique identifier or name.
+func (v *Value) IsIdentified() bool {
+	return v.ID != uuid.Nil || v.Name != ""
 }

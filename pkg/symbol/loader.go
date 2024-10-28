@@ -14,14 +14,16 @@ import (
 
 // LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Table       *Table         // Symbol table for storing loaded symbols
-	Scheme      *scheme.Scheme // Scheme for decoding and compiling specs
-	SpecStore   spec.Store     // SpecStore to retrieve specs from
-	SecretStore secret.Store   // SecretStore to retrieve secrets from
+	Environment map[string]string // Environment holds the variables for the loader.
+	Table       *Table            // Symbol table for storing loaded symbols
+	Scheme      *scheme.Scheme    // Scheme for decoding and compiling specs
+	SpecStore   spec.Store        // SpecStore to retrieve specs from
+	SecretStore secret.Store      // SecretStore to retrieve secrets from
 }
 
 // Loader synchronizes with spec.Store to load spec.Spec into the Table.
 type Loader struct {
+	environment map[string]string
 	table       *Table
 	scheme      *scheme.Scheme
 	specStore   spec.Store
@@ -31,6 +33,7 @@ type Loader struct {
 // NewLoader creates a new Loader instance with the provided configuration.
 func NewLoader(config LoaderConfig) *Loader {
 	return &Loader{
+		environment: config.Environment,
 		table:       config.Table,
 		scheme:      config.Scheme,
 		specStore:   config.SpecStore,
@@ -68,6 +71,10 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if len(l.environment) > 0 {
+		secrets = append(secrets, &secret.Secret{Data: l.environment})
 	}
 
 	var symbols []*Symbol

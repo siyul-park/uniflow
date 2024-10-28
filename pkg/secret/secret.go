@@ -84,3 +84,8 @@ func (s *Secret) GetData() any {
 func (s *Secret) SetData(val any) {
 	s.Data = val
 }
+
+// IsIdentified checks whether the Value instance has a unique identifier or name.
+func (s *Secret) IsIdentified() bool {
+	return s.ID != uuid.Nil || s.Name != ""
+}

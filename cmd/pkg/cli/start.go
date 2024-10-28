@@ -36,11 +36,12 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running")
-	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing specs")
-	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets")
-	cmd.PersistentFlags().String(flagFromCharts, "", "Specify the file path containing charts")
-	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running the workflow")
+	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
+	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets for the workflow")
+	cmd.PersistentFlags().String(flagFromCharts, "", "Specify the file path containing charts for the workflow")
+	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode for detailed output during execution")
+	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Set environment variables for the workflow execution")
 
 	return cmd
 }
@@ -62,6 +63,10 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
+		environment, err := cmd.Flags().GetStringToString(flagEnvironment)
+		if err != nil {
+			return err
+		}
 
 		if err := applySpecs(cmd); err != nil {
 			return err
@@ -80,6 +85,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 		r := runtime.New(runtime.Config{
 			Namespace:   namespace,
+			Environment: environment,
 			Scheme:      config.Scheme,
 			Hook:        h,
 			SpecStore:   config.SpecStore,

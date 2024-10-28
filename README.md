@@ -45,11 +45,14 @@ To run a basic HTTP request handler example using [ping.yaml](./examples/ping.ya
 - kind: listener
   name: listener
   protocol: http
-  port: 8000
+  port: '{{ .PORT }}'
   ports:
     out:
       - name: router
         port: in
+  env:
+    PORT:
+      data: '{{ .PORT }}'
 
 - kind: router
   name: router
@@ -71,7 +74,7 @@ To run a basic HTTP request handler example using [ping.yaml](./examples/ping.ya
 To start the workflow, run:
 
 ```sh
-uniflow start --from-specs example/ping.yaml
+./dist/uniflow start --from-specs ./examples/ping.yaml --env=PORT=8000
 ```
 
 Verify it's running by calling the HTTP endpoint:

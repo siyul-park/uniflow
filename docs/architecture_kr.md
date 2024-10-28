@@ -36,7 +36,7 @@
 - kind: listener
   name: listener
   protocol: http
-  port: 8000
+  port: '{{ .PORT }}'
   ports:
     out:
       - name: router
@@ -44,6 +44,9 @@
     error:
       - name: catch
         port: in
+  env:
+    PORT:
+      data: '{{ .PORT }}'
 
 - kind: router
   name: router

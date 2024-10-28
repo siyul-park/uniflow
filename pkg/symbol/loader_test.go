@@ -49,8 +49,8 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    scrt.GetID(),
-						Value: faker.Word(),
+						ID:   scrt.GetID(),
+						Data: faker.Word(),
 					},
 				},
 			},
@@ -104,8 +104,8 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    scrt.GetID(),
-						Value: faker.Word(),
+						ID:   scrt.GetID(),
+						Data: faker.Word(),
 					},
 				},
 			},
@@ -143,8 +143,8 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"key": {
 					{
-						ID:    scrt.GetID(),
-						Value: faker.Word(),
+						ID:   scrt.GetID(),
+						Data: faker.Word(),
 					},
 				},
 			},
@@ -187,14 +187,14 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"sec1": {
 					{
-						ID:    sec1.GetID(),
-						Value: faker.Word(),
+						ID:   sec1.GetID(),
+						Data: faker.Word(),
 					},
 				},
 				"sec2": {
 					{
-						ID:    sec2.GetID(),
-						Value: faker.Word(),
+						ID:   sec2.GetID(),
+						Data: faker.Word(),
 					},
 				},
 			},
@@ -231,8 +231,8 @@ func TestLoader_Load(t *testing.T) {
 			Env: map[string][]spec.Value{
 				"nonexist": {
 					{
-						ID:    uuid.Must(uuid.NewV7()),
-						Value: faker.Word(),
+						ID:   uuid.Must(uuid.NewV7()),
+						Data: faker.Word(),
 					},
 				},
 			},

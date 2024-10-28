@@ -6,15 +6,18 @@
 #      --header "Sec-WebSocket-Key: hqGkRtGkn4CjeomM99bTUw==" \
 #      --header "Sec-WebSocket-Version: 13" \
 #      http://localhost:8000/ws
-     
+
 - kind: listener
   name: listener
   protocol: http
-  port: 8000
+  port: '{{ .PORT }}'
   ports:
     out:
       - name: router
         port: in
+  env:
+    PORT:
+      data: '{{ .PORT }}'
 
 - kind: router
   name: router

@@ -8,7 +8,8 @@ const (
 	flagFromSecrets = "from-secrets"
 	flagFromCharts  = "from-charts"
 
-	flagDebug = "debug"
+	flagDebug       = "debug"
+	flagEnvironment = "env"
 
 	flagCPUProfile = "cpuprofile"
 	flagMemProfile = "memprofile"

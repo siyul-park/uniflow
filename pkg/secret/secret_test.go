@@ -22,4 +22,5 @@ func TestSecret_Get(t *testing.T) {
 	assert.Equal(t, scrt.Name, scrt.GetName())
 	assert.Equal(t, scrt.Annotations, scrt.GetAnnotations())
 	assert.Equal(t, scrt.Data, scrt.GetData())
+	assert.True(t, scrt.IsIdentified())
 }
