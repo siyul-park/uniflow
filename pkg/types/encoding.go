@@ -21,7 +21,6 @@ type Unmarshaler interface {
 var (
 	// Encoder is a global encoding assembler used to encode values into the custom Value type.
 	Encoder = encoding.NewEncodeAssembler[any, Value]()
-
 	// Decoder is a global decoding assembler used to decode values from the custom Value type.
 	Decoder = encoding.NewDecodeAssembler[Value, any]()
 )

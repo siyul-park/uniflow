@@ -22,6 +22,6 @@ func TestHooksBuilder_AddToScheme(t *testing.T) {
 		return nil
 	}))
 
-	err := b.AddToHooks(New())
+	err := b.AddToHook(New())
 	assert.NoError(t, err)
 }

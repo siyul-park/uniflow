@@ -221,10 +221,6 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					bp = m.debugger.Breakpoint()
 				}
-				if bp == nil {
-					m.view = nil
-					return m, nil
-				}
 
 				m.view = &breakpointDebugView{breakpoint: bp}
 				return m, nil
@@ -239,10 +235,6 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					sb = m.findSymbol(args[1])
 				} else {
 					sb = m.debugger.Symbol()
-				}
-				if sb == nil {
-					m.view = nil
-					return m, nil
 				}
 
 				m.view = &symbolDebugView{symbol: sb}
@@ -260,20 +252,11 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					proc = m.debugger.Process()
 				}
-				if proc == nil {
-					m.view = nil
-					return m, nil
-				}
 
 				m.view = &processDebugView{process: proc}
 				return m, nil
 			case "frame", "frm":
 				frame := m.debugger.Frame()
-				if frame == nil {
-					m.view = nil
-					return m, nil
-				}
-
 				m.view = &frameDebugView{frame: frame}
 				return m, nil
 			case "frames", "frms":
@@ -336,10 +319,16 @@ func (m *debugModel) findPort(sb *symbol.Symbol, name string) (*port.InPort, *po
 }
 
 func (v *errDebugView) View() string {
+	if v.err == nil {
+		return ""
+	}
 	return fmt.Sprintf("Error: %s.", v.err.Error())
 }
 
 func (v *frameDebugView) View() string {
+	if v.frame == nil {
+		return ""
+	}
 	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
@@ -348,6 +337,10 @@ func (v *frameDebugView) View() string {
 }
 
 func (v *frameDebugView) Interface() map[string]any {
+	if v.frame == nil {
+		return nil
+	}
+
 	value := map[string]any{}
 
 	if v.frame.Process != nil {
@@ -410,6 +403,10 @@ func (v *framesDebugView) View() string {
 }
 
 func (v *breakpointDebugView) View() string {
+	if v.breakpoint == nil {
+		return ""
+	}
+
 	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
@@ -418,6 +415,10 @@ func (v *breakpointDebugView) View() string {
 }
 
 func (v *breakpointDebugView) Interface() map[string]any {
+	if v.breakpoint == nil {
+		return nil
+	}
+
 	value := map[string]any{"id": v.id}
 
 	sb := v.breakpoint.Symbol()
@@ -459,6 +460,10 @@ func (v *breakpointsDebugView) View() string {
 }
 
 func (v *symbolDebugView) View() string {
+	if v.symbol == nil {
+		return ""
+	}
+
 	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
@@ -492,6 +497,10 @@ func (v *symbolsDebugView) View() string {
 }
 
 func (v *processDebugView) View() string {
+	if v.process == nil {
+		return ""
+	}
+
 	data, err := json.MarshalIndent(v.Interface(), "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
@@ -500,9 +509,17 @@ func (v *processDebugView) View() string {
 }
 
 func (v *processDebugView) Interface() map[string]any {
+	if v.process == nil {
+		return nil
+	}
+
 	value := map[string]any{"id": v.process.ID()}
 	if p := v.process.Parent(); p != nil {
 		value["pid"] = p.ID()
+	}
+	for _, key := range v.process.Keys() {
+		val := v.process.Load(key)
+		value[key] = val
 	}
 	value["status"] = v.process.Status()
 	return value

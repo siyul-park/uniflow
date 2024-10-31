@@ -66,6 +66,7 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 		if err != nil {
 			return err
 		}
+
 		defer file.Close()
 
 		reader := resource.NewReader(file)
@@ -75,6 +76,7 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 		if err := reader.Read(&resources); err != nil {
 			return err
 		}
+
 		if len(resources) == 0 {
 			return nil
 		}

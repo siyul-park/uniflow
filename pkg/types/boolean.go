@@ -23,7 +23,7 @@ var (
 	False = Boolean{value: false}
 )
 
-// NewBoolean returns a pointer to a Boolean instance.
+// NewBoolean returns the predefined True or False instance.
 func NewBoolean(value bool) Boolean {
 	if value {
 		return True
@@ -47,8 +47,6 @@ func (b Boolean) Hash() uint64 {
 	var value byte
 	if b.value {
 		value = 1
-	} else {
-		value = 0
 	}
 	h.Write([]byte{value})
 	return h.Sum64()
@@ -67,16 +65,16 @@ func (b Boolean) Equal(other Value) bool {
 	return false
 }
 
-// Compare checks whether another Object is equal to this Boolean instance.
+// Compare compares another Object with this Boolean instance.
 func (b Boolean) Compare(other Value) int {
 	if o, ok := other.(Boolean); ok {
 		if b.value == o.value {
 			return 0
-		} else if !b.value && o.value {
-			return -1
-		} else {
+		}
+		if b.value {
 			return 1
 		}
+		return -1
 	}
 	return compare(b.Kind(), KindOf(other))
 }

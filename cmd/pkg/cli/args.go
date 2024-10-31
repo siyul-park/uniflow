@@ -15,6 +15,7 @@ func runs(runs map[string]func(cmd *cobra.Command) error) func(cmd *cobra.Comman
 		if len(args) == 0 {
 			return nil
 		}
+
 		run, ok := runs[args[0]]
 		if !ok {
 			return nil

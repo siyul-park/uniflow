@@ -16,7 +16,7 @@ import (
 func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
-	err := AddToHook().AddToHooks(h)
+	err := AddToHook().AddToHook(h)
 	assert.NoError(t, err)
 
 	n := NewBlockNode(&symbol.Symbol{

@@ -19,6 +19,19 @@ func TestNewProcess(t *testing.T) {
 	assert.Equal(t, StatusRunning, proc.Status())
 }
 
+func TestProcess_Keys(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	k := faker.UUIDHyphenated()
+	v := faker.UUIDHyphenated()
+
+	proc.Store(k, v)
+
+	keys := proc.Keys()
+	assert.Contains(t, keys, k)
+}
+
 func TestProcess_Load(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)

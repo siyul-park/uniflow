@@ -3,7 +3,7 @@ package hook
 // Register defines an interface for registering types with a Hook.
 type Register interface {
 	// AddToHooks adds types to the given Hook.
-	AddToHooks(*Hook) error
+	AddToHook(*Hook) error
 }
 
 type register struct {
@@ -17,6 +17,6 @@ func RegisterFunc(addToHooks func(*Hook) error) Register {
 	return &register{addToHooks: addToHooks}
 }
 
-func (r *register) AddToHooks(s *Hook) error {
+func (r *register) AddToHook(s *Hook) error {
 	return r.addToHooks(s)
 }

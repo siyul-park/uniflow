@@ -88,7 +88,6 @@ func (l *Linker) Link(chrt *Chart) error {
 		}
 
 		n := NewClusterNode(table)
-
 		for name, ports := range chrt.GetPorts() {
 			for _, port := range ports {
 				for _, sb := range symbols {
@@ -103,7 +102,6 @@ func (l *Linker) Link(chrt *Chart) error {
 				}
 			}
 		}
-
 		return n, nil
 	})
 

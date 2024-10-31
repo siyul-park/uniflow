@@ -78,3 +78,43 @@ func TestMeta_Get(t *testing.T) {
 	assert.Equal(t, meta.Ports, meta.GetPorts())
 	assert.Equal(t, meta.Env, meta.GetEnv())
 }
+
+func TestMeta_Set(t *testing.T) {
+	meta := &Meta{}
+
+	id := uuid.Must(uuid.NewV7())
+	meta.SetID(id)
+	assert.Equal(t, id, meta.GetID())
+
+	kind := "testKind"
+	meta.SetKind(kind)
+	assert.Equal(t, kind, meta.GetKind())
+
+	namespace := "testNamespace"
+	meta.SetNamespace(namespace)
+	assert.Equal(t, namespace, meta.GetNamespace())
+
+	name := "testName"
+	meta.SetName(name)
+	assert.Equal(t, name, meta.GetName())
+
+	annotations := map[string]string{"key": "value"}
+	meta.SetAnnotations(annotations)
+	assert.Equal(t, annotations, meta.GetAnnotations())
+
+	ports := map[string][]Port{
+		"http": {
+			{ID: uuid.Must(uuid.NewV7()), Name: "port1", Port: "8080"},
+		},
+	}
+	meta.SetPorts(ports)
+	assert.Equal(t, ports, meta.GetPorts())
+
+	env := map[string][]Value{
+		"FOO": {
+			{ID: uuid.Must(uuid.NewV7()), Name: "bar", Data: "baz"},
+		},
+	}
+	meta.SetEnv(env)
+	assert.Equal(t, env, meta.GetEnv())
+}

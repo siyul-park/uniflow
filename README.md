@@ -16,15 +16,15 @@ This system empowers you to deliver customized experiences through your service 
 
 ## 🎯 Core Values
 
-- **Performance:** Maximize throughput and minimize latency across various environments.
-- **Flexibility:** Modify and adjust workflows in real-time.
-- **Extensibility:** Easily extend functionality with new components.
+- **Performance:** Optimized for maximum throughput and minimal latency.
+- **Flexibility:** Adapt workflows on-the-fly to meet evolving needs.
+- **Extensibility:** Easily integrate new components and expand your system’s functionality.
 
 ## 🚀 Quick Start
 
 ### 🛠️ Build and Install
 
-To begin, install **[Go 1.23](https://go.dev/doc/install)** or later. Then, follow these steps to build the source code:
+To get started, install **[Go 1.23](https://go.dev/doc/install)** or later. Then, follow these steps:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -37,9 +37,9 @@ make build
 
 The executable will be located in the `dist` directory after building.
 
-### ⚡ Running an Example
+### ⚡ Run an Example
 
-To run a basic HTTP request handler example using [ping.yaml](./examples/ping.yaml):
+Try a basic HTTP request handler using [ping.yaml](./examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -71,13 +71,13 @@ To run a basic HTTP request handler example using [ping.yaml](./examples/ping.ya
   code: pong
 ```
 
-To start the workflow, run:
+Start the workflow with:
 
 ```sh
 ./dist/uniflow start --from-specs ./examples/ping.yaml --env=PORT=8000
 ```
 
-Verify it's running by calling the HTTP endpoint:
+Verify by calling the HTTP endpoint:
 
 ```sh
 curl localhost:8000/ping
@@ -86,7 +86,7 @@ pong#
 
 ## ⚙️ Configuration
 
-Settings can be adjusted via the `.uniflow.toml` file or environment variables.
+Adjust settings through `.uniflow.toml` or environment variables.
 
 | TOML Key             | Environment Variable Key | Example                   |
 |----------------------|--------------------------|---------------------------|
@@ -97,7 +97,7 @@ Settings can be adjusted via the `.uniflow.toml` file or environment variables.
 
 ## 📊 Benchmark
 
-The benchmark below was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html). It measures the performance of the [ping.yaml](./examples/ping.yaml) workflow, including `listener`, `router`, and `snippet` nodes.
+The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](./examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -142,20 +142,20 @@ Percentage of the requests served within a certain time (ms)
 
 ## 📚 Learn More
 
-- [Getting Started](./docs/getting_started.md): Learn how to install the CLI and manage workflows.
-- [Key Concepts](./docs/key_concepts.md): Understand nodes, connections, ports, and packets.
-- [Architecture](./docs/architecture.md): Explore how workflows are executed and node specifications are loaded.
-- [Debugging](./docs/debugging.md): Learn how to debug workflows, set breakpoints, and start sessions.
-- [User Extensions](./docs/user_extensions.md): Learn to add features and integrate with external services.
+- [Getting Started](./docs/getting_started.md): CLI usage and workflow management.
+- [Key Concepts](./docs/key_concepts.md): Understanding nodes, ports, and packets.
+- [Architecture](./docs/architecture.md): Workflow execution and node specification loading.
+- [Debugging](./docs/debugging.md): Debug workflows, set breakpoints, and start sessions.
+- [User Extensions](./docs/user_extensions.md): Add features and integrate external services.
 
 ## 🌐 Community and Support
 
 - [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
-- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bug reports and request new features.
+- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bugs or request features.
 
 ## 📜 License
 
-This project is released under the [MIT License](./LICENSE). You are free to use, modify, and distribute it as per the terms of the license.
+This project is available under the [MIT License](./LICENSE). You are free to use, modify, and distribute it in accordance with the terms.
 
 <!-- Go -->
 

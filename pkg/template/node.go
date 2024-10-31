@@ -29,7 +29,7 @@ type mapNode struct {
 	children map[node]node
 }
 
-func (v *valueNode) execute(data any) (any, error) {
+func (v *valueNode) execute(_ any) (any, error) {
 	return v.value, nil
 }
 

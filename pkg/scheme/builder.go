@@ -7,7 +7,7 @@ var _ Register = (*Builder)(nil)
 
 // NewBuilder creates a new Builder with the provided Register functions.
 func NewBuilder(registers ...Register) Builder {
-	return Builder(registers)
+	return registers
 }
 
 // AddToScheme applies all Register functions in the Builder to the given Scheme.

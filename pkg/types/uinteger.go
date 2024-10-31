@@ -230,7 +230,7 @@ func (u Uint64) Uint() uint64 {
 	return u.value
 }
 
-// kind returns the type of the unsigned integer data.
+// Kind returns the type of the unsigned integer data.
 func (u Uint64) Kind() Kind {
 	return KindUint64
 }
@@ -265,7 +265,9 @@ func (u Uint64) Compare(other Value) int {
 
 func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
-		if typ != nil && typ.Kind() == reflect.Uint {
+		if typ == nil {
+			return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		} else if typ.Kind() == reflect.Uint {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(uint); ok {
 					return NewUint(s), nil
@@ -273,7 +275,7 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewUint(uint(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Uint8 {
+		} else if typ.Kind() == reflect.Uint8 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(uint8); ok {
 					return NewUint8(s), nil
@@ -281,7 +283,7 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewUint8(uint8(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Uint16 {
+		} else if typ.Kind() == reflect.Uint16 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(uint16); ok {
 					return NewUint16(s), nil
@@ -289,7 +291,7 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewUint16(uint16(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Uint32 {
+		} else if typ.Kind() == reflect.Uint32 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(uint32); ok {
 					return NewUint32(s), nil
@@ -297,7 +299,7 @@ func newUintegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewUint32(uint32(reflect.ValueOf(source).Uint())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Uint64 {
+		} else if typ.Kind() == reflect.Uint64 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(uint64); ok {
 					return NewUint64(s), nil

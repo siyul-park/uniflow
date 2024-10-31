@@ -58,8 +58,7 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 	}
 
 	if len(secrets) > 0 {
-		secrets, err = l.secretStore.Load(ctx, secrets...)
-		if err != nil {
+		if secrets, err = l.secretStore.Load(ctx, secrets...); err != nil {
 			return err
 		}
 	}

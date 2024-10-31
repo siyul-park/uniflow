@@ -17,7 +17,7 @@ type TableOption struct {
 type Table struct {
 	charts      map[uuid.UUID]*Chart
 	namespaces  map[string]map[string]uuid.UUID
-	refences    map[uuid.UUID][]uuid.UUID
+	references  map[uuid.UUID][]uuid.UUID
 	linkHooks   LinkHooks
 	unlinkHooks UnlinkHooks
 	mu          sync.RWMutex
@@ -35,7 +35,7 @@ func NewTable(opts ...TableOption) *Table {
 	return &Table{
 		charts:      make(map[uuid.UUID]*Chart),
 		namespaces:  make(map[string]map[string]uuid.UUID),
-		refences:    make(map[uuid.UUID][]uuid.UUID),
+		references:  make(map[uuid.UUID][]uuid.UUID),
 		linkHooks:   linkHooks,
 		unlinkHooks: unlinkHooks,
 	}
@@ -142,7 +142,6 @@ func (t *Table) free(id uuid.UUID) (*Chart, error) {
 	}
 
 	delete(t.charts, id)
-
 	return chrt, nil
 }
 
@@ -174,8 +173,8 @@ func (t *Table) unload(chrt *Chart) error {
 func (t *Table) links(chrt *Chart) {
 	for _, spec := range chrt.GetSpecs() {
 		id := t.lookup(chrt.GetNamespace(), spec.GetKind())
-		if id != uuid.Nil && !slices.Contains(t.refences[id], chrt.GetID()) {
-			t.refences[id] = append(t.refences[id], chrt.GetID())
+		if id != uuid.Nil && !slices.Contains(t.references[id], chrt.GetID()) {
+			t.references[id] = append(t.references[id], chrt.GetID())
 		}
 	}
 
@@ -183,8 +182,8 @@ func (t *Table) links(chrt *Chart) {
 		for _, spec := range ref.GetSpecs() {
 			id := t.lookup(ref.GetNamespace(), spec.GetKind())
 			if id != uuid.Nil && id == chrt.GetID() {
-				if !slices.Contains(t.refences[id], ref.GetID()) {
-					t.refences[id] = append(t.refences[id], ref.GetID())
+				if !slices.Contains(t.references[id], ref.GetID()) {
+					t.references[id] = append(t.references[id], ref.GetID())
 				}
 			}
 		}
@@ -195,22 +194,21 @@ func (t *Table) unlinks(chrt *Chart) {
 	for _, spec := range chrt.GetSpecs() {
 		id := t.lookup(chrt.GetNamespace(), spec.GetKind())
 
-		refences := t.refences[id]
-		for i := 0; i < len(refences); i++ {
-			if refences[i] == chrt.GetID() {
-				refences = append(refences[:i], refences[i+1:]...)
+		references := t.references[id]
+		for i := 0; i < len(references); i++ {
+			if references[i] == chrt.GetID() {
+				references = append(references[:i], references[i+1:]...)
 				i--
 			}
 		}
 
-		if len(refences) > 0 {
-			t.refences[id] = refences
+		if len(references) > 0 {
+			t.references[id] = references
 		} else {
-			delete(t.refences, id)
+			delete(t.references, id)
 		}
 	}
-
-	delete(t.refences, chrt.GetID())
+	delete(t.references, chrt.GetID())
 }
 
 func (t *Table) linked(chrt *Chart) []*Chart {
@@ -219,7 +217,7 @@ func (t *Table) linked(chrt *Chart) []*Chart {
 	for len(paths) > 0 {
 		sb := paths[len(paths)-1]
 		ok := true
-		for _, id := range t.refences[sb.GetID()] {
+		for _, id := range t.references[sb.GetID()] {
 			next := t.charts[id]
 			ok = slices.Contains(paths, next) || slices.Contains(linked, next)
 			if !ok {

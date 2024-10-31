@@ -134,6 +134,5 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 			}
 		}
 	}
-
 	return errors.Join(errs...)
 }

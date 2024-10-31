@@ -79,7 +79,9 @@ func newStringEncoder() encoding2.EncodeCompiler[any, Value] {
 	typeTextMarshaler := reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
 	return encoding2.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding2.Encoder[any, Value], error) {
-		if typ != nil && typ.ConvertibleTo(typeTextMarshaler) {
+		if typ == nil {
+			return nil, errors.WithStack(encoding2.ErrUnsupportedType)
+		} else if typ.ConvertibleTo(typeTextMarshaler) {
 			return encoding2.EncodeFunc[any, Value](func(source any) (Value, error) {
 				s := source.(encoding.TextMarshaler)
 				if s, err := s.MarshalText(); err != nil {
@@ -88,7 +90,7 @@ func newStringEncoder() encoding2.EncodeCompiler[any, Value] {
 					return NewString(string(s)), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.String {
+		} else if typ.Kind() == reflect.String {
 			return encoding2.EncodeFunc[any, Value](func(source any) (Value, error) {
 				if s, ok := source.(string); ok {
 					return NewString(s), nil
@@ -106,7 +108,9 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 	typeBinaryUnmarshaler := reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 
 	return encoding2.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding2.Decoder[Value, unsafe.Pointer], error) {
-		if typ != nil && typ.ConvertibleTo(typeTextUnmarshaler) {
+		if typ == nil {
+			return nil, errors.WithStack(encoding2.ErrUnsupportedType)
+		} else if typ.ConvertibleTo(typeTextUnmarshaler) {
 			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
@@ -114,7 +118,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 				}
 				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
-		} else if typ != nil && typ.ConvertibleTo(typeBinaryUnmarshaler) {
+		} else if typ.ConvertibleTo(typeBinaryUnmarshaler) {
 			return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(String); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
@@ -122,7 +126,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 				}
 				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Pointer {
+		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.String {
 				return encoding2.DecodeFunc[Value, unsafe.Pointer](func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(String); ok {
@@ -137,7 +141,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						if v, err := strconv.ParseBool(s.String()); err != nil {
 							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
-							*(*bool)(target) = bool(v)
+							*(*bool)(target) = v
 							return nil
 						}
 					}
@@ -161,7 +165,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						if v, err := strconv.ParseFloat(s.String(), 64); err != nil {
 							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
-							*(*float64)(target) = float64(v)
+							*(*float64)(target) = v
 							return nil
 						}
 					}
@@ -173,7 +177,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						if v, err := strconv.Atoi(s.String()); err != nil {
 							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
-							*(*int)(target) = int(v)
+							*(*int)(target) = v
 							return nil
 						}
 					}
@@ -221,7 +225,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						if v, err := strconv.ParseInt(s.String(), 10, 64); err != nil {
 							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
-							*(*int64)(target) = int64(v)
+							*(*int64)(target) = v
 							return nil
 						}
 					}
@@ -281,7 +285,7 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 						if v, err := strconv.ParseUint(s.String(), 10, 64); err != nil {
 							return errors.WithMessage(encoding2.ErrUnsupportedValue, err.Error())
 						} else {
-							*(*uint64)(target) = uint64(v)
+							*(*uint64)(target) = v
 							return nil
 						}
 					}

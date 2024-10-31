@@ -178,7 +178,6 @@ func (a *Agent) Load(sym *symbol.Symbol) error {
 		out.AddOpenHook(hook)
 		outbounds[name] = hook
 	}
-
 	return nil
 }
 
@@ -199,7 +198,6 @@ func (a *Agent) Unload(sym *symbol.Symbol) error {
 	delete(a.inbounds, sym.ID())
 	delete(a.outbounds, sym.ID())
 	delete(a.symbols, sym.ID())
-
 	return nil
 }
 
@@ -209,7 +207,6 @@ func (a *Agent) Link(chrt *chart.Chart) error {
 	defer a.mu.Unlock()
 
 	a.charts[chrt.GetID()] = chrt
-
 	return nil
 }
 
@@ -219,7 +216,6 @@ func (a *Agent) Unlink(chrt *chart.Chart) error {
 	defer a.mu.Unlock()
 
 	delete(a.charts, chrt.GetID())
-
 	return nil
 }
 
@@ -327,6 +323,5 @@ func (a *Agent) hooks(proc *process.Process, sym *symbol.Symbol, in *port.InPort
 
 		watchers.OnFrame(frame)
 	})
-
 	return inboundHook, outboundHook
 }

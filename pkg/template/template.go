@@ -29,11 +29,6 @@ func New(name string) *Template {
 
 // Parse parses the provided value into the template's root node.
 func (t *Template) Parse(value any) (*Template, error) {
-	if value == nil {
-		t.root = &valueNode{value: value}
-		return t, nil
-	}
-
 	root, err := t.parse(reflect.ValueOf(value))
 	if err != nil {
 		return nil, err

@@ -7,13 +7,13 @@ var _ Register = (*Builder)(nil)
 
 // NewBuilder creates a new Builder with optional initial hook functions.
 func NewBuilder(registers ...Register) Builder {
-	return Builder(registers)
+	return registers
 }
 
-// AddToHooks adds all registered hook functions to the provided Hook instance.
-func (b Builder) AddToHooks(hook *Hook) error {
-	for _, f := range b {
-		if err := f.AddToHooks(hook); err != nil {
+// AddToHook adds all registered hook functions to the provided Hook instance.
+func (b *Builder) AddToHook(hook *Hook) error {
+	for _, f := range *b {
+		if err := f.AddToHook(hook); err != nil {
 			return err
 		}
 	}
@@ -26,9 +26,9 @@ func (b *Builder) Register(registers ...Register) {
 }
 
 // Build creates a new Hook instance and adds all registered hook functions to it.
-func (b Builder) Build() (*Hook, error) {
+func (b *Builder) Build() (*Hook, error) {
 	h := New()
-	if err := b.AddToHooks(h); err != nil {
+	if err := b.AddToHook(h); err != nil {
 		return nil, err
 	}
 	return h, nil

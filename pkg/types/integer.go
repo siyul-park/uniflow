@@ -101,7 +101,7 @@ func (i Int8) Int() int64 {
 	return int64(i.value)
 }
 
-// kind returns the type of the integer data.
+// Kind returns the type of the integer data.
 func (i Int8) Kind() Kind {
 	return KindInt8
 }
@@ -144,7 +144,7 @@ func (i Int16) Int() int64 {
 	return int64(i.value)
 }
 
-// kind returns the type of the integer data.
+// Kind returns the type of the integer data.
 func (i Int16) Kind() Kind {
 	return KindInt16
 }
@@ -187,7 +187,7 @@ func (i Int32) Int() int64 {
 	return int64(i.value)
 }
 
-// kind returns the type of the integer data.
+// Kind returns the type of the integer data.
 func (i Int32) Kind() Kind {
 	return KindInt32
 }
@@ -230,7 +230,7 @@ func (i Int64) Int() int64 {
 	return i.value
 }
 
-// kind returns the type of the integer data.
+// Kind returns the type of the integer data.
 func (i Int64) Kind() Kind {
 	return KindInt64
 }
@@ -265,7 +265,9 @@ func (i Int64) Compare(other Value) int {
 
 func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
-		if typ != nil && typ.Kind() == reflect.Int {
+		if typ == nil {
+			return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		} else if typ.Kind() == reflect.Int {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int); ok {
 					return NewInt(s), nil
@@ -273,7 +275,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewInt(int(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Int8 {
+		} else if typ.Kind() == reflect.Int8 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int8); ok {
 					return NewInt8(s), nil
@@ -281,7 +283,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewInt8(int8(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Int16 {
+		} else if typ.Kind() == reflect.Int16 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int16); ok {
 					return NewInt16(s), nil
@@ -289,7 +291,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewInt16(int16(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Int32 {
+		} else if typ.Kind() == reflect.Int32 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int32); ok {
 					return NewInt32(s), nil
@@ -297,7 +299,7 @@ func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewInt32(int32(reflect.ValueOf(source).Int())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Int64 {
+		} else if typ.Kind() == reflect.Int64 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(int64); ok {
 					return NewInt64(s), nil

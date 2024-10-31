@@ -185,7 +185,7 @@ func (m Map) Interface() any {
 	return t.Interface()
 }
 
-// Compare compares two maps.
+// Equal checks if two Map instances are equal.
 func (m Map) Equal(other Value) bool {
 	if o, ok := other.(Map); ok {
 		if m.value.Len() == o.value.Len() {
@@ -226,6 +226,14 @@ func (m Map) Compare(other Value) int {
 	return compare(m.Kind(), KindOf(other))
 }
 
+func (m *mapProxy) Set(key, value Value) {
+	m.Map = m.Map.Set(key, value)
+}
+
+func (m *mapProxy) Delete(key Value) {
+	m.Map = m.Map.Delete(key)
+}
+
 func (*comparer) Compare(x, y Value) int {
 	return Compare(x, y)
 }
@@ -256,7 +264,6 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 					} else {
 						pairs = append(pairs, key)
 					}
-
 					if val, err := valueEncoder.Encode(v.Interface()); err != nil {
 						return nil, err
 					} else {
@@ -266,9 +273,7 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 				return NewMap(pairs...), nil
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Struct {
-			fields := make([]reflect.StructField, 0, typ.NumField())
-			tags := make([]mapTag, 0, typ.NumField())
-			valueEncoders := make([]encoding.Encoder[any, Value], 0, typ.NumField())
+			encoders := make([]encoding.Encoder[reflect.Value, []Value], 0, typ.NumField())
 			for i := 0; i < typ.NumField(); i++ {
 				field := typ.Field(i)
 				tag := getMapTag(field)
@@ -276,51 +281,61 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 					continue
 				}
 
-				valueEncoder, _ := encoder.Compile(field.Type)
-				if valueEncoder == nil {
-					valueEncoder = encoder
+				child, err := encoder.Compile(field.Type)
+				if err != nil {
+					child = encoder
 				}
 
-				fields = append(fields, field)
-				tags = append(tags, tag)
-				valueEncoders = append(valueEncoders, valueEncoder)
-			}
+				alias := NewString(tag.alias)
 
-			return encoding.EncodeFunc(func(source any) (Value, error) {
-				s := reflect.ValueOf(source)
+				var env encoding.Encoder[reflect.Value, []Value]
+				if tag.inline {
+					env = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+						elem := source.FieldByIndex(field.Index)
+						if tag.omitempty && elem.IsZero() {
+							return nil, nil
+						}
 
-				pairs := make([]Value, 0, len(fields)*2)
-				for i := 0; i < len(fields); i++ {
-					field := fields[i]
-					tag := tags[i]
-
-					elem := s.FieldByIndex(field.Index)
-					if tag.omitempty && elem.IsZero() {
-						continue
-					}
-
-					valueEncoder := valueEncoders[i]
-
-					if tag.inline {
-						if target, err := valueEncoder.Encode(elem.Interface()); err != nil {
+						if target, err := child.Encode(elem.Interface()); err != nil {
 							return nil, err
 						} else if t, ok := target.(Map); !ok {
 							return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 						} else {
-							pairs = append(pairs, t.Pairs()...)
+							return t.Pairs(), nil
 						}
-					} else {
-						if target, err := valueEncoder.Encode(elem.Interface()); err != nil {
+					})
+				} else {
+					env = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+						elem := source.FieldByIndex(field.Index)
+						if tag.omitempty && elem.IsZero() {
+							return nil, nil
+						}
+
+						if target, err := child.Encode(elem.Interface()); err != nil {
 							return nil, err
 						} else {
-							pairs = append(pairs, NewString(tag.alias), target)
+							return []Value{alias, target}, nil
 						}
-					}
+					})
 				}
 
+				encoders = append(encoders, env)
+			}
+
+			return encoding.EncodeFunc(func(source any) (Value, error) {
+				s := reflect.ValueOf(source)
+				pairs := make([]Value, 0, len(encoders)*2)
+				for _, enc := range encoders {
+					if target, err := enc.Encode(s); err != nil {
+						return nil, err
+					} else {
+						pairs = append(pairs, target...)
+					}
+				}
 				return NewMap(pairs...), nil
 			}), nil
 		}
+
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
 	})
 }
@@ -346,13 +361,13 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						return nil
 					}
 
-					proxy, ok := source.(*mapProxy)
-					if !ok {
-						if s, ok := source.(Map); ok {
-							proxy = &mapProxy{Map: s}
-						} else {
-							return errors.WithStack(encoding.ErrUnsupportedType)
-						}
+					var proxy *mapProxy
+					if s, ok := source.(*mapProxy); ok {
+						proxy = s
+					} else if s, ok := source.(Map); ok {
+						proxy = &mapProxy{Map: s}
+					} else {
+						return errors.WithStack(encoding.ErrUnsupportedType)
 					}
 
 					t := reflect.NewAt(typ.Elem(), target).Elem()
@@ -365,6 +380,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						if !ok {
 							continue
 						}
+
 						proxy.Delete(key)
 
 						k := reflect.New(keyType)
@@ -487,12 +503,4 @@ func getMapTag(f reflect.StructField) mapTag {
 	}
 
 	return mapTag{alias: key}
-}
-
-func (m *mapProxy) Set(key, value Value) {
-	m.Map = m.Map.Set(key, value)
-}
-
-func (m *mapProxy) Delete(key Value) {
-	m.Map = m.Map.Delete(key)
 }

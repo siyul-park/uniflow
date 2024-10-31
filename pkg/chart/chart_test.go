@@ -118,3 +118,58 @@ func TestChart_Get(t *testing.T) {
 	assert.Equal(t, chrt.Ports, chrt.GetPorts())
 	assert.Equal(t, chrt.Env, chrt.GetEnv())
 }
+
+func TestChart_Set(t *testing.T) {
+	chrt := New()
+
+	id := uuid.Must(uuid.NewV7())
+	namespace := "test-namespace"
+	name := "test-chart"
+	annotations := map[string]string{"key": "value"}
+	specs := []spec.Spec{
+		&spec.Unstructured{
+			Meta: spec.Meta{
+				ID:   uuid.Must(uuid.NewV7()),
+				Kind: "test",
+			},
+		},
+	}
+	ports := map[string][]Port{
+		"http": {
+			{
+				ID:   uuid.Must(uuid.NewV7()),
+				Name: "http",
+				Port: "80",
+			},
+		},
+	}
+	env := map[string][]Value{
+		"FOO": {
+			{
+				ID:    uuid.Must(uuid.NewV7()),
+				Value: "bar",
+			},
+		},
+	}
+
+	chrt.SetID(id)
+	assert.Equal(t, id, chrt.GetID())
+
+	chrt.SetNamespace(namespace)
+	assert.Equal(t, namespace, chrt.GetNamespace())
+
+	chrt.SetName(name)
+	assert.Equal(t, name, chrt.GetName())
+
+	chrt.SetAnnotations(annotations)
+	assert.Equal(t, annotations, chrt.GetAnnotations())
+
+	chrt.SetSpecs(specs)
+	assert.Equal(t, specs, chrt.GetSpecs())
+
+	chrt.SetPorts(ports)
+	assert.Equal(t, ports, chrt.GetPorts())
+
+	chrt.SetEnv(env)
+	assert.Equal(t, env, chrt.GetEnv())
+}

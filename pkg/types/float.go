@@ -83,7 +83,7 @@ func (f Float64) Float() float64 {
 	return f.value
 }
 
-// kind returns the type of the float data.
+// Kind returns the type of the float data.
 func (f Float64) Kind() Kind {
 	return KindFloat64
 }
@@ -118,7 +118,9 @@ func (f Float64) Compare(other Value) int {
 
 func newFloatEncoder() encoding.EncodeCompiler[any, Value] {
 	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
-		if typ != nil && typ.Kind() == reflect.Float32 {
+		if typ == nil {
+			return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		} else if typ.Kind() == reflect.Float32 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(float32); ok {
 					return NewFloat32(s), nil
@@ -126,7 +128,7 @@ func newFloatEncoder() encoding.EncodeCompiler[any, Value] {
 					return NewFloat32(float32(reflect.ValueOf(source).Float())), nil
 				}
 			}), nil
-		} else if typ != nil && typ.Kind() == reflect.Float64 {
+		} else if typ.Kind() == reflect.Float64 {
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				if s, ok := source.(float64); ok {
 					return NewFloat64(s), nil
