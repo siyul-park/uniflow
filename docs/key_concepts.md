@@ -107,11 +107,12 @@ Nodes are classified based on how they process packets:
 Ports are connection points for sending and receiving packets between nodes. There are two types of ports: `InPort` and `OutPort`, and packets are transmitted by connecting them. A packet sent to one port is forwarded to all connected ports.
 
 Commonly used port names include:
-- `init`: A special port used to initialize nodes. When the node becomes available, the workflow connected to the `init` port executes.
-- `io`: Processes packets and returns them immediately.
-- `in`: Receives packets for processing and sends the results to `out` or `error`. If there are no connected `out` or `error` ports, the result is returned directly.
-- `out`: Sends processed packets. The transmitted result can be sent to other `in` ports.
-- `error`: Sends errors encountered during packet processing. Error handling results can be sent back to an `in` port.
+- **`init`**: A special port used to initialize nodes. When a node becomes available, the workflow connected to the `init` port is executed.
+- **`term`**: A special port used to terminate nodes. The workflow connected to the `term` port is executed when the node is being deactivated.
+- **`io`**: Processes packets and immediately returns the results.
+- **`in`**: Receives packets for processing and sends the results to the `out` or `error` ports. If there are no connected `out` or `error` ports, the result is returned directly.
+- **`out`**: Sends processed packets. The transmitted results can be sent to other `in` ports.
+- **`error`**: Sends errors encountered during packet processing. The results of error handling can be sent back to an `in` port.
 
 When multiple ports with the same role are needed, they are expressed as `in[0]`, `in[1]`, `out[0]`, `out[1]`, etc.
 

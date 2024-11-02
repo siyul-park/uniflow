@@ -9,6 +9,7 @@ import (
 // Commonly used port names.
 const (
 	PortInit = "init"
+	PortTerm = "term"
 	PortIO   = "io"
 	PortIn   = "in"
 	PortOut  = "out"

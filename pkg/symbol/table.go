@@ -150,7 +150,7 @@ func (t *Table) load(sb *Symbol) error {
 	linked := t.linked(sb)
 	for _, sb := range linked {
 		if t.active(sb) {
-			if err := t.init(sb); err != nil {
+			if err := t.call(sb, node.PortInit); err != nil {
 				return err
 			}
 			if err := t.loadHooks.Load(sb); err != nil {
@@ -167,6 +167,9 @@ func (t *Table) unload(sb *Symbol) error {
 		sb := linked[i]
 		if t.active(sb) {
 			if err := t.unloadHooks.Unload(sb); err != nil {
+				return err
+			}
+			if err := t.call(sb, node.PortTerm); err != nil {
 				return err
 			}
 		}
@@ -336,22 +339,20 @@ func (t *Table) active(sb *Symbol) bool {
 	return true
 }
 
-func (t *Table) init(sb *Symbol) error {
+func (t *Table) call(sb *Symbol, name string) error {
 	out := port.NewOut()
 	defer out.Close()
 
 	ports := sb.Ports()
-	for _, port := range ports[node.PortInit] {
+	for _, port := range ports[name] {
 		id := port.ID
 		if id == uuid.Nil {
 			id = t.lookup(sb.Namespace(), port.Name)
 		}
 
-		if ref, ok := t.symbols[id]; ok {
-			if ref.Namespace() == sb.Namespace() {
-				if in := ref.In(port.Port); in != nil {
-					out.Link(in)
-				}
+		if ref, ok := t.symbols[id]; ok && ref.Namespace() == sb.Namespace() {
+			if in := ref.In(port.Port); in != nil {
+				out.Link(in)
 			}
 		}
 	}
