@@ -212,11 +212,31 @@ func (t *Table) unlinks(chrt *Chart) {
 }
 
 func (t *Table) linked(chrt *Chart) []*Chart {
+	degree := map[*Chart]int{}
+	visited := map[*Chart]struct{}{}
+	queue := []*Chart{chrt}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		if _, ok := visited[curr]; ok {
+			continue
+		}
+		visited[curr] = struct{}{}
+
+		for _, id := range t.references[curr.GetID()] {
+			if next, ok := t.charts[id]; ok {
+				degree[next]++
+				queue = append(queue, next)
+			}
+		}
+	}
+
 	var linked []*Chart
-	stack := []*Chart{chrt}
-	for len(stack) > 0 {
-		curr := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+	queue = []*Chart{chrt}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
 
 		if slices.Contains(linked, curr) {
 			continue
@@ -225,10 +245,19 @@ func (t *Table) linked(chrt *Chart) []*Chart {
 
 		for _, id := range t.references[curr.GetID()] {
 			if next, ok := t.charts[id]; ok {
-				stack = append(stack, next)
+				degree[next]--
+				if degree[next] == 0 {
+					queue = append(queue, next)
+				}
 			}
 		}
 	}
+	for curr, d := range degree {
+		if d != 0 {
+			linked = append(linked, curr)
+		}
+	}
+
 	return linked
 }
 

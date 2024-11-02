@@ -255,23 +255,23 @@ func (t *Table) unlinks(sb *Symbol) {
 				continue
 			}
 
-			refences := t.references[ref.ID()]
-			if refences == nil {
-				refences = make(map[string][]spec.Port)
-				t.references[ref.ID()] = refences
+			references := t.references[ref.ID()]
+			if references == nil {
+				references = make(map[string][]spec.Port)
+				t.references[ref.ID()] = references
 			}
 
 			var ports []spec.Port
-			for _, port := range refences[port.Port] {
+			for _, port := range references[port.Port] {
 				if port.ID != sb.ID() && port.Port != name {
 					ports = append(ports, port)
 				}
 			}
 
 			if len(ports) > 0 {
-				refences[port.Port] = ports
+				references[port.Port] = ports
 			} else {
-				delete(refences, port.Port)
+				delete(references, port.Port)
 			}
 		}
 	}
@@ -280,12 +280,38 @@ func (t *Table) unlinks(sb *Symbol) {
 }
 
 func (t *Table) linked(sb *Symbol) []*Symbol {
-	var linked []*Symbol
-	stack := []*Symbol{sb}
+	degree := map[*Symbol]int{}
+	visited := map[*Symbol]struct{}{}
+	queue := []*Symbol{sb}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
 
-	for len(stack) > 0 {
-		curr := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
+		if _, ok := visited[curr]; ok {
+			continue
+		}
+		visited[curr] = struct{}{}
+
+		for _, ports := range t.references[curr.ID()] {
+			for _, port := range ports {
+				id := port.ID
+				if id == uuid.Nil {
+					id = t.lookup(curr.Namespace(), port.Name)
+				}
+
+				if next, ok := t.symbols[id]; ok {
+					degree[next]++
+					queue = append(queue, next)
+				}
+			}
+		}
+	}
+
+	var linked []*Symbol
+	queue = []*Symbol{sb}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
 
 		if slices.Contains(linked, curr) {
 			continue
@@ -300,18 +326,26 @@ func (t *Table) linked(sb *Symbol) []*Symbol {
 				}
 
 				if next, ok := t.symbols[id]; ok {
-					stack = append(stack, next)
+					degree[next]--
+					if degree[next] == 0 {
+						queue = append(queue, next)
+					}
 				}
 			}
 		}
 	}
+	for curr, d := range degree {
+		if d != 0 {
+			linked = append(linked, curr)
+		}
+	}
+
 	return linked
 }
 
 func (t *Table) active(sb *Symbol) bool {
 	stack := []*Symbol{sb}
 	visited := map[*Symbol]struct{}{}
-
 	for len(stack) > 0 {
 		curr := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
