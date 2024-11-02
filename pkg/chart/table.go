@@ -147,9 +147,9 @@ func (t *Table) free(id uuid.UUID) (*Chart, error) {
 
 func (t *Table) load(chrt *Chart) error {
 	linked := t.linked(chrt)
-	for _, sb := range linked {
-		if t.active(sb) {
-			if err := t.linkHooks.Link(sb); err != nil {
+	for _, chrt := range linked {
+		if t.active(chrt) {
+			if err := t.linkHooks.Link(chrt); err != nil {
 				return err
 			}
 		}
@@ -160,9 +160,9 @@ func (t *Table) load(chrt *Chart) error {
 func (t *Table) unload(chrt *Chart) error {
 	linked := t.linked(chrt)
 	for i := len(linked) - 1; i >= 0; i-- {
-		sb := linked[i]
-		if t.active(sb) {
-			if err := t.unlinkHooks.Unlink(sb); err != nil {
+		chrt := linked[i]
+		if t.active(chrt) {
+			if err := t.unlinkHooks.Unlink(chrt); err != nil {
 				return err
 			}
 		}
@@ -213,50 +213,48 @@ func (t *Table) unlinks(chrt *Chart) {
 
 func (t *Table) linked(chrt *Chart) []*Chart {
 	var linked []*Chart
-	paths := []*Chart{chrt}
-	for len(paths) > 0 {
-		sb := paths[len(paths)-1]
-		ok := true
-		for _, id := range t.references[sb.GetID()] {
-			next := t.charts[id]
-			ok = slices.Contains(paths, next) || slices.Contains(linked, next)
-			if !ok {
-				paths = append(paths, next)
-				break
+	stack := []*Chart{chrt}
+	for len(stack) > 0 {
+		curr := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if slices.Contains(linked, curr) {
+			continue
+		}
+		linked = append(linked, curr)
+
+		for _, id := range t.references[curr.GetID()] {
+			if next, ok := t.charts[id]; ok {
+				stack = append(stack, next)
 			}
 		}
-		if ok {
-			paths = paths[0 : len(paths)-1]
-			linked = append(linked, sb)
-		}
 	}
-	slices.Reverse(linked)
 	return linked
 }
 
 func (t *Table) active(chrt *Chart) bool {
 	var linked []*Chart
-	paths := []*Chart{chrt}
-	for len(paths) > 0 {
-		chrt := paths[len(paths)-1]
+	stack := []*Chart{chrt}
+	for len(stack) > 0 {
+		curr := stack[len(stack)-1]
 		ok := true
-		for _, sp := range chrt.Specs {
-			id := t.lookup(chrt.GetNamespace(), sp.GetKind())
+		for _, sp := range curr.Specs {
+			id := t.lookup(curr.GetNamespace(), sp.GetKind())
 			next := t.charts[id]
 
-			if next == nil || slices.Contains(paths, next) {
+			if next == nil || slices.Contains(stack, next) {
 				return false
 			}
 
 			ok = slices.Contains(linked, next)
 			if !ok {
-				paths = append(paths, next)
+				stack = append(stack, next)
 				break
 			}
 		}
 		if ok {
-			paths = paths[0 : len(paths)-1]
-			linked = append(linked, chrt)
+			stack = stack[0 : len(stack)-1]
+			linked = append(linked, curr)
 		}
 	}
 	return true

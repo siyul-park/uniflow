@@ -21,7 +21,7 @@ type TableOption struct {
 type Table struct {
 	symbols     map[uuid.UUID]*Symbol
 	namespaces  map[string]map[string]uuid.UUID
-	refences    map[uuid.UUID]map[string][]spec.Port
+	references  map[uuid.UUID]map[string][]spec.Port
 	loadHooks   LoadHooks
 	unloadHooks UnloadHooks
 	mu          sync.RWMutex
@@ -39,7 +39,7 @@ func NewTable(opts ...TableOption) *Table {
 	return &Table{
 		symbols:     make(map[uuid.UUID]*Symbol),
 		namespaces:  make(map[string]map[string]uuid.UUID),
-		refences:    make(map[uuid.UUID]map[string][]spec.Port),
+		references:  make(map[uuid.UUID]map[string][]spec.Port),
 		loadHooks:   loadHooks,
 		unloadHooks: unloadHooks,
 	}
@@ -191,10 +191,10 @@ func (t *Table) links(sb *Symbol) {
 						out.Link(in)
 					}
 
-					refences := t.refences[ref.ID()]
+					refences := t.references[ref.ID()]
 					if refences == nil {
 						refences = make(map[string][]spec.Port)
-						t.refences[ref.ID()] = refences
+						t.references[ref.ID()] = refences
 					}
 
 					refences[port.Port] = append(refences[port.Port], spec.Port{
@@ -222,10 +222,10 @@ func (t *Table) links(sb *Symbol) {
 						out.Link(in)
 					}
 
-					refences := t.refences[sb.ID()]
+					refences := t.references[sb.ID()]
 					if refences == nil {
 						refences = make(map[string][]spec.Port)
-						t.refences[sb.ID()] = refences
+						t.references[sb.ID()] = refences
 					}
 
 					refences[port.Port] = append(refences[port.Port], spec.Port{
@@ -252,10 +252,10 @@ func (t *Table) unlinks(sb *Symbol) {
 				continue
 			}
 
-			refences := t.refences[ref.ID()]
+			refences := t.references[ref.ID()]
 			if refences == nil {
 				refences = make(map[string][]spec.Port)
-				t.refences[ref.ID()] = refences
+				t.references[ref.ID()] = refences
 			}
 
 			var ports []spec.Port
@@ -273,62 +273,63 @@ func (t *Table) unlinks(sb *Symbol) {
 		}
 	}
 
-	delete(t.refences, sb.ID())
+	delete(t.references, sb.ID())
 }
 
 func (t *Table) linked(sb *Symbol) []*Symbol {
 	var linked []*Symbol
-	paths := []*Symbol{sb}
-	for len(paths) > 0 {
-		sb := paths[len(paths)-1]
-		ok := true
-		for _, ports := range t.refences[sb.ID()] {
+	stack := []*Symbol{sb}
+
+	for len(stack) > 0 {
+		curr := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if slices.Contains(linked, curr) {
+			continue
+		}
+		linked = append(linked, curr)
+
+		for _, ports := range t.references[curr.ID()] {
 			for _, port := range ports {
-				next := t.symbols[port.ID]
-				ok = slices.Contains(paths, next) || slices.Contains(linked, next)
-				if !ok {
-					paths = append(paths, next)
-					break
+				id := port.ID
+				if id == uuid.Nil {
+					id = t.lookup(curr.Namespace(), port.Name)
+				}
+
+				if next, ok := t.symbols[id]; ok {
+					stack = append(stack, next)
 				}
 			}
-			if !ok {
-				break
-			}
-		}
-		if ok {
-			paths = paths[0 : len(paths)-1]
-			linked = append(linked, sb)
 		}
 	}
-	slices.Reverse(linked)
 	return linked
 }
 
 func (t *Table) active(sb *Symbol) bool {
-	nexts := []*Symbol{sb}
-	visits := map[*Symbol]struct{}{}
-	for len(nexts) > 0 {
-		sb := nexts[0]
-		nexts = nexts[1:]
+	stack := []*Symbol{sb}
+	visited := map[*Symbol]struct{}{}
 
-		if _, visit := visits[sb]; visit {
+	for len(stack) > 0 {
+		curr := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if _, ok := visited[curr]; ok {
 			continue
 		}
-		visits[sb] = struct{}{}
+		visited[curr] = struct{}{}
 
-		for _, ports := range sb.Ports() {
+		for _, ports := range curr.Ports() {
 			for _, port := range ports {
 				id := port.ID
 				if id == uuid.Nil {
-					id = t.lookup(sb.Namespace(), port.Name)
+					id = t.lookup(curr.Namespace(), port.Name)
 				}
 
-				ref, ok := t.symbols[id]
-				if !ok || ref.Namespace() != sb.Namespace() {
+				next, ok := t.symbols[id]
+				if !ok || next.Namespace() != curr.Namespace() {
 					return false
 				}
-
-				nexts = append(nexts, ref)
+				stack = append(stack, next)
 			}
 		}
 	}
