@@ -1,6 +1,8 @@
 package symbol
 
 import (
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"slices"
 	"sync"
 
@@ -93,8 +95,56 @@ func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for id := range t.symbols {
-		if _, err := t.free(id); err != nil {
+	degree := map[*Symbol]int{}
+	for id, sb := range t.symbols {
+		degree[sb] = 0
+		for _, ports := range t.references[id] {
+			degree[sb] += len(ports)
+		}
+	}
+
+	var queue []*Symbol
+	for sb, count := range degree {
+		if count == 0 {
+			queue = append(queue, sb)
+		}
+	}
+
+	symbols := make([]*Symbol, 0, len(t.symbols))
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		if slices.Contains(symbols, curr) {
+			continue
+		}
+		symbols = append(symbols, curr)
+
+		for _, ports := range curr.Ports() {
+			for _, port := range ports {
+				id := port.ID
+				if id == uuid.Nil {
+					id = t.lookup(curr.Namespace(), port.Name)
+				}
+
+				next, ok := t.symbols[id]
+				if ok && next.Namespace() == curr.Namespace() {
+					degree[next]--
+					if degree[next] == 0 {
+						queue = append(queue, next)
+					}
+				}
+			}
+		}
+	}
+	for sb, count := range degree {
+		if count != 0 {
+			symbols = append(symbols, sb)
+		}
+	}
+
+	for _, sb := range symbols {
+		if _, err := t.free(sb.ID()); err != nil {
 			return err
 		}
 	}
@@ -194,13 +244,13 @@ func (t *Table) links(sb *Symbol) {
 						out.Link(in)
 					}
 
-					refences := t.references[ref.ID()]
-					if refences == nil {
-						refences = make(map[string][]spec.Port)
-						t.references[ref.ID()] = refences
+					references := t.references[ref.ID()]
+					if references == nil {
+						references = make(map[string][]spec.Port)
+						t.references[ref.ID()] = references
 					}
 
-					refences[port.Port] = append(refences[port.Port], spec.Port{
+					references[port.Port] = append(references[port.Port], spec.Port{
 						ID:   sb.ID(),
 						Name: port.Name,
 						Port: name,
@@ -225,13 +275,13 @@ func (t *Table) links(sb *Symbol) {
 						out.Link(in)
 					}
 
-					refences := t.references[sb.ID()]
-					if refences == nil {
-						refences = make(map[string][]spec.Port)
-						t.references[sb.ID()] = refences
+					references := t.references[sb.ID()]
+					if references == nil {
+						references = make(map[string][]spec.Port)
+						t.references[sb.ID()] = references
 					}
 
-					refences[port.Port] = append(refences[port.Port], spec.Port{
+					references[port.Port] = append(references[port.Port], spec.Port{
 						ID:   ref.ID(),
 						Name: port.Name,
 						Port: name,
@@ -334,9 +384,9 @@ func (t *Table) linked(sb *Symbol) []*Symbol {
 			}
 		}
 	}
-	for curr, d := range degree {
-		if d != 0 {
-			linked = append(linked, curr)
+	for sb, count := range degree {
+		if count != 0 {
+			linked = append(linked, sb)
 		}
 	}
 
@@ -384,7 +434,8 @@ func (t *Table) call(sb *Symbol, name string) error {
 			id = t.lookup(sb.Namespace(), port.Name)
 		}
 
-		if ref, ok := t.symbols[id]; ok && ref.Namespace() == sb.Namespace() {
+		ref, ok := t.symbols[id]
+		if ok && ref.Namespace() == sb.Namespace() {
 			if in := ref.In(port.Port); in != nil {
 				out.Link(in)
 			}
@@ -396,7 +447,18 @@ func (t *Table) call(sb *Symbol, name string) error {
 		return err
 	}
 
-	_, err = port.Send(out, payload)
+	proc := process.New()
+	defer proc.Exit(err)
+
+	writer := out.Open(proc)
+	defer writer.Close()
+
+	outPck := packet.New(payload)
+	backPck := packet.Send(writer, outPck)
+
+	if v, ok := backPck.Payload().(types.Error); ok {
+		err = v.Unwrap()
+	}
 	return err
 }
 

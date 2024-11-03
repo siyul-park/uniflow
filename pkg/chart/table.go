@@ -101,8 +101,49 @@ func (t *Table) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	for id := range t.charts {
-		if _, err := t.free(id); err != nil {
+	degree := map[*Chart]int{}
+	for id, chrt := range t.charts {
+		degree[chrt] = 0
+		for _, ports := range t.references[id] {
+			degree[chrt] += len(ports)
+		}
+	}
+
+	var queue []*Chart
+	for chrt, count := range degree {
+		if count == 0 {
+			queue = append(queue, chrt)
+		}
+	}
+
+	charts := make([]*Chart, 0, len(t.charts))
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		if slices.Contains(charts, curr) {
+			continue
+		}
+		charts = append(charts, curr)
+
+		for _, spec := range curr.GetSpecs() {
+			id := t.lookup(curr.GetNamespace(), spec.GetKind())
+			if next, ok := t.charts[id]; ok {
+				degree[next]--
+				if degree[next] == 0 {
+					queue = append(queue, next)
+				}
+			}
+		}
+	}
+	for chrt, count := range degree {
+		if count != 0 {
+			charts = append(charts, chrt)
+		}
+	}
+
+	for _, chrt := range charts {
+		if _, err := t.free(chrt.GetID()); err != nil {
 			return err
 		}
 	}
@@ -252,8 +293,8 @@ func (t *Table) linked(chrt *Chart) []*Chart {
 			}
 		}
 	}
-	for curr, d := range degree {
-		if d != 0 {
+	for curr, count := range degree {
+		if count != 0 {
 			linked = append(linked, curr)
 		}
 	}

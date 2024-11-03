@@ -9,15 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrite(t *testing.T) {
-	out := NewOut()
-	defer out.Close()
-
-	res, err := Send(out, nil)
-	assert.NoError(t, err)
-	assert.Nil(t, res)
-}
-
 func TestOutPort_Open(t *testing.T) {
 	proc := process.New()
 	defer proc.Exit(nil)

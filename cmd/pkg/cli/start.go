@@ -92,6 +92,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			SecretStore: config.SecretStore,
 			ChartStore:  config.ChartStore,
 		})
+		defer r.Close()
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
