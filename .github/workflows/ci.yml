@@ -1,27 +1,31 @@
-name: check
+name: CI
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-on: ["push"]
+on:
+  push:
 
 jobs:
   check:
     strategy:
       matrix:
-        os: [ ubuntu-22.04 ]
-        go: [ '1.23' ]
+        os: [ubuntu-22.04]
+        go: ['1.23']
     name: Check ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-      - uses: actions/cache@v4
+
+      - name: Cache Go Modules and Build
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -30,11 +34,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - run: make init
-      - run: make lint
-      - run: make coverage
+      - name: Initialize Project
+        run: make init
 
-      - name: Upload coverage to Codecov
+      - name: Run Linter
+        run: make lint
+
+      - name: Run Tests and Generate Coverage
+        run: make coverage
+
+      - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -46,44 +55,46 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        os: [ ubuntu-22.04 ]
-        go: [ '1.22' ]
-    name: Benchmark comparison ${{ matrix.os }} @ Go ${{ matrix.go }}
+        os: [ubuntu-22.04]
+        go: ['1.22']
+    name: Benchmark Comparison ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     steps:
-      - name: Checkout Code (Previous)
+      - name: Checkout Previous Code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
           path: previous
 
-      - name: Checkout Code (New)
+      - name: Checkout New Code
         uses: actions/checkout@v4
         with:
           path: new
 
-      - name: Set up Go ${{ matrix.go }}
+      - name: Set up Go for Benchmarking
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-          
-      - name: Install Dependencies
+
+      - name: Install Benchmark Dependencies
         run: go install golang.org/x/perf/cmd/benchstat@latest
 
-      - name: Init (Previous)
+      - name: Initialize Previous Code
         working-directory: previous
         run: make init
+
       - name: Run Benchmark (Previous)
         working-directory: previous
         run: make benchmark test-options="-count=2" | tee benchmark.txt
 
-      - name: Init (New)
+      - name: Initialize New Code
         working-directory: new
         run: make init
+
       - name: Run Benchmark (New)
         working-directory: new
         run: make benchmark test-options="-count=2" | tee benchmark.txt
 
-      - name: Run Benchstat
+      - name: Compare Benchmark Results
         run: benchstat previous/benchmark.txt new/benchmark.txt
