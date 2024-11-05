@@ -103,6 +103,18 @@ func (m Map) Pairs() []Value {
 	return pairs
 }
 
+// Range returns a function that iterates over all key-value pairs in the map.
+func (m Map) Range() func(func(key, value Value) bool) {
+	return func(yield func(key Value, value Value) bool) {
+		for itr := m.value.Iterator(); !itr.Done(); {
+			k, v, _ := itr.Next()
+			if !yield(k, v) {
+				return
+			}
+		}
+	}
+}
+
 // Len returns the number of key-value pairs in the map.
 func (m Map) Len() int {
 	return m.value.Len()
@@ -232,6 +244,10 @@ func (m *mapProxy) Set(key, value Value) {
 
 func (m *mapProxy) Delete(key Value) {
 	m.Map = m.Map.Delete(key)
+}
+
+func (m *mapProxy) Close() {
+	m.Map = NewMap()
 }
 
 func (*comparer) Compare(x, y Value) int {
@@ -375,14 +391,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						t.Set(reflect.MakeMapWithSize(t.Type(), proxy.Len()))
 					}
 
-					for _, key := range proxy.Keys() {
-						value, ok := proxy.Get(key)
-						if !ok {
-							continue
-						}
-
-						proxy.Delete(key)
-
+					for key, value := range proxy.Range() {
 						k := reflect.New(keyType)
 						v := reflect.New(valueType)
 
@@ -394,6 +403,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 							t.SetMapIndex(k.Elem(), v.Elem())
 						}
 					}
+					proxy.Close()
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {

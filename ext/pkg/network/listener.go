@@ -185,13 +185,6 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer n.mu.RUnlock()
 
 	proc := process.New()
-	ctx := r.Context()
-
-	go func() {
-		<-ctx.Done()
-		proc.Join()
-		proc.Exit(ctx.Err())
-	}()
 
 	proc.Store(KeyHTTPResponseWriter, w)
 	proc.Store(KeyHTTPRequest, r)

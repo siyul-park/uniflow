@@ -92,6 +92,9 @@ func (s *Scheme) AddCodec(kind string, codec Codec) bool {
 
 // RemoveCodec removes the codec associated with a kind.
 func (s *Scheme) RemoveCodec(kind string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if _, ok := s.codecs[kind]; ok {
 		delete(s.codecs, kind)
 		return true

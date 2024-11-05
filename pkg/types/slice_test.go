@@ -75,6 +75,16 @@ func TestSlice_Values(t *testing.T) {
 	assert.Equal(t, []Value{v1, v2}, o.Values())
 }
 
+func TestSlice_Range(t *testing.T) {
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewSlice(v1)
+
+	for _, v := range o.Range() {
+		assert.Equal(t, v1, v)
+	}
+}
+
 func TestSlice_Len(t *testing.T) {
 	v1 := NewString(faker.UUIDHyphenated())
 	v2 := NewString(faker.UUIDHyphenated())

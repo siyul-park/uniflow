@@ -339,9 +339,6 @@ func BenchmarkHTTPListenNode_ServeHTTP(b *testing.B) {
 	n := NewHTTPListenNode("")
 	defer n.Close()
 
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
-
 	out := port.NewIn()
 	n.Out(node.PortOut).Link(out)
 

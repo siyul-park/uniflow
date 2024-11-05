@@ -175,7 +175,19 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 
 	ioWriter := io.Open(proc)
 	inWriter := in.Open(proc)
-	outReader := out.Open(proc)
+
+	out.AddListener(port.ListenFunc(func(proc *process.Process) {
+		outReader := out.Open(proc)
+
+		for {
+			_, ok := <-outReader.Read()
+			if !ok {
+				return
+			}
+
+			outReader.Receive(packet.None)
+		}
+	}))
 
 	var inPayload types.Value
 	inPck := packet.New(inPayload)
@@ -192,8 +204,7 @@ func BenchmarkWebSocketNode_SendAndReceive(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		inWriter.Write(inPck)
-		outPck := <-outReader.Read()
-		outReader.Receive(outPck)
+		<-inWriter.Receive()
 	}
 
 	inPayload, _ = types.Marshal(&WebSocketPayload{

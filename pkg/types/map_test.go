@@ -72,6 +72,18 @@ func TestMap_Pairs(t *testing.T) {
 	assert.Contains(t, pairs, v1)
 }
 
+func TestMap_Range(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	for k, v := range o.Range() {
+		assert.Equal(t, k1, k)
+		assert.Equal(t, v1, v)
+	}
+}
+
 func TestMap_Len(t *testing.T) {
 	k1 := NewString(faker.UUIDHyphenated())
 	v1 := NewString(faker.UUIDHyphenated())

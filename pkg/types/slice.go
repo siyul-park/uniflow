@@ -66,6 +66,18 @@ func (s Slice) Values() []Value {
 	return elements
 }
 
+// Range returns a function that iterates over all key-value pairs of the slice.
+func (s Slice) Range() func(func(key int, value Value) bool) {
+	return func(yield func(key int, value Value) bool) {
+		for itr := s.value.Iterator(); !itr.Done(); {
+			i, v := itr.Next()
+			if !yield(i, v) {
+				return
+			}
+		}
+	}
+}
+
 // Len returns the length of the slice.
 func (s Slice) Len() int {
 	return s.value.Len()
@@ -214,8 +226,8 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Dec
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					t := reflect.NewAt(typ.Elem(), target).Elem()
 					if s, ok := source.(Slice); ok {
-						for i := 0; i < s.Len(); i++ {
-							if err := setElement(s.Get(i), t, i); err != nil {
+						for i, v := range s.Range() {
+							if err := setElement(v, t, i); err != nil {
 								return err
 							}
 						}

@@ -320,7 +320,7 @@ func BenchmarkTable_Insert(b *testing.B) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		sb := &Symbol{Spec: meta}
+		sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 		_ = tb.Insert(sb)
 	}
 }
@@ -340,7 +340,7 @@ func BenchmarkTable_Free(b *testing.B) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		sb := &Symbol{Spec: meta}
+		sb := &Symbol{Spec: meta, Node: node.NewOneToOneNode(nil)}
 		_ = tb.Insert(sb)
 
 		b.StartTimer()

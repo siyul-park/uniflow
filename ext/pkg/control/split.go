@@ -39,8 +39,8 @@ func (n *SplitNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	switch inPayload := inPck.Payload().(type) {
 	case types.Slice:
 		outPcks := make([]*packet.Packet, 0, inPayload.Len())
-		for i := 0; i < inPayload.Len(); i++ {
-			outPck := packet.New(inPayload.Get(i))
+		for _, v := range inPayload.Range() {
+			outPck := packet.New(v)
 			outPcks = append(outPcks, outPck)
 		}
 		return outPcks, nil

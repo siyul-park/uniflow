@@ -105,7 +105,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 					elements = types.NewSlice(value)
 				}
 
-				for _, element := range elements.Values() {
+				for _, element := range elements.Range() {
 					h := textproto.MIMEHeader{}
 					h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, quoteEscaper.Replace(key.String())))
 
@@ -121,7 +121,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 		writeFields := func(value types.Value) error {
 			if value, ok := value.(types.Map); ok {
-				for _, key := range value.Keys() {
+				for key := range value.Range() {
 					if err := writeField(value, key); err != nil {
 						return err
 					}
@@ -132,7 +132,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 		writeFiles := func(value types.Value) error {
 			if value, ok := value.(types.Map); ok {
-				for _, key := range value.Keys() {
+				for key := range value.Range() {
 					if key, ok := key.(types.String); ok {
 						value := value.GetOr(key, nil)
 
@@ -195,9 +195,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		}
 
 		if v, ok := value.(types.Map); ok {
-			for _, key := range v.Keys() {
-				value := v.GetOr(key, nil)
-
+			for key, value := range v.Range() {
 				if key.Equal(keyValues) {
 					if err := writeFields(value); err != nil {
 						return err

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewProcess(t *testing.T) {
+func TestNew(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 

@@ -92,8 +92,10 @@ func (n *PrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Pa
 		if !ok {
 			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 		}
-		for i := 1; i < payload.Len(); i++ {
-			args = append(args, types.InterfaceOf(payload.Get(i)))
+		for i, v := range payload.Range() {
+			if i > 0 {
+				args = append(args, types.InterfaceOf(v))
+			}
 		}
 	}
 
@@ -124,8 +126,10 @@ func (n *DynPrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet
 	}
 
 	var args []any
-	for i := 2; i < payload.Len(); i++ {
-		args = append(args, types.InterfaceOf(payload.Get(i)))
+	for i, v := range payload.Range() {
+		if i > 1 {
+			args = append(args, types.InterfaceOf(v))
+		}
 	}
 
 	writer, err := n.fs.Open(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE)

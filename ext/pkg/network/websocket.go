@@ -286,8 +286,14 @@ func (n *WebSocketConnNode) connection(proc *process.Process) (*websocket.Conn, 
 	conns := make(chan *websocket.Conn)
 	defer close(conns)
 
+	done := make(chan struct{})
+	defer close(done)
+
 	hook := process.StoreFunc(func(conn *websocket.Conn) {
-		conns <- conn
+		select {
+		case conns <- conn:
+		case <-done:
+		}
 	})
 
 	for p := proc; p != nil; p = p.Parent() {
