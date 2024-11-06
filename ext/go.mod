@@ -8,7 +8,7 @@ require (
 	github.com/evanw/esbuild v0.24.0
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/google/cel-go v0.21.0
+	github.com/google/cel-go v0.22.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jmoiron/sqlx v1.4.0
@@ -19,6 +19,8 @@ require (
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require cel.dev/expr v0.18.0 // indirect
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
