@@ -11,5 +11,5 @@ replace (
 	github.com/siyul-park/uniflow v0.11.0 => ./
 	github.com/siyul-park/uniflow/cmd v0.10.0 => ./cmd/
 	github.com/siyul-park/uniflow/ext v0.11.0 => ./ext/
-	github.com/siyul-park/uniflow/driver/mongo v0.10.0 => ./driver/mongo/
+	github.com/siyul-park/uniflow/driver/mongo v0.11.0 => ./driver/mongo/
 )
