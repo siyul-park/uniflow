@@ -7,9 +7,9 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/mattn/go-sqlite3 v1.14.23
-	github.com/siyul-park/uniflow v0.10.0
+	github.com/siyul-park/uniflow v0.11.0
 	github.com/siyul-park/uniflow/driver/mongo v0.10.0
-	github.com/siyul-park/uniflow/ext v0.10.0
+	github.com/siyul-park/uniflow/ext v0.11.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
