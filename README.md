@@ -3,7 +3,7 @@
 [![go report][go_report_img]][go_report_url]
 [![go doc][go_doc_img]][go_doc_url]
 [![release][repo_releases_img]][repo_releases_url]
-[![check][repo_check_img]][repo_check_url]
+[![ci][repo_ci_img]][repo_ci_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
 **A high-performance, extremely flexible, and easily extensible universal workflow engine.**
@@ -179,5 +179,5 @@ This project is available under the [MIT License](./LICENSE). You are free to us
 [repo_wiki_url]: https://github.com/siyul-park/uniflow/wiki
 [repo_wiki_img]: https://img.shields.io/badge/docs-wiki_page-blue?style=for-the-badge&logo=none
 [repo_wiki_faq_url]: https://github.com/siyul-park/uniflow/wiki/FAQ
-[repo_check_img]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml/badge.svg
-[repo_check_url]: https://github.com/siyul-park/uniflow/actions/workflows/check.yml
+[repo_ci_img]: https://github.com/siyul-park/uniflow/actions/workflows/ci.yml/badge.svg
+[repo_ci_url]: https://github.com/siyul-park/uniflow/actions/workflows/ci.yml
