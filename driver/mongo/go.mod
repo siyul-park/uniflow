@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/siyul-park/uniflow v0.10.0
+	github.com/siyul-park/uniflow v0.11.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tryvium-travels/memongo v0.12.0
 	go.mongodb.org/mongo-driver v1.17.1
@@ -17,7 +17,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
-	github.com/klauspost/compress v1.17.10 // indirect
+	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pkg/errors v0.9.1
@@ -28,7 +28,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
-	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

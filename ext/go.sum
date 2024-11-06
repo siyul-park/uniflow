@@ -59,8 +59,8 @@ github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/samber/lo v1.47.0 h1:z7RynLwP5nbyRscyvcD043DWYoOcYRv3mV8lBeqOCLc=
 github.com/samber/lo v1.47.0/go.mod h1:RmDH9Ct32Qy3gduHQuKJ3gW1fMHAnE/fAzQuf6He5cU=
-github.com/siyul-park/uniflow v0.10.0 h1:oDRUBCiyABteLO25mvdR7G+Yw1ejL3Ufnh3llJCn+y0=
-github.com/siyul-park/uniflow v0.10.0/go.mod h1:UeZZMSCQiXz+APUqYw8RPzv3pYOd8IcbNpyPjp1hHM0=
+github.com/siyul-park/uniflow v0.11.0 h1:GTXFiFa7S7Wnvdia4kVb4+9MrU2JSMIj5GTVDIQRWaA=
+github.com/siyul-park/uniflow v0.11.0/go.mod h1:XN7Rld6TIcmva6SS8CS19jXnyuZa73e4E13BFXPAVSI=
 github.com/stoewer/go-strcase v1.3.0 h1:g0eASXYtp+yvN9fK8sH94oCIk0fau9uV1/ZdJ0AVEzs=
 github.com/stoewer/go-strcase v1.3.0/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
