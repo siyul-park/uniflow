@@ -1,6 +1,6 @@
-# Call Node
+# Pipe Node
 
-**The Call Node** processes the input packet and delivers the result to multiple output ports. This node allows for the reuse of data processing flows and is useful for modularizing complex tasks.
+**The Pipe Node** processes the input packet and delivers the result to multiple output ports. This node allows for the reuse of data processing flows and is useful for modularizing complex tasks.
 
 ## Specification
 
@@ -16,7 +16,7 @@
 ## Example
 
 ```yaml
-- kind: call
+- kind: pipe
   ports:
     out[0]:
       - name: origin

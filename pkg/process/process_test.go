@@ -133,7 +133,7 @@ func TestProcess_Wait(t *testing.T) {
 	child := proc.Fork()
 	defer child.Exit(nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	done := make(chan struct{})

@@ -43,8 +43,8 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 		s.AddKnownType(KindBlock, &BlockNodeSpec{})
 		s.AddCodec(KindBlock, NewBlockNodeCodec(s))
 
-		s.AddKnownType(KindCall, &CallNodeSpec{})
-		s.AddCodec(KindCall, NewCallNodeCodec())
+		s.AddKnownType(KindPipe, &PipeNodeSpec{})
+		s.AddCodec(KindPipe, NewPipeNodeCodec())
 
 		s.AddKnownType(KindFork, &ForkNodeSpec{})
 		s.AddCodec(KindFork, NewForkNodeCodec())

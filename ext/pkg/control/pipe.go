@@ -10,33 +10,33 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// CallNodeSpec holds the specification for creating a CallNode.
-type CallNodeSpec struct {
+// PipeNodeSpec holds the specification for creating a PipeNode.
+type PipeNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// CallNode processes an input packet and sends the result to multiple output ports.
-type CallNode struct {
+// PipeNode processes an input packet and sends the result to multiple output ports.
+type PipeNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts []*port.OutPort
 	errPort  *port.OutPort
 }
 
-const KindCall = "call"
+const KindPipe = "pipe"
 
-var _ node.Node = (*CallNode)(nil)
+var _ node.Node = (*PipeNode)(nil)
 
-// NewCallNodeCodec creates a new codec for CallNodeSpec.
-func NewCallNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *CallNodeSpec) (node.Node, error) {
-		return NewCallNode(), nil
+// NewPipeNodeCodec creates a new codec for PipeNodeSpec.
+func NewPipeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *PipeNodeSpec) (node.Node, error) {
+		return NewPipeNode(), nil
 	})
 }
 
-// NewCallNode creates a new CallNode.
-func NewCallNode() *CallNode {
-	n := &CallNode{
+// NewPipeNode creates a new PipeNode.
+func NewPipeNode() *PipeNode {
+	n := &PipeNode{
 		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
@@ -52,7 +52,7 @@ func NewCallNode() *CallNode {
 }
 
 // In returns the input port with the specified name.
-func (n *CallNode) In(name string) *port.InPort {
+func (n *PipeNode) In(name string) *port.InPort {
 	switch name {
 	case node.PortIn:
 		return n.inPort
@@ -62,7 +62,7 @@ func (n *CallNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *CallNode) Out(name string) *port.OutPort {
+func (n *PipeNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
@@ -80,7 +80,7 @@ func (n *CallNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *CallNode) Close() error {
+func (n *PipeNode) Close() error {
 	n.inPort.Close()
 	for _, outPort := range n.outPorts {
 		outPort.Close()
@@ -90,7 +90,7 @@ func (n *CallNode) Close() error {
 	return nil
 }
 
-func (n *CallNode) forward(proc *process.Process) {
+func (n *PipeNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
@@ -112,7 +112,7 @@ func (n *CallNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *CallNode) backward(index int) port.Listener {
+func (n *PipeNode) backward(index int) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		outWriter := n.outPorts[index].Open(proc)
 
@@ -122,7 +122,7 @@ func (n *CallNode) backward(index int) port.Listener {
 	})
 }
 
-func (n *CallNode) catch(proc *process.Process) {
+func (n *PipeNode) catch(proc *process.Process) {
 	errWriter := n.errPort.Open(proc)
 
 	for backPck := range errWriter.Receive() {

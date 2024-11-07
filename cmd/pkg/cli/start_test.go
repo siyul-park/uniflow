@@ -42,7 +42,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddCodec(kind, codec)
 
 	t.Run("NoFlag", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -87,7 +87,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	t.Run(flagDebug, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -134,7 +134,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	t.Run(flagFromSpecs, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		filename := "specs.json"
@@ -181,7 +181,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	t.Run(flagFromSecrets, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		filename := "secrets.json"
@@ -228,7 +228,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	t.Run(flagFromCharts, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		filename := "charts.json"

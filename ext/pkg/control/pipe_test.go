@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCallNodeCodec_Decode(t *testing.T) {
-	codec := NewCallNodeCodec()
+func TestPipeNodeCodec_Decode(t *testing.T) {
+	codec := NewPipeNodeCodec()
 
-	spec := &CallNodeSpec{}
+	spec := &PipeNodeSpec{}
 
 	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
@@ -26,14 +26,14 @@ func TestCallNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewCallNode(t *testing.T) {
-	n := NewCallNode()
+func TestNewPipeNode(t *testing.T) {
+	n := NewPipeNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestCallNode_Port(t *testing.T) {
-	n := NewCallNode()
+func TestPipeNode_Port(t *testing.T) {
+	n := NewPipeNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -43,7 +43,7 @@ func TestCallNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
-func TestCallNode_SendAndReceive(t *testing.T) {
+func TestPipeNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleInputToMultipleOutputs", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
@@ -53,7 +53,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		})
 		defer n1.Close()
 
-		n2 := NewCallNode()
+		n2 := NewPipeNode()
 		defer n2.Close()
 
 		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
@@ -100,7 +100,7 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 		})
 		defer n1.Close()
 
-		n2 := NewCallNode()
+		n2 := NewPipeNode()
 		defer n2.Close()
 
 		n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))
@@ -139,13 +139,13 @@ func TestCallNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func BenchmarkCallNode_SendAndReceive(b *testing.B) {
+func BenchmarkPipeNode_SendAndReceive(b *testing.B) {
 	n1 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 		return inPck, nil
 	})
 	defer n1.Close()
 
-	n2 := NewCallNode()
+	n2 := NewPipeNode()
 	defer n2.Close()
 
 	n2.Out(node.PortWithIndex(node.PortOut, 0)).Link(n1.In(node.PortIn))

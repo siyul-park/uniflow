@@ -4,11 +4,12 @@
   port: '{{ .PORT }}'
   ports:
     out:
-      - name: router
+      - name: proxy
         port: in
   env:
     PORT:
       data: '{{ .PORT }}'
+
 - kind: proxy
   name: proxy
   urls: [https://www.google.com/]
