@@ -76,6 +76,9 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 		s.AddKnownType(KindSwitch, &SwitchNodeSpec{})
 		s.AddCodec(KindSwitch, NewSwitchNodeCodec(expr))
 
+		s.AddKnownType(KindWait, &WaitNodeSpec{})
+		s.AddCodec(KindWait, NewWaitNodeCodec())
+
 		return nil
 	})
 }

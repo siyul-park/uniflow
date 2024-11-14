@@ -20,6 +20,7 @@ Precisely manage data flow.
 - **[Snippet Node](./docs/snippet_node.md)**: Executes code snippets written in various programming languages to process input packets.
 - **[Split Node](./docs/split_node.md)**: Splits input packets into multiple parts for processing.
 - **[Switch Node](./docs/switch_node.md)**: Routes input packets to one of several ports based on conditions.
+- **[Wait Node](./docs/wait_node.md)**: Introduces a specified delay in processing to pace workflows or await external conditions.
 
 ### **IO**
 
