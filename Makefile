@@ -91,4 +91,8 @@ doc: init
 	@godoc -http=:6060
 
 docker-build:
-	docker build --no-cache -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f $(DOCKERFILE) $(CURRENT_DIR)
+	docker build --no-cache \
+		-t $(DOCKER_IMAGE):$(DOCKER_TAG) \
+		-f $(DOCKERFILE) \
+		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
+		$(CURRENT_DIR)
