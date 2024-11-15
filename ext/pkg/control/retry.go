@@ -9,7 +9,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"sync"
-	"sync/atomic"
 )
 
 // RetryNodeSpec defines the configuration for RetryNode.
@@ -102,19 +101,17 @@ func (n *RetryNode) forward(proc *process.Process) {
 				return
 			}
 
-			actual, _ := attempts.LoadOrStore(inPck, &atomic.Uint32{})
-			count := actual.(*atomic.Uint32)
-
 			for {
-				v := count.Load()
+				actual, _ := attempts.LoadOrStore(inPck, 0)
+				count := actual.(int)
 
-				if int(v) == n.limit {
+				if count == n.limit {
 					n.tracer.Transform(inPck, backPck)
 					n.tracer.Write(errWriter, backPck)
 					return
 				}
 
-				if count.CompareAndSwap(v, v+1) {
+				if attempts.CompareAndSwap(inPck, count, count+1) {
 					break
 				}
 			}

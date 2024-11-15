@@ -637,7 +637,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data, _ := json.Marshal(types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), string(data))
+		assert.Contains(t, m.View(), data)
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -700,7 +700,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), string(data))
+		assert.Contains(t, m.View(), data)
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -763,7 +763,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), string(data))
+		assert.Contains(t, m.View(), data)
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
