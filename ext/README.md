@@ -16,6 +16,7 @@ Precisely manage data flow.
 - **[NOP Node](./docs/nop_node.md)**: Responds to input packets with an empty packet, without any processing.
 - **[Pipe Node](./docs/pipe_node.md)**: Processes input packets and distributes results to multiple output ports, allowing for reusable data flows.
 - **[Reduce Node](./docs/reduce_node.md)**: Repeatedly processes input data to produce a single output value, useful for data aggregation.
+- **[Retry Node](./docs/retry_node.md)**: Retries packet processing a specified number of times upon encountering errors.
 - **[Session Node](./docs/session_node.md)**: Stores and manages process information, maintaining session continuity.
 - **[Snippet Node](./docs/snippet_node.md)**: Executes code snippets written in various programming languages to process input packets.
 - **[Split Node](./docs/split_node.md)**: Splits input packets into multiple parts for processing.

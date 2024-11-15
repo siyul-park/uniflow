@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-// WaitNodeSpec defines the configuration for WaitNode, including a delay duration.
+// WaitNodeSpec defines the configuration for WaitNode.
 type WaitNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Interval  time.Duration `map:"timeout"`
+	Interval  time.Duration `map:"interval"`
 }
 
 // WaitNode adds a delay to packet processing, using a specified interval.

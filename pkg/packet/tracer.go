@@ -59,6 +59,7 @@ func (t *Tracer) Reduce(pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	t.reduce(pck, pck)
 	t.handle(pck)
 	t.receive(pck)
 }
@@ -82,7 +83,7 @@ func (t *Tracer) Write(writer *Writer, pck *Packet) {
 		t.writes[writer] = append(t.writes[writer], pck)
 		t.receives[pck] = append(t.receives[pck], nil)
 	} else {
-		t.receives[pck] = append(t.receives[pck], pck)
+		t.reduce(pck, pck)
 		t.handle(pck)
 		t.receive(pck)
 	}
@@ -105,24 +106,7 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 		delete(t.writes, writer)
 	}
 
-	targets := t.targets[write]
-	receives := t.receives[write]
-
-	offset := 0
-	for i := 0; i < len(targets); i++ {
-		if receives[i+offset] != nil {
-			i--
-			offset++
-		}
-	}
-
-	for i := len(targets) + offset; i < len(receives); i++ {
-		if receives[i] == nil {
-			receives[i] = pck
-			break
-		}
-	}
-
+	t.reduce(write, pck)
 	t.handle(write)
 	t.receive(write)
 }
@@ -143,6 +127,32 @@ func (t *Tracer) Close() {
 	t.reads = make(map[*Reader][]*Packet)
 	t.writes = make(map[*Writer][]*Packet)
 	t.reader = make(map[*Packet]*Reader)
+}
+
+func (t *Tracer) reduce(source, target *Packet) {
+	targets := t.targets[source]
+	receives := t.receives[source]
+
+	offset := 0
+	for i := 0; i < len(targets); i++ {
+		if receives[i+offset] != nil {
+			i--
+			offset++
+		}
+	}
+
+	ok := false
+	for i := len(targets) + offset; i < len(receives); i++ {
+		if receives[i] == nil {
+			receives[i] = target
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		receives = append(receives, target)
+		t.receives[source] = receives
+	}
 }
 
 func (t *Tracer) receive(pck *Packet) {
