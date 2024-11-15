@@ -9,7 +9,7 @@ DOCKERFILE = deployments/Dockerfile
 
 CGO_ENABLED ?= 1
 
-.PHONY: init generate build clean tidy update sync check test coverage benchmark lint fmt vet staticcheck doc docker-build
+.PHONY: init generate build clean tidy update sync check test coverage benchmark lint fmt vet doc docker-build
 
 init:
 	@cp .go.work go.work
@@ -17,7 +17,6 @@ init:
 	@$(MAKE) install-modules
 
 install-tools:
-	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@go install golang.org/x/tools/cmd/godoc@latest
 
 install-modules:
@@ -70,7 +69,7 @@ benchmark:
 		cd $$dir && go test -run="-" -bench=".*" -benchmem $(test-options) ./...; \
 	done
 
-lint: fmt vet staticcheck
+lint: fmt vet
 
 fmt:
 	@for dir in $(MODULE_DIRS); do \
@@ -80,11 +79,6 @@ fmt:
 vet:
 	@for dir in $(MODULE_DIRS); do \
 		cd $$dir && go vet ./...; \
-	done
-
-staticcheck: init
-	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && staticcheck ./...; \
 	done
 
 doc: init

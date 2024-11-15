@@ -241,14 +241,6 @@ func (a *Agent) accept(proc *process.Process) {
 	}
 
 	a.processes[proc.ID()] = proc
-	proc.AddExitHook(process.ExitFunc(func(err error) {
-		a.mu.Lock()
-		defer a.mu.Unlock()
-
-		delete(a.processes, proc.ID())
-		delete(a.frames, proc.ID())
-	}))
-
 	if _, ok := a.frames[proc.ID()]; !ok {
 		a.frames[proc.ID()] = nil
 	}
@@ -256,6 +248,14 @@ func (a *Agent) accept(proc *process.Process) {
 	watchers := a.watchers
 
 	a.mu.Unlock()
+
+	proc.AddExitHook(process.ExitFunc(func(err error) {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+
+		delete(a.processes, proc.ID())
+		delete(a.frames, proc.ID())
+	}))
 
 	watchers.OnProcess(proc)
 }
