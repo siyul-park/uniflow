@@ -36,6 +36,8 @@ func init() {
 	Encoder.Add(newBinaryEncoder())
 	Encoder.Add(newStringEncoder())
 	Encoder.Add(newErrorEncoder())
+	Encoder.Add(newTimeEncoder())
+	Encoder.Add(newDurationEncoder())
 	Encoder.Add(newExpandedEncoder())
 	Encoder.Add(newShortcutEncoder())
 
@@ -49,6 +51,8 @@ func init() {
 	Decoder.Add(newBinaryDecoder())
 	Decoder.Add(newStringDecoder())
 	Decoder.Add(newErrorDecoder())
+	Decoder.Add(newTimeDecoder())
+	Decoder.Add(newDurationDecoder())
 	Decoder.Add(newExpandedDecoder())
 	Decoder.Add(newShortcutDecoder())
 }

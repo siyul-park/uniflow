@@ -637,7 +637,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data, _ := json.Marshal(types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), data)
+		assert.Contains(t, m.View(), string(data))
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})

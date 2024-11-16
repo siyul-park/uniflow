@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/encoding"
@@ -30,7 +31,7 @@ func TestMarshal(t *testing.T) {
 			expect: True,
 		},
 		{
-			when:   int(0),
+			when:   0,
 			expect: NewInt(0),
 		},
 		{
@@ -44,6 +45,14 @@ func TestMarshal(t *testing.T) {
 		{
 			when:   "a",
 			expect: NewString("a"),
+		},
+		{
+			when:   time.Date(2024, time.November, 16, 12, 0, 0, 0, time.UTC),
+			expect: NewInt64(1731758400000),
+		},
+		{
+			when:   time.Millisecond * 1500,
+			expect: NewInt64(1500),
 		},
 		{
 			when:   errors.New("error"),
@@ -96,6 +105,15 @@ func TestUnmarshal(t *testing.T) {
 		{
 			when:   NewString("a"),
 			expect: "a",
+		},
+		{
+			when:   NewInt64(1731758400000),
+			expect: time.Date(2024, time.November, 16, 12, 0, 0, 0, time.UTC),
+		},
+
+		{
+			when:   NewInt64(1500),
+			expect: time.Millisecond * 1500,
 		},
 		{
 			when:   NewError(errors.New("error")),
