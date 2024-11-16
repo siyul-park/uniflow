@@ -1,6 +1,7 @@
 package scheme
 
 import (
+	"github.com/gofrs/uuid"
 	"reflect"
 	"slices"
 	"sync"
@@ -151,5 +152,8 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 		return nil, err
 	}
 
+	if structured.GetID() == uuid.Nil {
+		structured.SetID(uuid.Must(uuid.NewV7()))
+	}
 	return structured, nil
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -68,6 +69,13 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			return err
 		}
 
+		out := cmd.OutOrStdout()
+		if out == os.Stdout {
+			out = nil
+		}
+
+		cmd.SetOut(io.Discard)
+
 		if err := applySpecs(cmd); err != nil {
 			return err
 		}
@@ -77,6 +85,8 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err := applyCharts(cmd); err != nil {
 			return err
 		}
+
+		cmd.SetOut(out)
 
 		h := config.Hook
 		if h == nil {

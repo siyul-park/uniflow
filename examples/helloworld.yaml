@@ -3,10 +3,23 @@
   specs:
     - kind: snippet
       language: text
-      code: Hello, World!
+      code: "Hello, World!\n"
     - kind: print
       filename: /dev/stdout
   ports:
     init:
       - name: hello_world
+        port: in
+
+- kind: block
+  name: good_bye
+  specs:
+    - kind: snippet
+      language: text
+      code: "Good, Bye!\n"
+    - kind: print
+      filename: /dev/stdout
+  ports:
+    term:
+      - name: good_bye
         port: in
