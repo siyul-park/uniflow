@@ -77,7 +77,7 @@ func (s *Symbol) In(name string) *port.InPort {
 	}
 
 	p, ok := s.ins[name]
-	if !ok {
+	if !ok && s.Node != nil {
 		if p = s.Node.In(name); p != nil {
 			s.ins[name] = p
 		}
@@ -107,7 +107,7 @@ func (s *Symbol) Out(name string) *port.OutPort {
 	}
 
 	p, ok := s.outs[name]
-	if !ok {
+	if !ok && s.Node != nil {
 		if p = s.Node.Out(name); p != nil {
 			s.outs[name] = p
 		}
@@ -123,5 +123,8 @@ func (s *Symbol) Close() error {
 	s.ins = nil
 	s.outs = nil
 
+	if s.Node == nil {
+		return nil
+	}
 	return s.Node.Close()
 }

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -114,10 +115,10 @@ func New(config Config) *Runtime {
 
 // Load loads symbols from the spec store into the symbol table.
 func (r *Runtime) Load(ctx context.Context) error {
-	if err := r.chartLoader.Load(ctx, &chart.Chart{Namespace: r.namespace}); err != nil {
-		return err
-	}
-	return r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace})
+	var errs []error
+	errs = append(errs, r.chartLoader.Load(ctx, &chart.Chart{Namespace: r.namespace}))
+	errs = append(errs, r.symbolLoader.Load(ctx, &spec.Meta{Namespace: r.namespace}))
+	return errors.Join(errs...)
 }
 
 // Watch sets up watchers for specification and secret changes.
@@ -175,8 +176,6 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	unloaded := make(map[uuid.UUID]spec.Spec)
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -196,13 +195,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				}
 			}
 
-			for _, sp := range specs {
-				if err := r.symbolLoader.Load(ctx, sp); err != nil {
-					unloaded[sp.GetID()] = sp
-				} else {
-					delete(unloaded, sp.GetID())
-				}
-			}
+			r.symbolLoader.Load(ctx, specs...)
 		case event, ok := <-secretStream.Next():
 			if !ok {
 				return nil
@@ -216,26 +209,15 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				secrets = append(secrets, &secret.Secret{ID: event.ID})
 			}
 
-			bounded := make(map[uuid.UUID]spec.Spec)
+			var specs []spec.Spec
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
 				if sb != nil && spec.IsBound(sb.Spec, secrets...) {
-					bounded[sb.ID()] = sb.Spec
-				}
-			}
-			for _, sp := range unloaded {
-				if spec.IsBound(sp, secrets...) {
-					bounded[sp.GetID()] = sp
+					specs = append(specs, sb.Spec)
 				}
 			}
 
-			for _, sp := range bounded {
-				if err := r.symbolLoader.Load(ctx, sp); err != nil {
-					unloaded[sp.GetID()] = sp
-				} else {
-					delete(unloaded, sp.GetID())
-				}
-			}
+			r.symbolLoader.Load(ctx, specs...)
 		case event, ok := <-chartStream.Next():
 			if !ok {
 				return nil
@@ -255,32 +237,20 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				kinds = append(kinds, chrt.GetName())
 			}
 
-			bounded := make(map[uuid.UUID]spec.Spec)
+			var specs []spec.Spec
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
 				if sb != nil && slices.Contains(kinds, sb.Kind()) {
-					bounded[sb.ID()] = sb.Spec
-				}
-			}
-			for _, sp := range unloaded {
-				if slices.Contains(kinds, sp.GetKind()) {
-					bounded[sp.GetID()] = sp
+					specs = append(specs, sb.Spec)
 				}
 			}
 
-			for _, sp := range bounded {
+			for _, sp := range specs {
 				r.symbolTable.Free(sp.GetID())
 			}
 
 			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
-
-			for _, sp := range bounded {
-				if err := r.symbolLoader.Load(ctx, sp); err != nil {
-					unloaded[sp.GetID()] = sp
-				} else {
-					delete(unloaded, sp.GetID())
-				}
-			}
+			r.symbolLoader.Load(ctx, specs...)
 		}
 	}
 }

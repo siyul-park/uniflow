@@ -135,9 +135,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			if err := r.Watch(ctx); err != nil {
 				return err
 			}
-			if err := r.Load(ctx); err != nil {
-				return err
-			}
+			r.Load(ctx)
 			go r.Reconcile(ctx)
 			return d.Run()
 		}
@@ -150,9 +148,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err := r.Watch(ctx); err != nil {
 			return err
 		}
-		if err := r.Load(ctx); err != nil {
-			return err
-		}
+		r.Load(ctx)
 		return r.Reconcile(ctx)
 	}
 }

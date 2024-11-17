@@ -242,6 +242,5 @@ func TestLoader_Load(t *testing.T) {
 
 		err := loader.Load(ctx, meta)
 		assert.Error(t, err)
-		assert.Nil(t, table.Lookup(meta.GetID()))
 	})
 }

@@ -405,6 +405,10 @@ func (t *Table) active(sb *Symbol) bool {
 		}
 		visited[curr] = struct{}{}
 
+		if curr.Node == nil {
+			return false
+		}
+
 		for _, ports := range curr.Ports() {
 			for _, port := range ports {
 				id := port.ID

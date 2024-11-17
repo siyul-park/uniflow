@@ -80,41 +80,28 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	var symbols []*Symbol
 	var errs []error
 	for _, sp := range specs {
-		bind, err := spec.Bind(sp, secrets...)
-		if err != nil {
+		if bind, err := spec.Bind(sp, secrets...); err != nil {
 			errs = append(errs, err)
-			continue
+		} else if decode, err := l.scheme.Decode(bind); err != nil {
+			errs = append(errs, err)
+		} else if decode != nil {
+			sp = decode
 		}
 
-		decode, err := l.scheme.Decode(bind)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		sb := l.table.Lookup(decode.GetID())
-		if sb == nil || !reflect.DeepEqual(sb.Spec, decode) {
-			n, err := l.scheme.Compile(decode)
+		sb := l.table.Lookup(sp.GetID())
+		if sb == nil || !reflect.DeepEqual(sb.Spec, sp) {
+			n, err := l.scheme.Compile(sp)
 			if err != nil {
 				errs = append(errs, err)
-				continue
 			}
 
-			sb = &Symbol{Spec: decode, Node: n}
+			sb = &Symbol{Spec: sp, Node: n}
 			if err := l.table.Insert(sb); err != nil {
 				errs = append(errs, err)
-				continue
 			}
 		}
 
 		symbols = append(symbols, sb)
-	}
-
-	if len(errs) > 0 {
-		for _, sb := range symbols {
-			sb.Close()
-		}
-		symbols = nil
 	}
 
 	for _, id := range l.table.Keys() {
