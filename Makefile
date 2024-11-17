@@ -86,7 +86,7 @@ doc: init
 
 docker-build:
 	docker build --no-cache \
-		-t $(DOCKER_IMAGE):$(DOCKER_TAG) \
+		-t $(if $(DOCKER_DOMAIN),$(DOCKER_DOMAIN)/)$(DOCKER_IMAGE):$(DOCKER_TAG) \
 		-f $(DOCKERFILE) \
 		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
 		$(CURRENT_DIR)
