@@ -3,6 +3,7 @@ package network
 import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -30,23 +31,23 @@ func AddToHook() hook.Register {
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
 func AddToScheme() scheme.Register {
 	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		s.AddKnownType(KindHTTP, &HTTPNodeSpec{})
-		s.AddCodec(KindHTTP, NewHTTPNodeCodec())
+		definitions := []struct {
+			kind  string
+			codec scheme.Codec
+			spec  spec.Spec
+		}{
+			{KindHTTP, NewHTTPNodeCodec(), &HTTPNodeSpec{}},
+			{KindListener, NewListenNodeCodec(), &ListenNodeSpec{}},
+			{KindProxy, NewProxyNodeCodec(), &ProxyNodeSpec{}},
+			{KindRouter, NewRouteNodeCodec(), &RouteNodeSpec{}},
+			{KindWebSocket, NewWebSocketNodeCodec(), &WebSocketNodeSpec{}},
+			{KindGateway, NewGatewayNodeCodec(), &GatewayNodeSpec{}},
+		}
 
-		s.AddKnownType(KindListener, &ListenNodeSpec{})
-		s.AddCodec(KindListener, NewListenNodeCodec())
-
-		s.AddKnownType(KindProxy, &ProxyNodeSpec{})
-		s.AddCodec(KindProxy, NewProxyNodeCodec())
-
-		s.AddKnownType(KindRouter, &RouteNodeSpec{})
-		s.AddCodec(KindRouter, NewRouteNodeCodec())
-
-		s.AddKnownType(KindWebSocket, &WebSocketNodeSpec{})
-		s.AddCodec(KindWebSocket, NewWebSocketNodeCodec())
-
-		s.AddKnownType(KindGateway, &GatewayNodeSpec{})
-		s.AddCodec(KindGateway, NewGatewayNodeCodec())
+		for _, def := range definitions {
+			s.AddKnownType(def.kind, def.spec)
+			s.AddCodec(def.kind, def.codec)
+		}
 
 		return nil
 	})

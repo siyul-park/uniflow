@@ -1,19 +1,29 @@
 package io
 
-import "github.com/siyul-park/uniflow/pkg/scheme"
+import (
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
+)
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
 func AddToScheme(fs FileSystem) scheme.Register {
 	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		s.AddKnownType(KindSQL, &SQLNodeSpec{})
-		s.AddCodec(KindSQL, NewSQLNodeCodec())
+		definitions := []struct {
+			kind  string
+			codec scheme.Codec
+			spec  spec.Spec
+		}{
+			{KindSQL, NewSQLNodeCodec(), &SQLNodeSpec{}},
+			{KindPrint, NewPrintNodeCodec(fs), &PrintNodeSpec{}},
+			{KindScan, NewScanNodeCodec(fs), &ScanNodeSpec{}},
+		}
 
-		s.AddKnownType(KindPrint, &PrintNodeSpec{})
-		s.AddCodec(KindPrint, NewPrintNodeCodec(fs))
-
-		s.AddKnownType(KindScan, &ScanNodeSpec{})
-		s.AddCodec(KindScan, NewScanNodeCodec(fs))
+		for _, def := range definitions {
+			s.AddKnownType(def.kind, def.spec)
+			s.AddCodec(def.kind, def.codec)
+		}
 
 		return nil
 	})
+
 }

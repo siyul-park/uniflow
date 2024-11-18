@@ -46,9 +46,6 @@ Users can update node specifications by using a Command-Line Interface (CLI) or 
     error:
       - name: catch
         port: in
-  env:
-    PORT:
-      data: '{{ .PORT }}'
 
 - kind: router
   name: router

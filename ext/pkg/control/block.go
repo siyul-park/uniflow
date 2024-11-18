@@ -13,7 +13,7 @@ import (
 // BlockNodeSpec defines the specification for creating a BlockNode.
 type BlockNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Specs     []*spec.Unstructured `map:"specs"`
+	Specs     []spec.Spec `map:"specs"`
 }
 
 // BlockNode systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
@@ -32,17 +32,18 @@ var _ node.Node = (*BlockNode)(nil)
 
 // NewBlockNodeCodec creates a new codec for BlockNodeSpec.
 func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(spec *BlockNodeSpec) (node.Node, error) {
-		symbols := make([]*symbol.Symbol, 0, len(spec.Specs))
-		for _, sp := range spec.Specs {
-			decoded, err := s.Decode(sp)
+	return scheme.CodecWithType(func(sp *BlockNodeSpec) (node.Node, error) {
+		symbols := make([]*symbol.Symbol, 0, len(sp.Specs))
+		for _, sp := range sp.Specs {
+			sp, err := s.Decode(sp)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
 				}
 				return nil, err
 			}
-			n, err := s.Compile(decoded)
+
+			n, err := s.Compile(sp)
 			if err != nil {
 				for _, n := range symbols {
 					n.Close()
@@ -50,7 +51,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				return nil, err
 			}
 			symbols = append(symbols, &symbol.Symbol{
-				Spec: decoded,
+				Spec: sp,
 				Node: n,
 			})
 		}

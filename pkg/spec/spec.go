@@ -2,11 +2,7 @@ package spec
 
 import (
 	"github.com/gofrs/uuid"
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -83,93 +79,18 @@ type Value struct {
 var _ resource.Resource = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
 
+// Convert serializes a source spec.Spec and deserializes it into a destination spec.Spec.
+func Convert(src, dest Spec) error {
+	doc, err := types.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return types.Unmarshal(doc, dest)
+}
+
 // New creates and returns a new instance of Spec.
 func New() Spec {
 	return &Meta{}
-}
-
-// IsBound checks if the spec is bound to any of the provided secrets.
-func IsBound(sp Spec, secrets ...*secret.Secret) bool {
-	for _, vals := range sp.GetEnv() {
-		for _, val := range vals {
-			examples := make([]*secret.Secret, 0, 2)
-			if val.ID != uuid.Nil {
-				examples = append(examples, &secret.Secret{ID: val.ID})
-			}
-			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
-			}
-
-			for _, scrt := range secrets {
-				if len(resource.Match(scrt, examples...)) > 0 {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// Bind processes the environment variables in the spec using the provided secrets.
-func Bind(sp Spec, secrets ...*secret.Secret) (Spec, error) {
-	doc, err := types.Marshal(sp)
-	if err != nil {
-		return nil, err
-	}
-
-	unstructured := &Unstructured{}
-	if err := types.Unmarshal(doc, unstructured); err != nil {
-		return nil, err
-	}
-
-	env := map[string]any{}
-	for key, vals := range unstructured.GetEnv() {
-		for i, val := range vals {
-			example := &secret.Secret{
-				ID:        val.ID,
-				Namespace: unstructured.GetNamespace(),
-				Name:      val.Name,
-			}
-
-			var scrt *secret.Secret
-			for _, s := range secrets {
-				if (!s.IsIdentified() && !val.IsIdentified()) || len(resource.Match(s, example)) > 0 {
-					scrt = s
-					break
-				}
-			}
-
-			if scrt != nil {
-				v, err := template.Execute(val.Data, scrt.Data)
-				if err != nil {
-					return nil, err
-				}
-
-				val.ID = scrt.GetID()
-				val.Name = scrt.GetName()
-				val.Data = v
-				vals[i] = val
-			}
-
-			if !val.IsIdentified() || scrt != nil {
-				env[key] = val.Data
-			}
-		}
-
-		if _, ok := env[key]; !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-	}
-
-	if len(env) > 0 {
-		fields, err := template.Execute(unstructured.Fields, env)
-		if err != nil {
-			return nil, err
-		}
-		unstructured.Fields = fields.(map[string]any)
-	}
-
-	return unstructured, nil
 }
 
 // GetID returns the node's unique identifier.

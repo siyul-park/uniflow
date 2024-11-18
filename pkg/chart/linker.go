@@ -58,6 +58,20 @@ func (l *Linker) Link(chrt *Chart) error {
 
 		symbols := make([]*symbol.Symbol, 0, len(specs))
 		for _, sp := range specs {
+			if bind, err := l.scheme.Bind(sp); err != nil {
+				for _, sb := range symbols {
+					sb.Close()
+				}
+				return nil, err
+			} else if decode, err := l.scheme.Decode(bind); err != nil {
+				for _, sb := range symbols {
+					sb.Close()
+				}
+				return nil, err
+			} else {
+				sp = decode
+			}
+
 			n, err := l.scheme.Compile(sp)
 			if err != nil {
 				for _, sb := range symbols {

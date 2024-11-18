@@ -6,9 +6,6 @@
     out:
       - name: proxy
         port: in
-  env:
-    PORT:
-      data: '{{ .PORT }}'
 
 - kind: proxy
   name: proxy

@@ -3,9 +3,9 @@ package symbol
 import (
 	"context"
 	"errors"
+	"github.com/iancoleman/strcase"
 	"reflect"
 
-	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"
@@ -50,18 +50,39 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		return err
 	}
 
+	for i, sp := range specs {
+		unstructured := &spec.Unstructured{}
+		if err := spec.Convert(sp, unstructured); err != nil {
+			return err
+		}
+
+		env := unstructured.GetEnv()
+		if env == nil {
+			env = map[string][]spec.Value{}
+		}
+
+		for k, v := range l.environment {
+			k = strcase.ToScreamingSnake(k)
+			if _, ok := env[k]; !ok {
+				env[k] = append(env[k], spec.Value{Data: v})
+			}
+		}
+
+		unstructured.SetEnv(env)
+		specs[i] = unstructured
+	}
+
 	var secrets []*secret.Secret
 	for _, sp := range specs {
 		for _, vals := range sp.GetEnv() {
 			for _, val := range vals {
-				if val.ID == uuid.Nil && val.Name == "" {
-					continue
+				if val.IsIdentified() {
+					secrets = append(secrets, &secret.Secret{
+						ID:        val.ID,
+						Namespace: sp.GetNamespace(),
+						Name:      val.Name,
+					})
 				}
-				secrets = append(secrets, &secret.Secret{
-					ID:        val.ID,
-					Namespace: sp.GetNamespace(),
-					Name:      val.Name,
-				})
 			}
 		}
 	}
@@ -80,11 +101,11 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	var symbols []*Symbol
 	var errs []error
 	for _, sp := range specs {
-		if bind, err := spec.Bind(sp, secrets...); err != nil {
+		if bind, err := l.scheme.Bind(sp, secrets...); err != nil {
 			errs = append(errs, err)
 		} else if decode, err := l.scheme.Decode(bind); err != nil {
 			errs = append(errs, err)
-		} else if decode != nil {
+		} else {
 			sp = decode
 		}
 

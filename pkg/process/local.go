@@ -22,10 +22,11 @@ func (l *Local[T]) AddStoreHook(proc *Process, hook StoreHook[T]) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if _, ok := l.data[proc]; ok {
+	if val, ok := l.data[proc]; ok {
 		l.mu.Unlock()
 		defer l.mu.Lock()
-		hook.Store(l.data[proc])
+
+		hook.Store(val)
 		return true
 	}
 

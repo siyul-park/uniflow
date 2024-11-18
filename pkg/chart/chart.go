@@ -139,7 +139,7 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 	env := map[string][]spec.Value{}
 	for key, vals := range c.Env {
 		for _, val := range vals {
-			if val.IsIdentified() {
+			if !val.IsIdentified() {
 				v, err := template.Execute(val.Value, data)
 				if err != nil {
 					return nil, err
@@ -152,24 +152,16 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 
 	specs := make([]spec.Spec, 0, len(c.Specs))
 	for _, sp := range c.Specs {
-		doc, err := types.Marshal(sp)
-		if err != nil {
-			return nil, err
-		}
-
 		unstructured := &spec.Unstructured{}
-		if err := types.Unmarshal(doc, unstructured); err != nil {
+		if err := spec.Convert(sp, unstructured); err != nil {
 			return nil, err
 		}
 
-		unstructured.SetEnv(env)
-
-		bind, err := spec.Bind(unstructured)
-		if err != nil {
-			return nil, err
+		if len(env) > 0 {
+			unstructured.SetEnv(env)
 		}
 
-		specs = append(specs, bind)
+		specs = append(specs, unstructured)
 	}
 	return specs, nil
 }

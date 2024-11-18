@@ -212,7 +212,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			var specs []spec.Spec
 			for _, id := range r.symbolTable.Keys() {
 				sb := r.symbolTable.Lookup(id)
-				if sb != nil && spec.IsBound(sb.Spec, secrets...) {
+				if sb != nil && r.scheme.IsBound(sb.Spec, secrets...) {
 					specs = append(specs, sb.Spec)
 				}
 			}

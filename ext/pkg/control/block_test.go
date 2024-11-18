@@ -31,8 +31,8 @@ func TestBlockNodeCodec_Decode(t *testing.T) {
 	codec := NewBlockNodeCodec(s)
 
 	spec := &BlockNodeSpec{
-		Specs: []*spec.Unstructured{
-			{
+		Specs: []spec.Spec{
+			&spec.Unstructured{
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,

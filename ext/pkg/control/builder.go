@@ -4,6 +4,7 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
@@ -40,47 +41,31 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			return err
 		}
 
-		s.AddKnownType(KindBlock, &BlockNodeSpec{})
-		s.AddCodec(KindBlock, NewBlockNodeCodec(s))
+		definitions := []struct {
+			kind  string
+			codec scheme.Codec
+			spec  spec.Spec
+		}{
+			{KindBlock, NewBlockNodeCodec(s), &BlockNodeSpec{}},
+			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
+			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
+			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},
+			{KindLoop, NewLoopNodeCodec(), &LoopNodeSpec{}},
+			{KindMerge, NewMergeNodeCodec(), &MergeNodeSpec{}},
+			{KindNOP, NewNOPNodeCodec(), &NOPNodeSpec{}},
+			{KindReduce, NewReduceNodeCodec(expr), &ReduceNodeSpec{}},
+			{KindRetry, NewRetryNodeCodec(), &RetryNodeSpec{}},
+			{KindSession, NewSessionNodeCodec(), &SessionNodeSpec{}},
+			{KindSnippet, NewSnippetNodeCodec(module), &SnippetNodeSpec{}},
+			{KindSplit, NewSplitNodeCodec(), &SplitNodeSpec{}},
+			{KindSwitch, NewSwitchNodeCodec(expr), &SwitchNodeSpec{}},
+			{KindWait, NewWaitNodeCodec(), &WaitNodeSpec{}},
+		}
 
-		s.AddKnownType(KindPipe, &PipeNodeSpec{})
-		s.AddCodec(KindPipe, NewPipeNodeCodec())
-
-		s.AddKnownType(KindFork, &ForkNodeSpec{})
-		s.AddCodec(KindFork, NewForkNodeCodec())
-
-		s.AddKnownType(KindIf, &IfNodeSpec{})
-		s.AddCodec(KindIf, NewIfNodeCodec(expr))
-
-		s.AddKnownType(KindLoop, &LoopNodeSpec{})
-		s.AddCodec(KindLoop, NewLoopNodeCodec())
-
-		s.AddKnownType(KindMerge, &MergeNodeSpec{})
-		s.AddCodec(KindMerge, NewMergeNodeCodec())
-
-		s.AddKnownType(KindNOP, &NOPNodeSpec{})
-		s.AddCodec(KindNOP, NewNOPNodeCodec())
-
-		s.AddKnownType(KindReduce, &ReduceNodeSpec{})
-		s.AddCodec(KindReduce, NewReduceNodeCodec(expr))
-
-		s.AddKnownType(KindRetry, &RetryNodeSpec{})
-		s.AddCodec(KindRetry, NewRetryNodeCodec())
-
-		s.AddKnownType(KindSession, &SessionNodeSpec{})
-		s.AddCodec(KindSession, NewSessionNodeCodec())
-
-		s.AddKnownType(KindSnippet, &SnippetNodeSpec{})
-		s.AddCodec(KindSnippet, NewSnippetNodeCodec(module))
-
-		s.AddKnownType(KindSplit, &SplitNodeSpec{})
-		s.AddCodec(KindSplit, NewSplitNodeCodec())
-
-		s.AddKnownType(KindSwitch, &SwitchNodeSpec{})
-		s.AddCodec(KindSwitch, NewSwitchNodeCodec(expr))
-
-		s.AddKnownType(KindWait, &WaitNodeSpec{})
-		s.AddCodec(KindWait, NewWaitNodeCodec())
+		for _, def := range definitions {
+			s.AddKnownType(def.kind, def.spec)
+			s.AddCodec(def.kind, def.codec)
+		}
 
 		return nil
 	})
