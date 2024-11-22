@@ -20,10 +20,10 @@
   code: 'has(self.body) ? self.body : null'
   ports:
     out:
-      - name: nodes_create
+      - name: specs_create
         port: in
 
 - kind: native
-  name: nodes_create
-  opcode: nodes.create
+  name: specs_create
+  opcode: specs.create
 ```

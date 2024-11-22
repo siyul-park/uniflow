@@ -89,7 +89,7 @@ Adjust settings through `.uniflow.toml` or environment variables.
 |----------------------|--------------------------|---------------------------|
 | `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`   |
 | `database.name`      | `DATABASE.NAME`          | -                         |
-| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                   |
+| `collection.specs`   | `COLLECTION.SPECS`       | `nodes`                   |
 | `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
 
 ## 📊 Benchmark

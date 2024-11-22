@@ -2,7 +2,7 @@ package hook
 
 // Register defines an interface for registering types with a Hook.
 type Register interface {
-	// AddToHooks adds types to the given Hook.
+	// AddToHook adds types to the given Hook.
 	AddToHook(*Hook) error
 }
 

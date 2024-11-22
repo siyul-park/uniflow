@@ -49,39 +49,39 @@
   name: router
   routes:
     - method: POST
-      path: /v1/nodes
+      path: /v1/specs
       port: out[0]
     - method: GET
-      path: /v1/nodes
+      path: /v1/specs
       port: out[1]
     - method: PATCH
-      path: /v1/nodes
+      path: /v1/specs
       port: out[2]
     - method: DELETE
-      path: /v1/nodes
+      path: /v1/specs
       port: out[3]
   ports:
     out[0]:
-      - name: nodes_create
+      - name: specs_create
         port: in
     out[1]:
-      - name: nodes_read
+      - name: specs_read
         port: in
     out[2]:
-      - name: nodes_update
+      - name: specs_update
         port: in
     out[3]:
-      - name: nodes_delete
+      - name: specs_delete
         port: in
 
 - kind: block
-  name: nodes_create
+  name: specs_create
   specs:
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
     - kind: native
-      opcode: nodes.create
+      opcode: specs.create
     - kind: snippet
       language: javascript
       code: |
@@ -93,13 +93,13 @@
         }
 
 - kind: block
-  name: nodes_read
+  name: specs_read
   specs:
     - kind: snippet
       language: json
       code: 'null'
     - kind: native
-      opcode: nodes.read
+      opcode: specs.read
     - kind: snippet
       language: javascript
       code: |
@@ -111,13 +111,13 @@
         }
 
 - kind: block
-  name: nodes_update
+  name: specs_update
   specs:
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
     - kind: native
-      opcode: nodes.update
+      opcode: specs.update
     - kind: snippet
       language: javascript
       code: |
@@ -129,13 +129,13 @@
         }
 
 - kind: block
-  name: nodes_delete
+  name: specs_delete
   specs:
     - kind: snippet
       language: json
       code: 'null'
     - kind: native
-      opcode: nodes.delete
+      opcode: specs.delete
     - kind: snippet
       language: javascript
       code: |
