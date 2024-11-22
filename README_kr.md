@@ -89,7 +89,7 @@ pong#
 |----------------------|--------------------------|---------------------------|
 | `database.url`       | `DATABASE.URL`           | `mem://` 또는 `mongodb://` |
 | `database.name`      | `DATABASE.NAME`          | -                         |
-| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                   |
+| `collection.specs`   | `COLLECTION.SPECS`       | `nodes`                   |
 | `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
 
 ## 📊 벤치마크

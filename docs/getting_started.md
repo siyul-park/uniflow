@@ -40,7 +40,7 @@ Settings can be modified using the `.uniflow.toml` file or system environment va
 | `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`    |
 | `database.name`      | `DATABASE.NAME`          | -                           |
 | `collection.charts`  | `COLLECTION.CHARTS`      | `charts`                    |
-| `collection.nodes`   | `COLLECTION.NODES`       | `nodes`                     |
+| `collection.specs`   | `COLLECTION.SPECS`       | `nodes`                     |
 | `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                   |
 
 If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
@@ -104,7 +104,7 @@ The `start` command executes all node specifications in the specified namespace.
 If the namespace is empty, you can provide an initial node specification using the `--from-specs` flag:
 
 ```sh
-./dist/uniflow start --namespace default --from-specs examples/nodes.yaml
+./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
 You can specify an initial secrets file with the `--from-secrets` flag:
@@ -128,7 +128,7 @@ Charts can be initialized using the `--from-charts` flag:
 The `apply` command applies the contents of a specified file to the namespace. If no namespace is specified, the `default` namespace is used.
 
 ```sh
-./dist/uniflowctl apply nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
 ```
 
 To apply secrets:
@@ -148,7 +148,7 @@ To apply charts:
 The `delete` command removes all resources defined in the specified file. If no namespace is specified, the `default` namespace is used.
 
 ```sh
-./dist/uniflowctl delete nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
 ```
 
 To delete secrets:
@@ -189,7 +189,7 @@ To modify node specifications via the HTTP API, set up workflows accordingly. Yo
 
 ```yaml
 kind: native
-opcode: nodes.create # or nodes.read, nodes.update, nodes.delete
+opcode: specs.create # or specs.read, specs.update, specs.delete
 ```
 
 Refer to the [workflow examples](../examples/system.yaml) to get started. If needed, you can add authentication and authorization processes. These runtime control workflows are typically defined in the `system` namespace.

@@ -11,7 +11,7 @@
 | `database.url`       | `DATABASE.URL`          | `mem://` 또는 `mongodb://` |
 | `database.name`      | `DATABASE.NAME`         | -                          |
 | `collection.charts`  | `COLLECTION.CHARTS`     | `charts`                   |
-| `collection.nodes`   | `COLLECTION.NODES`      | `nodes`                    |
+| `collection.specs`   | `COLLECTION.SPECS`      | `nodes`                    |
 | `collection.secrets` | `COLLECTION.SECRETS`    | `secrets`                  |
 
 만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기 위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
@@ -31,7 +31,7 @@
 네임스페이스가 비어 있을 경우, 초기 노드 명세를 `--from-specs` 플래그로 제공할 수 있습니다:
 
 ```sh
-./dist/uniflow start --namespace default --from-specs examples/nodes.yaml
+./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
 초기 시크릿 파일은 `--from-secrets` 플래그로 설정할 수 있습니다:
@@ -54,7 +54,7 @@
 `apply` 명령어는 지정된 파일 내용을 네임스페이스에 적용합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
 
 ```sh
-./dist/uniflowctl apply nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
 ```
 
 시크릿을 적용하려면:
@@ -74,7 +74,7 @@
 `delete` 명령어는 지정된 파일에 정의된 모든 리소스를 삭제합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
 
 ```sh
-./dist/uniflowctl delete nodes --namespace default --filename examples/nodes.yaml
+./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
 ```
 
 시크릿을 삭제하려면:

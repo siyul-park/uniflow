@@ -17,13 +17,13 @@ const configFile = ".uniflow.toml"
 const (
 	flagDatabaseURL       = "database.url"
 	flagDatabaseName      = "database.name"
-	flagCollectionNodes   = "collection.nodes"
+	flagCollectionSpecs   = "collection.specs"
 	flagCollectionSecrets = "collection.secrets"
 	flagCollectionCharts  = "collection.charts"
 )
 
 func init() {
-	viper.SetDefault(flagCollectionNodes, "nodes")
+	viper.SetDefault(flagCollectionSpecs, "specs")
 	viper.SetDefault(flagCollectionSecrets, "secrets")
 	viper.SetDefault(flagCollectionCharts, "charts")
 
@@ -37,7 +37,7 @@ func main() {
 
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
-	collectionNodes := viper.GetString(flagCollectionNodes)
+	collectionNodes := viper.GetString(flagCollectionSpecs)
 	collectionSecrets := viper.GetString(flagCollectionSecrets)
 	collectionCharts := viper.GetString(flagCollectionCharts)
 

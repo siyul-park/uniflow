@@ -30,7 +30,7 @@ const configFile = ".uniflow.toml"
 const (
 	flagDatabaseURL       = "database.url"
 	flagDatabaseName      = "database.name"
-	flagCollectionNodes   = "collection.nodes"
+	flagCollectionSpecs   = "collection.specs"
 	flagCollectionSecrets = "collection.secrets"
 	flagCollectionCharts  = "collection.charts"
 )
@@ -41,10 +41,10 @@ const (
 	opUpdateCharts = "charts.update"
 	opDeleteCharts = "charts.delete"
 
-	opCreateNodes = "nodes.create"
-	opReadNodes   = "nodes.read"
-	opUpdateNodes = "nodes.update"
-	opDeleteNodes = "nodes.delete"
+	opCreateSpecs = "specs.create"
+	opReadSpecs   = "specs.read"
+	opUpdateSpecs = "specs.update"
+	opDeleteSpecs = "specs.delete"
 
 	opCreateSecrets = "secrets.create"
 	opReadSecrets   = "secrets.read"
@@ -53,7 +53,7 @@ const (
 )
 
 func init() {
-	viper.SetDefault(flagCollectionNodes, "nodes")
+	viper.SetDefault(flagCollectionSpecs, "specs")
 	viper.SetDefault(flagCollectionSecrets, "secrets")
 	viper.SetDefault(flagCollectionCharts, "charts")
 
@@ -67,7 +67,7 @@ func main() {
 
 	databaseURL := viper.GetString(flagDatabaseURL)
 	databaseName := viper.GetString(flagDatabaseName)
-	collectionNodes := viper.GetString(flagCollectionNodes)
+	collectionNodes := viper.GetString(flagCollectionSpecs)
 	collectionSecrets := viper.GetString(flagCollectionSecrets)
 	collectionCharts := viper.GetString(flagCollectionCharts)
 
@@ -106,10 +106,10 @@ func main() {
 	langs.Store(typescript.Language, typescript.NewCompiler())
 
 	nativeTable := system.NewNativeTable()
-	nativeTable.Store(opCreateNodes, system.CreateResource(specStore))
-	nativeTable.Store(opReadNodes, system.ReadResource(specStore))
-	nativeTable.Store(opUpdateNodes, system.UpdateResource(specStore))
-	nativeTable.Store(opDeleteNodes, system.DeleteResource(specStore))
+	nativeTable.Store(opCreateSpecs, system.CreateResource(specStore))
+	nativeTable.Store(opReadSpecs, system.ReadResource(specStore))
+	nativeTable.Store(opUpdateSpecs, system.UpdateResource(specStore))
+	nativeTable.Store(opDeleteSpecs, system.DeleteResource(specStore))
 	nativeTable.Store(opCreateSecrets, system.CreateResource(secretStore))
 	nativeTable.Store(opReadSecrets, system.ReadResource(secretStore))
 	nativeTable.Store(opUpdateSecrets, system.UpdateResource(secretStore))
