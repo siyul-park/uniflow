@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoopNodeCodec_Decode(t *testing.T) {
+func TestLoopNodeCodec_Compile(t *testing.T) {
 	codec := NewLoopNodeCodec()
 
 	spec := &LoopNodeSpec{}

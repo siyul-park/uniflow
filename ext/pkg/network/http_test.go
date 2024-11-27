@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHTTPNodeCodec_Decode(t *testing.T) {
+func TestHTTPNodeCodec_Compile(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 	}))
 	defer s.Close()

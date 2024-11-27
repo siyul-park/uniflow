@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRouteNodeCodec_Decode(t *testing.T) {
+func TestRouteNodeCodec_Compile(t *testing.T) {
 	codec := NewRouteNodeCodec()
 
 	spec := &RouteNodeSpec{

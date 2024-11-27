@@ -28,14 +28,6 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
-	flagDatabaseURL       = "database.url"
-	flagDatabaseName      = "database.name"
-	flagCollectionSpecs   = "collection.specs"
-	flagCollectionSecrets = "collection.secrets"
-	flagCollectionCharts  = "collection.charts"
-)
-
-const (
 	opCreateCharts = "charts.create"
 	opReadCharts   = "charts.read"
 	opUpdateCharts = "charts.update"
@@ -53,9 +45,9 @@ const (
 )
 
 func init() {
-	viper.SetDefault(flagCollectionSpecs, "specs")
-	viper.SetDefault(flagCollectionSecrets, "secrets")
-	viper.SetDefault(flagCollectionCharts, "charts")
+	viper.SetDefault(cli.EnvCollectionSpecs, "specs")
+	viper.SetDefault(cli.EnvCollectionSecrets, "secrets")
+	viper.SetDefault(cli.EnvCollectionCharts, "charts")
 
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
@@ -65,11 +57,11 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	databaseURL := viper.GetString(flagDatabaseURL)
-	databaseName := viper.GetString(flagDatabaseName)
-	collectionNodes := viper.GetString(flagCollectionSpecs)
-	collectionSecrets := viper.GetString(flagCollectionSecrets)
-	collectionCharts := viper.GetString(flagCollectionCharts)
+	databaseURL := viper.GetString(cli.EnvDatabaseURL)
+	databaseName := viper.GetString(cli.EnvDatabaseName)
+	collectionNodes := viper.GetString(cli.EnvCollectionSpecs)
+	collectionSecrets := viper.GetString(cli.EnvCollectionSecrets)
+	collectionCharts := viper.GetString(cli.EnvCollectionCharts)
 
 	d := driver.NewInMemoryDriver()
 	defer d.Close(ctx)
@@ -97,32 +89,33 @@ func main() {
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
 
-	langs := language.NewModule()
-	langs.Store(text.Language, text.NewCompiler())
-	langs.Store(json.Language, json.NewCompiler())
-	langs.Store(yaml.Language, yaml.NewCompiler())
-	langs.Store(cel.Language, cel.NewCompiler())
-	langs.Store(javascript.Language, javascript.NewCompiler())
-	langs.Store(typescript.Language, typescript.NewCompiler())
+	languages := language.NewModule()
+	languages.Store(text.Language, text.NewCompiler())
+	languages.Store(json.Language, json.NewCompiler())
+	languages.Store(yaml.Language, yaml.NewCompiler())
+	languages.Store(cel.Language, cel.NewCompiler())
+	languages.Store(javascript.Language, javascript.NewCompiler())
+	languages.Store(typescript.Language, typescript.NewCompiler())
 
-	nativeTable := system.NewNativeTable()
-	nativeTable.Store(opCreateSpecs, system.CreateResource(specStore))
-	nativeTable.Store(opReadSpecs, system.ReadResource(specStore))
-	nativeTable.Store(opUpdateSpecs, system.UpdateResource(specStore))
-	nativeTable.Store(opDeleteSpecs, system.DeleteResource(specStore))
-	nativeTable.Store(opCreateSecrets, system.CreateResource(secretStore))
-	nativeTable.Store(opReadSecrets, system.ReadResource(secretStore))
-	nativeTable.Store(opUpdateSecrets, system.UpdateResource(secretStore))
-	nativeTable.Store(opDeleteSecrets, system.DeleteResource(secretStore))
-	nativeTable.Store(opCreateCharts, system.CreateResource(chartStore))
-	nativeTable.Store(opReadCharts, system.ReadResource(chartStore))
-	nativeTable.Store(opUpdateCharts, system.UpdateResource(chartStore))
-	nativeTable.Store(opDeleteCharts, system.DeleteResource(chartStore))
+	operators := map[string]any{
+		opCreateSpecs:   system.CreateResource(specStore),
+		opReadSpecs:     system.ReadResource(specStore),
+		opUpdateSpecs:   system.UpdateResource(specStore),
+		opDeleteSpecs:   system.DeleteResource(specStore),
+		opCreateSecrets: system.CreateResource(secretStore),
+		opReadSecrets:   system.ReadResource(secretStore),
+		opUpdateSecrets: system.UpdateResource(secretStore),
+		opDeleteSecrets: system.DeleteResource(secretStore),
+		opCreateCharts:  system.CreateResource(chartStore),
+		opReadCharts:    system.ReadResource(chartStore),
+		opUpdateCharts:  system.UpdateResource(chartStore),
+		opDeleteCharts:  system.DeleteResource(chartStore),
+	}
 
-	schemeBuilder.Register(control.AddToScheme(langs, cel.Language))
+	schemeBuilder.Register(control.AddToScheme(languages, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
-	schemeBuilder.Register(system.AddToScheme(nativeTable))
+	schemeBuilder.Register(system.AddToScheme(operators))
 
 	hookBuilder.Register(control.AddToHook())
 	hookBuilder.Register(network.AddToHook())

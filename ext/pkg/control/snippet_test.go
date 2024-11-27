@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSnippetNodeCodec_Decode(t *testing.T) {
+func TestSnippetNodeCodec_Compile(t *testing.T) {
 	m := language.NewModule()
 	m.Store(text.Language, text.NewCompiler())
 

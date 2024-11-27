@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSwitchNodeCodec_Decode(t *testing.T) {
+func TestSwitchNodeCodec_Compile(t *testing.T) {
 	codec := NewSwitchNodeCodec(text.NewCompiler())
 
 	spec := &SwitchNodeSpec{

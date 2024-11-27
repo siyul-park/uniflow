@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSessionNodeCodec_Decode(t *testing.T) {
+func TestSessionNodeCodec_Compile(t *testing.T) {
 	codec := NewSessionNodeCodec()
 
 	spec := &SessionNodeSpec{}

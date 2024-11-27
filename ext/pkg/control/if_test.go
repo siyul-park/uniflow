@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIfNodeCodec_Decode(t *testing.T) {
+func TestIfNodeCodec_Compile(t *testing.T) {
 	codec := NewIfNodeCodec(text.NewCompiler())
 
 	spec := &IfNodeSpec{

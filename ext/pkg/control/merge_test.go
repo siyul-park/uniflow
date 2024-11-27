@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMergeNodeCodec_Decode(t *testing.T) {
+func TestMergeNodeCodec_Compile(t *testing.T) {
 	codec := NewMergeNodeCodec()
 
 	spec := &MergeNodeSpec{}

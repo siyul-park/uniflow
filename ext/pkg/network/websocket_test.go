@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWebSocketNodeCodec_Decode(t *testing.T) {
+func TestWebSocketNodeCodec_Compile(t *testing.T) {
 	codec := NewWebSocketNodeCodec()
 
 	spec := &WebSocketNodeSpec{

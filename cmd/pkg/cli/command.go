@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"runtime"
 	"runtime/pprof"
 
@@ -30,8 +29,6 @@ func NewCommand(config Config) *cobra.Command {
 			}
 
 			if cpuprofile != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Using cpu profile: %s\n", cpuprofile)
-
 				cpuprof, err = config.FS.Create(cpuprofile)
 				if err != nil {
 					return err
@@ -61,8 +58,6 @@ func NewCommand(config Config) *cobra.Command {
 			}
 
 			if memprofile != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "Using mem profile: %s\n", memprofile)
-
 				f, err := config.FS.Create(memprofile)
 				if err != nil {
 					return err

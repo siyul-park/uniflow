@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestForkNodeCodec_Decode(t *testing.T) {
+func TestForkNodeCodec_Compile(t *testing.T) {
 	codec := NewForkNodeCodec()
 
 	spec := &ForkNodeSpec{}

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSQLNodeCodec_Decode(t *testing.T) {
+func TestSQLNodeCodec_Compile(t *testing.T) {
 	codec := NewSQLNodeCodec()
 
 	spec := &SQLNodeSpec{

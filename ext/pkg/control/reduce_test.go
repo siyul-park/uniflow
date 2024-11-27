@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReduceNodeCodec_Decode(t *testing.T) {
+func TestReduceNodeCodec_Compile(t *testing.T) {
 	codec := NewReduceNodeCodec(text.NewCompiler())
 
 	spec := &ReduceNodeSpec{}

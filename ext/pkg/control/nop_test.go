@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNOPNodeCodec_Decode(t *testing.T) {
+func TestNOPNodeCodec_Compile(t *testing.T) {
 	codec := NewNOPNodeCodec()
 
 	spec := &NOPNodeSpec{}

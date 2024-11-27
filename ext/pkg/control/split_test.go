@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSplitNodeCodec_Decode(t *testing.T) {
+func TestSplitNodeCodec_Compile(t *testing.T) {
 	codec := NewSplitNodeCodec()
 
 	spec := &SplitNodeSpec{}

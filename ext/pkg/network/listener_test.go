@@ -30,7 +30,7 @@ import (
 	"golang.org/x/net/http2"
 )
 
-func TestListenNodeCodec_Decode(t *testing.T) {
+func TestListenNodeCodec_Compile(t *testing.T) {
 	port, err := freeport.GetFreePort()
 	assert.NoError(t, err)
 

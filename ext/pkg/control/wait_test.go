@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestWaitNodeCodec_Decode(t *testing.T) {
+func TestWaitNodeCodec_Compile(t *testing.T) {
 	codec := NewWaitNodeCodec()
 
 	spec := &WaitNodeSpec{

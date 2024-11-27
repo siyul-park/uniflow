@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func TestRetryNodeCodec_Decode(t *testing.T) {
+func TestRetryNodeCodec_Compile(t *testing.T) {
 	codec := NewRetryNodeCodec()
 
 	spec := &RetryNodeSpec{

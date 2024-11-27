@@ -57,6 +57,7 @@ func (d *MongoDriver) ChartStore(ctx context.Context, name string) (chart.Store,
 	if name == "" {
 		name = "charts"
 	}
+
 	collection := d.database.Collection(name)
 	store := mongochart.NewStore(collection)
 
@@ -71,6 +72,7 @@ func (d *MongoDriver) SpecStore(ctx context.Context, name string) (spec.Store, e
 	if name == "" {
 		name = "specs"
 	}
+
 	collection := d.database.Collection(name)
 	store := mongospec.NewStore(collection)
 
@@ -85,6 +87,7 @@ func (d *MongoDriver) SecretStore(ctx context.Context, name string) (secret.Stor
 	if name == "" {
 		name = "secrets"
 	}
+
 	collection := d.database.Collection(name)
 	store := mongosecret.NewStore(collection)
 

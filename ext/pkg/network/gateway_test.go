@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGatewayNodeCodec_Decode(t *testing.T) {
+func TestGatewayNodeCodec_Compile(t *testing.T) {
 	codec := NewGatewayNodeCodec()
 
 	spec := &GatewayNodeSpec{

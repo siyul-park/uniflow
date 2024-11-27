@@ -6,14 +6,14 @@ import (
 )
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme(table *NativeTable) scheme.Register {
+func AddToScheme(operators map[string]any) scheme.Register {
 	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
 		definitions := []struct {
 			kind  string
 			codec scheme.Codec
 			spec  spec.Spec
 		}{
-			{KindNative, NewNativeNodeCodec(table), &NativeNodeSpec{}},
+			{KindNative, NewNativeNodeCodec(operators), &NativeNodeSpec{}},
 		}
 
 		for _, def := range definitions {

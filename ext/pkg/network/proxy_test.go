@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxyNodeCodec_Decode(t *testing.T) {
+func TestProxyNodeCodec_Compile(t *testing.T) {
 	codec := NewProxyNodeCodec()
 
 	spec := &ProxyNodeSpec{

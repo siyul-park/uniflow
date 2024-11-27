@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBlockNodeCodec_Decode(t *testing.T) {
+func TestBlockNodeCodec_Compile(t *testing.T) {
 	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 

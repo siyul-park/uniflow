@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPrintNodeCodec_Decode(t *testing.T) {
+func TestPrintNodeCodec_Compile(t *testing.T) {
 	t.Run("static", func(t *testing.T) {
 		codec := NewPrintNodeCodec(FileOpenFunc(func(name string, flag int) (io.ReadWriteCloser, error) {
 			return &nopReadWriteCloser{bytes.NewBuffer(nil)}, nil

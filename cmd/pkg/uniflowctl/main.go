@@ -14,18 +14,10 @@ import (
 
 const configFile = ".uniflow.toml"
 
-const (
-	flagDatabaseURL       = "database.url"
-	flagDatabaseName      = "database.name"
-	flagCollectionSpecs   = "collection.specs"
-	flagCollectionSecrets = "collection.secrets"
-	flagCollectionCharts  = "collection.charts"
-)
-
 func init() {
-	viper.SetDefault(flagCollectionSpecs, "specs")
-	viper.SetDefault(flagCollectionSecrets, "secrets")
-	viper.SetDefault(flagCollectionCharts, "charts")
+	viper.SetDefault(cli.EnvCollectionSpecs, "specs")
+	viper.SetDefault(cli.EnvCollectionSecrets, "secrets")
+	viper.SetDefault(cli.EnvCollectionCharts, "charts")
 
 	viper.SetConfigFile(configFile)
 	viper.AutomaticEnv()
@@ -35,11 +27,11 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	databaseURL := viper.GetString(flagDatabaseURL)
-	databaseName := viper.GetString(flagDatabaseName)
-	collectionNodes := viper.GetString(flagCollectionSpecs)
-	collectionSecrets := viper.GetString(flagCollectionSecrets)
-	collectionCharts := viper.GetString(flagCollectionCharts)
+	databaseURL := viper.GetString(cli.EnvDatabaseURL)
+	databaseName := viper.GetString(cli.EnvDatabaseName)
+	collectionNodes := viper.GetString(cli.EnvCollectionSpecs)
+	collectionSecrets := viper.GetString(cli.EnvCollectionSecrets)
+	collectionCharts := viper.GetString(cli.EnvCollectionCharts)
 
 	d := driver.NewInMemoryDriver()
 	defer d.Close(ctx)

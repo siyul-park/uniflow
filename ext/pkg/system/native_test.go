@@ -2,7 +2,7 @@ package system
 
 import (
 	"context"
-	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 	"time"
 
@@ -15,19 +15,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNativeNodeCodec_Decode(t *testing.T) {
-	table := NewNativeTable()
+func TestNativeNodeCodec_Compile(t *testing.T) {
+	opcode := faker.UUIDHyphenated()
 
-	operation := faker.UUIDHyphenated()
-
-	table.Store(operation, func(arg any) any {
-		return arg
+	codec := NewNativeNodeCodec(map[string]any{
+		opcode: func() {},
 	})
 
-	codec := NewNativeNodeCodec(table)
-
 	spec := &NativeNodeSpec{
-		OPCode: operation,
+		OPCode: opcode,
 	}
 
 	n, err := codec.Compile(spec)
@@ -36,221 +32,218 @@ func TestNativeNodeCodec_Decode(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNativeTable_LoadAndStore(t *testing.T) {
-	opcode := faker.Word()
+func TestNativeNodeCodec_Load(t *testing.T) {
+	t.Run("func() void", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	tb := NewNativeTable()
-	tb.Store(opcode, func() {})
+		opcode := faker.UUIDHyphenated()
 
-	_, err := tb.Load(opcode)
-	assert.NoError(t, err)
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func() {},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		res, err := fn(ctx, nil)
+		assert.NoError(t, err)
+		assert.Len(t, res, 0)
+	})
+
+	t.Run("func() error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func() error {
+				return errors.New(faker.Word())
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		_, err = fn(ctx, nil)
+		assert.Error(t, err)
+	})
+
+	t.Run("func(string) (string)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(arg string) string {
+				return arg
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		res, err := fn(ctx, []any{arg})
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, res[0], arg)
+	})
+
+	t.Run("func(string) (string, error)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(arg string) (string, error) {
+				return "", errors.New(faker.Word())
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		_, err = fn(ctx, []any{arg})
+		assert.Error(t, err)
+	})
+
+	t.Run("func(context.Context, string) (string)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(_ context.Context, arg string) string {
+				return arg
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		res, err := fn(ctx, []any{arg})
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+		assert.Equal(t, res[0], arg)
+	})
+
+	t.Run("func(context.Context, string) (string, error)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(_ context.Context, arg string) (string, error) {
+				return "", errors.New(faker.Word())
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		_, err = fn(ctx, []any{arg})
+		assert.Error(t, err)
+	})
+
+	t.Run("func(string, string) (string, string)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(arg1, arg2 string) (string, string) {
+				return arg1, arg2
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		res, err := fn(ctx, []any{arg, arg})
+		assert.NoError(t, err)
+		assert.Len(t, res, 2)
+		assert.Equal(t, res[0], arg)
+		assert.Equal(t, res[1], arg)
+	})
+
+	t.Run("func(string, string) (string, string, error)", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		opcode := faker.UUIDHyphenated()
+
+		codec := NewNativeNodeCodec(map[string]any{
+			opcode: func(arg1, arg2 string) (string, string, error) {
+				return "", "", errors.New(faker.Word())
+			},
+		})
+
+		fn, err := codec.Load(opcode)
+		assert.NoError(t, err)
+
+		arg := faker.UUIDHyphenated()
+
+		_, err = fn(ctx, []any{arg, arg})
+		assert.Error(t, err)
+	})
 }
 
 func TestNewNativeNode(t *testing.T) {
-	n, err := NewNativeNode(func() {})
+	n, err := NewNativeNode(nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestNativeNode_SendAndReceive(t *testing.T) {
-	t.Run("Operands, Returns = 0", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
 
-		n, _ := NewNativeNode(func() {})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Nil(t, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
+	n, _ := NewNativeNode(func(ctx context.Context, arguments []any) ([]any, error) {
+		return arguments, nil
 	})
+	defer n.Close()
 
-	t.Run("Operands = 1, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-		n, _ := NewNativeNode(func(arg any) any {
-			return arg
-		})
-		defer n.Close()
+	proc := process.New()
+	defer proc.Exit(nil)
 
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
+	inWriter := in.Open(proc)
 
-		proc := process.New()
-		defer proc.Exit(nil)
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
 
-		inWriter := in.Open(proc)
+	inWriter.Write(inPck)
 
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands > 1, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewNativeNode(func(arg1, arg2 any) any {
-			return arg2
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewSlice(
-			types.NewString(faker.UUIDHyphenated()),
-			types.NewString(faker.UUIDHyphenated()),
-		)
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload.Get(1), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == Context, Returns == 1", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewNativeNode(func(ctx context.Context, arg any) any {
-			return arg
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == 1, Returns > 2", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewNativeNode(func(arg any) (any, any) {
-			return arg, arg
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-inWriter.Receive():
-			assert.Equal(t, types.NewSlice(inPayload, inPayload), outPck.Payload())
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run("Operands == 1, Returns == error", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		n, _ := NewNativeNode(func(arg any) error {
-			return fmt.Errorf("%v", arg)
-		})
-		defer n.Close()
-
-		in := port.NewOut()
-		in.Link(n.In(node.PortIn))
-
-		err := port.NewIn()
-		n.Out(node.PortErr).Link(err)
-
-		proc := process.New()
-		defer proc.Exit(nil)
-
-		inWriter := in.Open(proc)
-		errReader := err.Open(proc)
-
-		inPayload := types.NewString(faker.UUIDHyphenated())
-		inPck := packet.New(inPayload)
-
-		inWriter.Write(inPck)
-
-		select {
-		case outPck := <-errReader.Read():
-			assert.NotNil(t, outPck)
-			errReader.Receive(outPck)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-
-		select {
-		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
+	select {
+	case outPck := <-inWriter.Receive():
+		assert.Equal(t, inPayload, outPck.Payload())
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
+	}
 }
 
 func BenchmarkNativeNode_SendAndReceive(b *testing.B) {
-	n, _ := NewNativeNode(func(arg any) any {
-		return arg
+	n, _ := NewNativeNode(func(ctx context.Context, arguments []any) ([]any, error) {
+		return arguments, nil
 	})
 	defer n.Close()
 
