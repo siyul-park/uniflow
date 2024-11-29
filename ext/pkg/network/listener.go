@@ -262,7 +262,7 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 
 	if res.Header.Get(mime.HeaderContentType) == "" {
 		accept := req.Header.Get(mime.HeaderAccept)
-		offers := mime.DetectTypes(res.Body)
+		offers := mime.DetectTypesFromValue(res.Body)
 		contentType := mime.Negotiate(accept, offers)
 		if contentType != "" {
 			res.Header.Set(mime.HeaderContentType, contentType)

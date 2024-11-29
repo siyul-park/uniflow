@@ -2,6 +2,8 @@ package system
 
 import (
 	"context"
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/types"
 
 	"github.com/siyul-park/uniflow/pkg/resource"
 )
@@ -47,10 +49,52 @@ func ReadResource[T resource.Resource](store resource.Store[T]) func(context.Con
 // UpdateResource is a generic function to swap and load resources.
 func UpdateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
 	return func(ctx context.Context, resources []T) ([]T, error) {
+		exists, err := store.Load(ctx, resources...)
+		if err != nil {
+			return nil, err
+		}
+
+		origins := map[uuid.UUID]T{}
+		for _, v := range exists {
+			origins[v.GetID()] = v
+		}
+
+		for i := 0; i < len(resources); i++ {
+			patch := resources[i]
+			origin, ok := origins[patch.GetID()]
+			if !ok {
+				resources = append(resources[:i], resources[i+1:]...)
+				i--
+				continue
+			}
+
+			doc1, err := types.Marshal(origin)
+			if err != nil {
+				return nil, err
+			}
+
+			doc2, err := types.Marshal(patch)
+			if err != nil {
+				return nil, err
+			}
+
+			var pair []types.Value
+			if doc, ok := doc1.(types.Map); ok {
+				pair = append(pair, doc.Pairs()...)
+			}
+			if doc, ok := doc2.(types.Map); ok {
+				pair = append(pair, doc.Pairs()...)
+			}
+
+			if err := types.Unmarshal(types.NewMap(pair...), &resources[i]); err != nil {
+				return nil, err
+			}
+		}
+
 		if _, err := store.Swap(ctx, resources...); err != nil {
 			return nil, err
 		}
-		return store.Load(ctx, resources...)
+		return resources, nil
 	}
 }
 
@@ -61,8 +105,10 @@ func DeleteResource[T resource.Resource](store resource.Store[T]) func(context.C
 		if err != nil {
 			return nil, err
 		}
-		if _, err := store.Delete(ctx, exists...); err != nil {
-			return nil, err
+		if len(exists) > 0 {
+			if _, err := store.Delete(ctx, exists...); err != nil {
+				return nil, err
+			}
 		}
 		return exists, nil
 	}

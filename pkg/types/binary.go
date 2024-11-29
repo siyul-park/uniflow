@@ -89,7 +89,7 @@ func newBinaryEncoder() encoding2.EncodeCompiler[any, Value] {
 			return encoding2.EncodeFunc(func(source any) (Value, error) {
 				s := source.(encoding.BinaryMarshaler)
 				if t, err := s.MarshalBinary(); err != nil {
-					return nil, err
+					return nil, errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
 				} else {
 					return NewBinary(t), nil
 				}
@@ -122,7 +122,10 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
-					return t.UnmarshalBinary(s.Bytes())
+					if err := t.UnmarshalBinary(s.Bytes()); err != nil {
+						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
+					}
+					return nil
 				}
 				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil
@@ -130,7 +133,10 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
-					return t.UnmarshalText(s.Bytes())
+					if err := t.UnmarshalText(s.Bytes()); err != nil {
+						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
+					}
+					return nil
 				}
 				return errors.WithStack(encoding2.ErrUnsupportedType)
 			}), nil

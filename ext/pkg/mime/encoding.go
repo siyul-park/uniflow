@@ -1,6 +1,7 @@
 package mime
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -34,7 +35,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 	encode := header.Get(HeaderContentEncoding)
 
 	if typ == "" {
-		if detects := DetectTypes(value); len(detects) > 0 {
+		if detects := DetectTypesFromValue(value); len(detects) > 0 {
 			typ = detects[0]
 			header.Set(HeaderContentType, typ)
 		}
@@ -160,7 +161,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 							typ := h.Get(HeaderContentType)
 							if typ == "" {
-								if detects := DetectTypes(data); len(detects) > 0 {
+								if detects := DetectTypesFromValue(data); len(detects) > 0 {
 									typ = detects[0]
 									h.Set(HeaderContentType, typ)
 								}
@@ -240,8 +241,6 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
 
-	typ, params, _ := mime.ParseMediaType(typ)
-
 	r, err := Decompress(reader, encode)
 	if err != nil {
 		return nil, err
@@ -249,6 +248,22 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 	if c, ok := r.(io.Closer); ok && r != reader {
 		defer c.Close()
 	}
+
+	if typ == "" {
+		data, err := io.ReadAll(r)
+		if err != nil {
+			return nil, err
+		}
+
+		if detects := DetectTypesFromBytes(data); len(detects) > 0 {
+			typ = detects[0]
+			header.Set(HeaderContentType, typ)
+		}
+
+		r = bytes.NewReader(data)
+	}
+
+	typ, params, _ := mime.ParseMediaType(typ)
 
 	switch typ {
 	case ApplicationJSON:

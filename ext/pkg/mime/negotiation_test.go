@@ -29,7 +29,7 @@ func TestDetectTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
-			detects := DetectTypes(tt.when)
+			detects := DetectTypesFromValue(tt.when)
 			assert.Greater(t, len(detects), 0)
 		})
 	}

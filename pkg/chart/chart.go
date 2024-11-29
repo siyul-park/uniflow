@@ -18,7 +18,7 @@ type Chart struct {
 	// Logical grouping or environment.
 	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
 	// Name of the chart or cluster node.
-	Name string `json:"name" bson:"name" yaml:"name" map:"name"`
+	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	// Specifications that define the nodes and their configurations within the chart.

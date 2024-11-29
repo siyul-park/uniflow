@@ -1,6 +1,11 @@
 package mime
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"net/http"
+	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/siyul-park/uniflow/pkg/types"
@@ -28,8 +33,27 @@ const (
 
 const charsetUTF8 = "charset=utf-8"
 
-// DetectTypes determines the content types based on the type of types passed.
-func DetectTypes(value types.Value) []string {
+// DetectTypesFromBytes determines the potential content types of the given byte slice.
+func DetectTypesFromBytes(value []byte) []string {
+	var types []string
+	var v any
+	if err := json.Unmarshal(value, &v); err == nil {
+		types = append(types, ApplicationJSONCharsetUTF8)
+	}
+	if err := xml.Unmarshal(value, &v); err == nil {
+		types = append(types, ApplicationXMLCharsetUTF8, TextXMLCharsetUTF8)
+	}
+	if v, err := url.ParseQuery(string(value)); err == nil && len(v) > 0 && !v.Has(string(value)) {
+		types = append(types, ApplicationFormURLEncoded)
+	}
+	if typ := http.DetectContentType(value); !slices.Contains(types, typ) {
+		types = append(types, typ)
+	}
+	return types
+}
+
+// DetectTypesFromValue determines the content types based on the type of types passed.
+func DetectTypesFromValue(value types.Value) []string {
 	switch value.(type) {
 	case types.Binary:
 		return []string{ApplicationOctetStream}
@@ -37,7 +61,7 @@ func DetectTypes(value types.Value) []string {
 		return []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8}
 	case types.Slice:
 		return []string{ApplicationJSONCharsetUTF8}
-	case types.Value, types.Error:
+	case types.Map, types.Error:
 		return []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
 	default:
 		return []string{ApplicationJSONCharsetUTF8}

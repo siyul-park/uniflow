@@ -104,15 +104,14 @@ func (n *SessionNode) forward(proc *process.Process) {
 		outPcks := make([]*packet.Packet, 0, len(parents))
 		for i := 0; i < len(parents); i++ {
 			parent := parents[i]
-			child := parent.Fork()
-
 			value, ok := n.values.Load(parent)
 			if !ok {
-				child.Exit(nil)
 				continue
 			}
 
+			child := parent.Fork()
 			outPck := packet.New(types.NewSlice(value, inPck.Payload()))
+
 			n.tracer.Transform(inPck, outPck)
 
 			children = append(children, child)

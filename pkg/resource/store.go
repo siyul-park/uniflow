@@ -45,7 +45,7 @@ type Event struct {
 }
 
 // EventOP represents the type of operation that triggered an Event.
-type EventOP int
+type EventOP string
 
 type store[T Resource] struct {
 	data       map[uuid.UUID]T
@@ -63,9 +63,9 @@ type stream struct {
 }
 
 const (
-	EventStore  EventOP = iota // EventStore indicates an event for inserting a Resource.
-	EventSwap                  // EventSwap indicates an event for updating a Resource.
-	EventDelete                // EventDelete indicates an event for deleting a Resource.
+	EventStore  EventOP = "store"
+	EventSwap           = "swap"
+	EventDelete         = "delete"
 )
 
 var (

@@ -43,7 +43,7 @@ type Meta struct {
 	// ID is the unique identifier of the node.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
 	// Kind specifies the node's type.
-	Kind string `json:"kind" bson:"kind" yaml:"kind" map:"kind"`
+	Kind string `json:"kind,omitempty" bson:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
 	// Namespace groups nodes logically.
 	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
 	// Name is the human-readable name of the node.

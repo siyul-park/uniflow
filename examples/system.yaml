@@ -26,31 +26,62 @@
       path: /v1/specs
       port: out[3]
 
+    - method: GET
+      path: /v1/specs/:id
+      port: out[4]
+    - method: PATCH
+      path: /v1/specs/:id
+      port: out[5]
+    - method: DELETE
+      path: /v1/specs/:id
+      port: out[6]
+
     - method: POST
       path: /v1/secrets
-      port: out[4]
+      port: out[7]
     - method: GET
       path: /v1/secrets
-      port: out[5]
+      port: out[8]
     - method: PATCH
       path: /v1/secrets
-      port: out[6]
+      port: out[9]
     - method: DELETE
       path: /v1/secrets
-      port: out[7]
+      port: out[10]
+
+    - method: GET
+      path: /v1/secrets/:id
+      port: out[11]
+    - method: PATCH
+      path: /v1/secrets/:id
+      port: out[12]
+    - method: DELETE
+      path: /v1/secrets/:id
+      port: out[13]
 
     - method: POST
       path: /v1/charts
-      port: out[8]
+      port: out[14]
     - method: GET
       path: /v1/charts
-      port: out[9]
+      port: out[15]
     - method: PATCH
       path: /v1/charts
-      port: out[10]
+      port: out[16]
     - method: DELETE
       path: /v1/charts
-      port: out[11]
+      port: out[17]
+
+    - method: GET
+      path: /v1/charts/:id
+      port: out[18]
+    - method: PATCH
+      path: /v1/charts/:id
+      port: out[19]
+    - method: DELETE
+      path: /v1/charts/:id
+      port: out[20]
+
   ports:
     out[0]:
       - name: specs_create
@@ -66,40 +97,70 @@
         port: in
 
     out[4]:
-      - name: secrets_create
+      - name: specs_read_with_params
         port: in
     out[5]:
-      - name: secrets_read_or_watch
+      - name: specs_update_with_params
         port: in
     out[6]:
+      - name: specs_delete_with_params
+        port: in
+
+    out[7]:
+      - name: secrets_create
+        port: in
+    out[8]:
+      - name: secrets_read_or_watch
+        port: in
+    out[9]:
       - name: secrets_update
         port: in
-    out[7]:
+    out[10]:
       - name: secrets_delete
         port: in
 
-    out[8]:
+    out[11]:
+      - name: secrets_read_with_params
+        port: in
+    out[12]:
+      - name: secrets_update_with_params
+        port: in
+    out[13]:
+      - name: secrets_delete_with_params
+        port: in
+
+    out[14]:
       - name: charts_create
         port: in
-    out[9]:
+    out[15]:
       - name: charts_read_or_watch
         port: in
-    out[10]:
+    out[16]:
       - name: charts_update
         port: in
-    out[11]:
+    out[17]:
       - name: charts_delete
+        port: in
+
+    out[18]:
+      - name: charts_read_with_params
+        port: in
+    out[19]:
+      - name: charts_update_with_params
+        port: in
+    out[20]:
+      - name: charts_delete_with_params
         port: in
 
 - kind: if
   name: specs_read_or_watch
-  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: specs_read
         port: in
     out[1]:
-      - name: specs_watch_gateway
+      - name: specs_watch_websocket
         port: io
       - name: specs_watch_session
         port: io
@@ -175,8 +236,83 @@
           };
         }
 
+- kind: block
+  name: specs_read_with_params
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.params) ? self.params : null'
+    - kind: native
+      opcode: specs.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: specs_update_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          let { body, params } = args;
+          return { ...body, ...params };
+        }
+    - kind: native
+      opcode: specs.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: specs_delete_with_params
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.params) ? self.params : null'
+    - kind: native
+      opcode: specs.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            status: 204
+          };
+        }
+
 - kind: gateway
-  name: specs_watch_gateway
+  name: specs_watch_websocket
   protocol: websocket
 
 - kind: signal
@@ -200,18 +336,18 @@
   code: 'self[1]'
   ports:
     out:
-      - name: specs_watch_gateway
+      - name: specs_watch_websocket
         port: in
 
 - kind: if
   name: secrets_read_or_watch
-  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: secrets_read
         port: in
     out[1]:
-      - name: secrets_watch_gateway
+      - name: secrets_watch_websocket
         port: io
       - name: secrets_watch_session
         port: io
@@ -287,8 +423,77 @@
           };
         }
 
+- kind: block
+  name: secrets_read_with_params
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.params) ? self.params : null'
+    - kind: native
+      opcode: secrets.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_update_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          let { body, params } = args;
+          return { ...body, ...params };
+        }
+    - kind: native
+      opcode: secrets.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: secrets_delete_with_params
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: secrets.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
 - kind: gateway
-  name: secrets_watch_gateway
+  name: secrets_watch_websocket
   protocol: websocket
 
 - kind: signal
@@ -312,18 +517,18 @@
   code: 'self[1]'
   ports:
     out:
-      - name: secrets_watch_gateway
+      - name: secrets_watch_websocket
         port: in
 
 - kind: if
   name: charts_read_or_watch
-  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: charts_read
         port: in
     out[1]:
-      - name: charts_watch_gateway
+      - name: charts_watch_websocket
         port: io
       - name: charts_watch_session
         port: io
@@ -399,8 +604,77 @@
           };
         }
 
+- kind: block
+  name: charts_read_with_params
+  specs:
+    - kind: snippet
+      language: cel
+      code: 'has(self.params) ? self.params : null'
+    - kind: native
+      opcode: charts.read
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: charts_update_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          let { body, params } = args;
+          return { ...body, ...params };
+        }
+    - kind: native
+      opcode: charts.update
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: block
+  name: charts_delete_with_params
+  specs:
+    - kind: snippet
+      language: json
+      code: 'null'
+    - kind: native
+      opcode: charts.delete
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          return {
+            status: 204
+          };
+        }
+
 - kind: gateway
-  name: charts_watch_gateway
+  name: charts_watch_websocket
   protocol: websocket
 
 - kind: signal
@@ -424,7 +698,7 @@
   code: 'self[1]'
   ports:
     out:
-      - name: charts_watch_gateway
+      - name: charts_watch_websocket
         port: in
 
 - kind: switch
