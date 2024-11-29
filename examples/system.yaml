@@ -25,6 +25,7 @@
     - method: DELETE
       path: /v1/specs
       port: out[3]
+
     - method: POST
       path: /v1/secrets
       port: out[4]
@@ -37,6 +38,7 @@
     - method: DELETE
       path: /v1/secrets
       port: out[7]
+
     - method: POST
       path: /v1/charts
       port: out[8]
@@ -54,7 +56,7 @@
       - name: specs_create
         port: in
     out[1]:
-      - name: specs_read
+      - name: specs_read_or_watch
         port: in
     out[2]:
       - name: specs_update
@@ -62,11 +64,12 @@
     out[3]:
       - name: specs_delete
         port: in
+
     out[4]:
       - name: secrets_create
         port: in
     out[5]:
-      - name: secrets_read
+      - name: secrets_read_or_watch
         port: in
     out[6]:
       - name: secrets_update
@@ -74,11 +77,12 @@
     out[7]:
       - name: secrets_delete
         port: in
+
     out[8]:
       - name: charts_create
         port: in
     out[9]:
-      - name: charts_read
+      - name: charts_read_or_watch
         port: in
     out[10]:
       - name: charts_update
@@ -86,6 +90,19 @@
     out[11]:
       - name: charts_delete
         port: in
+
+- kind: if
+  name: specs_read_or_watch
+  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  ports:
+    out[0]:
+      - name: specs_read
+        port: in
+    out[1]:
+      - name: specs_watch_gateway
+        port: io
+      - name: specs_watch_session
+        port: io
 
 - kind: block
   name: specs_create
@@ -158,6 +175,47 @@
           };
         }
 
+- kind: gateway
+  name: specs_watch_gateway
+  protocol: websocket
+
+- kind: signal
+  name: specs_watch_signal
+  opcode: specs.watch
+  ports:
+    out:
+      - name: specs_watch_session
+        port: in
+
+- kind: session
+  name: specs_watch_session
+  ports:
+    out:
+      - name: specs_watch_downstream
+        port: in
+
+- kind: snippet
+  name: specs_watch_downstream
+  language: cel
+  code: 'self[1]'
+  ports:
+    out:
+      - name: specs_watch_gateway
+        port: in
+
+- kind: if
+  name: secrets_read_or_watch
+  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  ports:
+    out[0]:
+      - name: secrets_read
+        port: in
+    out[1]:
+      - name: secrets_watch_gateway
+        port: io
+      - name: secrets_watch_session
+        port: io
+
 - kind: block
   name: secrets_create
   specs:
@@ -229,6 +287,47 @@
           };
         }
 
+- kind: gateway
+  name: secrets_watch_gateway
+  protocol: websocket
+
+- kind: signal
+  name: secrets_watch_signal
+  opcode: secrets.watch
+  ports:
+    out:
+      - name: secrets_watch_session
+        port: in
+
+- kind: session
+  name: secrets_watch_session
+  ports:
+    out:
+      - name: secrets_watch_downstream
+        port: in
+
+- kind: snippet
+  name: secrets_watch_downstream
+  language: cel
+  code: 'self[1]'
+  ports:
+    out:
+      - name: secrets_watch_gateway
+        port: in
+
+- kind: if
+  name: charts_read_or_watch
+  when: '!has(self.query) || !has(self.query.watch) || !self.query.watch.all(x, x == "true")'
+  ports:
+    out[0]:
+      - name: charts_read
+        port: in
+    out[1]:
+      - name: charts_watch_gateway
+        port: io
+      - name: charts_watch_session
+        port: io
+
 - kind: block
   name: charts_create
   specs:
@@ -299,6 +398,34 @@
             status: 204
           };
         }
+
+- kind: gateway
+  name: charts_watch_gateway
+  protocol: websocket
+
+- kind: signal
+  name: charts_watch_signal
+  opcode: charts.watch
+  ports:
+    out:
+      - name: charts_watch_session
+        port: in
+
+- kind: session
+  name: charts_watch_session
+  ports:
+    out:
+      - name: charts_watch_downstream
+        port: in
+
+- kind: snippet
+  name: charts_watch_downstream
+  language: cel
+  code: 'self[1]'
+  ports:
+    out:
+      - name: charts_watch_gateway
+        port: in
 
 - kind: switch
   name: catch

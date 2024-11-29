@@ -2,7 +2,6 @@ package system
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"testing"
 	"time"
 
@@ -18,8 +17,10 @@ import (
 func TestNativeNodeCodec_Compile(t *testing.T) {
 	opcode := faker.UUIDHyphenated()
 
-	codec := NewNativeNodeCodec(map[string]any{
-		opcode: func() {},
+	codec := NewNativeNodeCodec(map[string]func(ctx context.Context, arguments []any) ([]any, error){
+		opcode: func(ctx context.Context, arguments []any) ([]any, error) {
+			return nil, nil
+		},
 	})
 
 	spec := &NativeNodeSpec{
@@ -30,178 +31,6 @@ func TestNativeNodeCodec_Compile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
-}
-
-func TestNativeNodeCodec_Load(t *testing.T) {
-	t.Run("func() void", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func() {},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		res, err := fn(ctx, nil)
-		assert.NoError(t, err)
-		assert.Len(t, res, 0)
-	})
-
-	t.Run("func() error", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func() error {
-				return errors.New(faker.Word())
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		_, err = fn(ctx, nil)
-		assert.Error(t, err)
-	})
-
-	t.Run("func(string) (string)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(arg string) string {
-				return arg
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		res, err := fn(ctx, []any{arg})
-		assert.NoError(t, err)
-		assert.Len(t, res, 1)
-		assert.Equal(t, res[0], arg)
-	})
-
-	t.Run("func(string) (string, error)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(arg string) (string, error) {
-				return "", errors.New(faker.Word())
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		_, err = fn(ctx, []any{arg})
-		assert.Error(t, err)
-	})
-
-	t.Run("func(context.Context, string) (string)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(_ context.Context, arg string) string {
-				return arg
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		res, err := fn(ctx, []any{arg})
-		assert.NoError(t, err)
-		assert.Len(t, res, 1)
-		assert.Equal(t, res[0], arg)
-	})
-
-	t.Run("func(context.Context, string) (string, error)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(_ context.Context, arg string) (string, error) {
-				return "", errors.New(faker.Word())
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		_, err = fn(ctx, []any{arg})
-		assert.Error(t, err)
-	})
-
-	t.Run("func(string, string) (string, string)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(arg1, arg2 string) (string, string) {
-				return arg1, arg2
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		res, err := fn(ctx, []any{arg, arg})
-		assert.NoError(t, err)
-		assert.Len(t, res, 2)
-		assert.Equal(t, res[0], arg)
-		assert.Equal(t, res[1], arg)
-	})
-
-	t.Run("func(string, string) (string, string, error)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		opcode := faker.UUIDHyphenated()
-
-		codec := NewNativeNodeCodec(map[string]any{
-			opcode: func(arg1, arg2 string) (string, string, error) {
-				return "", "", errors.New(faker.Word())
-			},
-		})
-
-		fn, err := codec.Load(opcode)
-		assert.NoError(t, err)
-
-		arg := faker.UUIDHyphenated()
-
-		_, err = fn(ctx, []any{arg, arg})
-		assert.Error(t, err)
-	})
 }
 
 func TestNewNativeNode(t *testing.T) {

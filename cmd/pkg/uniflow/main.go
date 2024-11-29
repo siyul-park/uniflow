@@ -28,20 +28,23 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
-	opCreateCharts = "charts.create"
-	opReadCharts   = "charts.read"
-	opUpdateCharts = "charts.update"
-	opDeleteCharts = "charts.delete"
-
 	opCreateSpecs = "specs.create"
 	opReadSpecs   = "specs.read"
 	opUpdateSpecs = "specs.update"
 	opDeleteSpecs = "specs.delete"
+	opWatchSpecs  = "specs.watch"
 
 	opCreateSecrets = "secrets.create"
 	opReadSecrets   = "secrets.read"
 	opUpdateSecrets = "secrets.update"
 	opDeleteSecrets = "secrets.delete"
+	opWatchSecrets  = "secrets.watch"
+
+	opCreateCharts = "charts.create"
+	opReadCharts   = "charts.read"
+	opUpdateCharts = "charts.update"
+	opDeleteCharts = "charts.delete"
+	opWatchCharts  = "charts.watch"
 )
 
 func init() {
@@ -102,14 +105,17 @@ func main() {
 		opReadSpecs:     system.ReadResource(specStore),
 		opUpdateSpecs:   system.UpdateResource(specStore),
 		opDeleteSpecs:   system.DeleteResource(specStore),
+		opWatchSpecs:    system.WatchResource(specStore),
 		opCreateSecrets: system.CreateResource(secretStore),
 		opReadSecrets:   system.ReadResource(secretStore),
 		opUpdateSecrets: system.UpdateResource(secretStore),
 		opDeleteSecrets: system.DeleteResource(secretStore),
+		opWatchSecrets:  system.WatchResource(secretStore),
 		opCreateCharts:  system.CreateResource(chartStore),
 		opReadCharts:    system.ReadResource(chartStore),
 		opUpdateCharts:  system.UpdateResource(chartStore),
 		opDeleteCharts:  system.DeleteResource(chartStore),
+		opWatchCharts:   system.WatchResource(chartStore),
 	}
 
 	schemeBuilder.Register(control.AddToScheme(languages, cel.Language))
@@ -119,6 +125,7 @@ func main() {
 
 	hookBuilder.Register(control.AddToHook())
 	hookBuilder.Register(network.AddToHook())
+	hookBuilder.Register(system.AddToHook())
 
 	scheme, err := schemeBuilder.Build()
 	if err != nil {

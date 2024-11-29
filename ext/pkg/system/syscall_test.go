@@ -11,6 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWatchResource(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	st := resource.NewStore[*resource.Meta]()
+	fn := WatchResource(st)
+
+	_, err := fn(ctx)
+	assert.NoError(t, err)
+}
+
 func TestCreateResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

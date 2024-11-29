@@ -101,22 +101,22 @@ func (n *SessionNode) forward(proc *process.Process) {
 
 		parents := n.values.Keys()
 		children := make([]*process.Process, 0, len(parents))
-		for _, parent := range parents {
-			children = append(children, parent.Fork())
-		}
+		outPcks := make([]*packet.Packet, 0, len(parents))
+		for i := 0; i < len(parents); i++ {
+			parent := parents[i]
+			child := parent.Fork()
 
-		outPcks := make([]*packet.Packet, 0, len(children))
-		for i := 0; i < len(children); i++ {
-			child := children[i]
-			if value, ok := n.values.Load(child); ok {
-				outPck := packet.New(types.NewSlice(value, inPck.Payload()))
-				n.tracer.Transform(inPck, outPck)
-				outPcks = append(outPcks, outPck)
-			} else {
+			value, ok := n.values.Load(parent)
+			if !ok {
 				child.Exit(nil)
-				children = append(children[:i], children[i+1:]...)
-				i--
+				continue
 			}
+
+			outPck := packet.New(types.NewSlice(value, inPck.Payload()))
+			n.tracer.Transform(inPck, outPck)
+
+			children = append(children, child)
+			outPcks = append(outPcks, outPck)
 		}
 
 		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {

@@ -6,6 +6,27 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 )
 
+// WatchResource creates a function to monitor changes in the resource store.
+func WatchResource[T resource.Resource](store resource.Store[T]) func(context.Context) (<-chan any, error) {
+	return func(ctx context.Context) (<-chan any, error) {
+		stream, err := store.Watch(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		signal := make(chan any)
+
+		go func() {
+			defer close(signal)
+			for event := range stream.Next() {
+				signal <- event
+			}
+		}()
+
+		return signal, nil
+	}
+}
+
 // CreateResource is a generic function to store and load resources.
 func CreateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
 	return func(ctx context.Context, resources []T) ([]T, error) {
