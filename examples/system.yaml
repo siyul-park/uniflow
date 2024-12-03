@@ -93,7 +93,7 @@
       - name: specs_update
         port: in
     out[3]:
-      - name: specs_delete
+      - name: specs_delete_with_query
         port: in
 
     out[4]:
@@ -116,7 +116,7 @@
       - name: secrets_update
         port: in
     out[10]:
-      - name: secrets_delete
+      - name: secrets_delete_with_query
         port: in
 
     out[11]:
@@ -139,7 +139,7 @@
       - name: charts_update
         port: in
     out[17]:
-      - name: charts_delete
+      - name: charts_delete_with_query
         port: in
 
     out[18]:
@@ -157,7 +157,7 @@
   when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
-      - name: specs_read
+      - name: specs_read_with_query
         port: in
     out[1]:
       - name: specs_watch_websocket
@@ -184,11 +184,16 @@
         }
 
 - kind: block
-  name: specs_read
+  name: specs_read_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: specs.read
     - kind: snippet
@@ -220,11 +225,16 @@
         }
 
 - kind: block
-  name: specs_delete
+  name: specs_delete_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: specs.delete
     - kind: snippet
@@ -266,8 +276,7 @@
     - kind: snippet
       language: javascript
       code: |
-        export default function (args) {
-          let { body, params } = args;
+        export default function ({ body, params }) {
           return { ...body, ...params };
         }
     - kind: native
@@ -344,7 +353,7 @@
   when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
-      - name: secrets_read
+      - name: secrets_read_with_query
         port: in
     out[1]:
       - name: secrets_watch_websocket
@@ -371,11 +380,16 @@
         }
 
 - kind: block
-  name: secrets_read
+  name: secrets_read_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: secrets.read
     - kind: snippet
@@ -407,11 +421,16 @@
         }
 
 - kind: block
-  name: secrets_delete
+  name: secrets_delete_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: secrets.delete
     - kind: snippet
@@ -453,8 +472,7 @@
     - kind: snippet
       language: javascript
       code: |
-        export default function (args) {
-          let { body, params } = args;
+        export default function ({ body, params }) {
           return { ...body, ...params };
         }
     - kind: native
@@ -479,8 +497,11 @@
   name: secrets_delete_with_params
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ body, params }) {
+          return { ...body, ...params };
+        }
     - kind: native
       opcode: secrets.delete
     - kind: snippet
@@ -525,7 +546,7 @@
   when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
-      - name: charts_read
+      - name: charts_read_with_query
         port: in
     out[1]:
       - name: charts_watch_websocket
@@ -552,11 +573,16 @@
         }
 
 - kind: block
-  name: charts_read
+  name: charts_read_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: charts.read
     - kind: snippet
@@ -588,11 +614,16 @@
         }
 
 - kind: block
-  name: charts_delete
+  name: charts_delete_with_query
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ query = {} } = {}) {
+          return Object.entries(query).flatMap(([key, values]) =>
+            values?.map((value) => ({ [key]: value })) || []
+          );
+        }
     - kind: native
       opcode: charts.delete
     - kind: snippet
@@ -634,8 +665,7 @@
     - kind: snippet
       language: javascript
       code: |
-        export default function (args) {
-          let { body, params } = args;
+        export default function ({ body, params }) {
           return { ...body, ...params };
         }
     - kind: native
@@ -660,8 +690,11 @@
   name: charts_delete_with_params
   specs:
     - kind: snippet
-      language: json
-      code: 'null'
+      language: javascript
+      code: |
+        export default function ({ body, params }) {
+          return { ...body, ...params };
+        }
     - kind: native
       opcode: charts.delete
     - kind: snippet

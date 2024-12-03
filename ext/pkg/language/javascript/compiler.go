@@ -29,6 +29,7 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 	if len(options) == 0 {
 		options = append(options, api.TransformOptions{
 			Format: api.FormatCommonJS,
+			Target: api.ES2016,
 		})
 	}
 

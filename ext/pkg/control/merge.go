@@ -35,7 +35,7 @@ func NewMergeNode() *MergeNode {
 	return n
 }
 
-func (n *MergeNode) action(proc *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
+func (n *MergeNode) action(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
 	outPck := packet.Merge(inPcks)
 
 	if _, ok := outPck.Payload().(types.Error); ok {

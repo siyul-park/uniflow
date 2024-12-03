@@ -12,5 +12,6 @@ func NewCompiler() language.Compiler {
 	return javascript.NewCompiler(api.TransformOptions{
 		Format: api.FormatCommonJS,
 		Loader: api.LoaderTS,
+		Target: api.ES2016,
 	})
 }
