@@ -4,7 +4,7 @@
 
 ## Specification
 
-- **limit**: Specifies the maximum number of retry attempts for processing a packet in case of failure. Once the retry limit is exceeded, the packet is routed to the error output port.
+- **threshold**: Specifies the maximum number of retry attempts for processing a packet in case of failure. Once the retry limit is exceeded, the packet is routed to the error output port.
 
 ## Ports
 
@@ -16,5 +16,5 @@
 
 ```yaml
 - kind: retry
-  limit: 3 # Retry up to 3 times
+  threshold: 3 # Retry up to 3 times
 ```

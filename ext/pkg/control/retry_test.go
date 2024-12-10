@@ -18,7 +18,7 @@ func TestRetryNodeCodec_Compile(t *testing.T) {
 	codec := NewRetryNodeCodec()
 
 	spec := &RetryNodeSpec{
-		Limit: 0,
+		Threshold: 0,
 	}
 
 	n, err := codec.Compile(spec)

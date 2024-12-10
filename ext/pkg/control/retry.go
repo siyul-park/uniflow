@@ -14,16 +14,16 @@ import (
 // RetryNodeSpec defines the configuration for RetryNode.
 type RetryNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Limit     int `map:"limit"`
+	Threshold int `map:"threshold"`
 }
 
 // RetryNode attempts to process packets up to a specified retry limit.
 type RetryNode struct {
-	limit   int
-	tracer  *packet.Tracer
-	inPort  *port.InPort
-	outPort *port.OutPort
-	errPort *port.OutPort
+	threshold int
+	tracer    *packet.Tracer
+	inPort    *port.InPort
+	outPort   *port.OutPort
+	errPort   *port.OutPort
 }
 
 var _ node.Node = (*RetryNode)(nil)
@@ -33,18 +33,18 @@ const KindRetry = "retry"
 // NewRetryNodeCodec creates a codec to build RetryNode from RetryNodeSpec.
 func NewRetryNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *RetryNodeSpec) (node.Node, error) {
-		return NewRetryNode(spec.Limit), nil
+		return NewRetryNode(spec.Threshold), nil
 	})
 }
 
 // NewRetryNode initializes a RetryNode with the given retry limit.
-func NewRetryNode(limit int) *RetryNode {
+func NewRetryNode(threshold int) *RetryNode {
 	n := &RetryNode{
-		limit:   limit,
-		tracer:  packet.NewTracer(),
-		inPort:  port.NewIn(),
-		outPort: port.NewOut(),
-		errPort: port.NewOut(),
+		threshold: threshold,
+		tracer:    packet.NewTracer(),
+		inPort:    port.NewIn(),
+		outPort:   port.NewOut(),
+		errPort:   port.NewOut(),
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
@@ -105,7 +105,7 @@ func (n *RetryNode) forward(proc *process.Process) {
 				actual, _ := attempts.LoadOrStore(inPck, 0)
 				count := actual.(int)
 
-				if count == n.limit {
+				if count == n.threshold {
 					n.tracer.Transform(inPck, backPck)
 					n.tracer.Write(errWriter, backPck)
 					return
