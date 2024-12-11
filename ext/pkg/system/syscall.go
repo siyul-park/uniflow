@@ -2,8 +2,10 @@ package system
 
 import (
 	"context"
+	"encoding/json"
+
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/types"
 
 	"github.com/siyul-park/uniflow/pkg/resource"
 )
@@ -68,25 +70,21 @@ func UpdateResource[T resource.Resource](store resource.Store[T]) func(context.C
 				continue
 			}
 
-			doc1, err := types.Marshal(origin)
+			json1, err := json.Marshal(patch)
+			if err != nil {
+				return nil, err
+			}
+			json2, err := json.Marshal(origin)
 			if err != nil {
 				return nil, err
 			}
 
-			doc2, err := types.Marshal(patch)
+			merge, err := jsonpatch.MergePatch(json1, json2)
 			if err != nil {
 				return nil, err
 			}
 
-			var pair []types.Value
-			if doc, ok := doc1.(types.Map); ok {
-				pair = append(pair, doc.Pairs()...)
-			}
-			if doc, ok := doc2.(types.Map); ok {
-				pair = append(pair, doc.Pairs()...)
-			}
-
-			if err := types.Unmarshal(types.NewMap(pair...), &resources[i]); err != nil {
+			if err := json.Unmarshal(merge, &resources[i]); err != nil {
 				return nil, err
 			}
 		}

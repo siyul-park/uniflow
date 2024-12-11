@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/dop251/goja v0.0.0-20241024094426-79f3a7efcdbd
+	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/evanw/esbuild v0.24.0
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
