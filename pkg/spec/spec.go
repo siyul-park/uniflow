@@ -2,7 +2,11 @@ package spec
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -161,6 +165,68 @@ func (m *Meta) GetEnv() map[string][]Value {
 // SetEnv sets the node's environment secrets.
 func (m *Meta) SetEnv(val map[string][]Value) {
 	m.Env = val
+}
+
+// IsBound checks if the spec is bound to any provided secrets.
+func (m *Meta) IsBound(secrets ...*secret.Secret) bool {
+	for _, values := range m.Env {
+		for _, val := range values {
+			var examples []*secret.Secret
+			if val.ID != uuid.Nil {
+				examples = append(examples, &secret.Secret{ID: val.ID})
+			}
+			if val.Name != "" {
+				examples = append(examples, &secret.Secret{Namespace: m.Namespace, Name: val.Name})
+			}
+
+			for _, scrt := range secrets {
+				if len(resource.Match(scrt, examples...)) > 0 {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// Bind processes the spec by resolving environment variables using provided secrets.
+func (m *Meta) Bind(secrets ...*secret.Secret) error {
+	for _, values := range m.Env {
+		ok := false
+		for i, val := range values {
+			example := &secret.Secret{
+				ID:        val.ID,
+				Namespace: m.Namespace,
+				Name:      val.Name,
+			}
+
+			var scrt *secret.Secret
+			for _, s := range secrets {
+				if (!s.IsIdentified() && !val.IsIdentified()) || len(resource.Match(s, example)) > 0 {
+					scrt = s
+					break
+				}
+			}
+
+			if scrt != nil {
+				v, err := template.Execute(val.Data, scrt.Data)
+				if err != nil {
+					return err
+				}
+
+				val.ID = scrt.GetID()
+				val.Name = scrt.GetName()
+				val.Data = v
+				values[i] = val
+			}
+
+			ok = ok || !val.IsIdentified() || scrt != nil
+		}
+		if !ok {
+			return errors.WithStack(encoding.ErrUnsupportedValue)
+		}
+	}
+	return nil
 }
 
 // IsIdentified checks whether the Value instance has a unique identifier or name.

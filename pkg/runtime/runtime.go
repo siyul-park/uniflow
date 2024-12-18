@@ -93,7 +93,7 @@ func New(config Config) *Runtime {
 	})
 
 	for _, kind := range config.Scheme.Kinds() {
-		chartTable.Insert(&chart.Chart{
+		_ = chartTable.Insert(&chart.Chart{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: config.Namespace,
 			Name:      kind,
@@ -195,7 +195,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				}
 			}
 
-			r.symbolLoader.Load(ctx, specs...)
+			_ = r.symbolLoader.Load(ctx, specs...)
 		case event, ok := <-secretStream.Next():
 			if !ok {
 				return nil
@@ -211,13 +211,17 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 
 			var specs []spec.Spec
 			for _, id := range r.symbolTable.Keys() {
-				sb := r.symbolTable.Lookup(id)
-				if sb != nil && r.scheme.IsBound(sb.Spec, secrets...) {
-					specs = append(specs, sb.Spec)
+				if sb := r.symbolTable.Lookup(id); sb != nil {
+					unstructured := &spec.Unstructured{}
+					if err := spec.Convert(sb.Spec, unstructured); err != nil {
+						return err
+					} else if unstructured.IsBound(secrets...) {
+						specs = append(specs, sb.Spec)
+					}
 				}
 			}
 
-			r.symbolLoader.Load(ctx, specs...)
+			_ = r.symbolLoader.Load(ctx, specs...)
 		case event, ok := <-chartStream.Next():
 			if !ok {
 				return nil
@@ -246,11 +250,11 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			}
 
 			for _, sp := range specs {
-				r.symbolTable.Free(sp.GetID())
+				_, _ = r.symbolTable.Free(sp.GetID())
 			}
 
-			r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
-			r.symbolLoader.Load(ctx, specs...)
+			_ = r.chartLoader.Load(ctx, &chart.Chart{ID: event.ID})
+			_ = r.symbolLoader.Load(ctx, specs...)
 		}
 	}
 }

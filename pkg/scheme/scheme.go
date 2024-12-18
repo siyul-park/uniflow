@@ -2,9 +2,6 @@ package scheme
 
 import (
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
-	"github.com/siyul-park/uniflow/pkg/template"
 	"reflect"
 	"slices"
 	"sync"
@@ -114,87 +111,6 @@ func (s *Scheme) Codec(kind string) Codec {
 	defer s.mu.RUnlock()
 
 	return s.codecs[kind]
-}
-
-// IsBound checks if the spec is bound to any of the provided secrets.
-func (s *Scheme) IsBound(sp spec.Spec, secrets ...*secret.Secret) bool {
-	for _, values := range sp.GetEnv() {
-		for _, val := range values {
-			examples := make([]*secret.Secret, 0, 2)
-			if val.ID != uuid.Nil {
-				examples = append(examples, &secret.Secret{ID: val.ID})
-			}
-			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: sp.GetNamespace(), Name: val.Name})
-			}
-
-			for _, scrt := range secrets {
-				if len(resource.Match(scrt, examples...)) > 0 {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// Bind processes the given spec.Spec by resolving its environment variables using provided secrets.
-func (s *Scheme) Bind(sp spec.Spec, secrets ...*secret.Secret) (spec.Spec, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	unstructured := &spec.Unstructured{}
-	if err := spec.Convert(sp, unstructured); err != nil {
-		return nil, err
-	}
-
-	env := map[string]any{}
-	for key, values := range unstructured.GetEnv() {
-		for i, val := range values {
-			example := &secret.Secret{
-				ID:        val.ID,
-				Namespace: sp.GetNamespace(),
-				Name:      val.Name,
-			}
-
-			var scrt *secret.Secret
-			for _, s := range secrets {
-				if (!s.IsIdentified() && !val.IsIdentified()) || len(resource.Match(s, example)) > 0 {
-					scrt = s
-					break
-				}
-			}
-
-			if scrt != nil {
-				v, err := template.Execute(val.Data, scrt.Data)
-				if err != nil {
-					return nil, err
-				}
-
-				val.ID = scrt.GetID()
-				val.Name = scrt.GetName()
-				val.Data = v
-				values[i] = val
-			}
-
-			if !val.IsIdentified() || scrt != nil {
-				env[key] = val.Data
-			}
-		}
-
-		if _, ok := env[key]; !ok {
-			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-	}
-
-	if len(env) > 0 {
-		if fields, err := template.Execute(unstructured.Fields, env); err != nil {
-			return nil, err
-		} else {
-			unstructured.Fields = fields.(map[string]any)
-		}
-	}
-	return unstructured, nil
 }
 
 // Decode converts the input spec.Spec into a registered structured type if one exists.

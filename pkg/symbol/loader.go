@@ -101,9 +101,12 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	var symbols []*Symbol
 	var errs []error
 	for _, sp := range specs {
-		if bind, err := l.scheme.Bind(sp, secrets...); err != nil {
+		unstructured := &spec.Unstructured{}
+		if err := spec.Convert(sp, unstructured); err != nil {
 			errs = append(errs, err)
-		} else if decode, err := l.scheme.Decode(bind); err != nil {
+		} else if err := unstructured.Bind(secrets...); err != nil {
+			errs = append(errs, err)
+		} else if decode, err := l.scheme.Decode(unstructured); err != nil {
 			errs = append(errs, err)
 		} else {
 			sp = decode

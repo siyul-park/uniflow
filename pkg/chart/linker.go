@@ -58,14 +58,20 @@ func (l *Linker) Link(chrt *Chart) error {
 
 		symbols := make([]*symbol.Symbol, 0, len(specs))
 		for _, sp := range specs {
-			if bind, err := l.scheme.Bind(sp); err != nil {
+			unstructured := &spec.Unstructured{}
+			if err := spec.Convert(sp, unstructured); err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
-			} else if decode, err := l.scheme.Decode(bind); err != nil {
+			} else if err := unstructured.Build(); err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
+				}
+				return nil, err
+			} else if decode, err := l.scheme.Decode(unstructured); err != nil {
+				for _, sb := range symbols {
+					_ = sb.Close()
 				}
 				return nil, err
 			} else {
@@ -75,7 +81,7 @@ func (l *Linker) Link(chrt *Chart) error {
 			n, err := l.scheme.Compile(sp)
 			if err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}

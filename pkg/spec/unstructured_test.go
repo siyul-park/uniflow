@@ -59,3 +59,26 @@ func TestUnstructured_GetSet(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, customValue, val)
 }
+
+func TestUnstructured_Build(t *testing.T) {
+	unstructured := &Unstructured{
+		Meta: Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.UUIDHyphenated(),
+			Env: map[string][]Value{
+				"FOO": {
+					{
+						Data: "foo",
+					},
+				},
+			},
+		},
+		Fields: map[string]any{
+			"foo": "{{ .FOO }}",
+		},
+	}
+
+	err := unstructured.Build()
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", unstructured.Fields["foo"])
+}

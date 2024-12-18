@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -82,4 +83,52 @@ func TestMeta_Set(t *testing.T) {
 	}
 	meta.SetEnv(env)
 	assert.Equal(t, env, meta.GetEnv())
+}
+
+func TestMeta_IsBound(t *testing.T) {
+	sec1 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+	sec2 := &secret.Secret{
+		ID: uuid.Must(uuid.NewV7()),
+	}
+
+	meta := &Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+		Env: map[string][]Value{
+			"FOO": {
+				{
+					ID:   sec1.ID,
+					Data: "foo",
+				},
+			},
+		},
+	}
+
+	assert.True(t, meta.IsBound(sec1))
+	assert.False(t, meta.IsBound(sec2))
+}
+
+func TestMeta_Bind(t *testing.T) {
+	sec := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
+	}
+	meta := &Meta{
+		ID:   uuid.Must(uuid.NewV7()),
+		Kind: faker.UUIDHyphenated(),
+		Env: map[string][]Value{
+			"FOO": {
+				{
+					ID:   sec.ID,
+					Data: "{{ . }}",
+				},
+			},
+		},
+	}
+
+	err := meta.Bind(sec)
+	assert.NoError(t, err)
+	assert.Equal(t, sec.Data, meta.GetEnv()["FOO"][0].Data)
 }

@@ -2,13 +2,14 @@ package spec
 
 import (
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
+	"github.com/siyul-park/uniflow/pkg/template"
 )
 
-// Unstructured is a flexible data structure implementing the Spec interface, allowing for dynamic key-value storage without strict marshaling.
+// Unstructured implements the Spec interface with a flexible key-value structure.
 type Unstructured struct {
-	// Meta provides common metadata fields for the specification.
-	Meta `json:",inline" bson:",inline" yaml:",inline" map:",inline"`
-	// Fields allows for flexible key-value storage.
+	Meta   `json:",inline" bson:",inline" yaml:",inline" map:",inline"`
 	Fields map[string]any `json:",inline" bson:",inline" yaml:",inline" map:",inline"`
 }
 
@@ -51,27 +52,65 @@ func (u *Unstructured) Get(key string) (any, bool) {
 	}
 }
 
-// Set assigns a value to the given key.
+// Set assigns a value to the specified key.
 func (u *Unstructured) Set(key string, val any) {
 	switch key {
 	case KeyID:
-		u.ID, _ = val.(uuid.UUID)
+		if v, ok := val.(uuid.UUID); ok {
+			u.ID = v
+		}
 	case KeyKind:
-		u.Kind, _ = val.(string)
+		if v, ok := val.(string); ok {
+			u.Kind = v
+		}
 	case KeyNamespace:
-		u.Namespace, _ = val.(string)
+		if v, ok := val.(string); ok {
+			u.Namespace = v
+		}
 	case KeyName:
-		u.Name, _ = val.(string)
+		if v, ok := val.(string); ok {
+			u.Name = v
+		}
 	case KeyAnnotations:
-		u.Annotations, _ = val.(map[string]string)
+		if v, ok := val.(map[string]string); ok {
+			u.Annotations = v
+		}
 	case KeyPorts:
-		u.Ports, _ = val.(map[string][]Port)
+		if v, ok := val.(map[string][]Port); ok {
+			u.Ports = v
+		}
 	case KeyEnv:
-		u.Env, _ = val.(map[string][]Value)
+		if v, ok := val.(map[string][]Value); ok {
+			u.Env = v
+		}
 	default:
 		if u.Fields == nil {
 			u.Fields = make(map[string]any)
 		}
 		u.Fields[key] = val
 	}
+}
+
+// Build processes the fields and resolves environment variables using template execution.
+func (u *Unstructured) Build() error {
+	env := make(map[string]any)
+	for key, values := range u.Env {
+		for _, val := range values {
+			env[key] = val.Data
+		}
+	}
+
+	if len(env) > 0 {
+		fields, err := template.Execute(u.Fields, env)
+		if err != nil {
+			return err
+		}
+
+		if fields, ok := fields.(map[string]any); ok {
+			u.Fields = fields
+		} else {
+			return errors.WithStack(encoding.ErrUnsupportedValue)
+		}
+	}
+	return nil
 }
