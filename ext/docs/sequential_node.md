@@ -1,6 +1,6 @@
-# Block Node
+# Sequential Node
 
-**The Block Node** systematically manages complex data processing flows and executes multiple sub-nodes sequentially. This allows you to organize data processing tasks clearly and efficiently.
+**The Sequential Node** systematically manages complex data processing flows and executes multiple sub-nodes sequentially. This allows you to organize data processing tasks clearly and efficiently.
 
 ## Specification
 
@@ -15,7 +15,7 @@
 ## Example
 
 ```yaml
-- kind: block
+- kind: sequential
   specs:
     - kind: snippet
       language: javascript

@@ -165,7 +165,7 @@
       - name: specs_watch_session
         port: io
 
-- kind: block
+- kind: sequential
   name: specs_create
   specs:
     - kind: snippet
@@ -183,7 +183,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_read_with_query
   specs:
     - kind: snippet
@@ -206,7 +206,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_update
   specs:
     - kind: snippet
@@ -224,7 +224,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_delete_with_query
   specs:
     - kind: snippet
@@ -246,7 +246,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_read_with_params
   specs:
     - kind: snippet
@@ -270,7 +270,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_update_with_params
   specs:
     - kind: snippet
@@ -297,7 +297,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: specs_delete_with_params
   specs:
     - kind: snippet
@@ -361,7 +361,7 @@
       - name: secrets_watch_session
         port: io
 
-- kind: block
+- kind: sequential
   name: secrets_create
   specs:
     - kind: snippet
@@ -379,7 +379,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_read_with_query
   specs:
     - kind: snippet
@@ -402,7 +402,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_update
   specs:
     - kind: snippet
@@ -420,7 +420,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_delete_with_query
   specs:
     - kind: snippet
@@ -442,7 +442,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_read_with_params
   specs:
     - kind: snippet
@@ -466,7 +466,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_update_with_params
   specs:
     - kind: snippet
@@ -493,7 +493,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: secrets_delete_with_params
   specs:
     - kind: snippet
@@ -554,7 +554,7 @@
       - name: charts_watch_session
         port: io
 
-- kind: block
+- kind: sequential
   name: charts_create
   specs:
     - kind: snippet
@@ -572,7 +572,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_read_with_query
   specs:
     - kind: snippet
@@ -595,7 +595,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_update
   specs:
     - kind: snippet
@@ -613,7 +613,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_delete_with_query
   specs:
     - kind: snippet
@@ -635,7 +635,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_read_with_params
   specs:
     - kind: snippet
@@ -659,7 +659,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_update_with_params
   specs:
     - kind: snippet
@@ -686,7 +686,7 @@
           };
         }
 
-- kind: block
+- kind: sequential
   name: charts_delete_with_params
   specs:
     - kind: snippet

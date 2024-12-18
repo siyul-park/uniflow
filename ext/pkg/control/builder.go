@@ -13,7 +13,7 @@ func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
 			n := sb.Node
-			if n, ok := n.(*BlockNode); ok {
+			if n, ok := n.(*SequentialNode); ok {
 				if err := n.Load(h); err != nil {
 					return err
 				}
@@ -22,7 +22,7 @@ func AddToHook() hook.Register {
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
 			n := sb.Node
-			if n, ok := n.(*BlockNode); ok {
+			if n, ok := n.(*SequentialNode); ok {
 				if err := n.Unload(h); err != nil {
 					return err
 				}
@@ -46,7 +46,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			codec scheme.Codec
 			spec  spec.Spec
 		}{
-			{KindBlock, NewBlockNodeCodec(s), &BlockNodeSpec{}},
+			{KindSequential, NewSequentialNodeCodec(s), &SequentialNodeSpec{}},
 			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
 			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
 			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},

@@ -8,7 +8,6 @@ Built-in extensions enable efficient processing of various tasks and maximize sy
 
 Precisely manage data flow.
 
-- **[Block Node](./docs/block_node.md)**: Systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
 - **[Fork Node](./docs/fork_node.md)**: Asynchronously branches data flows to perform independent tasks in parallel.
 - **[If Node](./docs/if_node.md)**: Evaluates conditions to split packets into two paths.
 - **[Loop Node](./docs/loop_node.md)**: Divides input packets into multiple sub-packets for repeated processing.
@@ -17,6 +16,7 @@ Precisely manage data flow.
 - **[Pipe Node](./docs/pipe_node.md)**: Processes input packets and distributes results to multiple output ports, allowing for reusable data flows.
 - **[Reduce Node](./docs/reduce_node.md)**: Repeatedly processes input data to produce a single output value, useful for data aggregation.
 - **[Retry Node](./docs/retry_node.md)**: Retries packet processing a specified number of times upon encountering errors.
+- **[Sequential Node](./docs/sequential_node.md)**: Systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
 - **[Session Node](./docs/session_node.md)**: Stores and manages process information, maintaining session continuity.
 - **[Snippet Node](./docs/snippet_node.md)**: Executes code snippets written in various programming languages to process input packets.
 - **[Split Node](./docs/split_node.md)**: Splits input packets into multiple parts for processing.

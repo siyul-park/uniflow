@@ -1,4 +1,4 @@
-- kind: block
+- kind: sequential
   name: hello_world
   specs:
     - kind: snippet
@@ -11,7 +11,7 @@
       - name: hello_world
         port: in
 
-- kind: block
+- kind: sequential
   name: good_bye
   specs:
     - kind: snippet

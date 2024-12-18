@@ -19,7 +19,7 @@ func TestAddToHook(t *testing.T) {
 	err := AddToHook().AddToHook(h)
 	assert.NoError(t, err)
 
-	n := NewBlockNode(&symbol.Symbol{
+	n := NewSequentialNode(&symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	})
 	defer n.Close()

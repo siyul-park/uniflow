@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBlockNodeCodec_Compile(t *testing.T) {
+func TestSequentialNodeCodec_Compile(t *testing.T) {
 	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
@@ -28,9 +28,9 @@ func TestBlockNodeCodec_Compile(t *testing.T) {
 
 	s.AddCodec(kind, c)
 
-	codec := NewBlockNodeCodec(s)
+	codec := NewSequentialNodeCodec(s)
 
-	spec := &BlockNodeSpec{
+	spec := &SequentialNodeSpec{
 		Specs: []spec.Spec{
 			&spec.Unstructured{
 				Meta: spec.Meta{
@@ -47,18 +47,18 @@ func TestBlockNodeCodec_Compile(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewBlockNode(t *testing.T) {
-	n := NewBlockNode()
+func TestNewSequentialNode(t *testing.T) {
+	n := NewSequentialNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestBlockNode_Load(t *testing.T) {
+func TestSequentialNode_Load(t *testing.T) {
 	sb := &symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewBlockNode(sb)
+	n := NewSequentialNode(sb)
 	defer n.Close()
 
 	count := 0
@@ -72,12 +72,12 @@ func TestBlockNode_Load(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestBlockNode_Unload(t *testing.T) {
+func TestSequentialNode_Unload(t *testing.T) {
 	sb := &symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewBlockNode(sb)
+	n := NewSequentialNode(sb)
 	defer n.Close()
 
 	count := 0
@@ -91,8 +91,8 @@ func TestBlockNode_Unload(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestBlockNode_Port(t *testing.T) {
-	n := NewBlockNode(&symbol.Symbol{
+func TestSequentialNode_Port(t *testing.T) {
+	n := NewSequentialNode(&symbol.Symbol{
 		Node: node.NewOneToOneNode(nil),
 	})
 	defer n.Close()
@@ -102,12 +102,12 @@ func TestBlockNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortErr))
 }
 
-func TestBlockNode_SendAndReceive(t *testing.T) {
+func TestSequentialNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleInputToNoOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewBlockNode(
+		n := NewSequentialNode(
 			&symbol.Symbol{
 				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 					return inPck, nil
@@ -145,7 +145,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewBlockNode(
+		n := NewSequentialNode(
 			&symbol.Symbol{
 				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 					return inPck, nil
@@ -196,7 +196,7 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewBlockNode(
+		n := NewSequentialNode(
 			&symbol.Symbol{
 				Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 					return nil, packet.New(types.NewString(faker.UUIDHyphenated()))
@@ -244,8 +244,8 @@ func TestBlockNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func BenchmarkBlockNode_SendAndReceive(b *testing.B) {
-	n := NewBlockNode(
+func BenchmarkSequentialNode_SendAndReceive(b *testing.B) {
+	n := NewSequentialNode(
 		&symbol.Symbol{
 			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 				return inPck, nil

@@ -10,14 +10,14 @@ import (
 	"sync"
 )
 
-// BlockNodeSpec defines the specification for creating a BlockNode.
-type BlockNodeSpec struct {
+// SequentialNodeSpec defines the specification for creating a SequentialNode.
+type SequentialNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Specs     []spec.Spec `map:"specs"`
 }
 
-// BlockNode systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
-type BlockNode struct {
+// SequentialNode systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
+type SequentialNode struct {
 	symbols   []*symbol.Symbol
 	inPorts   map[string]*port.InPort
 	outPorts  map[string]*port.OutPort
@@ -26,13 +26,13 @@ type BlockNode struct {
 	mu        sync.RWMutex
 }
 
-const KindBlock = "block"
+const KindSequential = "sequential"
 
-var _ node.Node = (*BlockNode)(nil)
+var _ node.Node = (*SequentialNode)(nil)
 
-// NewBlockNodeCodec creates a new codec for BlockNodeSpec.
-func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(sp *BlockNodeSpec) (node.Node, error) {
+// NewSequentialNodeCodec creates a new codec for SequentialNodeSpec.
+func NewSequentialNodeCodec(s *scheme.Scheme) scheme.Codec {
+	return scheme.CodecWithType(func(sp *SequentialNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(sp.Specs))
 		for _, sp := range sp.Specs {
 			sp, err := s.Decode(sp)
@@ -55,13 +55,13 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 				Node: n,
 			})
 		}
-		return NewBlockNode(symbols...), nil
+		return NewSequentialNode(symbols...), nil
 	})
 }
 
-// NewBlockNode creates a new BlockNode with the specified symbols.
-func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
-	n := &BlockNode{
+// NewSequentialNode creates a new SequentialNode with the specified symbols.
+func NewSequentialNode(nodes ...*symbol.Symbol) *SequentialNode {
+	n := &SequentialNode{
 		symbols:   nodes,
 		inPorts:   make(map[string]*port.InPort),
 		outPorts:  make(map[string]*port.OutPort),
@@ -99,7 +99,7 @@ func NewBlockNode(nodes ...*symbol.Symbol) *BlockNode {
 }
 
 // Load iterates over nodes in reverse order, invoking hook.Load for each node.
-func (n *BlockNode) Load(hook symbol.LoadHook) error {
+func (n *SequentialNode) Load(hook symbol.LoadHook) error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -113,7 +113,7 @@ func (n *BlockNode) Load(hook symbol.LoadHook) error {
 }
 
 // Unload iterates over nodes, invoking hook.Unload for each node.
-func (n *BlockNode) Unload(hook symbol.UnloadHook) error {
+func (n *SequentialNode) Unload(hook symbol.UnloadHook) error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -126,7 +126,7 @@ func (n *BlockNode) Unload(hook symbol.UnloadHook) error {
 }
 
 // In returns the input port with the specified name.
-func (n *BlockNode) In(name string) *port.InPort {
+func (n *SequentialNode) In(name string) *port.InPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -143,7 +143,7 @@ func (n *BlockNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *BlockNode) Out(name string) *port.OutPort {
+func (n *SequentialNode) Out(name string) *port.OutPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -159,8 +159,8 @@ func (n *BlockNode) Out(name string) *port.OutPort {
 	return nil
 }
 
-// Close closes all ports and sub-nodes associated with the BlockNode.
-func (n *BlockNode) Close() error {
+// Close closes all ports and sub-nodes associated with the SequentialNode.
+func (n *SequentialNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -184,7 +184,7 @@ func (n *BlockNode) Close() error {
 	return nil
 }
 
-func (n *BlockNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *SequentialNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
@@ -197,7 +197,7 @@ func (n *BlockNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Lis
 	})
 }
 
-func (n *BlockNode) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *SequentialNode) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
