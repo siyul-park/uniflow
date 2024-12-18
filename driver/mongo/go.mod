@@ -8,8 +8,11 @@ require (
 	github.com/siyul-park/uniflow v0.11.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tryvium-travels/memongo v0.12.0
-	go.mongodb.org/mongo-driver v1.17.1
+	go.mongodb.org/mongo-driver v1.9.1
+	go.mongodb.org/mongo-driver/v2 v2.0.0
 )
+
+require github.com/go-stack/stack v1.8.0 // indirect
 
 require (
 	github.com/acobaugh/osrelease v0.1.0 // indirect
