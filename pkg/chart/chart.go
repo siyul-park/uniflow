@@ -13,20 +13,14 @@ import (
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
 type Chart struct {
-	// Unique identifier of the chart.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	// Logical grouping or environment.
-	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-	// Name of the chart or cluster node.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	// Additional metadata.
-	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	// Specifications that define the nodes and their configurations within the chart.
-	Specs []spec.Spec `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
-	// Node connections within the chart.
-	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
-	// Sensitive configuration data or secrets.
-	Env map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
+	ID          uuid.UUID          `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	Namespace   string             `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Name        string             `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Annotations map[string]string  `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	Specs       []spec.Spec        `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
+	Inbound     map[string][]Port  `json:"inbound,omitempty" bson:"inbound,omitempty" yaml:"inbound,omitempty" map:"inbound,omitempty"`
+	Outbound    map[string][]Port  `json:"outbound,omitempty" bson:"outbound,omitempty" yaml:"outbound,omitempty" map:"outbound,omitempty"`
+	Env         map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Port represents a connection point for a node.
@@ -56,7 +50,7 @@ const (
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
 	KetSpecs       = "specs"
-	KeyPorts       = "ports"
+	KeyPorts       = "inbound"
 	KeyEnv         = "env"
 )
 
@@ -216,14 +210,24 @@ func (c *Chart) SetSpecs(val []spec.Spec) {
 	c.Specs = val
 }
 
-// GetPorts returns the chart's ports.
-func (c *Chart) GetPorts() map[string][]Port {
-	return c.Ports
+// GetInbound returns the chart's inbound.
+func (c *Chart) GetInbound() map[string][]Port {
+	return c.Inbound
 }
 
-// SetPorts sets the chart's ports.
-func (c *Chart) SetPorts(val map[string][]Port) {
-	c.Ports = val
+// SetInbound sets the chart's inbound.
+func (c *Chart) SetInbound(val map[string][]Port) {
+	c.Inbound = val
+}
+
+// GetOutbound returns the chart's outbound.
+func (c *Chart) GetOutbound() map[string][]Port {
+	return c.Outbound
+}
+
+// SetOutbound sets the chart's outbound.
+func (c *Chart) SetOutbound(val map[string][]Port) {
+	c.Outbound = val
 }
 
 // GetEnv returns the chart's environment data.

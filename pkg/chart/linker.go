@@ -99,29 +99,36 @@ func (l *Linker) Link(chrt *Chart) error {
 
 		for _, sb := range symbols {
 			if err := table.Insert(sb); err != nil {
-				table.Close()
+				_ = table.Close()
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}
 		}
 
 		n := NewClusterNode(table)
-		for name, ports := range chrt.GetPorts() {
+
+		for name, ports := range chrt.GetInbound() {
 			for _, port := range ports {
 				for _, sb := range symbols {
 					if port.Name == "" || sb.ID() == port.ID || sb.Name() == port.Name {
-						if in := sb.In(port.Port); in != nil {
-							n.Inbound(name, in)
-						}
-						if out := sb.Out(port.Port); out != nil {
-							n.Outbound(name, out)
-						}
+						n.Inbound(name, sb.ID(), port.Port)
 					}
 				}
 			}
 		}
+
+		for name, ports := range chrt.GetOutbound() {
+			for _, port := range ports {
+				for _, sb := range symbols {
+					if port.Name == "" || sb.ID() == port.ID || sb.Name() == port.Name {
+						n.Outbound(name, sb.ID(), port.Port)
+					}
+				}
+			}
+		}
+
 		return n, nil
 	})
 

@@ -106,8 +106,8 @@ func TestChart_Get(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			},
 		},
-		Ports: map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:   map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}},
+		Inbound: map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
+		Env:     map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}},
 	}
 
 	assert.Equal(t, chrt.ID, chrt.GetID())
@@ -115,7 +115,7 @@ func TestChart_Get(t *testing.T) {
 	assert.Equal(t, chrt.Name, chrt.GetName())
 	assert.Equal(t, chrt.Annotations, chrt.GetAnnotations())
 	assert.Equal(t, chrt.Specs, chrt.GetSpecs())
-	assert.Equal(t, chrt.Ports, chrt.GetPorts())
+	assert.Equal(t, chrt.Inbound, chrt.GetInbound())
 	assert.Equal(t, chrt.Env, chrt.GetEnv())
 }
 
@@ -167,8 +167,11 @@ func TestChart_Set(t *testing.T) {
 	chrt.SetSpecs(specs)
 	assert.Equal(t, specs, chrt.GetSpecs())
 
-	chrt.SetPorts(ports)
-	assert.Equal(t, ports, chrt.GetPorts())
+	chrt.SetInbound(ports)
+	assert.Equal(t, ports, chrt.GetInbound())
+
+	chrt.SetOutbound(ports)
+	assert.Equal(t, ports, chrt.GetOutbound())
 
 	chrt.SetEnv(env)
 	assert.Equal(t, env, chrt.GetEnv())

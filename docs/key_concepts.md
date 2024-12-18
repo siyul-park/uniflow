@@ -71,10 +71,11 @@ specs:
     name: sql
     driver: sqlite3
     source: file::{{ .FILENAME }}:?cache=shared
-ports:
+inbound:
   in:
     - name: sql
-      port: in      
+      port: in
+outbound:
   out:
     - name: sql
       port: out

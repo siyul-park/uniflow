@@ -38,7 +38,7 @@ func TestClusterNode_Inbound(t *testing.T) {
 	n := NewClusterNode(tb)
 	defer n.Close()
 
-	n.Inbound(node.PortIn, sb.In(node.PortIn))
+	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
 	assert.NotNil(t, n.In(node.PortIn))
 }
 
@@ -57,11 +57,49 @@ func TestClusterNode_Outbound(t *testing.T) {
 	n := NewClusterNode(tb)
 	defer n.Close()
 
-	n.Outbound(node.PortOut, sb.Out(node.PortOut))
+	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
 	assert.NotNil(t, n.Out(node.PortOut))
 }
 
-func NewClusterNode_SendAndReceive(t *testing.T) {
+func TestClusterNode_Symbols(t *testing.T) {
+	tb := symbol.NewTable()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	tb.Insert(sb)
+
+	n := NewClusterNode(tb)
+	defer n.Close()
+
+	symbols := n.Symbols()
+	assert.Len(t, symbols, 1)
+	assert.Equal(t, sb, symbols[0])
+}
+
+func TestClusterNode_Symbol(t *testing.T) {
+	tb := symbol.NewTable()
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	tb.Insert(sb)
+
+	n := NewClusterNode(tb)
+	defer n.Close()
+
+	assert.Equal(t, sb, n.Symbol(sb.ID()))
+}
+
+func TestClusterNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
@@ -81,8 +119,8 @@ func NewClusterNode_SendAndReceive(t *testing.T) {
 	n := NewClusterNode(tb)
 	defer n.Close()
 
-	n.Inbound(node.PortIn, sb.In(node.PortIn))
-	n.Outbound(node.PortOut, sb.Out(node.PortOut))
+	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
+	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))

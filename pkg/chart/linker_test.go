@@ -50,7 +50,7 @@ func TestLinker_Load(t *testing.T) {
 				},
 			},
 		},
-		Ports: map[string][]Port{
+		Inbound: map[string][]Port{
 			node.PortIn: {
 				{
 					Name: "dummy",

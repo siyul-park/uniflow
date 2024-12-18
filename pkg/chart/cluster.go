@@ -1,6 +1,7 @@
 package chart
 
 import (
+	"github.com/gofrs/uuid"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -33,20 +34,30 @@ func NewClusterNode(table *symbol.Table) *ClusterNode {
 }
 
 // Inbound sets up an input port and links it to the provided port.
-func (n *ClusterNode) Inbound(name string, prt *port.InPort) {
+func (n *ClusterNode) Inbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	inPort, ok1 := n.inPorts[name]
-	if !ok1 {
-		inPort = port.NewIn()
-		n.inPorts[name] = inPort
+	sb := n.table.Lookup(id)
+	if sb == nil {
+		return false
 	}
 
-	outPort, ok2 := n._outPorts[name]
+	prt := sb.In(target)
+	if prt == nil {
+		return false
+	}
+
+	inPort, ok1 := n.inPorts[source]
+	if !ok1 {
+		inPort = port.NewIn()
+		n.inPorts[source] = inPort
+	}
+
+	outPort, ok2 := n._outPorts[source]
 	if !ok2 {
 		outPort = port.NewOut()
-		n._outPorts[name] = outPort
+		n._outPorts[source] = outPort
 	}
 
 	if !ok1 {
@@ -57,23 +68,34 @@ func (n *ClusterNode) Inbound(name string, prt *port.InPort) {
 	}
 
 	outPort.Link(prt)
+	return true
 }
 
 // Outbound sets up an output port and links it to the provided port.
-func (n *ClusterNode) Outbound(name string, prt *port.OutPort) {
+func (n *ClusterNode) Outbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	inPort, ok1 := n._inPorts[name]
-	if !ok1 {
-		inPort = port.NewIn()
-		n._inPorts[name] = inPort
+	sb := n.table.Lookup(id)
+	if sb == nil {
+		return false
 	}
 
-	outPort, ok2 := n.outPorts[name]
+	prt := sb.Out(target)
+	if prt == nil {
+		return false
+	}
+
+	inPort, ok1 := n._inPorts[source]
+	if !ok1 {
+		inPort = port.NewIn()
+		n._inPorts[source] = inPort
+	}
+
+	outPort, ok2 := n.outPorts[source]
 	if !ok2 {
 		outPort = port.NewOut()
-		n.outPorts[name] = outPort
+		n.outPorts[source] = outPort
 	}
 
 	if !ok1 {
@@ -84,6 +106,29 @@ func (n *ClusterNode) Outbound(name string, prt *port.OutPort) {
 	}
 
 	prt.Link(inPort)
+	return true
+}
+
+// Symbols retrieves all symbols from the table.
+func (n *ClusterNode) Symbols() []*symbol.Symbol {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	var symbols []*symbol.Symbol
+	for _, key := range n.table.Keys() {
+		if sym := n.table.Lookup(key); sym != nil {
+			symbols = append(symbols, sym)
+		}
+	}
+	return symbols
+}
+
+// Symbol retrieves a specific symbol by UUID.
+func (n *ClusterNode) Symbol(id uuid.UUID) *symbol.Symbol {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.table.Lookup(id)
 }
 
 // In returns the input port by name.
