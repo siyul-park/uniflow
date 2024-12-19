@@ -272,10 +272,10 @@ func (t *Table) load(sb *Symbol) error {
 	linked := t.linked(sb)
 	for _, sb := range linked {
 		if t.active(sb) {
-			if err := t.call(sb, node.PortInit); err != nil {
+			if err := t.loadHooks.Load(sb); err != nil {
 				return err
 			}
-			if err := t.loadHooks.Load(sb); err != nil {
+			if err := t.call(sb, node.PortInit); err != nil {
 				return err
 			}
 		}
@@ -288,10 +288,10 @@ func (t *Table) unload(sb *Symbol) error {
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
 		if t.active(sb) {
-			if err := t.unloadHooks.Unload(sb); err != nil {
+			if err := t.call(sb, node.PortTerm); err != nil {
 				return err
 			}
-			if err := t.call(sb, node.PortTerm); err != nil {
+			if err := t.unloadHooks.Unload(sb); err != nil {
 				return err
 			}
 		}
