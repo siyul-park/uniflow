@@ -9,34 +9,21 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// LinkerConfig holds the configuration for the linker, including the scheme and hooks for loading/unloading symbols.
-type LinkerConfig struct {
-	Scheme      *scheme.Scheme      // Specifies the scheme, which defines symbol and node behavior.
-	LoadHooks   []symbol.LoadHook   // A list of hooks to be executed when symbols are loaded.
-	UnloadHooks []symbol.UnloadHook // A list of hooks to be executed when symbols are unloaded.
-}
-
 // Linker manages chart loading and unloading.
 type Linker struct {
-	scheme      *scheme.Scheme
-	codecs      map[string]scheme.Codec
-	loadHooks   symbol.LoadHooks
-	unloadHooks symbol.UnloadHooks
-	mu          sync.RWMutex
+	scheme *scheme.Scheme
+	codecs map[string]scheme.Codec
+	mu     sync.RWMutex
 }
 
 var _ LinkHook = (*Linker)(nil)
 var _ UnlinkHook = (*Linker)(nil)
-var _ symbol.LoadHook = (*Linker)(nil)
-var _ symbol.UnloadHook = (*Linker)(nil)
 
 // NewLinker creates a new Linker.
-func NewLinker(config LinkerConfig) *Linker {
+func NewLinker(s *scheme.Scheme) *Linker {
 	return &Linker{
-		scheme:      config.Scheme,
-		codecs:      make(map[string]scheme.Codec),
-		loadHooks:   config.LoadHooks,
-		unloadHooks: config.UnloadHooks,
+		scheme: s,
+		codecs: make(map[string]scheme.Codec),
 	}
 }
 
@@ -94,10 +81,7 @@ func (l *Linker) Link(chrt *Chart) error {
 			})
 		}
 
-		n := NewClusterNode(symbols, symbol.TableOption{
-			LoadHooks:   []symbol.LoadHook{l.loadHooks},
-			UnloadHooks: []symbol.UnloadHook{l.unloadHooks},
-		})
+		n := symbol.NewCluster(symbols)
 
 		for name, ports := range chrt.GetInbound() {
 			for _, port := range ports {
@@ -141,27 +125,5 @@ func (l *Linker) Unlink(chrt *Chart) error {
 
 	l.scheme.RemoveCodec(kind)
 	delete(l.codecs, kind)
-	return nil
-}
-
-// Load loads the symbol's node if it is a ClusterNode.
-func (l *Linker) Load(sb *symbol.Symbol) error {
-	n := sb.Node
-	if n, ok := n.(*ClusterNode); ok {
-		if err := n.Load(nil); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Unload unloads the symbol's node if it is a ClusterNode.
-func (l *Linker) Unload(sb *symbol.Symbol) error {
-	n := sb.Node
-	if n, ok := n.(*ClusterNode); ok {
-		if err := n.Unload(nil); err != nil {
-			return err
-		}
-	}
 	return nil
 }

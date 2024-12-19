@@ -1,10 +1,7 @@
-package chart
+package symbol
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -12,19 +9,60 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-func TestNewClusterNode(t *testing.T) {
-	n := NewClusterNode(nil)
+func TestNewClusterLoadHook(t *testing.T) {
+	h := NewClusterLoadHook(LoadFunc(func(_ *Symbol) error {
+		return nil
+	}))
+
+	n := NewCluster(nil)
+	defer n.Close()
+
+	sb := &Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: n,
+	}
+
+	err := h.Load(sb)
+	assert.NoError(t, err)
+}
+
+func TestNewClusterUnloadHook(t *testing.T) {
+	h := NewClusterUnloadHook(UnloadFunc(func(_ *Symbol) error {
+		return nil
+	}))
+
+	n := NewCluster(nil)
+	defer n.Close()
+
+	sb := &Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: n,
+	}
+
+	err := h.Unload(sb)
+	assert.NoError(t, err)
+}
+
+func TestNewCluster(t *testing.T) {
+	n := NewCluster(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestClusterNode_Keys(t *testing.T) {
-	sb := &symbol.Symbol{
+func TestCluster_Keys(t *testing.T) {
+	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -32,7 +70,7 @@ func TestClusterNode_Keys(t *testing.T) {
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewClusterNode([]*symbol.Symbol{sb})
+	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
 	keys := n.Keys()
@@ -40,8 +78,8 @@ func TestClusterNode_Keys(t *testing.T) {
 	assert.Equal(t, sb.ID(), keys[0])
 }
 
-func TestClusterNode_Lookup(t *testing.T) {
-	sb := &symbol.Symbol{
+func TestCluster_Lookup(t *testing.T) {
+	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -49,14 +87,14 @@ func TestClusterNode_Lookup(t *testing.T) {
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewClusterNode([]*symbol.Symbol{sb})
+	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
 	assert.Equal(t, sb, n.Lookup(sb.ID()))
 }
 
-func TestClusterNode_Inbound(t *testing.T) {
-	sb := &symbol.Symbol{
+func TestCluster_Inbound(t *testing.T) {
+	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -64,15 +102,15 @@ func TestClusterNode_Inbound(t *testing.T) {
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewClusterNode([]*symbol.Symbol{sb})
+	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
 	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
 	assert.NotNil(t, n.In(node.PortIn))
 }
 
-func TestClusterNode_Outbound(t *testing.T) {
-	sb := &symbol.Symbol{
+func TestCluster_Outbound(t *testing.T) {
+	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -80,22 +118,22 @@ func TestClusterNode_Outbound(t *testing.T) {
 		Node: node.NewOneToOneNode(nil),
 	}
 
-	n := NewClusterNode([]*symbol.Symbol{sb})
+	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
 	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
 	assert.NotNil(t, n.Out(node.PortOut))
 }
 
-func TestClusterNode_Load(t *testing.T) {
-	sb1 := &symbol.Symbol{
+func TestCluster_Load(t *testing.T) {
+	sb1 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	sb2 := &symbol.Symbol{
+	sb2 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -110,7 +148,7 @@ func TestClusterNode_Load(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	n := NewClusterNode([]*symbol.Symbol{sb1, sb2})
+	n := NewCluster([]*Symbol{sb1, sb2})
 	defer n.Close()
 
 	err := n.Load(nil)
@@ -120,15 +158,15 @@ func TestClusterNode_Load(t *testing.T) {
 	assert.Equal(t, 1, out.Links())
 }
 
-func TestClusterNode_Unload(t *testing.T) {
-	sb1 := &symbol.Symbol{
+func TestCluster_Unload(t *testing.T) {
+	sb1 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	sb2 := &symbol.Symbol{
+	sb2 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -143,7 +181,7 @@ func TestClusterNode_Unload(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	n := NewClusterNode([]*symbol.Symbol{sb1, sb2})
+	n := NewCluster([]*Symbol{sb1, sb2})
 	defer n.Close()
 
 	_ = n.Load(nil)
@@ -155,11 +193,11 @@ func TestClusterNode_Unload(t *testing.T) {
 	assert.Equal(t, 0, out.Links())
 }
 
-func TestClusterNode_SendAndReceive(t *testing.T) {
+func TestCluster_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	sb := &symbol.Symbol{
+	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
@@ -169,7 +207,7 @@ func TestClusterNode_SendAndReceive(t *testing.T) {
 		}),
 	}
 
-	n := NewClusterNode([]*symbol.Symbol{sb})
+	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
 	_ = n.Load(nil)

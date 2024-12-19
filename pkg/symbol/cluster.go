@@ -1,19 +1,17 @@
-package chart
+package symbol
 
 import (
 	"github.com/gofrs/uuid"
-	"sync"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/symbol"
+	"sync"
 )
 
-// ClusterNode manages the ports and symbol table for the cluster.
-type ClusterNode struct {
-	symbols   []*symbol.Symbol
-	table     *symbol.Table
+// Cluster manages the ports and symbol table for the cluster.
+type Cluster struct {
+	symbols   []*Symbol
+	table     *Table
 	inPorts   map[string]*port.InPort
 	outPorts  map[string]*port.OutPort
 	_inPorts  map[string]*port.InPort
@@ -21,13 +19,33 @@ type ClusterNode struct {
 	mu        sync.RWMutex
 }
 
-var _ node.Node = (*ClusterNode)(nil)
+var _ node.Node = (*Cluster)(nil)
 
-// NewClusterNode creates a new ClusterNode with the provided symbol table.
-func NewClusterNode(symbols []*symbol.Symbol, opts ...symbol.TableOption) *ClusterNode {
-	return &ClusterNode{
+// NewClusterLoadHook creates a LoadHook for Cluster nodes.
+func NewClusterLoadHook(hook LoadHook) LoadHook {
+	return LoadFunc(func(sb *Symbol) error {
+		if cluster, ok := sb.Node.(*Cluster); ok {
+			return cluster.Load(hook)
+		}
+		return nil
+	})
+}
+
+// NewClusterUnloadHook creates an UnloadHook for Cluster nodes.
+func NewClusterUnloadHook(hook UnloadHook) UnloadHook {
+	return UnloadFunc(func(sb *Symbol) error {
+		if cluster, ok := sb.Node.(*Cluster); ok {
+			return cluster.Unload(hook)
+		}
+		return nil
+	})
+}
+
+// NewCluster creates a new Cluster with the provided symbol table.
+func NewCluster(symbols []*Symbol) *Cluster {
+	return &Cluster{
 		symbols:   symbols,
-		table:     symbol.NewTable(opts...),
+		table:     NewTable(),
 		inPorts:   make(map[string]*port.InPort),
 		outPorts:  make(map[string]*port.OutPort),
 		_inPorts:  make(map[string]*port.InPort),
@@ -36,7 +54,7 @@ func NewClusterNode(symbols []*symbol.Symbol, opts ...symbol.TableOption) *Clust
 }
 
 // Keys returns all keys from the symbol table.
-func (n *ClusterNode) Keys() []uuid.UUID {
+func (n *Cluster) Keys() []uuid.UUID {
 	keys := make([]uuid.UUID, 0, len(n.symbols))
 	for _, sb := range n.symbols {
 		keys = append(keys, sb.ID())
@@ -45,7 +63,7 @@ func (n *ClusterNode) Keys() []uuid.UUID {
 }
 
 // Lookup retrieves a symbol from the table by its UUID.
-func (n *ClusterNode) Lookup(id uuid.UUID) *symbol.Symbol {
+func (n *Cluster) Lookup(id uuid.UUID) *Symbol {
 	for _, sb := range n.symbols {
 		if sb.ID() == id {
 			return sb
@@ -55,7 +73,7 @@ func (n *ClusterNode) Lookup(id uuid.UUID) *symbol.Symbol {
 }
 
 // Inbound links an external input to an internal symbol's input port.
-func (n *ClusterNode) Inbound(source string, id uuid.UUID, target string) bool {
+func (n *Cluster) Inbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -93,7 +111,7 @@ func (n *ClusterNode) Inbound(source string, id uuid.UUID, target string) bool {
 }
 
 // Outbound links an external output to an internal symbol's output port.
-func (n *ClusterNode) Outbound(source string, id uuid.UUID, target string) bool {
+func (n *Cluster) Outbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -131,7 +149,7 @@ func (n *ClusterNode) Outbound(source string, id uuid.UUID, target string) bool 
 }
 
 // Load processes all initialization hooks for symbols.
-func (n *ClusterNode) Load(hook symbol.LoadHook) error {
+func (n *Cluster) Load(hook LoadHook) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -143,7 +161,7 @@ func (n *ClusterNode) Load(hook symbol.LoadHook) error {
 			continue
 		}
 
-		sb := &symbol.Symbol{
+		sb := &Symbol{
 			Spec: sb.Spec,
 			Node: node.NoCloser(sb.Node),
 		}
@@ -155,7 +173,7 @@ func (n *ClusterNode) Load(hook symbol.LoadHook) error {
 }
 
 // Unload processes all termination hooks for symbols.
-func (n *ClusterNode) Unload(hook symbol.UnloadHook) error {
+func (n *Cluster) Unload(hook UnloadHook) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -166,7 +184,7 @@ func (n *ClusterNode) Unload(hook symbol.UnloadHook) error {
 }
 
 // In returns the input port by name.
-func (n *ClusterNode) In(name string) *port.InPort {
+func (n *Cluster) In(name string) *port.InPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -174,7 +192,7 @@ func (n *ClusterNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port by name.
-func (n *ClusterNode) Out(name string) *port.OutPort {
+func (n *Cluster) Out(name string) *port.OutPort {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -182,7 +200,7 @@ func (n *ClusterNode) Out(name string) *port.OutPort {
 }
 
 // Close shuts down all ports and the symbol table.
-func (n *ClusterNode) Close() error {
+func (n *Cluster) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -211,7 +229,7 @@ func (n *ClusterNode) Close() error {
 	return nil
 }
 
-func (n *ClusterNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *Cluster) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)
@@ -224,7 +242,7 @@ func (n *ClusterNode) inbound(inPort *port.InPort, outPort *port.OutPort) port.L
 	})
 }
 
-func (n *ClusterNode) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
+func (n *Cluster) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
 		writer := outPort.Open(proc)

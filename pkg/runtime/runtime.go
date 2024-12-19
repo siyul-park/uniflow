@@ -65,6 +65,9 @@ func New(config Config) *Runtime {
 		config.ChartStore = chart.NewStore()
 	}
 
+	config.Hook.AddLoadHook(symbol.NewClusterLoadHook(config.Hook))
+	config.Hook.AddUnloadHook(symbol.NewClusterUnloadHook(config.Hook))
+
 	symbolTable := symbol.NewTable(symbol.TableOption{
 		LoadHooks:   []symbol.LoadHook{config.Hook},
 		UnloadHooks: []symbol.UnloadHook{config.Hook},
@@ -77,11 +80,11 @@ func New(config Config) *Runtime {
 		SecretStore: config.SecretStore,
 	})
 
-	chartLinker := chart.NewLinker(chart.LinkerConfig{
-		LoadHooks:   []symbol.LoadHook{config.Hook},
-		UnloadHooks: []symbol.UnloadHook{config.Hook},
-		Scheme:      config.Scheme,
-	})
+	chartLinker := chart.NewLinker(config.Scheme)
+
+	config.Hook.AddLinkHook(chartLinker)
+	config.Hook.AddUnlinkHook(chartLinker)
+
 	chartTable := chart.NewTable(chart.TableOption{
 		LinkHooks:   []chart.LinkHook{config.Hook},
 		UnlinkHooks: []chart.UnlinkHook{config.Hook},
@@ -91,11 +94,6 @@ func New(config Config) *Runtime {
 		ChartStore:  config.ChartStore,
 		SecretStore: config.SecretStore,
 	})
-
-	config.Hook.AddLoadHook(chartLinker)
-	config.Hook.AddUnloadHook(chartLinker)
-	config.Hook.AddLinkHook(chartLinker)
-	config.Hook.AddUnlinkHook(chartLinker)
 
 	for _, kind := range config.Scheme.Kinds() {
 		_ = chartTable.Insert(&chart.Chart{

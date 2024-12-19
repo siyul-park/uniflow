@@ -1,7 +1,6 @@
 package chart
 
 import (
-	"github.com/siyul-park/uniflow/pkg/symbol"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -23,9 +22,7 @@ func TestLinker_Link(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	l := NewLinker(LinkerConfig{
-		Scheme: s,
-	})
+	l := NewLinker(s)
 
 	scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
 	chrt := &Chart{
@@ -78,9 +75,7 @@ func TestLinker_Link(t *testing.T) {
 func TestLinker_Unlink(t *testing.T) {
 	s := scheme.New()
 
-	l := NewLinker(LinkerConfig{
-		Scheme: s,
-	})
+	l := NewLinker(s)
 
 	chrt := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
@@ -94,48 +89,4 @@ func TestLinker_Unlink(t *testing.T) {
 	err := l.Unlink(chrt)
 	assert.NoError(t, err)
 	assert.NotContains(t, s.Kinds(), chrt.GetName())
-}
-
-func TestLinker_Load(t *testing.T) {
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	l := NewLinker(LinkerConfig{
-		Scheme: s,
-	})
-
-	sb := &symbol.Symbol{
-		Spec: &spec.Meta{
-			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
-		},
-		Node: NewClusterNode(nil),
-	}
-	defer sb.Close()
-
-	err := l.Load(sb)
-	assert.NoError(t, err)
-}
-
-func TestLinker_Unload(t *testing.T) {
-	s := scheme.New()
-	kind := faker.UUIDHyphenated()
-
-	l := NewLinker(LinkerConfig{
-		Scheme: s,
-	})
-
-	sb := &symbol.Symbol{
-		Spec: &spec.Meta{
-			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
-		},
-		Node: NewClusterNode(nil),
-	}
-	defer sb.Close()
-
-	_ = l.Load(sb)
-
-	err := l.Unload(sb)
-	assert.NoError(t, err)
 }
