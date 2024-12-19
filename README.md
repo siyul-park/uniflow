@@ -71,7 +71,7 @@ Try a basic HTTP request handler using [ping.yaml](./examples/ping.yaml):
 Start the workflow with:
 
 ```sh
-./dist/uniflow start --from-specs ./examples/ping.yaml --env=PORT=8000
+./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
 ```
 
 Verify by calling the HTTP endpoint:

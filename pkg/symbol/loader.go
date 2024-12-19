@@ -106,6 +106,8 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 			errs = append(errs, err)
 		} else if err := unstructured.Bind(secrets...); err != nil {
 			errs = append(errs, err)
+		} else if err := unstructured.Build(); err != nil {
+			errs = append(errs, err)
 		} else if decode, err := l.scheme.Decode(unstructured); err != nil {
 			errs = append(errs, err)
 		} else {

@@ -71,7 +71,7 @@ make build
 다음 명령어로 워크플로우를 실행합니다:
 
 ```sh
-./dist/uniflow start --from-specs ./examples/ping.yaml --env=PORT=8000
+./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
 ```
 
 정상 작동 여부를 확인하려면 HTTP 엔드포인트를 호출하세요:
