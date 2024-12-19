@@ -17,10 +17,11 @@ Precisely manage data flow.
 - **[Pipe Node](./docs/pipe_node.md)**: Processes input packets and distributes results to multiple output ports, allowing for reusable data flows.
 - **[Reduce Node](./docs/reduce_node.md)**: Repeatedly processes input data to produce a single output value, useful for data aggregation.
 - **[Retry Node](./docs/retry_node.md)**: Retries packet processing a specified number of times upon encountering errors.
-- **[Sequential Node](./docs/sequential_node.md)**: Systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
 - **[Session Node](./docs/session_node.md)**: Stores and manages process information, maintaining session continuity.
 - **[Snippet Node](./docs/snippet_node.md)**: Executes code snippets written in various programming languages to process input packets.
 - **[Split Node](./docs/split_node.md)**: Splits input packets into multiple parts for processing.
+- **[Step Node](./docs/step_node.md)**: Systematically manages complex data processing flows and executes multiple
+  sub-nodes steply.
 - **[Switch Node](./docs/switch_node.md)**: Routes input packets to one of several ports based on conditions.
 - **[Wait Node](./docs/wait_node.md)**: Introduces a specified delay in processing to pace workflows or await external conditions.
 

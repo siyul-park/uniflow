@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestSequentialNodeCodec_Compile(t *testing.T) {
+func TestStepNodeCodec_Compile(t *testing.T) {
 	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
@@ -20,9 +20,9 @@ func TestSequentialNodeCodec_Compile(t *testing.T) {
 
 	s.AddCodec(kind, c)
 
-	codec := NewSequentialNodeCodec(s)
+	codec := NewStepNodeCodec(s)
 
-	sp := &SequentialNodeSpec{
+	sp := &StepNodeSpec{
 		Specs: []spec.Spec{
 			&spec.Unstructured{
 				Meta: spec.Meta{

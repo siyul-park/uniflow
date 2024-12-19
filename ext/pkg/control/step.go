@@ -7,17 +7,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// SequentialNodeSpec defines the specification for creating a SequentialNode.
-type SequentialNodeSpec struct {
+// StepNodeSpec defines the specification for creating a StepNode.
+type StepNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Specs     []spec.Spec `map:"specs"`
 }
 
-const KindSequential = "sequential"
+const KindStep = "step"
 
-// NewSequentialNodeCodec creates a new codec for SequentialNodeSpec.
-func NewSequentialNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(sp *SequentialNodeSpec) (node.Node, error) {
+// NewStepNodeCodec creates a new codec for StepNodeSpec.
+func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
+	return scheme.CodecWithType(func(sp *StepNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(sp.Specs))
 		for _, sp := range sp.Specs {
 			sp, err := s.Decode(sp)

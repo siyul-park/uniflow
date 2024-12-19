@@ -1,6 +1,7 @@
-# Sequential Node
+# Step Node
 
-**The Sequential Node** systematically manages complex data processing flows and executes multiple sub-nodes sequentially. This allows you to organize data processing tasks clearly and efficiently.
+**The Step Node** systematically manages complex data processing flows and executes multiple sub-nodes sequentially.
+This allows you to organize data processing tasks clearly and efficiently.
 
 ## Specification
 
@@ -15,7 +16,7 @@
 ## Example
 
 ```yaml
-- kind: sequential
+- kind: step
   specs:
     - kind: snippet
       language: javascript
