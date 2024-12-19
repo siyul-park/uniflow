@@ -18,14 +18,12 @@ import (
 )
 
 func TestNewClusterNode(t *testing.T) {
-	n := NewClusterNode(symbol.NewTable())
+	n := NewClusterNode(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestClusterNode_Inbound(t *testing.T) {
-	tb := symbol.NewTable()
-
+func TestClusterNode_Keys(t *testing.T) {
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
@@ -33,9 +31,40 @@ func TestClusterNode_Inbound(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	tb.Insert(sb)
 
-	n := NewClusterNode(tb)
+	n := NewClusterNode([]*symbol.Symbol{sb})
+	defer n.Close()
+
+	keys := n.Keys()
+	assert.Len(t, keys, 1)
+	assert.Equal(t, sb.ID(), keys[0])
+}
+
+func TestClusterNode_Lookup(t *testing.T) {
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+
+	n := NewClusterNode([]*symbol.Symbol{sb})
+	defer n.Close()
+
+	assert.Equal(t, sb, n.Lookup(sb.ID()))
+}
+
+func TestClusterNode_Inbound(t *testing.T) {
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+
+	n := NewClusterNode([]*symbol.Symbol{sb})
 	defer n.Close()
 
 	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
@@ -43,8 +72,6 @@ func TestClusterNode_Inbound(t *testing.T) {
 }
 
 func TestClusterNode_Outbound(t *testing.T) {
-	tb := symbol.NewTable()
-
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
@@ -52,58 +79,85 @@ func TestClusterNode_Outbound(t *testing.T) {
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	tb.Insert(sb)
 
-	n := NewClusterNode(tb)
+	n := NewClusterNode([]*symbol.Symbol{sb})
 	defer n.Close()
 
 	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
 	assert.NotNil(t, n.Out(node.PortOut))
 }
 
-func TestClusterNode_Symbols(t *testing.T) {
-	tb := symbol.NewTable()
-
-	sb := &symbol.Symbol{
+func TestClusterNode_Load(t *testing.T) {
+	sb1 := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	tb.Insert(sb)
-
-	n := NewClusterNode(tb)
+	sb2 := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+			Ports: map[string][]spec.Port{
+				node.PortOut: {
+					{
+						ID:   sb1.ID(),
+						Port: node.PortIn,
+					},
+				},
+			},
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	n := NewClusterNode([]*symbol.Symbol{sb1, sb2})
 	defer n.Close()
 
-	symbols := n.Symbols()
-	assert.Len(t, symbols, 1)
-	assert.Equal(t, sb, symbols[0])
+	err := n.Load(nil)
+	assert.NoError(t, err)
+
+	out := sb2.Node.Out(node.PortOut)
+	assert.Equal(t, 1, out.Links())
 }
 
-func TestClusterNode_Symbol(t *testing.T) {
-	tb := symbol.NewTable()
-
-	sb := &symbol.Symbol{
+func TestClusterNode_Unload(t *testing.T) {
+	sb1 := &symbol.Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.Word(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
-	tb.Insert(sb)
-
-	n := NewClusterNode(tb)
+	sb2 := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.Word(),
+			Ports: map[string][]spec.Port{
+				node.PortOut: {
+					{
+						ID:   sb1.ID(),
+						Port: node.PortIn,
+					},
+				},
+			},
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	n := NewClusterNode([]*symbol.Symbol{sb1, sb2})
 	defer n.Close()
 
-	assert.Equal(t, sb, n.Symbol(sb.ID()))
+	_ = n.Load(nil)
+
+	err := n.Unload(nil)
+	assert.NoError(t, err)
+
+	out := sb2.Node.Out(node.PortOut)
+	assert.Equal(t, 0, out.Links())
 }
 
 func TestClusterNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
-
-	tb := symbol.NewTable()
 
 	sb := &symbol.Symbol{
 		Spec: &spec.Meta{
@@ -114,10 +168,11 @@ func TestClusterNode_SendAndReceive(t *testing.T) {
 			return inPck, nil
 		}),
 	}
-	tb.Insert(sb)
 
-	n := NewClusterNode(tb)
+	n := NewClusterNode([]*symbol.Symbol{sb})
 	defer n.Close()
+
+	_ = n.Load(nil)
 
 	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
 	n.Outbound(node.PortOut, sb.ID(), node.PortOut)

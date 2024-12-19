@@ -12,6 +12,7 @@ import (
 
 // ClusterNode manages the ports and symbol table for the cluster.
 type ClusterNode struct {
+	symbols   []*symbol.Symbol
 	table     *symbol.Table
 	inPorts   map[string]*port.InPort
 	outPorts  map[string]*port.OutPort
@@ -23,9 +24,10 @@ type ClusterNode struct {
 var _ node.Node = (*ClusterNode)(nil)
 
 // NewClusterNode creates a new ClusterNode with the provided symbol table.
-func NewClusterNode(table *symbol.Table) *ClusterNode {
+func NewClusterNode(symbols []*symbol.Symbol, opts ...symbol.TableOption) *ClusterNode {
 	return &ClusterNode{
-		table:     table,
+		symbols:   symbols,
+		table:     symbol.NewTable(opts...),
 		inPorts:   make(map[string]*port.InPort),
 		outPorts:  make(map[string]*port.OutPort),
 		_inPorts:  make(map[string]*port.InPort),
@@ -33,12 +35,31 @@ func NewClusterNode(table *symbol.Table) *ClusterNode {
 	}
 }
 
-// Inbound sets up an input port and links it to the provided port.
+// Keys returns all keys from the symbol table.
+func (n *ClusterNode) Keys() []uuid.UUID {
+	keys := make([]uuid.UUID, 0, len(n.symbols))
+	for _, sb := range n.symbols {
+		keys = append(keys, sb.ID())
+	}
+	return keys
+}
+
+// Lookup retrieves a symbol from the table by its UUID.
+func (n *ClusterNode) Lookup(id uuid.UUID) *symbol.Symbol {
+	for _, sb := range n.symbols {
+		if sb.ID() == id {
+			return sb
+		}
+	}
+	return nil
+}
+
+// Inbound links an external input to an internal symbol's input port.
 func (n *ClusterNode) Inbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	sb := n.table.Lookup(id)
+	sb := n.Lookup(id)
 	if sb == nil {
 		return false
 	}
@@ -71,12 +92,12 @@ func (n *ClusterNode) Inbound(source string, id uuid.UUID, target string) bool {
 	return true
 }
 
-// Outbound sets up an output port and links it to the provided port.
+// Outbound links an external output to an internal symbol's output port.
 func (n *ClusterNode) Outbound(source string, id uuid.UUID, target string) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	sb := n.table.Lookup(id)
+	sb := n.Lookup(id)
 	if sb == nil {
 		return false
 	}
@@ -109,26 +130,39 @@ func (n *ClusterNode) Outbound(source string, id uuid.UUID, target string) bool 
 	return true
 }
 
-// Symbols retrieves all symbols from the table.
-func (n *ClusterNode) Symbols() []*symbol.Symbol {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// Load processes all initialization hooks for symbols.
+func (n *ClusterNode) Load(hook symbol.LoadHook) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	var symbols []*symbol.Symbol
-	for _, key := range n.table.Keys() {
-		if sym := n.table.Lookup(key); sym != nil {
-			symbols = append(symbols, sym)
+	n.table.AddLoadHook(hook)
+	defer n.table.RemoveLoadHook(hook)
+
+	for _, sb := range n.symbols {
+		if n.table.Lookup(sb.ID()) != nil {
+			continue
+		}
+
+		sb := &symbol.Symbol{
+			Spec: sb.Spec,
+			Node: node.NoCloser(sb.Node),
+		}
+		if err := n.table.Insert(sb); err != nil {
+			return err
 		}
 	}
-	return symbols
+	return nil
 }
 
-// Symbol retrieves a specific symbol by UUID.
-func (n *ClusterNode) Symbol(id uuid.UUID) *symbol.Symbol {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
+// Unload processes all termination hooks for symbols.
+func (n *ClusterNode) Unload(hook symbol.UnloadHook) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	return n.table.Lookup(id)
+	n.table.AddUnloadHook(hook)
+	defer n.table.RemoveUnloadHook(hook)
+
+	return n.table.Close()
 }
 
 // In returns the input port by name.
@@ -154,6 +188,12 @@ func (n *ClusterNode) Close() error {
 
 	if err := n.table.Close(); err != nil {
 		return err
+	}
+
+	for _, sb := range n.symbols {
+		if err := sb.Close(); err != nil {
+			return err
+		}
 	}
 
 	for _, inPort := range n.inPorts {

@@ -47,6 +47,78 @@ func NewTable(opts ...TableOption) *Table {
 	}
 }
 
+// AddLoadHook adds a LoadHook to the table. Returns false if it already exists.
+func (t *Table) AddLoadHook(hook LoadHook) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if hook == nil {
+		return false
+	}
+
+	for _, h := range t.loadHooks {
+		if h == hook {
+			return false
+		}
+	}
+	t.loadHooks = append(t.loadHooks, hook)
+	return true
+}
+
+// RemoveLoadHook removes a LoadHook from the table. Returns true if removed.
+func (t *Table) RemoveLoadHook(hook LoadHook) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if hook == nil {
+		return false
+	}
+
+	for i, h := range t.loadHooks {
+		if h == hook {
+			t.loadHooks = append(t.loadHooks[:i], t.loadHooks[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// AddUnloadHook adds an UnloadHook to the table. Returns false if it already exists.
+func (t *Table) AddUnloadHook(hook UnloadHook) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if hook == nil {
+		return false
+	}
+
+	for _, h := range t.unloadHooks {
+		if h == hook {
+			return false
+		}
+	}
+	t.unloadHooks = append(t.unloadHooks, hook)
+	return true
+}
+
+// RemoveUnloadHook removes an UnloadHook from the table. Returns true if removed.
+func (t *Table) RemoveUnloadHook(hook UnloadHook) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if hook == nil {
+		return false
+	}
+
+	for i, h := range t.unloadHooks {
+		if h == hook {
+			t.unloadHooks = append(t.unloadHooks[:i], t.unloadHooks[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // Insert adds a new symbol to the table based on the provided spec.
 func (t *Table) Insert(sb *Symbol) error {
 	t.mu.Lock()
@@ -294,6 +366,8 @@ func (t *Table) links(sb *Symbol) {
 
 func (t *Table) unlinks(sb *Symbol) {
 	for name, ports := range sb.Ports() {
+		out := sb.Out(name)
+
 		for _, port := range ports {
 			id := port.ID
 			if id == uuid.Nil {
@@ -303,6 +377,11 @@ func (t *Table) unlinks(sb *Symbol) {
 			ref, ok := t.symbols[id]
 			if !ok {
 				continue
+			}
+
+			in := ref.In(port.Port)
+			if out != nil && in != nil {
+				out.Unlink(in)
 			}
 
 			references := t.references[ref.ID()]

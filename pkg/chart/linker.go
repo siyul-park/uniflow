@@ -20,13 +20,15 @@ type LinkerConfig struct {
 type Linker struct {
 	scheme      *scheme.Scheme
 	codecs      map[string]scheme.Codec
-	loadHooks   []symbol.LoadHook
-	unloadHooks []symbol.UnloadHook
+	loadHooks   symbol.LoadHooks
+	unloadHooks symbol.UnloadHooks
 	mu          sync.RWMutex
 }
 
 var _ LinkHook = (*Linker)(nil)
 var _ UnlinkHook = (*Linker)(nil)
+var _ symbol.LoadHook = (*Linker)(nil)
+var _ symbol.UnloadHook = (*Linker)(nil)
 
 // NewLinker creates a new Linker.
 func NewLinker(config LinkerConfig) *Linker {
@@ -92,22 +94,10 @@ func (l *Linker) Link(chrt *Chart) error {
 			})
 		}
 
-		table := symbol.NewTable(symbol.TableOption{
-			LoadHooks:   l.loadHooks,
-			UnloadHooks: l.unloadHooks,
+		n := NewClusterNode(symbols, symbol.TableOption{
+			LoadHooks:   []symbol.LoadHook{l.loadHooks},
+			UnloadHooks: []symbol.UnloadHook{l.unloadHooks},
 		})
-
-		for _, sb := range symbols {
-			if err := table.Insert(sb); err != nil {
-				_ = table.Close()
-				for _, sb := range symbols {
-					_ = sb.Close()
-				}
-				return nil, err
-			}
-		}
-
-		n := NewClusterNode(table)
 
 		for name, ports := range chrt.GetInbound() {
 			for _, port := range ports {
@@ -151,5 +141,27 @@ func (l *Linker) Unlink(chrt *Chart) error {
 
 	l.scheme.RemoveCodec(kind)
 	delete(l.codecs, kind)
+	return nil
+}
+
+// Load loads the symbol's node if it is a ClusterNode.
+func (l *Linker) Load(sb *symbol.Symbol) error {
+	n := sb.Node
+	if n, ok := n.(*ClusterNode); ok {
+		if err := n.Load(nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Unload unloads the symbol's node if it is a ClusterNode.
+func (l *Linker) Unload(sb *symbol.Symbol) error {
+	n := sb.Node
+	if n, ok := n.(*ClusterNode); ok {
+		if err := n.Unload(nil); err != nil {
+			return err
+		}
+	}
 	return nil
 }

@@ -83,14 +83,19 @@ func New(config Config) *Runtime {
 		Scheme:      config.Scheme,
 	})
 	chartTable := chart.NewTable(chart.TableOption{
-		LinkHooks:   []chart.LinkHook{chartLinker, config.Hook},
-		UnlinkHooks: []chart.UnlinkHook{chartLinker, config.Hook},
+		LinkHooks:   []chart.LinkHook{config.Hook},
+		UnlinkHooks: []chart.UnlinkHook{config.Hook},
 	})
 	chartLoader := chart.NewLoader(chart.LoaderConfig{
 		Table:       chartTable,
 		ChartStore:  config.ChartStore,
 		SecretStore: config.SecretStore,
 	})
+
+	config.Hook.AddLoadHook(chartLinker)
+	config.Hook.AddUnloadHook(chartLinker)
+	config.Hook.AddLinkHook(chartLinker)
+	config.Hook.AddUnlinkHook(chartLinker)
 
 	for _, kind := range config.Scheme.Kinds() {
 		_ = chartTable.Insert(&chart.Chart{

@@ -11,6 +11,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTable_AddAndRemoveLoadHook(t *testing.T) {
+	tb := NewTable()
+	defer tb.Close()
+
+	hook := LoadFunc(func(_ *Symbol) error {
+		return nil
+	})
+
+	ok := tb.AddLoadHook(hook)
+	assert.True(t, ok)
+
+	ok = tb.AddLoadHook(hook)
+	assert.False(t, ok)
+
+	ok = tb.RemoveLoadHook(hook)
+	assert.True(t, ok)
+
+	ok = tb.RemoveLoadHook(hook)
+	assert.False(t, ok)
+}
+
+func TestTable_AddAndRemoveUnloadHook(t *testing.T) {
+	tb := NewTable()
+	defer tb.Close()
+
+	hook := UnloadFunc(func(_ *Symbol) error {
+		return nil
+	})
+
+	ok := tb.AddUnloadHook(hook)
+	assert.True(t, ok)
+
+	ok = tb.AddUnloadHook(hook)
+	assert.False(t, ok)
+
+	ok = tb.RemoveUnloadHook(hook)
+	assert.True(t, ok)
+
+	ok = tb.RemoveUnloadHook(hook)
+	assert.False(t, ok)
+}
+
 func TestTable_Insert(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 

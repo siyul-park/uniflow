@@ -11,7 +11,7 @@ import (
 
 // LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Table       *Table       // Symbol table for storing loaded symbols
+	Table       *Table       // Lookup table for storing loaded symbols
 	ChartStore  Store        // ChartStore to retrieve charts from
 	SecretStore secret.Store // SecretStore to retrieve secrets from
 }
