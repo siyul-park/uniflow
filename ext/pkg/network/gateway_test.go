@@ -74,7 +74,7 @@ func TestWebSocketUpgradeNode_Port(t *testing.T) {
 	assert.NotNil(t, n.In(node.PortIO))
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
+	assert.NotNil(t, n.Out(node.PortError))
 }
 
 func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
@@ -115,7 +115,7 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		io.Link(n.In(node.PortIO))
 
 		err := port.NewIn()
-		n.Out(node.PortErr).Link(err)
+		n.Out(node.PortError).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)

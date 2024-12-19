@@ -25,7 +25,7 @@ func TestOneToOneNode_Port(t *testing.T) {
 
 	assert.NotNil(t, n.In(PortIn))
 	assert.NotNil(t, n.Out(PortOut))
-	assert.NotNil(t, n.Out(PortErr))
+	assert.NotNil(t, n.Out(PortError))
 }
 
 func TestOneToOneNode_SendAndReceive(t *testing.T) {
@@ -113,7 +113,7 @@ func TestOneToOneNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(PortIn))
 
 		err := port.NewIn()
-		n.Out(PortErr).Link(err)
+		n.Out(PortError).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)

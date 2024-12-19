@@ -64,7 +64,7 @@ func TestHTTPListenNode_Port(t *testing.T) {
 	defer n.Close()
 
 	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
+	assert.NotNil(t, n.Out(node.PortError))
 }
 
 func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
@@ -289,7 +289,7 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 		n.Out(node.PortOut).Link(out)
 
 		err := port.NewIn()
-		n.Out(node.PortErr).Link(err)
+		n.Out(node.PortError).Link(err)
 
 		out.AddListener(port.ListenFunc(func(proc *process.Process) {
 			outReader := out.Open(proc)

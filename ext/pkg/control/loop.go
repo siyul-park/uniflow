@@ -66,7 +66,7 @@ func (n *LoopNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
-	case node.PortErr:
+	case node.PortError:
 		return n.errPort
 	default:
 		if node.NameOfPort(name) == node.PortOut {

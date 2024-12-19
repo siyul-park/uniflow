@@ -68,7 +68,7 @@ func (n *ManyToOneNode) Out(name string) *port.OutPort {
 	switch name {
 	case PortOut:
 		return n.outPort
-	case PortErr:
+	case PortError:
 		return n.errPort
 	default:
 		return nil

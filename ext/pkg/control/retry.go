@@ -67,7 +67,7 @@ func (n *RetryNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPort
-	case node.PortErr:
+	case node.PortError:
 		return n.errPort
 	default:
 		return nil

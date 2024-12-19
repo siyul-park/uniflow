@@ -2,36 +2,9 @@ package control
 
 import (
 	"github.com/siyul-park/uniflow/ext/pkg/language"
-	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/symbol"
 )
-
-// AddToHook returns a function that adds hook to the provided hook.
-func AddToHook() hook.Register {
-	return hook.RegisterFunc(func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*SequentialNode); ok {
-				if err := n.Load(h); err != nil {
-					return err
-				}
-			}
-			return nil
-		}))
-		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*SequentialNode); ok {
-				if err := n.Unload(h); err != nil {
-					return err
-				}
-			}
-			return nil
-		}))
-		return nil
-	})
-}
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
 func AddToScheme(module *language.Module, lang string) scheme.Register {

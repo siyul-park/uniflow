@@ -133,7 +133,7 @@ func TestIfNode_SendAndReceive(t *testing.T) {
 		in.Link(n.In(node.PortIn))
 
 		err := port.NewIn()
-		n.Out(node.PortErr).Link(err)
+		n.Out(node.PortError).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)

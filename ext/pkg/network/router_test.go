@@ -202,17 +202,17 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 		{
 			whenMethod: http.MethodGet,
 			whenPath:   "/b/c/d",
-			expectPort: node.PortErr,
+			expectPort: node.PortError,
 		},
 		{
 			whenMethod: http.MethodPost,
 			whenPath:   "/a/b/c",
-			expectPort: node.PortErr,
+			expectPort: node.PortError,
 		},
 		{
 			whenMethod: http.MethodOptions,
 			whenPath:   "/a/b/c",
-			expectPort: node.PortErr,
+			expectPort: node.PortError,
 		},
 	}
 

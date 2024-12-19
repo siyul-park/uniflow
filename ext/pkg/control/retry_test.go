@@ -39,7 +39,7 @@ func TestRetryNode_Port(t *testing.T) {
 
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
+	assert.NotNil(t, n.Out(node.PortError))
 }
 
 func TestRetryNode_SendAndReceive(t *testing.T) {

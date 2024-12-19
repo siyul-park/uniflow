@@ -56,7 +56,7 @@ func (n *OneToManyNode) Out(name string) *port.OutPort {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if name == PortErr {
+	if name == PortError {
 		return n.errPort
 	}
 	if NameOfPort(name) == PortOut {

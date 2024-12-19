@@ -25,7 +25,7 @@ func TestManyToOneNode_Port(t *testing.T) {
 
 	assert.NotNil(t, n.In(PortWithIndex(PortIn, 0)))
 	assert.NotNil(t, n.Out(PortOut))
-	assert.NotNil(t, n.Out(PortErr))
+	assert.NotNil(t, n.Out(PortError))
 }
 
 func TestManyToOneNode_SendAndReceive(t *testing.T) {
@@ -139,7 +139,7 @@ func TestManyToOneNode_SendAndReceive(t *testing.T) {
 		in1.Link(n.In(PortWithIndex(PortIn, 1)))
 
 		err := port.NewIn()
-		n.Out(PortErr).Link(err)
+		n.Out(PortError).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)

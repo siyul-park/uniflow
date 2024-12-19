@@ -38,7 +38,7 @@ func TestPipeNode_Port(t *testing.T) {
 
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortErr))
+	assert.NotNil(t, n.Out(node.PortError))
 	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
 	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
@@ -109,7 +109,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		in.Link(n2.In(node.PortIn))
 
 		err := port.NewIn()
-		n2.Out(node.PortErr).Link(err)
+		n2.Out(node.PortError).Link(err)
 
 		proc := process.New()
 		defer proc.Exit(nil)

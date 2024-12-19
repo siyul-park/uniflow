@@ -50,3 +50,70 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Contains(t, sb.Ins(), node.PortIn)
 	assert.Contains(t, sb.Outs(), node.PortOut)
 }
+
+func TestSymbol_Setter(t *testing.T) {
+	n := node.NewOneToOneNode(nil)
+	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      faker.UUIDHyphenated(),
+		Namespace: resource.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+		Annotations: map[string]string{
+			faker.UUIDHyphenated(): faker.UUIDHyphenated(),
+		},
+		Ports: map[string][]spec.Port{
+			node.PortOut: {
+				{
+					ID:   uuid.Must(uuid.NewV7()),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+
+	sb := &Symbol{
+		Spec: meta,
+		Node: n,
+	}
+
+	id := uuid.Must(uuid.NewV7())
+	sb.SetID(id)
+	assert.Equal(t, id, sb.ID())
+
+	namespace := faker.Word()
+	sb.SetNamespace(namespace)
+	assert.Equal(t, namespace, sb.Namespace())
+
+	name := faker.UUIDHyphenated()
+	sb.SetName(name)
+	assert.Equal(t, name, sb.Name())
+
+	annotations := map[string]string{
+		faker.UUIDHyphenated(): faker.UUIDHyphenated(),
+	}
+	sb.SetAnnotations(annotations)
+	assert.Equal(t, annotations, sb.Annotations())
+
+	ports := map[string][]spec.Port{
+		node.PortIn: {
+			{
+				ID:   uuid.Must(uuid.NewV7()),
+				Port: node.PortOut,
+			},
+		},
+	}
+	sb.SetPorts(ports)
+	assert.Equal(t, ports, sb.Ports())
+
+	env := map[string][]spec.Value{
+		faker.UUIDHyphenated(): {
+			{
+				Data: faker.UUIDHyphenated(),
+			},
+		},
+	}
+	sb.SetEnv(env)
+	assert.Equal(t, env, sb.Env())
+}

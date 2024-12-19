@@ -123,7 +123,6 @@ func main() {
 	schemeBuilder.Register(network.AddToScheme())
 	schemeBuilder.Register(system.AddToScheme(operators))
 
-	hookBuilder.Register(control.AddToHook())
 	hookBuilder.Register(network.AddToHook())
 	hookBuilder.Register(system.AddToHook())
 

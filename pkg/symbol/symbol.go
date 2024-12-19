@@ -25,6 +25,11 @@ func (s *Symbol) ID() uuid.UUID {
 	return s.Spec.GetID()
 }
 
+// SetID sets the unique identifier of the Symbol.
+func (s *Symbol) SetID(id uuid.UUID) {
+	s.Spec.SetID(id)
+}
+
 // Kind returns the type of the Symbol.
 func (s *Symbol) Kind() string {
 	return s.Spec.GetKind()
@@ -35,9 +40,19 @@ func (s *Symbol) Namespace() string {
 	return s.Spec.GetNamespace()
 }
 
+// SetNamespace sets the namespace of the Symbol.
+func (s *Symbol) SetNamespace(namespace string) {
+	s.Spec.SetNamespace(namespace)
+}
+
 // Name returns the human-readable name of the Symbol.
 func (s *Symbol) Name() string {
 	return s.Spec.GetName()
+}
+
+// SetName sets the human-readable name of the Symbol.
+func (s *Symbol) SetName(name string) {
+	s.Spec.SetName(name)
 }
 
 // Annotations returns the annotations associated with the Symbol.
@@ -45,14 +60,29 @@ func (s *Symbol) Annotations() map[string]string {
 	return s.Spec.GetAnnotations()
 }
 
+// SetAnnotations sets the annotations of the Symbol.
+func (s *Symbol) SetAnnotations(annotations map[string]string) {
+	s.Spec.SetAnnotations(annotations)
+}
+
 // Ports returns the ports associated with the Symbol.
 func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
 }
 
+// SetPorts sets the ports of the Symbol.
+func (s *Symbol) SetPorts(ports map[string][]spec.Port) {
+	s.Spec.SetPorts(ports)
+}
+
 // Env returns the environment variables associated with the Symbol.
 func (s *Symbol) Env() map[string][]spec.Value {
 	return s.Spec.GetEnv()
+}
+
+// SetEnv sets the environment variables of the Symbol.
+func (s *Symbol) SetEnv(env map[string][]spec.Value) {
+	s.Spec.SetEnv(env)
 }
 
 // Ins returns the input ports associated with the Symbol.
