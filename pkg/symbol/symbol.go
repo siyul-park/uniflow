@@ -19,6 +19,7 @@ type Symbol struct {
 }
 
 var _ node.Node = (*Symbol)(nil)
+var _ node.Proxy = (*Symbol)(nil)
 
 // ID returns the unique identifier of the Symbol.
 func (s *Symbol) ID() uuid.UUID {
@@ -143,6 +144,11 @@ func (s *Symbol) Out(name string) *port.OutPort {
 		}
 	}
 	return p
+}
+
+// Unwrap returns the underlying Node from the Symbol.
+func (s *Symbol) Unwrap() node.Node {
+	return s.Node
 }
 
 // Close frees all resources held by the Symbol.

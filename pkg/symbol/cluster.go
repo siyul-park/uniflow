@@ -24,7 +24,7 @@ var _ node.Node = (*Cluster)(nil)
 // NewClusterLoadHook creates a LoadHook for Cluster nodes.
 func NewClusterLoadHook(hook LoadHook) LoadHook {
 	return LoadFunc(func(sb *Symbol) error {
-		if cluster, ok := sb.Node.(*Cluster); ok {
+		if cluster, ok := node.Unwrap(sb.Node).(*Cluster); ok {
 			return cluster.Load(hook)
 		}
 		return nil
@@ -34,7 +34,7 @@ func NewClusterLoadHook(hook LoadHook) LoadHook {
 // NewClusterUnloadHook creates an UnloadHook for Cluster nodes.
 func NewClusterUnloadHook(hook UnloadHook) UnloadHook {
 	return UnloadFunc(func(sb *Symbol) error {
-		if cluster, ok := sb.Node.(*Cluster); ok {
+		if cluster, ok := node.Unwrap(sb.Node).(*Cluster); ok {
 			return cluster.Unload(hook)
 		}
 		return nil

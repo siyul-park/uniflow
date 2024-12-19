@@ -26,6 +26,7 @@ type SignalNode struct {
 	outPort *port.OutPort
 	signal  <-chan any
 	done    chan struct{}
+	close   chan struct{}
 	mu      sync.RWMutex
 }
 
@@ -54,7 +55,7 @@ func NewSignalNodeCodec(signals map[string]func(context.Context) (<-chan any, er
 		n := NewSignalNode(signal)
 
 		go func() {
-			<-n.Done()
+			<-n.Wait()
 			cancel()
 		}()
 
@@ -68,6 +69,7 @@ func NewSignalNode(signal <-chan any) *SignalNode {
 		outPort: port.NewOut(),
 		signal:  signal,
 		done:    nil,
+		close:   make(chan struct{}),
 	}
 }
 
@@ -122,12 +124,20 @@ func (n *SignalNode) Shutdown() {
 	n.done = nil
 }
 
-// Done returns a channel that is closed when the node is shut down.
+// Done returns a channel that is closed when the node is shutdown.
 func (n *SignalNode) Done() <-chan struct{} {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.done
+}
+
+// Wait returns a channel that is closed when the node is close.
+func (n *SignalNode) Wait() <-chan struct{} {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	return n.close
 }
 
 // In returns nil as SignalNode does not have input ports.
@@ -145,6 +155,17 @@ func (n *SignalNode) Out(name string) *port.OutPort {
 
 // Close stops the node, releases resources, and makes it unusable.
 func (n *SignalNode) Close() error {
+	func() {
+		n.mu.Lock()
+		defer n.mu.Unlock()
+
+		select {
+		case <-n.close:
+		default:
+			close(n.close)
+		}
+	}()
+
 	n.Shutdown()
 	n.outPort.Close()
 	return nil

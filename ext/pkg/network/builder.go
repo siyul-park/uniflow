@@ -2,6 +2,7 @@ package network
 
 import (
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -11,15 +12,13 @@ import (
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*HTTPListenNode); ok {
+			if n, ok := node.Unwrap(sb.Node).(*HTTPListenNode); ok {
 				return n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*HTTPListenNode); ok {
+			if n, ok := node.Unwrap(sb.Node).(*HTTPListenNode); ok {
 				return n.Shutdown()
 			}
 			return nil

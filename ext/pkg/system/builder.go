@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -20,15 +21,13 @@ var _ scheme.Register = (*SchemeRegister)(nil)
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*SignalNode); ok {
+			if n, ok := node.Unwrap(sb.Node).(*SignalNode); ok {
 				n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			n := sb.Node
-			if n, ok := n.(*SignalNode); ok {
+			if n, ok := node.Unwrap(sb.Node).(*SignalNode); ok {
 				n.Shutdown()
 			}
 			return nil

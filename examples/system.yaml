@@ -160,9 +160,7 @@
       - name: specs_read_with_query
         port: in
     out[1]:
-      - name: specs_watch_websocket
-        port: io
-      - name: specs_watch_session
+      - name: specs_watch
         port: io
 
 - kind: sequential
@@ -320,33 +318,42 @@
           };
         }
 
-- kind: gateway
-  name: specs_watch_websocket
-  protocol: websocket
+- kind: block
+  name: specs_watch
+  specs:
+    - kind: gateway
+      name: websocket
+      protocol: websocket
 
-- kind: signal
-  name: specs_watch_signal
-  opcode: specs.watch
-  ports:
-    out:
-      - name: specs_watch_session
-        port: in
+    - kind: signal
+      name: signal
+      opcode: specs.watch
+      ports:
+        out:
+          - name: session
+            port: in
 
-- kind: session
-  name: specs_watch_session
-  ports:
-    out:
-      - name: specs_watch_downstream
-        port: in
+    - kind: session
+      name: session
+      ports:
+        out:
+          - name: downstream
+            port: in
 
-- kind: snippet
-  name: specs_watch_downstream
-  language: cel
-  code: 'self[1]'
-  ports:
-    out:
-      - name: specs_watch_websocket
-        port: in
+    - kind: snippet
+      name: downstream
+      language: cel
+      code: 'self[1]'
+      ports:
+        out:
+          - name: websocket
+            port: in
+  inbound:
+    io:
+      - name: websocket
+        port: io
+      - name: session
+        port: io
 
 - kind: if
   name: secrets_read_or_watch
@@ -356,9 +363,7 @@
       - name: secrets_read_with_query
         port: in
     out[1]:
-      - name: secrets_watch_websocket
-        port: io
-      - name: secrets_watch_session
+      - name: secrets_watch
         port: io
 
 - kind: sequential
@@ -513,33 +518,42 @@
           };
         }
 
-- kind: gateway
-  name: secrets_watch_websocket
-  protocol: websocket
+- kind: block
+  name: secrets_watch
+  specs:
+    - kind: gateway
+      name: websocket
+      protocol: websocket
 
-- kind: signal
-  name: secrets_watch_signal
-  opcode: secrets.watch
-  ports:
-    out:
-      - name: secrets_watch_session
-        port: in
+    - kind: signal
+      name: signal
+      opcode: secrets.watch
+      ports:
+        out:
+          - name: session
+            port: in
 
-- kind: session
-  name: secrets_watch_session
-  ports:
-    out:
-      - name: secrets_watch_downstream
-        port: in
+    - kind: session
+      name: session
+      ports:
+        out:
+          - name: downstream
+            port: in
 
-- kind: snippet
-  name: secrets_watch_downstream
-  language: cel
-  code: 'self[1]'
-  ports:
-    out:
-      - name: secrets_watch_websocket
-        port: in
+    - kind: snippet
+      name: downstream
+      language: cel
+      code: 'self[1]'
+      ports:
+        out:
+          - name: websocket
+            port: in
+  inbound:
+    io:
+      - name: websocket
+        port: io
+      - name: session
+        port: io
 
 - kind: if
   name: charts_read_or_watch
@@ -549,9 +563,7 @@
       - name: charts_read_with_query
         port: in
     out[1]:
-      - name: charts_watch_websocket
-        port: io
-      - name: charts_watch_session
+      - name: charts_watch
         port: io
 
 - kind: sequential
@@ -706,33 +718,42 @@
           };
         }
 
-- kind: gateway
-  name: charts_watch_websocket
-  protocol: websocket
+- kind: block
+  name: charts_watch
+  specs:
+    - kind: gateway
+      name: websocket
+      protocol: websocket
 
-- kind: signal
-  name: charts_watch_signal
-  opcode: charts.watch
-  ports:
-    out:
-      - name: charts_watch_session
-        port: in
+    - kind: signal
+      name: signal
+      opcode: charts.watch
+      ports:
+        out:
+          - name: session
+            port: in
 
-- kind: session
-  name: charts_watch_session
-  ports:
-    out:
-      - name: charts_watch_downstream
-        port: in
+    - kind: session
+      name: session
+      ports:
+        out:
+          - name: downstream
+            port: in
 
-- kind: snippet
-  name: charts_watch_downstream
-  language: cel
-  code: 'self[1]'
-  ports:
-    out:
-      - name: charts_watch_websocket
-        port: in
+    - kind: snippet
+      name: downstream
+      language: cel
+      code: 'self[1]'
+      ports:
+        out:
+          - name: websocket
+            port: in
+  inbound:
+    io:
+      - name: websocket
+        port: io
+      - name: session
+        port: io
 
 - kind: switch
   name: catch

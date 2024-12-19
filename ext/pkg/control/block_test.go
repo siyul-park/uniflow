@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestSequentialNodeCodec_Compile(t *testing.T) {
+func TestBlockNodeCodec_Compile(t *testing.T) {
 	s := scheme.New()
 	kind := faker.UUIDHyphenated()
 
@@ -20,9 +20,9 @@ func TestSequentialNodeCodec_Compile(t *testing.T) {
 
 	s.AddCodec(kind, c)
 
-	codec := NewSequentialNodeCodec(s)
+	codec := NewBlockNodeCodec(s)
 
-	sp := &SequentialNodeSpec{
+	sp := &BlockNodeSpec{
 		Specs: []spec.Spec{
 			&spec.Unstructured{
 				Meta: spec.Meta{
@@ -34,6 +34,22 @@ func TestSequentialNodeCodec_Compile(t *testing.T) {
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,
+				},
+			},
+		},
+		Inbound: map[string][]spec.Port{
+			node.PortIn: {
+				{
+					ID:   uuid.Must(uuid.NewV7()),
+					Port: node.PortIn,
+				},
+			},
+		},
+		Outbound: map[string][]spec.Port{
+			node.PortOut: {
+				{
+					ID:   uuid.Must(uuid.NewV7()),
+					Port: node.PortOut,
 				},
 			},
 		},

@@ -19,7 +19,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			codec scheme.Codec
 			spec  spec.Spec
 		}{
-			{KindSequential, NewSequentialNodeCodec(s), &SequentialNodeSpec{}},
+			{KindBlock, NewBlockNodeCodec(s), &BlockNodeSpec{}},
 			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
 			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
 			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},
@@ -28,6 +28,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			{KindNOP, NewNOPNodeCodec(), &NOPNodeSpec{}},
 			{KindReduce, NewReduceNodeCodec(expr), &ReduceNodeSpec{}},
 			{KindRetry, NewRetryNodeCodec(), &RetryNodeSpec{}},
+			{KindSequential, NewSequentialNodeCodec(s), &SequentialNodeSpec{}},
 			{KindSession, NewSessionNodeCodec(), &SessionNodeSpec{}},
 			{KindSnippet, NewSnippetNodeCodec(module), &SnippetNodeSpec{}},
 			{KindSplit, NewSplitNodeCodec(), &SplitNodeSpec{}},
