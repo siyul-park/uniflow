@@ -36,6 +36,8 @@ func NewSequentialNodeCodec(s *scheme.Scheme) scheme.Codec {
 				return nil, err
 			}
 
+			sp.SetPorts(nil)
+
 			symbols = append(symbols, &symbol.Symbol{
 				Spec: sp,
 				Node: n,
@@ -62,12 +64,21 @@ func NewSequentialNodeCodec(s *scheme.Scheme) scheme.Codec {
 			first := symbols[0]
 			last := symbols[len(symbols)-1]
 
-			cluster.Inbound(node.PortIn, first.ID(), node.PortIn)
-			cluster.Outbound(node.PortOut, last.ID(), node.PortOut)
+			cluster.Inbound(node.PortIn, spec.Port{
+				ID:   first.ID(),
+				Port: node.PortIn,
+			})
+			cluster.Outbound(node.PortOut, spec.Port{
+				ID:   last.ID(),
+				Port: node.PortOut,
+			})
 		}
 
 		for _, sb := range symbols {
-			cluster.Outbound(node.PortError, sb.ID(), node.PortError)
+			cluster.Outbound(node.PortError, spec.Port{
+				ID:   sb.ID(),
+				Port: node.PortError,
+			})
 		}
 
 		return cluster, nil

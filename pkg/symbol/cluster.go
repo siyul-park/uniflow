@@ -1,10 +1,10 @@
 package symbol
 
 import (
-	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"sync"
 )
 
@@ -53,36 +53,23 @@ func NewCluster(symbols []*Symbol) *Cluster {
 	}
 }
 
-// Keys returns all keys from the symbol table.
-func (n *Cluster) Keys() []uuid.UUID {
-	keys := make([]uuid.UUID, 0, len(n.symbols))
-	for _, sb := range n.symbols {
-		keys = append(keys, sb.ID())
-	}
-	return keys
-}
-
-// Lookup retrieves a symbol from the table by its UUID.
-func (n *Cluster) Lookup(id uuid.UUID) *Symbol {
-	for _, sb := range n.symbols {
-		if sb.ID() == id {
-			return sb
-		}
-	}
-	return nil
-}
-
 // Inbound links an external input to an internal symbol's input port.
-func (n *Cluster) Inbound(source string, id uuid.UUID, target string) bool {
+func (n *Cluster) Inbound(source string, target spec.Port) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	sb := n.Lookup(id)
+	var sb *Symbol
+	for _, s := range n.symbols {
+		if (target.ID == s.ID()) || (target.Name != "" && target.Name == s.Name()) {
+			sb = s
+			break
+		}
+	}
 	if sb == nil {
 		return false
 	}
 
-	prt := sb.In(target)
+	prt := sb.In(target.Port)
 	if prt == nil {
 		return false
 	}
@@ -111,16 +98,22 @@ func (n *Cluster) Inbound(source string, id uuid.UUID, target string) bool {
 }
 
 // Outbound links an external output to an internal symbol's output port.
-func (n *Cluster) Outbound(source string, id uuid.UUID, target string) bool {
+func (n *Cluster) Outbound(source string, target spec.Port) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	sb := n.Lookup(id)
+	var sb *Symbol
+	for _, s := range n.symbols {
+		if (target.ID == s.ID()) || (target.Name != "" && target.Name == s.Name()) {
+			sb = s
+			break
+		}
+	}
 	if sb == nil {
 		return false
 	}
 
-	prt := sb.Out(target)
+	prt := sb.Out(target.Port)
 	if prt == nil {
 		return false
 	}

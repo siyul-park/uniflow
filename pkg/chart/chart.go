@@ -13,34 +13,14 @@ import (
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
 type Chart struct {
-	ID          uuid.UUID          `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Namespace   string             `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
-	Name        string             `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	Annotations map[string]string  `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	Specs       []spec.Spec        `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
-	Inbound     map[string][]Port  `json:"inbound,omitempty" bson:"inbound,omitempty" yaml:"inbound,omitempty" map:"inbound,omitempty"`
-	Outbound    map[string][]Port  `json:"outbound,omitempty" bson:"outbound,omitempty" yaml:"outbound,omitempty" map:"outbound,omitempty"`
-	Env         map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
-}
-
-// Port represents a connection point for a node.
-type Port struct {
-	// Unique identifier of the port.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	// Name of the port.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	// Port number or identifier.
-	Port string `json:"port" bson:"port" yaml:"port" map:"port"`
-}
-
-// Value represents a sensitive value for a node.
-type Value struct {
-	// Unique identifier of the secret.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	// Name of the secret.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	// Secret value.
-	Value any `json:"value" bson:"value" yaml:"value" map:"value"`
+	ID          uuid.UUID               `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	Namespace   string                  `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Name        string                  `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Annotations map[string]string       `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	Specs       []spec.Spec             `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
+	Inbound     map[string][]spec.Port  `json:"inbound,omitempty" bson:"inbound,omitempty" yaml:"inbound,omitempty" map:"inbound,omitempty"`
+	Outbound    map[string][]spec.Port  `json:"outbound,omitempty" bson:"outbound,omitempty" yaml:"outbound,omitempty" map:"outbound,omitempty"`
+	Env         map[string][]spec.Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Key constants for commonly used fields.
@@ -105,14 +85,14 @@ func (c *Chart) Bind(secrets ...*secret.Secret) error {
 					return errors.WithStack(encoding.ErrUnsupportedValue)
 				}
 
-				v, err := template.Execute(val.Value, scrt.Data)
+				v, err := template.Execute(val.Data, scrt.Data)
 				if err != nil {
 					return err
 				}
 
 				val.ID = scrt.GetID()
 				val.Name = scrt.GetName()
-				val.Value = v
+				val.Data = v
 
 				vals[i] = val
 			}
@@ -134,13 +114,13 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 	for key, vals := range c.Env {
 		for _, val := range vals {
 			if !val.IsIdentified() {
-				v, err := template.Execute(val.Value, data)
+				v, err := template.Execute(val.Data, data)
 				if err != nil {
 					return nil, err
 				}
-				val.Value = v
+				val.Data = v
 			}
-			env[key] = append(env[key], spec.Value{Data: val.Value})
+			env[key] = append(env[key], val)
 		}
 	}
 
@@ -211,36 +191,31 @@ func (c *Chart) SetSpecs(val []spec.Spec) {
 }
 
 // GetInbound returns the chart's inbound.
-func (c *Chart) GetInbound() map[string][]Port {
+func (c *Chart) GetInbound() map[string][]spec.Port {
 	return c.Inbound
 }
 
 // SetInbound sets the chart's inbound.
-func (c *Chart) SetInbound(val map[string][]Port) {
+func (c *Chart) SetInbound(val map[string][]spec.Port) {
 	c.Inbound = val
 }
 
 // GetOutbound returns the chart's outbound.
-func (c *Chart) GetOutbound() map[string][]Port {
+func (c *Chart) GetOutbound() map[string][]spec.Port {
 	return c.Outbound
 }
 
 // SetOutbound sets the chart's outbound.
-func (c *Chart) SetOutbound(val map[string][]Port) {
+func (c *Chart) SetOutbound(val map[string][]spec.Port) {
 	c.Outbound = val
 }
 
 // GetEnv returns the chart's environment data.
-func (c *Chart) GetEnv() map[string][]Value {
+func (c *Chart) GetEnv() map[string][]spec.Value {
 	return c.Env
 }
 
 // SetEnv sets the chart's environment data.
-func (c *Chart) SetEnv(val map[string][]Value) {
+func (c *Chart) SetEnv(val map[string][]spec.Value) {
 	c.Env = val
-}
-
-// IsIdentified checks whether the Value instance has a unique identifier or name.
-func (v *Value) IsIdentified() bool {
-	return v.ID != uuid.Nil || v.Name != ""
 }

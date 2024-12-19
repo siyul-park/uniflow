@@ -35,20 +35,20 @@ func TestLinker_Link(t *testing.T) {
 				Name: "dummy",
 			},
 		},
-		Env: map[string][]Value{
+		Env: map[string][]spec.Value{
 			"key1": {
 				{
-					ID:    scrt.GetID(),
-					Value: faker.Word(),
+					ID:   scrt.GetID(),
+					Data: faker.Word(),
 				},
 			},
 			"key2": {
 				{
-					Value: "{{ .id }}",
+					Data: "{{ .id }}",
 				},
 			},
 		},
-		Inbound: map[string][]Port{
+		Inbound: map[string][]spec.Port{
 			node.PortIn: {
 				{
 					Name: "dummy",

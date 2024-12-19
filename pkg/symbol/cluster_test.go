@@ -61,38 +61,6 @@ func TestNewCluster(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestCluster_Keys(t *testing.T) {
-	sb := &Symbol{
-		Spec: &spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
-		},
-		Node: node.NewOneToOneNode(nil),
-	}
-
-	n := NewCluster([]*Symbol{sb})
-	defer n.Close()
-
-	keys := n.Keys()
-	assert.Len(t, keys, 1)
-	assert.Equal(t, sb.ID(), keys[0])
-}
-
-func TestCluster_Lookup(t *testing.T) {
-	sb := &Symbol{
-		Spec: &spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
-		},
-		Node: node.NewOneToOneNode(nil),
-	}
-
-	n := NewCluster([]*Symbol{sb})
-	defer n.Close()
-
-	assert.Equal(t, sb, n.Lookup(sb.ID()))
-}
-
 func TestCluster_Inbound(t *testing.T) {
 	sb := &Symbol{
 		Spec: &spec.Meta{
@@ -105,7 +73,10 @@ func TestCluster_Inbound(t *testing.T) {
 	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
-	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
+	n.Inbound(node.PortIn, spec.Port{
+		ID:   sb.ID(),
+		Port: node.PortIn,
+	})
 	assert.NotNil(t, n.In(node.PortIn))
 }
 
@@ -121,7 +92,10 @@ func TestCluster_Outbound(t *testing.T) {
 	n := NewCluster([]*Symbol{sb})
 	defer n.Close()
 
-	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
+	n.Outbound(node.PortOut, spec.Port{
+		ID:   sb.ID(),
+		Port: node.PortOut,
+	})
 	assert.NotNil(t, n.Out(node.PortOut))
 }
 
@@ -212,8 +186,14 @@ func TestCluster_SendAndReceive(t *testing.T) {
 
 	_ = n.Load(nil)
 
-	n.Inbound(node.PortIn, sb.ID(), node.PortIn)
-	n.Outbound(node.PortOut, sb.ID(), node.PortOut)
+	n.Inbound(node.PortIn, spec.Port{
+		ID:   sb.ID(),
+		Port: node.PortIn,
+	})
+	n.Outbound(node.PortOut, spec.Port{
+		ID:   sb.ID(),
+		Port: node.PortOut,
+	})
 
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))

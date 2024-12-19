@@ -21,11 +21,11 @@ func TestChart_IsBound(t *testing.T) {
 
 	chrt := &Chart{
 		ID: uuid.Must(uuid.NewV7()),
-		Env: map[string][]Value{
+		Env: map[string][]spec.Value{
 			"FOO": {
 				{
-					ID:    sec1.ID,
-					Value: "foo",
+					ID:   sec1.ID,
+					Data: "foo",
 				},
 			},
 		},
@@ -43,11 +43,11 @@ func TestChart_Bind(t *testing.T) {
 
 	chrt := &Chart{
 		ID: uuid.Must(uuid.NewV7()),
-		Env: map[string][]Value{
+		Env: map[string][]spec.Value{
 			"FOO": {
 				{
-					ID:    scrt.ID,
-					Value: "{{ . }}",
+					ID:   scrt.ID,
+					Data: "{{ . }}",
 				},
 			},
 		},
@@ -55,7 +55,7 @@ func TestChart_Bind(t *testing.T) {
 
 	err := chrt.Bind(scrt)
 	assert.NoError(t, err)
-	assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Value)
+	assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Data)
 }
 
 func TestChart_Build(t *testing.T) {
@@ -73,10 +73,10 @@ func TestChart_Build(t *testing.T) {
 				},
 			},
 		},
-		Env: map[string][]Value{
+		Env: map[string][]spec.Value{
 			"FOO": {
 				{
-					Value: "foo",
+					Data: "foo",
 				},
 			},
 		},
@@ -106,8 +106,8 @@ func TestChart_Get(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			},
 		},
-		Inbound: map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:     map[string][]Value{"env1": {{Name: "secret1", Value: "value1"}}},
+		Inbound: map[string][]spec.Port{"out": {{Name: faker.Word(), Port: "in"}}},
+		Env:     map[string][]spec.Value{"env1": {{Name: "secret1", Data: "value1"}}},
 	}
 
 	assert.Equal(t, chrt.ID, chrt.GetID())
@@ -134,7 +134,7 @@ func TestChart_Set(t *testing.T) {
 			},
 		},
 	}
-	ports := map[string][]Port{
+	ports := map[string][]spec.Port{
 		"http": {
 			{
 				ID:   uuid.Must(uuid.NewV7()),
@@ -143,11 +143,11 @@ func TestChart_Set(t *testing.T) {
 			},
 		},
 	}
-	env := map[string][]Value{
+	env := map[string][]spec.Value{
 		"FOO": {
 			{
-				ID:    uuid.Must(uuid.NewV7()),
-				Value: "bar",
+				ID:   uuid.Must(uuid.NewV7()),
+				Data: "bar",
 			},
 		},
 	}

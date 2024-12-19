@@ -34,11 +34,11 @@ func TestLoader_Load(t *testing.T) {
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
 		Specs:     []spec.Spec{},
-		Env: map[string][]Value{
+		Env: map[string][]spec.Value{
 			"key": {
 				{
-					ID:    scrt.GetID(),
-					Value: faker.Word(),
+					ID:   scrt.GetID(),
+					Data: faker.Word(),
 				},
 			},
 		},

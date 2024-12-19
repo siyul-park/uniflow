@@ -85,21 +85,13 @@ func (l *Linker) Link(chrt *Chart) error {
 
 		for name, ports := range chrt.GetInbound() {
 			for _, port := range ports {
-				for _, sb := range symbols {
-					if port.Name == "" || sb.ID() == port.ID || sb.Name() == port.Name {
-						n.Inbound(name, sb.ID(), port.Port)
-					}
-				}
+				n.Inbound(name, port)
 			}
 		}
 
 		for name, ports := range chrt.GetOutbound() {
 			for _, port := range ports {
-				for _, sb := range symbols {
-					if port.Name == "" || sb.ID() == port.ID || sb.Name() == port.Name {
-						n.Outbound(name, sb.ID(), port.Port)
-					}
-				}
+				n.Outbound(name, port)
 			}
 		}
 
