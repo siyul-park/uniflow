@@ -25,8 +25,8 @@ type SignalNodeSpec struct {
 type SignalNode struct {
 	outPort *port.OutPort
 	signal  <-chan any
+	wait    chan struct{}
 	done    chan struct{}
-	close   chan struct{}
 	mu      sync.RWMutex
 }
 
@@ -55,7 +55,7 @@ func NewSignalNodeCodec(signals map[string]func(context.Context) (<-chan any, er
 		n := NewSignalNode(signal)
 
 		go func() {
-			<-n.Wait()
+			<-n.Done()
 			cancel()
 		}()
 
@@ -68,8 +68,8 @@ func NewSignalNode(signal <-chan any) *SignalNode {
 	return &SignalNode{
 		outPort: port.NewOut(),
 		signal:  signal,
-		done:    nil,
-		close:   make(chan struct{}),
+		wait:    nil,
+		done:    make(chan struct{}),
 	}
 }
 
@@ -78,21 +78,21 @@ func (n *SignalNode) Listen() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if n.done != nil {
+	if n.wait != nil {
 		return
 	}
 
-	done := make(chan struct{})
-	n.done = done
+	wait := make(chan struct{})
+	n.wait = wait
 
 	go func() {
 		defer func() {
 			n.mu.Lock()
 			defer n.mu.Unlock()
 
-			if n.done != nil {
-				close(n.done)
-				n.done = nil
+			if n.wait != nil {
+				close(n.wait)
+				n.wait = nil
 			}
 		}()
 
@@ -102,9 +102,8 @@ func (n *SignalNode) Listen() {
 				if !ok {
 					return
 				}
-
 				n.emit(sig)
-			case <-done:
+			case <-wait:
 				return
 			}
 		}
@@ -116,28 +115,20 @@ func (n *SignalNode) Shutdown() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if n.done == nil {
+	if n.wait == nil {
 		return
 	}
 
-	close(n.done)
-	n.done = nil
+	close(n.wait)
+	n.wait = nil
 }
 
-// Done returns a channel that is closed when the node is shutdown.
+// Done returns a channel that is closed when the node is done.
 func (n *SignalNode) Done() <-chan struct{} {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	return n.done
-}
-
-// Wait returns a channel that is closed when the node is close.
-func (n *SignalNode) Wait() <-chan struct{} {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	return n.close
 }
 
 // In returns nil as SignalNode does not have input ports.
@@ -160,9 +151,9 @@ func (n *SignalNode) Close() error {
 		defer n.mu.Unlock()
 
 		select {
-		case <-n.close:
+		case <-n.done:
 		default:
-			close(n.close)
+			close(n.done)
 		}
 	}()
 
