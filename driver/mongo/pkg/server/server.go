@@ -7,9 +7,9 @@ import (
 
 	"github.com/tryvium-travels/memongo"
 	"github.com/tryvium-travels/memongo/memongolog"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 			defer serverStartUpLock.Unlock()
 
 			opts := &memongo.Options{
-				MongoVersion:     "6.0.8",
+				MongoVersion:     "8.0.4",
 				LogLevel:         memongolog.LogLevelWarn,
 				ShouldUseReplica: true,
 			}
@@ -44,7 +44,7 @@ func Release(server *memongo.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if client, err := mongo.Connect(ctx, options.Client().ApplyURI(server.URI()+"/retryWrites=false")); err != nil {
+	if client, err := mongo.Connect(options.Client().ApplyURI(server.URI() + "/retryWrites=false")); err != nil {
 		server.Stop()
 	} else {
 		if databases, err := client.ListDatabaseNames(ctx, bson.D{}); err == nil {

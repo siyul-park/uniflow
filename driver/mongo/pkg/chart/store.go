@@ -9,9 +9,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // Store manages storage and retrieval of Spec objects in a MongoDB collection.
@@ -88,9 +88,7 @@ func (s *Store) Load(ctx context.Context, charts ...*chart.Chart) ([]*chart.Char
 	filter := s.filter(charts...)
 	limit := int64(s.limit(charts...))
 
-	cursor, err := s.collection.Find(ctx, filter, &options.FindOptions{
-		Limit: &limit,
-	})
+	cursor, err := s.collection.Find(ctx, filter, options.Find().SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}

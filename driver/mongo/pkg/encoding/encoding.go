@@ -1,13 +1,13 @@
 package encoding
 
 import (
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"reflect"
 	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func init() {
@@ -16,12 +16,12 @@ func init() {
 }
 
 func newBSONEncoder() encoding.EncodeCompiler[any, types.Value] {
-	typeBinary := reflect.TypeOf((*primitive.Binary)(nil)).Elem()
+	typeBinary := reflect.TypeOf((*bson.Binary)(nil)).Elem()
 
 	return encoding.EncodeCompilerFunc[any, types.Value](func(typ reflect.Type) (encoding.Encoder[any, types.Value], error) {
 		if typ != nil && typ.ConvertibleTo(typeBinary) {
 			return encoding.EncodeFunc[any, types.Value](func(source any) (types.Value, error) {
-				s := source.(primitive.Binary)
+				s := source.(bson.Binary)
 				return types.NewBinary(s.Data), nil
 			}), nil
 		}
@@ -30,7 +30,7 @@ func newBSONEncoder() encoding.EncodeCompiler[any, types.Value] {
 }
 
 func newBSONDecoder() encoding.DecodeCompiler[types.Value] {
-	typeBinary := reflect.TypeOf((*primitive.Binary)(nil)).Elem()
+	typeBinary := reflect.TypeOf((*bson.Binary)(nil)).Elem()
 
 	return encoding.DecodeCompilerFunc[types.Value](func(typ reflect.Type) (encoding.Decoder[types.Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer {
@@ -38,7 +38,7 @@ func newBSONDecoder() encoding.DecodeCompiler[types.Value] {
 				return encoding.DecodeFunc[types.Value, unsafe.Pointer](func(source types.Value, target unsafe.Pointer) error {
 					if s, ok := source.(types.Binary); ok {
 						t := reflect.NewAt(typ.Elem(), target)
-						t.Elem().Set(reflect.ValueOf(primitive.Binary{
+						t.Elem().Set(reflect.ValueOf(bson.Binary{
 							Data: s.Bytes(),
 						}))
 						return nil

@@ -9,9 +9,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // Store manages storage and retrieval of Spec objects in a MongoDB collection.
@@ -91,9 +91,7 @@ func (s *Store) Load(ctx context.Context, specs ...spec.Spec) ([]spec.Spec, erro
 	filter := s.filter(specs...)
 	limit := int64(s.limit(specs...))
 
-	cursor, err := s.collection.Find(ctx, filter, &options.FindOptions{
-		Limit: &limit,
-	})
+	cursor, err := s.collection.Find(ctx, filter, options.Find().SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}

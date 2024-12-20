@@ -48,6 +48,11 @@ update:
 		cd $$dir && go get -u all && go mod tidy; \
 	done
 
+clean-cache:
+	@for dir in $(MODULE_DIRS); do \
+		cd $$dir && go clean -modcache; \
+	done
+
 sync:
 	@go work sync
 

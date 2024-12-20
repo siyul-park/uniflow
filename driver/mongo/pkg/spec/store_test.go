@@ -10,8 +10,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func TestStore_Index(t *testing.T) {
@@ -21,7 +21,7 @@ func TestStore_Index(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
@@ -39,7 +39,7 @@ func TestStore_Watch(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
@@ -80,7 +80,7 @@ func TestStore_Load(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
@@ -112,7 +112,7 @@ func TestStore_Store(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
@@ -144,7 +144,7 @@ func TestStore_Swap(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
@@ -180,7 +180,7 @@ func TestMemStore_Delete(t *testing.T) {
 	s := server.New()
 	defer server.Release(s)
 
-	c, _ := mongo.Connect(ctx, options.Client().ApplyURI(s.URI()))
+	c, _ := mongo.Connect(options.Client().ApplyURI(s.URI()))
 	defer c.Disconnect(ctx)
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
