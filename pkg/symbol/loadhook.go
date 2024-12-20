@@ -1,35 +1,53 @@
 package symbol
 
-// LoadHook defines an interface for handling events when a symbol is loaded.
+import "github.com/siyul-park/uniflow/pkg/node"
+
+// LoadHook handles symbol load events.
 type LoadHook interface {
-	// Load is called to handle the loading of a symbol and may return an error.
 	Load(*Symbol) error
 }
 
-// LoadHooks is a slice of LoadHook interfaces, processed sequentially.
+// LoadHooks is a collection of LoadHook instances.
 type LoadHooks []LoadHook
 
+// LoadListener registers and invokes LoadHook instances.
+type LoadListener interface {
+	Load(LoadHook) error
+}
+
 type loadHook struct {
-	load func(*Symbol) error
+	fn func(*Symbol) error
 }
 
-var _ LoadHook = (LoadHooks)(nil)
 var _ LoadHook = (*loadHook)(nil)
+var _ LoadHook = (LoadHooks)(nil)
 
-// LoadFunc creates a new LoadHook from the provided function.
-func LoadFunc(load func(*Symbol) error) LoadHook {
-	return &loadHook{load: load}
+// LoadFunc wraps a function as a LoadHook.
+func LoadFunc(fn func(*Symbol) error) LoadHook {
+	return &loadHook{fn: fn}
 }
 
-func (h LoadHooks) Load(sb *Symbol) error {
-	for _, hook := range h {
-		if err := hook.Load(sb); err != nil {
+// LoadListenerHook creates a LoadHook for nodes implementing LoadListener.
+func LoadListenerHook(hook LoadHook) LoadHook {
+	return LoadFunc(func(symbol *Symbol) error {
+		if listener, ok := node.Unwrap(symbol).(LoadListener); ok {
+			return listener.Load(hook)
+		}
+		return nil
+	})
+}
+
+// Load executes all LoadHooks sequentially.
+func (hooks LoadHooks) Load(symbol *Symbol) error {
+	for _, hook := range hooks {
+		if err := hook.Load(symbol); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *loadHook) Load(sb *Symbol) error {
-	return h.load(sb)
+// Load executes the associated function.
+func (h *loadHook) Load(symbol *Symbol) error {
+	return h.fn(symbol)
 }

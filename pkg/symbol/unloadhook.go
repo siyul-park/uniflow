@@ -1,36 +1,53 @@
 package symbol
 
-// UnloadHook defines an interface for handling events when a symbol is unloaded.
+import "github.com/siyul-park/uniflow/pkg/node"
+
+// UnloadHook handles symbol unload events.
 type UnloadHook interface {
-	// Unload is called when a symbol is unloaded and may return an error.
 	Unload(*Symbol) error
 }
 
-// UnloadHooks is a slice of UnloadHook interfaces, processed in reverse order.
+// UnloadHooks is a collection of UnloadHook instances, processed in reverse order.
 type UnloadHooks []UnloadHook
 
+// UnloadListener registers and invokes UnloadHook instances.
+type UnloadListener interface {
+	Unload(UnloadHook) error
+}
+
 type unloadHook struct {
-	unload func(*Symbol) error
+	fn func(*Symbol) error
 }
 
-var _ UnloadHook = (UnloadHooks)(nil)
 var _ UnloadHook = (*unloadHook)(nil)
+var _ UnloadHook = (UnloadHooks)(nil)
 
-// UnloadFunc creates a new UnloadHook from the provided function.
-func UnloadFunc(unload func(*Symbol) error) UnloadHook {
-	return &unloadHook{unload: unload}
+// UnloadFunc wraps a function as an UnloadHook.
+func UnloadFunc(fn func(*Symbol) error) UnloadHook {
+	return &unloadHook{fn: fn}
 }
 
-func (h UnloadHooks) Unload(sb *Symbol) error {
-	for i := len(h) - 1; i >= 0; i-- {
-		hook := h[i]
-		if err := hook.Unload(sb); err != nil {
+// UnloadListenerHook creates an UnloadHook for nodes implementing UnloadListener.
+func UnloadListenerHook(hook UnloadHook) UnloadHook {
+	return UnloadFunc(func(symbol *Symbol) error {
+		if listener, ok := node.Unwrap(symbol).(UnloadListener); ok {
+			return listener.Unload(hook)
+		}
+		return nil
+	})
+}
+
+// Unload executes all UnloadHooks in reverse order.
+func (hooks UnloadHooks) Unload(symbol *Symbol) error {
+	for i := len(hooks) - 1; i >= 0; i-- {
+		if err := hooks[i].Unload(symbol); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *unloadHook) Unload(sb *Symbol) error {
-	return h.unload(sb)
+// Unload executes the associated function.
+func (h *unloadHook) Unload(symbol *Symbol) error {
+	return h.fn(symbol)
 }

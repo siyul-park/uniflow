@@ -15,46 +15,6 @@ import (
 	"time"
 )
 
-func TestNewClusterLoadHook(t *testing.T) {
-	h := NewClusterLoadHook(LoadFunc(func(_ *Symbol) error {
-		return nil
-	}))
-
-	n := NewCluster(nil)
-	defer n.Close()
-
-	sb := &Symbol{
-		Spec: &spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
-		},
-		Node: n,
-	}
-
-	err := h.Load(sb)
-	assert.NoError(t, err)
-}
-
-func TestNewClusterUnloadHook(t *testing.T) {
-	h := NewClusterUnloadHook(UnloadFunc(func(_ *Symbol) error {
-		return nil
-	}))
-
-	n := NewCluster(nil)
-	defer n.Close()
-
-	sb := &Symbol{
-		Spec: &spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
-		},
-		Node: n,
-	}
-
-	err := h.Unload(sb)
-	assert.NoError(t, err)
-}
-
 func TestNewCluster(t *testing.T) {
 	n := NewCluster(nil)
 	assert.NotNil(t, n)

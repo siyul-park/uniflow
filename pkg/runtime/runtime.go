@@ -65,8 +65,8 @@ func New(config Config) *Runtime {
 		config.ChartStore = chart.NewStore()
 	}
 
-	config.Hook.AddLoadHook(symbol.NewClusterLoadHook(config.Hook))
-	config.Hook.AddUnloadHook(symbol.NewClusterUnloadHook(config.Hook))
+	config.Hook.AddLoadHook(symbol.LoadListenerHook(config.Hook))
+	config.Hook.AddUnloadHook(symbol.UnloadListenerHook(config.Hook))
 
 	symbolTable := symbol.NewTable(symbol.TableOption{
 		LoadHooks:   []symbol.LoadHook{config.Hook},

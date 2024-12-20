@@ -20,26 +20,8 @@ type Cluster struct {
 }
 
 var _ node.Node = (*Cluster)(nil)
-
-// NewClusterLoadHook creates a LoadHook for Cluster nodes.
-func NewClusterLoadHook(hook LoadHook) LoadHook {
-	return LoadFunc(func(sb *Symbol) error {
-		if cluster, ok := node.Unwrap(sb).(*Cluster); ok {
-			return cluster.Load(hook)
-		}
-		return nil
-	})
-}
-
-// NewClusterUnloadHook creates an UnloadHook for Cluster nodes.
-func NewClusterUnloadHook(hook UnloadHook) UnloadHook {
-	return UnloadFunc(func(sb *Symbol) error {
-		if cluster, ok := node.Unwrap(sb).(*Cluster); ok {
-			return cluster.Unload(hook)
-		}
-		return nil
-	})
-}
+var _ LoadListener = (*Cluster)(nil)
+var _ UnloadListener = (*Cluster)(nil)
 
 // NewCluster creates a new Cluster with the provided symbol table.
 func NewCluster(symbols []*Symbol) *Cluster {
