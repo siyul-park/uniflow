@@ -144,6 +144,8 @@ Percentage of the requests served within a certain time (ms)
 - [Architecture](./docs/architecture.md): Workflow execution and node specification loading.
 - [Debugging](./docs/debugging.md): Debug workflows, set breakpoints, and start sessions.
 - [User Extensions](./docs/user_extensions.md): Add features and integrate external services.
+- [Kubernetes Operator](https://github.com/siyul-park/uniflow-operator): Detects workflow changes and generates CRD to
+  provide serverless services.
 
 ## 🌐 Community and Support
 
