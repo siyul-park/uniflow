@@ -51,11 +51,11 @@ sub-nodes.
         export default function (args) {
           return args.body;
         }
-  inbound:
+  inbounds:
     in:
       - name: $0
         port: in
-  outbound:
+  outbounds:
     out:
       - name: $2
         port: out

@@ -23,7 +23,7 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 			sp, err := s.Decode(sp)
 			if err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}
@@ -31,7 +31,7 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 			n, err := s.Compile(sp)
 			if err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}

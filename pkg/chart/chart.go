@@ -18,8 +18,8 @@ type Chart struct {
 	Name        string                  `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	Annotations map[string]string       `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	Specs       []spec.Spec             `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
-	Inbound     map[string][]spec.Port  `json:"inbound,omitempty" bson:"inbound,omitempty" yaml:"inbound,omitempty" map:"inbound,omitempty"`
-	Outbound    map[string][]spec.Port  `json:"outbound,omitempty" bson:"outbound,omitempty" yaml:"outbound,omitempty" map:"outbound,omitempty"`
+	Inbounds    map[string][]spec.Port  `json:"inbounds,omitempty" bson:"inbounds,omitempty" yaml:"inbounds,omitempty" map:"inbounds,omitempty"`
+	Outbounds   map[string][]spec.Port  `json:"outbounds,omitempty" bson:"outbounds,omitempty" yaml:"outbounds,omitempty" map:"outbounds,omitempty"`
 	Env         map[string][]spec.Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
@@ -30,7 +30,8 @@ const (
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
 	KetSpecs       = "specs"
-	KeyPorts       = "inbound"
+	KeyInbounds    = "inbounds"
+	KeyOutbounds   = "outbounds"
 	KeyEnv         = "env"
 )
 
@@ -190,24 +191,24 @@ func (c *Chart) SetSpecs(val []spec.Spec) {
 	c.Specs = val
 }
 
-// GetInbound returns the chart's inbound.
-func (c *Chart) GetInbound() map[string][]spec.Port {
-	return c.Inbound
+// GetInbounds returns the chart's inbounds.
+func (c *Chart) GetInbounds() map[string][]spec.Port {
+	return c.Inbounds
 }
 
-// SetInbound sets the chart's inbound.
-func (c *Chart) SetInbound(val map[string][]spec.Port) {
-	c.Inbound = val
+// SetInbounds sets the chart's inbounds.
+func (c *Chart) SetInbounds(val map[string][]spec.Port) {
+	c.Inbounds = val
 }
 
-// GetOutbound returns the chart's outbound.
-func (c *Chart) GetOutbound() map[string][]spec.Port {
-	return c.Outbound
+// GetOutbounds returns the chart's outbounds.
+func (c *Chart) GetOutbounds() map[string][]spec.Port {
+	return c.Outbounds
 }
 
-// SetOutbound sets the chart's outbound.
-func (c *Chart) SetOutbound(val map[string][]spec.Port) {
-	c.Outbound = val
+// SetOutbounds sets the chart's outbounds.
+func (c *Chart) SetOutbounds(val map[string][]spec.Port) {
+	c.Outbounds = val
 }
 
 // GetEnv returns the chart's environment data.

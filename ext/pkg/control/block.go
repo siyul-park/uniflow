@@ -12,8 +12,8 @@ import (
 type BlockNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Specs     []spec.Spec            `map:"specs"`
-	Inbound   map[string][]spec.Port `map:"inbound,omitempty"`
-	Outbound  map[string][]spec.Port `map:"outbound,omitempty"`
+	Inbounds  map[string][]spec.Port `map:"inbounds,omitempty"`
+	Outbounds map[string][]spec.Port `map:"outbounds,omitempty"`
 }
 
 const KindBlock = "block"
@@ -26,7 +26,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 			sp, err := s.Decode(sp)
 			if err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}
@@ -34,7 +34,7 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 			n, err := s.Compile(sp)
 			if err != nil {
 				for _, sb := range symbols {
-					sb.Close()
+					_ = sb.Close()
 				}
 				return nil, err
 			}
@@ -51,12 +51,12 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 
 		cluster := symbol.NewCluster(symbols)
 
-		for name, ports := range sp.Inbound {
+		for name, ports := range sp.Inbounds {
 			for _, port := range ports {
 				cluster.Inbound(name, port)
 			}
 		}
-		for name, ports := range sp.Outbound {
+		for name, ports := range sp.Outbounds {
 			for _, port := range ports {
 				cluster.Outbound(name, port)
 			}

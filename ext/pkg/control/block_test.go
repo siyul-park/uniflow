@@ -37,7 +37,7 @@ func TestBlockNodeCodec_Compile(t *testing.T) {
 				},
 			},
 		},
-		Inbound: map[string][]spec.Port{
+		Inbounds: map[string][]spec.Port{
 			node.PortIn: {
 				{
 					ID:   uuid.Must(uuid.NewV7()),
@@ -45,7 +45,7 @@ func TestBlockNodeCodec_Compile(t *testing.T) {
 				},
 			},
 		},
-		Outbound: map[string][]spec.Port{
+		Outbounds: map[string][]spec.Port{
 			node.PortOut: {
 				{
 					ID:   uuid.Must(uuid.NewV7()),

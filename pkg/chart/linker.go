@@ -83,13 +83,13 @@ func (l *Linker) Link(chrt *Chart) error {
 
 		n := symbol.NewCluster(symbols)
 
-		for name, ports := range chrt.GetInbound() {
+		for name, ports := range chrt.GetInbounds() {
 			for _, port := range ports {
 				n.Inbound(name, port)
 			}
 		}
 
-		for name, ports := range chrt.GetOutbound() {
+		for name, ports := range chrt.GetOutbounds() {
 			for _, port := range ports {
 				n.Outbound(name, port)
 			}

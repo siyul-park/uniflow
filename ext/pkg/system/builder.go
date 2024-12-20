@@ -21,13 +21,13 @@ var _ scheme.Register = (*SchemeRegister)(nil)
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			if n, ok := node.Unwrap(sb.Node).(*SignalNode); ok {
+			if n, ok := node.Unwrap(sb).(*SignalNode); ok {
 				n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			if n, ok := node.Unwrap(sb.Node).(*SignalNode); ok {
+			if n, ok := node.Unwrap(sb).(*SignalNode); ok {
 				n.Shutdown()
 			}
 			return nil

@@ -348,7 +348,7 @@
         out:
           - name: websocket
             port: in
-  inbound:
+  inbounds:
     io:
       - name: websocket
         port: io
@@ -548,7 +548,7 @@
         out:
           - name: websocket
             port: in
-  inbound:
+  inbounds:
     io:
       - name: websocket
         port: io
@@ -748,7 +748,7 @@
         out:
           - name: websocket
             port: in
-  inbound:
+  inbounds:
     io:
       - name: websocket
         port: io
