@@ -16,7 +16,7 @@ processing real-time events or system-level signals within the workflow.
 
 ```yaml
 - kind: signal
-  opcode: specs.watch
+  opcode: specs
   ports:
     out:
       - name: next

@@ -169,7 +169,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: specs.create
     - kind: snippet
       language: javascript
@@ -192,7 +192,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: specs.read
     - kind: snippet
       language: javascript
@@ -210,7 +210,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: specs.update
     - kind: snippet
       language: javascript
@@ -233,7 +233,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: specs.delete
     - kind: snippet
       language: javascript
@@ -250,7 +250,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.params) ? self.params : null'
-    - kind: native
+    - kind: syscall
       opcode: specs.read
     - kind: snippet
       language: javascript
@@ -277,7 +277,7 @@
         export default function ({ body, params }) {
           return { ...body, ...params };
         }
-    - kind: native
+    - kind: syscall
       opcode: specs.update
     - kind: snippet
       language: javascript
@@ -301,7 +301,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.params) ? self.params : null'
-    - kind: native
+    - kind: syscall
       opcode: specs.delete
     - kind: snippet
       language: javascript
@@ -327,7 +327,7 @@
 
     - kind: signal
       name: signal
-      opcode: specs.watch
+      topic: specs
       ports:
         out:
           - name: session
@@ -372,7 +372,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: secrets.create
     - kind: snippet
       language: javascript
@@ -395,7 +395,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: secrets.read
     - kind: snippet
       language: javascript
@@ -413,7 +413,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: secrets.update
     - kind: snippet
       language: javascript
@@ -436,7 +436,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: secrets.delete
     - kind: snippet
       language: javascript
@@ -453,7 +453,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.params) ? self.params : null'
-    - kind: native
+    - kind: syscall
       opcode: secrets.read
     - kind: snippet
       language: javascript
@@ -480,7 +480,7 @@
         export default function ({ body, params }) {
           return { ...body, ...params };
         }
-    - kind: native
+    - kind: syscall
       opcode: secrets.update
     - kind: snippet
       language: javascript
@@ -507,7 +507,7 @@
         export default function ({ body, params }) {
           return { ...body, ...params };
         }
-    - kind: native
+    - kind: syscall
       opcode: secrets.delete
     - kind: snippet
       language: javascript
@@ -527,7 +527,7 @@
 
     - kind: signal
       name: signal
-      opcode: secrets.watch
+      topic: secrets
       ports:
         out:
           - name: session
@@ -572,7 +572,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: charts.create
     - kind: snippet
       language: javascript
@@ -595,7 +595,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: charts.read
     - kind: snippet
       language: javascript
@@ -613,7 +613,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
-    - kind: native
+    - kind: syscall
       opcode: charts.update
     - kind: snippet
       language: javascript
@@ -636,7 +636,7 @@
             values?.map((value) => ({ [key]: value })) || []
           );
         }
-    - kind: native
+    - kind: syscall
       opcode: charts.delete
     - kind: snippet
       language: javascript
@@ -653,7 +653,7 @@
     - kind: snippet
       language: cel
       code: 'has(self.params) ? self.params : null'
-    - kind: native
+    - kind: syscall
       opcode: charts.read
     - kind: snippet
       language: javascript
@@ -680,7 +680,7 @@
         export default function ({ body, params }) {
           return { ...body, ...params };
         }
-    - kind: native
+    - kind: syscall
       opcode: charts.update
     - kind: snippet
       language: javascript
@@ -707,7 +707,7 @@
         export default function ({ body, params }) {
           return { ...body, ...params };
         }
-    - kind: native
+    - kind: syscall
       opcode: charts.delete
     - kind: snippet
       language: javascript
@@ -727,7 +727,7 @@
 
     - kind: signal
       name: signal
-      opcode: charts.watch
+      topic: charts
       ports:
         out:
           - name: session

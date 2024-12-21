@@ -22,7 +22,7 @@ func TestSignalNodeCodec_Compile(t *testing.T) {
 	})
 
 	spec := &SignalNodeSpec{
-		OPCode: opcode,
+		Topic: opcode,
 	}
 
 	n, err := codec.Compile(spec)

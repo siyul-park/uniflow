@@ -185,10 +185,10 @@ pong#
 
 ## HTTP API 통합
 
-HTTP API를 통해 노드 명세를 수정하려면, 관련 워크플로우를 설정해야 합니다. 이를 위해 [기본 확장](../ext/README_kr.md)에 포함된 `native` 노드를 사용할 수 있습니다:
+HTTP API를 통해 노드 명세를 수정하려면, 관련 워크플로우를 설정해야 합니다. 이를 위해 [기본 확장](../ext/README_kr.md)에 포함된 `syscall` 노드를 사용할 수 있습니다:
 
 ```yaml
-kind: native
+kind: syscall
 opcode: specs.create # 또는 specs.read, specs.update, specs.delete
 ```
 

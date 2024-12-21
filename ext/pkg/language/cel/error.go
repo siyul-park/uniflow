@@ -18,8 +18,8 @@ var ErrorType = cel.ObjectType("error")
 
 var _ types.Error = (*Error)(nil)
 
-// ConvertToNative converts the Error instance to a native Go type as per the provided type descriptor.
-func (e *Error) ConvertToNative(typeDesc reflect.Type) (any, error) {
+// ConvertToSyscall converts the Error instance to a syscall Go type as per the provided type descriptor.
+func (e *Error) ConvertToSyscall(typeDesc reflect.Type) (any, error) {
 	return nil, e.error
 }
 

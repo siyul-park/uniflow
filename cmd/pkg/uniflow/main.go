@@ -28,23 +28,24 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
+	topicSpecs   = "specs"
+	topicSecrets = "secrets"
+	topicCharts  = "charts"
+
 	opCreateSpecs = "specs.create"
 	opReadSpecs   = "specs.read"
 	opUpdateSpecs = "specs.update"
 	opDeleteSpecs = "specs.delete"
-	opWatchSpecs  = "specs.watch"
 
 	opCreateSecrets = "secrets.create"
 	opReadSecrets   = "secrets.read"
 	opUpdateSecrets = "secrets.update"
 	opDeleteSecrets = "secrets.delete"
-	opWatchSecrets  = "secrets.watch"
 
 	opCreateCharts = "charts.create"
 	opReadCharts   = "charts.read"
 	opUpdateCharts = "charts.update"
 	opDeleteCharts = "charts.delete"
-	opWatchCharts  = "charts.watch"
 )
 
 func init() {
@@ -100,28 +101,43 @@ func main() {
 	languages.Store(javascript.Language, javascript.NewCompiler())
 	languages.Store(typescript.Language, typescript.NewCompiler())
 
-	operators := map[string]any{
+	signals := map[string]any{
+		topicSpecs:   system.WatchResource(specStore),
+		topicSecrets: system.WatchResource(secretStore),
+		topicCharts:  system.WatchResource(chartStore),
+	}
+	syscalls := map[string]any{
 		opCreateSpecs:   system.CreateResource(specStore),
 		opReadSpecs:     system.ReadResource(specStore),
 		opUpdateSpecs:   system.UpdateResource(specStore),
 		opDeleteSpecs:   system.DeleteResource(specStore),
-		opWatchSpecs:    system.WatchResource(specStore),
 		opCreateSecrets: system.CreateResource(secretStore),
 		opReadSecrets:   system.ReadResource(secretStore),
 		opUpdateSecrets: system.UpdateResource(secretStore),
 		opDeleteSecrets: system.DeleteResource(secretStore),
-		opWatchSecrets:  system.WatchResource(secretStore),
 		opCreateCharts:  system.CreateResource(chartStore),
 		opReadCharts:    system.ReadResource(chartStore),
 		opUpdateCharts:  system.UpdateResource(chartStore),
 		opDeleteCharts:  system.DeleteResource(chartStore),
-		opWatchCharts:   system.WatchResource(chartStore),
+	}
+
+	systemAddToScheme := system.AddToScheme()
+
+	for topic, signal := range signals {
+		if err := systemAddToScheme.SetSignal(topic, signal); err != nil {
+			log.Fatal(err)
+		}
+	}
+	for opcode, syscall := range syscalls {
+		if err := systemAddToScheme.SetSyscall(opcode, syscall); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	schemeBuilder.Register(control.AddToScheme(languages, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
-	schemeBuilder.Register(system.AddToScheme(operators))
+	schemeBuilder.Register(systemAddToScheme)
 
 	hookBuilder.Register(network.AddToHook())
 	hookBuilder.Register(system.AddToHook())

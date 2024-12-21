@@ -1,6 +1,7 @@
-# Native Node
+# Syscall Node
 
-**The Native Node** performs function call operations within the system. This node processes system calls based on the `opcode`, passing input packets to the function for execution and returning the result.
+**The Syscall Node** performs function call operations within the system. This node processes system calls based on the
+`opcode`, passing input packets to the function for execution and returning the result.
 
 ## Specification
 
@@ -23,7 +24,7 @@
       - name: specs_create
         port: in
 
-- kind: native
+- kind: syscall
   name: specs_create
   opcode: specs.create
 ```

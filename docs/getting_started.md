@@ -185,10 +185,11 @@ To retrieve charts:
 
 ## Integrating HTTP API
 
-To modify node specifications via the HTTP API, set up workflows accordingly. You can use the `native` node provided in the [core extensions](../ext/README.md):
+To modify node specifications via the HTTP API, set up workflows accordingly. You can use the `syscall` node provided in
+the [core extensions](../ext/README.md):
 
 ```yaml
-kind: native
+kind: syscall
 opcode: specs.create # or specs.read, specs.update, specs.delete
 ```
 

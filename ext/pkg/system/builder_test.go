@@ -37,10 +37,10 @@ func TestAddToHook(t *testing.T) {
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	err := AddToScheme(nil).AddToScheme(s)
+	err := AddToScheme().AddToScheme(s)
 	assert.NoError(t, err)
 
-	tests := []string{KindNative, KindSignal}
+	tests := []string{KindSyscall, KindSignal}
 
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
@@ -55,15 +55,16 @@ func TestSchemeRegister_Signal(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		opcode := faker.UUIDHyphenated()
+		topic := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func() <-chan any {
-				return make(chan any)
-			},
+		register := AddToScheme()
+
+		err := register.SetSignal(topic, func() <-chan any {
+			return make(chan any)
 		})
+		assert.NoError(t, err)
 
-		signal := register.Signal(opcode)
+		signal := register.Signal(topic)
 		assert.NotNil(t, signal)
 
 		sig, err := signal(ctx)
@@ -75,15 +76,16 @@ func TestSchemeRegister_Signal(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		opcode := faker.UUIDHyphenated()
+		topic := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func() (<-chan any, error) {
-				return make(chan any), nil
-			},
+		register := AddToScheme()
+
+		err := register.SetSignal(topic, func() (<-chan any, error) {
+			return make(chan any), nil
 		})
+		assert.NoError(t, err)
 
-		signal := register.Signal(opcode)
+		signal := register.Signal(topic)
 		assert.NotNil(t, signal)
 
 		sig, err := signal(ctx)
@@ -95,15 +97,16 @@ func TestSchemeRegister_Signal(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		opcode := faker.UUIDHyphenated()
+		topic := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(_ context.Context) <-chan any {
-				return make(chan any)
-			},
+		register := AddToScheme()
+
+		err := register.SetSignal(topic, func(_ context.Context) <-chan any {
+			return make(chan any)
 		})
+		assert.NoError(t, err)
 
-		signal := register.Signal(opcode)
+		signal := register.Signal(topic)
 		assert.NotNil(t, signal)
 
 		sig, err := signal(ctx)
@@ -115,15 +118,16 @@ func TestSchemeRegister_Signal(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		opcode := faker.UUIDHyphenated()
+		topic := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(_ context.Context) (<-chan any, error) {
-				return make(chan any), nil
-			},
+		register := AddToScheme()
+
+		err := register.SetSignal(topic, func(_ context.Context) (<-chan any, error) {
+			return make(chan any), nil
 		})
+		assert.NoError(t, err)
 
-		signal := register.Signal(opcode)
+		signal := register.Signal(topic)
 		assert.NotNil(t, signal)
 
 		sig, err := signal(ctx)
@@ -132,18 +136,19 @@ func TestSchemeRegister_Signal(t *testing.T) {
 	})
 }
 
-func TestSchemeRegister_Function(t *testing.T) {
+func TestSchemeRegister_Syscall(t *testing.T) {
 	t.Run("func() void", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func() {},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func() {})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		res, err := fn(ctx, nil)
@@ -157,16 +162,17 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func() error {
-				return errors.New(faker.Word())
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func() error {
+			return errors.New(faker.Word())
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
-		_, err := fn(ctx, nil)
+		_, err = fn(ctx, nil)
 		assert.Error(t, err)
 	})
 
@@ -176,13 +182,14 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(arg string) string {
-				return arg
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(arg string) string {
+			return arg
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -199,18 +206,19 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(arg string) (string, error) {
-				return "", errors.New(faker.Word())
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(arg string) (string, error) {
+			return "", errors.New(faker.Word())
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
 
-		_, err := fn(ctx, []any{arg})
+		_, err = fn(ctx, []any{arg})
 		assert.Error(t, err)
 	})
 
@@ -220,13 +228,14 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(_ context.Context, arg string) string {
-				return arg
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(_ context.Context, arg string) string {
+			return arg
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -243,18 +252,19 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(_ context.Context, arg string) (string, error) {
-				return "", errors.New(faker.Word())
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(_ context.Context, arg string) (string, error) {
+			return "", errors.New(faker.Word())
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
 
-		_, err := fn(ctx, []any{arg})
+		_, err = fn(ctx, []any{arg})
 		assert.Error(t, err)
 	})
 
@@ -264,13 +274,14 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(arg1, arg2 string) (string, string) {
-				return arg1, arg2
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(arg1, arg2 string) (string, string) {
+			return arg1, arg2
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -288,18 +299,19 @@ func TestSchemeRegister_Function(t *testing.T) {
 
 		opcode := faker.UUIDHyphenated()
 
-		register := AddToScheme(map[string]any{
-			opcode: func(arg1, arg2 string) (string, string, error) {
-				return "", "", errors.New(faker.Word())
-			},
-		})
+		register := AddToScheme()
 
-		fn := register.Function(opcode)
+		err := register.SetSyscall(opcode, func(arg1, arg2 string) (string, string, error) {
+			return "", "", errors.New(faker.Word())
+		})
+		assert.NoError(t, err)
+
+		fn := register.Syscall(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
 
-		_, err := fn(ctx, []any{arg, arg})
+		_, err = fn(ctx, []any{arg, arg})
 		assert.Error(t, err)
 	})
 }

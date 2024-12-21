@@ -1,6 +1,6 @@
-# Native 노드
+# Syscall 노드
 
-**Native 노드**는 시스템 내부에서 함수 호출 작업을 수행하는 노드입니다. 이 노드는 `opcode`를 기반으로 시스템 호출을 처리하며, 입력 패킷을 함수에 전달하여 실행하고, 그 결과를 반환합니다.
+**Syscall 노드**는 시스템 내부에서 함수 호출 작업을 수행하는 노드입니다. 이 노드는 `opcode`를 기반으로 시스템 호출을 처리하며, 입력 패킷을 함수에 전달하여 실행하고, 그 결과를 반환합니다.
 
 ## 명세
 
@@ -23,7 +23,7 @@
       - name: specs_create
         port: in
 
-- kind: native
+- kind: syscall
   name: specs_create
   opcode: specs.create
 ```

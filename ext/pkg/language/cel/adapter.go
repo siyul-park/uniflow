@@ -9,10 +9,10 @@ type adapter struct{}
 
 var _ types.Adapter = (*adapter)(nil)
 
-func (*adapter) NativeToValue(value any) ref.Val {
+func (*adapter) SyscallToValue(value any) ref.Val {
 	switch v := value.(type) {
 	case error:
 		return &Error{error: v}
 	}
-	return types.DefaultTypeAdapter.NativeToValue(value)
+	return types.DefaultTypeAdapter.SyscallToValue(value)
 }

@@ -2,112 +2,82 @@ package system
 
 import (
 	"context"
-	"encoding/json"
-
-	jsonpatch "github.com/evanphx/json-patch/v5"
-	"github.com/gofrs/uuid"
-
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// WatchResource creates a function to monitor changes in the resource store.
-func WatchResource[T resource.Resource](store resource.Store[T]) func(context.Context) (<-chan any, error) {
-	return func(ctx context.Context) (<-chan any, error) {
-		stream, err := store.Watch(ctx)
+// SyscallNodeSpec specifies the creation parameters for a SyscallNode.
+type SyscallNodeSpec struct {
+	spec.Meta `map:",inline"`
+	OPCode    string `map:"opcode"`
+}
+
+// SyscallNode executes synchronized function.
+type SyscallNode struct {
+	*node.OneToOneNode
+	fn func(context.Context, []any) ([]any, error)
+}
+
+const KindSyscall = "syscall"
+
+// NewSyscallNodeCodec returns a codec for SyscallNodeSpec.
+func NewSyscallNodeCodec(functions map[string]func(ctx context.Context, arguments []any) ([]any, error)) scheme.Codec {
+	if functions == nil {
+		functions = make(map[string]func(ctx context.Context, arguments []any) ([]any, error))
+	}
+
+	return scheme.CodecWithType[*SyscallNodeSpec](func(spec *SyscallNodeSpec) (node.Node, error) {
+		fn, ok := functions[spec.OPCode]
+		if !ok {
+			return nil, errors.WithStack(ErrInvalidOperation)
+		}
+
+		return NewSyscallNode(fn)
+	})
+}
+
+// NewSyscallNode creates a new SyscallNode from a function.
+func NewSyscallNode(fn func(context.Context, []any) ([]any, error)) (*SyscallNode, error) {
+	n := &SyscallNode{fn: fn}
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
+	return n, nil
+}
+
+func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	ctx := proc.Context()
+	inPayload := inPck.Payload()
+
+	var arguments []any
+	if v, ok := inPayload.(types.Slice); ok {
+		arguments = v.Slice()
+	} else {
+		arguments = append(arguments, types.InterfaceOf(inPayload))
+	}
+
+	returns, err := n.fn(ctx, arguments)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+
+	outPayloads := make([]types.Value, len(returns))
+	for i, out := range returns {
+		outPayload, err := types.Marshal(out)
 		if err != nil {
-			return nil, err
+			return nil, packet.New(types.NewError(err))
 		}
-
-		signal := make(chan any)
-
-		go func() {
-			defer close(signal)
-			for event := range stream.Next() {
-				signal <- event
-			}
-		}()
-
-		return signal, nil
+		outPayloads[i] = outPayload
 	}
-}
 
-// CreateResource is a generic function to store and load resources.
-func CreateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
-	return func(ctx context.Context, resources []T) ([]T, error) {
-		if _, err := store.Store(ctx, resources...); err != nil {
-			return nil, err
-		}
-		return store.Load(ctx, resources...)
+	if len(outPayloads) == 0 {
+		return packet.New(nil), nil
 	}
-}
-
-// ReadResource is a generic function to load resources.
-func ReadResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
-	return func(ctx context.Context, resources []T) ([]T, error) {
-		return store.Load(ctx, resources...)
+	if len(outPayloads) == 1 {
+		return packet.New(outPayloads[0]), nil
 	}
-}
-
-// UpdateResource is a generic function to swap and load resources.
-func UpdateResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
-	return func(ctx context.Context, resources []T) ([]T, error) {
-		exists, err := store.Load(ctx, resources...)
-		if err != nil {
-			return nil, err
-		}
-
-		origins := map[uuid.UUID]T{}
-		for _, v := range exists {
-			origins[v.GetID()] = v
-		}
-
-		for i := 0; i < len(resources); i++ {
-			patch := resources[i]
-			origin, ok := origins[patch.GetID()]
-			if !ok {
-				resources = append(resources[:i], resources[i+1:]...)
-				i--
-				continue
-			}
-
-			json1, err := json.Marshal(patch)
-			if err != nil {
-				return nil, err
-			}
-			json2, err := json.Marshal(origin)
-			if err != nil {
-				return nil, err
-			}
-
-			merge, err := jsonpatch.MergePatch(json1, json2)
-			if err != nil {
-				return nil, err
-			}
-
-			if err := json.Unmarshal(merge, &resources[i]); err != nil {
-				return nil, err
-			}
-		}
-
-		if _, err := store.Swap(ctx, resources...); err != nil {
-			return nil, err
-		}
-		return resources, nil
-	}
-}
-
-// DeleteResource is a generic function to load and delete resources.
-func DeleteResource[T resource.Resource](store resource.Store[T]) func(context.Context, []T) ([]T, error) {
-	return func(ctx context.Context, resources []T) ([]T, error) {
-		exists, err := store.Load(ctx, resources...)
-		if err != nil {
-			return nil, err
-		}
-		if len(exists) > 0 {
-			if _, err := store.Delete(ctx, exists...); err != nil {
-				return nil, err
-			}
-		}
-		return exists, nil
-	}
+	return packet.New(types.NewSlice(outPayloads...)), nil
 }

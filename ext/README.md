@@ -48,4 +48,5 @@ Facilitates smooth execution of network-related tasks across various protocols.
 
 Manages and optimizes system components.
 
-- **[Native Node](./docs/native_node.md)**: Performs function calls within the system and returns results as packets.
+- **[Signal Node](./docs/signal_node.md)**: Detects and responds to events occurring within the system.
+- **[Syscall Node](./docs/syscall_node.md)**: Executes system-level function calls and delivers the results.

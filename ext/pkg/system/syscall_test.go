@@ -6,95 +6,91 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWatchResource(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+func TestSyscallNodeCodec_Compile(t *testing.T) {
+	opcode := faker.UUIDHyphenated()
 
-	st := resource.NewStore[resource.Resource]()
-	fn := WatchResource(st)
+	codec := NewSyscallNodeCodec(map[string]func(ctx context.Context, arguments []any) ([]any, error){
+		opcode: func(ctx context.Context, arguments []any) ([]any, error) {
+			return nil, nil
+		},
+	})
 
-	_, err := fn(ctx)
-	assert.NoError(t, err)
-}
-
-func TestCreateResource(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := resource.NewStore[resource.Resource]()
-	fn := CreateResource(st)
-
-	meta := &resource.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+	spec := &SyscallNodeSpec{
+		OPCode: opcode,
 	}
 
-	res, err := fn(ctx, []resource.Resource{meta})
+	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
-	assert.Len(t, res, 1)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
 }
 
-func TestReadResource(t *testing.T) {
+func TestNewSyscallNode(t *testing.T) {
+	n, err := NewSyscallNode(nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, n)
+	assert.NoError(t, n.Close())
+}
+
+func TestSyscallNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	st := resource.NewStore[resource.Resource]()
-	fn := ReadResource(st)
+	n, _ := NewSyscallNode(func(ctx context.Context, arguments []any) ([]any, error) {
+		return arguments, nil
+	})
+	defer n.Close()
 
-	meta := &resource.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
+
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	inWriter.Write(inPck)
+
+	select {
+	case outPck := <-inWriter.Receive():
+		assert.Equal(t, inPayload, outPck.Payload())
+	case <-ctx.Done():
+		assert.Fail(t, ctx.Err().Error())
 	}
-
-	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
-
-	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
 }
 
-func TestUpdateResource(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+func BenchmarkSyscallNode_SendAndReceive(b *testing.B) {
+	n, _ := NewSyscallNode(func(ctx context.Context, arguments []any) ([]any, error) {
+		return arguments, nil
+	})
+	defer n.Close()
 
-	st := resource.NewStore[resource.Resource]()
-	fn := UpdateResource(st)
+	in := port.NewOut()
+	in.Link(n.In(node.PortIn))
 
-	meta := &resource.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	inWriter := in.Open(proc)
+
+	inPayload := types.NewString(faker.UUIDHyphenated())
+	inPck := packet.New(inPayload)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		inWriter.Write(inPck)
+		<-inWriter.Receive()
 	}
-
-	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
-
-	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
-}
-
-func TestDeleteResource(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	st := resource.NewStore[resource.Resource]()
-	fn := DeleteResource(st)
-
-	meta := &resource.Meta{
-		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
-	}
-
-	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
-
-	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
 }

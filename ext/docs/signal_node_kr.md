@@ -15,7 +15,7 @@
 
 ```yaml
 - kind: signal
-  opcode: specs.watch
+  opcode: specs
   ports:
     out:
       - name: next

@@ -47,4 +47,5 @@
 
 시스템 구성 요소를 관리하고 최적화합니다.
 
-- **[Native 노드](./docs/native_node_kr.md)**: 시스템 내부에서 함수 호출을 수행하고 결과를 패킷으로 반환합니다.
+- **[Signal 노드](./docs/signal_node_kr.md)**: 시스템 내부에서 발생하는 이벤트를 감지하고 대응합니다.
+- **[Syscall 노드](./docs/syscall_node_kr.md)**: 시스템 내부 함수 호출을 수행하여 결과를 제공합니다.

@@ -17,7 +17,7 @@ import (
 // SignalNodeSpec defines the specifications for creating a SignalNode.
 type SignalNodeSpec struct {
 	spec.Meta `map:",inline"`
-	OPCode    string `map:"opcode"`
+	Topic     string `map:"topic"`
 }
 
 // SignalNode listens to a signal channel and forwards signals as packets.
@@ -39,7 +39,7 @@ func NewSignalNodeCodec(signals map[string]func(context.Context) (<-chan any, er
 	}
 
 	return scheme.CodecWithType[*SignalNodeSpec](func(spec *SignalNodeSpec) (node.Node, error) {
-		fn, ok := signals[spec.OPCode]
+		fn, ok := signals[spec.Topic]
 		if !ok {
 			return nil, errors.WithStack(ErrInvalidOperation)
 		}
