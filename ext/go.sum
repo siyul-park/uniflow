@@ -23,6 +23,8 @@ github.com/evanphx/json-patch/v5 v5.9.0 h1:kcBlZQbplgElYIlo/n1hJbls2z/1awpXxpRi0
 github.com/evanphx/json-patch/v5 v5.9.0/go.mod h1:VNkHZ/282BpEyt/tObQO8s5CMPmYYq14uClGH4abBuQ=
 github.com/evanw/esbuild v0.24.0 h1:GZ78naTLp7FKr+K7eNuM/SLs5maeiHYRPsTg6kmdsSE=
 github.com/evanw/esbuild v0.24.0/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
+github.com/evanw/esbuild v0.24.2 h1:PQExybVBrjHjN6/JJiShRGIXh1hWVm6NepVnhZhrt0A=
+github.com/evanw/esbuild v0.24.2/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
 github.com/go-faker/faker/v4 v4.5.0 h1:ARzAY2XoOL9tOUK+KSecUQzyXQsUaZHefjyF8x6YFHc=
 github.com/go-faker/faker/v4 v4.5.0/go.mod h1:p3oq1GRjG2PZ7yqeFFfQI20Xm61DoBDlCA8RiSyZ48M=
 github.com/go-sourcemap/sourcemap v2.1.4+incompatible h1:a+iTbH5auLKxaNwQFg0B+TCYl6lbukKPc7b5x0n1s6Q=
