@@ -32,7 +32,7 @@ func TestNewDebugger(t *testing.T) {
 }
 
 func TestDebugModel_Update(t *testing.T) {
-	t.Run("break", func(t *testing.T) {
+	t.Run("break <symbol> <port>", func(t *testing.T) {
 		a := agent.New()
 		defer a.Close()
 
@@ -60,6 +60,39 @@ func TestDebugModel_Update(t *testing.T) {
 		defer m.agent.Unload(sb)
 
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+		assert.Len(t, d.Breakpoints(), 1)
+	})
+
+	t.Run("break", func(t *testing.T) {
+		a := agent.New()
+		defer a.Close()
+
+		d := debug.NewDebugger(a)
+		defer d.Close()
+
+		m := &debugModel{
+			input:    textinput.New(),
+			agent:    a,
+			debugger: d,
+		}
+
+		sb := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      faker.UUIDHyphenated(),
+				Namespace: resource.DefaultNamespace,
+				Name:      faker.UUIDHyphenated(),
+			},
+			Node: node.NewOneToOneNode(nil),
+		}
+		defer sb.Close()
+
+		m.agent.Load(sb)
+		defer m.agent.Unload(sb)
+
+		m.input.SetValue("break")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		assert.Len(t, d.Breakpoints(), 1)
@@ -101,7 +134,7 @@ func TestDebugModel_Update(t *testing.T) {
 		// TODO: assert
 	})
 
-	t.Run("delete", func(t *testing.T) {
+	t.Run("delete <breakpoint>", func(t *testing.T) {
 		a := agent.New()
 		defer a.Close()
 
@@ -131,7 +164,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		m.input.SetValue(fmt.Sprintf("delete %d", 0))
+		m.input.SetValue(fmt.Sprintf("delete %s", d.Breakpoints()[0].ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		assert.Len(t, d.Breakpoints(), 0)
@@ -203,7 +236,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		m.input.SetValue(fmt.Sprintf("breakpoint %d", 0))
+		m.input.SetValue(fmt.Sprintf("breakpoint %s", d.Breakpoints()[0].ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		assert.Contains(t, m.View(), sb.Name())

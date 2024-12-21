@@ -182,7 +182,7 @@ func (n *WebSocketConnNode) connect(proc *process.Process) {
 
 			child := proc.Fork()
 			child.AddExitHook(process.ExitFunc(func(_ error) {
-				conn.Close()
+				_ = conn.Close()
 			}))
 
 			ioReader.Receive(packet.None)

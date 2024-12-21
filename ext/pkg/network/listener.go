@@ -60,7 +60,7 @@ func NewListenNodeCodec() scheme.Codec {
 			n := NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
 			if spec.Cert != "" || spec.Key != "" {
 				if err := n.TLS(spec.Cert, spec.Key); err != nil {
-					n.Close()
+					_ = n.Close()
 					return nil, err
 				}
 			}
@@ -226,7 +226,7 @@ func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if w, ok := proc.LoadAndDelete(KeyHTTPResponseWriter).(http.ResponseWriter); ok {
 			n.negotiate(req, res)
-			n.write(w, res)
+			_ = n.write(w, res)
 		}
 	}
 

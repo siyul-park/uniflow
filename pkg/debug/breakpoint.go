@@ -1,6 +1,7 @@
 package debug
 
 import (
+	"github.com/gofrs/uuid"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/agent"
@@ -11,6 +12,7 @@ import (
 
 // Breakpoint represents a synchronization point in a process where execution can be paused and resumed.
 type Breakpoint struct {
+	id      uuid.UUID
 	process *process.Process
 	symbol  *symbol.Symbol
 	inPort  *port.InPort
@@ -24,19 +26,6 @@ type Breakpoint struct {
 }
 
 var _ agent.Watcher = (*Breakpoint)(nil)
-
-// NewBreakpoint creates a new Breakpoint with optional configurations.
-func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
-	b := &Breakpoint{
-		in:   make(chan *agent.Frame),
-		out:  make(chan *agent.Frame),
-		done: make(chan struct{}),
-	}
-	for _, opt := range options {
-		opt(b)
-	}
-	return b
-}
 
 // WithProcess sets the process associated with the breakpoint.
 func WithProcess(proc *process.Process) func(*Breakpoint) {
@@ -56,6 +45,25 @@ func WithInPort(port *port.InPort) func(*Breakpoint) {
 // WithOutPort sets the output port associated with the breakpoint.
 func WithOutPort(port *port.OutPort) func(*Breakpoint) {
 	return func(b *Breakpoint) { b.outPort = port }
+}
+
+// NewBreakpoint creates a new Breakpoint with optional configurations.
+func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
+	b := &Breakpoint{
+		id:   uuid.Must(uuid.NewV7()),
+		in:   make(chan *agent.Frame),
+		out:  make(chan *agent.Frame),
+		done: make(chan struct{}),
+	}
+	for _, opt := range options {
+		opt(b)
+	}
+	return b
+}
+
+// ID returns the unique identifier.
+func (b *Breakpoint) ID() uuid.UUID {
+	return b.id
 }
 
 // Next advances to the next frame, returning false if closed.
@@ -97,10 +105,11 @@ func (b *Breakpoint) Done() bool {
 
 // Frame returns the current frame under lock protection.
 func (b *Breakpoint) Frame() *agent.Frame {
-	b.rmu.RLock()
-	defer b.rmu.RUnlock()
-
-	return b.current
+	if b.rmu.TryRLock() {
+		defer b.rmu.RUnlock()
+		return b.current
+	}
+	return nil
 }
 
 // Process returns the associated process.

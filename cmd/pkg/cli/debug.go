@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
+	"slices"
 	"strings"
 	"time"
 
@@ -43,13 +43,10 @@ type debugView interface {
 
 // Various debug view types
 type (
-	errDebugView        struct{ err error }
-	frameDebugView      struct{ frame *agent.Frame }
-	framesDebugView     struct{ frames []*agent.Frame }
-	breakpointDebugView struct {
-		id         int
-		breakpoint *debug.Breakpoint
-	}
+	errDebugView         struct{ err error }
+	frameDebugView       struct{ frame *agent.Frame }
+	framesDebugView      struct{ frames []*agent.Frame }
+	breakpointDebugView  struct{ breakpoint *debug.Breakpoint }
 	breakpointsDebugView struct{ breakpoints []*debug.Breakpoint }
 	symbolDebugView      struct{ symbol *symbol.Symbol }
 	symbolsDebugView     struct{ symbols []*symbol.Symbol }
@@ -143,38 +140,49 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "quit", "q":
 				return m, tea.Quit
 			case "break", "b":
-				var sb *symbol.Symbol
-				if len(args) > 1 {
-					sb = m.findSymbol(args[1])
-					if sb == nil {
+				var bps []*debug.Breakpoint
+				if len(args) <= 1 {
+					bp := debug.NewBreakpoint()
+					m.debugger.AddBreakpoint(bp)
+
+					bps = append(bps, bp)
+				} else {
+					sbs := m.findSymbols(args[1])
+					if len(sbs) == 0 {
 						m.view = &errDebugView{err: fmt.Errorf("symbol '%s' not found", args[1])}
 						return m, nil
 					}
-				}
 
-				var inPort *port.InPort
-				var outPort *port.OutPort
-				if len(args) > 2 {
-					inPort, outPort = m.findPort(sb, args[2])
-					if inPort == nil && outPort == nil {
-						m.view = &errDebugView{err: fmt.Errorf("port '%s' not found on symbol '%s'", args[2], sb.Name())}
-						return m, nil
+					for _, sb := range sbs {
+						var inPort *port.InPort
+						var outPort *port.OutPort
+						if len(args) > 2 {
+							inPort, outPort = m.findPort(sb, args[2])
+							if inPort == nil && outPort == nil {
+								continue
+							}
+						}
+
+						bp := debug.NewBreakpoint(
+							debug.WithSymbol(sb),
+							debug.WithInPort(inPort),
+							debug.WithOutPort(outPort),
+						)
+						m.debugger.AddBreakpoint(bp)
+
+						bps = append(bps, bp)
 					}
 				}
 
-				bp := debug.NewBreakpoint(
-					debug.WithSymbol(sb),
-					debug.WithInPort(inPort),
-					debug.WithOutPort(outPort),
-				)
-				m.debugger.AddBreakpoint(bp)
-
-				bps := m.debugger.Breakpoints()
-				m.view = &breakpointDebugView{id: len(bps) - 1, breakpoint: bp}
+				if len(bps) == 1 {
+					m.view = &breakpointDebugView{breakpoint: bps[0]}
+				} else {
+					m.view = &breakpointsDebugView{breakpoints: bps}
+				}
 
 				return m, func() tea.Msg {
 					if m.debugger.Pause(context.Background()) {
-						if m.debugger.Breakpoint() == bp {
+						if slices.Contains(bps, m.debugger.Breakpoint()) {
 							return m.debugger.Frame()
 						}
 					}
@@ -190,12 +198,14 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return nil
 				}
 			case "delete", "d":
-				bps := m.debugger.Breakpoints()
-
 				var bp *debug.Breakpoint
 				if len(args) > 1 {
-					if i, err := strconv.Atoi(args[1]); err == nil && i < len(bps) {
-						bp = bps[i]
+					bps := m.debugger.Breakpoints()
+					for _, b := range bps {
+						if b.ID().String() == args[1] {
+							bp = b
+							break
+						}
 					}
 				} else {
 					bp = m.debugger.Breakpoint()
@@ -211,12 +221,14 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.view = &breakpointsDebugView{breakpoints: bps}
 				return m, nil
 			case "breakpoint", "bp":
-				bps := m.debugger.Breakpoints()
-
 				var bp *debug.Breakpoint
 				if len(args) > 1 {
-					if i, err := strconv.Atoi(args[1]); err == nil && i < len(bps) {
-						bp = bps[i]
+					bps := m.debugger.Breakpoints()
+					for _, b := range bps {
+						if b.ID().String() == args[1] {
+							bp = b
+							break
+						}
 					}
 				} else {
 					bp = m.debugger.Breakpoint()
@@ -230,14 +242,21 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.view = &symbolsDebugView{symbols: sbs}
 				return m, nil
 			case "symbol", "sb":
-				var sb *symbol.Symbol
+				var sbs []*symbol.Symbol
 				if len(args) > 1 {
-					sb = m.findSymbol(args[1])
+					sbs = m.findSymbols(args[1])
 				} else {
-					sb = m.debugger.Symbol()
+					sbs = []*symbol.Symbol{m.debugger.Symbol()}
 				}
 
-				m.view = &symbolDebugView{symbol: sb}
+				if len(sbs) == 0 {
+					m.view = &errDebugView{err: fmt.Errorf("symbol '%s' not found", args[1])}
+				} else if len(sbs) == 1 {
+					m.view = &symbolDebugView{symbol: sbs[0]}
+				} else {
+					m.view = &symbolsDebugView{symbols: sbs}
+				}
+
 				return m, nil
 			case "processes", "procs":
 				procs := m.agent.Processes()
@@ -299,13 +318,14 @@ func (m *debugModel) nextInput(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-func (m *debugModel) findSymbol(key string) *symbol.Symbol {
+func (m *debugModel) findSymbols(key string) []*symbol.Symbol {
+	var symbols []*symbol.Symbol
 	for _, sb := range m.agent.Symbols() {
 		if sb.ID().String() == key || sb.Name() == key {
-			return sb
+			symbols = append(symbols, sb)
 		}
 	}
-	return nil
+	return symbols
 }
 
 func (m *debugModel) findPort(sb *symbol.Symbol, name string) (*port.InPort, *port.OutPort) {
@@ -419,7 +439,7 @@ func (v *breakpointDebugView) Interface() map[string]any {
 		return nil
 	}
 
-	value := map[string]any{"id": v.id}
+	value := map[string]any{"id": v.breakpoint.ID()}
 
 	sb := v.breakpoint.Symbol()
 	if sb != nil {
@@ -450,8 +470,8 @@ func (v *breakpointsDebugView) View() string {
 	writer := resource.NewWriter(buffer)
 
 	values := make([]any, 0, len(v.breakpoints))
-	for i, b := range v.breakpoints {
-		value := (&breakpointDebugView{id: i, breakpoint: b}).Interface()
+	for _, b := range v.breakpoints {
+		value := (&breakpointDebugView{breakpoint: b}).Interface()
 		values = append(values, value)
 	}
 

@@ -10,6 +10,7 @@ DOCKERFILE = deployments/Dockerfile
 CGO_ENABLED ?= 1
 
 .PHONY: init generate build clean tidy update sync check test coverage benchmark lint fmt vet doc docker-build
+all: lint test build
 
 init:
 	@cp .go.work go.work

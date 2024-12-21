@@ -53,12 +53,12 @@ const KindHTTP = "http"
 // NewHTTPNodeCodec creates a new codec for HTTPNode.
 func NewHTTPNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *HTTPNodeSpec) (node.Node, error) {
-		url, err := url.Parse(spec.URL)
+		parse, err := url.Parse(spec.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		n := NewHTTPNode(url)
+		n := NewHTTPNode(parse)
 		n.SetTimeout(spec.Timeout)
 		return n, nil
 	})
@@ -67,7 +67,7 @@ func NewHTTPNodeCodec() scheme.Codec {
 // NewHTTPNode creates a new HTTPNode instance.
 func NewHTTPNode(url *url.URL) *HTTPNode {
 	transport := &http.Transport{}
-	http2.ConfigureTransport(transport)
+	_ = http2.ConfigureTransport(transport)
 
 	client := &http.Client{
 		Transport: transport,
@@ -176,10 +176,10 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 }
 
 // NewHTTPPayload creates a new HTTPPayload with the given HTTP status code and optional body.
-func NewHTTPPayload(status int, bodys ...types.Value) *HTTPPayload {
+func NewHTTPPayload(status int, bodies ...types.Value) *HTTPPayload {
 	var body types.Value = types.NewString(http.StatusText(status))
-	if len(bodys) > 0 {
-		body = bodys[0]
+	if len(bodies) > 0 {
+		body = bodies[0]
 	}
 	return &HTTPPayload{
 		Header: http.Header{},

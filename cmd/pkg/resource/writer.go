@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 	"io"
+	"math"
 	"slices"
 	"strings"
 
@@ -61,11 +62,16 @@ func (w *Writer) Write(value any) error {
 			counts[key]++
 		}
 	}
-	sizes := map[string]int{}
+
+	scores := map[string]float64{}
 	for _, element := range elements {
-		for key, value := range element {
-			sizes[key] += len(fmt.Sprint(value))
+		for key, val := range element {
+			scores[key] += 1.0 / float64(len(fmt.Sprint(val)))
 		}
+	}
+
+	for key, score := range scores {
+		scores[key] = score/float64(counts[key]) + 1.0/float64(len(key))
 	}
 
 	var keys []string
@@ -79,8 +85,12 @@ func (w *Writer) Write(value any) error {
 		if diff := counts[y] - counts[x]; diff != 0 {
 			return diff
 		}
-		if diff := sizes[x] - sizes[y]; diff != 0 {
-			return diff
+		if diff := scores[y] - scores[x]; math.Abs(diff) > 0.1 {
+			if diff > 0 {
+				return 1
+			} else {
+				return -1
+			}
 		}
 		return strings.Compare(x, y)
 	})

@@ -37,6 +37,7 @@ func TestNewBreakpoint(t *testing.T) {
 	)
 	defer b.Close()
 
+	assert.NotZero(t, proc.ID())
 	assert.Equal(t, proc, b.Process())
 	assert.Equal(t, sb, b.Symbol())
 	assert.Equal(t, sb.In(node.PortIn), b.InPort())

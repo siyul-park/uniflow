@@ -112,32 +112,33 @@ func (d *Debugger) Step(ctx context.Context) bool {
 
 // Breakpoint returns the currently active breakpoint.
 func (d *Debugger) Breakpoint() *Breakpoint {
-	d.rmu.RLock()
-	defer d.rmu.RUnlock()
-
-	return d.current
+	if d.rmu.TryRLock() {
+		defer d.rmu.RUnlock()
+		return d.current
+	}
+	return nil
 }
 
 // Frame returns the frame of the current breakpoint.
 func (d *Debugger) Frame() *agent.Frame {
-	d.rmu.RLock()
-	defer d.rmu.RUnlock()
-
-	if d.current != nil {
-		return d.current.Frame()
+	if d.rmu.TryRLock() {
+		defer d.rmu.RUnlock()
+		if d.current != nil {
+			return d.current.Frame()
+		}
 	}
 	return nil
 }
 
 // Process retrieves the process linked to the current breakpoint.
 func (d *Debugger) Process() *process.Process {
-	d.rmu.RLock()
-	defer d.rmu.RUnlock()
-
-	if d.current != nil {
-		frame := d.current.Frame()
-		if frame != nil {
-			return frame.Process
+	if d.rmu.TryRLock() {
+		defer d.rmu.RUnlock()
+		if d.current != nil {
+			frame := d.current.Frame()
+			if frame != nil {
+				return frame.Process
+			}
 		}
 	}
 	return nil
@@ -145,15 +146,15 @@ func (d *Debugger) Process() *process.Process {
 
 // Symbol retrieves the symbol for the frame at the current breakpoint.
 func (d *Debugger) Symbol() *symbol.Symbol {
-	d.rmu.RLock()
-	defer d.rmu.RUnlock()
-
-	if d.current != nil {
-		frame := d.current.Frame()
-		if frame != nil {
-			return frame.Symbol
+	if d.rmu.TryRLock() {
+		defer d.rmu.RUnlock()
+		if d.current != nil {
+			frame := d.current.Frame()
+			if frame != nil {
+				return frame.Symbol
+			}
+			return d.current.Symbol()
 		}
-		return d.current.Symbol()
 	}
 	return nil
 }
