@@ -1,4 +1,4 @@
-package agent
+package runtime
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestAgent_Watch(t *testing.T) {
-	a := New()
+	a := NewAgent()
 	defer a.Close()
 
 	w := NewProcessWatcher(func(proc *process.Process) {})
@@ -36,7 +36,7 @@ func TestAgent_Watch(t *testing.T) {
 }
 
 func TestAgent_Symbol(t *testing.T) {
-	a := New()
+	a := NewAgent()
 	defer a.Close()
 
 	sb := &symbol.Symbol{
@@ -58,7 +58,7 @@ func TestAgent_Symbol(t *testing.T) {
 }
 
 func TestAgent_Process(t *testing.T) {
-	a := New()
+	a := NewAgent()
 	defer a.Close()
 
 	done := make(chan struct{})
@@ -96,7 +96,7 @@ func TestAgent_Process(t *testing.T) {
 }
 
 func TestAgent_Chart(t *testing.T) {
-	a := New()
+	a := NewAgent()
 	defer a.Close()
 
 	chrt := &chart.Chart{
@@ -111,7 +111,7 @@ func TestAgent_Chart(t *testing.T) {
 }
 
 func TestAgent_Frames(t *testing.T) {
-	a := New()
+	a := NewAgent()
 	defer a.Close()
 
 	count := 0

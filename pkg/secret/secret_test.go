@@ -1,49 +1,65 @@
 package secret
 
 import (
+	"github.com/go-faker/faker/v4"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecret_Get(t *testing.T) {
-	scrt := &Secret{
-		ID:          uuid.Must(uuid.NewV7()),
-		Namespace:   "default",
-		Name:        faker.Word(),
-		Annotations: map[string]string{"key": "value"},
-		Data:        faker.Word(),
-	}
-
-	assert.Equal(t, scrt.ID, scrt.GetID())
-	assert.Equal(t, scrt.Namespace, scrt.GetNamespace())
-	assert.Equal(t, scrt.Name, scrt.GetName())
-	assert.Equal(t, scrt.Annotations, scrt.GetAnnotations())
-	assert.Equal(t, scrt.Data, scrt.GetData())
-	assert.True(t, scrt.IsIdentified())
+func TestSecret_SetID(t *testing.T) {
+	scrt := New()
+	id := uuid.Must(uuid.NewV7())
+	scrt.SetID(id)
+	assert.Equal(t, id, scrt.GetID())
 }
 
-func TestSecret_Set(t *testing.T) {
+func TestSecret_SetNamespace(t *testing.T) {
 	scrt := New()
-
-	id := uuid.Must(uuid.NewV7())
-	namespace := "default"
-	name := faker.Word()
-	annotations := map[string]string{"key": "value"}
-	data := faker.Word()
-
-	scrt.SetID(id)
+	namespace := faker.Word()
 	scrt.SetNamespace(namespace)
-	scrt.SetName(name)
-	scrt.SetAnnotations(annotations)
-	scrt.SetData(data)
-
-	assert.Equal(t, id, scrt.GetID())
 	assert.Equal(t, namespace, scrt.GetNamespace())
+}
+
+func TestSecret_SetName(t *testing.T) {
+	scrt := New()
+	name := faker.Word()
+	scrt.SetName(name)
 	assert.Equal(t, name, scrt.GetName())
-	assert.Equal(t, annotations, scrt.GetAnnotations())
+}
+
+func TestSecret_SetAnnotations(t *testing.T) {
+	scrt := New()
+	annotation := map[string]string{"key": "value"}
+	scrt.SetAnnotations(annotation)
+	assert.Equal(t, annotation, scrt.GetAnnotations())
+}
+
+func TestSecret_SetData_Nil(t *testing.T) {
+	scrt := New()
+	data := faker.Word()
+	scrt.SetData(data)
 	assert.Equal(t, data, scrt.GetData())
-	assert.True(t, scrt.IsIdentified())
+}
+
+func TestSecret_IsIdentified(t *testing.T) {
+	t.Run("ID", func(t *testing.T) {
+		scrt := &Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+		assert.True(t, scrt.IsIdentified())
+	})
+
+	t.Run("Name", func(t *testing.T) {
+		scrt := &Secret{
+			Name: faker.Word(),
+		}
+		assert.True(t, scrt.IsIdentified())
+	})
+
+	t.Run("Nil", func(t *testing.T) {
+		scrt := &Secret{}
+		assert.False(t, scrt.IsIdentified())
+	})
 }

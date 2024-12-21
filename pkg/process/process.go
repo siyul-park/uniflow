@@ -9,23 +9,23 @@ import (
 
 // Process represents a unit of execution with data, status, and lifecycle management.
 type Process struct {
-	parent    *Process        // Parent process, if any.
-	id        uuid.UUID       // Unique identifier.
-	data      map[string]any  // Process data storage.
-	status    Status          // Current status.
-	err       error           // Execution error, if any.
-	ctx       context.Context // Process context.
-	exitHooks ExitHooks       // Hooks to run on exit.
-	wait      sync.WaitGroup  // Manages child process completion.
-	mu        sync.RWMutex    // Synchronizes access to data and status.
+	parent    *Process
+	id        uuid.UUID
+	data      map[string]any
+	status    Status
+	err       error
+	ctx       context.Context
+	exitHooks ExitHooks
+	wait      sync.WaitGroup
+	mu        sync.RWMutex
 }
 
 // Status represents the process state.
 type Status int
 
 const (
-	StatusRunning    Status = iota // Process is active.
-	StatusTerminated               // Process has ended.
+	StatusRunning Status = iota
+	StatusTerminated
 )
 
 // New creates a new process with a background context and an exit hook.
@@ -67,11 +67,10 @@ func (p *Process) Load(key string) any {
 	if val, ok := p.data[key]; ok {
 		return val
 	}
-
-	if p.parent == nil {
-		return nil
+	if p.parent != nil {
+		return p.parent.Load(key)
 	}
-	return p.parent.Load(key)
+	return nil
 }
 
 // Store saves a value with the given key.
@@ -101,11 +100,10 @@ func (p *Process) LoadAndDelete(key string) any {
 		delete(p.data, key)
 		return val
 	}
-
-	if p.parent == nil {
-		return nil
+	if p.parent != nil {
+		return p.parent.LoadAndDelete(key)
 	}
-	return p.parent.LoadAndDelete(key)
+	return nil
 }
 
 // Status returns the process's status.
@@ -160,23 +158,27 @@ func (p *Process) Fork() *Process {
 
 // Exit terminates the process with an error, running exit hooks.
 func (p *Process) Exit(err error) {
-	p.mu.Lock()
+	exitHooks := func() ExitHooks {
+		p.mu.Lock()
+		defer p.mu.Unlock()
 
-	if p.status == StatusTerminated {
-		p.mu.Unlock()
-		return
+		if p.status == StatusTerminated {
+			return nil
+		}
+
+		exitHooks := p.exitHooks
+
+		p.data = make(map[string]any)
+		p.status = StatusTerminated
+		p.err = err
+		p.exitHooks = nil
+
+		return exitHooks
+	}()
+
+	if exitHooks != nil {
+		exitHooks.Exit(err)
 	}
-
-	exitHooks := p.exitHooks
-
-	p.data = make(map[string]any)
-	p.status = StatusTerminated
-	p.err = err
-	p.exitHooks = nil
-
-	p.mu.Unlock()
-
-	exitHooks.Exit(err)
 }
 
 // AddExitHook adds an exit hook, executing immediately if terminated.

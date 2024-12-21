@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"testing"
 	"time"
 
@@ -11,8 +12,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/agent"
-	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -25,7 +24,7 @@ import (
 )
 
 func TestNewDebugger(t *testing.T) {
-	d := NewDebugger(agent.New())
+	d := NewDebugger(runtime.NewAgent())
 	defer d.Kill()
 
 	assert.NotNil(t, d)
@@ -33,10 +32,10 @@ func TestNewDebugger(t *testing.T) {
 
 func TestDebugModel_Update(t *testing.T) {
 	t.Run("break <symbol> <port>", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -66,10 +65,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("break", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -99,10 +98,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("continue", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -135,10 +134,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("delete <breakpoint>", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -171,10 +170,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("breakpoints", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -207,10 +206,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("breakpoint <breakpoint>", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -246,10 +245,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -303,10 +302,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("symbols", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -336,10 +335,10 @@ func TestDebugModel_Update(t *testing.T) {
 	})
 
 	t.Run("symbol <symbol>", func(t *testing.T) {
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -375,10 +374,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -435,10 +434,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -496,10 +495,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -556,10 +555,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -616,10 +615,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -679,10 +678,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{
@@ -742,10 +741,10 @@ func TestDebugModel_Update(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		a := agent.New()
+		a := runtime.NewAgent()
 		defer a.Close()
 
-		d := debug.NewDebugger(a)
+		d := runtime.NewDebugger(a)
 		defer d.Close()
 
 		m := &debugModel{

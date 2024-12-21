@@ -1,10 +1,9 @@
-package debug
+package runtime
 
 import (
 	"github.com/gofrs/uuid"
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -17,33 +16,33 @@ type Breakpoint struct {
 	symbol  *symbol.Symbol
 	inPort  *port.InPort
 	outPort *port.OutPort
-	current *agent.Frame
-	in      chan *agent.Frame
-	out     chan *agent.Frame
+	current *Frame
+	in      chan *Frame
+	out     chan *Frame
 	done    chan struct{}
 	rmu     sync.RWMutex
 	wmu     sync.Mutex
 }
 
-var _ agent.Watcher = (*Breakpoint)(nil)
+var _ Watcher = (*Breakpoint)(nil)
 
-// WithProcess sets the process associated with the breakpoint.
-func WithProcess(proc *process.Process) func(*Breakpoint) {
+// BreakWithProcess sets the process associated with the breakpoint.
+func BreakWithProcess(proc *process.Process) func(*Breakpoint) {
 	return func(b *Breakpoint) { b.process = proc }
 }
 
-// WithSymbol sets the symbol associated with the breakpoint.
-func WithSymbol(sb *symbol.Symbol) func(*Breakpoint) {
+// BreakWithSymbol sets the symbol associated with the breakpoint.
+func BreakWithSymbol(sb *symbol.Symbol) func(*Breakpoint) {
 	return func(b *Breakpoint) { b.symbol = sb }
 }
 
-// WithInPort sets the input port associated with the breakpoint.
-func WithInPort(port *port.InPort) func(*Breakpoint) {
+// BreakWithInPort sets the input port associated with the breakpoint.
+func BreakWithInPort(port *port.InPort) func(*Breakpoint) {
 	return func(b *Breakpoint) { b.inPort = port }
 }
 
-// WithOutPort sets the output port associated with the breakpoint.
-func WithOutPort(port *port.OutPort) func(*Breakpoint) {
+// BreakWithOutPort sets the output port associated with the breakpoint.
+func BreakWithOutPort(port *port.OutPort) func(*Breakpoint) {
 	return func(b *Breakpoint) { b.outPort = port }
 }
 
@@ -51,8 +50,8 @@ func WithOutPort(port *port.OutPort) func(*Breakpoint) {
 func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
 	b := &Breakpoint{
 		id:   uuid.Must(uuid.NewV7()),
-		in:   make(chan *agent.Frame),
-		out:  make(chan *agent.Frame),
+		in:   make(chan *Frame),
+		out:  make(chan *Frame),
 		done: make(chan struct{}),
 	}
 	for _, opt := range options {
@@ -61,7 +60,7 @@ func NewBreakpoint(options ...func(*Breakpoint)) *Breakpoint {
 	return b
 }
 
-// ID returns the unique identifier.
+// ID returns the unique identifier of the breakpoint.
 func (b *Breakpoint) ID() uuid.UUID {
 	return b.id
 }
@@ -104,7 +103,7 @@ func (b *Breakpoint) Done() bool {
 }
 
 // Frame returns the current frame under lock protection.
-func (b *Breakpoint) Frame() *agent.Frame {
+func (b *Breakpoint) Frame() *Frame {
 	if b.rmu.TryRLock() {
 		defer b.rmu.RUnlock()
 		return b.current
@@ -133,7 +132,7 @@ func (b *Breakpoint) OutPort() *port.OutPort {
 }
 
 // OnFrame processes an incoming frame and synchronizes it.
-func (b *Breakpoint) OnFrame(frame *agent.Frame) {
+func (b *Breakpoint) OnFrame(frame *Frame) {
 	if b.matches(frame) {
 		select {
 		case b.in <- frame:
@@ -169,7 +168,7 @@ func (b *Breakpoint) Close() {
 	b.current = nil
 }
 
-func (b *Breakpoint) matches(frame *agent.Frame) bool {
+func (b *Breakpoint) matches(frame *Frame) bool {
 	return (b.process == nil || b.process == frame.Process) &&
 		(b.symbol == nil || b.symbol == frame.Symbol) &&
 		(b.inPort == nil || b.inPort == frame.InPort) &&

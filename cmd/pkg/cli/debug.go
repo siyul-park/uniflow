@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"slices"
 	"strings"
 	"time"
@@ -13,8 +14,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/agent"
-	"github.com/siyul-park/uniflow/pkg/debug"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -23,8 +22,8 @@ import (
 
 // Debugger manages the debugger UI using Bubble Tea.
 type Debugger struct {
-	agent    *agent.Agent
-	debugger *debug.Debugger
+	agent    *runtime.Agent
+	debugger *runtime.Debugger
 	program  *tea.Program
 }
 
@@ -32,8 +31,8 @@ type Debugger struct {
 type debugModel struct {
 	view     debugView
 	input    textinput.Model
-	agent    *agent.Agent
-	debugger *debug.Debugger
+	agent    *runtime.Agent
+	debugger *runtime.Debugger
 }
 
 // debugView defines an interface for different debug view types.
@@ -44,10 +43,10 @@ type debugView interface {
 // Various debug view types
 type (
 	errDebugView         struct{ err error }
-	frameDebugView       struct{ frame *agent.Frame }
-	framesDebugView      struct{ frames []*agent.Frame }
-	breakpointDebugView  struct{ breakpoint *debug.Breakpoint }
-	breakpointsDebugView struct{ breakpoints []*debug.Breakpoint }
+	frameDebugView       struct{ frame *runtime.Frame }
+	framesDebugView      struct{ frames []*runtime.Frame }
+	breakpointDebugView  struct{ breakpoint *runtime.Breakpoint }
+	breakpointsDebugView struct{ breakpoints []*runtime.Breakpoint }
 	symbolDebugView      struct{ symbol *symbol.Symbol }
 	symbolsDebugView     struct{ symbols []*symbol.Symbol }
 	processDebugView     struct{ process *process.Process }
@@ -65,12 +64,12 @@ var _ debugView = (*processDebugView)(nil)
 var _ debugView = (*processesDebugView)(nil)
 
 // NewDebugger initializes a new Debugger with an input model and UI.
-func NewDebugger(agent *agent.Agent, options ...tea.ProgramOption) *Debugger {
+func NewDebugger(agent *runtime.Agent, options ...tea.ProgramOption) *Debugger {
 	ti := textinput.New()
 	ti.Prompt = "(debug) "
 	ti.Focus()
 
-	debugger := debug.NewDebugger(agent)
+	debugger := runtime.NewDebugger(agent)
 	model := &debugModel{
 		input:    ti,
 		agent:    agent,
@@ -140,9 +139,9 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "quit", "q":
 				return m, tea.Quit
 			case "break", "b":
-				var bps []*debug.Breakpoint
+				var bps []*runtime.Breakpoint
 				if len(args) <= 1 {
-					bp := debug.NewBreakpoint()
+					bp := runtime.NewBreakpoint()
 					m.debugger.AddBreakpoint(bp)
 
 					bps = append(bps, bp)
@@ -163,10 +162,10 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							}
 						}
 
-						bp := debug.NewBreakpoint(
-							debug.WithSymbol(sb),
-							debug.WithInPort(inPort),
-							debug.WithOutPort(outPort),
+						bp := runtime.NewBreakpoint(
+							runtime.BreakWithSymbol(sb),
+							runtime.BreakWithInPort(inPort),
+							runtime.BreakWithOutPort(outPort),
 						)
 						m.debugger.AddBreakpoint(bp)
 
@@ -198,7 +197,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return nil
 				}
 			case "delete", "d":
-				var bp *debug.Breakpoint
+				var bp *runtime.Breakpoint
 				if len(args) > 1 {
 					bps := m.debugger.Breakpoints()
 					for _, b := range bps {
@@ -221,7 +220,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.view = &breakpointsDebugView{breakpoints: bps}
 				return m, nil
 			case "breakpoint", "bp":
-				var bp *debug.Breakpoint
+				var bp *runtime.Breakpoint
 				if len(args) > 1 {
 					bps := m.debugger.Breakpoints()
 					for _, b := range bps {
@@ -287,7 +286,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					proc = m.debugger.Process()
 				}
 
-				var frames []*agent.Frame
+				var frames []*runtime.Frame
 				if proc != nil {
 					frames = m.agent.Frames(proc.ID())
 				}
@@ -300,7 +299,7 @@ func (m *debugModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
-	case *agent.Frame:
+	case *runtime.Frame:
 		if msg == nil {
 			m.view = nil
 		} else {

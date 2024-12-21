@@ -29,7 +29,7 @@ const (
 	KeyNamespace   = "namespace"
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
-	KetSpecs       = "specs"
+	KeySpecs       = "specs"
 	KeyInbounds    = "inbounds"
 	KeyOutbounds   = "outbounds"
 	KeyEnv         = "env"

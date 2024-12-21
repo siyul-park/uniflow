@@ -18,9 +18,15 @@ var ErrorType = cel.ObjectType("error")
 
 var _ types.Error = (*Error)(nil)
 
-// ConvertToSyscall converts the Error instance to a syscall Go type as per the provided type descriptor.
-func (e *Error) ConvertToSyscall(typeDesc reflect.Type) (any, error) {
-	return nil, e.error
+// ConvertToNative converts the Error instance to a syscall Go type as per the provided type descriptor.
+func (e *Error) ConvertToNative(typeDesc reflect.Type) (any, error) {
+	if typeDesc == reflect.TypeOf("") {
+		return e.String(), nil
+	}
+	if typeDesc == reflect.TypeOf((*error)(nil)).Elem() {
+		return e.error, nil
+	}
+	return nil, errors.New("unsupported type")
 }
 
 // ConvertToType converts the Error instance to a specified ref.Type value.
@@ -36,13 +42,13 @@ func (e *Error) ConvertToType(typeVal ref.Type) ref.Val {
 func (e *Error) Equal(other ref.Val) ref.Val {
 	switch o := other.(type) {
 	case types.String:
-		return types.Bool(errors.Is(e, errors.New(string(o))))
+		return types.Bool(errors.Is(e.error, errors.New(string(o))))
 	case *types.Err:
-		return types.Bool(errors.Is(e, o.Unwrap()))
+		return types.Bool(errors.Is(e.error, o.Unwrap()))
 	case *Error:
-		return types.Bool(errors.Is(e, o.Unwrap()))
+		return types.Bool(errors.Is(e.error, o.Unwrap()))
 	}
-	return e
+	return types.Bool(false)
 }
 
 // String returns the string representation of the Error instance.
@@ -62,25 +68,7 @@ func (e *Error) Value() any {
 
 // Is checks whether the Error instance matches the target error using errors.Is.
 func (e *Error) Is(target error) bool {
-	errs := []error{e.error}
-	for len(errs) > 0 {
-		err := errs[0]
-		errs = errs[1:]
-
-		if err.Error() == target.Error() {
-			return true
-		}
-
-		switch x := err.(type) {
-		case interface{ Unwrap() error }:
-			if err = x.Unwrap(); err != nil {
-				errs = append(errs, err)
-			}
-		case interface{ Unwrap() []error }:
-			errs = append(errs, x.Unwrap()...)
-		}
-	}
-	return false
+	return errors.Is(e.error, target)
 }
 
 // Unwrap returns the wrapped error instance from the Error.

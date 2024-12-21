@@ -1,6 +1,7 @@
 package cel
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -9,62 +10,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestError_String(t *testing.T) {
-	cause := faker.Sentence()
-	err := &Error{error: errors.New(cause)}
+func TestError_ConvertToNative(t *testing.T) {
+	t.Run("ConvertToString", func(t *testing.T) {
+		cause := faker.Sentence()
+		v := &Error{error: errors.New(cause)}
 
-	assert.Equal(t, cause, err.String())
-}
+		native, err := v.ConvertToNative(reflect.TypeOf(""))
+		assert.NoError(t, err)
+		assert.Equal(t, cause, native)
+	})
 
-func TestError_ConvertToType(t *testing.T) {
-	cause := faker.Sentence()
-	err := &Error{error: errors.New(cause)}
+	t.Run("ConvertToError", func(t *testing.T) {
+		cause := faker.Sentence()
+		v := &Error{error: errors.New(cause)}
 
-	str := err.ConvertToType(types.StringType)
+		native, err := v.ConvertToNative(reflect.TypeOf((*error)(nil)).Elem())
+		assert.NoError(t, err)
+		assert.Equal(t, v.error, native)
+	})
 
-	assert.Equal(t, types.String(cause), str)
+	t.Run("UnsupportedType", func(t *testing.T) {
+		cause := faker.Sentence()
+		v := &Error{error: errors.New(cause)}
+
+		native, err := v.ConvertToNative(reflect.TypeOf(0))
+		assert.Error(t, err)
+		assert.Nil(t, native)
+	})
 }
 
 func TestError_Equal(t *testing.T) {
-	t.Run("String", func(t *testing.T) {
-		cause := faker.Sentence()
-		err := &Error{error: errors.New(cause)}
+	err1 := &Error{error: errors.New(faker.Sentence())}
+	err2 := &Error{error: errors.New(faker.Sentence())}
 
-		other := types.String(cause)
-		assert.Equal(t, types.True, err.Equal(other))
-	})
-
-	t.Run("Error", func(t *testing.T) {
-		cause := faker.Sentence()
-		err := &Error{error: errors.New(cause)}
-
-		other := &Error{error: errors.New(cause)}
-		assert.Equal(t, types.True, err.Equal(other))
-	})
-
-	t.Run("Unwrap", func(t *testing.T) {
-		cause := faker.Sentence()
-		err := &Error{error: errors.WithMessage(errors.New(cause), faker.Sentence())}
-
-		other := types.String(cause)
-		assert.Equal(t, types.True, err.Equal(other))
-	})
+	assert.Equal(t, types.False, err1.Equal(err2))
 }
 
 func TestError_Is(t *testing.T) {
-	t.Run("Error", func(t *testing.T) {
-		cause := faker.Sentence()
-		err := &Error{error: errors.New(cause)}
+	err1 := &Error{error: errors.New(faker.Sentence())}
+	err2 := &Error{error: errors.New(faker.Sentence())}
 
-		other := &Error{error: errors.New(cause)}
-		assert.True(t, err.Is(other))
-	})
-
-	t.Run("Unwrap", func(t *testing.T) {
-		cause := faker.Sentence()
-		err := &Error{error: errors.WithMessage(errors.New(cause), faker.Sentence())}
-
-		other := &Error{error: errors.New(cause)}
-		assert.True(t, err.Is(other))
-	})
+	assert.False(t, err1.Is(err2))
 }

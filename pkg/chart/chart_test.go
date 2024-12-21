@@ -12,120 +12,176 @@ import (
 )
 
 func TestChart_IsBound(t *testing.T) {
-	sec1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
-	}
-	sec2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
-	}
-
-	chrt := &Chart{
-		ID: uuid.Must(uuid.NewV7()),
-		Env: map[string][]spec.Value{
-			"FOO": {
-				{
-					ID:   sec1.ID,
-					Data: "foo",
+	t.Run("NoSecrets", func(t *testing.T) {
+		chrt := &Chart{
+			ID: uuid.Must(uuid.NewV7()),
+			Env: map[string][]spec.Value{
+				"FOO": {
+					{
+						ID:   uuid.Must(uuid.NewV7()),
+						Data: "foo",
+					},
 				},
 			},
-		},
-	}
+		}
+		assert.False(t, chrt.IsBound())
+	})
 
-	assert.True(t, chrt.IsBound(sec1))
-	assert.False(t, chrt.IsBound(sec2))
+	t.Run("WithSecrets", func(t *testing.T) {
+		sec1 := &secret.Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+		sec2 := &secret.Secret{
+			ID: uuid.Must(uuid.NewV7()),
+		}
+		chrt := &Chart{
+			ID: uuid.Must(uuid.NewV7()),
+			Env: map[string][]spec.Value{
+				"FOO": {
+					{
+						ID:   sec1.ID,
+						Data: "foo",
+					},
+				},
+			},
+		}
+		assert.True(t, chrt.IsBound(sec1))
+		assert.False(t, chrt.IsBound(sec2))
+	})
 }
 
 func TestChart_Bind(t *testing.T) {
-	scrt := &secret.Secret{
-		ID:   uuid.Must(uuid.NewV7()),
-		Data: "foo",
-	}
-
-	chrt := &Chart{
-		ID: uuid.Must(uuid.NewV7()),
-		Env: map[string][]spec.Value{
-			"FOO": {
-				{
-					ID:   scrt.ID,
-					Data: "{{ . }}",
+	t.Run("NoMatchingSecret", func(t *testing.T) {
+		scrt := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: "foo",
+		}
+		chrt := &Chart{
+			ID: uuid.Must(uuid.NewV7()),
+			Env: map[string][]spec.Value{
+				"FOO": {
+					{
+						ID:   uuid.Must(uuid.NewV7()),
+						Data: "{{ . }}",
+					},
 				},
 			},
-		},
-	}
+		}
+		err := chrt.Bind(scrt)
+		assert.Error(t, err)
+	})
 
-	err := chrt.Bind(scrt)
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Data)
+	t.Run("MatchingSecret", func(t *testing.T) {
+		scrt := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: "foo",
+		}
+		chrt := &Chart{
+			ID: uuid.Must(uuid.NewV7()),
+			Env: map[string][]spec.Value{
+				"FOO": {
+					{
+						ID:   scrt.ID,
+						Data: "{{ . }}",
+					},
+				},
+			},
+		}
+		err := chrt.Bind(scrt)
+		assert.NoError(t, err)
+		assert.Equal(t, "foo", chrt.GetEnv()["FOO"][0].Data)
+	})
 }
 
 func TestChart_Build(t *testing.T) {
-	chrt := &Chart{
-		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Unstructured{
-				Meta: spec.Meta{
-					ID:   uuid.Must(uuid.NewV7()),
-					Kind: faker.UUIDHyphenated(),
-				},
-				Fields: map[string]any{
-					"foo": "{{ .FOO }}",
-				},
-			},
-		},
-		Env: map[string][]spec.Value{
-			"FOO": {
-				{
-					Data: "foo",
+	t.Run("NoEnv", func(t *testing.T) {
+		chrt := &Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.UUIDHyphenated(),
+			Specs: []spec.Spec{
+				&spec.Unstructured{
+					Meta: spec.Meta{
+						ID:   uuid.Must(uuid.NewV7()),
+						Kind: faker.UUIDHyphenated(),
+					},
+					Fields: map[string]any{
+						"foo": "{{ .FOO }}",
+					},
 				},
 			},
-		},
-	}
+		}
+		meta := &spec.Meta{
+			Kind:      chrt.GetName(),
+			Namespace: resource.DefaultNamespace,
+		}
+		specs, err := chrt.Build(meta)
+		assert.NoError(t, err)
+		assert.Len(t, specs, 1)
+	})
 
-	meta := &spec.Meta{
-		Kind:      chrt.GetName(),
-		Namespace: resource.DefaultNamespace,
-	}
-
-	specs, err := chrt.Build(meta)
-	assert.NoError(t, err)
-	assert.Len(t, specs, 1)
+	t.Run("WithEnv", func(t *testing.T) {
+		chrt := &Chart{
+			ID:   uuid.Must(uuid.NewV7()),
+			Name: faker.UUIDHyphenated(),
+			Specs: []spec.Spec{
+				&spec.Unstructured{
+					Meta: spec.Meta{
+						ID:   uuid.Must(uuid.NewV7()),
+						Kind: faker.UUIDHyphenated(),
+					},
+					Fields: map[string]any{
+						"foo": "{{ .FOO }}",
+					},
+				},
+			},
+			Env: map[string][]spec.Value{
+				"FOO": {
+					{
+						Data: "foo",
+					},
+				},
+			},
+		}
+		meta := &spec.Meta{
+			Kind:      chrt.GetName(),
+			Namespace: resource.DefaultNamespace,
+		}
+		specs, err := chrt.Build(meta)
+		assert.NoError(t, err)
+		assert.Len(t, specs, 1)
+	})
 }
 
-func TestChart_Get(t *testing.T) {
-	chrt := &Chart{
-		ID:          uuid.Must(uuid.NewV7()),
-		Namespace:   "default",
-		Name:        faker.Word(),
-		Annotations: map[string]string{"key": "value"},
-		Specs: []spec.Spec{
-			&spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-		},
-		Inbounds: map[string][]spec.Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:      map[string][]spec.Value{"env1": {{Name: "secret1", Data: "value1"}}},
-	}
-
-	assert.Equal(t, chrt.ID, chrt.GetID())
-	assert.Equal(t, chrt.Namespace, chrt.GetNamespace())
-	assert.Equal(t, chrt.Name, chrt.GetName())
-	assert.Equal(t, chrt.Annotations, chrt.GetAnnotations())
-	assert.Equal(t, chrt.Specs, chrt.GetSpecs())
-	assert.Equal(t, chrt.Inbounds, chrt.GetInbounds())
-	assert.Equal(t, chrt.Env, chrt.GetEnv())
-}
-
-func TestChart_Set(t *testing.T) {
+func TestChart_SetID(t *testing.T) {
 	chrt := New()
-
 	id := uuid.Must(uuid.NewV7())
+	chrt.SetID(id)
+	assert.Equal(t, id, chrt.GetID())
+}
+
+func TestChart_SetNamespace(t *testing.T) {
+	chrt := New()
 	namespace := "test-namespace"
+	chrt.SetNamespace(namespace)
+	assert.Equal(t, namespace, chrt.GetNamespace())
+}
+
+func TestChart_SetName(t *testing.T) {
+	chrt := New()
 	name := "test-chart"
+	chrt.SetName(name)
+	assert.Equal(t, name, chrt.GetName())
+}
+
+func TestChart_SetAnnotations(t *testing.T) {
+	chrt := New()
 	annotations := map[string]string{"key": "value"}
+	chrt.SetAnnotations(annotations)
+	assert.Equal(t, annotations, chrt.GetAnnotations())
+}
+
+func TestChart_SetSpecs(t *testing.T) {
+	chrt := New()
 	specs := []spec.Spec{
 		&spec.Unstructured{
 			Meta: spec.Meta{
@@ -134,6 +190,12 @@ func TestChart_Set(t *testing.T) {
 			},
 		},
 	}
+	chrt.SetSpecs(specs)
+	assert.Equal(t, specs, chrt.GetSpecs())
+}
+
+func TestChart_SetInbounds(t *testing.T) {
+	chrt := New()
 	ports := map[string][]spec.Port{
 		"http": {
 			{
@@ -143,6 +205,27 @@ func TestChart_Set(t *testing.T) {
 			},
 		},
 	}
+	chrt.SetInbounds(ports)
+	assert.Equal(t, ports, chrt.GetInbounds())
+}
+
+func TestChart_SetOutbounds(t *testing.T) {
+	chrt := New()
+	ports := map[string][]spec.Port{
+		"http": {
+			{
+				ID:   uuid.Must(uuid.NewV7()),
+				Name: "http",
+				Port: "80",
+			},
+		},
+	}
+	chrt.SetOutbounds(ports)
+	assert.Equal(t, ports, chrt.GetOutbounds())
+}
+
+func TestChart_SetEnv(t *testing.T) {
+	chrt := New()
 	env := map[string][]spec.Value{
 		"FOO": {
 			{
@@ -151,28 +234,6 @@ func TestChart_Set(t *testing.T) {
 			},
 		},
 	}
-
-	chrt.SetID(id)
-	assert.Equal(t, id, chrt.GetID())
-
-	chrt.SetNamespace(namespace)
-	assert.Equal(t, namespace, chrt.GetNamespace())
-
-	chrt.SetName(name)
-	assert.Equal(t, name, chrt.GetName())
-
-	chrt.SetAnnotations(annotations)
-	assert.Equal(t, annotations, chrt.GetAnnotations())
-
-	chrt.SetSpecs(specs)
-	assert.Equal(t, specs, chrt.GetSpecs())
-
-	chrt.SetInbounds(ports)
-	assert.Equal(t, ports, chrt.GetInbounds())
-
-	chrt.SetOutbounds(ports)
-	assert.Equal(t, ports, chrt.GetOutbounds())
-
 	chrt.SetEnv(env)
 	assert.Equal(t, env, chrt.GetEnv())
 }

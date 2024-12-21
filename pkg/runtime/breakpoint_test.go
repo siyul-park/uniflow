@@ -1,11 +1,10 @@
-package debug
+package runtime
 
 import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -30,10 +29,10 @@ func TestNewBreakpoint(t *testing.T) {
 	defer sb.Close()
 
 	b := NewBreakpoint(
-		WithProcess(proc),
-		WithSymbol(sb),
-		WithInPort(sb.In(node.PortIn)),
-		WithOutPort(sb.Out(node.PortOut)),
+		BreakWithProcess(proc),
+		BreakWithSymbol(sb),
+		BreakWithInPort(sb.In(node.PortIn)),
+		BreakWithOutPort(sb.Out(node.PortOut)),
 	)
 	defer b.Close()
 
@@ -60,12 +59,12 @@ func TestBreakpoint_Next(t *testing.T) {
 	defer sb.Close()
 
 	b := NewBreakpoint(
-		WithProcess(proc),
-		WithSymbol(sb),
+		BreakWithProcess(proc),
+		BreakWithSymbol(sb),
 	)
 	defer b.Close()
 
-	frame := &agent.Frame{
+	frame := &Frame{
 		Process: proc,
 		Symbol:  sb,
 	}
@@ -92,12 +91,12 @@ func TestBreakpoint_Done(t *testing.T) {
 	defer sb.Close()
 
 	b := NewBreakpoint(
-		WithProcess(proc),
-		WithSymbol(sb),
+		BreakWithProcess(proc),
+		BreakWithSymbol(sb),
 	)
 	defer b.Close()
 
-	frame := &agent.Frame{
+	frame := &Frame{
 		Process: proc,
 		Symbol:  sb,
 	}

@@ -1,4 +1,4 @@
-package agent
+package runtime
 
 import (
 	"sync"
@@ -29,8 +29,8 @@ var _ symbol.UnloadHook = (*Agent)(nil)
 var _ chart.LinkHook = (*Agent)(nil)
 var _ chart.UnlinkHook = (*Agent)(nil)
 
-// New initializes and returns a new Agent.
-func New() *Agent {
+// NewAgent initializes and returns a new Agent.
+func NewAgent() *Agent {
 	return &Agent{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
 		processes: make(map[uuid.UUID]*process.Process),

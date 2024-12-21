@@ -25,60 +25,63 @@ func TestConvert(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestMeta_Get(t *testing.T) {
-	meta := &Meta{
-		ID:          uuid.Must(uuid.NewV7()),
-		Kind:        faker.Word(),
-		Namespace:   "default",
-		Name:        faker.Word(),
-		Annotations: map[string]string{"key": "value"},
-		Ports:       map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
-		Env:         map[string][]Value{"env1": {{Name: "secret1", Data: "value1"}}},
-	}
-
-	assert.Equal(t, meta.ID, meta.GetID())
-	assert.Equal(t, meta.Kind, meta.GetKind())
-	assert.Equal(t, meta.Namespace, meta.GetNamespace())
-	assert.Equal(t, meta.Name, meta.GetName())
-	assert.Equal(t, meta.Annotations, meta.GetAnnotations())
-	assert.Equal(t, meta.Ports, meta.GetPorts())
-	assert.Equal(t, meta.Env, meta.GetEnv())
-}
-
-func TestMeta_Set(t *testing.T) {
+func TestMeta_SetID(t *testing.T) {
 	meta := &Meta{}
-
 	id := uuid.Must(uuid.NewV7())
 	meta.SetID(id)
 	assert.Equal(t, id, meta.GetID())
+}
 
-	kind := "testKind"
+func TestMeta_SetKind(t *testing.T) {
+	meta := &Meta{}
+	kind := faker.Word()
 	meta.SetKind(kind)
 	assert.Equal(t, kind, meta.GetKind())
+}
 
-	namespace := "testNamespace"
+func TestMeta_SetNamespace(t *testing.T) {
+	meta := &Meta{}
+	namespace := faker.Word()
 	meta.SetNamespace(namespace)
 	assert.Equal(t, namespace, meta.GetNamespace())
+}
 
-	name := "testName"
+func TestMeta_SetName(t *testing.T) {
+	meta := &Meta{}
+	name := faker.Word()
 	meta.SetName(name)
 	assert.Equal(t, name, meta.GetName())
+}
 
+func TestMeta_SetAnnotations(t *testing.T) {
+	meta := &Meta{}
 	annotations := map[string]string{"key": "value"}
 	meta.SetAnnotations(annotations)
 	assert.Equal(t, annotations, meta.GetAnnotations())
+}
 
+func TestMeta_SetPorts(t *testing.T) {
+	meta := &Meta{}
 	ports := map[string][]Port{
-		"http": {
-			{ID: uuid.Must(uuid.NewV7()), Name: "port1", Port: "8080"},
+		"out": {
+			{
+				ID:   uuid.Must(uuid.NewV7()),
+				Port: "in",
+			},
 		},
 	}
 	meta.SetPorts(ports)
 	assert.Equal(t, ports, meta.GetPorts())
+}
 
+func TestMeta_SetEnv(t *testing.T) {
+	meta := &Meta{}
 	env := map[string][]Value{
 		"FOO": {
-			{ID: uuid.Must(uuid.NewV7()), Name: "bar", Data: "baz"},
+			{
+				ID:   uuid.Must(uuid.NewV7()),
+				Data: "baz",
+			},
 		},
 	}
 	meta.SetEnv(env)

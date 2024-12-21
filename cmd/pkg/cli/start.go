@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
@@ -108,7 +107,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 		if enableDebug {
-			a := agent.New()
+			a := runtime.NewAgent()
 
 			h.AddLoadHook(a)
 			h.AddUnloadHook(a)

@@ -1,4 +1,4 @@
-package debug
+package runtime
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -20,7 +19,7 @@ import (
 )
 
 func TestDebugger_AddBreakpoint(t *testing.T) {
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -37,7 +36,7 @@ func TestDebugger_AddBreakpoint(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	ok := d.AddBreakpoint(bp)
 	assert.True(t, ok)
@@ -47,7 +46,7 @@ func TestDebugger_AddBreakpoint(t *testing.T) {
 }
 
 func TestDebugger_RemoveBreakpoint(t *testing.T) {
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -64,7 +63,7 @@ func TestDebugger_RemoveBreakpoint(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -76,7 +75,7 @@ func TestDebugger_RemoveBreakpoint(t *testing.T) {
 }
 
 func TestDebugger_Breakpoints(t *testing.T) {
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -93,7 +92,7 @@ func TestDebugger_Breakpoints(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -105,7 +104,7 @@ func TestDebugger_Pause(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -122,7 +121,7 @@ func TestDebugger_Pause(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -157,7 +156,7 @@ func TestDebugger_Step(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -174,7 +173,7 @@ func TestDebugger_Step(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -209,7 +208,7 @@ func TestDebugger_Breakpoint(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -226,7 +225,7 @@ func TestDebugger_Breakpoint(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -263,7 +262,7 @@ func TestDebugger_Frame(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -280,7 +279,7 @@ func TestDebugger_Frame(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -317,7 +316,7 @@ func TestDebugger_Process(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -334,7 +333,7 @@ func TestDebugger_Process(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 
@@ -371,7 +370,7 @@ func TestDebugger_Symbol(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	a := agent.New()
+	a := NewAgent()
 	defer a.Close()
 
 	d := NewDebugger(a)
@@ -388,7 +387,7 @@ func TestDebugger_Symbol(t *testing.T) {
 	}
 	defer sb.Close()
 
-	bp := NewBreakpoint(WithSymbol(sb))
+	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	d.AddBreakpoint(bp)
 

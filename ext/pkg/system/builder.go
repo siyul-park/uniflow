@@ -13,6 +13,7 @@ import (
 	"reflect"
 )
 
+// SchemeRegister manages syscalls and signals for a scheme.
 type SchemeRegister struct {
 	syscalls map[string]func(context.Context, []any) ([]any, error)
 	signals  map[string]func(context.Context) (<-chan any, error)
@@ -20,7 +21,7 @@ type SchemeRegister struct {
 
 var _ scheme.Register = (*SchemeRegister)(nil)
 
-// AddToHook returns a function that adds hook to the provided hook.
+// AddToHook returns a function that adds hooks to the provided hook.
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
@@ -39,7 +40,7 @@ func AddToHook() hook.Register {
 	})
 }
 
-// AddToScheme returns a function that adds node types and codecs to the provided spec.
+// AddToScheme returns a new SchemeRegister instance.
 func AddToScheme() *SchemeRegister {
 	return &SchemeRegister{
 		syscalls: make(map[string]func(context.Context, []any) ([]any, error)),
@@ -47,6 +48,7 @@ func AddToScheme() *SchemeRegister {
 	}
 }
 
+// AddToScheme adds node types and codecs to the provided scheme.
 func (r *SchemeRegister) AddToScheme(s *scheme.Scheme) error {
 	definitions := []struct {
 		kind  string
@@ -65,24 +67,25 @@ func (r *SchemeRegister) AddToScheme(s *scheme.Scheme) error {
 	return nil
 }
 
+// SetSignal registers a signal function for a given topic.
 func (r *SchemeRegister) SetSignal(topic string, fn any) error {
 	var signal func(context.Context) (<-chan any, error)
-	if s, ok := fn.(func(context.Context) (<-chan any, error)); ok {
+	switch s := fn.(type) {
+	case func(context.Context) (<-chan any, error):
 		signal = s
-	} else if s, ok := fn.(func(context.Context) <-chan any); ok {
+	case func(context.Context) <-chan any:
 		signal = func(ctx context.Context) (<-chan any, error) {
 			return s(ctx), nil
 		}
-	} else if s, ok := fn.(func() (<-chan any, error)); ok {
+	case func() (<-chan any, error):
 		signal = func(_ context.Context) (<-chan any, error) {
 			return s()
 		}
-	} else if s, ok := fn.(func() <-chan any); ok {
+	case func() <-chan any:
 		signal = func(_ context.Context) (<-chan any, error) {
 			return s(), nil
 		}
-	}
-	if signal == nil {
+	default:
 		return errors.WithStack(encoding.ErrUnsupportedType)
 	}
 
@@ -90,18 +93,17 @@ func (r *SchemeRegister) SetSignal(topic string, fn any) error {
 	return nil
 }
 
+// Signal retrieves the signal function for a given topic.
 func (r *SchemeRegister) Signal(topic string) func(context.Context) (<-chan any, error) {
 	return r.signals[topic]
 }
 
+// SetSyscall registers a syscall function for a given opcode.
 func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 	fnValue := reflect.ValueOf(fn)
 	if fnValue.Kind() != reflect.Func {
 		return errors.WithStack(encoding.ErrUnsupportedType)
 	}
-
-	typeContext := reflect.TypeOf((*context.Context)(nil)).Elem()
-	typeError := reflect.TypeOf((*error)(nil)).Elem()
 
 	fnType := fnValue.Type()
 	numIn := fnType.NumIn()
@@ -111,7 +113,7 @@ func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 		ins := make([]reflect.Value, numIn)
 		offset := 0
 
-		if numIn > 0 && fnType.In(0).Implements(typeContext) {
+		if numIn > 0 && fnType.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem()) {
 			ins[0] = reflect.ValueOf(ctx)
 			offset++
 		}
@@ -134,7 +136,7 @@ func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 
 		outs := fnValue.Call(ins)
 
-		if numOut > 0 && fnType.Out(numOut-1).Implements(typeError) {
+		if numOut > 0 && fnType.Out(numOut-1).Implements(reflect.TypeOf((*error)(nil)).Elem()) {
 			if err, ok := outs[numOut-1].Interface().(error); ok && err != nil {
 				return nil, err
 			}
@@ -150,6 +152,7 @@ func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 	return nil
 }
 
+// Syscall retrieves the syscall function for a given opcode.
 func (r *SchemeRegister) Syscall(opcode string) func(context.Context, []any) ([]any, error) {
 	return r.syscalls[opcode]
 }

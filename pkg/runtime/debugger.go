@@ -1,17 +1,16 @@
-package debug
+package runtime
 
 import (
 	"context"
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/agent"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
 // Debugger manages breakpoints and the debugging process.
 type Debugger struct {
-	agent       *agent.Agent
+	agent       *Agent
 	breakpoints []*Breakpoint
 	current     *Breakpoint
 	in          chan *Breakpoint
@@ -21,7 +20,7 @@ type Debugger struct {
 }
 
 // NewDebugger creates a new Debugger instance with the specified agent.
-func NewDebugger(agent *agent.Agent) *Debugger {
+func NewDebugger(agent *Agent) *Debugger {
 	return &Debugger{
 		agent: agent,
 		in:    make(chan *Breakpoint),
@@ -120,7 +119,7 @@ func (d *Debugger) Breakpoint() *Breakpoint {
 }
 
 // Frame returns the frame of the current breakpoint.
-func (d *Debugger) Frame() *agent.Frame {
+func (d *Debugger) Frame() *Frame {
 	if d.rmu.TryRLock() {
 		defer d.rmu.RUnlock()
 		if d.current != nil {

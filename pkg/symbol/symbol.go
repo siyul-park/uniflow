@@ -11,10 +11,10 @@ import (
 
 // Symbol represents a Node that is identifiable within a Spec.
 type Symbol struct {
-	Spec spec.Spec
-	Node node.Node
-	ins  map[string]*port.InPort
-	outs map[string]*port.OutPort
+	Spec spec.Spec                // Spec holds the specification of the Symbol.
+	Node node.Node                // Node is the underlying node of the Symbol.
+	ins  map[string]*port.InPort  // ins is a map of input ports.
+	outs map[string]*port.OutPort // outs is a map of output ports.
 	mu   sync.RWMutex
 }
 
