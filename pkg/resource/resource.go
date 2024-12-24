@@ -1,6 +1,8 @@
 package resource
 
-import "github.com/gofrs/uuid"
+import (
+	"github.com/gofrs/uuid"
+)
 
 // Resource represents a common interface for objects with metadata.
 type Resource interface {
@@ -25,9 +27,9 @@ type Resource interface {
 // Meta contains metadata for resources.
 type Meta struct {
 	// ID is the unique identifier of the resource.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
 	// Namespace groups resources logically.
-	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
 	// Name is the human-readable name of the resource.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.

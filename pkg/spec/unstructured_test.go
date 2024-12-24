@@ -17,7 +17,7 @@ func TestUnstructured_GetSet(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, id, val)
 
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 	unstructured.Set(KeyKind, kind)
 	val, ok = unstructured.Get(KeyKind)
 	assert.True(t, ok)
@@ -28,7 +28,7 @@ func TestUnstructured_GetSet(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "default", val)
 
-	name := faker.Word()
+	name := faker.UUIDHyphenated()
 	unstructured.Set(KeyName, name)
 	val, ok = unstructured.Get(KeyName)
 	assert.True(t, ok)
@@ -40,7 +40,7 @@ func TestUnstructured_GetSet(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, annotations, val)
 
-	ports := map[string][]Port{"port1": {{Name: faker.Word(), Port: "8080"}}}
+	ports := map[string][]Port{"port1": {{Name: faker.UUIDHyphenated(), Port: "8080"}}}
 	unstructured.Set(KeyPorts, ports)
 	val, ok = unstructured.Get(KeyPorts)
 	assert.True(t, ok)

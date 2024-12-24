@@ -18,17 +18,18 @@ func TestTable_Insert(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs:     []spec.Spec{},
 	}
 	chrt2 := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      chrt1.GetName(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      chrt1.GetName(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}
@@ -50,11 +51,13 @@ func TestTable_Free(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      faker.UUIDHyphenated(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}
@@ -75,11 +78,13 @@ func TestTable_Lookup(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      faker.UUIDHyphenated(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}
@@ -97,17 +102,18 @@ func TestTable_Links(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs:     []spec.Spec{},
 	}
 	chrt2 := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      chrt1.GetName(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      chrt1.GetName(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}
@@ -130,11 +136,13 @@ func TestTable_Keys(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      faker.UUIDHyphenated(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}
@@ -169,17 +177,18 @@ func TestTable_Hook(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs:     []spec.Spec{},
 	}
 	chrt2 := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      chrt1.GetName(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      chrt1.GetName(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}

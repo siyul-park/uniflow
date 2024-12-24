@@ -22,7 +22,7 @@ func TestProgram_Run(t *testing.T) {
 	c := NewCompiler()
 	p, _ := c.Compile("self")
 
-	args := []any{faker.Word()}
+	args := []any{faker.UUIDHyphenated()}
 
 	res, err := p.Run(ctx, args)
 	assert.NoError(t, err)

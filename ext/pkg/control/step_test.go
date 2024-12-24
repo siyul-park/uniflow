@@ -23,14 +23,14 @@ func TestStepNodeCodec_Compile(t *testing.T) {
 	codec := NewStepNodeCodec(s)
 
 	sp := &StepNodeSpec{
-		Specs: []spec.Spec{
-			&spec.Unstructured{
+		Specs: []*spec.Unstructured{
+			{
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,
 				},
 			},
-			&spec.Unstructured{
+			{
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,

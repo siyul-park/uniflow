@@ -12,7 +12,7 @@ import (
 // WaitNodeSpec defines the configuration for WaitNode.
 type WaitNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Interval  time.Duration `map:"interval"`
+	Interval  time.Duration `map:"interval" validate:"required"`
 }
 
 // WaitNode adds a delay to packet processing, using a specified interval.

@@ -164,7 +164,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		scrt := &secret.Secret{
 			ID:   uuid.Must(uuid.NewV7()),
-			Data: faker.Word(),
+			Data: faker.UUIDHyphenated(),
 		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -363,7 +363,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			scrt := &secret.Secret{
 				ID:   uuid.Must(uuid.NewV7()),
-				Data: faker.Word(),
+				Data: faker.UUIDHyphenated(),
 			}
 			meta := &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),

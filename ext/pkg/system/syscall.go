@@ -14,7 +14,7 @@ import (
 // SyscallNodeSpec specifies the creation parameters for a SyscallNode.
 type SyscallNodeSpec struct {
 	spec.Meta `map:",inline"`
-	OPCode    string `map:"opcode"`
+	OPCode    string `map:"opcode" validate:"required"`
 }
 
 // SyscallNode executes synchronized function.

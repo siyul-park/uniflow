@@ -44,7 +44,7 @@ func TestNegotiate(t *testing.T) {
 
 		{
 			when:   "",
-			offers: []string{faker.Word(), faker.Word(), faker.Word()},
+			offers: []string{faker.UUIDHyphenated(), faker.UUIDHyphenated(), faker.UUIDHyphenated()},
 			expect: "",
 		},
 		{

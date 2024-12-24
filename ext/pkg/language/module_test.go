@@ -9,7 +9,7 @@ import (
 )
 
 func TestModule_StoreAndLoad(t *testing.T) {
-	lang := faker.Word()
+	lang := faker.UUIDHyphenated()
 	c := CompileFunc(func(s string) (Program, error) {
 		return RunFunc(func(_ context.Context, _ []any) ([]any, error) {
 			return nil, nil

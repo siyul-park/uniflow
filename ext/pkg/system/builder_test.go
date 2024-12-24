@@ -165,7 +165,7 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 		register := AddToScheme()
 
 		err := register.SetSyscall(opcode, func() error {
-			return errors.New(faker.Word())
+			return errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
@@ -209,7 +209,7 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 		register := AddToScheme()
 
 		err := register.SetSyscall(opcode, func(arg string) (string, error) {
-			return "", errors.New(faker.Word())
+			return "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
@@ -255,7 +255,7 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 		register := AddToScheme()
 
 		err := register.SetSyscall(opcode, func(_ context.Context, arg string) (string, error) {
-			return "", errors.New(faker.Word())
+			return "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
@@ -302,7 +302,7 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 		register := AddToScheme()
 
 		err := register.SetSyscall(opcode, func(arg1, arg2 string) (string, string, error) {
-			return "", "", errors.New(faker.Word())
+			return "", "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 

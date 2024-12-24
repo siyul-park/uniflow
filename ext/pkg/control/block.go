@@ -11,7 +11,7 @@ import (
 // BlockNodeSpec defines the specification for creating a BlockNode.
 type BlockNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Specs     []spec.Spec            `map:"specs"`
+	Specs     []*spec.Unstructured   `map:"specs"`
 	Inbounds  map[string][]spec.Port `map:"inbounds,omitempty"`
 	Outbounds map[string][]spec.Port `map:"outbounds,omitempty"`
 }
@@ -20,9 +20,13 @@ const KindBlock = "block"
 
 // NewBlockNodeCodec creates a new codec for BlockNodeSpec.
 func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(sp *BlockNodeSpec) (node.Node, error) {
-		symbols := make([]*symbol.Symbol, 0, len(sp.Specs))
-		for i, sp := range sp.Specs {
+	return scheme.CodecWithType(func(root *BlockNodeSpec) (node.Node, error) {
+		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
+		for i, sp := range root.Specs {
+			if sp.GetNamespace() == "" {
+				sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
+			}
+
 			sp, err := s.Decode(sp)
 			if err != nil {
 				for _, sb := range symbols {
@@ -51,12 +55,12 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 
 		cluster := symbol.NewCluster(symbols)
 
-		for name, ports := range sp.Inbounds {
+		for name, ports := range root.Inbounds {
 			for _, port := range ports {
 				cluster.Inbound(name, port)
 			}
 		}
-		for name, ports := range sp.Outbounds {
+		for name, ports := range root.Outbounds {
 			for _, port := range ports {
 				cluster.Outbound(name, port)
 			}

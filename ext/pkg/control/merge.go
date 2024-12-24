@@ -36,7 +36,7 @@ func NewMergeNode() *MergeNode {
 }
 
 func (n *MergeNode) action(_ *process.Process, inPcks []*packet.Packet) (*packet.Packet, *packet.Packet) {
-	outPck := packet.Merge(inPcks)
+	outPck := packet.Join(inPcks...)
 
 	if _, ok := outPck.Payload().(types.Error); ok {
 		return nil, outPck

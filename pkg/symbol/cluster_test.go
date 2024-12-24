@@ -25,7 +25,7 @@ func TestCluster_Inbound(t *testing.T) {
 	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
@@ -44,7 +44,7 @@ func TestCluster_Outbound(t *testing.T) {
 	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
@@ -63,14 +63,14 @@ func TestCluster_Load(t *testing.T) {
 	sb1 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
 	sb2 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 			Ports: map[string][]spec.Port{
 				node.PortOut: {
 					{
@@ -96,14 +96,14 @@ func TestCluster_Unload(t *testing.T) {
 	sb1 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
 	}
 	sb2 := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 			Ports: map[string][]spec.Port{
 				node.PortOut: {
 					{
@@ -134,7 +134,7 @@ func TestCluster_SendAndReceive(t *testing.T) {
 	sb := &Symbol{
 		Spec: &spec.Meta{
 			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.Word(),
+			Kind: faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			return inPck, nil

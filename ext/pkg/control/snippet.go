@@ -16,8 +16,8 @@ import (
 // SnippetNodeSpec defines the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Language  string        `map:"language,omitempty"`
-	Code      string        `map:"code"`
+	Language  string        `map:"language" validate:"required"`
+	Code      string        `map:"code" validate:"required"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 

@@ -15,6 +15,7 @@ func TestChart_IsBound(t *testing.T) {
 	t.Run("NoSecrets", func(t *testing.T) {
 		chrt := &Chart{
 			ID: uuid.Must(uuid.NewV7()),
+
 			Env: map[string][]spec.Value{
 				"FOO": {
 					{
@@ -36,6 +37,7 @@ func TestChart_IsBound(t *testing.T) {
 		}
 		chrt := &Chart{
 			ID: uuid.Must(uuid.NewV7()),
+
 			Env: map[string][]spec.Value{
 				"FOO": {
 					{
@@ -98,8 +100,8 @@ func TestChart_Build(t *testing.T) {
 		chrt := &Chart{
 			ID:   uuid.Must(uuid.NewV7()),
 			Name: faker.UUIDHyphenated(),
-			Specs: []spec.Spec{
-				&spec.Unstructured{
+			Specs: []*spec.Unstructured{
+				{
 					Meta: spec.Meta{
 						ID:   uuid.Must(uuid.NewV7()),
 						Kind: faker.UUIDHyphenated(),
@@ -123,8 +125,8 @@ func TestChart_Build(t *testing.T) {
 		chrt := &Chart{
 			ID:   uuid.Must(uuid.NewV7()),
 			Name: faker.UUIDHyphenated(),
-			Specs: []spec.Spec{
-				&spec.Unstructured{
+			Specs: []*spec.Unstructured{
+				{
 					Meta: spec.Meta{
 						ID:   uuid.Must(uuid.NewV7()),
 						Kind: faker.UUIDHyphenated(),
@@ -182,8 +184,8 @@ func TestChart_SetAnnotations(t *testing.T) {
 
 func TestChart_SetSpecs(t *testing.T) {
 	chrt := New()
-	specs := []spec.Spec{
-		&spec.Unstructured{
+	specs := []*spec.Unstructured{
+		{
 			Meta: spec.Meta{
 				ID:   uuid.Must(uuid.NewV7()),
 				Kind: "test",

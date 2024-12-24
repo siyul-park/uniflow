@@ -23,7 +23,7 @@ import (
 // WebSocketNodeSpec defines the specifications for creating a WebSocketNode.
 type WebSocketNodeSpec struct {
 	spec.Meta `map:",inline"`
-	URL       string        `map:"url"`
+	URL       string        `map:"url" validate:"required,url"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 

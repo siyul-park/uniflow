@@ -1,6 +1,7 @@
 package scheme
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"reflect"
 	"slices"
@@ -14,9 +15,10 @@ import (
 
 // Scheme manages type information and decodes spec implementations into node objects within a workflow environment.
 type Scheme struct {
-	types  map[string]reflect.Type
-	codecs map[string]Codec
-	mu     sync.RWMutex
+	types    map[string]reflect.Type
+	codecs   map[string]Codec
+	validate *validator.Validate
+	mu       sync.RWMutex
 }
 
 var _ Codec = (*Scheme)(nil)
@@ -24,8 +26,9 @@ var _ Codec = (*Scheme)(nil)
 // New creates a new Scheme instance with initialized type and codec maps.
 func New() *Scheme {
 	return &Scheme{
-		types:  make(map[string]reflect.Type),
-		codecs: make(map[string]Codec),
+		types:    make(map[string]reflect.Type),
+		codecs:   make(map[string]Codec),
+		validate: validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
 
@@ -132,7 +135,6 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 	if !ok {
 		return sp, nil
 	}
-
 	if err := spec.Convert(sp, structured); err != nil {
 		return nil, err
 	}
@@ -140,6 +142,11 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 	if structured.GetID() == uuid.Nil {
 		structured.SetID(uuid.Must(uuid.NewV7()))
 	}
+
+	if err := s.validate.Struct(structured); err != nil {
+		return nil, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+	}
+
 	return structured, nil
 }
 

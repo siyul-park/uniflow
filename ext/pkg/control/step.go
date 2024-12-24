@@ -1,6 +1,7 @@
 package control
 
 import (
+	"fmt"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -10,16 +11,20 @@ import (
 // StepNodeSpec defines the specification for creating a StepNode.
 type StepNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Specs     []spec.Spec `map:"specs"`
+	Specs     []*spec.Unstructured `map:"specs"`
 }
 
 const KindStep = "step"
 
 // NewStepNodeCodec creates a new codec for StepNodeSpec.
 func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(sp *StepNodeSpec) (node.Node, error) {
-		symbols := make([]*symbol.Symbol, 0, len(sp.Specs))
-		for _, sp := range sp.Specs {
+	return scheme.CodecWithType(func(root *StepNodeSpec) (node.Node, error) {
+		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
+		for _, sp := range root.Specs {
+			if sp.GetNamespace() == "" {
+				sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
+			}
+
 			sp, err := s.Decode(sp)
 			if err != nil {
 				for _, sb := range symbols {

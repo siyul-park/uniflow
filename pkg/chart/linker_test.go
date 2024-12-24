@@ -29,17 +29,19 @@ func TestLinker_Link(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind: kind,
-				Name: "dummy",
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind: kind,
+					Name: "dummy",
+				},
 			},
 		},
 		Env: map[string][]spec.Value{
 			"key1": {
 				{
 					ID:   scrt.GetID(),
-					Data: faker.Word(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 			"key2": {
@@ -81,7 +83,6 @@ func TestLinker_Unlink(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs:     []spec.Spec{},
 	}
 
 	l.Link(chrt)

@@ -55,7 +55,7 @@ func TestGetCommand_Execute(t *testing.T) {
 
 		scrt := &secret.Secret{
 			Name: faker.UUIDHyphenated(),
-			Data: faker.Word(),
+			Data: faker.UUIDHyphenated(),
 		}
 
 		_, err := secretStore.Store(ctx, scrt)
@@ -84,7 +84,7 @@ func TestGetCommand_Execute(t *testing.T) {
 
 		chrt := &chart.Chart{
 			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
+			Name: faker.UUIDHyphenated(),
 		}
 
 		_, err := chartStore.Store(ctx, chrt)

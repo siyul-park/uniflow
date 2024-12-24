@@ -189,7 +189,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		scrt := &secret.Secret{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: resource.DefaultNamespace,
-			Data:      faker.Word(),
+			Data:      faker.UUIDHyphenated(),
 		}
 
 		data, _ := json.Marshal(scrt)
@@ -236,7 +236,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		chrt := &chart.Chart{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: resource.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		}
 
 		data, _ := json.Marshal(chrt)

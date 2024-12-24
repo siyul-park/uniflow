@@ -17,7 +17,7 @@ import (
 // ReduceNodeSpec defines the specifications for creating a ReduceNode.
 type ReduceNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Action    string        `map:"action"`
+	Action    string        `map:"action" validate:"required"`
 	Init      any           `map:"init,omitempty"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }

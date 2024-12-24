@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/binary"
-	"fmt"
 	"hash/fnv"
 	"reflect"
 	"strings"
@@ -433,9 +432,6 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						dec = encoding.DecodeFunc(func(source *mapProxy, target unsafe.Pointer) error {
 							value, ok := source.Get(alias)
 							if !ok {
-								if !tag.omitempty {
-									return errors.WithMessage(encoding.ErrUnsupportedValue, fmt.Sprintf("%v is zero value", field.Name))
-								}
 								return nil
 							}
 							source.Delete(alias)

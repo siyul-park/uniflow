@@ -28,17 +28,21 @@ func TestLoader_Load(t *testing.T) {
 		SecretStore: secretStore,
 	})
 
-	scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+	scrt := &secret.Secret{
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
+	}
+
 	chrt1 := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs:     []spec.Spec{},
+
 		Env: map[string][]spec.Value{
 			"key": {
 				{
 					ID:   scrt.GetID(),
-					Data: faker.Word(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		},
@@ -47,11 +51,13 @@ func TestLoader_Load(t *testing.T) {
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,
 		Name:      faker.UUIDHyphenated(),
-		Specs: []spec.Spec{
-			&spec.Meta{
-				Kind:      chrt1.GetName(),
-				Namespace: resource.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					Kind:      chrt1.GetName(),
+					Namespace: resource.DefaultNamespace,
+					Name:      faker.UUIDHyphenated(),
+				},
 			},
 		},
 	}

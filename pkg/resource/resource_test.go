@@ -12,7 +12,7 @@ func TestMeta_GetSet(t *testing.T) {
 	meta := &Meta{
 		ID:          uuid.Must(uuid.NewV7()),
 		Namespace:   "default",
-		Name:        faker.Word(),
+		Name:        faker.UUIDHyphenated(),
 		Annotations: map[string]string{"key": "value"},
 	}
 

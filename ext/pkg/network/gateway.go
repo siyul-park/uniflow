@@ -20,7 +20,7 @@ import (
 // GatewayNodeSpec defines the specifications for creating a GatewayNode.
 type GatewayNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Protocol  string        `map:"protocol"`
+	Protocol  string        `map:"protocol" validate:"required"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 	Buffer    int           `map:"buffer,omitempty"`
 }

@@ -17,7 +17,7 @@ import (
 // IfNodeSpec defines the specifications for creating an IfNode.
 type IfNodeSpec struct {
 	spec.Meta `map:",inline"`
-	When      string        `map:"when"`
+	When      string        `map:"when" validate:"required"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 

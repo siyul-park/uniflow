@@ -7,7 +7,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -59,8 +58,8 @@ func TestStore_Watch(t *testing.T) {
 	}()
 
 	scrt := &secret.Secret{
-		ID:        uuid.Must(uuid.NewV7()),
-		Namespace: resource.DefaultNamespace,
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 
 	_, _ = st.Store(ctx, scrt)
@@ -81,10 +80,12 @@ func TestStore_Load(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	scrt1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 	scrt2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, scrt1, scrt2)
@@ -109,10 +110,12 @@ func TestStore_Store(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	scrt1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 	scrt2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, scrt1, scrt2)
@@ -137,10 +140,12 @@ func TestStore_Swap(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	scrt1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 	scrt2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, scrt1, scrt2)
@@ -169,10 +174,12 @@ func TestMemStore_Delete(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	scrt1 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 	scrt2 := &secret.Secret{
-		ID: uuid.Must(uuid.NewV7()),
+		ID:   uuid.Must(uuid.NewV7()),
+		Data: faker.UUIDHyphenated(),
 	}
 
 	count, err := st.Store(ctx, scrt1, scrt2)

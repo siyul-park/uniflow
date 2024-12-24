@@ -17,7 +17,7 @@ import (
 // SignalNodeSpec defines the specifications for creating a SignalNode.
 type SignalNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Topic     string `map:"topic"`
+	Topic     string `map:"topic" validate:"required"`
 }
 
 // SignalNode listens to a signal channel and forwards signals as packets.

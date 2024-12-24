@@ -19,7 +19,7 @@ func TestSpecDecoder_Decode(t *testing.T) {
 		Meta: Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: resource.DefaultNamespace,
-			Name:      faker.Word(),
+			Name:      faker.UUIDHyphenated(),
 		},
 		Fields: map[string]any{},
 	}

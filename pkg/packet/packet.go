@@ -17,8 +17,8 @@ var None = New(nil)
 // ErrDroppedPacket is an error indicating a dropped packet.
 var ErrDroppedPacket = errors.New("dropped packet")
 
-// Merge combines multiple packets into one, handling errors and payloads.
-func Merge(pcks []*Packet) *Packet {
+// Join combines multiple packets into one, handling errors and payloads.
+func Join(pcks ...*Packet) *Packet {
 	var errs []error
 	var payloads []types.Value
 

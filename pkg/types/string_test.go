@@ -86,7 +86,7 @@ func TestString_Encode(t *testing.T) {
 	})
 
 	t.Run("string", func(t *testing.T) {
-		source := faker.Word()
+		source := faker.UUIDHyphenated()
 		v := NewString(source)
 
 		decoded, err := enc.Encode(source)

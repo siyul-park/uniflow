@@ -2,6 +2,8 @@ package secret
 
 import (
 	"context"
+	"github.com/go-playground/validator/v10"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
@@ -16,6 +18,7 @@ import (
 // Store manages storage and retrieval of Spec objects in a MongoDB collection.
 type Store struct {
 	collection *mongo.Collection
+	validate   *validator.Validate
 }
 
 // Stream represents a MongoDB change stream for tracking Spec changes.
@@ -38,7 +41,10 @@ var _ secret.Stream = (*Stream)(nil)
 
 // NewStore creates a new Store with the specified MongoDB collection.
 func NewStore(collection *mongo.Collection) *Store {
-	return &Store{collection: collection}
+	return &Store{
+		collection: collection,
+		validate:   validator.New(validator.WithRequiredStructEnabled()),
+	}
 }
 
 // Index ensures the collection has the required indexes and updates them if necessary.
@@ -119,6 +125,10 @@ func (s *Store) Store(ctx context.Context, secrets ...*secret.Secret) (int, erro
 			scrt.SetNamespace(resource.DefaultNamespace)
 		}
 
+		if err := s.validate.Struct(scrt); err != nil {
+			return 0, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+		}
+
 		docs = append(docs, scrt)
 	}
 
@@ -139,6 +149,11 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 		if scrt.GetID() == uuid.Nil {
 			scrt.SetID(uuid.Must(uuid.NewV7()))
 		}
+
+		if err := s.validate.Struct(scrt); err != nil {
+			return 0, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+		}
+
 		ids[i] = scrt.GetID()
 	}
 

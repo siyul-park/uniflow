@@ -31,7 +31,7 @@ func TestCreateResource(t *testing.T) {
 
 	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+		Name: faker.UUIDHyphenated(),
 	}
 
 	res, err := fn(ctx, []resource.Resource{meta})
@@ -48,7 +48,7 @@ func TestReadResource(t *testing.T) {
 
 	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+		Name: faker.UUIDHyphenated(),
 	}
 
 	_, err := st.Store(ctx, meta)
@@ -68,7 +68,7 @@ func TestUpdateResource(t *testing.T) {
 
 	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+		Name: faker.UUIDHyphenated(),
 	}
 
 	_, err := st.Store(ctx, meta)
@@ -88,7 +88,7 @@ func TestDeleteResource(t *testing.T) {
 
 	meta := &resource.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
-		Name: faker.Word(),
+		Name: faker.UUIDHyphenated(),
 	}
 
 	_, err := st.Store(ctx, meta)

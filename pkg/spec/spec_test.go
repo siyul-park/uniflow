@@ -12,11 +12,11 @@ import (
 func TestConvert(t *testing.T) {
 	meta := &Meta{
 		ID:          uuid.Must(uuid.NewV7()),
-		Kind:        faker.Word(),
+		Kind:        faker.UUIDHyphenated(),
 		Namespace:   "default",
-		Name:        faker.Word(),
+		Name:        faker.UUIDHyphenated(),
 		Annotations: map[string]string{"key": "value"},
-		Ports:       map[string][]Port{"out": {{Name: faker.Word(), Port: "in"}}},
+		Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
 		Env:         map[string][]Value{"env1": {{Name: "secret1", Data: "value1"}}},
 	}
 
@@ -34,21 +34,21 @@ func TestMeta_SetID(t *testing.T) {
 
 func TestMeta_SetKind(t *testing.T) {
 	meta := &Meta{}
-	kind := faker.Word()
+	kind := faker.UUIDHyphenated()
 	meta.SetKind(kind)
 	assert.Equal(t, kind, meta.GetKind())
 }
 
 func TestMeta_SetNamespace(t *testing.T) {
 	meta := &Meta{}
-	namespace := faker.Word()
+	namespace := faker.UUIDHyphenated()
 	meta.SetNamespace(namespace)
 	assert.Equal(t, namespace, meta.GetNamespace())
 }
 
 func TestMeta_SetName(t *testing.T) {
 	meta := &Meta{}
-	name := faker.Word()
+	name := faker.UUIDHyphenated()
 	meta.SetName(name)
 	assert.Equal(t, name, meta.GetName())
 }

@@ -75,8 +75,9 @@ func TestScheme_Decode(t *testing.T) {
 
 	meta := &spec.Unstructured{
 		Meta: spec.Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: kind,
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: faker.UUIDHyphenated(),
 		},
 	}
 

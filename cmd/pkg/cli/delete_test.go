@@ -73,7 +73,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 
 		scrt := &secret.Secret{
 			Name: faker.UUIDHyphenated(),
-			Data: faker.Word(),
+			Data: faker.UUIDHyphenated(),
 		}
 
 		data, err := json.Marshal(scrt)
@@ -114,7 +114,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 
 		chrt := &chart.Chart{
 			ID:   uuid.Must(uuid.NewV7()),
-			Name: faker.Word(),
+			Name: faker.UUIDHyphenated(),
 		}
 
 		data, err := json.Marshal(chrt)

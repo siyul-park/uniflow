@@ -45,11 +45,11 @@ type Spec interface {
 // Meta contains metadata for node specifications.
 type Meta struct {
 	// ID is the unique identifier of the node.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
 	// Kind specifies the node's type.
-	Kind string `json:"kind,omitempty" bson:"kind,omitempty" yaml:"kind,omitempty" map:"kind,omitempty"`
+	Kind string `json:"kind" bson:"kind" yaml:"kind" map:"kind" validate:"required"`
 	// Namespace groups nodes logically.
-	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
 	// Name is the human-readable name of the node.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.
@@ -67,7 +67,7 @@ type Port struct {
 	// Name is the human-readable name of the port.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Port is the port number or identifier within the namespace.
-	Port string `json:"port" bson:"port" yaml:"port" map:"port"`
+	Port string `json:"port" bson:"port" yaml:"port" map:"port" validate:"required"`
 }
 
 // Value represents a sensitive piece of data associated with a node.
@@ -77,7 +77,7 @@ type Value struct {
 	// Name is the human-readable name of the secret.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Data is the sensitive value of the secret.
-	Data any `json:"data" bson:"data" yaml:"data" map:"data"`
+	Data any `json:"data" bson:"data" yaml:"data" map:"data" validate:"required"`
 }
 
 var _ resource.Resource = (Spec)(nil)

@@ -40,7 +40,11 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.UUIDHyphenated(),
+		}
+
 		meta1 := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -50,7 +54,7 @@ func TestLoader_Load(t *testing.T) {
 				"key": {
 					{
 						ID:   scrt.GetID(),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 			},
@@ -96,7 +100,11 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.UUIDHyphenated(),
+		}
+
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -105,7 +113,7 @@ func TestLoader_Load(t *testing.T) {
 				"key": {
 					{
 						ID:   scrt.GetID(),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 			},
@@ -135,7 +143,11 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		scrt := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.UUIDHyphenated(),
+		}
+
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -144,7 +156,7 @@ func TestLoader_Load(t *testing.T) {
 				"key": {
 					{
 						ID:   scrt.GetID(),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 			},
@@ -177,8 +189,15 @@ func TestLoader_Load(t *testing.T) {
 			SecretStore: secretStore,
 		})
 
-		sec1 := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
-		sec2 := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+		sec1 := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.UUIDHyphenated(),
+		}
+		sec2 := &secret.Secret{
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: faker.UUIDHyphenated(),
+		}
+
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
@@ -188,13 +207,13 @@ func TestLoader_Load(t *testing.T) {
 				"sec1": {
 					{
 						ID:   sec1.GetID(),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 				"sec2": {
 					{
 						ID:   sec2.GetID(),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 			},
@@ -232,7 +251,7 @@ func TestLoader_Load(t *testing.T) {
 				"nonexist": {
 					{
 						ID:   uuid.Must(uuid.NewV7()),
-						Data: faker.Word(),
+						Data: faker.UUIDHyphenated(),
 					},
 				},
 			},

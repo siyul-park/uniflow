@@ -18,14 +18,14 @@ import (
 // SwitchNodeSpec holds specifications for creating a SwitchNode.
 type SwitchNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Matches   []Condition   `map:"matches"`
+	Matches   []Condition   `map:"matches" validate:"required"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
 }
 
 // Condition represents a condition for directing packets to specific ports.
 type Condition struct {
-	When string `map:"when"`
-	Port string `map:"port"`
+	When string `map:"when" validate:"required"`
+	Port string `map:"port" validate:"required"`
 }
 
 // SwitchNode directs packets to different ports based on specified conditions.

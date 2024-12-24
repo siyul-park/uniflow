@@ -18,8 +18,8 @@ import (
 // SQLNodeSpec defines the specifications for creating a SQLNode.
 type SQLNodeSpec struct {
 	spec.Meta `map:",inline"`
-	Driver    string             `map:"driver"`
-	Source    string             `map:"source"`
+	Driver    string             `map:"driver" validate:"required"`
+	Source    string             `map:"source" validate:"required"`
 	Isolation sql.IsolationLevel `map:"isolation,omitempty"`
 }
 

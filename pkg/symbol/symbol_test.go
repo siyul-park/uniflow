@@ -82,7 +82,7 @@ func TestSymbol_Setter(t *testing.T) {
 	sb.SetID(id)
 	assert.Equal(t, id, sb.ID())
 
-	namespace := faker.Word()
+	namespace := faker.UUIDHyphenated()
 	sb.SetNamespace(namespace)
 	assert.Equal(t, namespace, sb.Namespace())
 

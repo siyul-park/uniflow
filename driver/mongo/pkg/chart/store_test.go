@@ -2,13 +2,13 @@ package chart
 
 import (
 	"context"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	"github.com/siyul-park/uniflow/pkg/chart"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -59,8 +59,7 @@ func TestStore_Watch(t *testing.T) {
 	}()
 
 	chrt := &chart.Chart{
-		ID:        uuid.Must(uuid.NewV7()),
-		Namespace: resource.DefaultNamespace,
+		ID: uuid.Must(uuid.NewV7()),
 	}
 
 	_, _ = st.Store(ctx, chrt)
@@ -110,6 +109,14 @@ func TestStore_Store(t *testing.T) {
 
 	chrt1 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),
+		Specs: []*spec.Unstructured{
+			{
+				Meta: spec.Meta{
+					ID:   uuid.Must(uuid.NewV7()),
+					Kind: faker.UUIDHyphenated(),
+				},
+			},
+		},
 	}
 	chrt2 := &chart.Chart{
 		ID: uuid.Must(uuid.NewV7()),

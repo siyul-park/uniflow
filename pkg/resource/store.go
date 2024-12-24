@@ -2,6 +2,8 @@ package resource
 
 import (
 	"context"
+	"github.com/go-playground/validator/v10"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -52,6 +54,7 @@ type store[T Resource] struct {
 	namespaces map[string]map[string]uuid.UUID
 	streams    []*stream
 	examples   [][]T
+	validate   *validator.Validate
 	mu         sync.RWMutex
 }
 
@@ -68,9 +71,7 @@ const (
 	EventDelete         = "delete"
 )
 
-var (
-	ErrDuplicatedKey = errors.New("duplicated key") // ErrDuplicatedKey indicates a duplicated key error.
-)
+var ErrDuplicatedKey = errors.New("duplicated key") // ErrDuplicatedKey indicates a duplicated key error.
 
 var _ Store[Resource] = (*store[Resource])(nil)
 var _ Stream = (*stream)(nil)
@@ -80,6 +81,7 @@ func NewStore[T Resource]() Store[T] {
 	return &store[T]{
 		data:       make(map[uuid.UUID]T),
 		namespaces: make(map[string]map[string]uuid.UUID),
+		validate:   validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
 
@@ -146,6 +148,10 @@ func (s *store[T]) Store(_ context.Context, resources ...T) (int, error) {
 			res.SetNamespace(DefaultNamespace)
 		}
 
+		if err := s.validate.Struct(res); err != nil {
+			return 0, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+		}
+
 		if res.GetName() != "" && s.lookup(res.GetNamespace(), res.GetName()) != uuid.Nil {
 			return 0, errors.WithStack(ErrDuplicatedKey)
 		}
@@ -173,6 +179,10 @@ func (s *store[T]) Swap(_ context.Context, resources ...T) (int, error) {
 
 		if res.GetID() == uuid.Nil {
 			res.SetID(s.lookup(res.GetNamespace(), res.GetName()))
+		}
+
+		if err := s.validate.Struct(res); err != nil {
+			return 0, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
 		}
 	}
 

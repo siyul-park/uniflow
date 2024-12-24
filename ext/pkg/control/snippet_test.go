@@ -56,7 +56,7 @@ func TestSnippetNode_SendAndReceive(t *testing.T) {
 
 	inWriter := in.Open(proc)
 
-	inPayload := types.NewString(faker.Word())
+	inPayload := types.NewString(faker.UUIDHyphenated())
 	inPck := packet.New(inPayload)
 
 	inWriter.Write(inPck)

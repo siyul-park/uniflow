@@ -60,7 +60,7 @@ func TestSplitNode_SendAndReceive(t *testing.T) {
 
 	inPayload := types.NewSlice()
 	for range outs {
-		inPayload = inPayload.Append(types.NewString(faker.Word()))
+		inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 	}
 	inPck := packet.New(inPayload)
 
@@ -109,7 +109,7 @@ func BenchmarkSplitNode_SendAndReceive(b *testing.B) {
 
 	inPayload := types.NewSlice()
 	for range outs {
-		inPayload = inPayload.Append(types.NewString(faker.Word()))
+		inPayload = inPayload.Append(types.NewString(faker.UUIDHyphenated()))
 	}
 	inPck := packet.New(inPayload)
 

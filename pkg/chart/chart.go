@@ -1,6 +1,7 @@
 package chart
 
 import (
+	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
@@ -13,11 +14,11 @@ import (
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
 type Chart struct {
-	ID          uuid.UUID               `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	Namespace   string                  `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	ID          uuid.UUID               `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
+	Namespace   string                  `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
 	Name        string                  `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	Annotations map[string]string       `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	Specs       []spec.Spec             `json:"specs,omitempty" bson:"specs,omitempty" yaml:"specs,omitempty" map:"specs,omitempty"`
+	Specs       []*spec.Unstructured    `json:"specs" bson:"specs" yaml:"specs" map:"specs"`
 	Inbounds    map[string][]spec.Port  `json:"inbounds,omitempty" bson:"inbounds,omitempty" yaml:"inbounds,omitempty" map:"inbounds,omitempty"`
 	Outbounds   map[string][]spec.Port  `json:"outbounds,omitempty" bson:"outbounds,omitempty" yaml:"outbounds,omitempty" map:"outbounds,omitempty"`
 	Env         map[string][]spec.Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
@@ -103,8 +104,8 @@ func (c *Chart) Bind(secrets ...*secret.Secret) error {
 }
 
 // Build constructs a specs based on the given spec.
-func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
-	doc, err := types.Marshal(sp)
+func (c *Chart) Build(root spec.Spec) ([]spec.Spec, error) {
+	doc, err := types.Marshal(root)
 	if err != nil {
 		return nil, err
 	}
@@ -127,16 +128,14 @@ func (c *Chart) Build(sp spec.Spec) ([]spec.Spec, error) {
 
 	specs := make([]spec.Spec, 0, len(c.Specs))
 	for _, sp := range c.Specs {
-		unstructured := &spec.Unstructured{}
-		if err := spec.Convert(sp, unstructured); err != nil {
-			return nil, err
+		if sp.GetNamespace() == "" {
+			sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
 		}
-
 		if len(env) > 0 {
-			unstructured.SetEnv(env)
+			sp.SetEnv(env)
 		}
 
-		specs = append(specs, unstructured)
+		specs = append(specs, sp)
 	}
 	return specs, nil
 }
@@ -182,12 +181,12 @@ func (c *Chart) SetAnnotations(val map[string]string) {
 }
 
 // GetSpecs returns the chart's specs.
-func (c *Chart) GetSpecs() []spec.Spec {
+func (c *Chart) GetSpecs() []*spec.Unstructured {
 	return c.Specs
 }
 
 // SetSpecs sets the chart's specs.
-func (c *Chart) SetSpecs(val []spec.Spec) {
+func (c *Chart) SetSpecs(val []*spec.Unstructured) {
 	c.Specs = val
 }
 

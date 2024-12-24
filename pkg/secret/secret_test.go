@@ -17,14 +17,14 @@ func TestSecret_SetID(t *testing.T) {
 
 func TestSecret_SetNamespace(t *testing.T) {
 	scrt := New()
-	namespace := faker.Word()
+	namespace := faker.UUIDHyphenated()
 	scrt.SetNamespace(namespace)
 	assert.Equal(t, namespace, scrt.GetNamespace())
 }
 
 func TestSecret_SetName(t *testing.T) {
 	scrt := New()
-	name := faker.Word()
+	name := faker.UUIDHyphenated()
 	scrt.SetName(name)
 	assert.Equal(t, name, scrt.GetName())
 }
@@ -38,7 +38,7 @@ func TestSecret_SetAnnotations(t *testing.T) {
 
 func TestSecret_SetData_Nil(t *testing.T) {
 	scrt := New()
-	data := faker.Word()
+	data := faker.UUIDHyphenated()
 	scrt.SetData(data)
 	assert.Equal(t, data, scrt.GetData())
 }
@@ -53,7 +53,7 @@ func TestSecret_IsIdentified(t *testing.T) {
 
 	t.Run("Name", func(t *testing.T) {
 		scrt := &Secret{
-			Name: faker.Word(),
+			Name: faker.UUIDHyphenated(),
 		}
 		assert.True(t, scrt.IsIdentified())
 	})

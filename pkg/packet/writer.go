@@ -223,7 +223,7 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 
 		w.receives = w.receives[1:]
 
-		pck := Merge(receives)
+		pck := Join(receives...)
 		w.inbounds.Handle(pck)
 		w.in <- pck
 	}

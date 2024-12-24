@@ -39,8 +39,8 @@ func (l *Linker) Link(chrt *Chart) error {
 		return nil
 	}
 
-	codec = scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
-		specs, err := chrt.Build(sp)
+	codec = scheme.CodecFunc(func(root spec.Spec) (node.Node, error) {
+		specs, err := chrt.Build(root)
 		if err != nil {
 			return nil, err
 		}

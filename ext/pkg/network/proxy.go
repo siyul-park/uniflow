@@ -25,7 +25,7 @@ import (
 // ProxyNodeSpec defines the specifications for creating a ProxyNode.
 type ProxyNodeSpec struct {
 	spec.Meta `map:",inline"`
-	URLs      []string `map:"urls"`
+	URLs      []string `map:"urls" validate:"required,dive,url"`
 }
 
 // ProxyNode represents a Node for handling HTTP proxy.

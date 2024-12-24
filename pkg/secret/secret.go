@@ -8,15 +8,15 @@ import (
 // Secret defines the interface for a secret with various attributes.
 type Secret struct {
 	// ID is the unique identifier of the secret.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
 	// Namespace groups secrets logically.
-	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty" yaml:"namespace,omitempty" map:"namespace,omitempty"`
+	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
 	// Name is the human-readable name of the secret.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
 	// Data holds the secret's actual data.
-	Data any `json:"data,omitempty" bson:"data,omitempty" yaml:"data,omitempty" map:"data,omitempty"`
+	Data any `json:"data" bson:"data" yaml:"data" map:"data" validate:"required"`
 }
 
 // Key constants for commonly used fields.

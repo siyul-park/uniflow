@@ -165,7 +165,7 @@ func (t *Tracer) receive(pck *Packet) {
 	if sources, ok := t.sources[pck]; ok {
 		delete(t.sources, pck)
 
-		merged := Merge(receives)
+		join := Join(receives...)
 		for _, source := range sources {
 			targets := t.targets[source]
 			receives := t.receives[source]
@@ -179,7 +179,7 @@ func (t *Tracer) receive(pck *Packet) {
 				}
 
 				if targets[i] == pck {
-					receives[i+offset] = merged
+					receives[i+offset] = join
 					targets = append(targets[:i], targets[i+1:]...)
 					break
 				}
@@ -206,8 +206,8 @@ func (t *Tracer) receive(pck *Packet) {
 				break
 			}
 
-			merged := Merge(receives)
-			reader.Receive(merged)
+			join := Join(receives...)
+			reader.Receive(join)
 
 			delete(t.reader, read)
 			delete(t.receives, read)
@@ -233,13 +233,13 @@ func (t *Tracer) handle(pck *Packet) {
 	}
 
 	if hooks := t.hooks[pck]; len(hooks) > 0 {
-		merged := Merge(receives)
+		join := Join(receives...)
 
 		delete(t.hooks, pck)
 		delete(t.receives, pck)
 
 		t.mu.Unlock()
-		hooks.Handle(merged)
+		hooks.Handle(join)
 		t.mu.Lock()
 	}
 }

@@ -23,14 +23,14 @@ func TestBlockNodeCodec_Compile(t *testing.T) {
 	codec := NewBlockNodeCodec(s)
 
 	sp := &BlockNodeSpec{
-		Specs: []spec.Spec{
-			&spec.Unstructured{
+		Specs: []*spec.Unstructured{
+			{
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,
 				},
 			},
-			&spec.Unstructured{
+			{
 				Meta: spec.Meta{
 					ID:   uuid.Must(uuid.NewV7()),
 					Kind: kind,
