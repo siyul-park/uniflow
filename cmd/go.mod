@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/siyul-park/uniflow v0.12.0
 	github.com/siyul-park/uniflow/driver/mongo v0.11.0
-	github.com/siyul-park/uniflow/ext v0.11.0
+	github.com/siyul-park/uniflow/ext v0.12.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
@@ -36,6 +36,7 @@ require (
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/dop251/goja v0.0.0-20241024094426-79f3a7efcdbd // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/evanw/esbuild v0.24.2 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.7 // indirect

@@ -37,6 +37,8 @@ github.com/dop251/goja v0.0.0-20241024094426-79f3a7efcdbd h1:QMSNEh9uQkDjyPwu/J5
 github.com/dop251/goja v0.0.0-20241024094426-79f3a7efcdbd/go.mod h1:MxLav0peU43GgvwVgNbLAj1s/bSGboKkhuULvq/7hx4=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f h1:Y/CXytFA4m6baUTXGLOoWe4PQhGxaX0KpnayAqC48p4=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f/go.mod h1:vw97MGsxSvLiUE2X8qFplwetxpGLQrlU1Q9AUEIzCaM=
+github.com/evanphx/json-patch/v5 v5.9.0 h1:kcBlZQbplgElYIlo/n1hJbls2z/1awpXxpRi0/FOJfg=
+github.com/evanphx/json-patch/v5 v5.9.0/go.mod h1:VNkHZ/282BpEyt/tObQO8s5CMPmYYq14uClGH4abBuQ=
 github.com/evanw/esbuild v0.24.2 h1:PQExybVBrjHjN6/JJiShRGIXh1hWVm6NepVnhZhrt0A=
 github.com/evanw/esbuild v0.24.2/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
@@ -141,8 +143,8 @@ github.com/siyul-park/uniflow v0.12.0 h1:o+SqvRAnSyiJbRq1a/ph9XXXWqjwrsQZ8zQg2ob
 github.com/siyul-park/uniflow v0.12.0/go.mod h1:bnl5h41lOOJF8T3dpk4n+C1+CcRLOEzEVZCHSFMgq5w=
 github.com/siyul-park/uniflow/driver/mongo v0.11.0 h1:5DxVTrTvcJnucAtpqL5qYUjXbuGLbEfnRrVQA+YuOn4=
 github.com/siyul-park/uniflow/driver/mongo v0.11.0/go.mod h1:QvLM3viXP7hj4wBtWj6hpLQeYh0IMVnZ1hJADapROmI=
-github.com/siyul-park/uniflow/ext v0.11.0 h1:kHoj6lTkbq6xzBI48jtrub82efPG4dajWbIsQCiFImw=
-github.com/siyul-park/uniflow/ext v0.11.0/go.mod h1:VaQ8P7IZhCwcTqEYZ6xOiAbEqV18sJr62o5giw7dXL4=
+github.com/siyul-park/uniflow/ext v0.12.0 h1:2DWX4+m/oGjpJCrYK2wh8oTsDJWPUogQquGbZpMcFCA=
+github.com/siyul-park/uniflow/ext v0.12.0/go.mod h1:Eus3OYQkzxeW9PkVrmvtMHhxaoD0pWzH1XSJdNYLXmE=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=
