@@ -7,23 +7,5 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Refresh Go Modules
-        env:
-          BASE_URL: "https://pkg.go.dev/fetch"
-          REPO_URL: "github.com/${{ github.repository }}"
-          RELEASE_TAG: "${{ github.event.release.tag_name }}"
-        run: |
-          # If the tag contains '/', replace the last '/' with '@'
-          if [[ "$RELEASE_TAG" == *"/"* ]]; then
-            FORMATTED_TAG="/${RELEASE_TAG%/*}@${RELEASE_TAG##*/}"
-          else
-            FORMATTED_TAG="@${RELEASE_TAG}"
-          fi
-
-          FULL_URL="${BASE_URL}/${REPO_URL}${FORMATTED_TAG}"
-          echo "Sending POST request to $FULL_URL"
-
-          # Send the POST request
-          curl -X POST "$FULL_URL" --fail || echo "Failed to notify pkg.go.dev"
+      - uses: siyul-park/notify-pkg-go-dev@v1
