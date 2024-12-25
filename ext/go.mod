@@ -16,12 +16,20 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
-	github.com/siyul-park/uniflow v0.11.0
+	github.com/siyul-park/uniflow v0.12.0
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require cel.dev/expr v0.19.1 // indirect
+require (
+	cel.dev/expr v0.19.1 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.23.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
+)
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect

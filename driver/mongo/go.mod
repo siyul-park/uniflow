@@ -6,7 +6,7 @@ require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/siyul-park/uniflow v0.11.0
+	github.com/siyul-park/uniflow v0.12.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tryvium-travels/memongo v0.12.0
 	go.mongodb.org/mongo-driver/v2 v2.0.0
