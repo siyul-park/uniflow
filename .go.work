@@ -9,7 +9,7 @@ use (
 
 replace (
 	github.com/siyul-park/uniflow v0.12.0 => ./
-	github.com/siyul-park/uniflow/cmd v0.11.0 => ./cmd/
+	github.com/siyul-park/uniflow/cmd v0.12.0 => ./cmd/
 	github.com/siyul-park/uniflow/ext v0.12.0 => ./ext/
 	github.com/siyul-park/uniflow/driver/mongo v0.12.0 => ./driver/mongo/
 )
