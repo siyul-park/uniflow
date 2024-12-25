@@ -120,7 +120,7 @@ func (p *InPort) Open(proc *process.Process) *packet.Reader {
 	}))
 
 	openHooks.Open(proc)
-	listeners.Accept(proc)
+	go listeners.Accept(proc)
 
 	return reader
 }

@@ -1,6 +1,9 @@
 package port
 
-import "github.com/siyul-park/uniflow/pkg/process"
+import (
+	"github.com/siyul-park/uniflow/pkg/process"
+	"sync"
+)
 
 // Listener is an interface for handling process events.
 type Listener interface {
@@ -24,10 +27,16 @@ func ListenFunc(accept func(proc *process.Process)) Listener {
 }
 
 func (l Listeners) Accept(proc *process.Process) {
+	wg := sync.WaitGroup{}
 	for _, listener := range l {
 		listener := listener
-		go listener.Accept(proc)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			listener.Accept(proc)
+		}()
 	}
+	wg.Wait()
 }
 
 func (l *listener) Accept(proc *process.Process) {

@@ -147,7 +147,7 @@ func (p *OutPort) Open(proc *process.Process) *packet.Writer {
 	p.mu.Unlock()
 
 	openHooks.Open(proc)
-	listeners.Accept(proc)
+	go listeners.Accept(proc)
 
 	proc.AddExitHook(process.ExitFunc(func(_ error) {
 		p.mu.Lock()
