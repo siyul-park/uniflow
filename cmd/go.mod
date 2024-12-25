@@ -10,7 +10,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.6.5
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/siyul-park/uniflow v0.12.0
-	github.com/siyul-park/uniflow/driver/mongo v0.12.0
+	github.com/siyul-park/uniflow/driver/mongo v0.12.1
 	github.com/siyul-park/uniflow/ext v0.12.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
