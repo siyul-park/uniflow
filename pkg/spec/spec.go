@@ -83,8 +83,8 @@ type Value struct {
 var _ resource.Resource = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
 
-// Convert serializes a source spec.Spec and deserializes it into a destination spec.Spec.
-func Convert(src, dest Spec) error {
+// As serializes a source spec.Spec and deserializes it into a destination spec.Spec.
+func As(src, dest Spec) error {
 	doc, err := types.Marshal(src)
 	if err != nil {
 		return err

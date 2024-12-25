@@ -216,7 +216,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			for _, id := range r.symbolTable.Keys() {
 				if sb := r.symbolTable.Lookup(id); sb != nil {
 					unstructured := &spec.Unstructured{}
-					if err := spec.Convert(sb.Spec, unstructured); err != nil {
+					if err := spec.As(sb.Spec, unstructured); err != nil {
 						return err
 					} else if unstructured.IsBound(secrets...) {
 						specs = append(specs, sb.Spec)

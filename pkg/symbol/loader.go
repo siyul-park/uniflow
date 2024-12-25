@@ -52,7 +52,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 
 	for i, sp := range specs {
 		unstructured := &spec.Unstructured{}
-		if err := spec.Convert(sp, unstructured); err != nil {
+		if err := spec.As(sp, unstructured); err != nil {
 			return err
 		}
 
@@ -102,7 +102,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	var errs []error
 	for _, sp := range specs {
 		unstructured := &spec.Unstructured{}
-		if err := spec.Convert(sp, unstructured); err != nil {
+		if err := spec.As(sp, unstructured); err != nil {
 			errs = append(errs, err)
 		} else if err := unstructured.Bind(secrets...); err != nil {
 			errs = append(errs, err)

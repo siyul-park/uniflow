@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConvert(t *testing.T) {
+func TestAs(t *testing.T) {
 	meta := &Meta{
 		ID:          uuid.Must(uuid.NewV7()),
 		Kind:        faker.UUIDHyphenated(),
@@ -21,7 +21,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	unstructured := &Unstructured{}
-	err := Convert(meta, unstructured)
+	err := As(meta, unstructured)
 	assert.NoError(t, err)
 }
 

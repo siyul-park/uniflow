@@ -48,7 +48,7 @@ func (l *Linker) Link(chrt *Chart) error {
 		symbols := make([]*symbol.Symbol, 0, len(specs))
 		for _, sp := range specs {
 			unstructured := &spec.Unstructured{}
-			if err := spec.Convert(sp, unstructured); err != nil {
+			if err := spec.As(sp, unstructured); err != nil {
 				for _, sb := range symbols {
 					_ = sb.Close()
 				}

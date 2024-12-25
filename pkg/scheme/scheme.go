@@ -135,7 +135,7 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 	if !ok {
 		return sp, nil
 	}
-	if err := spec.Convert(sp, structured); err != nil {
+	if err := spec.As(sp, structured); err != nil {
 		return nil, err
 	}
 
