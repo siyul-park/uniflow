@@ -1,9 +1,9 @@
 package runtime
 
 import (
-	"github.com/gofrs/uuid"
 	"sync"
 
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"

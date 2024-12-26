@@ -2,8 +2,9 @@ package chart
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/spec"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"

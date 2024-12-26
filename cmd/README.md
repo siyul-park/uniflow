@@ -6,13 +6,13 @@ Effectively manage your workflows using the versatile Command Line Interface (CL
 
 Settings can be modified using the `.uniflow.toml` file or system environment variables. The key configuration options are:
 
-| TOML Key             | Environment Variable Key | Example                     |
-|----------------------|--------------------------|-----------------------------|
-| `database.url`       | `DATABASE.URL`           | `mem://` or `mongodb://`    |
-| `database.name`      | `DATABASE.NAME`          | -                           |
-| `collection.charts`  | `COLLECTION.CHARTS`      | `charts`                    |
-| `collection.specs`   | `COLLECTION.SPECS`       | `nodes`                     |
-| `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                   |
+| TOML Key             | Environment Variable Key | Example                  |
+|----------------------|--------------------------|--------------------------|
+| `database.url`       | `DATABASE_URL`           | `mem://` or `mongodb://` |
+| `database.name`      | `DATABASE_NAME`          | -                        |
+| `collection.charts`  | `COLLECTION_CHARTS`      | `charts`                 |
+| `collection.specs`   | `COLLECTION_SPECS`       | `nodes`                  |
+| `collection.secrets` | `COLLECTION_SECRETS`     | `secrets`                |
 
 If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 

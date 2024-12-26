@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/siyul-park/uniflow/pkg/runtime"
 	"slices"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
 )

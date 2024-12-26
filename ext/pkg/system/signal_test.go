@@ -2,14 +2,15 @@ package system
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestSignalNodeCodec_Compile(t *testing.T) {

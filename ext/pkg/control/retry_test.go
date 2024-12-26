@@ -2,6 +2,9 @@ package control
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -10,8 +13,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestRetryNodeCodec_Compile(t *testing.T) {

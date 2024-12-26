@@ -19,6 +19,8 @@ init:
 
 install-tools:
 	@go install golang.org/x/tools/cmd/godoc@latest
+	@go install golang.org/x/tools/cmd/goimports@latest
+	@go install honnef.co/go/tools/cmd/staticcheck@latest
 
 install-modules:
 	@for dir in $(MODULE_DIRS); do \
@@ -57,7 +59,7 @@ clean-cache:
 sync:
 	@go work sync
 
-check: lint test
+check: lint test staticcheck
 
 test:
 	@for dir in $(MODULE_DIRS); do \
@@ -75,16 +77,21 @@ benchmark:
 		cd $$dir && go test -run="-" -bench=".*" -benchmem $(test-options) ./...; \
 	done
 
-lint: fmt vet
+lint: fmt vet staticcheck
 
 fmt:
 	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && go fmt ./...; \
+		cd $$dir && goimports -w .; \
 	done
 
 vet:
 	@for dir in $(MODULE_DIRS); do \
 		cd $$dir && go vet ./...; \
+	done
+
+staticcheck:
+	@for dir in $(MODULE_DIRS); do \
+		cd $$dir && staticcheck ./...; \
 	done
 
 doc: init

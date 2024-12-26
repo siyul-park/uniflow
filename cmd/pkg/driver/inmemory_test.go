@@ -2,9 +2,10 @@ package driver
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewInMemoryDriver(t *testing.T) {

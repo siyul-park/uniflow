@@ -1,6 +1,8 @@
 package control
 
 import (
+	"sync"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -8,7 +10,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"sync"
 )
 
 // RetryNodeSpec defines the configuration for RetryNode.

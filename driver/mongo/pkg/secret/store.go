@@ -2,12 +2,12 @@ package secret
 
 import (
 	"context"
-	"github.com/go-playground/validator/v10"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/secret"
 	"go.mongodb.org/mongo-driver/v2/bson"

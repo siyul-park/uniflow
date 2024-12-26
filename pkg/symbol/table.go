@@ -1,14 +1,14 @@
 package symbol
 
 import (
-	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/process"
 	"slices"
 	"sync"
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )

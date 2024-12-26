@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/siyul-park/uniflow/pkg/encoding"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTime_Encode(t *testing.T) {

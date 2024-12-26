@@ -1,11 +1,11 @@
 package spec
 
 import (
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/stretchr/testify/assert"
 )
 

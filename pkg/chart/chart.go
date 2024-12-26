@@ -2,6 +2,7 @@ package chart
 
 import (
 	"fmt"
+
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"

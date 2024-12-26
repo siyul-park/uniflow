@@ -1,13 +1,14 @@
 package control
 
 import (
+	"testing"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStepNodeCodec_Compile(t *testing.T) {

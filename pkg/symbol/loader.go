@@ -3,9 +3,9 @@ package symbol
 import (
 	"context"
 	"errors"
-	"github.com/iancoleman/strcase"
 	"reflect"
 
+	"github.com/iancoleman/strcase"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/secret"

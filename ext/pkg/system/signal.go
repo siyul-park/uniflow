@@ -2,14 +2,14 @@ package system
 
 import (
 	"context"
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
@@ -165,23 +165,22 @@ func (n *SignalNode) Close() error {
 }
 
 func (n *SignalNode) emit(sig any) {
-	var err error
-
 	proc := process.New()
-	defer proc.Exit(err)
+	proc.Exit(func() error {
+		writer := n.outPort.Open(proc)
+		defer writer.Close()
 
-	writer := n.outPort.Open(proc)
-	defer writer.Close()
+		payload, err := types.Marshal(sig)
+		if err != nil {
+			return err
+		}
 
-	payload, err := types.Marshal(sig)
-	if err != nil {
-		return
-	}
+		outPck := packet.New(payload)
+		backPck := packet.Send(writer, outPck)
 
-	outPck := packet.New(payload)
-	backPck := packet.Send(writer, outPck)
-
-	if v, ok := backPck.Payload().(types.Error); ok {
-		err = v.Unwrap()
-	}
+		if v, ok := backPck.Payload().(types.Error); ok {
+			return v.Unwrap()
+		}
+		return nil
+	}())
 }

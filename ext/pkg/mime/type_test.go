@@ -2,8 +2,9 @@ package mime
 
 import (
 	"fmt"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"testing"
+
+	"github.com/siyul-park/uniflow/pkg/types"
 
 	"github.com/stretchr/testify/assert"
 )

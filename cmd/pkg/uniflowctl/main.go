@@ -2,56 +2,72 @@ package main
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/cmd/pkg/driver"
 	"log"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
+	"github.com/siyul-park/uniflow/cmd/pkg/driver"
 	"github.com/spf13/afero"
-	"github.com/spf13/viper"
 )
 
 const configFile = ".uniflow.toml"
 
-func init() {
-	viper.SetDefault(cli.EnvCollectionSpecs, "specs")
-	viper.SetDefault(cli.EnvCollectionSecrets, "secrets")
-	viper.SetDefault(cli.EnvCollectionCharts, "charts")
+var k = koanf.New(".")
 
-	viper.SetConfigFile(configFile)
-	viper.AutomaticEnv()
-	viper.ReadInConfig()
+func init() {
+	if err := k.Set(cli.EnvCollectionSpecs, "specs"); err != nil {
+		log.Fatal(err)
+	}
+	if err := k.Set(cli.EnvCollectionSecrets, "secrets"); err != nil {
+		log.Fatal(err)
+	}
+	if err := k.Set(cli.EnvCollectionCharts, "charts"); err != nil {
+		log.Fatal(err)
+	}
+
+	_ = k.Load(file.Provider(configFile), toml.Parser())
+
+	if err := k.Load(env.Provider("", ".", func(s string) string {
+		return strcase.ToDelimited(s, '.')
+	}), nil); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
 	ctx := context.Background()
 
-	databaseURL := viper.GetString(cli.EnvDatabaseURL)
-	databaseName := viper.GetString(cli.EnvDatabaseName)
-	collectionNodes := viper.GetString(cli.EnvCollectionSpecs)
-	collectionSecrets := viper.GetString(cli.EnvCollectionSecrets)
-	collectionCharts := viper.GetString(cli.EnvCollectionCharts)
+	databaseURL := k.String(cli.EnvDatabaseURL)
+	databaseName := k.String(cli.EnvDatabaseName)
+	collectionNodes := k.String(cli.EnvCollectionSpecs)
+	collectionSecrets := k.String(cli.EnvCollectionSecrets)
+	collectionCharts := k.String(cli.EnvCollectionCharts)
 
-	d := driver.NewInMemoryDriver()
-	defer d.Close(ctx)
+	drv := driver.NewInMemoryDriver()
+	defer drv.Close(ctx)
 
 	if strings.HasPrefix(databaseURL, "memongodb://") || strings.HasPrefix(databaseURL, "mongodb://") {
 		var err error
-		if d, err = driver.NewMongoDriver(ctx, databaseURL, databaseName); err != nil {
+		if drv, err = driver.NewMongoDriver(ctx, databaseURL, databaseName); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	specStore, err := d.SpecStore(ctx, collectionNodes)
+	specStore, err := drv.SpecStore(ctx, collectionNodes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	secretStore, err := d.SecretStore(ctx, collectionSecrets)
+	secretStore, err := drv.SecretStore(ctx, collectionSecrets)
 	if err != nil {
 		log.Fatal(err)
 	}
-	chartStore, err := d.ChartStore(ctx, collectionCharts)
+	chartStore, err := drv.ChartStore(ctx, collectionCharts)
 	if err != nil {
 		log.Fatal(err)
 	}

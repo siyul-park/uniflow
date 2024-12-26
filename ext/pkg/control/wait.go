@@ -1,12 +1,13 @@
 package control
 
 import (
+	"time"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"time"
 )
 
 // WaitNodeSpec defines the configuration for WaitNode.

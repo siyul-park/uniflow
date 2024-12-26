@@ -2,6 +2,9 @@ package symbol
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -11,8 +14,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestNewCluster(t *testing.T) {

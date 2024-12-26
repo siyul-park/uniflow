@@ -1,13 +1,13 @@
 package encoding
 
 import (
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"reflect"
 	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func init() {

@@ -85,12 +85,12 @@ pong#
 
 환경 설정은 `.uniflow.toml` 파일 또는 시스템 환경 변수를 통해 관리할 수 있습니다.
 
-| TOML 키              | 환경 변수 키            | 예시                       |
-|----------------------|--------------------------|---------------------------|
-| `database.url`       | `DATABASE.URL`           | `mem://` 또는 `mongodb://` |
-| `database.name`      | `DATABASE.NAME`          | -                         |
-| `collection.specs`   | `COLLECTION.SPECS`       | `nodes`                   |
-| `collection.secrets` | `COLLECTION.SECRETS`     | `secrets`                 |
+| TOML 키               | 환경 변수 키              | 예시                       |
+|----------------------|----------------------|--------------------------|
+| `database.url`       | `DATABASE_URL`       | `mem://` 또는 `mongodb://` |
+| `database.name`      | `DATABASE_NAME`      | -                        |
+| `collection.specs`   | `COLLECTION_SPECS`   | `nodes`                  |
+| `collection.secrets` | `COLLECTION_SECRETS` | `secrets`                |
 
 ## 📊 벤치마크
 

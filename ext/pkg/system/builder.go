@@ -2,6 +2,8 @@ package system
 
 import (
 	"context"
+	"reflect"
+
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -10,13 +12,12 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"reflect"
 )
 
-// SchemeRegister manages syscalls and signals for a scheme.
+// SchemeRegister manages calls and signals for a scheme.
 type SchemeRegister struct {
-	syscalls map[string]func(context.Context, []any) ([]any, error)
-	signals  map[string]func(context.Context) (<-chan any, error)
+	calls   map[string]func(context.Context, []any) ([]any, error)
+	signals map[string]func(context.Context) (<-chan any, error)
 }
 
 var _ scheme.Register = (*SchemeRegister)(nil)
@@ -43,8 +44,8 @@ func AddToHook() hook.Register {
 // AddToScheme returns a new SchemeRegister instance.
 func AddToScheme() *SchemeRegister {
 	return &SchemeRegister{
-		syscalls: make(map[string]func(context.Context, []any) ([]any, error)),
-		signals:  make(map[string]func(context.Context) (<-chan any, error)),
+		calls:   make(map[string]func(context.Context, []any) ([]any, error)),
+		signals: make(map[string]func(context.Context) (<-chan any, error)),
 	}
 }
 
@@ -55,7 +56,7 @@ func (r *SchemeRegister) AddToScheme(s *scheme.Scheme) error {
 		codec scheme.Codec
 		spec  spec.Spec
 	}{
-		{KindSyscall, NewSyscallNodeCodec(r.syscalls), &SyscallNodeSpec{}},
+		{KindSyscall, NewSyscallNodeCodec(r.calls), &SyscallNodeSpec{}},
 		{KindSignal, NewSignalNodeCodec(r.signals), &SignalNodeSpec{}},
 	}
 
@@ -98,8 +99,8 @@ func (r *SchemeRegister) Signal(topic string) func(context.Context) (<-chan any,
 	return r.signals[topic]
 }
 
-// SetSyscall registers a syscall function for a given opcode.
-func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
+// SetCall registers a syscall function for a given opcode.
+func (r *SchemeRegister) SetCall(opcode string, fn any) error {
 	fnValue := reflect.ValueOf(fn)
 	if fnValue.Kind() != reflect.Func {
 		return errors.WithStack(encoding.ErrUnsupportedType)
@@ -109,7 +110,7 @@ func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 	numIn := fnType.NumIn()
 	numOut := fnType.NumOut()
 
-	r.syscalls[opcode] = func(ctx context.Context, arguments []any) ([]any, error) {
+	r.calls[opcode] = func(ctx context.Context, arguments []any) ([]any, error) {
 		ins := make([]reflect.Value, numIn)
 		offset := 0
 
@@ -152,7 +153,7 @@ func (r *SchemeRegister) SetSyscall(opcode string, fn any) error {
 	return nil
 }
 
-// Syscall retrieves the syscall function for a given opcode.
-func (r *SchemeRegister) Syscall(opcode string) func(context.Context, []any) ([]any, error) {
-	return r.syscalls[opcode]
+// Call retrieves the syscall function for a given opcode.
+func (r *SchemeRegister) Call(opcode string) func(context.Context, []any) ([]any, error) {
+	return r.calls[opcode]
 }

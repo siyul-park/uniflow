@@ -35,13 +35,13 @@ make build
 
 설정은 `.uniflow.toml` 파일이나 시스템 환경 변수를 사용해 유연하게 변경할 수 있습니다. 주요 설정 항목은 다음과 같습니다:
 
-| TOML 키              | 환경 변수 키            | 예시                       |
-|----------------------|-------------------------|----------------------------|
-| `database.url`       | `DATABASE.URL`          | `mem://` 또는 `mongodb://` |
-| `database.name`      | `DATABASE.NAME`         | -                          |
-| `collection.charts`  | `COLLECTION.CHARTS`     | `charts`                   |
-| `collection.specs`   | `COLLECTION.SPECS`      | `nodes`                    |
-| `collection.secrets` | `COLLECTION.SECRETS`    | `secrets`                  |
+| TOML 키               | 환경 변수 키              | 예시                       |
+|----------------------|----------------------|--------------------------|
+| `database.url`       | `DATABASE_URL`       | `mem://` 또는 `mongodb://` |
+| `database.name`      | `DATABASE_NAME`      | -                        |
+| `collection.charts`  | `COLLECTION_CHARTS`  | `charts`                 |
+| `collection.specs`   | `COLLECTION_SPECS`   | `nodes`                  |
+| `collection.secrets` | `COLLECTION_SECRETS` | `secrets`                |
 
 만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기 위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
 

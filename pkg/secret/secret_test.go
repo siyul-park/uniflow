@@ -1,9 +1,9 @@
 package secret
 
 import (
-	"github.com/go-faker/faker/v4"
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )

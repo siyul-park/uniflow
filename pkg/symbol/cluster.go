@@ -1,11 +1,12 @@
 package symbol
 
 import (
+	"sync"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"sync"
 )
 
 // Cluster manages the ports and symbol table for the cluster.

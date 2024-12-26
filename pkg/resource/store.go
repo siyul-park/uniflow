@@ -2,12 +2,12 @@ package resource
 
 import (
 	"context"
-	"github.com/go-playground/validator/v10"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"sync"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Store defines methods for managing Resource objects in a database.
@@ -67,8 +67,8 @@ type stream struct {
 
 const (
 	EventStore  EventOP = "store"
-	EventSwap           = "swap"
-	EventDelete         = "delete"
+	EventSwap   EventOP = "swap"
+	EventDelete EventOP = "delete"
 )
 
 var ErrDuplicatedKey = errors.New("duplicated key") // ErrDuplicatedKey indicates a duplicated key error.

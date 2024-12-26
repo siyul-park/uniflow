@@ -3,14 +3,15 @@ package system
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestAddToHook(t *testing.T) {
@@ -136,7 +137,7 @@ func TestSchemeRegister_Signal(t *testing.T) {
 	})
 }
 
-func TestSchemeRegister_Syscall(t *testing.T) {
+func TestSchemeRegister_Call(t *testing.T) {
 	t.Run("func() void", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
@@ -145,10 +146,10 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func() {})
+		err := register.SetCall(opcode, func() {})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		res, err := fn(ctx, nil)
@@ -164,12 +165,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func() error {
+		err := register.SetCall(opcode, func() error {
 			return errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		_, err = fn(ctx, nil)
@@ -184,12 +185,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(arg string) string {
+		err := register.SetCall(opcode, func(arg string) string {
 			return arg
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -208,12 +209,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(arg string) (string, error) {
+		err := register.SetCall(opcode, func(arg string) (string, error) {
 			return "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -230,12 +231,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(_ context.Context, arg string) string {
+		err := register.SetCall(opcode, func(_ context.Context, arg string) string {
 			return arg
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -254,12 +255,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(_ context.Context, arg string) (string, error) {
+		err := register.SetCall(opcode, func(_ context.Context, arg string) (string, error) {
 			return "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -276,12 +277,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(arg1, arg2 string) (string, string) {
+		err := register.SetCall(opcode, func(arg1, arg2 string) (string, string) {
 			return arg1, arg2
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
@@ -301,12 +302,12 @@ func TestSchemeRegister_Syscall(t *testing.T) {
 
 		register := AddToScheme()
 
-		err := register.SetSyscall(opcode, func(arg1, arg2 string) (string, string, error) {
+		err := register.SetCall(opcode, func(arg1, arg2 string) (string, string, error) {
 			return "", "", errors.New(faker.UUIDHyphenated())
 		})
 		assert.NoError(t, err)
 
-		fn := register.Syscall(opcode)
+		fn := register.Call(opcode)
 		assert.NotNil(t, fn)
 
 		arg := faker.UUIDHyphenated()
