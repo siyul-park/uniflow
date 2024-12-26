@@ -251,7 +251,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 
 			select {
 			case outPck := <-outReader.Read():
-				params, _ := types.Pick[map[string]string](outPck.Payload(), "params")
+				params, _ := types.Get[map[string]string](outPck.Payload(), "params")
 				assert.Equal(t, tt.expectParams, params)
 				outReader.Receive(outPck)
 			case <-ctx.Done():

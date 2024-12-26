@@ -82,7 +82,7 @@ func (n *ScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Pac
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	format, ok := types.Pick[string](inPck.Payload())
+	format, ok := types.Get[string](inPck.Payload())
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
@@ -118,12 +118,12 @@ func (n *DynScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	filename, ok := types.Pick[string](inPck.Payload(), 0)
+	filename, ok := types.Get[string](inPck.Payload(), 0)
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	format, ok := types.Pick[string](inPck.Payload(), 1)
+	format, ok := types.Get[string](inPck.Payload(), 1)
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}

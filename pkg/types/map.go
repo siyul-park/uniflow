@@ -4,175 +4,281 @@ import (
 	"encoding/binary"
 	"hash/fnv"
 	"reflect"
+	"sort"
 	"strings"
+	"sync"
 	"unsafe"
 
-	"github.com/benbjohnson/immutable"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// Map represents a map structure.
-type Map = *_map
+// Map represents a key-value map with support for immutability and mutability.
+type Map interface {
+	Value
 
-type _map struct {
-	value *immutable.SortedMap[Value, Value]
+	// Get retrieves the value associated with the given key.
+	Get(key Value) Value
+	// Set adds or updates a key-value pair in the map.
+	Set(key Value, val Value) Map
+	// Delete removes a key-value pair from the map by key.
+	Delete(key Value) Map
+	// Clear removes all key-value pairs from the map.
+	Clear() Map
+
+	// Keys returns all keys in the map.
+	Keys() []Value
+	// Values returns all values in the map.
+	Values() []Value
+	// Pairs returns all key-value pairs in the map.
+	Pairs() []Value
+	// Len returns the number of key-value pairs in the map.
+	Len() int
+
+	// Range provides an iterator function for traversing key-value pairs.
+	Range() func(func(key, value Value) bool)
+
+	// Mutable returns a mutable version of the map.
+	Mutable() Map
+	// Immutable returns an immutable version of the map.
+	Immutable() Map
+
+	// Map converts the map into a native Go map.
+	Map() map[any]any
 }
 
-type mapTag struct {
+type immutableMap struct {
+	value map[uint64][][2]Value
+	hash  uint64
+	mu    sync.Mutex
+}
+
+type mutableMap struct {
+	value map[uint64][][2]Value
+}
+
+type mapMeta struct {
 	alias     string
 	ignore    bool
 	omitempty bool
 	inline    bool
 }
 
-type mapProxy struct {
-	Map
-}
-
-type comparer struct{}
-
 const tagMap = "map"
 
-var _ Value = (Map)(nil)
-var _ immutable.Comparer[Value] = &comparer{}
+var _ Map = (*immutableMap)(nil)
+var _ Map = (*mutableMap)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {
-	b := immutable.NewSortedMapBuilder[Value, Value](&comparer{})
+	value := make(map[uint64][][2]Value, len(pairs)/2)
 	for i := 0; i < len(pairs)/2; i++ {
 		k, v := pairs[i*2], pairs[i*2+1]
-		b.Set(k, v)
+
+		hash := HashOf(k)
+		exists := false
+		if elements, ok := value[hash]; ok {
+			for _, pair := range elements {
+				if Equal(pair[0], k) {
+					pair[1] = v
+					exists = true
+					break
+				}
+			}
+		}
+		if !exists {
+			value[hash] = append(value[hash], [2]Value{k, v})
+		}
 	}
-	return &_map{value: b.Map()}
+
+	for _, elements := range value {
+		sort.Slice(elements, func(i, j int) bool {
+			return Compare(elements[i][0], elements[j][0]) < 0
+		})
+	}
+
+	return &immutableMap{value: value}
 }
 
-// Get retrieves the value for a given key.
-func (m Map) Get(key Value) (Value, bool) {
-	return m.value.Get(key)
-}
-
-// GetOr returns the value for a given key or a default value if the key is not found.
-func (m Map) GetOr(key, value Value) Value {
-	if v, ok := m.value.Get(key); ok {
-		return v
+// Get retrieves the value associated with the given key.
+func (m *immutableMap) Get(key Value) Value {
+	if elements, ok := m.value[HashOf(key)]; ok {
+		for _, pair := range elements {
+			if Equal(pair[0], key) {
+				return pair[1]
+			}
+		}
 	}
-	return value
+	return nil
 }
 
 // Set adds or updates a key-value pair in the map.
-func (m Map) Set(key, value Value) Map {
-	return &_map{value: m.value.Set(key, value)}
+func (m *immutableMap) Set(key, val Value) Map {
+	return m.Mutable().Set(key, val).Immutable()
 }
 
-// Delete removes a key and its corresponding value from the map.
-func (m Map) Delete(key Value) Map {
-	return &_map{value: m.value.Delete(key)}
+// Delete removes a key-value pair from the map by key.
+func (m *immutableMap) Delete(key Value) Map {
+	return m.Mutable().Delete(key).Immutable()
+}
+
+// Clear all key-value pairs in the mutable map.
+func (m *immutableMap) Clear() Map {
+	return &immutableMap{value: make(map[uint64][][2]Value)}
 }
 
 // Keys returns all keys in the map.
-func (m Map) Keys() []Value {
-	keys := make([]Value, 0, m.value.Len())
-	for itr := m.value.Iterator(); !itr.Done(); {
-		k, _, _ := itr.Next()
-		keys = append(keys, k)
+func (m *immutableMap) Keys() []Value {
+	keys := make([]Value, 0, len(m.value))
+	for _, elements := range m.value {
+		for _, pair := range elements {
+			keys = append(keys, pair[0])
+		}
 	}
 	return keys
 }
 
 // Values returns all values in the map.
-func (m Map) Values() []Value {
-	values := make([]Value, 0, m.value.Len())
-	for itr := m.value.Iterator(); !itr.Done(); {
-		_, v, _ := itr.Next()
-		values = append(values, v)
+func (m *immutableMap) Values() []Value {
+	values := make([]Value, 0, len(m.value))
+	for _, elements := range m.value {
+		for _, pair := range elements {
+			values = append(values, pair[1])
+		}
 	}
 	return values
 }
 
-// Pairs returns all keys and values in the map.
-func (m Map) Pairs() []Value {
-	pairs := make([]Value, 0, m.value.Len()*2)
-	for itr := m.value.Iterator(); !itr.Done(); {
-		k, v, _ := itr.Next()
-		pairs = append(pairs, k)
-		pairs = append(pairs, v)
+// Pairs returns all key-value pairs in the map.
+func (m *immutableMap) Pairs() []Value {
+	pairs := make([]Value, 0, len(m.value)*2)
+	for _, elements := range m.value {
+		for _, pair := range elements {
+			pairs = append(pairs, pair[0], pair[1])
+		}
 	}
 	return pairs
 }
 
-// Range returns a function that iterates over all key-value pairs in the map.
-func (m Map) Range() func(func(key, value Value) bool) {
+// Len returns the number of key-value pairs in the map.
+func (m *immutableMap) Len() int {
+	length := 0
+	for _, elements := range m.value {
+		length += len(elements)
+	}
+	return length
+}
+
+// Range provides an iterator function for traversing key-value pairs.
+func (m *immutableMap) Range() func(func(key, value Value) bool) {
 	return func(yield func(key Value, value Value) bool) {
-		for itr := m.value.Iterator(); !itr.Done(); {
-			k, v, _ := itr.Next()
-			if !yield(k, v) {
-				return
+		keys := make([]uint64, 0, len(m.value))
+		for key := range m.value {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
+
+		for _, key := range keys {
+			for _, pair := range m.value[key] {
+				k, v := pair[0], pair[1]
+				if !yield(k, v) {
+					return
+				}
 			}
 		}
 	}
 }
 
-// Len returns the number of key-value pairs in the map.
-func (m Map) Len() int {
-	return m.value.Len()
+// Immutable returns the immutable version of the map.
+func (m *immutableMap) Immutable() Map {
+	return m
 }
 
-// Map converts the Map to a raw Go map.
-func (m Map) Map() map[any]any {
-	if m.value.Len() == 0 {
+// Mutable returns a mutable version of the map.
+func (m *immutableMap) Mutable() Map {
+	value := make(map[uint64][][2]Value, len(m.value))
+	for hash, elements := range m.value {
+		value[hash] = elements
+	}
+	return &mutableMap{value: value}
+}
+
+// Map converts the map into a native Go map.
+func (m *immutableMap) Map() map[any]any {
+	if len(m.value) == 0 {
 		return nil
 	}
 
-	values := make(map[any]any, m.value.Len())
-	for itr := m.value.Iterator(); !itr.Done(); {
-		k, v, _ := itr.Next()
-		values[InterfaceOf(k)] = InterfaceOf(v)
+	values := make(map[any]any, len(m.value))
+	for _, elements := range m.value {
+		for _, pair := range elements {
+			k, v := pair[0], pair[1]
+			values[InterfaceOf(k)] = InterfaceOf(v)
+		}
 	}
-
 	return values
 }
 
-// Kind returns the kind of the Map.
-func (m Map) Kind() Kind {
+// Kind returns the kind of the map.
+func (m *immutableMap) Kind() Kind {
 	return KindMap
 }
 
-// Hash calculates and returns the hash code.
-func (m Map) Hash() uint64 {
-	h := fnv.New64a()
-	var buf [8]byte
-	for itr := m.value.Iterator(); !itr.Done(); {
-		k, v, _ := itr.Next()
+// Hash calculates the hash code for the map.
+func (m *immutableMap) Hash() uint64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-		binary.BigEndian.PutUint64(buf[:], HashOf(k))
-		_, _ = h.Write(buf[:])
+	if m.hash == 0 {
+		keys := make([]uint64, 0, len(m.value))
+		for key := range m.value {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
 
-		binary.BigEndian.PutUint64(buf[:], HashOf(v))
-		_, _ = h.Write(buf[:])
+		h := fnv.New64a()
+		var buf [8]byte
+		for _, key := range keys {
+			for _, pair := range m.value[key] {
+				k, v := pair[0], pair[1]
+
+				binary.BigEndian.PutUint64(buf[:], HashOf(k))
+				_, _ = h.Write(buf[:])
+
+				binary.BigEndian.PutUint64(buf[:], HashOf(v))
+				_, _ = h.Write(buf[:])
+			}
+		}
+		m.hash = h.Sum64()
 	}
-	return h.Sum64()
+	return m.hash
 }
 
 // Interface converts the Map to an any.
-func (m Map) Interface() any {
-	if m.value.Len() == 0 {
+func (m *immutableMap) Interface() any {
+	if len(m.value) == 0 {
 		return nil
 	}
 
-	keys := make([]any, 0, m.value.Len())
-	values := make([]any, 0, m.value.Len())
+	keys := make([]any, 0, len(m.value))
+	values := make([]any, 0, len(m.value))
 
 	hashable := true
-	for itr := m.value.Iterator(); !itr.Done(); {
-		k, v, _ := itr.Next()
+	for _, elements := range m.value {
+		for _, pair := range elements {
+			k, v := pair[0], pair[1]
 
-		keys = append(keys, InterfaceOf(k))
-		values = append(values, InterfaceOf(v))
+			keys = append(keys, InterfaceOf(k))
+			values = append(values, InterfaceOf(v))
 
-		kind := KindOf(k)
-		hashable = hashable && kind != KindBinary && kind != KindMap && kind != KindSlice
+			kind := KindOf(k)
+			hashable = hashable && kind != KindBinary && kind != KindMap && kind != KindSlice
+		}
 	}
 
 	if !hashable {
@@ -192,22 +298,30 @@ func (m Map) Interface() any {
 		value := values[i]
 		t.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 	}
-
 	return t.Interface()
 }
 
 // Equal checks if two Map instances are equal.
-func (m Map) Equal(other Value) bool {
-	if o, ok := other.(Map); ok {
-		if m.value.Len() == o.value.Len() {
-			itr1 := m.value.Iterator()
-			itr2 := o.value.Iterator()
-			for !itr1.Done() && !itr2.Done() {
-				k1, v1, _ := itr1.Next()
-				k2, v2, _ := itr2.Next()
+func (m *immutableMap) Equal(other Value) bool {
+	if o, ok := other.(*immutableMap); ok {
+		if m.Hash() != o.Hash() {
+			return false
+		}
 
-				if !Equal(k1, k2) || !Equal(v1, v2) {
+		if len(m.value) == len(o.value) {
+			for hash, elements1 := range m.value {
+				elements2 := o.value[hash]
+				if len(elements1) != len(elements2) {
 					return false
+				}
+
+				for i := 0; i < len(elements1); i++ {
+					v1 := elements1[i][1]
+					v2 := elements2[i][1]
+
+					if !Equal(v1, v2) {
+						return false
+					}
 				}
 			}
 			return true
@@ -217,40 +331,169 @@ func (m Map) Equal(other Value) bool {
 }
 
 // Compare checks whether another Object is equal to this Map instance.
-func (m Map) Compare(other Value) int {
-	if o, ok := other.(Map); ok {
-		itr1 := m.value.Iterator()
-		itr2 := o.value.Iterator()
-		for !itr1.Done() && !itr2.Done() {
-			k1, v1, _ := itr1.Next()
-			k2, v2, _ := itr2.Next()
+func (m *immutableMap) Compare(other Value) int {
+	if o, ok := other.(*immutableMap); ok {
+		if len(m.value) != len(o.value) {
+			return compare(len(m.value), len(o.value))
+		}
 
-			if c := Compare(k1, k2); c != 0 {
-				return c
+		keys := make([]uint64, 0, len(m.value))
+		for key := range m.value {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
+
+		for _, hash := range keys {
+			elements1 := m.value[hash]
+			elements2 := o.value[hash]
+			if len(elements1) != len(elements2) {
+				return compare(len(elements1), len(elements2))
 			}
-			if c := Compare(v1, v2); c != 0 {
-				return c
+
+			for i := 0; i < len(elements1); i++ {
+				v1 := elements1[i][1]
+				v2 := elements2[i][1]
+
+				if c := Compare(v1, v2); c != 0 {
+					return c
+				}
 			}
 		}
-		return compare(m.value.Len(), o.value.Len())
+		return 0
 	}
 	return compare(m.Kind(), KindOf(other))
 }
 
-func (m *mapProxy) Set(key, value Value) {
-	m.Map = m.Map.Set(key, value)
+// Get retrieves the value associated with the given key.
+func (m *mutableMap) Get(key Value) Value {
+	return m.Immutable().Get(key)
 }
 
-func (m *mapProxy) Delete(key Value) {
-	m.Map = m.Map.Delete(key)
+// Set adds or updates a key-value pair in the map.
+func (m *mutableMap) Set(key, val Value) Map {
+	hash := HashOf(key)
+	exists := false
+	if elements, ok := m.value[hash]; ok {
+		modify := make([][2]Value, len(elements))
+		copy(modify, elements)
+
+		for _, pair := range modify {
+			if Equal(pair[0], key) {
+				pair[1] = val
+				exists = true
+				break
+			}
+		}
+
+		m.value[hash] = modify
+	}
+	if !exists {
+		m.value[hash] = append(m.value[hash], [2]Value{key, val})
+	}
+
+	elements := m.value[hash]
+	sort.Slice(elements, func(i, j int) bool {
+		return Compare(elements[i][0], elements[j][0]) < 0
+	})
+
+	return m
 }
 
-func (m *mapProxy) Close() {
-	m.Map = NewMap()
+// Delete removes a key-value pair from the map by key.
+func (m *mutableMap) Delete(key Value) Map {
+	hash := HashOf(key)
+	if elements, ok := m.value[hash]; ok {
+		modify := make([][2]Value, len(elements))
+		copy(modify, elements)
+
+		for i, pair := range modify {
+			if Equal(pair[0], key) {
+				modify = append(modify[:i], modify[i+1:]...)
+				break
+			}
+		}
+
+		if len(modify) > 0 {
+			m.value[hash] = modify
+		} else {
+			delete(m.value, hash)
+		}
+	}
+
+	return m
 }
 
-func (*comparer) Compare(x, y Value) int {
-	return Compare(x, y)
+// Clear all key-value pairs in the mutable map.
+func (m *mutableMap) Clear() Map {
+	m.value = make(map[uint64][][2]Value)
+	return m
+}
+
+// Keys returns all keys in the map.
+func (m *mutableMap) Keys() []Value {
+	return m.Immutable().Keys()
+}
+
+// Values returns all values in the map.
+func (m *mutableMap) Values() []Value {
+	return m.Immutable().Values()
+}
+
+// Pairs returns all key-value pairs in the map.
+func (m *mutableMap) Pairs() []Value {
+	return m.Immutable().Pairs()
+}
+
+// Len returns the number of key-value pairs in the map.
+func (m *mutableMap) Len() int {
+	return m.Immutable().Len()
+}
+
+// Range provides an iterator function for traversing key-value pairs.
+func (m *mutableMap) Range() func(func(key, value Value) bool) {
+	return m.Immutable().Range()
+}
+
+// Immutable returns the immutable version of the map.
+func (m *mutableMap) Immutable() Map {
+	return &immutableMap{value: m.value}
+}
+
+// Mutable returns a mutable version of the map.
+func (m *mutableMap) Mutable() Map {
+	return m
+}
+
+// Map converts the map into a native Go map.
+func (m *mutableMap) Map() map[any]any {
+	return m.Immutable().Map()
+}
+
+// Kind returns the kind of the map.
+func (m *mutableMap) Kind() Kind {
+	return KindMap
+}
+
+// Hash calculates the hash code for the map.
+func (m *mutableMap) Hash() uint64 {
+	return m.Immutable().Hash()
+}
+
+// Interface converts the Map to an any.
+func (m *mutableMap) Interface() any {
+	return m.Immutable().Interface()
+}
+
+// Equal checks if two Map instances are equal.
+func (m *mutableMap) Equal(other Value) bool {
+	return m.Immutable().Equal(other)
+}
+
+// Compare checks whether another Object is equal to this Map instance.
+func (m *mutableMap) Compare(other Value) int {
+	return m.Immutable().Compare(other)
 }
 
 func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.EncodeCompiler[any, Value] {
@@ -291,8 +534,8 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 			encoders := make([]encoding.Encoder[reflect.Value, []Value], 0, typ.NumField())
 			for i := 0; i < typ.NumField(); i++ {
 				field := typ.Field(i)
-				tag := getMapTag(field)
-				if !field.IsExported() || tag.ignore {
+				meta := getMapMeta(field)
+				if !field.IsExported() || meta.ignore {
 					continue
 				}
 
@@ -301,13 +544,13 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 					child = encoder
 				}
 
-				alias := NewString(tag.alias)
+				alias := NewString(meta.alias)
 
-				var env encoding.Encoder[reflect.Value, []Value]
-				if tag.inline {
-					env = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+				var enc encoding.Encoder[reflect.Value, []Value]
+				if meta.inline {
+					enc = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
 						elem := source.FieldByIndex(field.Index)
-						if tag.omitempty && elem.IsZero() {
+						if meta.omitempty && elem.IsZero() {
 							return nil, nil
 						}
 
@@ -320,9 +563,9 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 						}
 					})
 				} else {
-					env = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+					enc = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
 						elem := source.FieldByIndex(field.Index)
-						if tag.omitempty && elem.IsZero() {
+						if meta.omitempty && elem.IsZero() {
 							return nil, nil
 						}
 
@@ -334,7 +577,7 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 					})
 				}
 
-				encoders = append(encoders, env)
+				encoders = append(encoders, enc)
 			}
 
 			return encoding.EncodeFunc(func(source any) (Value, error) {
@@ -376,21 +619,19 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						return nil
 					}
 
-					var proxy *mapProxy
-					if s, ok := source.(*mapProxy); ok {
-						proxy = s
-					} else if s, ok := source.(Map); ok {
-						proxy = &mapProxy{Map: s}
+					var m Map
+					if s, ok := source.(Map); ok {
+						m = s
 					} else {
 						return errors.WithStack(encoding.ErrUnsupportedType)
 					}
 
 					t := reflect.NewAt(typ.Elem(), target).Elem()
 					if t.IsNil() {
-						t.Set(reflect.MakeMapWithSize(t.Type(), proxy.Len()))
+						t.Set(reflect.MakeMapWithSize(t.Type(), m.Len()))
 					}
 
-					for key, value := range proxy.Range() {
+					for key, value := range m.Range() {
 						k := reflect.New(keyType)
 						v := reflect.New(valueType)
 
@@ -402,16 +643,17 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 							t.SetMapIndex(k.Elem(), v.Elem())
 						}
 					}
-					proxy.Close()
+
+					m.Clear()
 					return nil
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Struct {
-				var decoders []encoding.Decoder[*mapProxy, unsafe.Pointer]
+				var decoders []encoding.Decoder[Map, unsafe.Pointer]
 				for i := 0; i < typ.Elem().NumField(); i++ {
 					field := typ.Elem().Field(i)
-					tag := getMapTag(field)
+					meta := getMapMeta(field)
 
-					if !field.IsExported() || tag.ignore {
+					if !field.IsExported() || meta.ignore {
 						continue
 					}
 
@@ -421,17 +663,17 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 					}
 
 					offset := field.Offset
-					alias := NewString(tag.alias)
+					alias := NewString(meta.alias)
 
-					var dec encoding.Decoder[*mapProxy, unsafe.Pointer]
-					if tag.inline {
-						dec = encoding.DecodeFunc(func(source *mapProxy, target unsafe.Pointer) error {
+					var dec encoding.Decoder[Map, unsafe.Pointer]
+					if meta.inline {
+						dec = encoding.DecodeFunc(func(source Map, target unsafe.Pointer) error {
 							return child.Decode(source, unsafe.Pointer(uintptr(target)+offset))
 						})
 					} else {
-						dec = encoding.DecodeFunc(func(source *mapProxy, target unsafe.Pointer) error {
-							value, ok := source.Get(alias)
-							if !ok {
+						dec = encoding.DecodeFunc(func(source Map, target unsafe.Pointer) error {
+							value := source.Get(alias)
+							if value == nil {
 								return nil
 							}
 							source.Delete(alias)
@@ -447,17 +689,15 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 						return nil
 					}
 
-					var proxy *mapProxy
-					if s, ok := source.(*mapProxy); ok {
-						proxy = s
-					} else if s, ok := source.(Map); ok {
-						proxy = &mapProxy{Map: s}
+					var m Map
+					if s, ok := source.(Map); ok {
+						m = s.Mutable()
 					} else {
 						return errors.WithStack(encoding.ErrUnsupportedType)
 					}
 
 					for _, dec := range decoders {
-						if err := dec.Decode(proxy, target); err != nil {
+						if err := dec.Decode(m, target); err != nil {
 							return err
 						}
 					}
@@ -466,9 +706,6 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Map); ok {
-						*(*any)(target) = s.Interface()
-						return nil
-					} else if s, ok := source.(*mapProxy); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
@@ -480,33 +717,32 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 	})
 }
 
-func getMapTag(f reflect.StructField) mapTag {
+func getMapMeta(f reflect.StructField) mapMeta {
 	key := strcase.ToSnake(f.Name)
-	rawTag := f.Tag.Get(tagMap)
+	tag := f.Tag.Get(tagMap)
 
-	if rawTag != "" {
-		if rawTag == "-" {
-			return mapTag{ignore: true}
+	if tag != "" {
+		if tag == "-" {
+			return mapMeta{ignore: true}
 		}
 
-		if index := strings.Index(rawTag, ","); index != -1 {
-			tag := mapTag{}
-			tag.alias = key
-			if rawTag[:index] != "" {
-				tag.alias = rawTag[:index]
+		if index := strings.Index(tag, ","); index != -1 {
+			meta := mapMeta{}
+			meta.alias = key
+			if tag[:index] != "" {
+				meta.alias = tag[:index]
 			}
 
-			if rawTag[index+1:] == "omitempty" {
-				tag.omitempty = true
-			} else if rawTag[index+1:] == "inline" {
-				tag.alias = ""
-				tag.inline = true
+			if tag[index+1:] == "omitempty" {
+				meta.omitempty = true
+			} else if tag[index+1:] == "inline" {
+				meta.alias = ""
+				meta.inline = true
 			}
-			return tag
+			return meta
 		} else {
-			return mapTag{alias: rawTag}
+			return mapMeta{alias: tag}
 		}
 	}
-
-	return mapTag{alias: key}
+	return mapMeta{alias: key}
 }

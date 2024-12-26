@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"hash/fnv"
 	"reflect"
+	"sync"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -17,6 +18,8 @@ type Binary = *binary_
 
 type binary_ struct {
 	value []byte
+	hash  uint64
+	mu    sync.Mutex
 }
 
 var _ Value = (Binary)(nil)
@@ -53,9 +56,15 @@ func (b Binary) Kind() Kind {
 
 // Hash returns the precomputed hash code.
 func (b Binary) Hash() uint64 {
-	h := fnv.New64a()
-	h.Write(b.value)
-	return h.Sum64()
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.hash == 0 {
+		h := fnv.New64a()
+		h.Write(b.value)
+		b.hash = h.Sum64()
+	}
+	return b.hash
 }
 
 // Interface converts Binary to a byte slice.
@@ -66,6 +75,9 @@ func (b Binary) Interface() any {
 // Equal checks whether another Object is equal to this Binary instance.
 func (b Binary) Equal(other Value) bool {
 	if o, ok := other.(Binary); ok {
+		if b.Hash() != o.Hash() {
+			return false
+		}
 		return bytes.Equal(b.value, o.value)
 	}
 	return false

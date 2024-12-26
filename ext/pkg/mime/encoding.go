@@ -97,7 +97,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 		writeField := func(obj types.Map, key types.Value) error {
 			if key, ok := key.(types.String); ok {
-				value := obj.GetOr(key, nil)
+				value := obj.Get(key)
 
 				var elements types.Slice
 				if v, ok := value.(types.Slice); ok {
@@ -135,7 +135,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 			if value, ok := value.(types.Map); ok {
 				for key := range value.Range() {
 					if key, ok := key.(types.String); ok {
-						value := value.GetOr(key, nil)
+						value := value.Get(key)
 
 						var elements types.Slice
 						if v, ok := value.(types.Slice); ok {
@@ -145,16 +145,16 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 						}
 
 						for _, element := range elements.Values() {
-							data, ok := types.Pick[types.Value](element, "data")
+							data, ok := types.Get[types.Value](element, "data")
 							if !ok {
 								data = element
 							}
-							filename, ok := types.Pick[string](element, "filename")
+							filename, ok := types.Get[string](element, "filename")
 							if !ok {
 								filename = key.String()
 							}
 
-							header, _ := types.Pick[types.Value](element, "header")
+							header, _ := types.Get[types.Value](element, "header")
 
 							h := textproto.MIMEHeader{}
 							_ = types.Unmarshal(header, &h)

@@ -91,9 +91,9 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	ctx := proc.Context()
 
-	query, ok := types.Pick[string](inPck.Payload())
+	query, ok := types.Get[string](inPck.Payload())
 	if !ok {
-		query, ok = types.Pick[string](inPck.Payload(), 0)
+		query, ok = types.Get[string](inPck.Payload(), 0)
 	}
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
@@ -129,16 +129,16 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
-		args, _ := types.Pick[[]any](inPck.Payload(), 1)
+		args, _ := types.Get[[]any](inPck.Payload(), 1)
 		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 	} else {
 		var arg any
 		var ok bool
-		arg, ok = types.Pick[map[string]any](inPck.Payload(), 1)
+		arg, ok = types.Get[map[string]any](inPck.Payload(), 1)
 		if !ok {
-			arg, _ = types.Pick[[]map[string]any](inPck.Payload(), 1)
+			arg, _ = types.Get[[]map[string]any](inPck.Payload(), 1)
 		}
 
 		query, args, err := tx.BindNamed(query, arg)

@@ -27,14 +27,12 @@ func TestMap_GetAndSetAndDelete(t *testing.T) {
 	o := NewMap()
 	o = o.Set(k1, v1)
 
-	r1, ok := o.Get(k1)
-	assert.True(t, ok)
+	r1 := o.Get(k1)
 	assert.Equal(t, v1, r1)
 
 	o = o.Delete(k1)
 
-	r2, ok := o.Get(k1)
-	assert.False(t, ok)
+	r2 := o.Get(k1)
 	assert.Nil(t, r2)
 }
 
@@ -99,12 +97,18 @@ func TestMap_Equal(t *testing.T) {
 	k1 := NewString(faker.UUIDHyphenated())
 	v1 := NewString(faker.UUIDHyphenated())
 
+	k2 := NewString(faker.UUIDHyphenated())
+	v2 := NewString(faker.UUIDHyphenated())
+
 	o1 := NewMap()
-	o2 := NewMap(k1, v1)
+	o2 := NewMap(k1, v1, k2, v2)
+	o3 := NewMap(k2, v2, k1, v1)
 
 	assert.True(t, o1.Equal(o1))
 	assert.True(t, o2.Equal(o2))
+	assert.True(t, o3.Equal(o3))
 	assert.False(t, o1.Equal(o2))
+	assert.True(t, o2.Equal(o3))
 }
 
 func TestMap_Compare(t *testing.T) {
@@ -256,7 +260,7 @@ func BenchmarkMap_Get(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = m.Get(NewString(faker.UUIDHyphenated()))
+		_ = m.Get(NewString(faker.UUIDHyphenated()))
 	}
 }
 
@@ -276,7 +280,10 @@ func BenchmarkMap_Encode(b *testing.B) {
 
 	b.Run("static", func(b *testing.B) {
 		b.Run("map", func(b *testing.B) {
-			source := map[string]string{"foo": "bar"}
+			source := map[string]string{
+				"foo": "foo",
+				"bar": "bar",
+			}
 
 			for i := 0; i < b.N; i++ {
 				enc.Encode(source)
@@ -300,8 +307,10 @@ func BenchmarkMap_Encode(b *testing.B) {
 
 	b.Run("dynamic", func(b *testing.B) {
 		b.Run("map", func(b *testing.B) {
-			source := map[any]any{"foo": "bar"}
-
+			source := map[string]string{
+				"foo": "foo",
+				"bar": "bar",
+			}
 			for i := 0; i < b.N; i++ {
 				enc.Encode(source)
 			}
@@ -329,7 +338,10 @@ func BenchmarkMap_Decode(b *testing.B) {
 	dec.Add(newMapDecoder(dec))
 
 	b.Run("map", func(b *testing.B) {
-		v := NewMap(NewString("foo"), NewString("bar"))
+		v := NewMap(
+			NewString("foo"), NewString("foo"),
+			NewString("bar"), NewString("bar"),
+		)
 
 		for i := 0; i < b.N; i++ {
 			var decoded map[string]string

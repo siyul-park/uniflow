@@ -4,73 +4,92 @@ import (
 	"encoding/binary"
 	"hash/fnv"
 	"reflect"
+	"sync"
 	"unsafe"
 
-	"github.com/benbjohnson/immutable"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Slice represents a slice of Objects.
-type Slice = *slice_
+type Slice = *_slice
 
-type slice_ struct {
-	value *immutable.List[Value]
+type _slice struct {
+	value []Value
+	hash  uint64
+	mu    sync.RWMutex
 }
 
 var _ Value = (Slice)(nil)
 
 // NewSlice returns a new Slice.
 func NewSlice(elements ...Value) Slice {
-	return &slice_{value: immutable.NewList(elements...)}
+	return &_slice{value: elements}
 }
 
 // Prepend adds a value to the beginning of the slice.
 func (s Slice) Prepend(value Value) Slice {
-	return &slice_{value: s.value.Prepend(value)}
+	return &_slice{value: append([]Value{value}, s.value...)}
 }
 
 // Append adds a value to the end of the slice.
 func (s Slice) Append(value Value) Slice {
-	return &slice_{value: s.value.Append(value)}
+	elements := make([]Value, len(s.value), len(s.value)+1)
+	copy(elements, s.value)
+	elements = append(elements, value)
+
+	return &_slice{value: elements}
 }
 
 // Sub returns a new slice that is a sub-slice of the original slice.
 func (s Slice) Sub(start, end int) Slice {
-	return &slice_{value: s.value.Slice(start, end)}
+	if start < 0 {
+		start = 0
+	}
+	if end > len(s.value) {
+		end = len(s.value)
+	}
+	if end <= start {
+		return &_slice{}
+	}
+
+	elements := make([]Value, end-start)
+	copy(elements, s.value[start:end])
+
+	return &_slice{value: elements}
 }
 
 // Get retrieves the value at the given index.
 func (s Slice) Get(index int) Value {
-	if index >= s.value.Len() {
+	if index >= len(s.value) {
 		return nil
 	}
-	return s.value.Get(index)
+	return s.value[index]
 }
 
 // Set sets the value at the given index.
 func (s Slice) Set(index int, value Value) Slice {
-	if index < 0 || index >= s.value.Len() {
+	if index < 0 || index >= len(s.value) {
 		return s
 	}
-	return &slice_{value: s.value.Set(index, value)}
+
+	elements := make([]Value, len(s.value))
+	copy(elements, s.value)
+	elements[index] = value
+
+	return &_slice{value: elements}
 }
 
 // Values returns the elements of the slice.
 func (s Slice) Values() []Value {
-	elements := make([]Value, s.value.Len())
-	for itr := s.value.Iterator(); !itr.Done(); {
-		i, v := itr.Next()
-		elements[i] = v
-	}
-	return elements
+	return append([]Value(nil), s.value...)
 }
 
 // Range returns a function that iterates over all key-value pairs of the slice.
 func (s Slice) Range() func(func(key int, value Value) bool) {
 	return func(yield func(key int, value Value) bool) {
-		for itr := s.value.Iterator(); !itr.Done(); {
-			i, v := itr.Next()
+		for i := 0; i < len(s.value); i++ {
+			v := s.value[i]
 			if !yield(i, v) {
 				return
 			}
@@ -80,21 +99,20 @@ func (s Slice) Range() func(func(key int, value Value) bool) {
 
 // Len returns the length of the slice.
 func (s Slice) Len() int {
-	return s.value.Len()
+	return len(s.value)
 }
 
 // Slice returns a raw representation of the slice.
 func (s Slice) Slice() []any {
-	if s.value.Len() == 0 {
+	if len(s.value) == 0 {
 		return nil
 	}
 
-	values := make([]any, s.value.Len())
-	for itr := s.value.Iterator(); !itr.Done(); {
-		i, v := itr.Next()
+	values := make([]any, len(s.value))
+	for i := 0; i < len(s.value); i++ {
+		v := s.value[i]
 		values[i] = InterfaceOf(v)
 	}
-
 	return values
 }
 
@@ -105,20 +123,25 @@ func (s Slice) Kind() Kind {
 
 // Hash returns the hash value of the slice.
 func (s Slice) Hash() uint64 {
-	h := fnv.New64a()
-	var buf [8]byte
-	for itr := s.value.Iterator(); !itr.Done(); {
-		_, v := itr.Next()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-		binary.BigEndian.PutUint64(buf[:], HashOf(v))
-		_, _ = h.Write(buf[:])
+	if s.hash == 0 {
+		h := fnv.New64a()
+		var buf [8]byte
+		for i := 0; i < len(s.value); i++ {
+			v := s.value[i]
+			binary.BigEndian.PutUint64(buf[:], HashOf(v))
+			_, _ = h.Write(buf[:])
+		}
+		s.hash = h.Sum64()
 	}
-	return h.Sum64()
+	return s.hash
 }
 
 // Interface returns the slice as a generic interface.
 func (s Slice) Interface() any {
-	if s.value.Len() == 0 {
+	if len(s.value) == 0 {
 		return nil
 	}
 
@@ -131,19 +154,20 @@ func (s Slice) Interface() any {
 			t.Index(i).Set(reflect.ValueOf(value))
 		}
 	}
-
 	return t.Interface()
 }
 
 // Equal checks if two Slice instances are equal.
 func (s Slice) Equal(other Value) bool {
 	if o, ok := other.(Slice); ok {
-		if s.value.Len() == o.value.Len() {
-			itr1 := s.value.Iterator()
-			itr2 := o.value.Iterator()
-			for !itr1.Done() && !itr2.Done() {
-				_, v1 := itr1.Next()
-				_, v2 := itr2.Next()
+		if s.Hash() != o.Hash() {
+			return false
+		}
+
+		if len(s.value) == len(o.value) {
+			for i := 0; i < len(s.value); i++ {
+				v1 := s.value[i]
+				v2 := o.value[i]
 
 				if !Equal(v1, v2) {
 					return false
@@ -158,17 +182,16 @@ func (s Slice) Equal(other Value) bool {
 // Compare checks whether another Object is equal to this Slice instance.
 func (s Slice) Compare(other Value) int {
 	if o, ok := other.(Slice); ok {
-		itr1 := s.value.Iterator()
-		itr2 := o.value.Iterator()
-		for !itr1.Done() && !itr2.Done() {
-			_, v1 := itr1.Next()
-			_, v2 := itr2.Next()
+		length := min(len(s.value), len(o.value))
+		for i := 0; i < length; i++ {
+			v1 := s.value[i]
+			v2 := o.value[i]
 
 			if c := Compare(v1, v2); c != 0 {
 				return c
 			}
 		}
-		return compare(s.value.Len(), o.value.Len())
+		return compare(len(s.value), len(o.value))
 	}
 	return compare(s.Kind(), KindOf(other))
 }

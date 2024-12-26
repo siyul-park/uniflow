@@ -3,7 +3,6 @@ module github.com/siyul-park/uniflow
 go 1.23.4
 
 require (
-	github.com/benbjohnson/immutable v0.4.3
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/gofrs/uuid v4.4.0+incompatible

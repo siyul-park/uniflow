@@ -1,8 +1,9 @@
 package port
 
 import (
-	"github.com/siyul-park/uniflow/pkg/process"
 	"sync"
+
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 // Listener is an interface for handling process events.

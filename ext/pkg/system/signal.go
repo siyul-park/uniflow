@@ -32,6 +32,8 @@ type SignalNode struct {
 
 const KindSignal = "signal"
 
+var ErrInvalidTopic = errors.New("topic is invalid")
+
 // NewSignalNodeCodec creates a codec for compiling SignalNodeSpec into SignalNode instances.
 func NewSignalNodeCodec(signals map[string]func(context.Context) (<-chan any, error)) scheme.Codec {
 	if signals == nil {
@@ -41,7 +43,7 @@ func NewSignalNodeCodec(signals map[string]func(context.Context) (<-chan any, er
 	return scheme.CodecWithType[*SignalNodeSpec](func(spec *SignalNodeSpec) (node.Node, error) {
 		fn, ok := signals[spec.Topic]
 		if !ok {
-			return nil, errors.WithStack(ErrInvalidOperation)
+			return nil, errors.WithStack(ErrInvalidTopic)
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())

@@ -25,6 +25,8 @@ type SyscallNode struct {
 
 const KindSyscall = "syscall"
 
+var ErrInvalidOperation = errors.New("operation is invalid")
+
 // NewSyscallNodeCodec returns a codec for SyscallNodeSpec.
 func NewSyscallNodeCodec(functions map[string]func(ctx context.Context, arguments []any) ([]any, error)) scheme.Codec {
 	if functions == nil {

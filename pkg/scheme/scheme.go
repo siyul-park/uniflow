@@ -1,11 +1,12 @@
 package scheme
 
 import (
-	"github.com/go-playground/validator/v10"
-	"github.com/gofrs/uuid"
 	"reflect"
 	"slices"
 	"sync"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/gofrs/uuid"
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"

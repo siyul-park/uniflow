@@ -1,11 +1,12 @@
 package types
 
 import (
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"reflect"
 	"time"
 	"unsafe"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 func newTimeEncoder() encoding.EncodeCompiler[any, Value] {
@@ -77,7 +78,9 @@ func newDurationDecoder() encoding.DecodeCompiler[Value] {
 					var v time.Duration
 					var err error
 					if s, ok := source.(String); ok {
-						v, err = time.ParseDuration(s.String())
+						if v, err = time.ParseDuration(s.String()); err != nil {
+							err = errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+						}
 					} else if s, ok := source.(Integer); ok {
 						v = time.Millisecond * (time.Duration)(s.Int())
 					} else if s, ok := source.(Float); ok {

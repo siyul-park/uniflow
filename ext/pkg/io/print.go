@@ -82,13 +82,13 @@ func (n *PrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Pa
 	defer n.mu.RUnlock()
 
 	var args []any
-	format, ok := types.Pick[string](inPck.Payload())
+	format, ok := types.Get[string](inPck.Payload())
 	if !ok {
 		payload, ok := inPck.Payload().(types.Slice)
 		if !ok {
 			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 		}
-		format, ok = types.Pick[string](payload, 0)
+		format, ok = types.Get[string](payload, 0)
 		if !ok {
 			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 		}
@@ -115,12 +115,12 @@ func (n *DynPrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	filename, ok := types.Pick[string](payload, 0)
+	filename, ok := types.Get[string](payload, 0)
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	format, ok := types.Pick[string](payload, 1)
+	format, ok := types.Get[string](payload, 1)
 	if !ok {
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}

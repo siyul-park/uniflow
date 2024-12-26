@@ -1,7 +1,7 @@
 package types
 
-// Pick extracts a value from a nested structure using the provided paths.
-func Pick[T any](obj Value, paths ...any) (T, bool) {
+// Get extracts a value from a nested structure using the provided paths.
+func Get[T any](obj Value, paths ...any) (T, bool) {
 	var val T
 	cur := obj
 	for _, path := range paths {
@@ -13,8 +13,8 @@ func Pick[T any](obj Value, paths ...any) (T, bool) {
 		switch p := p.(type) {
 		case String:
 			if v, ok := cur.(Map); ok {
-				child, ok := v.Get(p)
-				if !ok {
+				child := v.Get(p)
+				if child == nil {
 					return val, false
 				}
 				cur = child

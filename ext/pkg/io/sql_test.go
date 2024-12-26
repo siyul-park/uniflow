@@ -90,7 +90,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, types.NewSlice(), outPck.Payload())
+			assert.Equal(t, nil, outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -150,7 +150,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, types.NewSlice(), outPck.Payload())
+			assert.Equal(t, nil, outPck.Payload().Interface())
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
