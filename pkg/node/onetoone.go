@@ -69,11 +69,18 @@ func (n *OneToOneNode) Close() error {
 
 func (n *OneToOneNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
-	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
+	var outWriter *packet.Writer
+	var errWriter *packet.Writer
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
+
+		if outWriter == nil {
+			outWriter = n.outPort.Open(proc)
+		}
+		if errWriter == nil {
+			errWriter = n.errPort.Open(proc)
+		}
 
 		if outPck, errPck := n.action(proc, inPck); errPck != nil {
 			n.tracer.Transform(inPck, errPck)

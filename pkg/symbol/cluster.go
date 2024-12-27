@@ -1,6 +1,7 @@
 package symbol
 
 import (
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -208,9 +209,12 @@ func (n *Cluster) Close() error {
 func (n *Cluster) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		reader := inPort.Open(proc)
-		writer := outPort.Open(proc)
+		var writer *packet.Writer
 
 		for inPck := range reader.Read() {
+			if writer == nil {
+				writer = outPort.Open(proc)
+			}
 			if writer.Write(inPck) == 0 {
 				reader.Receive(inPck)
 			}
@@ -220,10 +224,13 @@ func (n *Cluster) inbound(inPort *port.InPort, outPort *port.OutPort) port.Liste
 
 func (n *Cluster) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
-		reader := inPort.Open(proc)
+		var reader *packet.Reader
 		writer := outPort.Open(proc)
 
 		for backPck := range writer.Receive() {
+			if reader == nil {
+				reader = inPort.Open(proc)
+			}
 			reader.Receive(backPck)
 		}
 	})

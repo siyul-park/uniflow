@@ -96,8 +96,8 @@ func (n *ManyToOneNode) forward(index int) port.Listener {
 		defer n.mu.RUnlock()
 
 		inReader := n.inPorts[index].Open(proc)
-		outWriter := n.outPort.Open(proc)
-		errWriter := n.errPort.Open(proc)
+		var outWriter *packet.Writer
+		var errWriter *packet.Writer
 
 		readGroup, _ := n.readGroups.LoadOrStore(proc, func() (*packet.ReadGroup, error) {
 			inReaders := make([]*packet.Reader, len(n.inPorts))
@@ -109,6 +109,13 @@ func (n *ManyToOneNode) forward(index int) port.Listener {
 
 		for inPck := range inReader.Read() {
 			n.tracer.Read(inReader, inPck)
+
+			if outWriter == nil {
+				outWriter = n.outPort.Open(proc)
+			}
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
 
 			if inPcks := readGroup.Read(inReader, inPck); len(inPcks) < len(n.inPorts) {
 				n.tracer.Reduce(inPck)
