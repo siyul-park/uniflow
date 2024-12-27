@@ -15,14 +15,22 @@ import (
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
 type Chart struct {
-	ID          uuid.UUID               `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
-	Namespace   string                  `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
-	Name        string                  `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	Annotations map[string]string       `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
-	Specs       []*spec.Unstructured    `json:"specs" bson:"specs" yaml:"specs" map:"specs"`
-	Inbounds    map[string][]spec.Port  `json:"inbounds,omitempty" bson:"inbounds,omitempty" yaml:"inbounds,omitempty" map:"inbounds,omitempty"`
-	Outbounds   map[string][]spec.Port  `json:"outbounds,omitempty" bson:"outbounds,omitempty" yaml:"outbounds,omitempty" map:"outbounds,omitempty"`
-	Env         map[string][]spec.Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
+	// ID is the unique identifier of the chart.
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
+	// Namespace groups charts logically.
+	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
+	// Name is the human-readable name of the chart.
+	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	// Annotations hold additional metadata.
+	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	// Specs define the specifications of the chart.
+	Specs []*spec.Unstructured `json:"specs" bson:"specs" yaml:"specs" map:"specs"`
+	// Inbounds define the inbound ports of the chart.
+	Inbounds map[string][]spec.Port `json:"inbounds,omitempty" bson:"inbounds,omitempty" yaml:"inbounds,omitempty" map:"inbounds,omitempty"`
+	// Outbounds define the outbound ports of the chart.
+	Outbounds map[string][]spec.Port `json:"outbounds,omitempty" bson:"outbounds,omitempty" yaml:"outbounds,omitempty" map:"outbounds,omitempty"`
+	// Env holds the environment variables of the chart.
+	Env map[string][]spec.Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Key constants for commonly used fields.

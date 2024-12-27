@@ -25,35 +25,35 @@ func TestAs(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestMeta_SetID(t *testing.T) {
+func TestMeta_ID(t *testing.T) {
 	meta := &Meta{}
 	id := uuid.Must(uuid.NewV7())
 	meta.SetID(id)
 	assert.Equal(t, id, meta.GetID())
 }
 
-func TestMeta_SetKind(t *testing.T) {
+func TestMeta_Kind(t *testing.T) {
 	meta := &Meta{}
 	kind := faker.UUIDHyphenated()
 	meta.SetKind(kind)
 	assert.Equal(t, kind, meta.GetKind())
 }
 
-func TestMeta_SetNamespace(t *testing.T) {
+func TestMeta_Namespace(t *testing.T) {
 	meta := &Meta{}
 	namespace := faker.UUIDHyphenated()
 	meta.SetNamespace(namespace)
 	assert.Equal(t, namespace, meta.GetNamespace())
 }
 
-func TestMeta_SetName(t *testing.T) {
+func TestMeta_Name(t *testing.T) {
 	meta := &Meta{}
 	name := faker.UUIDHyphenated()
 	meta.SetName(name)
 	assert.Equal(t, name, meta.GetName())
 }
 
-func TestMeta_SetAnnotations(t *testing.T) {
+func TestMeta_Annotations(t *testing.T) {
 	meta := &Meta{}
 	annotations := map[string]string{"key": "value"}
 	meta.SetAnnotations(annotations)

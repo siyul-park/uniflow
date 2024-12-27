@@ -154,35 +154,35 @@ func TestChart_Build(t *testing.T) {
 	})
 }
 
-func TestChart_SetID(t *testing.T) {
+func TestChart_ID(t *testing.T) {
 	chrt := New()
 	id := uuid.Must(uuid.NewV7())
 	chrt.SetID(id)
 	assert.Equal(t, id, chrt.GetID())
 }
 
-func TestChart_SetNamespace(t *testing.T) {
+func TestChart_Namespace(t *testing.T) {
 	chrt := New()
 	namespace := "test-namespace"
 	chrt.SetNamespace(namespace)
 	assert.Equal(t, namespace, chrt.GetNamespace())
 }
 
-func TestChart_SetName(t *testing.T) {
+func TestChart_Name(t *testing.T) {
 	chrt := New()
 	name := "test-chart"
 	chrt.SetName(name)
 	assert.Equal(t, name, chrt.GetName())
 }
 
-func TestChart_SetAnnotations(t *testing.T) {
+func TestChart_Annotations(t *testing.T) {
 	chrt := New()
 	annotations := map[string]string{"key": "value"}
 	chrt.SetAnnotations(annotations)
 	assert.Equal(t, annotations, chrt.GetAnnotations())
 }
 
-func TestChart_SetSpecs(t *testing.T) {
+func TestChart_Specs(t *testing.T) {
 	chrt := New()
 	specs := []*spec.Unstructured{
 		{
@@ -196,7 +196,7 @@ func TestChart_SetSpecs(t *testing.T) {
 	assert.Equal(t, specs, chrt.GetSpecs())
 }
 
-func TestChart_SetInbounds(t *testing.T) {
+func TestChart_Inbounds(t *testing.T) {
 	chrt := New()
 	ports := map[string][]spec.Port{
 		"http": {
@@ -211,7 +211,7 @@ func TestChart_SetInbounds(t *testing.T) {
 	assert.Equal(t, ports, chrt.GetInbounds())
 }
 
-func TestChart_SetOutbounds(t *testing.T) {
+func TestChart_Outbounds(t *testing.T) {
 	chrt := New()
 	ports := map[string][]spec.Port{
 		"http": {
@@ -226,7 +226,7 @@ func TestChart_SetOutbounds(t *testing.T) {
 	assert.Equal(t, ports, chrt.GetOutbounds())
 }
 
-func TestChart_SetEnv(t *testing.T) {
+func TestChart_Env(t *testing.T) {
 	chrt := New()
 	env := map[string][]spec.Value{
 		"FOO": {

@@ -8,35 +8,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecret_SetID(t *testing.T) {
+func TestSecret_ID(t *testing.T) {
 	scrt := New()
 	id := uuid.Must(uuid.NewV7())
 	scrt.SetID(id)
 	assert.Equal(t, id, scrt.GetID())
 }
 
-func TestSecret_SetNamespace(t *testing.T) {
+func TestSecret_Namespace(t *testing.T) {
 	scrt := New()
 	namespace := faker.UUIDHyphenated()
 	scrt.SetNamespace(namespace)
 	assert.Equal(t, namespace, scrt.GetNamespace())
 }
 
-func TestSecret_SetName(t *testing.T) {
+func TestSecret_Name(t *testing.T) {
 	scrt := New()
 	name := faker.UUIDHyphenated()
 	scrt.SetName(name)
 	assert.Equal(t, name, scrt.GetName())
 }
 
-func TestSecret_SetAnnotations(t *testing.T) {
+func TestSecret_Annotations(t *testing.T) {
 	scrt := New()
 	annotation := map[string]string{"key": "value"}
 	scrt.SetAnnotations(annotation)
 	assert.Equal(t, annotation, scrt.GetAnnotations())
 }
 
-func TestSecret_SetData_Nil(t *testing.T) {
+func TestSecret_Data(t *testing.T) {
 	scrt := New()
 	data := faker.UUIDHyphenated()
 	scrt.SetData(data)
