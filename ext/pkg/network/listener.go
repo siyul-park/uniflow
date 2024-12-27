@@ -27,7 +27,7 @@ import (
 type ListenNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string `map:"protocol" validate:"required"`
-	Host      string `map:"host,omitempty"`
+	Host      string `map:"host,omitempty" validate:"omitempty,hostname|ip"`
 	Port      int    `map:"port" validate:"required"`
 	Cert      string `map:"cert,omitempty"`
 	Key       string `map:"key,omitempty"`

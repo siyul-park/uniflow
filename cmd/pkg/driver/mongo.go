@@ -27,7 +27,7 @@ type MongoDriver struct {
 var _ Driver = (*MongoDriver)(nil)
 
 // NewMongoDriver initializes a new MongoDB connection and returns a Driver instance.
-func NewMongoDriver(ctx context.Context, uri, name string) (Driver, error) {
+func NewMongoDriver(uri, name string) (Driver, error) {
 	var server *memongo.Server
 	if strings.HasPrefix(uri, "memongodb://") {
 		server = mongoserver.New()

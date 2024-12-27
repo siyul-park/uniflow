@@ -54,7 +54,7 @@ func main() {
 
 	if strings.HasPrefix(databaseURL, "memongodb://") || strings.HasPrefix(databaseURL, "mongodb://") {
 		var err error
-		if drv, err = driver.NewMongoDriver(ctx, databaseURL, databaseName); err != nil {
+		if drv, err = driver.NewMongoDriver(databaseURL, databaseName); err != nil {
 			log.Fatal(err)
 		}
 	}

@@ -102,6 +102,7 @@ func (s *store[T]) Watch(ctx context.Context, resources ...T) (Stream, error) {
 
 	go func() {
 		<-stream.Done()
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 

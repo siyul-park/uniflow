@@ -538,7 +538,7 @@ func (v *processDebugView) Interface() map[string]any {
 	}
 	for _, key := range v.process.Keys() {
 		val := v.process.Load(key)
-		value[key] = val
+		value[key] = fmt.Sprint(val)
 	}
 	value["status"] = v.process.Status()
 	return value

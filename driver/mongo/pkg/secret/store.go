@@ -55,9 +55,8 @@ func (s *Store) Index(ctx context.Context) error {
 				{Key: secret.KeyNamespace, Value: 1},
 				{Key: secret.KeyName, Value: 1},
 			},
-			Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{
-				secret.KeyName: bson.M{"$exists": true},
-			}),
+			Options: options.Index().SetUnique(true).
+				SetPartialFilterExpression(bson.M{secret.KeyName: bson.M{"$exists": true}}),
 		},
 	}
 

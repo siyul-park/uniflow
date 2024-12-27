@@ -56,9 +56,8 @@ func (s *Store) Index(ctx context.Context) error {
 				{Key: chart.KeyNamespace, Value: 1},
 				{Key: chart.KeyName, Value: 1},
 			},
-			Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{
-				chart.KeyName: bson.M{"$exists": true},
-			}),
+			Options: options.Index().SetUnique(true).
+				SetPartialFilterExpression(bson.M{chart.KeyName: bson.M{"$exists": true}}),
 		},
 	}
 
