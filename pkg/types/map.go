@@ -18,6 +18,8 @@ import (
 type Map interface {
 	Value
 
+	// Has checks if the map contains the specified key.
+	Has(key Value) bool
 	// Get retrieves the value associated with the given key.
 	Get(key Value) Value
 	// Set adds or updates a key-value pair in the map.
@@ -72,41 +74,46 @@ var _ Map = (*mutableMap)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {
-	value := make(map[uint64][][2]Value, len(pairs)/2)
+	m := &mutableMap{value: make(map[uint64][][2]Value, len(pairs)/2)}
 	for i := 0; i < len(pairs)/2; i++ {
 		k, v := pairs[i*2], pairs[i*2+1]
+		m.Set(k, v)
+	}
+	return m.Immutable()
+}
 
-		hash := HashOf(k)
-		exists := false
-		if elements, ok := value[hash]; ok {
-			for _, pair := range elements {
-				if Equal(pair[0], k) {
-					pair[1] = v
-					exists = true
-					break
-				}
+// Has checks if the map contains the specified key.
+func (m *immutableMap) Has(key Value) bool {
+	if bucket, ok := m.value[HashOf(key)]; ok {
+		low, high := 0, len(bucket)-1
+		for low <= high {
+			mid := low + (high-low)/2
+			diff := Compare(bucket[mid][0], key)
+			if diff == 0 {
+				return true
+			} else if diff < 0 {
+				low = mid + 1
+			} else {
+				high = mid - 1
 			}
 		}
-		if !exists {
-			value[hash] = append(value[hash], [2]Value{k, v})
-		}
 	}
-
-	for _, elements := range value {
-		sort.Slice(elements, func(i, j int) bool {
-			return Compare(elements[i][0], elements[j][0]) < 0
-		})
-	}
-
-	return &immutableMap{value: value}
+	return false
 }
 
 // Get retrieves the value associated with the given key.
 func (m *immutableMap) Get(key Value) Value {
-	if elements, ok := m.value[HashOf(key)]; ok {
-		for _, pair := range elements {
-			if Equal(pair[0], key) {
-				return pair[1]
+	if bucket, ok := m.value[HashOf(key)]; ok {
+		low, high := 0, len(bucket)-1
+		for low <= high {
+			mid := low + (high-low)/2
+			diff := Compare(bucket[mid][0], key)
+			if diff == 0 {
+				return bucket[mid][1]
+			} else if diff < 0 {
+				low = mid + 1
+			} else {
+				high = mid - 1
 			}
 		}
 	}
@@ -115,11 +122,17 @@ func (m *immutableMap) Get(key Value) Value {
 
 // Set adds or updates a key-value pair in the map.
 func (m *immutableMap) Set(key, val Value) Map {
+	if m.Has(key) && Equal(m.Get(key), val) {
+		return m
+	}
 	return m.Mutable().Set(key, val).Immutable()
 }
 
 // Delete removes a key-value pair from the map by key.
 func (m *immutableMap) Delete(key Value) Map {
+	if !m.Has(key) {
+		return m
+	}
 	return m.Mutable().Delete(key).Immutable()
 }
 
@@ -131,8 +144,8 @@ func (m *immutableMap) Clear() Map {
 // Keys returns all keys in the map.
 func (m *immutableMap) Keys() []Value {
 	keys := make([]Value, 0, len(m.value))
-	for _, elements := range m.value {
-		for _, pair := range elements {
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
 			keys = append(keys, pair[0])
 		}
 	}
@@ -142,8 +155,8 @@ func (m *immutableMap) Keys() []Value {
 // Values returns all values in the map.
 func (m *immutableMap) Values() []Value {
 	values := make([]Value, 0, len(m.value))
-	for _, elements := range m.value {
-		for _, pair := range elements {
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
 			values = append(values, pair[1])
 		}
 	}
@@ -153,8 +166,8 @@ func (m *immutableMap) Values() []Value {
 // Pairs returns all key-value pairs in the map.
 func (m *immutableMap) Pairs() []Value {
 	pairs := make([]Value, 0, len(m.value)*2)
-	for _, elements := range m.value {
-		for _, pair := range elements {
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
 			pairs = append(pairs, pair[0], pair[1])
 		}
 	}
@@ -164,8 +177,8 @@ func (m *immutableMap) Pairs() []Value {
 // Len returns the number of key-value pairs in the map.
 func (m *immutableMap) Len() int {
 	length := 0
-	for _, elements := range m.value {
-		length += len(elements)
+	for _, bucket := range m.value {
+		length += len(bucket)
 	}
 	return length
 }
@@ -200,8 +213,8 @@ func (m *immutableMap) Immutable() Map {
 // Mutable returns a mutable version of the map.
 func (m *immutableMap) Mutable() Map {
 	value := make(map[uint64][][2]Value, len(m.value))
-	for hash, elements := range m.value {
-		value[hash] = elements
+	for hash, bucket := range m.value {
+		value[hash] = bucket
 	}
 	return &mutableMap{value: value}
 }
@@ -213,8 +226,8 @@ func (m *immutableMap) Map() map[any]any {
 	}
 
 	values := make(map[any]any, len(m.value))
-	for _, elements := range m.value {
-		for _, pair := range elements {
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
 			k, v := pair[0], pair[1]
 			values[InterfaceOf(k)] = InterfaceOf(v)
 		}
@@ -269,8 +282,8 @@ func (m *immutableMap) Interface() any {
 	values := make([]any, 0, len(m.value))
 
 	hashable := true
-	for _, elements := range m.value {
-		for _, pair := range elements {
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
 			k, v := pair[0], pair[1]
 
 			keys = append(keys, InterfaceOf(k))
@@ -366,6 +379,11 @@ func (m *immutableMap) Compare(other Value) int {
 	return compare(m.Kind(), KindOf(other))
 }
 
+// Has checks if the map contains the specified key.
+func (m *mutableMap) Has(key Value) bool {
+	return m.Immutable().Has(key)
+}
+
 // Get retrieves the value associated with the given key.
 func (m *mutableMap) Get(key Value) Value {
 	return m.Immutable().Get(key)
@@ -374,44 +392,57 @@ func (m *mutableMap) Get(key Value) Value {
 // Set adds or updates a key-value pair in the map.
 func (m *mutableMap) Set(key, val Value) Map {
 	hash := HashOf(key)
-	exists := false
-	if elements, ok := m.value[hash]; ok {
-		modify := make([][2]Value, len(elements))
-		copy(modify, elements)
+	bucket := m.value[hash]
 
-		for _, pair := range modify {
-			if Equal(pair[0], key) {
-				pair[1] = val
-				exists = true
-				break
-			}
+	modify := make([][2]Value, len(bucket))
+	copy(modify, bucket)
+
+	ok := false
+
+	low, high := 0, len(modify)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		diff := Compare(modify[mid][0], key)
+		if diff == 0 {
+			modify[mid][1] = val
+			ok = true
+			break
+		} else if diff < 0 {
+			low = mid + 1
+		} else {
+			high = mid - 1
 		}
-
-		m.value[hash] = modify
-	}
-	if !exists {
-		m.value[hash] = append(m.value[hash], [2]Value{key, val})
 	}
 
-	elements := m.value[hash]
-	sort.Slice(elements, func(i, j int) bool {
-		return Compare(elements[i][0], elements[j][0]) < 0
-	})
+	if !ok {
+		idx := low
+		modify = append(modify, [2]Value{})
+		copy(modify[idx+1:], modify[idx:])
+		modify[idx] = [2]Value{key, val}
+	}
 
+	m.value[hash] = modify
 	return m
 }
 
 // Delete removes a key-value pair from the map by key.
 func (m *mutableMap) Delete(key Value) Map {
 	hash := HashOf(key)
-	if elements, ok := m.value[hash]; ok {
-		modify := make([][2]Value, len(elements))
-		copy(modify, elements)
+	if bucket, ok := m.value[hash]; ok {
+		modify := make([][2]Value, len(bucket))
+		copy(modify, bucket)
 
-		for i, pair := range modify {
-			if Equal(pair[0], key) {
-				modify = append(modify[:i], modify[i+1:]...)
+		low, high := 0, len(modify)-1
+		for low <= high {
+			mid := low + (high-low)/2
+			diff := Compare(modify[mid][0], key)
+			if diff == 0 {
+				modify = append(modify[:mid], modify[mid+1:]...)
 				break
+			} else if diff < 0 {
+				low = mid + 1
+			} else {
+				high = mid - 1
 			}
 		}
 
@@ -421,7 +452,6 @@ func (m *mutableMap) Delete(key Value) Map {
 			delete(m.value, hash)
 		}
 	}
-
 	return m
 }
 

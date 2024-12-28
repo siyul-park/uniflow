@@ -28,17 +28,17 @@ func NewSlice(elements ...Value) Slice {
 }
 
 // Prepend adds a value to the beginning of the slice.
-func (s Slice) Prepend(value Value) Slice {
-	return &_slice{value: append([]Value{value}, s.value...)}
+func (s Slice) Prepend(elements ...Value) Slice {
+	return &_slice{value: append(elements, s.value...)}
 }
 
 // Append adds a value to the end of the slice.
-func (s Slice) Append(value Value) Slice {
-	elements := make([]Value, len(s.value), len(s.value)+1)
-	copy(elements, s.value)
-	elements = append(elements, value)
+func (s Slice) Append(elements ...Value) Slice {
+	value := make([]Value, len(s.value), len(s.value)+len(elements))
+	copy(value, s.value)
+	value = append(value, elements...)
 
-	return &_slice{value: elements}
+	return &_slice{value: value}
 }
 
 // Sub returns a new slice that is a sub-slice of the original slice.
@@ -210,7 +210,6 @@ func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Enc
 				values := make([]Value, 0, s.Len())
 				for i := 0; i < s.Len(); i++ {
 					v := s.Index(i)
-
 					if value, err := valueEncoder.Encode(v.Interface()); err != nil {
 						return nil, err
 					} else {
@@ -225,38 +224,41 @@ func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Enc
 }
 
 func newSliceDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.DecodeCompiler[Value] {
-	setElement := func(source Value, target reflect.Value, i int) error {
-		v := reflect.New(target.Type().Elem())
-		if err := decoder.Decode(source, v.Interface()); err != nil {
-			return err
-		}
-
-		if target.Len() < i+1 {
-			if target.Kind() != reflect.Slice {
-				return errors.WithStack(encoding.ErrUnsupportedValue)
-			} else {
-				target.Set(reflect.Append(target, v.Elem()).Convert(target.Type()))
-			}
-		} else {
-			target.Index(i).Set(v.Elem().Convert(target.Type().Elem()))
-		}
-		return nil
-	}
-
 	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
 		if typ != nil && typ.Kind() == reflect.Pointer {
 			if typ.Elem().Kind() == reflect.Array || typ.Elem().Kind() == reflect.Slice {
+				valueDecoder, err := decoder.Compile(reflect.PointerTo(typ.Elem().Elem()))
+				if err != nil {
+					return nil, err
+				}
+
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					t := reflect.NewAt(typ.Elem(), target).Elem()
 					if s, ok := source.(Slice); ok {
+						for t.Len() < s.Len() {
+							if t.Kind() != reflect.Slice {
+								return errors.WithStack(encoding.ErrUnsupportedValue)
+							} else {
+								t.Set(reflect.Append(t, reflect.Zero(t.Type().Elem())))
+							}
+						}
+
 						for i, v := range s.Range() {
-							if err := setElement(v, t, i); err != nil {
+							if err := valueDecoder.Decode(v, t.Index(i).Addr().UnsafePointer()); err != nil {
 								return err
 							}
 						}
 						return nil
 					}
-					return setElement(source, t, 0)
+
+					if t.Len() == 0 {
+						if t.Kind() != reflect.Slice {
+							return errors.WithStack(encoding.ErrUnsupportedValue)
+						} else {
+							t.Set(reflect.Append(t, reflect.Zero(t.Type().Elem())))
+						}
+					}
+					return valueDecoder.Decode(source, t.Index(0).Addr().UnsafePointer())
 				}), nil
 			} else if typ.Elem().Kind() == reflect.Interface {
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {

@@ -181,9 +181,6 @@ func (n *HTTPListenNode) Shutdown() error {
 
 // ServeHTTP handles HTTP requests.
 func (n *HTTPListenNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
 	proc := process.New()
 
 	proc.Store(KeyHTTPResponseWriter, w)

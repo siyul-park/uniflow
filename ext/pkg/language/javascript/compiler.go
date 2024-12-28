@@ -68,7 +68,9 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 			},
 		}
 
-		return language.RunFunc(func(ctx context.Context, args []any) ([]any, error) {
+		return language.RunFunc(func(ctx context.Context, args []any) (_ []any, err error) {
+			defer func() { err, _ = recover().(error) }()
+
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 

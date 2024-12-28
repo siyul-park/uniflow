@@ -1,10 +1,10 @@
 package symbol
 
 import (
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"

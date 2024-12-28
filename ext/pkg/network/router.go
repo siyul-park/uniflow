@@ -170,7 +170,7 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 	method, _ := types.Get[string](inPayload, "method")
 	path, _ := types.Get[string](inPayload, "path")
 
-	route, paramValues := n.find(method, path)
+	route, values := n.find(method, path)
 	if route == nil {
 		outPayload, _ := types.Marshal(NewHTTPPayload(http.StatusNotFound))
 		return nil, packet.New(outPayload)
@@ -189,9 +189,9 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 		return nil, packet.New(outPayload)
 	}
 
-	params := make([]types.Value, 0, len(paramValues)*2)
+	params := make([]types.Value, 0, len(values)*2)
 	for i, name := range route.paramNames {
-		params = append(params, types.NewString(name), types.NewString(paramValues[i]))
+		params = append(params, types.NewString(name), types.NewString(values[i]))
 	}
 
 	outPayload := inPayload.Set(types.NewString("params"), types.NewMap(params...))

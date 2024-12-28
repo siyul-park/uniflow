@@ -1,18 +1,31 @@
 package process
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
-// Local provides a concurrent cache for process-specific data.
+// Local provides a concurrent cache for process-specific eager.
 type Local[T any] struct {
-	data       map[*Process]T
+	eager      map[*Process]T
+	lazy       map[*Process]*lazy[T]
 	storeHooks map[*Process]StoreHooks[T]
 	mu         sync.RWMutex
+}
+
+type lazy[T any] struct {
+	fn    func() (T, error)
+	value T
+	error error
+	done  atomic.Uint32
+	mu    sync.Mutex
 }
 
 // NewLocal creates a new Local cache instance.
 func NewLocal[T any]() *Local[T] {
 	return &Local[T]{
-		data:       make(map[*Process]T),
+		eager:      make(map[*Process]T),
+		lazy:       make(map[*Process]*lazy[T]),
 		storeHooks: make(map[*Process]StoreHooks[T]),
 	}
 }
@@ -22,7 +35,7 @@ func (l *Local[T]) AddStoreHook(proc *Process, hook StoreHook[T]) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if val, ok := l.data[proc]; ok {
+	if val, ok := l.eager[proc]; ok {
 		l.mu.Unlock()
 		defer l.mu.Lock()
 
@@ -63,8 +76,8 @@ func (l *Local[T]) Keys() []*Process {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	keys := make([]*Process, 0, len(l.data))
-	for proc := range l.data {
+	keys := make([]*Process, 0, len(l.eager))
+	for proc := range l.eager {
 		keys = append(keys, proc)
 	}
 	return keys
@@ -75,7 +88,7 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	val, ok := l.data[proc]
+	val, ok := l.eager[proc]
 	return val, ok
 }
 
@@ -83,9 +96,9 @@ func (l *Local[T]) Load(proc *Process) (T, bool) {
 func (l *Local[T]) Store(proc *Process, val T) {
 	l.mu.Lock()
 
-	_, ok := l.data[proc]
+	_, ok := l.eager[proc]
 
-	l.data[proc] = val
+	l.eager[proc] = val
 	if !ok {
 		proc.AddExitHook(ExitFunc(func(err error) {
 			l.Delete(proc)
@@ -100,14 +113,14 @@ func (l *Local[T]) Store(proc *Process, val T) {
 	storeHooks.Store(val)
 }
 
-// Delete removes the process and its data from the cache.
+// Delete removes the process and its eager from the cache.
 func (l *Local[T]) Delete(proc *Process) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	_, ok := l.data[proc]
+	_, ok := l.eager[proc]
 
-	delete(l.data, proc)
+	delete(l.eager, proc)
 	delete(l.storeHooks, proc)
 
 	return ok
@@ -115,40 +128,69 @@ func (l *Local[T]) Delete(proc *Process) bool {
 
 // LoadOrStore retrieves or stores a value for the given process.
 func (l *Local[T]) LoadOrStore(proc *Process, val func() (T, error)) (T, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if v, ok := l.data[proc]; ok {
+	l.mu.RLock()
+	v, ok := l.eager[proc]
+	l.mu.RUnlock()
+	if ok {
 		return v, nil
 	}
 
-	v, err := val()
+	l.mu.Lock()
+
+	if v, ok := l.eager[proc]; ok {
+		l.mu.Unlock()
+		return v, nil
+	}
+
+	fn, ok := l.lazy[proc]
+	if !ok {
+		fn = &lazy[T]{fn: val}
+		l.lazy[proc] = fn
+	}
+
+	l.mu.Unlock()
+
+	v, err := fn.Do()
 	if err != nil {
 		return v, err
 	}
 
-	l.data[proc] = v
-	proc.AddExitHook(ExitFunc(func(err error) {
-		l.Delete(proc)
-	}))
+	l.mu.Lock()
+
+	l.eager[proc] = v
+	delete(l.lazy, proc)
 
 	storeHooks := l.storeHooks[proc]
 	delete(l.storeHooks, proc)
 
 	l.mu.Unlock()
 
-	storeHooks.Store(v)
+	proc.AddExitHook(ExitFunc(func(err error) {
+		l.Delete(proc)
+	}))
 
-	l.mu.Lock()
+	storeHooks.Store(v)
 
 	return v, nil
 }
 
-// Close clears all cached data and hooks.
+// Close clears all cached eager and hooks.
 func (l *Local[T]) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.data = make(map[*Process]T)
+	l.eager = make(map[*Process]T)
+	l.lazy = make(map[*Process]*lazy[T])
 	l.storeHooks = make(map[*Process]StoreHooks[T])
+}
+
+func (o *lazy[T]) Do() (T, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if o.done.Load() == 0 {
+		defer o.done.Store(1)
+		o.value, o.error = o.fn()
+	}
+	return o.value, o.error
 }

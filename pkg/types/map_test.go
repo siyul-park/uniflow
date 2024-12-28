@@ -20,20 +20,47 @@ func TestNewMap(t *testing.T) {
 	assert.Equal(t, map[any]any{k1.Interface(): v1.Interface()}, o.Map())
 }
 
-func TestMap_GetAndSetAndDelete(t *testing.T) {
+func TestMap_Has(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	ok := o.Has(k1)
+	assert.True(t, ok)
+}
+
+func TestMap_Get(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	r := o.Get(k1)
+	assert.Equal(t, v1, r)
+}
+
+func TestMap_Set(t *testing.T) {
 	k1 := NewString(faker.UUIDHyphenated())
 	v1 := NewString(faker.UUIDHyphenated())
 
 	o := NewMap()
 	o = o.Set(k1, v1)
 
-	r1 := o.Get(k1)
-	assert.Equal(t, v1, r1)
+	r := o.Get(k1)
+	assert.Equal(t, v1, r)
+}
+
+func TestMap_Delete(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
 
 	o = o.Delete(k1)
 
-	r2 := o.Get(k1)
-	assert.Nil(t, r2)
+	ok := o.Has(k1)
+	assert.False(t, ok)
 }
 
 func TestMap_Keys(t *testing.T) {
@@ -244,23 +271,62 @@ func TestMap_Decode(t *testing.T) {
 	})
 }
 
-func BenchmarkMap_Set(b *testing.B) {
-	m := NewMap()
+func BenchmarkMap_Has(b *testing.B) {
+	key := NewString(faker.UUIDHyphenated())
+	value := NewString(faker.UUIDHyphenated())
 
-	for i := 0; i < b.N; i++ {
-		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
-	}
-}
-
-func BenchmarkMap_Get(b *testing.B) {
-	m := NewMap()
-	for i := 0; i < 1000; i++ {
+	m := NewMap(key, value)
+	for i := 0; i < 100; i++ {
 		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = m.Get(NewString(faker.UUIDHyphenated()))
+		m.Has(key)
+	}
+}
+
+func BenchmarkMap_Set(b *testing.B) {
+	m := NewMap()
+	for i := 0; i < 100; i++ {
+		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
+	}
+
+	key := NewString(faker.UUIDHyphenated())
+	value := NewString(faker.UUIDHyphenated())
+
+	for i := 0; i < b.N; i++ {
+		m.Set(key, value)
+	}
+}
+
+func BenchmarkMap_Get(b *testing.B) {
+	key := NewString(faker.UUIDHyphenated())
+	value := NewString(faker.UUIDHyphenated())
+
+	m := NewMap(key, value)
+	for i := 0; i < 100; i++ {
+		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Get(key)
+	}
+}
+
+func BenchmarkMap_Delete(b *testing.B) {
+	key := NewString(faker.UUIDHyphenated())
+	value := NewString(faker.UUIDHyphenated())
+
+	m := NewMap(key, value)
+	for i := 0; i < 100; i++ {
+		m = m.Set(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Delete(key)
 	}
 }
 
@@ -337,30 +403,61 @@ func BenchmarkMap_Decode(b *testing.B) {
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
-	b.Run("map", func(b *testing.B) {
-		v := NewMap(
-			NewString("foo"), NewString("foo"),
-			NewString("bar"), NewString("bar"),
-		)
+	b.Run("static", func(b *testing.B) {
+		b.Run("map", func(b *testing.B) {
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
 
-		for i := 0; i < b.N; i++ {
-			var decoded map[string]string
-			_ = dec.Decode(v, &decoded)
-		}
+			for i := 0; i < b.N; i++ {
+				var decoded map[string]string
+				_ = dec.Decode(v, &decoded)
+			}
+		})
+
+		b.Run("struct", func(b *testing.B) {
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
+
+			for i := 0; i < b.N; i++ {
+				var decoded struct {
+					Foo string `map:"foo"`
+					Bar string `map:"bar"`
+				}
+				_ = dec.Decode(v, &decoded)
+			}
+		})
 	})
 
-	b.Run("struct", func(b *testing.B) {
-		v := NewMap(
-			NewString("foo"), NewString("foo"),
-			NewString("bar"), NewString("bar"),
-		)
+	b.Run("dynamic", func(b *testing.B) {
+		b.Run("map", func(b *testing.B) {
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
 
-		for i := 0; i < b.N; i++ {
-			var decoded struct {
-				Foo string `map:"foo"`
-				Bar string `map:"bar"`
+			for i := 0; i < b.N; i++ {
+				var decoded map[any]any
+				_ = dec.Decode(v, &decoded)
 			}
-			_ = dec.Decode(v, &decoded)
-		}
+		})
+
+		b.Run("struct", func(b *testing.B) {
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
+
+			for i := 0; i < b.N; i++ {
+				var decoded struct {
+					Foo any `map:"foo"`
+					Bar any `map:"bar"`
+				}
+				_ = dec.Decode(v, &decoded)
+			}
+		})
 	})
 }

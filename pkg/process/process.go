@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// Process represents a unit of execution with data, status, and lifecycle management.
+// Process represents a unit of execution with eager, status, and lifecycle management.
 type Process struct {
 	parent    *Process
 	id        uuid.UUID
@@ -44,7 +44,7 @@ func (p *Process) ID() uuid.UUID {
 	return p.id
 }
 
-// Keys returns all data keys in the process.
+// Keys returns all eager keys in the process.
 func (p *Process) Keys() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -137,7 +137,7 @@ func (p *Process) Join() {
 	p.wait.Wait()
 }
 
-// Fork creates a child process with inherited data and context.
+// Fork creates a child process with inherited eager and context.
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
 

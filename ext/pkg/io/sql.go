@@ -109,9 +109,9 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 		proc.AddExitHook(process.ExitFunc(func(err error) {
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 			} else {
-				tx.Commit()
+				_ = tx.Commit()
 			}
 		}))
 

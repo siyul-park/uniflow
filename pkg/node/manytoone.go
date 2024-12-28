@@ -91,15 +91,17 @@ func (n *ManyToOneNode) Close() error {
 }
 
 func (n *ManyToOneNode) forward(index int) port.Listener {
-	return port.ListenFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
+	inPort := n.inPorts[index]
 
-		inReader := n.inPorts[index].Open(proc)
+	return port.ListenFunc(func(proc *process.Process) {
+		inReader := inPort.Open(proc)
 		var outWriter *packet.Writer
 		var errWriter *packet.Writer
 
 		readGroup, _ := n.readGroups.LoadOrStore(proc, func() (*packet.ReadGroup, error) {
+			n.mu.RLock()
+			defer n.mu.RUnlock()
+
 			inReaders := make([]*packet.Reader, len(n.inPorts))
 			for i, inPort := range n.inPorts {
 				inReaders[i] = inPort.Open(proc)
@@ -110,19 +112,20 @@ func (n *ManyToOneNode) forward(index int) port.Listener {
 		for inPck := range inReader.Read() {
 			n.tracer.Read(inReader, inPck)
 
-			if outWriter == nil {
-				outWriter = n.outPort.Open(proc)
-			}
-			if errWriter == nil {
-				errWriter = n.errPort.Open(proc)
-			}
-
 			if inPcks := readGroup.Read(inReader, inPck); len(inPcks) < len(n.inPorts) {
 				n.tracer.Reduce(inPck)
 			} else if outPck, errPck := n.action(proc, inPcks); errPck != nil {
+				if errWriter == nil {
+					errWriter = n.errPort.Open(proc)
+				}
+
 				n.tracer.Transform(inPck, errPck)
 				n.tracer.Write(errWriter, errPck)
 			} else if outPck != nil {
+				if outWriter == nil {
+					outWriter = n.outPort.Open(proc)
+				}
+
 				n.tracer.Transform(inPck, outPck)
 				n.tracer.Write(outWriter, outPck)
 			} else {

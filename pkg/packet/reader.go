@@ -11,7 +11,7 @@ type Reader struct {
 	writers   []*Writer
 	in        chan *Packet
 	out       chan *Packet
-	done      chan struct{}
+	done      bool
 	inbounds  Hooks
 	outbounds Hooks
 	mu        sync.Mutex
@@ -20,32 +20,25 @@ type Reader struct {
 // NewReader creates a new Reader instance and starts its processing loop.
 func NewReader() *Reader {
 	r := &Reader{
-		in:   make(chan *Packet),
-		out:  make(chan *Packet),
-		done: make(chan struct{}),
+		in:  make(chan *Packet),
+		out: make(chan *Packet),
 	}
 
 	go func() {
 		defer close(r.out)
-		defer close(r.in)
 
 		buffer := make([]*Packet, 0, 2)
-		for {
-			var pck *Packet
-			select {
-			case pck = <-r.in:
-			case <-r.done:
-				return
-			}
-
+		for pck := range r.in {
 			select {
 			case r.out <- pck:
 			default:
 				buffer = append(buffer, pck)
-
 				for len(buffer) > 0 {
 					select {
-					case pck = <-r.in:
+					case pck, ok := <-r.in:
+						if !ok {
+							return
+						}
 						buffer = append(buffer, pck)
 					case r.out <- buffer[0]:
 						buffer = buffer[1:]
@@ -63,18 +56,17 @@ func (r *Reader) AddInboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	select {
-	case <-r.done:
+	if r.done {
 		return false
-	default:
-		for _, h := range r.inbounds {
-			if h == hook {
-				return false
-			}
-		}
-		r.inbounds = append(r.inbounds, hook)
-		return true
 	}
+
+	for _, h := range r.inbounds {
+		if h == hook {
+			return false
+		}
+	}
+	r.inbounds = append(r.inbounds, hook)
+	return true
 }
 
 // AddOutboundHook adds a handler to process outbound packets.
@@ -82,18 +74,17 @@ func (r *Reader) AddOutboundHook(hook Hook) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	select {
-	case <-r.done:
+	if r.done {
 		return false
-	default:
-		for _, h := range r.outbounds {
-			if h == hook {
-				return false
-			}
-		}
-		r.outbounds = append(r.outbounds, hook)
-		return true
 	}
+
+	for _, h := range r.outbounds {
+		if h == hook {
+			return false
+		}
+	}
+	r.outbounds = append(r.outbounds, hook)
+	return true
 }
 
 // Read returns the channel for reading packets from the reader.
@@ -125,10 +116,8 @@ func (r *Reader) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	select {
-	case <-r.done:
+	if r.done {
 		return
-	default:
 	}
 
 	pck := New(types.NewError(ErrDroppedPacket))
@@ -137,8 +126,9 @@ func (r *Reader) Close() {
 		go w.receive(pck, r)
 	}
 
-	close(r.done)
+	close(r.in)
 
+	r.done = true
 	r.writers = nil
 	r.inbounds = nil
 	r.outbounds = nil
@@ -148,10 +138,8 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	select {
-	case <-r.done:
+	if r.done {
 		return false
-	default:
 	}
 
 	r.writers = append(r.writers, writer)

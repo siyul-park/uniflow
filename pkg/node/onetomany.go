@@ -94,22 +94,17 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 	defer n.mu.RUnlock()
 
 	inReader := n.inPort.Open(proc)
-	outWriters := make([]*packet.Writer, 0, len(n.outPorts))
+	outWriters := make([]*packet.Writer, len(n.outPorts))
 	var errWriter *packet.Writer
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
-		if len(outWriters) == 0 {
-			for _, outPort := range n.outPorts {
-				outWriters = append(outWriters, outPort.Open(proc))
-			}
-		}
-		if errWriter == nil {
-			errWriter = n.errPort.Open(proc)
-		}
-
 		if outPcks, errPck := n.action(proc, inPck); errPck != nil {
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
+
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else {
@@ -122,6 +117,10 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			count := 0
 			for i, outPck := range outPcks {
 				if i < len(outWriters) && outPck != nil {
+					if outWriters[i] == nil {
+						outWriters[i] = n.outPorts[i].Open(proc)
+					}
+
 					n.tracer.Write(outWriters[i], outPck)
 					count++
 				}
@@ -135,12 +134,9 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 }
 
 func (n *OneToManyNode) backward(index int) port.Listener {
+	outPort := n.outPorts[index]
+
 	return port.ListenFunc(func(proc *process.Process) {
-		n.mu.RLock()
-		defer n.mu.RUnlock()
-
-		outPort := n.outPorts[index]
-
 		outWriter := outPort.Open(proc)
 
 		for backPck := range outWriter.Receive() {

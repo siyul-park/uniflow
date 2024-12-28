@@ -12,7 +12,7 @@ type Writer struct {
 	receives  [][]*Packet
 	in        chan *Packet
 	out       chan *Packet
-	done      chan struct{}
+	done      bool
 	inbounds  Hooks
 	outbounds Hooks
 	mu        sync.Mutex
@@ -34,32 +34,25 @@ func SendOrFallback(writer *Writer, outPck *Packet, backPck *Packet) *Packet {
 // NewWriter creates a new Writer instance and starts its processing loop.
 func NewWriter() *Writer {
 	w := &Writer{
-		in:   make(chan *Packet),
-		out:  make(chan *Packet),
-		done: make(chan struct{}),
+		in:  make(chan *Packet),
+		out: make(chan *Packet),
 	}
 
 	go func() {
 		defer close(w.out)
-		defer close(w.in)
 
 		buffer := make([]*Packet, 0, 2)
-		for {
-			var pck *Packet
-			select {
-			case pck = <-w.in:
-			case <-w.done:
-				return
-			}
-
+		for pck := range w.in {
 			select {
 			case w.out <- pck:
 			default:
 				buffer = append(buffer, pck)
-
 				for len(buffer) > 0 {
 					select {
-					case pck = <-w.in:
+					case pck, ok := <-w.in:
+						if !ok {
+							return
+						}
 						buffer = append(buffer, pck)
 					case w.out <- buffer[0]:
 						buffer = buffer[1:]
@@ -77,18 +70,17 @@ func (w *Writer) AddInboundHook(hook Hook) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return false
-	default:
-		for _, h := range w.inbounds {
-			if h == hook {
-				return false
-			}
-		}
-		w.inbounds = append(w.inbounds, hook)
-		return true
 	}
+
+	for _, h := range w.inbounds {
+		if h == hook {
+			return false
+		}
+	}
+	w.inbounds = append(w.inbounds, hook)
+	return true
 }
 
 // AddOutboundHook adds a handler to process outbound packets.
@@ -96,18 +88,17 @@ func (w *Writer) AddOutboundHook(hook Hook) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return false
-	default:
-		for _, h := range w.outbounds {
-			if h == hook {
-				return false
-			}
-		}
-		w.outbounds = append(w.outbounds, hook)
-		return true
 	}
+
+	for _, h := range w.outbounds {
+		if h == hook {
+			return false
+		}
+	}
+	w.outbounds = append(w.outbounds, hook)
+	return true
 }
 
 // Link connects a reader to the writer.
@@ -115,12 +106,11 @@ func (w *Writer) Link(reader *Reader) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return
-	default:
-		w.readers = append(w.readers, reader)
 	}
+
+	w.readers = append(w.readers, reader)
 }
 
 // Write writes a packet to all linked readers and returns the count of successful writes.
@@ -128,10 +118,8 @@ func (w *Writer) Write(pck *Packet) int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return 0
-	default:
 	}
 
 	if len(w.readers) == 0 {
@@ -171,10 +159,8 @@ func (w *Writer) Close() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return
-	default:
 	}
 
 	pck := New(types.NewError(ErrDroppedPacket))
@@ -183,8 +169,9 @@ func (w *Writer) Close() {
 		w.in <- pck
 	}
 
-	close(w.done)
+	close(w.in)
 
+	w.done = true
 	w.readers = nil
 	w.receives = nil
 	w.inbounds = nil
@@ -195,10 +182,8 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	select {
-	case <-w.done:
+	if w.done {
 		return false
-	default:
 	}
 
 	index := w.indexOfReader(reader)

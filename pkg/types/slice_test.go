@@ -20,22 +20,28 @@ func TestNewSlice(t *testing.T) {
 	assert.Equal(t, []any{v1.Interface()}, o.Slice())
 }
 
-func TestSlice_GetAndSet(t *testing.T) {
+func TestSlice_Get(t *testing.T) {
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewSlice(v1)
+
+	r := o.Get(0)
+	assert.Equal(t, v1, r)
+
+	r = o.Get(1)
+	assert.Nil(t, r)
+}
+
+func TestSlice_Set(t *testing.T) {
 	v1 := NewString(faker.UUIDHyphenated())
 	v2 := NewString(faker.UUIDHyphenated())
 
 	o := NewSlice(v1)
 
-	r1 := o.Get(0)
-	assert.Equal(t, v1, r1)
-
-	r2 := o.Get(1)
-	assert.Nil(t, r2)
-
 	o = o.Set(0, v2)
 
-	r3 := o.Get(0)
-	assert.Equal(t, v2, r3)
+	r := o.Get(0)
+	assert.Equal(t, v2, r)
 }
 
 func TestSlice_Prepend(t *testing.T) {
@@ -164,34 +170,68 @@ func TestSlice_Decode(t *testing.T) {
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
-	t.Run("slice", func(t *testing.T) {
-		source := []string{"foo", "bar"}
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	t.Run("static", func(t *testing.T) {
+		t.Run("slice", func(t *testing.T) {
+			source := []string{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded []string
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+			var decoded []string
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
+
+		t.Run("array", func(t *testing.T) {
+			source := []string{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
+
+			var decoded [2]string
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.EqualValues(t, source, decoded)
+		})
+
+		t.Run("element", func(t *testing.T) {
+			source := []string{"foo"}
+			v := NewString("foo")
+
+			var decoded []string
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
 	})
 
-	t.Run("array", func(t *testing.T) {
-		source := []string{"foo", "bar"}
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	t.Run("dynamic", func(t *testing.T) {
+		t.Run("slice", func(t *testing.T) {
+			source := []any{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded [2]string
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.EqualValues(t, source, decoded)
-	})
+			var decoded []any
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
 
-	t.Run("element", func(t *testing.T) {
-		source := []string{"foo"}
-		v := NewString("foo")
+		t.Run("array", func(t *testing.T) {
+			source := []any{"foo", "bar"}
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		var decoded []string
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+			var decoded [2]any
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.EqualValues(t, source, decoded)
+		})
+
+		t.Run("element", func(t *testing.T) {
+			source := []any{"foo"}
+			v := NewString("foo")
+
+			var decoded []any
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
 	})
 }
 
@@ -285,30 +325,61 @@ func BenchmarkSlice_Decode(b *testing.B) {
 	dec.Add(newStringDecoder())
 	dec.Add(newSliceDecoder(dec))
 
-	b.Run("slice", func(b *testing.B) {
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	b.Run("static", func(b *testing.B) {
+		b.Run("slice", func(b *testing.B) {
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		for i := 0; i < b.N; i++ {
-			var decoded []string
-			_ = dec.Decode(v, &decoded)
-		}
+			for i := 0; i < b.N; i++ {
+				var decoded []string
+				_ = dec.Decode(v, &decoded)
+			}
+		})
+
+		b.Run("array", func(b *testing.B) {
+			v := NewSlice(NewString("foo"), NewString("bar"))
+
+			for i := 0; i < b.N; i++ {
+				var decoded [2]string
+				_ = dec.Decode(v, &decoded)
+			}
+		})
+
+		b.Run("element", func(b *testing.B) {
+			v := NewString("foo")
+
+			for i := 0; i < b.N; i++ {
+				var decoded []string
+				_ = dec.Decode(v, &decoded)
+			}
+		})
 	})
 
-	b.Run("array", func(b *testing.B) {
-		v := NewSlice(NewString("foo"), NewString("bar"))
+	b.Run("dynamic", func(b *testing.B) {
+		b.Run("slice", func(b *testing.B) {
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		for i := 0; i < b.N; i++ {
-			var decoded [2]string
-			_ = dec.Decode(v, &decoded)
-		}
-	})
+			for i := 0; i < b.N; i++ {
+				var decoded []any
+				_ = dec.Decode(v, &decoded)
+			}
+		})
 
-	b.Run("element", func(b *testing.B) {
-		v := NewString("foo")
+		b.Run("array", func(b *testing.B) {
+			v := NewSlice(NewString("foo"), NewString("bar"))
 
-		for i := 0; i < b.N; i++ {
-			var decoded []string
-			_ = dec.Decode(v, &decoded)
-		}
+			for i := 0; i < b.N; i++ {
+				var decoded [2]any
+				_ = dec.Decode(v, &decoded)
+			}
+		})
+
+		b.Run("element", func(b *testing.B) {
+			v := NewString("foo")
+
+			for i := 0; i < b.N; i++ {
+				var decoded []any
+				_ = dec.Decode(v, &decoded)
+			}
+		})
 	})
 }
