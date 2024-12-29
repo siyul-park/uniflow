@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -14,13 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCacheNodeCodec_Compile(t *testing.T) {
-	codec := NewCacheNodeCodec()
+func TestTryNodeCodec_Compile(t *testing.T) {
+	codec := NewTryNodeCodec()
 
-	spec := &CacheNodeSpec{
-		Capacity: 1,
-		TTL:      time.Second,
-	}
+	spec := &TryNodeSpec{}
 
 	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
@@ -28,29 +26,30 @@ func TestCacheNodeCodec_Compile(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewCacheNode(t *testing.T) {
-	n := NewCacheNode(0, 0)
+func TestNewTryNode(t *testing.T) {
+	n := NewTryNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestCacheNode_Port(t *testing.T) {
-	n := NewCacheNode(0, 0)
+func TestTryNode_Port(t *testing.T) {
+	n := NewTryNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
 	assert.NotNil(t, n.Out(node.PortOut))
+	assert.NotNil(t, n.Out(node.PortError))
 }
 
-func TestCacheNode_SendAndReceive(t *testing.T) {
+func TestTryNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n1 := NewCacheNode(0, 0)
+	n1 := NewTryNode()
 	defer n1.Close()
 
 	n2 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-		return inPck, nil
+		return nil, packet.New(types.NewError(errors.New(faker.Sentence())))
 	})
 	defer n2.Close()
 
@@ -59,10 +58,14 @@ func TestCacheNode_SendAndReceive(t *testing.T) {
 	in := port.NewOut()
 	in.Link(n1.In(node.PortIn))
 
+	err := port.NewIn()
+	n1.Out(node.PortError).Link(err)
+
 	proc := process.New()
 	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
+	errReader := err.Open(proc)
 
 	inPayload := types.NewString(faker.UUIDHyphenated())
 	inPck := packet.New(inPayload)
@@ -70,26 +73,26 @@ func TestCacheNode_SendAndReceive(t *testing.T) {
 	inWriter.Write(inPck)
 
 	select {
-	case <-inWriter.Receive():
+	case outPck := <-errReader.Read():
+		errReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 
-	inWriter.Write(inPck)
-
 	select {
-	case <-inWriter.Receive():
+	case outPck := <-inWriter.Receive():
+		assert.IsType(t, outPck.Payload(), types.NewError(nil))
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
 }
 
-func BenchmarkCacheNode_SendAndReceive(b *testing.B) {
-	n1 := NewCacheNode(0, 0)
+func BenchmarkTryNode_SendAndReceive(b *testing.B) {
+	n1 := NewTryNode()
 	defer n1.Close()
 
 	n2 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-		return inPck, nil
+		return nil, packet.New(types.NewError(errors.New(faker.Sentence())))
 	})
 	defer n2.Close()
 

@@ -24,6 +24,8 @@ Precisely manage data flow.
 - **[Step Node](./docs/step_node.md)**: Systematically manages complex data processing flows and executes multiple
   sub-nodes steply.
 - **[Switch Node](./docs/switch_node.md)**: Routes input packets to one of several ports based on conditions.
+- **[Try Node](./docs/try_node.md)**: Handles errors that may occur during packet processing and appropriately manages
+  them through the error port.
 - **[Wait Node](./docs/wait_node.md)**: Introduces a specified delay in processing to pace workflows or await external conditions.
 
 ### **IO**

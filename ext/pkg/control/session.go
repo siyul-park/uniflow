@@ -28,7 +28,7 @@ const KindSession = "session"
 
 var _ node.Node = (*SessionNode)(nil)
 
-// NewSessionNodeCodec creates a codec for decoding NewSessionNodeCodec.
+// NewSessionNodeCodec creates a codec for decoding SessionNodeSpec.
 func NewSessionNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(_ *SessionNodeSpec) (node.Node, error) {
 		return NewSessionNode(), nil
