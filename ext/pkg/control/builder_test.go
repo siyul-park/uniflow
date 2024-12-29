@@ -18,7 +18,7 @@ func TestAddToScheme(t *testing.T) {
 	err := AddToScheme(m, text.Language).AddToScheme(s)
 	assert.NoError(t, err)
 
-	tests := []string{KindBlock, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindPipe, KindReduce, KindRetry, KindStep, KindSession, KindSnippet, KindSplit, KindSwitch, KindWait}
+	tests := []string{KindBlock, KindCache, KindFork, KindIf, KindLoop, KindMerge, KindNOP, KindPipe, KindReduce, KindRetry, KindStep, KindSession, KindSnippet, KindSplit, KindSwitch, KindWait}
 
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {

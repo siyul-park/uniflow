@@ -20,7 +20,7 @@ type GetConfig struct {
 func NewGetCommand(config GetConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "get",
-		Short:     "Get resources from the specified namespace",
+		Short:     "Load resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{specs, secrets, charts},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{

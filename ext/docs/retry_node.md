@@ -10,7 +10,6 @@
 
 - **in**: Receives the input packet and initiates processing. The packet will be retried until the `limit` is reached if processing fails.
 - **out**: Outputs the packet if processing is successful within the retry limit.
-- **error**: Routes the packet to the error output if it exceeds the retry limit without success.
 
 ## Example
 

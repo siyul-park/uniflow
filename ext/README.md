@@ -9,6 +9,7 @@ Built-in extensions enable efficient processing of various tasks and maximize sy
 Precisely manage data flow.
 
 - **[Block Node](./docs/block_node.md)**: Combines multiple sub-nodes to manage complex data processing flows.
+- **[Cache Node](./docs/cache_node.md)**: Uses an LRU (Least Recently Used) cache to store and retrieve data.
 - **[Fork Node](./docs/fork_node.md)**: Asynchronously branches data flows to perform independent tasks in parallel.
 - **[If Node](./docs/if_node.md)**: Evaluates conditions to split packets into two paths.
 - **[Loop Node](./docs/loop_node.md)**: Divides input packets into multiple sub-packets for repeated processing.

@@ -24,7 +24,6 @@ type RetryNode struct {
 	tracer    *packet.Tracer
 	inPort    *port.InPort
 	outPort   *port.OutPort
-	errPort   *port.OutPort
 }
 
 var _ node.Node = (*RetryNode)(nil)
@@ -45,12 +44,10 @@ func NewRetryNode(threshold int) *RetryNode {
 		tracer:    packet.NewTracer(),
 		inPort:    port.NewIn(),
 		outPort:   port.NewOut(),
-		errPort:   port.NewOut(),
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
 	n.outPort.AddListener(port.ListenFunc(n.backward))
-	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
 }
@@ -68,8 +65,6 @@ func (n *RetryNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPort
-	case node.PortError:
-		return n.errPort
 	default:
 		return nil
 	}
@@ -79,7 +74,6 @@ func (n *RetryNode) Out(name string) *port.OutPort {
 func (n *RetryNode) Close() error {
 	n.inPort.Close()
 	n.outPort.Close()
-	n.errPort.Close()
 	n.tracer.Close()
 	return nil
 }
@@ -87,7 +81,6 @@ func (n *RetryNode) Close() error {
 func (n *RetryNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
 
 	attempts := &sync.Map{}
 
@@ -96,19 +89,15 @@ func (n *RetryNode) forward(proc *process.Process) {
 
 		var hook packet.Hook
 		hook = packet.HookFunc(func(backPck *packet.Packet) {
-			if _, ok := backPck.Payload().(types.Error); !ok {
-				n.tracer.Transform(inPck, backPck)
-				n.tracer.Reduce(backPck)
-				return
-			}
-
 			for {
 				actual, _ := attempts.LoadOrStore(inPck, 0)
 				count := actual.(int)
 
-				if count == n.threshold {
+				_, fail := backPck.Payload().(types.Error)
+				if !fail || count == n.threshold {
+					attempts.Delete(inPck)
 					n.tracer.Transform(inPck, backPck)
-					n.tracer.Write(errWriter, backPck)
+					n.tracer.Reduce(backPck)
 					return
 				}
 
@@ -131,13 +120,5 @@ func (n *RetryNode) backward(proc *process.Process) {
 
 	for backPck := range outWriter.Receive() {
 		n.tracer.Receive(outWriter, backPck)
-	}
-}
-
-func (n *RetryNode) catch(proc *process.Process) {
-	errWriter := n.errPort.Open(proc)
-
-	for backPck := range errWriter.Receive() {
-		n.tracer.Receive(errWriter, backPck)
 	}
 }

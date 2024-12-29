@@ -20,6 +20,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			spec  spec.Spec
 		}{
 			{KindBlock, NewBlockNodeCodec(s), &BlockNodeSpec{}},
+			{KindCache, NewCacheNodeCodec(), &CacheNodeSpec{}},
 			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
 			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
 			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},

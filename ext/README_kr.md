@@ -9,6 +9,7 @@
 데이터 흐름을 정밀하게 제어합니다.
 
 - **[Block 노드](./docs/block_node_kr.md)**: 여러 하위 노드를 묶어 복잡한 데이터 처리 흐름을 관리하며, 각 하위 노드는 특정 작업을 수행합니다.
+- **[Cache 노드](./docs/cache_node_kr.md)**: LRU(Least Recently Used) 캐시를 사용하여 데이터를 저장하고 조회합니다.
 - **[Fork 노드](./docs/fork_node_kr.md)**: 데이터 흐름을 비동기적으로 분기하여 독립적인 작업을 병렬로 수행합니다.
 - **[If 노드](./docs/if_node_kr.md)**: 조건을 평가하여 패킷을 두 경로로 분기합니다.
 - **[Loop 노드](./docs/loop_node_kr.md)**: 입력 패킷을 여러 하위 패킷으로 나누어 반복 처리합니다.
