@@ -80,7 +80,7 @@ func (n *RetryNode) Close() error {
 
 func (n *RetryNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
-	outWriter := n.outPort.Open(proc)
+	var outWriter *packet.Writer
 
 	attempts := &sync.Map{}
 
@@ -106,10 +106,16 @@ func (n *RetryNode) forward(proc *process.Process) {
 				}
 			}
 
+			if outWriter == nil {
+				outWriter = n.outPort.Open(proc)
+			}
 			n.tracer.AddHook(inPck, hook)
 			n.tracer.Write(outWriter, inPck)
 		})
 
+		if outWriter == nil {
+			outWriter = n.outPort.Open(proc)
+		}
 		n.tracer.AddHook(inPck, hook)
 		n.tracer.Write(outWriter, inPck)
 	}

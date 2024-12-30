@@ -92,9 +92,9 @@ func (n *ForNode) Close() error {
 
 func (n *ForNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
-	outWriter0 := n.outPorts[0].Open(proc)
-	outWriter1 := n.outPorts[1].Open(proc)
-	errWriter := n.errPort.Open(proc)
+	var outWriter0 *packet.Writer
+	var outWriter1 *packet.Writer
+	var errWriter *packet.Writer
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
@@ -118,13 +118,22 @@ func (n *ForNode) forward(proc *process.Process) {
 		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 			n.tracer.Transform(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
+				if errWriter == nil {
+					errWriter = n.errPort.Open(proc)
+				}
 				n.tracer.Write(errWriter, backPck)
 			} else {
+				if outWriter1 == nil {
+					outWriter1 = n.outPorts[1].Open(proc)
+				}
 				n.tracer.Write(outWriter1, backPck)
 			}
 		}))
 
 		for _, outPck := range outPcks {
+			if outWriter0 == nil {
+				outWriter0 = n.outPorts[0].Open(proc)
+			}
 			n.tracer.Write(outWriter0, outPck)
 		}
 	}

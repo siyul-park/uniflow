@@ -111,8 +111,8 @@ func (n *ReduceNode) Close() error {
 
 func (n *ReduceNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
-	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
+	var outWriter *packet.Writer
+	var errWriter *packet.Writer
 
 	acc := n.init
 	for i := 0; ; i++ {
@@ -126,15 +126,27 @@ func (n *ReduceNode) forward(proc *process.Process) {
 
 		if v, err := n.action(proc.Context(), acc, cur, i); err != nil {
 			errPck := packet.New(types.NewError(err))
+
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else if outPayload, err := types.Marshal(v); err != nil {
 			errPck := packet.New(types.NewError(err))
+
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
 			n.tracer.Transform(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else {
 			acc = v
 			outPck := packet.New(outPayload)
+
+			if outWriter == nil {
+				outWriter = n.outPort.Open(proc)
+			}
 			n.tracer.Transform(inPck, outPck)
 			n.tracer.Write(outWriter, outPck)
 		}

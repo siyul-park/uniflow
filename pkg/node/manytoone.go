@@ -118,14 +118,12 @@ func (n *ManyToOneNode) forward(index int) port.Listener {
 				if errWriter == nil {
 					errWriter = n.errPort.Open(proc)
 				}
-
 				n.tracer.Transform(inPck, errPck)
 				n.tracer.Write(errWriter, errPck)
 			} else if outPck != nil {
 				if outWriter == nil {
 					outWriter = n.outPort.Open(proc)
 				}
-
 				n.tracer.Transform(inPck, outPck)
 				n.tracer.Write(outWriter, outPck)
 			} else {

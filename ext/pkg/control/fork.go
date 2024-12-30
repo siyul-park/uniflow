@@ -92,7 +92,7 @@ func (n *ForkNode) forward(proc *process.Process) {
 
 func (n *ForkNode) backward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
-	errWriter := n.errPort.Open(proc)
+	var errWriter *packet.Writer
 
 	for backPck := range outWriter.Receive() {
 		var err error
@@ -100,8 +100,13 @@ func (n *ForkNode) backward(proc *process.Process) {
 			err = v.Unwrap()
 		}
 
-		if err != nil && errWriter.Write(backPck) > 0 {
-			continue
+		if err != nil {
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
+			if errWriter.Write(backPck) > 0 {
+				continue
+			}
 		}
 
 		proc.Join()

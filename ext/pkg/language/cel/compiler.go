@@ -25,6 +25,7 @@ func NewCompiler(opts ...cel.EnvOption) language.Compiler {
 		if err != nil {
 			return nil, err
 		}
+
 		return language.RunFunc(func(ctx context.Context, args []any) ([]any, error) {
 			var env any
 			if len(args) == 0 {
