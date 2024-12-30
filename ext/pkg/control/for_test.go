@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoopNodeCodec_Compile(t *testing.T) {
-	codec := NewLoopNodeCodec()
+func TestForNodeCodec_Compile(t *testing.T) {
+	codec := NewForNodeCodec()
 
-	spec := &LoopNodeSpec{}
+	spec := &ForNodeSpec{}
 
 	n, err := codec.Compile(spec)
 	assert.NoError(t, err)
@@ -26,14 +26,14 @@ func TestLoopNodeCodec_Compile(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewLoopNode(t *testing.T) {
-	n := NewLoopNode()
+func TestNewForNode(t *testing.T) {
+	n := NewForNode()
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestLoopNode_Port(t *testing.T) {
-	n := NewLoopNode()
+func TestForNode_Port(t *testing.T) {
+	n := NewForNode()
 	defer n.Close()
 
 	assert.NotNil(t, n.In(node.PortIn))
@@ -43,12 +43,12 @@ func TestLoopNode_Port(t *testing.T) {
 	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
-func TestLoopNode_SendAndReceive(t *testing.T) {
+func TestForNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleInputToSingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewLoopNode()
+		n := NewForNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -92,7 +92,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewLoopNode()
+		n := NewForNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -147,7 +147,7 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		n := NewLoopNode()
+		n := NewForNode()
 		defer n.Close()
 
 		in := port.NewOut()
@@ -188,8 +188,8 @@ func TestLoopNode_SendAndReceive(t *testing.T) {
 	})
 }
 
-func BenchmarkLoopNode_SendAndReceive(b *testing.B) {
-	n := NewLoopNode()
+func BenchmarkForNode_SendAndReceive(b *testing.B) {
+	n := NewForNode()
 	defer n.Close()
 
 	in := port.NewOut()

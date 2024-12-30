@@ -1,6 +1,8 @@
-# Loop Node
+# For Node
 
-**The Loop Node** provides the functionality to split an incoming packet into multiple sub-packets for repeated processing. This is useful in data processing flows where repeated tasks are needed, and it integrates the results of each sub-packet before returning them.
+**The For Node** provides the functionality to split an incoming packet into multiple sub-packets for repeated
+processing. This is useful in data processing flows where repeated tasks are needed, and it integrates the results of
+each sub-packet before returning them.
 
 ## Specification
 
@@ -16,7 +18,7 @@
 ## Example
 
 ```yaml
-- kind: loop
+- kind: for
   ports:
     out[0]:
       - name: next

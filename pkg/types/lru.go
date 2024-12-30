@@ -11,17 +11,17 @@ type LRU struct {
 	capacity int
 	entries  map[uint64][]*list.Element
 	order    *list.List
-	ttl      time.Duration
+	interval time.Duration
 	mu       sync.Mutex
 }
 
-// NewLRU creates a new LRU with the given capacity and TTL.
-func NewLRU(capacity int, ttl time.Duration) *LRU {
+// NewLRU creates a new LRU with the given capacity and Interval.
+func NewLRU(capacity int, interval time.Duration) *LRU {
 	return &LRU{
 		capacity: capacity,
 		entries:  make(map[uint64][]*list.Element),
 		order:    list.New(),
-		ttl:      ttl,
+		interval: interval,
 	}
 }
 
@@ -34,7 +34,7 @@ func (c *LRU) Load(key Value) (Value, bool) {
 	for _, elem := range c.entries[hash] {
 		pair := elem.Value.([3]any)
 		if Equal(pair[0].(Value), key) {
-			if c.ttl > 0 && time.Now().After(pair[2].(time.Time)) {
+			if c.interval > 0 && time.Now().After(pair[2].(time.Time)) {
 				c.remove(elem)
 				return nil, false
 			}
@@ -54,8 +54,8 @@ func (c *LRU) Store(key, value Value) {
 	for _, elem := range c.entries[hash] {
 		pair := elem.Value.([3]any)
 		if Equal(pair[0].(Value), key) {
-			if c.ttl > 0 {
-				elem.Value = [3]any{key, value, time.Now().Add(c.ttl)}
+			if c.interval > 0 {
+				elem.Value = [3]any{key, value, time.Now().Add(c.interval)}
 			} else {
 				elem.Value = [3]any{key, value, nil}
 			}
@@ -65,8 +65,8 @@ func (c *LRU) Store(key, value Value) {
 	}
 
 	var elem *list.Element
-	if c.ttl > 0 {
-		elem = c.order.PushFront([3]any{key, value, time.Now().Add(c.ttl)})
+	if c.interval > 0 {
+		elem = c.order.PushFront([3]any{key, value, time.Now().Add(c.interval)})
 	} else {
 		elem = c.order.PushFront([3]any{key, value, nil})
 	}
@@ -108,7 +108,7 @@ func (c *LRU) Clear() {
 }
 
 func (c *LRU) evict() {
-	if c.ttl > 0 {
+	if c.interval > 0 {
 		now := time.Now()
 		for elem := c.order.Back(); elem != nil; elem = c.order.Back() {
 			pair := elem.Value.([3]any)

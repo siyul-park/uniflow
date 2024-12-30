@@ -16,7 +16,7 @@ import (
 type CacheNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Capacity  int           `map:"capacity,omitempty"`
-	TTL       time.Duration `map:"ttl,omitempty"`
+	Interval  time.Duration `map:"interval,omitempty"`
 }
 
 // CacheNode represents a node in the cache.
@@ -34,14 +34,14 @@ var _ node.Node = (*CacheNode)(nil)
 // NewCacheNodeCodec creates a new codec for CacheNodeSpec.
 func NewCacheNodeCodec() scheme.Codec {
 	return scheme.CodecWithType(func(spec *CacheNodeSpec) (node.Node, error) {
-		return NewCacheNode(spec.Capacity, spec.TTL), nil
+		return NewCacheNode(spec.Capacity, spec.Interval), nil
 	})
 }
 
-// NewCacheNode creates a new CacheNode with the given capacity and TTL.
-func NewCacheNode(capacity int, ttl time.Duration) *CacheNode {
+// NewCacheNode creates a new CacheNode with the given capacity and Interval.
+func NewCacheNode(capacity int, interval time.Duration) *CacheNode {
 	n := &CacheNode{
-		lru:     types.NewLRU(capacity, ttl),
+		lru:     types.NewLRU(capacity, interval),
 		tracer:  packet.NewTracer(),
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),

@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWaitNodeCodec_Compile(t *testing.T) {
-	codec := NewWaitNodeCodec()
+func TestSleepNodeCodec_Compile(t *testing.T) {
+	codec := NewSleepNodeCodec()
 
-	spec := &WaitNodeSpec{
+	spec := &SleepNodeSpec{
 		Interval: 0,
 	}
 
@@ -27,17 +27,17 @@ func TestWaitNodeCodec_Compile(t *testing.T) {
 	assert.NoError(t, n.Close())
 }
 
-func TestNewWaitNode(t *testing.T) {
-	n := NewWaitNode(0)
+func TestNewSleepNode(t *testing.T) {
+	n := NewSleepNode(0)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
-func TestWaitNode_SendAndReceive(t *testing.T) {
+func TestSleepNode_SendAndReceive(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
-	n := NewWaitNode(0)
+	n := NewSleepNode(0)
 	defer n.Close()
 
 	in := port.NewOut()
@@ -61,8 +61,8 @@ func TestWaitNode_SendAndReceive(t *testing.T) {
 	}
 }
 
-func BenchmarkWaitNode_SendAndReceive(b *testing.B) {
-	n := NewWaitNode(0)
+func BenchmarkSleepNode_SendAndReceive(b *testing.B) {
+	n := NewSleepNode(0)
 	defer n.Close()
 
 	in := port.NewOut()

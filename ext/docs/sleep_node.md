@@ -1,6 +1,7 @@
-# Wait Node
+# Sleep Node
 
-**The Wait Node** introduces a delay in packet processing, allowing for timed pauses in workflows. This node is useful for pacing operations or waiting for external conditions before continuing to process data.
+**The Sleep Node** introduces a delay in packet processing, allowing for timed pauses in workflows. This node is useful
+for pacing operations or waiting for external conditions before continuing to process data.
 
 ## Specification
 
@@ -14,6 +15,6 @@
 ## Example
 
 ```yaml
-- kind: wait
+- kind: sleep
   interval: 2000 # Delay of 2 seconds
 ```

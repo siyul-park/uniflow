@@ -8,7 +8,8 @@ improving performance by reducing the need for repeated processing.
 
 - **capacity**: Defines the maximum number of items the cache can hold. When the cache exceeds this capacity, the least
   recently used entries are evicted.
-- **ttl**: Specifies the time-to-live (TTL) for cache entries. Once an entry expires, it will be removed from the cache.
+- **interval**: Specifies the time-to-live (TTL) for cache entries. Once an entry expires, it will be removed from the
+  cache.
   If not set, the cache does not have a TTL.
 
 ## Ports
@@ -22,5 +23,5 @@ improving performance by reducing the need for repeated processing.
 ```yaml
 - kind: cache
   capacity: 100   # Cache capacity of 100 items
-  ttl: 1h         # Entries will expire after 1 hour
+  interval: 1h         # Entries will expire after 1 hour
 ```

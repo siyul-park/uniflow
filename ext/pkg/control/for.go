@@ -10,33 +10,33 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// LoopNodeSpec defines the specifications for creating a LoopNode.
-type LoopNodeSpec struct {
+// ForNodeSpec defines the specifications for creating a ForNode.
+type ForNodeSpec struct {
 	spec.Meta `map:",inline"`
 }
 
-// LoopNode processes input data in batches, splitting packets into sub-packets and handling them accordingly.
-type LoopNode struct {
+// ForNode processes input data in batches, splitting packets into sub-packets and handling them accordingly.
+type ForNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts [2]*port.OutPort
 	errPort  *port.OutPort
 }
 
-const KindLoop = "loop"
+const KindFor = "for"
 
-var _ node.Node = (*LoopNode)(nil)
+var _ node.Node = (*ForNode)(nil)
 
-// NewLoopNodeCodec creates a new codec for LoopNodeSpec.
-func NewLoopNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *LoopNodeSpec) (node.Node, error) {
-		return NewLoopNode(), nil
+// NewForNodeCodec creates a new codec for ForNodeSpec.
+func NewForNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *ForNodeSpec) (node.Node, error) {
+		return NewForNode(), nil
 	})
 }
 
-// NewLoopNode creates a new LoopNode with default configurations.
-func NewLoopNode() *LoopNode {
-	n := &LoopNode{
+// NewForNode creates a new ForNode with default configurations.
+func NewForNode() *ForNode {
+	n := &ForNode{
 		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: [2]*port.OutPort{port.NewOut(), port.NewOut()},
@@ -52,7 +52,7 @@ func NewLoopNode() *LoopNode {
 }
 
 // In returns the input port with the specified name.
-func (n *LoopNode) In(name string) *port.InPort {
+func (n *ForNode) In(name string) *port.InPort {
 	switch name {
 	case node.PortIn:
 		return n.inPort
@@ -62,7 +62,7 @@ func (n *LoopNode) In(name string) *port.InPort {
 }
 
 // Out returns the output port with the specified name.
-func (n *LoopNode) Out(name string) *port.OutPort {
+func (n *ForNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
@@ -80,7 +80,7 @@ func (n *LoopNode) Out(name string) *port.OutPort {
 }
 
 // Close closes all ports associated with the node.
-func (n *LoopNode) Close() error {
+func (n *ForNode) Close() error {
 	n.inPort.Close()
 	for _, outPort := range n.outPorts {
 		outPort.Close()
@@ -90,7 +90,7 @@ func (n *LoopNode) Close() error {
 	return nil
 }
 
-func (n *LoopNode) forward(proc *process.Process) {
+func (n *ForNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
@@ -130,7 +130,7 @@ func (n *LoopNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *LoopNode) backward(index int) port.Listener {
+func (n *ForNode) backward(index int) port.Listener {
 	return port.ListenFunc(func(proc *process.Process) {
 		outWriter := n.outPorts[index].Open(proc)
 
@@ -140,7 +140,7 @@ func (n *LoopNode) backward(index int) port.Listener {
 	})
 }
 
-func (n *LoopNode) catch(proc *process.Process) {
+func (n *ForNode) catch(proc *process.Process) {
 	errWriter := n.errPort.Open(proc)
 
 	for backPck := range errWriter.Receive() {

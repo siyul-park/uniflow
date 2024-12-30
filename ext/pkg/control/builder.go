@@ -21,21 +21,21 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 		}{
 			{KindBlock, NewBlockNodeCodec(s), &BlockNodeSpec{}},
 			{KindCache, NewCacheNodeCodec(), &CacheNodeSpec{}},
-			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
+			{KindFor, NewForNodeCodec(), &ForNodeSpec{}},
 			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
 			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},
-			{KindLoop, NewLoopNodeCodec(), &LoopNodeSpec{}},
 			{KindMerge, NewMergeNodeCodec(), &MergeNodeSpec{}},
 			{KindNOP, NewNOPNodeCodec(), &NOPNodeSpec{}},
+			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
 			{KindReduce, NewReduceNodeCodec(expr), &ReduceNodeSpec{}},
 			{KindRetry, NewRetryNodeCodec(), &RetryNodeSpec{}},
 			{KindSession, NewSessionNodeCodec(), &SessionNodeSpec{}},
+			{KindSleep, NewSleepNodeCodec(), &SleepNodeSpec{}},
 			{KindSnippet, NewSnippetNodeCodec(module), &SnippetNodeSpec{}},
 			{KindSplit, NewSplitNodeCodec(), &SplitNodeSpec{}},
 			{KindStep, NewStepNodeCodec(s), &StepNodeSpec{}},
 			{KindSwitch, NewSwitchNodeCodec(expr), &SwitchNodeSpec{}},
 			{KindTry, NewTryNodeCodec(), &TryNodeSpec{}},
-			{KindWait, NewWaitNodeCodec(), &WaitNodeSpec{}},
 		}
 
 		for _, def := range definitions {

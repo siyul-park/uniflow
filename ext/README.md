@@ -10,15 +10,17 @@ Precisely manage data flow.
 
 - **[Block Node](./docs/block_node.md)**: Combines multiple sub-nodes to manage complex data processing flows.
 - **[Cache Node](./docs/cache_node.md)**: Uses an LRU (Least Recently Used) cache to store and retrieve data.
+- **[For Node](./docs/for_node.md)**: Divides input packets into multiple sub-packets for repeated processing.
 - **[Fork Node](./docs/fork_node.md)**: Asynchronously branches data flows to perform independent tasks in parallel.
 - **[If Node](./docs/if_node.md)**: Evaluates conditions to split packets into two paths.
-- **[Loop Node](./docs/loop_node.md)**: Divides input packets into multiple sub-packets for repeated processing.
 - **[Merge Node](./docs/merge_node.md)**: Combines multiple input packets into one.
 - **[NOP Node](./docs/nop_node.md)**: Responds to input packets with an empty packet, without any processing.
 - **[Pipe Node](./docs/pipe_node.md)**: Processes input packets and distributes results to multiple output ports, allowing for reusable data flows.
 - **[Reduce Node](./docs/reduce_node.md)**: Repeatedly processes input data to produce a single output value, useful for data aggregation.
 - **[Retry Node](./docs/retry_node.md)**: Retries packet processing a specified number of times upon encountering errors.
 - **[Session Node](./docs/session_node.md)**: Stores and manages process information, maintaining session continuity.
+- **[Sleep Node](./docs/sleep_node.md)**: Introduces a specified delay in processing to pace workflows or await external
+  conditions.
 - **[Snippet Node](./docs/snippet_node.md)**: Executes code snippets written in various programming languages to process input packets.
 - **[Split Node](./docs/split_node.md)**: Splits input packets into multiple parts for processing.
 - **[Step Node](./docs/step_node.md)**: Systematically manages complex data processing flows and executes multiple
@@ -26,7 +28,6 @@ Precisely manage data flow.
 - **[Switch Node](./docs/switch_node.md)**: Routes input packets to one of several ports based on conditions.
 - **[Try Node](./docs/try_node.md)**: Handles errors that may occur during packet processing and appropriately manages
   them through the error port.
-- **[Wait Node](./docs/wait_node.md)**: Introduces a specified delay in processing to pace workflows or await external conditions.
 
 ### **IO**
 

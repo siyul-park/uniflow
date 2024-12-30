@@ -19,7 +19,7 @@ func TestCacheNodeCodec_Compile(t *testing.T) {
 
 	spec := &CacheNodeSpec{
 		Capacity: 1,
-		TTL:      time.Second,
+		Interval: time.Second,
 	}
 
 	n, err := codec.Compile(spec)
