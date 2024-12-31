@@ -18,6 +18,13 @@ type Writer struct {
 	mu        sync.Mutex
 }
 
+var ClosedWriter *Writer
+
+func init() {
+	ClosedWriter = NewWriter()
+	ClosedWriter.Close()
+}
+
 // Send sends a packet to the writer and returns the received packet or None if to write fails.
 func Send(writer *Writer, pck *Packet) *Packet {
 	return SendOrFallback(writer, pck, None)

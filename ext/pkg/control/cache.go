@@ -95,10 +95,6 @@ func (n *CacheNode) forward(proc *process.Process) {
 			n.tracer.Transform(inPck, outPck)
 			n.tracer.Reduce(outPck)
 		} else {
-			if outWriter == nil {
-				outWriter = n.outPort.Open(proc)
-			}
-
 			n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 				if _, ok := backPck.Payload().(types.Error); !ok {
 					n.lru.Store(inPayload, backPck.Payload())
@@ -107,6 +103,9 @@ func (n *CacheNode) forward(proc *process.Process) {
 				n.tracer.Reduce(backPck)
 			}))
 
+			if outWriter == nil {
+				outWriter = n.outPort.Open(proc)
+			}
 			n.tracer.Write(outWriter, inPck)
 		}
 	}

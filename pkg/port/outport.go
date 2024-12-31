@@ -129,6 +129,10 @@ func (p *OutPort) Unlink(in *InPort) {
 
 // Open opens the output port for the given process and returns a writer.
 func (p *OutPort) Open(proc *process.Process) *packet.Writer {
+	if proc.Status() == process.StatusTerminated {
+		return packet.ClosedWriter
+	}
+
 	p.mu.RLock()
 	writer, ok := p.writers[proc]
 	p.mu.RUnlock()

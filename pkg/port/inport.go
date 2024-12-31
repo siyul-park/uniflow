@@ -95,6 +95,10 @@ func (p *InPort) AddListener(listener Listener) bool {
 
 // Open prepares the input port for a given process and returns a reader.
 func (p *InPort) Open(proc *process.Process) *packet.Reader {
+	if proc.Status() == process.StatusTerminated {
+		return packet.ClosedReader
+	}
+
 	p.mu.RLock()
 	reader, ok := p.readers[proc]
 	p.mu.RUnlock()

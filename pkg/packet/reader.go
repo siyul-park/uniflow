@@ -17,6 +17,13 @@ type Reader struct {
 	mu        sync.Mutex
 }
 
+var ClosedReader *Reader
+
+func init() {
+	ClosedReader = NewReader()
+	ClosedReader.Close()
+}
+
 // NewReader creates a new Reader instance and starts its processing loop.
 func NewReader() *Reader {
 	r := &Reader{
