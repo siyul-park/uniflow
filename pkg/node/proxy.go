@@ -20,6 +20,21 @@ func Unwrap(n Node) Node {
 	return n
 }
 
+// As attempts to cast the source Node to the target type T.
+func As[T any](source Node, target *T) bool {
+	for {
+		if s, ok := source.(T); ok {
+			*target = s
+			return true
+		}
+		if proxy, ok := source.(Proxy); ok {
+			source = proxy.Unwrap()
+		} else {
+			return false
+		}
+	}
+}
+
 // NoCloser returns a Node with a no-op Close method.
 func NoCloser(node Node) Node {
 	return &noCloseNode{Node: node}

@@ -30,10 +30,19 @@ func LoadFunc(fn func(*Symbol) error) LoadHook {
 // LoadListenerHook creates a LoadHook for nodes implementing LoadListener.
 func LoadListenerHook(hook LoadHook) LoadHook {
 	return LoadFunc(func(symbol *Symbol) error {
-		if listener, ok := node.Unwrap(symbol).(LoadListener); ok {
-			return listener.Load(hook)
+		var n node.Node = symbol
+		for {
+			if listener, ok := n.(LoadListener); ok {
+				if err := listener.Load(hook); err != nil {
+					return err
+				}
+			}
+			if proxy, ok := n.(node.Proxy); ok {
+				n = proxy.Unwrap()
+			} else {
+				return nil
+			}
 		}
-		return nil
 	})
 }
 

@@ -30,10 +30,19 @@ func UnloadFunc(fn func(*Symbol) error) UnloadHook {
 // UnloadListenerHook creates an UnloadHook for nodes implementing UnloadListener.
 func UnloadListenerHook(hook UnloadHook) UnloadHook {
 	return UnloadFunc(func(symbol *Symbol) error {
-		if listener, ok := node.Unwrap(symbol).(UnloadListener); ok {
-			return listener.Unload(hook)
+		var n node.Node = symbol
+		for {
+			if listener, ok := n.(UnloadListener); ok {
+				if err := listener.Unload(hook); err != nil {
+					return err
+				}
+			}
+			if proxy, ok := n.(node.Proxy); ok {
+				n = proxy.Unwrap()
+			} else {
+				return nil
+			}
 		}
-		return nil
 	})
 }
 

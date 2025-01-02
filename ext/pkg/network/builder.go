@@ -12,13 +12,15 @@ import (
 func AddToHook() hook.Register {
 	return hook.RegisterFunc(func(h *hook.Hook) error {
 		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			if n, ok := node.Unwrap(sb).(*HTTPListenNode); ok {
+			var n *HTTPListenNode
+			if node.As(sb, &n) {
 				return n.Listen()
 			}
 			return nil
 		}))
 		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			if n, ok := node.Unwrap(sb).(*HTTPListenNode); ok {
+			var n *HTTPListenNode
+			if node.As(sb, &n) {
 				return n.Shutdown()
 			}
 			return nil
