@@ -145,14 +145,17 @@ func (s Slice) Interface() any {
 		return nil
 	}
 
-	elements := s.Slice()
-	elementType := getCommonType(elements)
+	var elementType reflect.Type
+	for _, element := range s.value {
+		elementType = unionType(elementType, TypeOf(KindOf(element)))
+	}
+	if elementType == nil {
+		elementType = types[KindInvalid]
+	}
 
-	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(elements), len(elements))
-	for i, value := range elements {
-		if value != nil {
-			t.Index(i).Set(reflect.ValueOf(value))
-		}
+	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(s.value), len(s.value))
+	for i, element := range s.value {
+		t.Index(i).Set(reflect.ValueOf(InterfaceOf(element)))
 	}
 	return t.Interface()
 }

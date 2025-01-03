@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"hash/fnv"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"unsafe"
@@ -74,12 +74,17 @@ var _ Map = (*mutableMap)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {
-	m := &mutableMap{value: make(map[uint64][][2]Value, len(pairs)/2)}
+	m := NewMapWithSize(len(pairs) / 2)
 	for i := 0; i < len(pairs)/2; i++ {
 		k, v := pairs[i*2], pairs[i*2+1]
 		m.Set(k, v)
 	}
 	return m.Immutable()
+}
+
+// NewMapWithSize creates a new Map with the specified size.
+func NewMapWithSize(size int) Map {
+	return &mutableMap{value: make(map[uint64][][2]Value, size)}
 }
 
 // Has checks if the map contains the specified key.
@@ -190,9 +195,7 @@ func (m *immutableMap) Range() func(func(key, value Value) bool) {
 		for key := range m.value {
 			keys = append(keys, key)
 		}
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i] < keys[j]
-		})
+		slices.Sort(keys)
 
 		for _, key := range keys {
 			for _, pair := range m.value[key] {
@@ -250,9 +253,7 @@ func (m *immutableMap) Hash() uint64 {
 		for key := range m.value {
 			keys = append(keys, key)
 		}
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i] < keys[j]
-		})
+		slices.Sort(keys)
 
 		h := fnv.New64a()
 		var buf [8]byte
@@ -278,38 +279,36 @@ func (m *immutableMap) Interface() any {
 		return nil
 	}
 
-	keys := make([]any, 0, len(m.value))
-	values := make([]any, 0, len(m.value))
-
-	hashable := true
+	var keyType reflect.Type
+	var valueType reflect.Type
 	for _, bucket := range m.value {
 		for _, pair := range bucket {
-			k, v := pair[0], pair[1]
-
-			keys = append(keys, InterfaceOf(k))
-			values = append(values, InterfaceOf(v))
-
-			kind := KindOf(k)
-			hashable = hashable && kind != KindBinary && kind != KindMap && kind != KindSlice
+			keyType = unionType(keyType, TypeOf(KindOf(pair[0])))
+			valueType = unionType(valueType, TypeOf(KindOf(pair[1])))
 		}
 	}
+	if keyType == nil {
+		keyType = types[KindInvalid]
+	}
+	if valueType == nil {
+		valueType = types[KindInvalid]
+	}
 
-	if !hashable {
-		t := make([][2]any, len(keys))
-		for i, key := range keys {
-			value := values[i]
-			t[i] = [2]any{key, value}
+	if keyType.Kind() == reflect.Interface || keyType.Kind() == reflect.Map || keyType.Kind() == reflect.Slice {
+		t := make([][2]any, 0, len(m.value))
+		for _, bucket := range m.value {
+			for _, pair := range bucket {
+				t = append(t, [2]any{InterfaceOf(pair[0]), InterfaceOf(pair[1])})
+			}
 		}
 		return t
 	}
 
-	keyType := getCommonType(keys)
-	valueType := getCommonType(values)
-
-	t := reflect.MakeMapWithSize(reflect.MapOf(keyType, valueType), len(keys))
-	for i, key := range keys {
-		value := values[i]
-		t.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
+	t := reflect.MakeMapWithSize(reflect.MapOf(keyType, valueType), len(m.value))
+	for _, bucket := range m.value {
+		for _, pair := range bucket {
+			t.SetMapIndex(reflect.ValueOf(InterfaceOf(pair[0])), reflect.ValueOf(InterfaceOf(pair[1])))
+		}
 	}
 	return t.Interface()
 }
@@ -354,9 +353,7 @@ func (m *immutableMap) Compare(other Value) int {
 		for key := range m.value {
 			keys = append(keys, key)
 		}
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i] < keys[j]
-		})
+		slices.Sort(keys)
 
 		for _, hash := range keys {
 			elements1 := m.value[hash]
@@ -394,18 +391,16 @@ func (m *mutableMap) Set(key, val Value) Map {
 	hash := HashOf(key)
 	bucket := m.value[hash]
 
-	modify := make([][2]Value, len(bucket))
-	copy(modify, bucket)
-
-	ok := false
-
-	low, high := 0, len(modify)-1
+	diff := -1
+	low, high := 0, len(bucket)-1
 	for low <= high {
 		mid := low + (high-low)/2
-		diff := Compare(modify[mid][0], key)
-		if diff == 0 {
-			modify[mid][1] = val
-			ok = true
+		if diff = Compare(bucket[mid][0], key); diff == 0 {
+			modify := make([][2]Value, len(bucket))
+			copy(modify, bucket)
+			bucket[mid][1] = val
+
+			m.value[hash] = modify
 			break
 		} else if diff < 0 {
 			low = mid + 1
@@ -413,15 +408,15 @@ func (m *mutableMap) Set(key, val Value) Map {
 			high = mid - 1
 		}
 	}
+	if diff != 0 {
+		modify := make([][2]Value, len(bucket)+1)
+		copy(modify[:low], bucket[:low])
+		copy(modify[low+1:], bucket[low:])
+		modify[low] = [2]Value{key, val}
 
-	if !ok {
-		idx := low
-		modify = append(modify, [2]Value{})
-		copy(modify[idx+1:], modify[idx:])
-		modify[idx] = [2]Value{key, val}
+		m.value[hash] = modify
 	}
 
-	m.value[hash] = modify
 	return m
 }
 
@@ -429,27 +424,26 @@ func (m *mutableMap) Set(key, val Value) Map {
 func (m *mutableMap) Delete(key Value) Map {
 	hash := HashOf(key)
 	if bucket, ok := m.value[hash]; ok {
-		modify := make([][2]Value, len(bucket))
-		copy(modify, bucket)
-
-		low, high := 0, len(modify)-1
+		low, high := 0, len(bucket)-1
 		for low <= high {
 			mid := low + (high-low)/2
-			diff := Compare(modify[mid][0], key)
+			diff := Compare(bucket[mid][0], key)
 			if diff == 0 {
-				modify = append(modify[:mid], modify[mid+1:]...)
+				modify := make([][2]Value, len(bucket)-1)
+				copy(modify[:mid], bucket[:mid])
+				copy(modify[mid:], bucket[mid+1:])
+
+				if len(modify) > 0 {
+					m.value[hash] = modify
+				} else {
+					delete(m.value, hash)
+				}
 				break
 			} else if diff < 0 {
 				low = mid + 1
 			} else {
 				high = mid - 1
 			}
-		}
-
-		if len(modify) > 0 {
-			m.value[hash] = modify
-		} else {
-			delete(m.value, hash)
 		}
 	}
 	return m
@@ -543,25 +537,21 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := reflect.ValueOf(source)
-				pairs := make([]Value, 0, s.Len()*2)
+				m := NewMapWithSize(s.Len())
 				for _, k := range s.MapKeys() {
 					v := s.MapIndex(k)
-
 					if key, err := keyEncoder.Encode(k.Interface()); err != nil {
 						return nil, err
-					} else {
-						pairs = append(pairs, key)
-					}
-					if val, err := valueEncoder.Encode(v.Interface()); err != nil {
+					} else if val, err := valueEncoder.Encode(v.Interface()); err != nil {
 						return nil, err
 					} else {
-						pairs = append(pairs, val)
+						m.Set(key, val)
 					}
 				}
-				return NewMap(pairs...), nil
+				return m.Immutable(), nil
 			}), nil
 		} else if typ != nil && typ.Kind() == reflect.Struct {
-			encoders := make([]encoding.Encoder[reflect.Value, []Value], 0, typ.NumField())
+			decoders := make([]encoding.Decoder[reflect.Value, Map], 0, typ.NumField())
 			for i := 0; i < typ.NumField(); i++ {
 				field := typ.Field(i)
 				meta := getMapMeta(field)
@@ -576,51 +566,53 @@ func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.Encod
 
 				alias := NewString(meta.alias)
 
-				var enc encoding.Encoder[reflect.Value, []Value]
+				var dec encoding.Decoder[reflect.Value, Map]
 				if meta.inline {
-					enc = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+					dec = encoding.DecodeFunc(func(source reflect.Value, m Map) error {
 						elem := source.FieldByIndex(field.Index)
 						if meta.omitempty && elem.IsZero() {
-							return nil, nil
+							return nil
 						}
 
 						if target, err := child.Encode(elem.Interface()); err != nil {
-							return nil, err
+							return err
 						} else if t, ok := target.(Map); !ok {
-							return nil, errors.WithStack(encoding.ErrUnsupportedValue)
+							return errors.WithStack(encoding.ErrUnsupportedValue)
 						} else {
-							return t.Pairs(), nil
+							for k, v := range t.Range() {
+								m.Set(k, v)
+							}
+							return nil
 						}
 					})
 				} else {
-					enc = encoding.EncodeFunc(func(source reflect.Value) ([]Value, error) {
+					dec = encoding.DecodeFunc(func(source reflect.Value, m Map) error {
 						elem := source.FieldByIndex(field.Index)
 						if meta.omitempty && elem.IsZero() {
-							return nil, nil
+							return nil
 						}
 
 						if target, err := child.Encode(elem.Interface()); err != nil {
-							return nil, err
+							return err
 						} else {
-							return []Value{alias, target}, nil
+							m.Set(alias, target)
+							return nil
 						}
 					})
 				}
 
-				encoders = append(encoders, enc)
+				decoders = append(decoders, dec)
 			}
 
 			return encoding.EncodeFunc(func(source any) (Value, error) {
 				s := reflect.ValueOf(source)
-				pairs := make([]Value, 0, len(encoders)*2)
-				for _, enc := range encoders {
-					if target, err := enc.Encode(s); err != nil {
+				m := NewMapWithSize(len(decoders) * 2)
+				for _, dec := range decoders {
+					if err := dec.Decode(s, m); err != nil {
 						return nil, err
-					} else {
-						pairs = append(pairs, target...)
 					}
 				}
-				return NewMap(pairs...), nil
+				return m.Immutable(), nil
 			}), nil
 		}
 

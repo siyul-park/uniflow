@@ -30,12 +30,12 @@ key2: 123
 - key1: value2
   key2: 456
 `,
-			expected: []map[string]any{
-				{
+			expected: []any{
+				map[string]any{
 					"key1": "value1",
 					"key2": 123,
 				},
-				{
+				map[string]any{
 					"key1": "value2",
 					"key2": 456,
 				},

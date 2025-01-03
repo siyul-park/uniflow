@@ -1,5 +1,7 @@
 package types
 
+import "reflect"
+
 // Value is an interface representing atomic data types.
 type Value interface {
 	Kind() Kind              // Kind returns the type of the Value.
@@ -35,12 +37,39 @@ const (
 	KindString
 )
 
+var types = map[Kind]reflect.Type{
+	KindInvalid: reflect.TypeOf((*any)(nil)).Elem(),
+	KindBinary:  reflect.TypeOf([]byte(nil)),
+	KindBoolean: reflect.TypeOf(false),
+	KindError:   reflect.TypeOf((*error)(nil)).Elem(),
+	KindInt:     reflect.TypeOf(0),
+	KindInt8:    reflect.TypeOf(int8(0)),
+	KindInt16:   reflect.TypeOf(int16(0)),
+	KindInt32:   reflect.TypeOf(int32(0)),
+	KindInt64:   reflect.TypeOf(int64(0)),
+	KindUint:    reflect.TypeOf(uint(0)),
+	KindUint8:   reflect.TypeOf(uint8(0)),
+	KindUint16:  reflect.TypeOf(uint16(0)),
+	KindUint32:  reflect.TypeOf(uint32(0)),
+	KindUint64:  reflect.TypeOf(uint64(0)),
+	KindFloat32: reflect.TypeOf(float32(0)),
+	KindFloat64: reflect.TypeOf(float64(0)),
+	KindMap:     reflect.TypeOf((*any)(nil)).Elem(),
+	KindSlice:   reflect.TypeOf((*any)(nil)).Elem(),
+	KindString:  reflect.TypeOf(""),
+}
+
 // KindOf returns the kind of the provided Value.
 func KindOf(v Value) Kind {
 	if v == nil {
 		return KindInvalid
 	}
 	return v.Kind()
+}
+
+// TypeOf returns the reflect.Type of the provided Kind.
+func TypeOf(kind Kind) reflect.Type {
+	return types[kind]
 }
 
 // HashOf returns the hash code of the provided Value.
@@ -82,4 +111,15 @@ func Compare(x, y Value) int {
 		return 1
 	}
 	return x.Compare(y)
+}
+
+func unionType(x, y reflect.Type) reflect.Type {
+	if x == nil {
+		return y
+	} else if y == nil {
+		return x
+	} else if x == y {
+		return x
+	}
+	return types[KindInvalid]
 }
