@@ -3,6 +3,9 @@ package packet
 import (
 	"testing"
 
+	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/types"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -100,7 +103,7 @@ func TestTracer_Reduce(t *testing.T) {
 	tr := NewTracer()
 	defer tr.Close()
 
-	pck1 := New(nil)
+	pck1 := New(types.NewString(faker.UUIDHyphenated()))
 
 	w1.Write(pck1)
 	<-r1.Read()
@@ -110,7 +113,7 @@ func TestTracer_Reduce(t *testing.T) {
 
 	pck2, ok := <-w1.Receive()
 	assert.True(t, ok)
-	assert.Equal(t, None, pck2)
+	assert.Equal(t, pck1.Payload(), pck2.Payload())
 }
 
 func TestTracer_ReadAndWriteAndReceive(t *testing.T) {
