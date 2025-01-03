@@ -4,9 +4,9 @@ const (
 	flagNamespace = "namespace"
 	flagFilename  = "filename"
 
-	flagFromSpecs   = "from-specs"
-	flagFromSecrets = "from-secrets"
-	flagFromCharts  = "from-charts"
+	flagFromSpecs  = "from-specs"
+	flagFromValues = "from-values"
+	flagFromCharts = "from-charts"
 
 	flagDebug       = "debug"
 	flagEnvironment = "env"

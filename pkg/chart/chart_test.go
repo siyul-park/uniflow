@@ -6,13 +6,13 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestChart_IsBound(t *testing.T) {
-	t.Run("NoSecrets", func(t *testing.T) {
+	t.Run("NoValues", func(t *testing.T) {
 		chrt := &Chart{
 			ID: uuid.Must(uuid.NewV7()),
 
@@ -28,11 +28,11 @@ func TestChart_IsBound(t *testing.T) {
 		assert.False(t, chrt.IsBound())
 	})
 
-	t.Run("WithSecrets", func(t *testing.T) {
-		sec1 := &secret.Secret{
+	t.Run("WithValues", func(t *testing.T) {
+		sec1 := &value.Value{
 			ID: uuid.Must(uuid.NewV7()),
 		}
-		sec2 := &secret.Secret{
+		sec2 := &value.Value{
 			ID: uuid.Must(uuid.NewV7()),
 		}
 		chrt := &Chart{
@@ -53,8 +53,8 @@ func TestChart_IsBound(t *testing.T) {
 }
 
 func TestChart_Bind(t *testing.T) {
-	t.Run("NoMatchingSecret", func(t *testing.T) {
-		scrt := &secret.Secret{
+	t.Run("NoMatchingValue", func(t *testing.T) {
+		scrt := &value.Value{
 			ID:   uuid.Must(uuid.NewV7()),
 			Data: "foo",
 		}
@@ -73,8 +73,8 @@ func TestChart_Bind(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("MatchingSecret", func(t *testing.T) {
-		scrt := &secret.Secret{
+	t.Run("MatchingValue", func(t *testing.T) {
+		scrt := &value.Value{
 			ID:   uuid.Must(uuid.NewV7()),
 			Data: "foo",
 		}

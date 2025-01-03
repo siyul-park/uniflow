@@ -1,4 +1,4 @@
-package secret
+package value
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
-	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -57,7 +57,7 @@ func TestStore_Watch(t *testing.T) {
 		}
 	}()
 
-	scrt := &secret.Secret{
+	scrt := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -79,11 +79,11 @@ func TestStore_Load(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	scrt1 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
-	scrt2 := &secret.Secret{
+	scrt2 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -109,11 +109,11 @@ func TestStore_Store(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	scrt1 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
-	scrt2 := &secret.Secret{
+	scrt2 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -139,11 +139,11 @@ func TestStore_Swap(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	scrt1 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
-	scrt2 := &secret.Secret{
+	scrt2 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -173,11 +173,11 @@ func TestMemStore_Delete(t *testing.T) {
 
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	scrt1 := &secret.Secret{
+	scrt1 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
-	scrt2 := &secret.Secret{
+	scrt2 := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}

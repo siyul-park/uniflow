@@ -52,7 +52,7 @@ Namespace string // Specifies the namespace the node belongs to.
 Name string // Specifies the name of the node, which must be unique within the same namespace.
 Annotations map[string]string // Additional metadata about the node.
 Ports map[string][]Port // Defines the port connections.
-Env map[string][]Secret // Specifies environment variables required by the node.
+Env map[string][]Value // Specifies environment variables required by the node.
 ```
 
 You can simplify this with `spec.Meta`:
@@ -323,19 +323,20 @@ r := runtime.New(runtime.Config{
 	Schema:      scheme,
 	Hook:        hook,
 	SpecStore:   specStore,
-	SecretStore: secretStore,
+	ValueStore: valueStore,
 })
 defer r.Close()
 ```
 
-This code creates a new runtime environment using the provided schema, hook, specification store, and secret store. The `defer` statement ensures that resources are cleaned up when done.
+This code creates a new runtime environment using the provided schema, hook, specification store, and value store. The
+`defer` statement ensures that resources are cleaned up when done.
 
 ```go
 func main() {
 	ctx := context.TODO()
 
 	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
@@ -354,7 +355,7 @@ func main() {
 		Schema:      scheme,
 		Hook:        hook,
 		SpecStore:   specStore,
-		SecretStore: secretStore,
+		ValueStore: valueStore,
 	})
 	defer r.Close()
 

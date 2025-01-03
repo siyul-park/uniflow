@@ -29,14 +29,14 @@ func TestMongoDriver_SpecStore(t *testing.T) {
 	assert.NotNil(t, store)
 }
 
-func TestMongoDriver_SecretStore(t *testing.T) {
+func TestMongoDriver_ValueStore(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	driver, _ := NewMongoDriver("memongodb://", "")
 	defer driver.Close(ctx)
 
-	store, err := driver.SecretStore(ctx, "")
+	store, err := driver.ValueStore(ctx, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 }

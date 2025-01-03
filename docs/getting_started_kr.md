@@ -35,13 +35,13 @@ make build
 
 설정은 `.uniflow.toml` 파일이나 시스템 환경 변수를 사용해 유연하게 변경할 수 있습니다. 주요 설정 항목은 다음과 같습니다:
 
-| TOML 키               | 환경 변수 키              | 예시                       |
-|----------------------|----------------------|--------------------------|
-| `database.url`       | `DATABASE_URL`       | `mem://` 또는 `mongodb://` |
-| `database.name`      | `DATABASE_NAME`      | -                        |
-| `collection.charts`  | `COLLECTION_CHARTS`  | `charts`                 |
-| `collection.specs`   | `COLLECTION_SPECS`   | `nodes`                  |
-| `collection.secrets` | `COLLECTION_SECRETS` | `secrets`                |
+| TOML 키              | 환경 변수 키             | 예시                       |
+|---------------------|---------------------|--------------------------|
+| `database.url`      | `DATABASE_URL`      | `mem://` 또는 `mongodb://` |
+| `database.name`     | `DATABASE_NAME`     | -                        |
+| `collection.charts` | `COLLECTION_CHARTS` | `charts`                 |
+| `collection.specs`  | `COLLECTION_SPECS`  | `nodes`                  |
+| `collection.values` | `COLLECTION_VALUES` | `values`                 |
 
 만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기 위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
 
@@ -108,9 +108,9 @@ pong#
 ./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
-초기 시크릿 파일은 `--from-secrets` 플래그로 설정할 수 있습니다:
+초기 변수 파일은 `--from-values` 플래그로 설정할 수 있습니다:
 ```sh
-./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
+./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
 초기 차트 파일은 `--from-charts` 플래그로 제공할 수 있습니다:
@@ -131,10 +131,10 @@ pong#
 ./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
 ```
 
-시크릿을 적용하려면:
+변수을 적용하려면:
 
 ```sh
-./dist/uniflowctl apply secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
 ```
 
 차트를 적용하려면:
@@ -151,10 +151,10 @@ pong#
 ./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
 ```
 
-시크릿을 삭제하려면:
+변수을 삭제하려면:
 
 ```sh
-./dist/uniflowctl delete secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
 ```
 
 차트를 삭제하려면:
@@ -171,10 +171,10 @@ pong#
 ./dist/uniflowctl get nodes --namespace default
 ```
 
-시크릿을 조회하려면:
+변수을 조회하려면:
 
 ```sh
-./dist/uniflowctl get secrets --namespace default
+./dist/uniflowctl get values --namespace default
 ```
 
 차트를 조회하려면:

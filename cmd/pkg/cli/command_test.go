@@ -32,7 +32,7 @@ func TestCommand_Execute(t *testing.T) {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:       "dummy",
-		ValidArgs: []string{specs, secrets},
+		ValidArgs: []string{specs, values},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},

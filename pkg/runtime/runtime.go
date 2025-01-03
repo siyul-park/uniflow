@@ -10,9 +10,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"golang.org/x/exp/slices"
 )
 
@@ -23,7 +23,7 @@ type Config struct {
 	Hook        *hook.Hook        // Hook is a collection of hook functions for managing symbols.
 	Scheme      *scheme.Scheme    // Scheme defines the scheme and behaviors for symbols.
 	SpecStore   spec.Store        // SpecStore is responsible for persisting specifications.
-	SecretStore secret.Store      // SecretStore is responsible for persisting secrets.
+	ValueStore  value.Store       // ValueStore is responsible for persisting values.
 	ChartStore  chart.Store       // ChartStore is responsible for persisting charts.
 }
 
@@ -32,10 +32,10 @@ type Runtime struct {
 	namespace    string
 	scheme       *scheme.Scheme
 	specStore    spec.Store
-	secretStore  secret.Store
+	valueStore   value.Store
 	chartStore   chart.Store
 	specStream   spec.Stream
-	secretStream secret.Stream
+	valueStream  value.Stream
 	chartStream  chart.Stream
 	symbolTable  *symbol.Table
 	symbolLoader *symbol.Loader
@@ -58,8 +58,8 @@ func New(config Config) *Runtime {
 	if config.SpecStore == nil {
 		config.SpecStore = spec.NewStore()
 	}
-	if config.SecretStore == nil {
-		config.SecretStore = secret.NewStore()
+	if config.ValueStore == nil {
+		config.ValueStore = value.NewStore()
 	}
 	if config.ChartStore == nil {
 		config.ChartStore = chart.NewStore()
@@ -77,7 +77,7 @@ func New(config Config) *Runtime {
 		Table:       symbolTable,
 		Scheme:      config.Scheme,
 		SpecStore:   config.SpecStore,
-		SecretStore: config.SecretStore,
+		ValueStore:  config.ValueStore,
 	})
 
 	chartLinker := chart.NewLinker(config.Scheme)
@@ -90,9 +90,9 @@ func New(config Config) *Runtime {
 		UnlinkHooks: []chart.UnlinkHook{config.Hook},
 	})
 	chartLoader := chart.NewLoader(chart.LoaderConfig{
-		Table:       chartTable,
-		ChartStore:  config.ChartStore,
-		SecretStore: config.SecretStore,
+		Table:      chartTable,
+		ChartStore: config.ChartStore,
+		ValueStore: config.ValueStore,
 	})
 
 	for _, kind := range config.Scheme.Kinds() {
@@ -107,7 +107,7 @@ func New(config Config) *Runtime {
 		namespace:    config.Namespace,
 		scheme:       config.Scheme,
 		specStore:    config.SpecStore,
-		secretStore:  config.SecretStore,
+		valueStore:   config.ValueStore,
 		chartStore:   config.ChartStore,
 		symbolTable:  symbolTable,
 		symbolLoader: symbolLoader,
@@ -124,7 +124,7 @@ func (r *Runtime) Load(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// Watch sets up watchers for specification and secret changes.
+// Watch sets up watchers for specification and value changes.
 func (r *Runtime) Watch(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -140,16 +140,16 @@ func (r *Runtime) Watch(ctx context.Context) error {
 	}
 	r.specStream = specStream
 
-	if r.secretStream != nil {
-		if err := r.secretStream.Close(); err != nil {
+	if r.valueStream != nil {
+		if err := r.valueStream.Close(); err != nil {
 			return err
 		}
 	}
-	secretStream, err := r.secretStore.Watch(ctx, &secret.Secret{Namespace: r.namespace})
+	valueStream, err := r.valueStore.Watch(ctx, &value.Value{Namespace: r.namespace})
 	if err != nil {
 		return err
 	}
-	r.secretStream = secretStream
+	r.valueStream = valueStream
 
 	if r.chartStream != nil {
 		if err := r.chartStream.Close(); err != nil {
@@ -165,17 +165,17 @@ func (r *Runtime) Watch(ctx context.Context) error {
 	return nil
 }
 
-// Reconcile reconciles the state of symbols based on changes in specifications and secrets.
+// Reconcile reconciles the state of symbols based on changes in specifications and values.
 func (r *Runtime) Reconcile(ctx context.Context) error {
 	r.mu.RLock()
 
 	specStream := r.specStream
-	secretStream := r.secretStream
+	valueStream := r.valueStream
 	chartStream := r.chartStream
 
 	r.mu.RUnlock()
 
-	if specStream == nil || secretStream == nil || chartStream == nil {
+	if specStream == nil || valueStream == nil || chartStream == nil {
 		return nil
 	}
 
@@ -199,17 +199,17 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 			}
 
 			_ = r.symbolLoader.Load(ctx, specs...)
-		case event, ok := <-secretStream.Next():
+		case event, ok := <-valueStream.Next():
 			if !ok {
 				return nil
 			}
 
-			secrets, err := r.secretStore.Load(ctx, &secret.Secret{ID: event.ID})
+			values, err := r.valueStore.Load(ctx, &value.Value{ID: event.ID})
 			if err != nil {
 				return err
 			}
-			if len(secrets) == 0 {
-				secrets = append(secrets, &secret.Secret{ID: event.ID})
+			if len(values) == 0 {
+				values = append(values, &value.Value{ID: event.ID})
 			}
 
 			var specs []spec.Spec
@@ -218,7 +218,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 					unstructured := &spec.Unstructured{}
 					if err := spec.As(sb.Spec, unstructured); err != nil {
 						return err
-					} else if unstructured.IsBound(secrets...) {
+					} else if unstructured.IsBound(values...) {
 						specs = append(specs, sb.Spec)
 					}
 				}
@@ -273,11 +273,11 @@ func (r *Runtime) Close() error {
 		}
 		r.specStream = nil
 	}
-	if r.secretStream != nil {
-		if err := r.secretStream.Close(); err != nil {
+	if r.valueStream != nil {
+		if err := r.valueStream.Close(); err != nil {
 			return err
 		}
-		r.secretStream = nil
+		r.valueStream = nil
 	}
 	if r.chartStream != nil {
 		if err := r.chartStream.Close(); err != nil {

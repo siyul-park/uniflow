@@ -4,18 +4,18 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	SpecStore   spec.Store
-	SecretStore secret.Store
-	ChartStore  chart.Store
-	FS          afero.Fs
+	SpecStore  spec.Store
+	ValueStore value.Store
+	ChartStore chart.Store
+	FS         afero.Fs
 }
 
 // NewApplyCommand creates a new cobra.Command for the apply command.
@@ -24,11 +24,11 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Use:       "apply",
 		Short:     "Apply resources to the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{specs, secrets, charts},
+		ValidArgs: []string{specs, values, charts},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:   runApplyCommand(config.SpecStore, config.FS),
-			secrets: runApplyCommand(config.SecretStore, config.FS),
-			charts:  runApplyCommand(config.ChartStore, config.FS),
+			specs:  runApplyCommand(config.SpecStore, config.FS),
+			values: runApplyCommand(config.ValueStore, config.FS),
+			charts: runApplyCommand(config.ChartStore, config.FS),
 		}),
 	}
 

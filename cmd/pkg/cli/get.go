@@ -4,16 +4,16 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/cobra"
 )
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
-	ChartStore  chart.Store
-	SpecStore   spec.Store
-	SecretStore secret.Store
+	ChartStore chart.Store
+	SpecStore  spec.Store
+	ValueStore value.Store
 }
 
 // NewGetCommand creates a new cobra.Command for the get command.
@@ -22,11 +22,11 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		Use:       "get",
 		Short:     "Load resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{specs, secrets, charts},
+		ValidArgs: []string{specs, values, charts},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:   runGetCommand(config.SpecStore, spec.New),
-			secrets: runGetCommand(config.SecretStore, secret.New),
-			charts:  runGetCommand(config.ChartStore, chart.New),
+			specs:  runGetCommand(config.SpecStore, spec.New),
+			values: runGetCommand(config.ValueStore, value.New),
+			charts: runGetCommand(config.ChartStore, chart.New),
 		}),
 	}
 

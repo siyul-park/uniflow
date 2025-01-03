@@ -34,11 +34,11 @@ env:
 - `protocol`: Specifies the protocol used by the listener. This is an additional required field for nodes of the `listener` type.
 - `port`: Specifies the port used by the listener. This is an additional required field for nodes of the `listener` type.
 - `ports`: Defines how the ports are connected. `out` defines an output port named `proxy`, which connects to the `in` port of another node.
-- `env`: Specifies the environment variables required by the node. In this case, `PORT` is dynamically set from a secret.
+- `env`: Specifies the environment variables required by the node. In this case, `PORT` is dynamically set from a value.
 
-## Secret
+## Value
 
-A secret securely store sensitive information needed by nodes, such as passwords and API keys.
+A value securely store sensitive information needed by nodes, such as passwords and API keys.
 
 ```yaml
 id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
@@ -47,14 +47,15 @@ name: database
 annotations:
   description: "Database information"
 data:
-  password: "super-secret-password"
+  password: "super-value-password"
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.
-- `namespace`: Specifies the namespace to which the secret belongs, defaulting to `default`.
-- `name`: Specifies the name of the secret, which must be unique within the same namespace.
-- `annotations`: Additional metadata for the secret, including user-defined key-value pairs such as description and version.
-- `data`: Contains the secret data structured as key-value pairs.
+- `namespace`: Specifies the namespace to which the value belongs, defaulting to `default`.
+- `name`: Specifies the name of the value, which must be unique within the same namespace.
+- `annotations`: Additional metadata for the value, including user-defined key-value pairs such as description and
+  version.
+- `data`: Contains the value data structured as key-value pairs.
 
 ## Chart
 

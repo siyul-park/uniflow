@@ -24,7 +24,7 @@ func init() {
 	if err := k.Set(cli.EnvCollectionSpecs, "specs"); err != nil {
 		log.Fatal(err)
 	}
-	if err := k.Set(cli.EnvCollectionSecrets, "secrets"); err != nil {
+	if err := k.Set(cli.EnvCollectionValues, "values"); err != nil {
 		log.Fatal(err)
 	}
 	if err := k.Set(cli.EnvCollectionCharts, "charts"); err != nil {
@@ -46,7 +46,7 @@ func main() {
 	databaseURL := k.String(cli.EnvDatabaseURL)
 	databaseName := k.String(cli.EnvDatabaseName)
 	collectionNodes := k.String(cli.EnvCollectionSpecs)
-	collectionSecrets := k.String(cli.EnvCollectionSecrets)
+	collectionValues := k.String(cli.EnvCollectionValues)
 	collectionCharts := k.String(cli.EnvCollectionCharts)
 
 	drv := driver.NewInMemoryDriver()
@@ -63,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	secretStore, err := drv.SecretStore(ctx, collectionSecrets)
+	valueStore, err := drv.ValueStore(ctx, collectionValues)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,21 +79,21 @@ func main() {
 		Short: "A high-performance, extremely flexible, and easily extensible universal workflow engine.",
 	})
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		ChartStore:  chartStore,
-		FS:          fs,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		ChartStore: chartStore,
+		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		ChartStore:  chartStore,
-		FS:          fs,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		ChartStore: chartStore,
+		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		ChartStore:  chartStore,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		ChartStore: chartStore,
 	}))
 
 	if err := cmd.Execute(); err != nil {

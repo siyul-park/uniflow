@@ -6,33 +6,33 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 // LoaderConfig holds configuration for the Loader.
 type LoaderConfig struct {
-	Table       *Table       // Lookup table for storing loaded symbols
-	ChartStore  Store        // ChartStore to retrieve charts from
-	SecretStore secret.Store // SecretStore to retrieve secrets from
+	Table      *Table      // Lookup table for storing loaded symbols
+	ChartStore Store       // ChartStore to retrieve charts from
+	ValueStore value.Store // ValueStore to retrieve values from
 }
 
 // Loader synchronizes with spec.Store to load spec.Spec into the Table.
 type Loader struct {
-	table       *Table
-	chartStore  Store
-	secretStore secret.Store
+	table      *Table
+	chartStore Store
+	valueStore value.Store
 }
 
 // NewLoader creates a new Loader instance with the provided configuration.
 func NewLoader(config LoaderConfig) *Loader {
 	return &Loader{
-		table:       config.Table,
-		chartStore:  config.ChartStore,
-		secretStore: config.SecretStore,
+		table:      config.Table,
+		chartStore: config.ChartStore,
+		valueStore: config.ValueStore,
 	}
 }
 
-// Load loads charts and binds them with secrets, then inserts them into the table.
+// Load loads charts and binds them with values, then inserts them into the table.
 func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 	examples := charts
 
@@ -41,14 +41,14 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 		return err
 	}
 
-	var secrets []*secret.Secret
+	var values []*value.Value
 	for _, chrt := range charts {
 		for _, vals := range chrt.GetEnv() {
 			for _, val := range vals {
 				if val.ID == uuid.Nil && val.Name == "" {
 					continue
 				}
-				secrets = append(secrets, &secret.Secret{
+				values = append(values, &value.Value{
 					ID:        val.ID,
 					Namespace: chrt.GetNamespace(),
 					Name:      val.Name,
@@ -57,8 +57,8 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 		}
 	}
 
-	if len(secrets) > 0 {
-		if secrets, err = l.secretStore.Load(ctx, secrets...); err != nil {
+	if len(values) > 0 {
+		if values, err = l.valueStore.Load(ctx, values...); err != nil {
 			return err
 		}
 	}
@@ -66,7 +66,7 @@ func (l *Loader) Load(ctx context.Context, charts ...*Chart) error {
 	var errs []error
 	loaded := make([]*Chart, 0, len(charts))
 	for _, chrt := range charts {
-		if err := chrt.Bind(secrets...); err != nil {
+		if err := chrt.Bind(values...); err != nil {
 			errs = append(errs, err)
 		} else if err := l.table.Insert(chrt); err != nil {
 			errs = append(errs, err)

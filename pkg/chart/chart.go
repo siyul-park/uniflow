@@ -7,10 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 // Chart defines the structure that combines multiple nodes into a cluster node.
@@ -52,19 +52,19 @@ func New() *Chart {
 	return &Chart{}
 }
 
-// IsBound checks whether any of the secrets are bound to the chart.
-func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
+// IsBound checks whether any of the values are bound to the chart.
+func (c *Chart) IsBound(values ...*value.Value) bool {
 	for _, vals := range c.Env {
 		for _, val := range vals {
-			examples := make([]*secret.Secret, 0, 2)
+			examples := make([]*value.Value, 0, 2)
 			if val.ID != uuid.Nil {
-				examples = append(examples, &secret.Secret{ID: val.ID})
+				examples = append(examples, &value.Value{ID: val.ID})
 			}
 			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: c.GetNamespace(), Name: val.Name})
+				examples = append(examples, &value.Value{Namespace: c.GetNamespace(), Name: val.Name})
 			}
 
-			for _, scrt := range secrets {
+			for _, scrt := range values {
 				if len(resource.Match(scrt, examples...)) > 0 {
 					return true
 				}
@@ -74,19 +74,19 @@ func (c *Chart) IsBound(secrets ...*secret.Secret) bool {
 	return false
 }
 
-// Bind binds the chart's environment variables to the provided secrets.
-func (c *Chart) Bind(secrets ...*secret.Secret) error {
+// Bind binds the chart's environment variables to the provided values.
+func (c *Chart) Bind(values ...*value.Value) error {
 	for _, vals := range c.Env {
 		for i, val := range vals {
 			if val.IsIdentified() {
-				example := &secret.Secret{
+				example := &value.Value{
 					ID:        val.ID,
 					Namespace: c.GetNamespace(),
 					Name:      val.Name,
 				}
 
-				var scrt *secret.Secret
-				for _, s := range secrets {
+				var scrt *value.Value
+				for _, s := range values {
 					if len(resource.Match(s, example)) > 0 {
 						scrt = s
 						break

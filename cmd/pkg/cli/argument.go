@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	specs   = "specs"
-	secrets = "secrets"
-	charts  = "charts"
+	specs  = "specs"
+	values = "values"
+	charts = "charts"
 )
 
 func runs(runs map[string]func(cmd *cobra.Command) error) func(cmd *cobra.Command, args []string) error {

@@ -52,7 +52,7 @@ Namespace string // 노드가 속한 네임스페이스를 지정합니다.
 Name string // 노드의 이름을 지정하며, 동일한 네임스페이스 내에서 고유해야 합니다.
 Annotations map[string]string // 노드에 대한 추가 메타데이터입니다.
 Ports map[string][]Port // 포트의 연결 방식을 정의합니다.
-Env map[string][]Secret // 노드에 필요한 환경 변수를 지정합니다.
+Env map[string][]Value // 노드에 필요한 환경 변수를 지정합니다.
 ```
 
 `spec.Meta`를 사용하면 간단하게 작성할 수 있습니다:
@@ -323,7 +323,7 @@ r := runtime.New(runtime.Config{
 	Schema:      scheme,
 	Hook:        hook,
 	SpecStore:   specStore,
-	SecretStore: secretStore,
+	ValueStore: valueStore,
 })
 defer r.Close()
 ```
@@ -339,7 +339,7 @@ func main() {
 	ctx := context.TODO()
 
 	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
@@ -358,7 +358,7 @@ func main() {
 		Schema:      scheme,
 		Hook:        hook,
 		SpecStore:   specStore,
-		SecretStore: secretStore,
+		ValueStore: valueStore,
 	})
 	defer r.Close()
 

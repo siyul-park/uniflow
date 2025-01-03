@@ -40,7 +40,10 @@ This approach ensures runtime stability while allowing flexible system expansion
 
 ## Compilation Process
 
-The loader tracks changes to node specifications and secrets in real-time through a change stream. When additions, modifications, or deletions occur, the loader dynamically reloads the specifications from the database. These specifications are compiled into executable forms using codecs defined in the schema, with caching and optimization to enhance performance.
+The loader tracks changes to node specifications and values in real-time through a change stream. When additions,
+modifications, or deletions occur, the loader dynamically reloads the specifications from the database. These
+specifications are compiled into executable forms using codecs defined in the schema, with caching and optimization to
+enhance performance.
 
 Compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information in the node specifications.
 
@@ -58,10 +61,10 @@ Compiled nodes are transformed into symbols and stored in a symbol table. The sy
    +--------------------------+   |  |  +-------+  |  |
    |         Database         |   |  |  | Codec |  |  |--+
    |  +--------+  +--------+  |   |  |  +-------+  |  |  |
-   |  | Secret |  | Secret |  |-->|  +-------------+  |  |
+   |  | Value |  | Value |  |-->|  +-------------+  |  |
    |  +--------+  +--------+  |   +-------------------+  |
    |  +--------+  +--------+  |                          |
-   |  | Secret |  | Secret |  |                          |
+   |  | Value |  | Value |  |                          |
    |  +--------+  +--------+  |                          |
    +--------------------------+                          |
    +-------------------------+                           |

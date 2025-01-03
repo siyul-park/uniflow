@@ -5,9 +5,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 // Spec defines the behavior and connections of each node.
@@ -36,9 +36,9 @@ type Spec interface {
 	GetPorts() map[string][]Port
 	// SetPorts assigns port connections to the node.
 	SetPorts(val map[string][]Port)
-	// GetEnv retrieves the environment secrets for the node.
+	// GetEnv retrieves the environment values for the node.
 	GetEnv() map[string][]Value
-	// SetEnv assigns environment secrets to the node.
+	// SetEnv assigns environment values to the node.
 	SetEnv(val map[string][]Value)
 }
 
@@ -72,11 +72,11 @@ type Port struct {
 
 // Value represents a sensitive piece of data associated with a node.
 type Value struct {
-	// ID is the unique identifier of the secret.
+	// ID is the unique identifier of the value.
 	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty" map:"id,omitempty"`
-	// Name is the human-readable name of the secret.
+	// Name is the human-readable name of the value.
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
-	// Data is the sensitive value of the secret.
+	// Data is the sensitive value of the value.
 	Data any `json:"data" bson:"data" yaml:"data" map:"data" validate:"required"`
 }
 
@@ -157,30 +157,30 @@ func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
 }
 
-// GetEnv returns the node's environment secrets.
+// GetEnv returns the node's environment values.
 func (m *Meta) GetEnv() map[string][]Value {
 	return m.Env
 }
 
-// SetEnv sets the node's environment secrets.
+// SetEnv sets the node's environment values.
 func (m *Meta) SetEnv(val map[string][]Value) {
 	m.Env = val
 }
 
-// IsBound checks if the spec is bound to any provided secrets.
-func (m *Meta) IsBound(secrets ...*secret.Secret) bool {
-	for _, values := range m.Env {
-		for _, val := range values {
-			var examples []*secret.Secret
+// IsBound checks if the spec is bound to any provided values.
+func (m *Meta) IsBound(values ...*value.Value) bool {
+	for _, vals := range m.Env {
+		for _, val := range vals {
+			var examples []*value.Value
 			if val.ID != uuid.Nil {
-				examples = append(examples, &secret.Secret{ID: val.ID})
+				examples = append(examples, &value.Value{ID: val.ID})
 			}
 			if val.Name != "" {
-				examples = append(examples, &secret.Secret{Namespace: m.Namespace, Name: val.Name})
+				examples = append(examples, &value.Value{Namespace: m.Namespace, Name: val.Name})
 			}
 
-			for _, scrt := range secrets {
-				if len(resource.Match(scrt, examples...)) > 0 {
+			for _, v := range values {
+				if len(resource.Match(v, examples...)) > 0 {
 					return true
 				}
 			}
@@ -189,38 +189,38 @@ func (m *Meta) IsBound(secrets ...*secret.Secret) bool {
 	return false
 }
 
-// Bind processes the spec by resolving environment variables using provided secrets.
-func (m *Meta) Bind(secrets ...*secret.Secret) error {
-	for _, values := range m.Env {
+// Bind processes the spec by resolving environment variables using provided values.
+func (m *Meta) Bind(values ...*value.Value) error {
+	for _, vals := range m.Env {
 		ok := false
-		for i, val := range values {
-			example := &secret.Secret{
+		for i, val := range vals {
+			example := &value.Value{
 				ID:        val.ID,
 				Namespace: m.Namespace,
 				Name:      val.Name,
 			}
 
-			var scrt *secret.Secret
-			for _, s := range secrets {
-				if (!s.IsIdentified() && !val.IsIdentified()) || len(resource.Match(s, example)) > 0 {
-					scrt = s
+			var value *value.Value
+			for _, v := range values {
+				if (!v.IsIdentified() && !val.IsIdentified()) || len(resource.Match(v, example)) > 0 {
+					value = v
 					break
 				}
 			}
 
-			if scrt != nil {
-				v, err := template.Execute(val.Data, scrt.Data)
+			if value != nil {
+				v, err := template.Execute(val.Data, value.Data)
 				if err != nil {
 					return err
 				}
 
-				val.ID = scrt.GetID()
-				val.Name = scrt.GetName()
+				val.ID = value.GetID()
+				val.Name = value.GetName()
 				val.Data = v
-				values[i] = val
+				vals[i] = val
 			}
 
-			ok = ok || !val.IsIdentified() || scrt != nil
+			ok = ok || !val.IsIdentified() || value != nil
 		}
 		if !ok {
 			return errors.WithStack(encoding.ErrUnsupportedValue)

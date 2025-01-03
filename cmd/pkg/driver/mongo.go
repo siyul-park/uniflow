@@ -6,12 +6,12 @@ import (
 
 	"github.com/gofrs/uuid"
 	mongochart "github.com/siyul-park/uniflow/driver/mongo/pkg/chart"
-	mongosecret "github.com/siyul-park/uniflow/driver/mongo/pkg/secret"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
+	mongovalue "github.com/siyul-park/uniflow/driver/mongo/pkg/value"
 	"github.com/siyul-park/uniflow/pkg/chart"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/tryvium-travels/memongo"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -83,14 +83,14 @@ func (d *MongoDriver) SpecStore(ctx context.Context, name string) (spec.Store, e
 	return store, nil
 }
 
-// SecretStore creates and returns a new Secret Store.
-func (d *MongoDriver) SecretStore(ctx context.Context, name string) (secret.Store, error) {
+// ValueStore creates and returns a new Value Store.
+func (d *MongoDriver) ValueStore(ctx context.Context, name string) (value.Store, error) {
 	if name == "" {
-		name = "secrets"
+		name = "values"
 	}
 
 	collection := d.database.Collection(name)
-	store := mongosecret.NewStore(collection)
+	store := mongovalue.NewStore(collection)
 
 	if err := store.Index(ctx); err != nil {
 		return nil, err

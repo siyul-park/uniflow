@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/siyul-park/uniflow/pkg/chart"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 // InMemoryDriver is a mock driver that provides in-memory stores.
@@ -23,9 +23,9 @@ func (c *InMemoryDriver) SpecStore(_ context.Context, _ string) (spec.Store, err
 	return spec.NewStore(), nil
 }
 
-// SecretStore creates and returns a new in-memory Secret Store.
-func (c *InMemoryDriver) SecretStore(_ context.Context, _ string) (secret.Store, error) {
-	return secret.NewStore(), nil
+// ValueStore creates and returns a new in-memory Value Store.
+func (c *InMemoryDriver) ValueStore(_ context.Context, _ string) (value.Store, error) {
+	return value.NewStore(), nil
 }
 
 // ChartStore creates and returns a new in-memory Chart Store.

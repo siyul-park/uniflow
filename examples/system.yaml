@@ -37,26 +37,26 @@
       port: out[6]
 
     - method: POST
-      path: /v1/secrets
+      path: /v1/values
       port: out[7]
     - method: GET
-      path: /v1/secrets
+      path: /v1/values
       port: out[8]
     - method: PATCH
-      path: /v1/secrets
+      path: /v1/values
       port: out[9]
     - method: DELETE
-      path: /v1/secrets
+      path: /v1/values
       port: out[10]
 
     - method: GET
-      path: /v1/secrets/:id
+      path: /v1/values/:id
       port: out[11]
     - method: PATCH
-      path: /v1/secrets/:id
+      path: /v1/values/:id
       port: out[12]
     - method: DELETE
-      path: /v1/secrets/:id
+      path: /v1/values/:id
       port: out[13]
 
     - method: POST
@@ -107,26 +107,26 @@
         port: in
 
     out[7]:
-      - name: secrets_create
+      - name: values_create
         port: in
     out[8]:
-      - name: secrets_read_or_watch
+      - name: values_read_or_watch
         port: in
     out[9]:
-      - name: secrets_update
+      - name: values_update
         port: in
     out[10]:
-      - name: secrets_delete_with_query
+      - name: values_delete_with_query
         port: in
 
     out[11]:
-      - name: secrets_read_with_params
+      - name: values_read_with_params
         port: in
     out[12]:
-      - name: secrets_update_with_params
+      - name: values_update_with_params
         port: in
     out[13]:
-      - name: secrets_delete_with_params
+      - name: values_delete_with_params
         port: in
 
     out[14]:
@@ -356,24 +356,24 @@
         port: io
 
 - kind: if
-  name: secrets_read_or_watch
+  name: values_read_or_watch
   when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
-      - name: secrets_read_with_query
+      - name: values_read_with_query
         port: in
     out[1]:
-      - name: secrets_watch
+      - name: values_watch
         port: io
 
 - kind: step
-  name: secrets_create
+  name: values_create
   specs:
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
     - kind: syscall
-      opcode: secrets.create
+      opcode: values.create
     - kind: snippet
       language: javascript
       code: |
@@ -385,7 +385,7 @@
         }
 
 - kind: step
-  name: secrets_read_with_query
+  name: values_read_with_query
   specs:
     - kind: snippet
       language: javascript
@@ -396,7 +396,7 @@
           );
         }
     - kind: syscall
-      opcode: secrets.read
+      opcode: values.read
     - kind: snippet
       language: javascript
       code: |
@@ -408,13 +408,13 @@
         }
 
 - kind: step
-  name: secrets_update
+  name: values_update
   specs:
     - kind: snippet
       language: cel
       code: 'has(self.body) ? self.body : null'
     - kind: syscall
-      opcode: secrets.update
+      opcode: values.update
     - kind: snippet
       language: javascript
       code: |
@@ -426,7 +426,7 @@
         }
 
 - kind: step
-  name: secrets_delete_with_query
+  name: values_delete_with_query
   specs:
     - kind: snippet
       language: javascript
@@ -437,7 +437,7 @@
           );
         }
     - kind: syscall
-      opcode: secrets.delete
+      opcode: values.delete
     - kind: snippet
       language: javascript
       code: |
@@ -448,13 +448,13 @@
         }
 
 - kind: step
-  name: secrets_read_with_params
+  name: values_read_with_params
   specs:
     - kind: snippet
       language: cel
       code: 'has(self.params) ? self.params : null'
     - kind: syscall
-      opcode: secrets.read
+      opcode: values.read
     - kind: snippet
       language: javascript
       code: |
@@ -472,7 +472,7 @@
         }
 
 - kind: step
-  name: secrets_update_with_params
+  name: values_update_with_params
   specs:
     - kind: snippet
       language: javascript
@@ -481,7 +481,7 @@
           return { ...body, ...params };
         }
     - kind: syscall
-      opcode: secrets.update
+      opcode: values.update
     - kind: snippet
       language: javascript
       code: |
@@ -499,7 +499,7 @@
         }
 
 - kind: step
-  name: secrets_delete_with_params
+  name: values_delete_with_params
   specs:
     - kind: snippet
       language: javascript
@@ -508,7 +508,7 @@
           return { ...body, ...params };
         }
     - kind: syscall
-      opcode: secrets.delete
+      opcode: values.delete
     - kind: snippet
       language: javascript
       code: |
@@ -519,7 +519,7 @@
         }
 
 - kind: block
-  name: secrets_watch
+  name: values_watch
   specs:
     - kind: gateway
       name: websocket
@@ -527,7 +527,7 @@
 
     - kind: signal
       name: signal
-      topic: secrets
+      topic: values
       ports:
         out:
           - name: session

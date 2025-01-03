@@ -7,8 +7,8 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,18 +17,18 @@ func TestLoader_Load(t *testing.T) {
 	defer cancel()
 
 	chartStore := NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 
 	table := NewTable()
 	defer table.Close()
 
 	loader := NewLoader(LoaderConfig{
-		Table:       table,
-		ChartStore:  chartStore,
-		SecretStore: secretStore,
+		Table:      table,
+		ChartStore: chartStore,
+		ValueStore: valueStore,
 	})
 
-	scrt := &secret.Secret{
+	scrt := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -62,7 +62,7 @@ func TestLoader_Load(t *testing.T) {
 		},
 	}
 
-	secretStore.Store(ctx, scrt)
+	valueStore.Store(ctx, scrt)
 
 	chartStore.Store(ctx, chrt1)
 	chartStore.Store(ctx, chrt2)

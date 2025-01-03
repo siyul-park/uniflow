@@ -4,18 +4,18 @@ import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	SpecStore   spec.Store
-	SecretStore secret.Store
-	ChartStore  chart.Store
-	FS          afero.Fs
+	SpecStore  spec.Store
+	ValueStore value.Store
+	ChartStore chart.Store
+	FS         afero.Fs
 }
 
 // NewDeleteCommand creates a new cobra.Command for the delete command.
@@ -24,11 +24,11 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		Use:       "delete",
 		Short:     "Delete resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{specs, secrets, charts},
+		ValidArgs: []string{specs, values, charts},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:   runDeleteCommand(config.SpecStore, config.FS, spec.New),
-			secrets: runDeleteCommand(config.SecretStore, config.FS, secret.New),
-			charts:  runDeleteCommand(config.ChartStore, config.FS, chart.New),
+			specs:  runDeleteCommand(config.SpecStore, config.FS, spec.New),
+			values: runDeleteCommand(config.ValueStore, config.FS, value.New),
+			charts: runDeleteCommand(config.ChartStore, config.FS, chart.New),
 		}),
 	}
 

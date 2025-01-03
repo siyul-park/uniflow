@@ -15,9 +15,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +27,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	h := hook.New()
 
 	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 	chartStore := chart.NewStore()
 
 	fs := afero.NewMemMapFs()
@@ -64,12 +64,12 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			FS:         fs,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -109,12 +109,12 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			FS:         fs,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -153,12 +153,12 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			FS:         fs,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -180,13 +180,13 @@ func TestStartCommand_Execute(t *testing.T) {
 		}
 	})
 
-	t.Run(flagFromSecrets, func(t *testing.T) {
+	t.Run(flagFromValues, func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		filename := "secrets.json"
+		filename := "values.json"
 
-		scrt := &secret.Secret{
+		scrt := &value.Value{
 			ID:        uuid.Must(uuid.NewV7()),
 			Namespace: resource.DefaultNamespace,
 			Data:      faker.UUIDHyphenated(),
@@ -200,28 +200,28 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			FS:         fs,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
 		cmd.SetContext(ctx)
 
-		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromSecrets), filename})
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromValues), filename})
 
-		secretStream, _ := secretStore.Watch(ctx)
-		defer secretStream.Close()
+		valueStream, _ := valueStore.Watch(ctx)
+		defer valueStream.Close()
 
 		go func() {
 			_ = cmd.Execute()
 		}()
 
 		select {
-		case <-secretStream.Next():
+		case <-valueStream.Next():
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -247,12 +247,12 @@ func TestStartCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewStartCommand(StartConfig{
-			Scheme:      s,
-			Hook:        h,
-			FS:          fs,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			FS:         fs,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)

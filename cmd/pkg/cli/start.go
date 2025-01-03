@@ -12,20 +12,20 @@ import (
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // StartConfig holds the configuration for the start command.
 type StartConfig struct {
-	Scheme      *scheme.Scheme
-	Hook        *hook.Hook
-	SpecStore   spec.Store
-	SecretStore secret.Store
-	ChartStore  chart.Store
-	FS          afero.Fs
+	Scheme     *scheme.Scheme
+	Hook       *hook.Hook
+	SpecStore  spec.Store
+	ValueStore value.Store
+	ChartStore chart.Store
+	FS         afero.Fs
 }
 
 // NewStartCommand creates a new cobra.Command for the start command.
@@ -38,7 +38,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
-	cmd.PersistentFlags().String(flagFromSecrets, "", "Specify the file path containing secrets for the workflow")
+	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
 	cmd.PersistentFlags().String(flagFromCharts, "", "Specify the file path containing charts for the workflow")
 	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode for detailed output during execution")
 	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Set environment variables for the workflow execution")
@@ -49,7 +49,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 // runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
-	applySecrets := runApplyCommand(config.SecretStore, config.FS, alias(flagFilename, flagFromSecrets))
+	applyValues := runApplyCommand(config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
 	applyCharts := runApplyCommand(config.ChartStore, config.FS, alias(flagFilename, flagFromCharts))
 
 	return func(cmd *cobra.Command, _ []string) error {
@@ -78,7 +78,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err := applySpecs(cmd); err != nil {
 			return err
 		}
-		if err := applySecrets(cmd); err != nil {
+		if err := applyValues(cmd); err != nil {
 			return err
 		}
 		if err := applyCharts(cmd); err != nil {
@@ -98,7 +98,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			Scheme:      config.Scheme,
 			Hook:        h,
 			SpecStore:   config.SpecStore,
-			SecretStore: config.SecretStore,
+			ValueStore:  config.ValueStore,
 			ChartStore:  config.ChartStore,
 		})
 		defer r.Close()

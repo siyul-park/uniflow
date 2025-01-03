@@ -8,8 +8,8 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 // LoaderConfig holds configuration for the Loader.
@@ -18,7 +18,7 @@ type LoaderConfig struct {
 	Table       *Table            // Symbol table for storing loaded symbols
 	Scheme      *scheme.Scheme    // Scheme for decoding and compiling specs
 	SpecStore   spec.Store        // SpecStore to retrieve specs from
-	SecretStore secret.Store      // SecretStore to retrieve secrets from
+	ValueStore  value.Store       // ValueStore to retrieve values from
 }
 
 // Loader synchronizes with spec.Store to load spec.Spec into the Table.
@@ -27,7 +27,7 @@ type Loader struct {
 	table       *Table
 	scheme      *scheme.Scheme
 	specStore   spec.Store
-	secretStore secret.Store
+	valueStore  value.Store
 }
 
 // NewLoader creates a new Loader instance with the provided configuration.
@@ -37,7 +37,7 @@ func NewLoader(config LoaderConfig) *Loader {
 		table:       config.Table,
 		scheme:      config.Scheme,
 		specStore:   config.SpecStore,
-		secretStore: config.SecretStore,
+		valueStore:  config.ValueStore,
 	}
 }
 
@@ -72,12 +72,12 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		specs[i] = unstructured
 	}
 
-	var secrets []*secret.Secret
+	var values []*value.Value
 	for _, sp := range specs {
 		for _, vals := range sp.GetEnv() {
 			for _, val := range vals {
 				if val.IsIdentified() {
-					secrets = append(secrets, &secret.Secret{
+					values = append(values, &value.Value{
 						ID:        val.ID,
 						Namespace: sp.GetNamespace(),
 						Name:      val.Name,
@@ -87,15 +87,15 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		}
 	}
 
-	if len(secrets) > 0 {
-		secrets, err = l.secretStore.Load(ctx, secrets...)
+	if len(values) > 0 {
+		values, err = l.valueStore.Load(ctx, values...)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(l.environment) > 0 {
-		secrets = append(secrets, &secret.Secret{Data: l.environment})
+		values = append(values, &value.Value{Data: l.environment})
 	}
 
 	var symbols []*Symbol
@@ -104,7 +104,7 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 		unstructured := &spec.Unstructured{}
 		if err := spec.As(sp, unstructured); err != nil {
 			errs = append(errs, err)
-		} else if err := unstructured.Bind(secrets...); err != nil {
+		} else if err := unstructured.Bind(values...); err != nil {
 			errs = append(errs, err)
 		} else if err := unstructured.Build(); err != nil {
 			errs = append(errs, err)

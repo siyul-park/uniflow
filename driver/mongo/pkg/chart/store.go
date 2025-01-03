@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -66,7 +66,7 @@ func (s *Store) Index(ctx context.Context) error {
 }
 
 // Watch returns a Stream that monitors changes matching the specified filter.
-func (s *Store) Watch(ctx context.Context, charts ...*chart.Chart) (secret.Stream, error) {
+func (s *Store) Watch(ctx context.Context, charts ...*chart.Chart) (value.Stream, error) {
 	filter := s.filter(charts...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)
@@ -213,10 +213,10 @@ func (s *Store) filter(charts ...*chart.Chart) bson.M {
 			andFilters["_id"] = v.GetID()
 		}
 		if v.GetNamespace() != "" {
-			andFilters[secret.KeyNamespace] = v.GetNamespace()
+			andFilters[value.KeyNamespace] = v.GetNamespace()
 		}
 		if v.GetName() != "" {
-			andFilters[secret.KeyName] = v.GetName()
+			andFilters[value.KeyName] = v.GetName()
 		}
 		if len(andFilters) > 0 {
 			orFilters = append(orFilters, andFilters)

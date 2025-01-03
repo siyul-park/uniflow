@@ -32,19 +32,19 @@ import (
 const configFile = ".uniflow.toml"
 
 const (
-	topicSpecs   = "specs"
-	topicSecrets = "secrets"
-	topicCharts  = "charts"
+	topicSpecs  = "specs"
+	topicValues = "values"
+	topicCharts = "charts"
 
 	opCreateSpecs = "specs.create"
 	opReadSpecs   = "specs.read"
 	opUpdateSpecs = "specs.update"
 	opDeleteSpecs = "specs.delete"
 
-	opCreateSecrets = "secrets.create"
-	opReadSecrets   = "secrets.read"
-	opUpdateSecrets = "secrets.update"
-	opDeleteSecrets = "secrets.delete"
+	opCreateValues = "values.create"
+	opReadValues   = "values.read"
+	opUpdateValues = "values.update"
+	opDeleteValues = "values.delete"
 
 	opCreateCharts = "charts.create"
 	opReadCharts   = "charts.read"
@@ -58,7 +58,7 @@ func init() {
 	if err := k.Set(cli.EnvCollectionSpecs, "specs"); err != nil {
 		log.Fatal(err)
 	}
-	if err := k.Set(cli.EnvCollectionSecrets, "secrets"); err != nil {
+	if err := k.Set(cli.EnvCollectionValues, "values"); err != nil {
 		log.Fatal(err)
 	}
 	if err := k.Set(cli.EnvCollectionCharts, "charts"); err != nil {
@@ -80,7 +80,7 @@ func main() {
 	databaseURL := k.String(cli.EnvDatabaseURL)
 	databaseName := k.String(cli.EnvDatabaseName)
 	collectionNodes := k.String(cli.EnvCollectionSpecs)
-	collectionSecrets := k.String(cli.EnvCollectionSecrets)
+	collectionValues := k.String(cli.EnvCollectionValues)
 	collectionCharts := k.String(cli.EnvCollectionCharts)
 
 	drv := driver.NewInMemoryDriver()
@@ -97,7 +97,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	secretStore, err := drv.SecretStore(ctx, collectionSecrets)
+	valueStore, err := drv.ValueStore(ctx, collectionValues)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,23 +118,23 @@ func main() {
 	languages.Store(typescript.Language, typescript.NewCompiler())
 
 	signals := map[string]any{
-		topicSpecs:   system.WatchResource(specStore),
-		topicSecrets: system.WatchResource(secretStore),
-		topicCharts:  system.WatchResource(chartStore),
+		topicSpecs:  system.WatchResource(specStore),
+		topicValues: system.WatchResource(valueStore),
+		topicCharts: system.WatchResource(chartStore),
 	}
 	calls := map[string]any{
-		opCreateSpecs:   system.CreateResource(specStore),
-		opReadSpecs:     system.ReadResource(specStore),
-		opUpdateSpecs:   system.UpdateResource(specStore),
-		opDeleteSpecs:   system.DeleteResource(specStore),
-		opCreateSecrets: system.CreateResource(secretStore),
-		opReadSecrets:   system.ReadResource(secretStore),
-		opUpdateSecrets: system.UpdateResource(secretStore),
-		opDeleteSecrets: system.DeleteResource(secretStore),
-		opCreateCharts:  system.CreateResource(chartStore),
-		opReadCharts:    system.ReadResource(chartStore),
-		opUpdateCharts:  system.UpdateResource(chartStore),
-		opDeleteCharts:  system.DeleteResource(chartStore),
+		opCreateSpecs:  system.CreateResource(specStore),
+		opReadSpecs:    system.ReadResource(specStore),
+		opUpdateSpecs:  system.UpdateResource(specStore),
+		opDeleteSpecs:  system.DeleteResource(specStore),
+		opCreateValues: system.CreateResource(valueStore),
+		opReadValues:   system.ReadResource(valueStore),
+		opUpdateValues: system.UpdateResource(valueStore),
+		opDeleteValues: system.DeleteResource(valueStore),
+		opCreateCharts: system.CreateResource(chartStore),
+		opReadCharts:   system.ReadResource(chartStore),
+		opUpdateCharts: system.UpdateResource(chartStore),
+		opDeleteCharts: system.DeleteResource(chartStore),
 	}
 
 	systemAddToScheme := system.AddToScheme()
@@ -175,12 +175,12 @@ func main() {
 		FS:    fs,
 	})
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
-		Scheme:      scheme,
-		Hook:        hook,
-		ChartStore:  chartStore,
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		FS:          fs,
+		Scheme:     scheme,
+		Hook:       hook,
+		ChartStore: chartStore,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		FS:         fs,
 	}))
 
 	if err := cmd.Execute(); err != nil {

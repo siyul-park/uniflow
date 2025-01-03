@@ -1,4 +1,4 @@
-package secret
+package value
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	_ "github.com/siyul-park/uniflow/driver/mongo/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -36,8 +36,8 @@ type changeDocument struct {
 	} `bson:"documentKey"`
 }
 
-var _ secret.Store = (*Store)(nil)
-var _ secret.Stream = (*Stream)(nil)
+var _ value.Store = (*Store)(nil)
+var _ value.Stream = (*Stream)(nil)
 
 // NewStore creates a new Store with the specified MongoDB collection.
 func NewStore(collection *mongo.Collection) *Store {
@@ -52,11 +52,11 @@ func (s *Store) Index(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: secret.KeyNamespace, Value: 1},
-				{Key: secret.KeyName, Value: 1},
+				{Key: value.KeyNamespace, Value: 1},
+				{Key: value.KeyName, Value: 1},
 			},
 			Options: options.Index().SetUnique(true).
-				SetPartialFilterExpression(bson.M{secret.KeyName: bson.M{"$exists": true}}),
+				SetPartialFilterExpression(bson.M{value.KeyName: bson.M{"$exists": true}}),
 		},
 	}
 
@@ -65,8 +65,8 @@ func (s *Store) Index(ctx context.Context) error {
 }
 
 // Watch returns a Stream that monitors changes matching the specified filter.
-func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (secret.Stream, error) {
-	filter := s.filter(secrets...)
+func (s *Store) Watch(ctx context.Context, values ...*value.Value) (value.Stream, error) {
+	filter := s.filter(values...)
 
 	opts := options.ChangeStream().SetFullDocument(options.UpdateLookup)
 	changeStream, err := s.collection.Watch(ctx, mongo.Pipeline{bson.D{{Key: "$match", Value: filter}}}, opts)
@@ -88,9 +88,9 @@ func (s *Store) Watch(ctx context.Context, secrets ...*secret.Secret) (secret.St
 }
 
 // Load retrieves Specs from the store that match the given criteria.
-func (s *Store) Load(ctx context.Context, secrets ...*secret.Secret) ([]*secret.Secret, error) {
-	filter := s.filter(secrets...)
-	limit := int64(s.limit(secrets...))
+func (s *Store) Load(ctx context.Context, values ...*value.Value) ([]*value.Value, error) {
+	filter := s.filter(values...)
+	limit := int64(s.limit(values...))
 
 	cursor, err := s.collection.Find(ctx, filter, options.Find().SetLimit(limit))
 	if err != nil {
@@ -98,9 +98,9 @@ func (s *Store) Load(ctx context.Context, secrets ...*secret.Secret) ([]*secret.
 	}
 	defer cursor.Close(ctx)
 
-	var result []*secret.Secret
+	var result []*value.Value
 	for cursor.Next(ctx) {
-		scrt := &secret.Secret{}
+		scrt := &value.Value{}
 		if err := cursor.Decode(&scrt); err != nil {
 			return nil, err
 		}
@@ -114,9 +114,9 @@ func (s *Store) Load(ctx context.Context, secrets ...*secret.Secret) ([]*secret.
 }
 
 // Store saves the given Specs into the database.
-func (s *Store) Store(ctx context.Context, secrets ...*secret.Secret) (int, error) {
+func (s *Store) Store(ctx context.Context, values ...*value.Value) (int, error) {
 	var docs []any
-	for _, scrt := range secrets {
+	for _, scrt := range values {
 		if scrt.GetID() == uuid.Nil {
 			scrt.SetID(uuid.Must(uuid.NewV7()))
 		}
@@ -142,9 +142,9 @@ func (s *Store) Store(ctx context.Context, secrets ...*secret.Secret) (int, erro
 }
 
 // Swap updates existing Specs in the database with the provided data.
-func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error) {
-	ids := make([]uuid.UUID, len(secrets))
-	for i, scrt := range secrets {
+func (s *Store) Swap(ctx context.Context, values ...*value.Value) (int, error) {
+	ids := make([]uuid.UUID, len(values))
+	for i, scrt := range values {
 		if scrt.GetID() == uuid.Nil {
 			scrt.SetID(uuid.Must(uuid.NewV7()))
 		}
@@ -164,9 +164,9 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 	}
 	defer cursor.Close(ctx)
 
-	ok := make(map[uuid.UUID]*secret.Secret)
+	ok := make(map[uuid.UUID]*value.Value)
 	for cursor.Next(ctx) {
-		scrt := &secret.Secret{}
+		scrt := &value.Value{}
 		if err := cursor.Decode(&scrt); err != nil {
 			return 0, err
 		}
@@ -174,7 +174,7 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 	}
 
 	count := 0
-	for _, scrt := range secrets {
+	for _, scrt := range values {
 		exist, ok := ok[scrt.GetID()]
 		if !ok {
 			continue
@@ -195,8 +195,8 @@ func (s *Store) Swap(ctx context.Context, secrets ...*secret.Secret) (int, error
 }
 
 // Delete removes Specs from the store based on the provided criteria.
-func (s *Store) Delete(ctx context.Context, secrets ...*secret.Secret) (int, error) {
-	filter := s.filter(secrets...)
+func (s *Store) Delete(ctx context.Context, values ...*value.Value) (int, error) {
+	filter := s.filter(values...)
 	res, err := s.collection.DeleteMany(ctx, filter)
 	if err != nil {
 		return 0, err
@@ -204,18 +204,18 @@ func (s *Store) Delete(ctx context.Context, secrets ...*secret.Secret) (int, err
 	return int(res.DeletedCount), nil
 }
 
-func (s *Store) filter(secrets ...*secret.Secret) bson.M {
+func (s *Store) filter(values ...*value.Value) bson.M {
 	var orFilters []bson.M
-	for _, v := range secrets {
+	for _, v := range values {
 		andFilters := bson.M{}
 		if v.GetID() != uuid.Nil {
 			andFilters["_id"] = v.GetID()
 		}
 		if v.GetNamespace() != "" {
-			andFilters[secret.KeyNamespace] = v.GetNamespace()
+			andFilters[value.KeyNamespace] = v.GetNamespace()
 		}
 		if v.GetName() != "" {
-			andFilters[secret.KeyName] = v.GetName()
+			andFilters[value.KeyName] = v.GetName()
 		}
 		if len(andFilters) > 0 {
 			orFilters = append(orFilters, andFilters)
@@ -232,9 +232,9 @@ func (s *Store) filter(secrets ...*secret.Secret) bson.M {
 	}
 }
 
-func (s *Store) limit(secrets ...*secret.Secret) int {
+func (s *Store) limit(values ...*value.Value) int {
 	limit := 0
-	for _, v := range secrets {
+	for _, v := range values {
 		if v.GetID() != uuid.Nil || v.GetName() != "" {
 			limit += 1
 		} else if v.GetNamespace() != "" {

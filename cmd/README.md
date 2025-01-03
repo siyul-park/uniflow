@@ -6,13 +6,13 @@ Effectively manage your workflows using the versatile Command Line Interface (CL
 
 Settings can be modified using the `.uniflow.toml` file or system environment variables. The key configuration options are:
 
-| TOML Key             | Environment Variable Key | Example                  |
-|----------------------|--------------------------|--------------------------|
-| `database.url`       | `DATABASE_URL`           | `mem://` or `mongodb://` |
-| `database.name`      | `DATABASE_NAME`          | -                        |
-| `collection.charts`  | `COLLECTION_CHARTS`      | `charts`                 |
-| `collection.specs`   | `COLLECTION_SPECS`       | `nodes`                  |
-| `collection.secrets` | `COLLECTION_SECRETS`     | `secrets`                |
+| TOML Key            | Environment Variable Key | Example                  |
+|---------------------|--------------------------|--------------------------|
+| `database.url`      | `DATABASE_URL`           | `mem://` or `mongodb://` |
+| `database.name`     | `DATABASE_NAME`          | -                        |
+| `collection.charts` | `COLLECTION_CHARTS`      | `charts`                 |
+| `collection.specs`  | `COLLECTION_SPECS`       | `specs`                  |
+| `collection.values` | `COLLECTION_VALUES`      | `values`                 |
 
 If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 
@@ -34,10 +34,10 @@ If the namespace is empty, you can provide an initial node specification using t
 ./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
-You can specify an initial secrets file with the `--from-secrets` flag:
+You can specify an initial values file with the `--from-values` flag:
 
 ```sh
-./dist/uniflow start --namespace default --from-secrets examples/secrets.yaml
+./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
 Charts can be initialized using the `--from-charts` flag:
@@ -58,10 +58,10 @@ The `apply` command applies the contents of a specified file to the namespace. I
 ./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
 ```
 
-To apply secrets:
+To apply values:
 
 ```sh
-./dist/uniflowctl apply secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
 ```
 
 To apply charts:
@@ -78,10 +78,10 @@ The `delete` command removes all resources defined in the specified file. If no 
 ./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
 ```
 
-To delete secrets:
+To delete values:
 
 ```sh
-./dist/uniflowctl delete secrets --namespace default --filename examples/secrets.yaml
+./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
 ```
 
 To delete charts:
@@ -98,10 +98,10 @@ The `get` command retrieves all resources in the specified namespace. If no name
 ./dist/uniflowctl get nodes --namespace default
 ```
 
-To retrieve secrets:
+To retrieve values:
 
 ```sh
-./dist/uniflowctl get secrets --namespace default
+./dist/uniflowctl get values --namespace default
 ```
 
 To retrieve charts:

@@ -12,9 +12,9 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,14 +31,14 @@ func TestRuntime_Load(t *testing.T) {
 	}))
 
 	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 	chartStore := chart.NewStore()
 
 	r := New(Config{
-		Scheme:      s,
-		SpecStore:   specStore,
-		SecretStore: secretStore,
-		ChartStore:  chartStore,
+		Scheme:     s,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		ChartStore: chartStore,
 	})
 	defer r.Close()
 
@@ -67,7 +67,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}))
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -83,11 +83,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		defer r.Close()
 
@@ -121,7 +121,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}
 	})
 
-	t.Run("Secret", func(t *testing.T) {
+	t.Run("Value", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -134,7 +134,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}))
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -150,11 +150,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 
 		err := r.Watch(ctx)
@@ -162,7 +162,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		go r.Reconcile(ctx)
 
-		scrt := &secret.Secret{
+		scrt := &value.Value{
 			ID:   uuid.Must(uuid.NewV7()),
 			Data: faker.UUIDHyphenated(),
 		}
@@ -181,7 +181,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}
 
 		specStore.Store(ctx, meta)
-		secretStore.Store(ctx, scrt)
+		valueStore.Store(ctx, scrt)
 
 		select {
 		case sb := <-symbols:
@@ -191,7 +191,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.NoError(t, ctx.Err())
 		}
 
-		secretStore.Delete(ctx, scrt)
+		valueStore.Delete(ctx, scrt)
 
 		select {
 		case sb := <-symbols:
@@ -209,7 +209,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -225,11 +225,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		defer r.Close()
 
@@ -283,7 +283,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}))
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -295,11 +295,11 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		defer r.Close()
 
@@ -324,7 +324,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}
 	})
 
-	b.Run("Secret", func(b *testing.B) {
+	b.Run("Value", func(b *testing.B) {
 		ctx := context.TODO()
 
 		s := scheme.New()
@@ -336,7 +336,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}))
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -348,11 +348,11 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 
 		err := r.Watch(ctx)
@@ -361,7 +361,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		go r.Reconcile(ctx)
 
 		for i := 0; i < b.N; i++ {
-			scrt := &secret.Secret{
+			scrt := &value.Value{
 				ID:   uuid.Must(uuid.NewV7()),
 				Data: faker.UUIDHyphenated(),
 			}
@@ -380,7 +380,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			}
 
 			specStore.Store(ctx, meta)
-			secretStore.Store(ctx, scrt)
+			valueStore.Store(ctx, scrt)
 
 			select {
 			case <-symbols:
@@ -396,7 +396,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		kind := faker.UUIDHyphenated()
 
 		specStore := spec.NewStore()
-		secretStore := secret.NewStore()
+		valueStore := value.NewStore()
 		chartStore := chart.NewStore()
 
 		h := hook.New()
@@ -408,11 +408,11 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		}))
 
 		r := New(Config{
-			Scheme:      s,
-			Hook:        h,
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			Scheme:     s,
+			Hook:       h,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		defer r.Close()
 

@@ -8,8 +8,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestLinker_Link(t *testing.T) {
 
 	l := NewLinker(s)
 
-	scrt := &secret.Secret{ID: uuid.Must(uuid.NewV7())}
+	scrt := &value.Value{ID: uuid.Must(uuid.NewV7())}
 	chrt := &Chart{
 		ID:        uuid.Must(uuid.NewV7()),
 		Namespace: resource.DefaultNamespace,

@@ -8,14 +8,14 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/chart"
-	"github.com/siyul-park/uniflow/pkg/secret"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetCommand_Execute(t *testing.T) {
 	specStore := spec.NewStore()
-	secretStore := secret.NewStore()
+	valueStore := value.NewStore()
 	chartStore := chart.NewStore()
 
 	t.Run("GetSpec", func(t *testing.T) {
@@ -35,9 +35,9 @@ func TestGetCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewGetCommand(GetConfig{
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -49,28 +49,28 @@ func TestGetCommand_Execute(t *testing.T) {
 		assert.Contains(t, output.String(), meta.Name)
 	})
 
-	t.Run("GetSecret", func(t *testing.T) {
+	t.Run("GetValue", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		scrt := &secret.Secret{
+		scrt := &value.Value{
 			Name: faker.UUIDHyphenated(),
 			Data: faker.UUIDHyphenated(),
 		}
 
-		_, err := secretStore.Store(ctx, scrt)
+		_, err := valueStore.Store(ctx, scrt)
 		assert.NoError(t, err)
 
 		output := new(bytes.Buffer)
 
 		cmd := NewGetCommand(GetConfig{
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
-		cmd.SetArgs([]string{secrets})
+		cmd.SetArgs([]string{values})
 
 		err = cmd.Execute()
 		assert.NoError(t, err)
@@ -93,9 +93,9 @@ func TestGetCommand_Execute(t *testing.T) {
 		output := new(bytes.Buffer)
 
 		cmd := NewGetCommand(GetConfig{
-			SpecStore:   specStore,
-			SecretStore: secretStore,
-			ChartStore:  chartStore,
+			SpecStore:  specStore,
+			ValueStore: valueStore,
+			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)

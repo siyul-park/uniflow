@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/secret"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func TestAs(t *testing.T) {
 		Name:        faker.UUIDHyphenated(),
 		Annotations: map[string]string{"key": "value"},
 		Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
-		Env:         map[string][]Value{"env1": {{Name: "secret1", Data: "value1"}}},
+		Env:         map[string][]Value{"env1": {{Name: "value1", Data: "value1"}}},
 	}
 
 	unstructured := &Unstructured{}
@@ -89,10 +89,10 @@ func TestMeta_SetEnv(t *testing.T) {
 }
 
 func TestMeta_IsBound(t *testing.T) {
-	sec1 := &secret.Secret{
+	sec1 := &value.Value{
 		ID: uuid.Must(uuid.NewV7()),
 	}
-	sec2 := &secret.Secret{
+	sec2 := &value.Value{
 		ID: uuid.Must(uuid.NewV7()),
 	}
 
@@ -114,7 +114,7 @@ func TestMeta_IsBound(t *testing.T) {
 }
 
 func TestMeta_Bind(t *testing.T) {
-	sec := &secret.Secret{
+	sec := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
