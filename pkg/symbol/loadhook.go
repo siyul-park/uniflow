@@ -19,8 +19,8 @@ type loadHook struct {
 	fn func(*Symbol) error
 }
 
-var _ LoadHook = (*loadHook)(nil)
 var _ LoadHook = (LoadHooks)(nil)
+var _ LoadHook = (*loadHook)(nil)
 
 // LoadFunc wraps a function as a LoadHook.
 func LoadFunc(fn func(*Symbol) error) LoadHook {
@@ -47,8 +47,8 @@ func LoadListenerHook(hook LoadHook) LoadHook {
 }
 
 // Load executes all LoadHooks sequentially.
-func (hooks LoadHooks) Load(symbol *Symbol) error {
-	for _, hook := range hooks {
+func (h LoadHooks) Load(symbol *Symbol) error {
+	for _, hook := range h {
 		if err := hook.Load(symbol); err != nil {
 			return err
 		}

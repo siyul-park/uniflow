@@ -5,18 +5,16 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Agent manages symbols, processes, charts, and hooks for ports and packets.
+// Agent manages symbols, processes, and hooks for ports and packets.
 type Agent struct {
 	symbols   map[uuid.UUID]*symbol.Symbol
 	processes map[uuid.UUID]*process.Process
-	charts    map[uuid.UUID]*chart.Chart
 	frames    map[uuid.UUID][]*Frame
 	inbounds  map[uuid.UUID]map[string]port.OpenHook
 	outbounds map[uuid.UUID]map[string]port.OpenHook
@@ -26,15 +24,12 @@ type Agent struct {
 
 var _ symbol.LoadHook = (*Agent)(nil)
 var _ symbol.UnloadHook = (*Agent)(nil)
-var _ chart.LinkHook = (*Agent)(nil)
-var _ chart.UnlinkHook = (*Agent)(nil)
 
 // NewAgent initializes and returns a new Agent.
 func NewAgent() *Agent {
 	return &Agent{
 		symbols:   make(map[uuid.UUID]*symbol.Symbol),
 		processes: make(map[uuid.UUID]*process.Process),
-		charts:    make(map[uuid.UUID]*chart.Chart),
 		frames:    make(map[uuid.UUID][]*Frame),
 		inbounds:  make(map[uuid.UUID]map[string]port.OpenHook),
 		outbounds: make(map[uuid.UUID]map[string]port.OpenHook),
@@ -109,26 +104,6 @@ func (a *Agent) Process(id uuid.UUID) *process.Process {
 	return a.processes[id]
 }
 
-// Charts returns a list of all registered charts.
-func (a *Agent) Charts() []*chart.Chart {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	charts := make([]*chart.Chart, 0, len(a.charts))
-	for _, ch := range a.charts {
-		charts = append(charts, ch)
-	}
-	return charts
-}
-
-// Chart returns a chart by UUID.
-func (a *Agent) Chart(id uuid.UUID) *chart.Chart {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	return a.charts[id]
-}
-
 // Frames returns the frames associated with a specific process UUID.
 func (a *Agent) Frames(id uuid.UUID) []*Frame {
 	a.mu.RLock()
@@ -201,24 +176,6 @@ func (a *Agent) Unload(sym *symbol.Symbol) error {
 	return nil
 }
 
-// Link registers a chart.
-func (a *Agent) Link(chrt *chart.Chart) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	a.charts[chrt.GetID()] = chrt
-	return nil
-}
-
-// Unlink removes a chart.
-func (a *Agent) Unlink(chrt *chart.Chart) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	delete(a.charts, chrt.GetID())
-	return nil
-}
-
 // Close clears all symbols, processes, and registered watchers.
 func (a *Agent) Close() {
 	a.mu.Lock()
@@ -226,7 +183,6 @@ func (a *Agent) Close() {
 
 	a.symbols = make(map[uuid.UUID]*symbol.Symbol)
 	a.processes = make(map[uuid.UUID]*process.Process)
-	a.charts = make(map[uuid.UUID]*chart.Chart)
 	a.frames = make(map[uuid.UUID][]*Frame)
 	a.watchers = nil
 }

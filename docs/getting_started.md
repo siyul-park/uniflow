@@ -39,7 +39,6 @@ Settings can be modified using the `.uniflow.toml` file or system environment va
 |---------------------|--------------------------|--------------------------|
 | `database.url`      | `DATABASE_URL`           | `mem://` or `mongodb://` |
 | `database.name`     | `DATABASE_NAME`          | -                        |
-| `collection.charts` | `COLLECTION_CHARTS`      | `charts`                 |
 | `collection.specs`  | `COLLECTION_SPECS`       | `nodes`                  |
 | `collection.values` | `COLLECTION_VALUES`      | `values`                 |
 
@@ -113,12 +112,6 @@ You can specify an initial values file with the `--from-values` flag:
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-Charts can be initialized using the `--from-charts` flag:
-
-```sh
-./dist/uniflow start --namespace default --from-charts examples/charts.yaml
-```
-
 ## Using Uniflowctl
 
 `uniflowctl` is a command used to manage resources within a namespace.
@@ -137,12 +130,6 @@ To apply values:
 ./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
 ```
 
-To apply charts:
-
-```sh
-./dist/uniflowctl apply charts --namespace default --filename examples/charts.yaml
-```
-
 ### Delete Command
 
 The `delete` command removes all resources defined in the specified file. If no namespace is specified, the `default` namespace is used.
@@ -157,11 +144,6 @@ To delete values:
 ./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
 ```
 
-To delete charts:
-
-```sh
-./dist/uniflowctl delete charts --namespace default --filename examples/charts.yaml
-```
 
 ### Get Command
 
@@ -177,11 +159,6 @@ To retrieve values:
 ./dist/uniflowctl get values --namespace default
 ```
 
-To retrieve charts:
-
-```sh
-./dist/uniflowctl get charts --namespace default
-```
 
 ## Integrating HTTP API
 

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -14,7 +13,6 @@ import (
 type DeleteConfig struct {
 	SpecStore  spec.Store
 	ValueStore value.Store
-	ChartStore chart.Store
 	FS         afero.Fs
 }
 
@@ -24,11 +22,10 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		Use:       "delete",
 		Short:     "Delete resources from the specified namespace",
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		ValidArgs: []string{specs, values, charts},
+		ValidArgs: []string{specs, values},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
 			specs:  runDeleteCommand(config.SpecStore, config.FS, spec.New),
 			values: runDeleteCommand(config.ValueStore, config.FS, value.New),
-			charts: runDeleteCommand(config.ChartStore, config.FS, chart.New),
 		}),
 	}
 

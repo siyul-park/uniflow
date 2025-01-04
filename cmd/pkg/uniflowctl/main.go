@@ -27,9 +27,6 @@ func init() {
 	if err := k.Set(cli.EnvCollectionValues, "values"); err != nil {
 		log.Fatal(err)
 	}
-	if err := k.Set(cli.EnvCollectionCharts, "charts"); err != nil {
-		log.Fatal(err)
-	}
 
 	_ = k.Load(file.Provider(configFile), toml.Parser())
 
@@ -47,7 +44,6 @@ func main() {
 	databaseName := k.String(cli.EnvDatabaseName)
 	collectionNodes := k.String(cli.EnvCollectionSpecs)
 	collectionValues := k.String(cli.EnvCollectionValues)
-	collectionCharts := k.String(cli.EnvCollectionCharts)
 
 	drv := driver.NewInMemoryDriver()
 	defer drv.Close(ctx)
@@ -59,15 +55,11 @@ func main() {
 		}
 	}
 
-	specStore, err := drv.SpecStore(ctx, collectionNodes)
+	specStore, err := drv.NewSpecStore(ctx, collectionNodes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	valueStore, err := drv.ValueStore(ctx, collectionValues)
-	if err != nil {
-		log.Fatal(err)
-	}
-	chartStore, err := drv.ChartStore(ctx, collectionCharts)
+	valueStore, err := drv.NewValueStore(ctx, collectionValues)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,19 +73,16 @@ func main() {
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
-		ChartStore: chartStore,
 		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
-		ChartStore: chartStore,
 		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
-		ChartStore: chartStore,
 	}))
 
 	if err := cmd.Execute(); err != nil {

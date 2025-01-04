@@ -39,7 +39,6 @@ make build
 |---------------------|---------------------|--------------------------|
 | `database.url`      | `DATABASE_URL`      | `mem://` 또는 `mongodb://` |
 | `database.name`     | `DATABASE_NAME`     | -                        |
-| `collection.charts` | `COLLECTION_CHARTS` | `charts`                 |
 | `collection.specs`  | `COLLECTION_SPECS`  | `nodes`                  |
 | `collection.values` | `COLLECTION_VALUES` | `values`                 |
 
@@ -113,12 +112,6 @@ pong#
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-초기 차트 파일은 `--from-charts` 플래그로 제공할 수 있습니다:
-
-```sh
-./dist/uniflow start --namespace default --from-charts examples/charts.yaml
-```
-
 ## Uniflowctl 사용하기
 
 `uniflowctl`는 네임스페이스 내에서 리소스를 관리하는 명령어입니다.
@@ -137,12 +130,6 @@ pong#
 ./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
 ```
 
-차트를 적용하려면:
-
-```sh
-./dist/uniflowctl apply charts --namespace default --filename examples/charts.yaml
-```
-
 ### Delete 명령어
 
 `delete` 명령어는 지정된 파일에 정의된 모든 리소스를 삭제합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
@@ -157,12 +144,6 @@ pong#
 ./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
 ```
 
-차트를 삭제하려면:
-
-```sh
-./dist/uniflowctl delete charts --namespace default --filename examples/charts.yaml
-```
-
 ### Get 명령어
 
 `get` 명령어는 지정된 네임스페이스 내 모든 리소스를 조회합니다. 네임스페이스가 지정되지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
@@ -175,12 +156,6 @@ pong#
 
 ```sh
 ./dist/uniflowctl get values --namespace default
-```
-
-차트를 조회하려면:
-
-```sh
-./dist/uniflowctl get charts --namespace default
 ```
 
 ## HTTP API 통합

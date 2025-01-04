@@ -5,5 +5,4 @@ const (
 	EnvDatabaseName     = "database.name"
 	EnvCollectionSpecs  = "collection.specs"
 	EnvCollectionValues = "collection.values"
-	EnvCollectionCharts = "collection.charts"
 )

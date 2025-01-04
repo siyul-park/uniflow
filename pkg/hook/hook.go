@@ -3,21 +3,16 @@ package hook
 import (
 	"sync"
 
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 )
 
-// Hook represents a collection of hook functions that can be executed on charts and symbols.
+// Hook represents a collection of hook functions that can be executed on symbols.
 type Hook struct {
-	linkHooks   chart.LinkHooks
-	unlinkHooks chart.UnlinkHooks
 	loadHooks   symbol.LoadHooks
 	unloadHooks symbol.UnloadHooks
 	mu          sync.RWMutex
 }
 
-var _ chart.LinkHook = (*Hook)(nil)
-var _ chart.UnlinkHook = (*Hook)(nil)
 var _ symbol.LoadHook = (*Hook)(nil)
 var _ symbol.UnloadHook = (*Hook)(nil)
 
@@ -26,52 +21,32 @@ func New() *Hook {
 	return &Hook{}
 }
 
-// AddLinkHook adds a LinkHook function to the Hook.
-func (h *Hook) AddLinkHook(hook chart.LinkHook) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.linkHooks = append(h.linkHooks, hook)
-}
-
-// AddUnlinkHook adds an UnlinkHook function to the Hook.
-func (h *Hook) AddUnlinkHook(hook chart.UnlinkHook) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.unlinkHooks = append(h.unlinkHooks, hook)
-}
-
 // AddLoadHook adds a LoadHook function to the Hook.
-func (h *Hook) AddLoadHook(hook symbol.LoadHook) {
+func (h *Hook) AddLoadHook(hook symbol.LoadHook) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	for _, h := range h.loadHooks {
+		if h == hook {
+			return false
+		}
+	}
 	h.loadHooks = append(h.loadHooks, hook)
+	return true
 }
 
 // AddUnloadHook adds an UnloadHook function to the Hook.
-func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) {
+func (h *Hook) AddUnloadHook(hook symbol.UnloadHook) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	for _, h := range h.unloadHooks {
+		if h == hook {
+			return false
+		}
+	}
 	h.unloadHooks = append(h.unloadHooks, hook)
-}
-
-// Link executes all LinkHooks registered in the Hook on the provided chart.
-func (h *Hook) Link(chrt *chart.Chart) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	return h.linkHooks.Link(chrt)
-}
-
-// Unlink executes all UnlinkHooks registered in the Hook on the provided chart.
-func (h *Hook) Unlink(chrt *chart.Chart) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	return h.unlinkHooks.Unlink(chrt)
+	return true
 }
 
 // Load executes all LoadHooks registered in the Hook on the provided symbol.

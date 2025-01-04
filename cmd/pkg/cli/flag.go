@@ -6,7 +6,6 @@ const (
 
 	flagFromSpecs  = "from-specs"
 	flagFromValues = "from-values"
-	flagFromCharts = "from-charts"
 
 	flagDebug       = "debug"
 	flagEnvironment = "env"

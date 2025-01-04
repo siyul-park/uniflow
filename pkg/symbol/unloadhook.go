@@ -19,8 +19,8 @@ type unloadHook struct {
 	fn func(*Symbol) error
 }
 
-var _ UnloadHook = (*unloadHook)(nil)
 var _ UnloadHook = (UnloadHooks)(nil)
+var _ UnloadHook = (*unloadHook)(nil)
 
 // UnloadFunc wraps a function as an UnloadHook.
 func UnloadFunc(fn func(*Symbol) error) UnloadHook {
@@ -47,9 +47,9 @@ func UnloadListenerHook(hook UnloadHook) UnloadHook {
 }
 
 // Unload executes all UnloadHooks in reverse order.
-func (hooks UnloadHooks) Unload(symbol *Symbol) error {
-	for i := len(hooks) - 1; i >= 0; i-- {
-		if err := hooks[i].Unload(symbol); err != nil {
+func (h UnloadHooks) Unload(symbol *Symbol) error {
+	for i := len(h) - 1; i >= 0; i-- {
+		if err := h[i].Unload(symbol); err != nil {
 			return err
 		}
 	}

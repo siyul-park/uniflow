@@ -5,11 +5,9 @@ import (
 	"strings"
 
 	"github.com/gofrs/uuid"
-	mongochart "github.com/siyul-park/uniflow/driver/mongo/pkg/chart"
 	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
 	mongovalue "github.com/siyul-park/uniflow/driver/mongo/pkg/value"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/tryvium-travels/memongo"
@@ -53,23 +51,8 @@ func NewMongoDriver(uri, name string) (Driver, error) {
 	}, nil
 }
 
-// ChartStore creates and returns a new Chart Store.
-func (d *MongoDriver) ChartStore(ctx context.Context, name string) (chart.Store, error) {
-	if name == "" {
-		name = "charts"
-	}
-
-	collection := d.database.Collection(name)
-	store := mongochart.NewStore(collection)
-
-	if err := store.Index(ctx); err != nil {
-		return nil, err
-	}
-	return store, nil
-}
-
-// SpecStore creates and returns a new Spec Store.
-func (d *MongoDriver) SpecStore(ctx context.Context, name string) (spec.Store, error) {
+// NewSpecStore creates and returns a new Spec Store.
+func (d *MongoDriver) NewSpecStore(ctx context.Context, name string) (spec.Store, error) {
 	if name == "" {
 		name = "specs"
 	}
@@ -83,8 +66,8 @@ func (d *MongoDriver) SpecStore(ctx context.Context, name string) (spec.Store, e
 	return store, nil
 }
 
-// ValueStore creates and returns a new Value Store.
-func (d *MongoDriver) ValueStore(ctx context.Context, name string) (value.Store, error) {
+// NewValueStore creates and returns a new Value Store.
+func (d *MongoDriver) NewValueStore(ctx context.Context, name string) (value.Store, error) {
 	if name == "" {
 		name = "values"
 	}

@@ -87,7 +87,7 @@ func (s *Store) Watch(ctx context.Context, values ...*value.Value) (value.Stream
 	return stream, nil
 }
 
-// Load retrieves Specs from the store that match the given criteria.
+// Load retrieves NewSpecStore from the store that match the given criteria.
 func (s *Store) Load(ctx context.Context, values ...*value.Value) ([]*value.Value, error) {
 	filter := s.filter(values...)
 	limit := int64(s.limit(values...))
@@ -113,7 +113,7 @@ func (s *Store) Load(ctx context.Context, values ...*value.Value) ([]*value.Valu
 	return result, nil
 }
 
-// Store saves the given Specs into the database.
+// Store saves the given NewSpecStore into the database.
 func (s *Store) Store(ctx context.Context, values ...*value.Value) (int, error) {
 	var docs []any
 	for _, scrt := range values {
@@ -141,7 +141,7 @@ func (s *Store) Store(ctx context.Context, values ...*value.Value) (int, error) 
 	return len(res.InsertedIDs), nil
 }
 
-// Swap updates existing Specs in the database with the provided data.
+// Swap updates existing NewSpecStore in the database with the provided data.
 func (s *Store) Swap(ctx context.Context, values ...*value.Value) (int, error) {
 	ids := make([]uuid.UUID, len(values))
 	for i, scrt := range values {
@@ -194,7 +194,7 @@ func (s *Store) Swap(ctx context.Context, values ...*value.Value) (int, error) {
 	return count, nil
 }
 
-// Delete removes Specs from the store based on the provided criteria.
+// Delete removes NewSpecStore from the store based on the provided criteria.
 func (s *Store) Delete(ctx context.Context, values ...*value.Value) (int, error) {
 	filter := s.filter(values...)
 	res, err := s.collection.DeleteMany(ctx, filter)

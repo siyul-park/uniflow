@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -28,7 +27,6 @@ func TestStartCommand_Execute(t *testing.T) {
 
 	specStore := spec.NewStore()
 	valueStore := value.NewStore()
-	chartStore := chart.NewStore()
 
 	fs := afero.NewMemMapFs()
 
@@ -69,7 +67,6 @@ func TestStartCommand_Execute(t *testing.T) {
 			FS:         fs,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -114,7 +111,6 @@ func TestStartCommand_Execute(t *testing.T) {
 			FS:         fs,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -158,7 +154,6 @@ func TestStartCommand_Execute(t *testing.T) {
 			FS:         fs,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -205,7 +200,6 @@ func TestStartCommand_Execute(t *testing.T) {
 			FS:         fs,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		cmd.SetOut(output)
 		cmd.SetErr(output)
@@ -222,53 +216,6 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		select {
 		case <-valueStream.Next():
-		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
-		}
-	})
-
-	t.Run(flagFromCharts, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		filename := "charts.json"
-
-		chrt := &chart.Chart{
-			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
-			Name:      faker.UUIDHyphenated(),
-		}
-
-		data, _ := json.Marshal(chrt)
-
-		f, _ := fs.Create(filename)
-		f.Write(data)
-
-		output := new(bytes.Buffer)
-
-		cmd := NewStartCommand(StartConfig{
-			Scheme:     s,
-			Hook:       h,
-			FS:         fs,
-			SpecStore:  specStore,
-			ValueStore: valueStore,
-			ChartStore: chartStore,
-		})
-		cmd.SetOut(output)
-		cmd.SetErr(output)
-		cmd.SetContext(ctx)
-
-		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromCharts), filename})
-
-		chartStream, _ := chartStore.Watch(ctx)
-		defer chartStream.Close()
-
-		go func() {
-			_ = cmd.Execute()
-		}()
-
-		select {
-		case <-chartStream.Next():
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}

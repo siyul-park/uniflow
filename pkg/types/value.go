@@ -97,7 +97,7 @@ func InterfaceOf(v Value) any {
 	return v.Interface()
 }
 
-// Equal checks equality between two Values.
+// Equal checks equality between two NewValueStore.
 func Equal(x, y Value) bool {
 	if x == nil && y == nil {
 		return true
@@ -108,7 +108,7 @@ func Equal(x, y Value) bool {
 	return x.Equal(y)
 }
 
-// Compare compares two Values and returns.
+// Compare compares two NewValueStore and returns.
 func Compare(x, y Value) int {
 	if x == nil && y == nil {
 		return 0

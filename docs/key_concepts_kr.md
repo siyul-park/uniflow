@@ -56,42 +56,6 @@ data:
 - `annotations`: 변수에 대한 추가 메타데이터입니다. 설명, 버전 등 사용자 정의 키-값 쌍을 포함할 수 있습니다.
 - `data`: 키-값 쌍으로 구성된 변수 데이터를 포함합니다.
 
-## 차트
-
-차트는 여러 개의 노드를 결합하여 더 복잡한 동작을 수행하는 노드를 정의합니다. 차트는 노드들 간의 상호 작용을 설정하는 데 사용됩니다.
-
-```yaml
-id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
-namespace: default
-name: sqlite
-annotations:
-  version: "v1.0.0"
-specs:
-  - kind: sql
-    name: sql
-    driver: sqlite3
-    source: file::{{ .FILENAME }}:?cache=shared
-inbounds:
-  in:
-    - name: sql
-      port: in      
-outbounds:
-  out:
-    - name: sql
-      port: out
-env:
-  FILENAME:
-      value: "{{ .filename }}"
-```
-
-- `id`: UUID 형식의 고유 식별자입니다. UUID V7을 권장합니다.
-- `namespace`: 차트가 속한 네임스페이스를 지정하며, 기본값은 `default`입니다.
-- `name`: 차트의 이름을 지정하며, 동일한 네임스페이스 내에서 고유해야 합니다. 이 이름이 노드 명세의 유형이 됩니다.
-- `annotations`: 차트에 대한 추가 메타데이터입니다. 설명, 버전 등 사용자 정의 키-값 쌍을 포함할 수 있습니다.
-- `specs`: 차트를 구성하는 노드 명세를 정의합니다.
-- `ports`: 차트의 연결 방식을 정의합니다. 외부로 노출될 포트가 내부의 어떤 노드와 연결되어야 하는지 정의합니다.
-- `env`: 차트에 필요한 환경 변수를 지정합니다. `id`와 `name`이 비어져 있다면 이 차트를 활용하는 노드 명세가 값을 평가하기 위한 인자로 사용됩니다.
-
 ## 노드
 
 노드는 데이터를 처리하는 객체로, 서로 연결된 포트를 통해 패킷을 주고받으며 워크플로우를 실행합니다. 각 노드는 독립적인 처리 루프를 가지며, 비동기적으로 다른 노드와 통신합니다.

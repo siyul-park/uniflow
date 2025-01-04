@@ -57,42 +57,6 @@ data:
   version.
 - `data`: Contains the value data structured as key-value pairs.
 
-## Chart
-
-A chart defines a node that combines multiple nodes to perform more complex operations. Charts are used to set up interactions between nodes.
-
-```yaml
-id: 01908c74-8b22-7cbf-a475-6b6bc871b01b
-namespace: default
-name: sqlite
-annotations:
-  version: "v1.0.0"
-specs:
-  - kind: sql
-    name: sql
-    driver: sqlite3
-    source: file::{{ .FILENAME }}:?cache=shared
-inbounds:
-  in:
-    - name: sql
-      port: in
-outbounds:
-  out:
-    - name: sql
-      port: out
-env:
-  FILENAME:
-      value: "{{ .filename }}"
-```
-
-- `id`: A unique identifier in UUID format. UUID V7 is recommended.
-- `namespace`: Specifies the namespace to which the chart belongs, defaulting to `default`.
-- `name`: Specifies the name of the chart, which must be unique within the same namespace. This name becomes the type of the node specification.
-- `annotations`: Additional metadata for the chart, including user-defined key-value pairs such as description and version.
-- `specs`: Defines the node specifications that make up the chart.
-- `ports`: Defines how the chart's ports connect. It specifies how external ports should connect to internal nodes.
-- `env`: Specifies the environment variables required by the chart. If `id` and `name` are empty, this is used as an argument for node specifications that utilize this chart.
-
 ## Node
 
 A node is an object that processes data, executing workflows by sending and receiving packets through connected ports. Each node has its own independent processing loop and communicates asynchronously with other nodes.

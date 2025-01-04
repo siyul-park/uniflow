@@ -34,7 +34,6 @@ const configFile = ".uniflow.toml"
 const (
 	topicSpecs  = "specs"
 	topicValues = "values"
-	topicCharts = "charts"
 
 	opCreateSpecs = "specs.create"
 	opReadSpecs   = "specs.read"
@@ -45,11 +44,6 @@ const (
 	opReadValues   = "values.read"
 	opUpdateValues = "values.update"
 	opDeleteValues = "values.delete"
-
-	opCreateCharts = "charts.create"
-	opReadCharts   = "charts.read"
-	opUpdateCharts = "charts.update"
-	opDeleteCharts = "charts.delete"
 )
 
 var k = koanf.New(".")
@@ -59,9 +53,6 @@ func init() {
 		log.Fatal(err)
 	}
 	if err := k.Set(cli.EnvCollectionValues, "values"); err != nil {
-		log.Fatal(err)
-	}
-	if err := k.Set(cli.EnvCollectionCharts, "charts"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -81,7 +72,6 @@ func main() {
 	databaseName := k.String(cli.EnvDatabaseName)
 	collectionNodes := k.String(cli.EnvCollectionSpecs)
 	collectionValues := k.String(cli.EnvCollectionValues)
-	collectionCharts := k.String(cli.EnvCollectionCharts)
 
 	drv := driver.NewInMemoryDriver()
 	defer drv.Close(ctx)
@@ -93,15 +83,11 @@ func main() {
 		}
 	}
 
-	specStore, err := drv.SpecStore(ctx, collectionNodes)
+	specStore, err := drv.NewSpecStore(ctx, collectionNodes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	valueStore, err := drv.ValueStore(ctx, collectionValues)
-	if err != nil {
-		log.Fatal(err)
-	}
-	chartStore, err := drv.ChartStore(ctx, collectionCharts)
+	valueStore, err := drv.NewValueStore(ctx, collectionValues)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -120,7 +106,6 @@ func main() {
 	signals := map[string]any{
 		topicSpecs:  system.WatchResource(specStore),
 		topicValues: system.WatchResource(valueStore),
-		topicCharts: system.WatchResource(chartStore),
 	}
 	calls := map[string]any{
 		opCreateSpecs:  system.CreateResource(specStore),
@@ -131,10 +116,6 @@ func main() {
 		opReadValues:   system.ReadResource(valueStore),
 		opUpdateValues: system.UpdateResource(valueStore),
 		opDeleteValues: system.DeleteResource(valueStore),
-		opCreateCharts: system.CreateResource(chartStore),
-		opReadCharts:   system.ReadResource(chartStore),
-		opUpdateCharts: system.UpdateResource(chartStore),
-		opDeleteCharts: system.DeleteResource(chartStore),
 	}
 
 	systemAddToScheme := system.AddToScheme()
@@ -177,7 +158,6 @@ func main() {
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
 		Scheme:     scheme,
 		Hook:       hook,
-		ChartStore: chartStore,
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 		FS:         fs,

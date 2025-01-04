@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -24,7 +23,6 @@ type StartConfig struct {
 	Hook       *hook.Hook
 	SpecStore  spec.Store
 	ValueStore value.Store
-	ChartStore chart.Store
 	FS         afero.Fs
 }
 
@@ -39,7 +37,6 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
 	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
-	cmd.PersistentFlags().String(flagFromCharts, "", "Specify the file path containing charts for the workflow")
 	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode for detailed output during execution")
 	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Set environment variables for the workflow execution")
 
@@ -50,7 +47,6 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
 	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
 	applyValues := runApplyCommand(config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
-	applyCharts := runApplyCommand(config.ChartStore, config.FS, alias(flagFilename, flagFromCharts))
 
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
@@ -81,9 +77,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if err := applyValues(cmd); err != nil {
 			return err
 		}
-		if err := applyCharts(cmd); err != nil {
-			return err
-		}
 
 		cmd.SetOut(out)
 
@@ -99,7 +92,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			Hook:        h,
 			SpecStore:   config.SpecStore,
 			ValueStore:  config.ValueStore,
-			ChartStore:  config.ChartStore,
 		})
 		defer r.Close()
 
@@ -111,8 +103,6 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 			h.AddLoadHook(a)
 			h.AddUnloadHook(a)
-			h.AddLinkHook(a)
-			h.AddUnlinkHook(a)
 
 			d := NewDebugger(
 				a,

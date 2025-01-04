@@ -24,7 +24,7 @@ func TestMongoDriver_SpecStore(t *testing.T) {
 	driver, _ := NewMongoDriver("memongodb://", "")
 	defer driver.Close(ctx)
 
-	store, err := driver.SpecStore(ctx, "")
+	store, err := driver.NewSpecStore(ctx, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 }
@@ -36,19 +36,7 @@ func TestMongoDriver_ValueStore(t *testing.T) {
 	driver, _ := NewMongoDriver("memongodb://", "")
 	defer driver.Close(ctx)
 
-	store, err := driver.ValueStore(ctx, "")
-	assert.NoError(t, err)
-	assert.NotNil(t, store)
-}
-
-func TestMongoDriver_ChartStore(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-
-	driver, _ := NewMongoDriver("memongodb://", "")
-	defer driver.Close(ctx)
-
-	store, err := driver.ChartStore(ctx, "")
+	store, err := driver.NewValueStore(ctx, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 }

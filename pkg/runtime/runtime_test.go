@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/chart"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -32,13 +31,11 @@ func TestRuntime_Load(t *testing.T) {
 
 	specStore := spec.NewStore()
 	valueStore := value.NewStore()
-	chartStore := chart.NewStore()
 
 	r := New(Config{
 		Scheme:     s,
 		SpecStore:  specStore,
 		ValueStore: valueStore,
-		ChartStore: chartStore,
 	})
 	defer r.Close()
 
@@ -68,7 +65,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		specStore := spec.NewStore()
 		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -87,7 +83,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Hook:       h,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		defer r.Close()
 
@@ -135,7 +130,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		specStore := spec.NewStore()
 		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -154,7 +148,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Hook:       h,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 
 		err := r.Watch(ctx)
@@ -200,74 +193,6 @@ func TestRuntime_Reconcile(t *testing.T) {
 			assert.NoError(t, ctx.Err())
 		}
 	})
-
-	t.Run("Chart", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		s := scheme.New()
-		kind := faker.UUIDHyphenated()
-
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
-
-		h := hook.New()
-		symbols := make(chan *symbol.Symbol)
-
-		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			symbols <- sb
-			return nil
-		}))
-		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			symbols <- sb
-			return nil
-		}))
-
-		r := New(Config{
-			Scheme:     s,
-			Hook:       h,
-			SpecStore:  specStore,
-			ValueStore: valueStore,
-			ChartStore: chartStore,
-		})
-		defer r.Close()
-
-		err := r.Watch(ctx)
-		assert.NoError(t, err)
-
-		go r.Reconcile(ctx)
-
-		meta := &spec.Meta{
-			ID:        uuid.Must(uuid.NewV7()),
-			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
-		}
-		chrt := &chart.Chart{
-			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
-			Name:      kind,
-		}
-
-		specStore.Store(ctx, meta)
-		chartStore.Store(ctx, chrt)
-
-		select {
-		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		}
-
-		chartStore.Delete(ctx, chrt)
-
-		select {
-		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
-		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
-		}
-	})
 }
 
 func BenchmarkRuntime_Reconcile(b *testing.B) {
@@ -284,7 +209,6 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 
 		specStore := spec.NewStore()
 		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -299,7 +223,6 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			Hook:       h,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 		defer r.Close()
 
@@ -337,7 +260,6 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 
 		specStore := spec.NewStore()
 		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -352,7 +274,6 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			Hook:       h,
 			SpecStore:  specStore,
 			ValueStore: valueStore,
-			ChartStore: chartStore,
 		})
 
 		err := r.Watch(ctx)
@@ -381,60 +302,6 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 
 			specStore.Store(ctx, meta)
 			valueStore.Store(ctx, scrt)
-
-			select {
-			case <-symbols:
-			case <-ctx.Done():
-			}
-		}
-	})
-
-	b.Run("Chart", func(b *testing.B) {
-		ctx := context.TODO()
-
-		s := scheme.New()
-		kind := faker.UUIDHyphenated()
-
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
-		chartStore := chart.NewStore()
-
-		h := hook.New()
-		symbols := make(chan *symbol.Symbol)
-
-		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			symbols <- sb
-			return nil
-		}))
-
-		r := New(Config{
-			Scheme:     s,
-			Hook:       h,
-			SpecStore:  specStore,
-			ValueStore: valueStore,
-			ChartStore: chartStore,
-		})
-		defer r.Close()
-
-		err := r.Watch(ctx)
-		assert.NoError(b, err)
-
-		go r.Reconcile(ctx)
-
-		for i := 0; i < b.N; i++ {
-			meta := &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      kind,
-				Namespace: resource.DefaultNamespace,
-			}
-			chrt := &chart.Chart{
-				ID:        uuid.Must(uuid.NewV7()),
-				Namespace: resource.DefaultNamespace,
-				Name:      kind,
-			}
-
-			specStore.Store(ctx, meta)
-			chartStore.Store(ctx, chrt)
 
 			select {
 			case <-symbols:
