@@ -4,9 +4,10 @@
   port: '{{ .PORT }}'
   ports:
     out:
-      - name: proxy
+      - name: loopback
         port: in
 
-- kind: http
-  name: proxy
-  url: https://echo.free.beeceptor.com/
+- kind: snippet
+  name: loopback
+  language: cel
+  code: self

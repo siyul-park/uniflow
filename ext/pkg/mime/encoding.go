@@ -18,12 +18,20 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+type byteCounter struct {
+	io.Writer
+	count int
+}
+
 var (
 	keyValues = types.NewString("values")
 	keyFiles  = types.NewString("files")
 )
 
-var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+var escapeQuotes = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+var _ io.Writer = (*byteCounter)(nil)
+var _ io.Closer = (*byteCounter)(nil)
 
 // Encode encodes the given types into the writer with the specified MIME headers.
 func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) error {
@@ -41,28 +49,32 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		}
 	}
 
+	counter := &byteCounter{Writer: writer}
+	defer header.Set(HeaderContentLength, strconv.Itoa(counter.Count()))
+
+	w, err := Compress(counter, encode)
+	if err != nil {
+		return err
+	}
+	if c, ok := w.(io.Closer); ok {
+		defer c.Close()
+	}
+
+	if v, ok := value.(types.Buffer); ok {
+		if _, err := io.Copy(w, v); err != nil {
+			return err
+		}
+		return nil
+	} else if v, ok := value.(types.Binary); ok {
+		if _, err := w.Write(v.Bytes()); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	typ, params, err := mime.ParseMediaType(typ)
 	if err != nil {
 		return err
-	}
-
-	count := 0
-	var cwriter io.Writer = WriterFunc(func(p []byte) (n int, err error) {
-		n, err = writer.Write(p)
-		count += n
-		return
-	})
-
-	w, err := Compress(cwriter, encode)
-	if err != nil {
-		return err
-	}
-
-	flush := func() {
-		if c, ok := w.(io.Closer); ok && w != cwriter {
-			c.Close()
-		}
-		header.Set(HeaderContentLength, strconv.Itoa(count))
 	}
 
 	switch typ {
@@ -70,7 +82,6 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if err := json.NewEncoder(w).Encode(types.InterfaceOf(value)); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
@@ -80,7 +91,14 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
 			return err
 		}
-		flush()
+		return nil
+	case TextPlain:
+		if v, ok := value.(types.String); ok {
+			if _, err := w.Write([]byte(v.String())); err != nil {
+				return err
+			}
+			return nil
+		}
 		return nil
 	case MultipartFormData:
 		boundary := params["boundary"]
@@ -95,7 +113,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 			return err
 		}
 
-		writeField := func(obj types.Map, key types.Value) error {
+		writeFormField := func(obj types.Map, key types.Value) error {
 			if key, ok := key.(types.String); ok {
 				value := obj.Get(key)
 
@@ -108,7 +126,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 				for _, element := range elements.Range() {
 					h := textproto.MIMEHeader{}
-					h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, quoteEscaper.Replace(key.String())))
+					h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, escapeQuotes.Replace(key.String())))
 
 					if w, err := mw.CreatePart(h); err != nil {
 						return err
@@ -120,10 +138,10 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 			return nil
 		}
 
-		writeFields := func(value types.Value) error {
+		writeFormFields := func(value types.Value) error {
 			if value, ok := value.(types.Map); ok {
 				for key := range value.Range() {
-					if err := writeField(value, key); err != nil {
+					if err := writeFormField(value, key); err != nil {
 						return err
 					}
 				}
@@ -131,7 +149,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 			return nil
 		}
 
-		writeFiles := func(value types.Value) error {
+		writeFormFiles := func(value types.Value) error {
 			if value, ok := value.(types.Map); ok {
 				for key := range value.Range() {
 					if key, ok := key.(types.String); ok {
@@ -181,7 +199,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 								}
 							}
 
-							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, quoteEscaper.Replace(key.String()), quoteEscaper.Replace(filename)))
+							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, escapeQuotes.Replace(key.String()), escapeQuotes.Replace(filename)))
 
 							if writer, err := mw.CreatePart(h); err != nil {
 								return err
@@ -198,14 +216,14 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if v, ok := value.(types.Map); ok {
 			for key, value := range v.Range() {
 				if key.Equal(keyValues) {
-					if err := writeFields(value); err != nil {
+					if err := writeFormFields(value); err != nil {
 						return err
 					}
 				} else if key.Equal(keyFiles) {
-					if err := writeFiles(value); err != nil {
+					if err := writeFormFiles(value); err != nil {
 						return err
 					}
-				} else if err := writeField(v, key); err != nil {
+				} else if err := writeFormField(v, key); err != nil {
 					return err
 				}
 			}
@@ -214,29 +232,13 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if err := mw.Close(); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	}
 
-	switch v := value.(type) {
-	case types.Binary:
-		if _, err := w.Write(v.Bytes()); err != nil {
-			return err
-		}
-		flush()
-		return nil
-	case types.String:
-		if _, err := w.Write([]byte(v.String())); err != nil {
-			return err
-		}
-		flush()
-		return nil
-	default:
-		return errors.WithStack(encoding.ErrUnsupportedType)
-	}
+	return errors.WithStack(encoding.ErrUnsupportedType)
 }
 
-// Decode decodes the given reader with the specified MIME headers into an types.
+// Decode decodes the given reader with the specified MIME headers into types.
 func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) {
 	typ := header.Get(HeaderContentType)
 	encode := header.Get(HeaderContentEncoding)
@@ -245,9 +247,12 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 	if err != nil {
 		return nil, err
 	}
-	if c, ok := r.(io.Closer); ok && r != reader {
-		defer c.Close()
-	}
+
+	defer func() {
+		if c, ok := r.(io.Closer); ok {
+			_ = c.Close()
+		}
+	}()
 
 	if typ == "" {
 		data, err := io.ReadAll(r)
@@ -290,9 +295,9 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		}
 		return types.NewString(string(data)), nil
 	case MultipartFormData:
-		reader := multipart.NewReader(r, params["boundary"])
+		parts := multipart.NewReader(r, params["boundary"])
 
-		form, err := reader.ReadForm(0)
+		form, err := parts.ReadForm(0)
 		if err != nil {
 			return nil, err
 		}
@@ -327,11 +332,9 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		})
 	}
 
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return types.NewBinary(data), nil
+	buf := types.NewBuffer(r)
+	r = io.NopCloser(r)
+	return buf, nil
 }
 
 func randomMultipartBoundary() string {
@@ -341,4 +344,21 @@ func randomMultipartBoundary() string {
 		panic(err)
 	}
 	return fmt.Sprintf("%x", buf[:])
+}
+
+func (w *byteCounter) Write(p []byte) (n int, err error) {
+	n, err = w.Writer.Write(p)
+	w.count += n
+	return n, err
+}
+
+func (w *byteCounter) Close() error {
+	if c, ok := w.Writer.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
+}
+
+func (w *byteCounter) Count() int {
+	return w.count
 }

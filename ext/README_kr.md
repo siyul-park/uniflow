@@ -42,7 +42,6 @@
 - **[WebSocket 노드](./docs/websocket_node_kr.md)**: WebSocket 연결을 설정하고 메시지를 송수신합니다.
 - **[Gateway 노드](./docs/gateway_node_kr.md)**: HTTP 연결을 WebSocket으로 업그레이드하여 실시간 데이터 통신을 지원합니다.
 - **[Listener 노드](./docs/listener_node_kr.md)**: 지정된 프로토콜과 포트에서 네트워크 요청을 수신합니다.
-- **[Proxy 노드](./docs/proxy_node_kr.md)**: HTTP 요청을 다른 서버로 프록시하여 응답을 반환합니다.
 - **[Router 노드](./docs/router_node_kr.md)**: 입력 패킷을 조건에 따라 여러 출력 포트로 라우팅합니다.
 
 ### **System**

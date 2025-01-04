@@ -1,7 +1,6 @@
 package network
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"net/textproto"
@@ -202,31 +201,30 @@ func (n *WebSocketConnNode) consume(proc *process.Process) {
 	}
 
 	for inPck := range inReader.Read() {
-		var inPayload *WebSocketPayload
-		if err := types.Unmarshal(inPck.Payload(), &inPayload); err != nil {
+		var inPayload WebSocketPayload
+		_ = types.Unmarshal(inPck.Payload(), &inPayload)
+		if inPayload.Type == 0 && inPayload.Data == nil {
 			inPayload.Data = inPck.Payload()
-			if _, ok := inPayload.Data.(types.Binary); !ok {
+			if kind := types.KindOf(inPayload.Data); kind != types.KindBuffer && kind != types.KindBinary {
 				inPayload.Type = websocket.TextMessage
 			} else {
 				inPayload.Type = websocket.BinaryMessage
 			}
 		}
 
-		w := mime.WriterFunc(func(b []byte) (int, error) {
-			if err := conn.WriteMessage(inPayload.Type, b); err != nil {
-				return 0, err
-			}
-			return len(b), nil
-		})
-
-		if err := mime.Encode(w, inPayload.Data, textproto.MIMEHeader{}); err != nil {
+		w, err := conn.NextWriter(inPayload.Type)
+		if err != nil {
 			errPck := packet.New(types.NewError(err))
-			if errWriter.Write(errPck) > 0 {
-				<-errWriter.Receive()
-			}
+			inReader.Receive(packet.Send(errWriter, errPck))
+			continue
 		}
 
-		inReader.Receive(packet.None)
+		if err = mime.Encode(w, inPayload.Data, textproto.MIMEHeader{}); err != nil {
+			errPck := packet.New(types.NewError(err))
+			inReader.Receive(packet.Send(errWriter, errPck))
+		} else {
+			inReader.Receive(packet.None)
+		}
 	}
 }
 
@@ -237,7 +235,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 	}
 
 	for {
-		typ, p, err := conn.ReadMessage()
+		typ, reader, err := conn.NextReader()
 		if err != nil || typ == websocket.CloseMessage {
 			outWriter := n.outPort.Open(proc)
 
@@ -262,7 +260,7 @@ func (n *WebSocketConnNode) produce(proc *process.Process) {
 		child := proc.Fork()
 		outWriter := n.outPort.Open(child)
 
-		data, err := mime.Decode(bytes.NewReader(p), textproto.MIMEHeader{})
+		data, err := mime.Decode(reader, textproto.MIMEHeader{})
 		if err != nil {
 			data = types.NewString(err.Error())
 		}

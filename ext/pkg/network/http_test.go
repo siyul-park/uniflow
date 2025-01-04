@@ -2,11 +2,16 @@ package network
 
 import (
 	"context"
+	"crypto/tls"
+	"github.com/go-faker/faker/v4"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"golang.org/x/net/http2"
 
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -34,46 +39,111 @@ func TestHTTPNodeCodec_Compile(t *testing.T) {
 }
 
 func TestNewHTTPNode(t *testing.T) {
-	n := NewHTTPNode(&url.URL{})
+	n := NewHTTPNode(nil)
 	assert.NotNil(t, n)
 	assert.NoError(t, n.Close())
 }
 
 func TestHTTPNode_SendAndReceive(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
+	t.Run("HTTP/1.1", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	s := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-	}))
-	defer s.Close()
+		s := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
+			assert.Equal(t, "HTTP/1.1", req.Proto)
 
-	u, _ := url.Parse(s.URL)
+			body, err := io.ReadAll(req.Body)
+			assert.NoError(t, err)
+			assert.NotZero(t, len(body))
+		}))
+		defer s.Close()
 
-	n := NewHTTPNode(u)
-	defer n.Close()
+		u, _ := url.Parse(s.URL)
 
-	n.SetTimeout(time.Second)
+		n := NewHTTPNode(nil)
+		defer n.Close()
 
-	in := port.NewOut()
-	in.Link(n.In(node.PortIn))
+		n.SetURL(u)
+		n.SetTimeout(time.Second)
 
-	proc := process.New()
-	defer proc.Exit(nil)
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-	inWriter := in.Open(proc)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-	var inPayload types.Value
-	inPck := packet.New(inPayload)
+		inWriter := in.Open(proc)
 
-	inWriter.Write(inPck)
+		inPayload := types.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
 
-	select {
-	case outPck := <-inWriter.Receive():
-		_, ok := outPck.Payload().(types.Error)
-		assert.False(t, ok)
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			_, ok := outPck.Payload().(types.Error)
+			assert.False(t, ok)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("HTTP/2", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := httptest.NewUnstartedServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
+			assert.Equal(t, "HTTP/2.0", req.Proto)
+
+			body, err := io.ReadAll(req.Body)
+			assert.NoError(t, err)
+			assert.NotZero(t, len(body))
+		}))
+		_ = http2.ConfigureServer(s.Config, nil)
+
+		s.TLS = &tls.Config{
+			NextProtos: []string{"h2"},
+		}
+
+		s.StartTLS()
+		defer s.Close()
+
+		client := &http.Client{
+			Transport: &http2.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		}
+		u, _ := url.Parse(s.URL)
+
+		n := NewHTTPNode(client)
+		defer n.Close()
+
+		n.SetURL(u)
+		n.SetTimeout(time.Second)
+
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+
+		inPayload := types.NewString(faker.UUIDHyphenated())
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-inWriter.Receive():
+			_, ok := outPck.Payload().(types.Error)
+			assert.False(t, ok)
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+		}
+	})
 }
 
 func BenchmarkHTTPNode_SendAndReceive(b *testing.B) {
@@ -83,9 +153,10 @@ func BenchmarkHTTPNode_SendAndReceive(b *testing.B) {
 
 	u, _ := url.Parse(s.URL)
 
-	n := NewHTTPNode(u)
+	n := NewHTTPNode(nil)
 	defer n.Close()
 
+	n.SetURL(u)
 	n.SetTimeout(time.Second)
 
 	in := port.NewOut()

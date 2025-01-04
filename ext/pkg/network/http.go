@@ -1,8 +1,8 @@
 package network
 
 import (
-	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"net/textproto"
 	"net/url"
@@ -58,24 +58,35 @@ func NewHTTPNodeCodec() scheme.Codec {
 			return nil, err
 		}
 
-		n := NewHTTPNode(parse)
+		transport := &http.Transport{}
+		if err := http2.ConfigureTransport(transport); err != nil {
+			return nil, err
+		}
+		client := &http.Client{Transport: transport}
+
+		n := NewHTTPNode(client)
+		n.SetURL(parse)
 		n.SetTimeout(spec.Timeout)
 		return n, nil
 	})
 }
 
 // NewHTTPNode creates a new HTTPNode instance.
-func NewHTTPNode(url *url.URL) *HTTPNode {
-	transport := &http.Transport{}
-	_ = http2.ConfigureTransport(transport)
-
-	client := &http.Client{
-		Transport: transport,
+func NewHTTPNode(client *http.Client) *HTTPNode {
+	if client == nil {
+		client = http.DefaultClient
 	}
-
-	n := &HTTPNode{client: client, url: url}
+	n := &HTTPNode{client: client, url: &url.URL{}}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 	return n
+}
+
+// SetURL sets the URL for the HTTP request.
+func (n *HTTPNode) SetURL(url *url.URL) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.url = url
 }
 
 // SetTimeout sets the timeout duration for the HTTP request.
@@ -97,11 +108,8 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		defer cancel()
 	}
 
-	req := &HTTPPayload{
-		Query:  make(url.Values),
-		Header: make(http.Header),
-	}
-	if err := types.Unmarshal(inPck.Payload(), req); err != nil {
+	var req *HTTPPayload
+	if err := types.Unmarshal(inPck.Payload(), &req); err != nil {
 		req.Body = inPck.Payload()
 	}
 
@@ -127,33 +135,50 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 		}
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if err := mime.Encode(buf, req.Body, textproto.MIMEHeader(req.Header)); err != nil {
-		return nil, packet.New(types.NewError(err))
+	header := textproto.MIMEHeader{}
+	for k, v := range req.Header {
+		header[k] = v
 	}
 
-	u := &url.URL{
-		Scheme:   req.Scheme,
-		Host:     req.Host,
-		Path:     req.Path,
-		RawQuery: req.Query.Encode(),
+	pr, pw := io.Pipe()
+
+	errors := make(chan error)
+	go func() {
+		defer close(errors)
+		if err := mime.Encode(pw, req.Body, header); err != nil {
+			errors <- err
+		}
+	}()
+
+	r := &http.Request{
+		Method: req.Method,
+		URL: &url.URL{
+			Scheme:   req.Scheme,
+			Host:     req.Host,
+			Path:     req.Path,
+			RawQuery: req.Query.Encode(),
+		},
+		Header: req.Header,
+		Body:   pr,
 	}
 
-	r, err := http.NewRequest(req.Method, u.String(), buf)
+	w, err := n.client.Do(r.WithContext(ctx))
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-	r = r.WithContext(ctx)
-
-	w, err := n.client.Do(r)
-	if err != nil {
+	if err := <-errors; err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-	defer w.Body.Close()
 
 	body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header))
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
+	}
+
+	if b, ok := body.(types.Buffer); ok {
+		proc.AddExitHook(process.ExitFunc(func(err error) {
+			_ = b.Close()
+		}))
 	}
 
 	res := &HTTPPayload{

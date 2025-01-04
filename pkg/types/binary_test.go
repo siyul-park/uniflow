@@ -142,7 +142,6 @@ func TestBinary_Decode(t *testing.T) {
 
 		d, err := base64.StdEncoding.DecodeString(decoded)
 		assert.NoError(t, err)
-
 		assert.Equal(t, source, d)
 	})
 

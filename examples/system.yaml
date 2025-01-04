@@ -154,7 +154,7 @@
 
 - kind: if
   name: specs_read_or_watch
-  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
+  when: '!has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: specs_read_with_query
@@ -357,7 +357,7 @@
 
 - kind: if
   name: values_read_or_watch
-  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
+  when: '!has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: values_read_with_query
@@ -557,7 +557,7 @@
 
 - kind: if
   name: charts_read_or_watch
-  when: '!has(self.query.watch) || !self.query.watch.all(x, x == "true") || !has(self.header.Connection) || !has(self.header.Upgrade)'
+  when: '!has(self.header.Connection) || !has(self.header.Upgrade)'
   ports:
     out[0]:
       - name: charts_read_with_query

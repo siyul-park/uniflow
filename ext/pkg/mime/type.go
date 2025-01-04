@@ -55,16 +55,16 @@ func DetectTypesFromBytes(value []byte) []string {
 // DetectTypesFromValue determines the content types based on the type of types passed.
 func DetectTypesFromValue(value types.Value) []string {
 	switch value.(type) {
-	case types.Binary:
+	case types.Binary, types.Buffer:
 		return []string{ApplicationOctetStream}
 	case types.String:
-		return []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8}
+		return []string{TextPlainCharsetUTF8, ApplicationOctetStream, ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
 	case types.Slice:
-		return []string{ApplicationJSONCharsetUTF8}
+		return []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded}
 	case types.Map, types.Error:
-		return []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
+		return []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData}
 	default:
-		return []string{ApplicationJSONCharsetUTF8}
+		return []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, TextPlainCharsetUTF8, ApplicationOctetStream}
 	}
 }
 

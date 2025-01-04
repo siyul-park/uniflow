@@ -45,7 +45,6 @@ Facilitates smooth execution of network-related tasks across various protocols.
 - **[WebSocket Node](./docs/websocket_node.md)**: Establishes WebSocket connections and handles message sending and receiving.
 - **[Gateway Node](./docs/gateway_node.md)**: Upgrades HTTP connections to WebSocket for real-time data communication.
 - **[Listener Node](./docs/listener_node.md)**: Receives network requests on specified protocols and ports.
-- **[Proxy Node](./docs/proxy_node.md)**: Proxies HTTP requests to other servers and returns their responses.
 - **[Router Node](./docs/router_node.md)**: Routes input packets to multiple output ports based on conditions.
 
 ### **System**

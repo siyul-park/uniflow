@@ -39,7 +39,6 @@ func AddToScheme() scheme.Register {
 		}{
 			{KindHTTP, NewHTTPNodeCodec(), &HTTPNodeSpec{}},
 			{KindListener, NewListenNodeCodec(), &ListenNodeSpec{}},
-			{KindProxy, NewProxyNodeCodec(), &ProxyNodeSpec{}},
 			{KindRouter, NewRouteNodeCodec(), &RouteNodeSpec{}},
 			{KindWebSocket, NewWebSocketNodeCodec(), &WebSocketNodeSpec{}},
 			{KindGateway, NewGatewayNodeCodec(), &GatewayNodeSpec{}},

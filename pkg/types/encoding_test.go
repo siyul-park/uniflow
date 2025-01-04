@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +26,10 @@ func TestMarshal(t *testing.T) {
 		{
 			when:   []byte{0},
 			expect: NewBinary([]byte{0}),
+		},
+		{
+			when:   strings.NewReader("test"),
+			expect: NewBuffer(strings.NewReader("test")),
 		},
 		{
 			when:   true,
@@ -83,8 +88,12 @@ func TestUnmarshal(t *testing.T) {
 		expect any
 	}{
 		{
-			expect: []byte{0},
 			when:   NewBinary([]byte{0}),
+			expect: []byte{0},
+		},
+		{
+			when:   NewBuffer(strings.NewReader("test")),
+			expect: strings.NewReader("test"),
 		},
 		{
 			when:   True,

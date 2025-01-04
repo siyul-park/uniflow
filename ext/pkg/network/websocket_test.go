@@ -95,6 +95,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 			}
 
 			outReader.Receive(packet.None)
+
 			select {
 			case <-done:
 			default:

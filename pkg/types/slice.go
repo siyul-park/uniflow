@@ -150,7 +150,7 @@ func (s Slice) Interface() any {
 		elementType = unionType(elementType, TypeOf(KindOf(element)))
 	}
 	if elementType == nil {
-		elementType = types[KindInvalid]
+		elementType = types[KindUnknown]
 	}
 
 	t := reflect.MakeSlice(reflect.SliceOf(elementType), len(s.value), len(s.value))
@@ -263,7 +263,7 @@ func newSliceDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Dec
 					}
 					return valueDecoder.Decode(source, t.Index(0).Addr().UnsafePointer())
 				}), nil
-			} else if typ.Elem().Kind() == reflect.Interface {
+			} else if typ.Elem() == types[KindUnknown] {
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Slice); ok {
 						*(*any)(target) = s.Interface()
