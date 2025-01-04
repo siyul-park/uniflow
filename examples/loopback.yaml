@@ -1,0 +1,13 @@
+- kind: listener
+  name: listener
+  protocol: http
+  port: '{{ .PORT }}'
+  ports:
+    out:
+      - name: loopback
+        port: in
+
+- kind: snippet
+  name: loopback
+  language: cel
+  code: self

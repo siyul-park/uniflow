@@ -288,10 +288,10 @@ func (m *immutableMap) Interface() any {
 		}
 	}
 	if keyType == nil {
-		keyType = types[KindInvalid]
+		keyType = types[KindUnknown]
 	}
 	if valueType == nil {
-		valueType = types[KindInvalid]
+		valueType = types[KindUnknown]
 	}
 
 	if keyType.Kind() == reflect.Interface || keyType.Kind() == reflect.Map || keyType.Kind() == reflect.Slice {
@@ -725,7 +725,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 					}
 					return nil
 				}), nil
-			} else if typ.Elem().Kind() == reflect.Interface {
+			} else if typ.Elem() == types[KindUnknown] {
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Map); ok {
 						*(*any)(target) = s.Interface()

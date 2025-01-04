@@ -149,7 +149,10 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-	defer w.Body.Close()
+
+	proc.AddExitHook(process.ExitFunc(func(err error) {
+		_ = w.Body.Close()
+	}))
 
 	body, err := mime.Decode(w.Body, textproto.MIMEHeader(w.Header))
 	if err != nil {

@@ -1,6 +1,9 @@
 package types
 
-import "reflect"
+import (
+	"io"
+	"reflect"
+)
 
 // Value is an interface representing atomic data types.
 type Value interface {
@@ -14,10 +17,15 @@ type Value interface {
 // Kind represents enumerated data types.
 type Kind byte
 
+type ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr | ~float32 | ~float64 | ~string
+}
+
 // Constants representing various data types.
 const (
-	KindInvalid Kind = iota
+	KindUnknown Kind = iota
 	KindBinary
+	KindBuffer
 	KindBoolean
 	KindError
 	KindInt
@@ -38,8 +46,9 @@ const (
 )
 
 var types = map[Kind]reflect.Type{
-	KindInvalid: reflect.TypeOf((*any)(nil)).Elem(),
+	KindUnknown: reflect.TypeOf((*any)(nil)).Elem(),
 	KindBinary:  reflect.TypeOf([]byte(nil)),
+	KindBuffer:  reflect.TypeOf((*io.Reader)(nil)).Elem(),
 	KindBoolean: reflect.TypeOf(false),
 	KindError:   reflect.TypeOf((*error)(nil)).Elem(),
 	KindInt:     reflect.TypeOf(0),
@@ -62,7 +71,7 @@ var types = map[Kind]reflect.Type{
 // KindOf returns the kind of the provided Value.
 func KindOf(v Value) Kind {
 	if v == nil {
-		return KindInvalid
+		return KindUnknown
 	}
 	return v.Kind()
 }
@@ -113,6 +122,59 @@ func Compare(x, y Value) int {
 	return x.Compare(y)
 }
 
+// Get extracts a value from a nested structure using the provided paths.
+func Get[T any](obj Value, paths ...any) (T, bool) {
+	var val T
+	cur := obj
+	for _, path := range paths {
+		p, err := Marshal(path)
+		if err != nil {
+			return val, false
+		}
+
+		switch p := p.(type) {
+		case String:
+			if v, ok := cur.(Map); ok {
+				child := v.Get(p)
+				if child == nil {
+					return val, false
+				}
+				cur = child
+			}
+		case Integer:
+			if v, ok := cur.(Slice); ok {
+				if int(p.Int()) >= v.Len() {
+					return val, false
+				}
+				cur = v.Get(int(p.Int()))
+			}
+		default:
+			return val, false
+		}
+	}
+
+	if cur == nil {
+		return val, false
+	}
+	if v, ok := cur.(T); ok {
+		return v, true
+	}
+	return val, Unmarshal(cur, &val) == nil
+}
+
+func compare[T ordered](x, y T) int {
+	if x == y {
+		return 0
+	}
+	if x > y {
+		return 1
+	}
+	if x < y {
+		return -1
+	}
+	return 0
+}
+
 func unionType(x, y reflect.Type) reflect.Type {
 	if x == nil {
 		return y
@@ -121,5 +183,5 @@ func unionType(x, y reflect.Type) reflect.Type {
 	} else if x == y {
 		return x
 	}
-	return types[KindInvalid]
+	return types[KindUnknown]
 }

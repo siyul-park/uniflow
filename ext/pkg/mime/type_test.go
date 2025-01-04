@@ -54,20 +54,24 @@ func TestDetectTypesFromValue(t *testing.T) {
 			expect: []string{ApplicationOctetStream},
 		},
 		{
+			when:   types.NewBuffer(nil),
+			expect: []string{ApplicationOctetStream},
+		},
+		{
 			when:   types.NewString(""),
-			expect: []string{TextPlainCharsetUTF8, ApplicationJSONCharsetUTF8},
+			expect: []string{TextPlainCharsetUTF8, ApplicationOctetStream, ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData},
 		},
 		{
 			when:   types.NewSlice(),
-			expect: []string{ApplicationJSONCharsetUTF8},
+			expect: []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded},
 		},
 		{
 			when:   types.NewMap(),
-			expect: []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData},
+			expect: []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData},
 		},
 		{
 			when:   types.NewError(nil),
-			expect: []string{ApplicationJSONCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData},
+			expect: []string{ApplicationJSONCharsetUTF8, ApplicationXMLCharsetUTF8, ApplicationFormURLEncoded, MultipartFormData},
 		},
 	}
 

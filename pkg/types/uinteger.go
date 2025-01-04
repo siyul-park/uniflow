@@ -347,7 +347,7 @@ func newUintegerDecoder() encoding.DecodeCompiler[Value] {
 					}
 					return errors.WithStack(encoding.ErrUnsupportedType)
 				}), nil
-			} else if typ.Elem().Kind() == reflect.Interface {
+			} else if typ.Elem() == types[KindUnknown] {
 				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Uinteger); ok {
 						*(*any)(target) = s.Interface()

@@ -1,10 +1,8 @@
 package network
 
 import (
-	"bytes"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -261,6 +259,9 @@ func (n *HTTPListenNode) negotiate(req *HTTPPayload, res *HTTPPayload) {
 		accept := req.Header.Get(mime.HeaderAccept)
 		offers := mime.DetectTypesFromValue(res.Body)
 		contentType := mime.Negotiate(accept, offers)
+		if contentType == "" && len(offers) > 0 {
+			contentType = offers[0]
+		}
 		if contentType != "" {
 			res.Header.Set(mime.HeaderContentType, contentType)
 		}
@@ -302,17 +303,11 @@ func (n *HTTPListenNode) write(w http.ResponseWriter, res *HTTPPayload) error {
 		}
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if err := mime.Encode(buf, res.Body, textproto.MIMEHeader(h)); err != nil {
-		return err
-	}
-
 	status := res.Status
 	if status == 0 {
 		status = http.StatusOK
 	}
-	w.WriteHeader(status)
 
-	_, err := io.Copy(w, buf)
-	return err
+	w.WriteHeader(status)
+	return mime.Encode(w, res.Body, textproto.MIMEHeader(h))
 }

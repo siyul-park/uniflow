@@ -171,7 +171,7 @@ func TestDecode(t *testing.T) {
 		{
 			whenValue: []byte("--MyBoundary\r\n" +
 				"Content-Disposition: form-data; name=\"test\"; filename=\"test\"\r\n" +
-				"Content-Type: application/octet-stream\r\n" +
+				"Content-Type: text/plain\r\n" +
 				"\r\n" +
 				"test\r\n" +
 				"--MyBoundary\r\n" +
@@ -186,11 +186,11 @@ func TestDecode(t *testing.T) {
 				),
 				types.NewString("files"), types.NewMap(
 					types.NewString("test"), types.NewSlice(types.NewMap(
-						types.NewString("data"), types.NewBinary([]byte("test")),
+						types.NewString("data"), types.NewString("test"),
 						types.NewString("filename"), types.NewString("test"),
 						types.NewString("header"), types.NewMap(
 							types.NewString("Content-Disposition"), types.NewSlice(types.NewString("form-data; name=\"test\"; filename=\"test\"")),
-							types.NewString("Content-Type"), types.NewSlice(types.NewString("application/octet-stream")),
+							types.NewString("Content-Type"), types.NewSlice(types.NewString("text/plain")),
 						),
 						types.NewString("size"), types.NewInt64(4),
 					)),
@@ -200,7 +200,7 @@ func TestDecode(t *testing.T) {
 		{
 			whenValue: []byte("testtesttest"),
 			whenType:  ApplicationOctetStream,
-			expect:    types.NewBinary([]byte("testtesttest")),
+			expect:    types.NewBuffer(bytes.NewBuffer([]byte("testtesttest"))),
 		},
 	}
 
@@ -210,7 +210,12 @@ func TestDecode(t *testing.T) {
 				HeaderContentType: []string{tt.whenType},
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expect.Interface(), decode.Interface())
+
+			var expect any
+			var actual any
+			_ = types.Unmarshal(tt.expect, &expect)
+			_ = types.Unmarshal(decode, &actual)
+			assert.Equal(t, expect, actual)
 		})
 	}
 }

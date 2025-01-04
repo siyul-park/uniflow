@@ -179,7 +179,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
-			} else if typ.Elem().Kind() == reflect.Interface {
+			} else if typ.Elem() == types[KindUnknown] {
 				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
 						*(*any)(target) = s.Interface()

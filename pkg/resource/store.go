@@ -42,8 +42,8 @@ type Stream interface {
 
 // Event represents a change event for a Resource.
 type Event struct {
-	OP EventOP   // Operation type (Store, Swap, Delete)
-	ID uuid.UUID // ID of the changed Resource
+	ID uuid.UUID `json:"id" map:"id"`
+	OP EventOP   `json:"op" map:"op"`
 }
 
 // EventOP represents the type of operation that triggered an Event.

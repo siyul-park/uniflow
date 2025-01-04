@@ -47,30 +47,29 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 	}
 
 	count := 0
-	var cwriter io.Writer = WriterFunc(func(p []byte) (n int, err error) {
+	var counter io.Writer = WriterFunc(func(p []byte) (n int, err error) {
 		n, err = writer.Write(p)
 		count += n
 		return
 	})
 
-	w, err := Compress(cwriter, encode)
+	w, err := Compress(counter, encode)
 	if err != nil {
 		return err
 	}
 
-	flush := func() {
-		if c, ok := w.(io.Closer); ok && w != cwriter {
-			c.Close()
+	defer func() {
+		if c, ok := w.(io.Closer); ok {
+			_ = c.Close()
 		}
 		header.Set(HeaderContentLength, strconv.Itoa(count))
-	}
+	}()
 
 	switch typ {
 	case ApplicationJSON:
 		if err := json.NewEncoder(w).Encode(types.InterfaceOf(value)); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
@@ -80,7 +79,6 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	case MultipartFormData:
 		boundary := params["boundary"]
@@ -214,22 +212,24 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		if err := mw.Close(); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	}
 
 	switch v := value.(type) {
+	case types.Buffer:
+		if _, err := io.Copy(w, v); err != nil {
+			return err
+		}
+		return nil
 	case types.Binary:
 		if _, err := w.Write(v.Bytes()); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	case types.String:
 		if _, err := w.Write([]byte(v.String())); err != nil {
 			return err
 		}
-		flush()
 		return nil
 	default:
 		return errors.WithStack(encoding.ErrUnsupportedType)
@@ -327,11 +327,7 @@ func Decode(reader io.Reader, header textproto.MIMEHeader) (types.Value, error) 
 		})
 	}
 
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return types.NewBinary(data), nil
+	return types.NewBuffer(r), nil
 }
 
 func randomMultipartBoundary() string {
