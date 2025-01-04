@@ -4,9 +4,7 @@ import (
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
-	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -58,23 +56,12 @@ func (n *Cluster) Inbound(source string, target spec.Port) bool {
 		return false
 	}
 
-	inPort, ok1 := n.inPorts[source]
-	if !ok1 {
-		inPort = port.NewIn()
+	outPort, ok := n.outPorts[source]
+	if !ok {
+		var inPort *port.InPort
+		inPort, outPort = port.Pipe()
 		n.inPorts[source] = inPort
-	}
-
-	outPort, ok2 := n._outPorts[source]
-	if !ok2 {
-		outPort = port.NewOut()
 		n._outPorts[source] = outPort
-	}
-
-	if !ok1 {
-		inPort.AddListener(n.inbound(inPort, outPort))
-	}
-	if !ok2 {
-		outPort.AddListener(n.outbound(inPort, outPort))
 	}
 
 	outPort.Link(prt)
@@ -102,23 +89,12 @@ func (n *Cluster) Outbound(source string, target spec.Port) bool {
 		return false
 	}
 
-	inPort, ok1 := n._inPorts[source]
-	if !ok1 {
-		inPort = port.NewIn()
+	inPort, ok := n._inPorts[source]
+	if !ok {
+		var outPort *port.OutPort
+		inPort, outPort = port.Pipe()
 		n._inPorts[source] = inPort
-	}
-
-	outPort, ok2 := n.outPorts[source]
-	if !ok2 {
-		outPort = port.NewOut()
 		n.outPorts[source] = outPort
-	}
-
-	if !ok1 {
-		inPort.AddListener(n.inbound(inPort, outPort))
-	}
-	if !ok2 {
-		outPort.AddListener(n.outbound(inPort, outPort))
 	}
 
 	prt.Link(inPort)
@@ -204,34 +180,4 @@ func (n *Cluster) Close() error {
 		outPort.Close()
 	}
 	return nil
-}
-
-func (n *Cluster) inbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
-	return port.ListenFunc(func(proc *process.Process) {
-		reader := inPort.Open(proc)
-		var writer *packet.Writer
-
-		for inPck := range reader.Read() {
-			if writer == nil {
-				writer = outPort.Open(proc)
-			}
-			if writer.Write(inPck) == 0 {
-				reader.Receive(inPck)
-			}
-		}
-	})
-}
-
-func (n *Cluster) outbound(inPort *port.InPort, outPort *port.OutPort) port.Listener {
-	return port.ListenFunc(func(proc *process.Process) {
-		var reader *packet.Reader
-		writer := outPort.Open(proc)
-
-		for backPck := range writer.Receive() {
-			if reader == nil {
-				reader = inPort.Open(proc)
-			}
-			reader.Receive(backPck)
-		}
-	})
 }

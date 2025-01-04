@@ -3,13 +3,14 @@ package network
 import (
 	"context"
 	"crypto/tls"
-	"github.com/go-faker/faker/v4"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/go-faker/faker/v4"
 
 	"golang.org/x/net/http2"
 

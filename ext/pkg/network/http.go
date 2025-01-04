@@ -142,13 +142,7 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 	pr, pw := io.Pipe()
 
-	errors := make(chan error)
-	go func() {
-		defer close(errors)
-		if err := mime.Encode(pw, req.Body, header); err != nil {
-			errors <- err
-		}
-	}()
+	go mime.Encode(pw, req.Body, header)
 
 	r := &http.Request{
 		Method: req.Method,
@@ -164,9 +158,6 @@ func (n *HTTPNode) action(proc *process.Process, inPck *packet.Packet) (*packet.
 
 	w, err := n.client.Do(r.WithContext(ctx))
 	if err != nil {
-		return nil, packet.New(types.NewError(err))
-	}
-	if err := <-errors; err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 
