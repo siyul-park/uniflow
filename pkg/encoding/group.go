@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 )
 
@@ -14,6 +15,7 @@ type EncoderGroup[S, T any] struct {
 // DecoderGroup manages a group of decoders.
 type DecoderGroup[S, T any] struct {
 	decoders []Decoder[S, T]
+	cache    sync.Map
 	mu       sync.RWMutex
 }
 
@@ -99,9 +101,21 @@ func (g *DecoderGroup[S, T]) Decode(source S, target T) error {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
+	typ := reflect.TypeOf(source)
+
 	var err error
+	cache, ok := g.cache.Load(typ)
+	if ok {
+		if err = cache.(Decoder[S, T]).Decode(source, target); err == nil {
+			return nil
+		}
+	}
 	for _, dec := range g.decoders {
+		if dec == cache {
+			continue
+		}
 		if err = dec.Decode(source, target); err == nil {
+			g.cache.Store(typ, dec)
 			return nil
 		} else if !errors.Is(err, ErrUnsupportedType) {
 			return err

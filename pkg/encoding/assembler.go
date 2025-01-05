@@ -78,12 +78,18 @@ func (a *EncodeAssembler[S, T]) Compile(typ reflect.Type) (Encoder[S, T], error)
 		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
-	group := NewEncoderGroup[S, T]()
-	for _, enc := range encoders {
-		group.Add(enc)
+	var enc Encoder[S, T]
+	if len(encoders) == 1 {
+		enc = encoders[0]
+	} else {
+		group := NewEncoderGroup[S, T]()
+		for _, enc := range encoders {
+			group.Add(enc)
+		}
+		enc = group
 	}
-	a.encoders.Store(typ, group)
-	return group, nil
+	a.encoders.Store(typ, enc)
+	return enc, nil
 }
 
 // NewDecodeAssembler creates a new DecodeAssembler instance.
@@ -138,10 +144,16 @@ func (a *DecodeAssembler[S, T]) Compile(typ reflect.Type) (Decoder[S, unsafe.Poi
 		return nil, errors.WithStack(ErrUnsupportedType)
 	}
 
-	group := NewDecoderGroup[S, unsafe.Pointer]()
-	for _, dec := range decoders {
-		group.Add(dec)
+	var dec Decoder[S, unsafe.Pointer]
+	if len(decoders) == 1 {
+		dec = decoders[0]
+	} else {
+		group := NewDecoderGroup[S, unsafe.Pointer]()
+		for _, dec := range decoders {
+			group.Add(dec)
+		}
+		dec = group
 	}
-	a.decoders.Store(typ, group)
-	return group, nil
+	a.decoders.Store(typ, dec)
+	return dec, nil
 }

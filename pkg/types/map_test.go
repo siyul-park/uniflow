@@ -232,42 +232,91 @@ func TestMap_Decode(t *testing.T) {
 	dec.Add(newStringDecoder())
 	dec.Add(newMapDecoder(dec))
 
-	t.Run("nil", func(t *testing.T) {
-		var decoded map[string]string
-		err := dec.Decode(nil, &decoded)
-		assert.NoError(t, err)
+	t.Run("static", func(t *testing.T) {
+		t.Run("nil", func(t *testing.T) {
+			var decoded map[string]string
+			err := dec.Decode(nil, &decoded)
+			assert.NoError(t, err)
+		})
+
+		t.Run("map", func(t *testing.T) {
+			source := map[string]string{"foo": "bar"}
+			v := NewMap(NewString("foo"), NewString("bar"))
+
+			var decoded map[string]string
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
+
+		t.Run("struct", func(t *testing.T) {
+			source := struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar"`
+			}{
+				Foo: "foo",
+				Bar: "bar",
+			}
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
+
+			var decoded struct {
+				Foo string `map:"foo"`
+				Bar string `map:"bar"`
+			}
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.EqualValues(t, source, decoded)
+		})
 	})
 
-	t.Run("map", func(t *testing.T) {
-		source := map[string]string{"foo": "bar"}
-		v := NewMap(NewString("foo"), NewString("bar"))
+	t.Run("dynamic", func(t *testing.T) {
+		t.Run("map", func(t *testing.T) {
+			source := map[any]any{"foo": "bar"}
+			v := NewMap(NewString("foo"), NewString("bar"))
 
-		var decoded map[string]string
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
-	})
+			var decoded map[any]any
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, source, decoded)
+		})
 
-	t.Run("struct", func(t *testing.T) {
-		source := struct {
-			Foo string `map:"foo"`
-			Bar string `map:"bar"`
-		}{
-			Foo: "foo",
-			Bar: "bar",
-		}
-		v := NewMap(
-			NewString("foo"), NewString("foo"),
-			NewString("bar"), NewString("bar"),
-		)
+		t.Run("struct", func(t *testing.T) {
+			source := struct {
+				Foo any `map:"foo"`
+				Bar any `map:"bar"`
+			}{
+				Foo: "foo",
+				Bar: "bar",
+			}
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
 
-		var decoded struct {
-			Foo string `map:"foo"`
-			Bar string `map:"bar"`
-		}
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.EqualValues(t, source, decoded)
+			var decoded struct {
+				Foo any `map:"foo"`
+				Bar any `map:"bar"`
+			}
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.EqualValues(t, source, decoded)
+		})
+
+		t.Run("any", func(t *testing.T) {
+			source := map[string]string{"foo": "foo", "bar": "bar"}
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
+
+			var decoded any
+			err := dec.Decode(v, &decoded)
+			assert.NoError(t, err)
+			assert.EqualValues(t, source, decoded)
+		})
 	})
 }
 
@@ -456,6 +505,18 @@ func BenchmarkMap_Decode(b *testing.B) {
 					Foo any `map:"foo"`
 					Bar any `map:"bar"`
 				}
+				_ = dec.Decode(v, &decoded)
+			}
+		})
+
+		b.Run("struct", func(b *testing.B) {
+			v := NewMap(
+				NewString("foo"), NewString("foo"),
+				NewString("bar"), NewString("bar"),
+			)
+
+			for i := 0; i < b.N; i++ {
+				var decoded any
 				_ = dec.Decode(v, &decoded)
 			}
 		})
