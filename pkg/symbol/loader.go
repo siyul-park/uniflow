@@ -3,9 +3,9 @@ package symbol
 import (
 	"context"
 	"errors"
+	"github.com/iancoleman/strcase"
 	"reflect"
 
-	"github.com/iancoleman/strcase"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -32,8 +32,12 @@ type Loader struct {
 
 // NewLoader creates a new Loader instance with the provided configuration.
 func NewLoader(config LoaderConfig) *Loader {
+	env := map[string]string{}
+	for k, v := range config.Environment {
+		env[strcase.ToScreamingSnake(k)] = v
+	}
 	return &Loader{
-		environment: config.Environment,
+		environment: env,
 		table:       config.Table,
 		scheme:      config.Scheme,
 		specStore:   config.SpecStore,
@@ -48,28 +52,6 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 	specs, err := l.specStore.Load(ctx, examples...)
 	if err != nil {
 		return err
-	}
-
-	for i, sp := range specs {
-		unstructured := &spec.Unstructured{}
-		if err := spec.As(sp, unstructured); err != nil {
-			return err
-		}
-
-		env := unstructured.GetEnv()
-		if env == nil {
-			env = map[string][]spec.Value{}
-		}
-
-		for k, v := range l.environment {
-			k = strcase.ToScreamingSnake(k)
-			if _, ok := env[k]; !ok {
-				env[k] = append(env[k], spec.Value{Data: v})
-			}
-		}
-
-		unstructured.SetEnv(env)
-		specs[i] = unstructured
 	}
 
 	var values []*value.Value

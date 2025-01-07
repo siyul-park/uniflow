@@ -6,6 +6,9 @@
     out:
       - name: loopback
         port: in
+  env:
+    PORT:
+      - data: '{{ .PORT }}'
 
 - kind: snippet
   name: loopback
