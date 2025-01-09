@@ -43,7 +43,7 @@ Facilitates smooth execution of network-related tasks across various protocols.
 
 - **[HTTP Node](./docs/http_node.md)**: Processes HTTP requests and returns responses, suitable for web service communication.
 - **[WebSocket Node](./docs/websocket_node.md)**: Establishes WebSocket connections and handles message sending and receiving.
-- **[Gateway Node](./docs/gateway_node.md)**: Upgrades HTTP connections to WebSocket for real-time data communication.
+- **[Upgrade Node](./docs/upgrade_node.md)**: Upgrades HTTP connections to WebSocket for real-time data communication.
 - **[Listener Node](./docs/listener_node.md)**: Receives network requests on specified protocols and ports.
 - **[Router Node](./docs/router_node.md)**: Routes input packets to multiple output ports based on conditions.
 

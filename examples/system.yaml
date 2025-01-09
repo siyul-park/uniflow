@@ -277,7 +277,7 @@
 - kind: block
   name: specs_watch
   specs:
-    - kind: gateway
+    - kind: upgrader
       name: websocket
       protocol: websocket
 
@@ -477,7 +477,7 @@
 - kind: block
   name: values_watch
   specs:
-    - kind: gateway
+    - kind: upgrader
       name: websocket
       protocol: websocket
 

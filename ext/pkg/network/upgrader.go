@@ -17,8 +17,8 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-// GatewayNodeSpec defines the specifications for creating a GatewayNode.
-type GatewayNodeSpec struct {
+// UpgradeNodeSpec defines the specifications for creating a UpgradeNode.
+type UpgradeNodeSpec struct {
 	spec.Meta `map:",inline"`
 	Protocol  string        `map:"protocol" validate:"required"`
 	Timeout   time.Duration `map:"timeout,omitempty"`
@@ -32,13 +32,13 @@ type WebSocketUpgradeNode struct {
 	mu       sync.RWMutex
 }
 
-const KindGateway = "gateway"
+const KindUpgrader = "upgrader"
 
 var _ node.Node = (*WebSocketUpgradeNode)(nil)
 
-// NewGatewayNodeCodec creates a new codec for GatewayNodeSpec.
-func NewGatewayNodeCodec() scheme.Codec {
-	return scheme.CodecWithType(func(spec *GatewayNodeSpec) (node.Node, error) {
+// NewUpgradeNodeCodec creates a new codec for UpgradeNodeSpec.
+func NewUpgradeNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(spec *UpgradeNodeSpec) (node.Node, error) {
 		switch spec.Protocol {
 		case ProtocolWebsocket:
 			n := NewWebSocketUpgradeNode()

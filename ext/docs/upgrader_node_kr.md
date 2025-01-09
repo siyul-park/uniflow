@@ -1,6 +1,6 @@
-# Gateway 노드
+# Upgrade 노드
 
-**Gateway 노드**는 네트워크 프로토콜을 다른 프로토콜로 업그레이드하는 기능을 제공하며, 주로 HTTP 연결을 WebSocket 연결로 변환하여 실시간 데이터 통신을 지원합니다.
+**Upgrade 노드**는 네트워크 프로토콜을 다른 프로토콜로 업그레이드하는 기능을 제공하며, 주로 HTTP 연결을 WebSocket 연결로 변환하여 실시간 데이터 통신을 지원합니다.
 
 ## 명세
 
@@ -47,13 +47,13 @@
       port: out[0]
   ports:
     out[0]:
-      - name: gateway
+      - name: upgrader
         port: io
       - name: proxy
         port: io
 
-- kind: gateway
-  name: gateway
+- kind: upgrader
+  name: upgrader
   protocol: websocket
   ports:
     out:
@@ -65,6 +65,6 @@
   url: wss://echo.websocket.org/
   ports:
     out:
-      - name: gateway
+      - name: upgrader
         port: in
 ```

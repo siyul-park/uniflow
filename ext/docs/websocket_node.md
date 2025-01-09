@@ -41,13 +41,13 @@
       port: out[0]
   ports:
     out[0]:
-      - name: gateway
+      - name: upgrader
         port: io
       - name: proxy
         port: io
 
-- kind: gateway
-  name: gateway
+- kind: upgrader
+  name: upgrader
   protocol: websocket
   ports:
     out:
@@ -59,6 +59,6 @@
   url: wss://echo.websocket.org/
   ports:
     out:
-      - name: gateway
+      - name: upgrader
         port: in
 ```

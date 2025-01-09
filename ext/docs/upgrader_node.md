@@ -1,6 +1,7 @@
-# Gateway Node
+# Upgrade Node
 
-**The Gateway Node** provides the capability to upgrade network protocols to other protocols, primarily converting HTTP connections to WebSocket connections to support real-time data communication.
+**The Upgrade Node** provides the capability to upgrade network protocols to other protocols, primarily converting HTTP
+connections to WebSocket connections to support real-time data communication.
 
 ## Specification
 
@@ -47,13 +48,13 @@
       port: out[0]
   ports:
     out[0]:
-      - name: gateway
+      - name: upgrader
         port: io
       - name: proxy
         port: io
 
-- kind: gateway
-  name: gateway
+- kind: upgrader
+  name: upgrader
   protocol: websocket
   ports:
     out:
@@ -65,6 +66,6 @@
   url: wss://echo.websocket.org/
   ports:
     out:
-      - name: gateway
+      - name: upgrader
         port: in
 ```

@@ -41,7 +41,7 @@ func AddToScheme() scheme.Register {
 			{KindListener, NewListenNodeCodec(), &ListenNodeSpec{}},
 			{KindRouter, NewRouteNodeCodec(), &RouteNodeSpec{}},
 			{KindWebSocket, NewWebSocketNodeCodec(), &WebSocketNodeSpec{}},
-			{KindGateway, NewGatewayNodeCodec(), &GatewayNodeSpec{}},
+			{KindUpgrader, NewUpgradeNodeCodec(), &UpgradeNodeSpec{}},
 		}
 
 		for _, def := range definitions {

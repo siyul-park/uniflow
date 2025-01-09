@@ -17,10 +17,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGatewayNodeCodec_Compile(t *testing.T) {
-	codec := NewGatewayNodeCodec()
+func TestUpgradeNodeCodec_Compile(t *testing.T) {
+	codec := NewUpgradeNodeCodec()
 
-	spec := &GatewayNodeSpec{
+	spec := &UpgradeNodeSpec{
 		Protocol: ProtocolWebsocket,
 		Timeout:  time.Second,
 		Buffer:   64,
