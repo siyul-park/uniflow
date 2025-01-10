@@ -7,12 +7,9 @@
     - kind: print
       filename: /dev/stdout
   ports:
-    init:
+    begin:
       - name: hello_world
         port: in
-  env:
-    PORT:
-      - data: '{{ .PORT }}'
 
 - kind: step
   name: good_bye

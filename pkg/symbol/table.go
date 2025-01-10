@@ -155,7 +155,7 @@ func (t *Table) Keys() []uuid.UUID {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	var ids []uuid.UUID
+	ids := make([]uuid.UUID, 0, len(t.symbols))
 	for id := range t.symbols {
 		ids = append(ids, id)
 	}
@@ -271,11 +271,12 @@ func (t *Table) free(id uuid.UUID) (*Symbol, error) {
 func (t *Table) load(sb *Symbol) error {
 	linked := t.linked(sb)
 	for _, sb := range linked {
-		if t.active(sb) {
-			if err := t.loadHooks.Load(sb); err != nil {
-				return err
-			}
+		if t.isActivated(sb) {
 			if err := t.call(sb, node.PortInit); err != nil {
+				return err
+			} else if err := t.loadHooks.Load(sb); err != nil {
+				return err
+			} else if err := t.call(sb, node.PortBegin); err != nil {
 				return err
 			}
 		}
@@ -287,11 +288,12 @@ func (t *Table) unload(sb *Symbol) error {
 	linked := t.linked(sb)
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
-		if t.active(sb) {
+		if t.isActivated(sb) {
 			if err := t.call(sb, node.PortTerm); err != nil {
 				return err
-			}
-			if err := t.unloadHooks.Unload(sb); err != nil {
+			} else if err := t.unloadHooks.Unload(sb); err != nil {
+				return err
+			} else if err := t.call(sb, node.PortFinal); err != nil {
 				return err
 			}
 		}
@@ -472,7 +474,7 @@ func (t *Table) linked(sb *Symbol) []*Symbol {
 	return linked
 }
 
-func (t *Table) active(sb *Symbol) bool {
+func (t *Table) isActivated(sb *Symbol) bool {
 	stack := []*Symbol{sb}
 	visited := map[*Symbol]struct{}{}
 	for len(stack) > 0 {
