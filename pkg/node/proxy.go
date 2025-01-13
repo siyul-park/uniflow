@@ -14,25 +14,23 @@ var _ Proxy = (*noCloseNode)(nil)
 
 // Unwrap recursively unwraps a Node if it implements Proxy.
 func Unwrap(n Node) Node {
-	if proxy, ok := n.(Proxy); ok {
-		return Unwrap(proxy.Unwrap())
+	proxy, ok := n.(Proxy)
+	if !ok {
+		return nil
 	}
-	return n
+	return proxy.Unwrap()
 }
 
 // As attempts to cast the source Node to the target type T.
 func As[T any](source Node, target *T) bool {
-	for {
+	for source != nil {
 		if s, ok := source.(T); ok {
 			*target = s
 			return true
 		}
-		if proxy, ok := source.(Proxy); ok {
-			source = proxy.Unwrap()
-		} else {
-			return false
-		}
+		source = Unwrap(source)
 	}
+	return false
 }
 
 // NoCloser returns a Node with a no-op Close method.

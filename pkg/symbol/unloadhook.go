@@ -31,18 +31,15 @@ func UnloadFunc(fn func(*Symbol) error) UnloadHook {
 func UnloadListenerHook(hook UnloadHook) UnloadHook {
 	return UnloadFunc(func(symbol *Symbol) error {
 		var n node.Node = symbol
-		for {
+		for n != nil {
 			if listener, ok := n.(UnloadListener); ok {
 				if err := listener.Unload(hook); err != nil {
 					return err
 				}
 			}
-			if proxy, ok := n.(node.Proxy); ok {
-				n = proxy.Unwrap()
-			} else {
-				return nil
-			}
+			n = node.Unwrap(n)
 		}
+		return nil
 	})
 }
 

@@ -107,11 +107,9 @@ func TestSymbol_Setter(t *testing.T) {
 	sb.SetPorts(ports)
 	assert.Equal(t, ports, sb.Ports())
 
-	env := map[string][]spec.Value{
+	env := map[string]spec.Value{
 		faker.UUIDHyphenated(): {
-			{
-				Data: faker.UUIDHyphenated(),
-			},
+			Data: faker.UUIDHyphenated(),
 		},
 	}
 	sb.SetEnv(env)

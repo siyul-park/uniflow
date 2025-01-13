@@ -2,13 +2,13 @@
   name: listener
   protocol: http
   port: '{{ .PORT }}'
+  env:
+    PORT:
+      data: '{{ .PORT }}'
   ports:
     out:
       - name: loopback
         port: in
-  env:
-    PORT:
-      - data: '{{ .PORT }}'
 
 - kind: snippet
   name: loopback

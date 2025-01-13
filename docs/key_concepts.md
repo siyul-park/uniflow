@@ -16,14 +16,14 @@ annotations:
   version: "1.0"
 protocol: http
 port: "{{ .PORT }}"
+env:
+  PORT:
+    name: network
+    data: "{{ .PORT }}"
 ports:
   out:
     - name: proxy
       port: in
-env:
-  PORT:
-    - name: network
-      data: "{{ .PORT }}"
 ```
 
 - `id`: A unique identifier in UUID format. UUID V7 is recommended.

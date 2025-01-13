@@ -46,13 +46,13 @@ Try a basic HTTP request handler using [ping.yaml](./examples/ping.yaml):
   name: listener
   protocol: http
   port: '{{ .PORT }}'
+  env:
+    PORT:
+      data: '{{ .PORT }}'
   ports:
     out:
       - name: router
         port: in
-  env:
-    PORT:
-      - data: '{{ .PORT }}'
 
 - kind: router
   name: router

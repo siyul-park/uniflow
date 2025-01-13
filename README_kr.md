@@ -46,13 +46,13 @@ make build
   name: listener
   protocol: http
   port: '{{ .PORT }}'
+  env:
+    PORT:
+      data: '{{ .PORT }}'
   ports:
     out:
       - name: router
         port: in
-  env:
-    PORT:
-      - data: "{{ .PORT }}"
 
 - kind: router
   name: router

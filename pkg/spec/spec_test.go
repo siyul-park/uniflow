@@ -17,7 +17,7 @@ func TestAs(t *testing.T) {
 		Name:        faker.UUIDHyphenated(),
 		Annotations: map[string]string{"key": "value"},
 		Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
-		Env:         map[string][]Value{"env1": {{Name: "value1", Data: "value1"}}},
+		Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
 	}
 
 	unstructured := &Unstructured{}
@@ -60,6 +60,19 @@ func TestMeta_Annotations(t *testing.T) {
 	assert.Equal(t, annotations, meta.GetAnnotations())
 }
 
+func TestMeta_SetEnv(t *testing.T) {
+	meta := &Meta{}
+	env := map[string]Value{
+		"FOO": {
+
+			ID:   uuid.Must(uuid.NewV7()),
+			Data: "baz",
+		},
+	}
+	meta.SetEnv(env)
+	assert.Equal(t, env, meta.GetEnv())
+}
+
 func TestMeta_SetPorts(t *testing.T) {
 	meta := &Meta{}
 	ports := map[string][]Port{
@@ -74,20 +87,6 @@ func TestMeta_SetPorts(t *testing.T) {
 	assert.Equal(t, ports, meta.GetPorts())
 }
 
-func TestMeta_SetEnv(t *testing.T) {
-	meta := &Meta{}
-	env := map[string][]Value{
-		"FOO": {
-			{
-				ID:   uuid.Must(uuid.NewV7()),
-				Data: "baz",
-			},
-		},
-	}
-	meta.SetEnv(env)
-	assert.Equal(t, env, meta.GetEnv())
-}
-
 func TestMeta_IsBound(t *testing.T) {
 	sec1 := &value.Value{
 		ID: uuid.Must(uuid.NewV7()),
@@ -99,12 +98,10 @@ func TestMeta_IsBound(t *testing.T) {
 	meta := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
-		Env: map[string][]Value{
+		Env: map[string]Value{
 			"FOO": {
-				{
-					ID:   sec1.ID,
-					Data: "foo",
-				},
+				ID:   sec1.ID,
+				Data: "foo",
 			},
 		},
 	}
@@ -121,17 +118,15 @@ func TestMeta_Bind(t *testing.T) {
 	meta := &Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: faker.UUIDHyphenated(),
-		Env: map[string][]Value{
+		Env: map[string]Value{
 			"FOO": {
-				{
-					ID:   sec.ID,
-					Data: "{{ . }}",
-				},
+				ID:   sec.ID,
+				Data: "{{ . }}",
 			},
 		},
 	}
 
 	err := meta.Bind(sec)
 	assert.NoError(t, err)
-	assert.Equal(t, sec.Data, meta.GetEnv()["FOO"][0].Data)
+	assert.Equal(t, sec.Data, meta.GetEnv()["FOO"].Data)
 }

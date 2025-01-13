@@ -56,15 +56,13 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 
 	var values []*value.Value
 	for _, sp := range specs {
-		for _, vals := range sp.GetEnv() {
-			for _, val := range vals {
-				if val.IsIdentified() {
-					values = append(values, &value.Value{
-						ID:        val.ID,
-						Namespace: sp.GetNamespace(),
-						Name:      val.Name,
-					})
-				}
+		for _, val := range sp.GetEnv() {
+			if val.IsIdentified() {
+				values = append(values, &value.Value{
+					ID:        val.ID,
+					Namespace: sp.GetNamespace(),
+					Name:      val.Name,
+				})
 			}
 		}
 	}

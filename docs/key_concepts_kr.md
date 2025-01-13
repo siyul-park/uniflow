@@ -16,14 +16,14 @@ annotations:
   version: "1.0"
 protocol: http
 port: "{{ .PORT }}"
+env:
+  PORT:
+    name: network
+    data: "{{ .PORT }}"
 ports:
   out:
     - name: proxy
       port: in
-env:
-  PORT:
-    - name: network
-      data: "{{ .PORT }}"
 ```
 
 - `id`: UUID 형식의 고유 식별자입니다. UUID V7을 권장합니다.

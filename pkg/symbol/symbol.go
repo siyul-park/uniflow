@@ -66,6 +66,16 @@ func (s *Symbol) SetAnnotations(annotations map[string]string) {
 	s.Spec.SetAnnotations(annotations)
 }
 
+// Env returns the environment variables associated with the Symbol.
+func (s *Symbol) Env() map[string]spec.Value {
+	return s.Spec.GetEnv()
+}
+
+// SetEnv sets the environment variables of the Symbol.
+func (s *Symbol) SetEnv(env map[string]spec.Value) {
+	s.Spec.SetEnv(env)
+}
+
 // Ports returns the ports associated with the Symbol.
 func (s *Symbol) Ports() map[string][]spec.Port {
 	return s.Spec.GetPorts()
@@ -74,16 +84,6 @@ func (s *Symbol) Ports() map[string][]spec.Port {
 // SetPorts sets the ports of the Symbol.
 func (s *Symbol) SetPorts(ports map[string][]spec.Port) {
 	s.Spec.SetPorts(ports)
-}
-
-// Env returns the environment variables associated with the Symbol.
-func (s *Symbol) Env() map[string][]spec.Value {
-	return s.Spec.GetEnv()
-}
-
-// SetEnv sets the environment variables of the Symbol.
-func (s *Symbol) SetEnv(env map[string][]spec.Value) {
-	s.Spec.SetEnv(env)
 }
 
 // Ins returns the input ports associated with the Symbol.

@@ -163,12 +163,10 @@ func TestRuntime_Reconcile(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"key": {
-					{
-						ID:   scrt.GetID(),
-						Data: "{{ . }}",
-					},
+					ID:   scrt.GetID(),
+					Data: "{{ . }}",
 				},
 			},
 		}
@@ -179,7 +177,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		select {
 		case sb := <-symbols:
 			assert.Equal(t, meta.GetID(), sb.ID())
-			assert.Equal(t, scrt.Data, sb.Env()["key"][0].Data)
+			assert.Equal(t, scrt.Data, sb.Env()["key"].Data)
 		case <-ctx.Done():
 			assert.NoError(t, ctx.Err())
 		}
@@ -290,12 +288,10 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      kind,
 				Namespace: resource.DefaultNamespace,
-				Env: map[string][]spec.Value{
+				Env: map[string]spec.Value{
 					"key": {
-						{
-							ID:   scrt.GetID(),
-							Data: "{{ . }}",
-						},
+						ID:   scrt.GetID(),
+						Data: "{{ . }}",
 					},
 				},
 			}

@@ -73,7 +73,7 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 
 	t.Run("KeyEnv", func(t *testing.T) {
 		unstructured := &Unstructured{}
-		env := map[string][]Value{"env1": {{Name: "value1", Data: "value1"}}}
+		env := map[string]Value{"env1": {Name: "value1", Data: "value1"}}
 		unstructured.Set(KeyEnv, env)
 		val, ok := unstructured.Get(KeyEnv)
 		assert.True(t, ok)
@@ -96,11 +96,9 @@ func TestUnstructured_Build(t *testing.T) {
 		Meta: Meta{
 			ID:   uuid.Must(uuid.NewV7()),
 			Kind: faker.UUIDHyphenated(),
-			Env: map[string][]Value{
+			Env: map[string]Value{
 				"FOO": {
-					{
-						Data: "foo",
-					},
+					Data: "foo",
 				},
 			},
 		},

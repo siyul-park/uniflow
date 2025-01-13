@@ -2,13 +2,13 @@
   name: listener
   protocol: http
   port: '{{ .PORT }}'
+  env:
+    PORT:
+      data: '{{ .PORT }}'
   ports:
     out:
       - name: proxy
         port: in
-  env:
-    PORT:
-      - data: '{{ .PORT }}'
 
 - kind: http
   name: proxy

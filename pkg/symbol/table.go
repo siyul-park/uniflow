@@ -272,11 +272,11 @@ func (t *Table) load(sb *Symbol) error {
 	linked := t.linked(sb)
 	for _, sb := range linked {
 		if t.isActivated(sb) {
-			if err := t.call(sb, node.PortInit); err != nil {
+			if err := t.exec(sb, node.PortInit); err != nil {
 				return err
 			} else if err := t.loadHooks.Load(sb); err != nil {
 				return err
-			} else if err := t.call(sb, node.PortBegin); err != nil {
+			} else if err := t.exec(sb, node.PortBegin); err != nil {
 				return err
 			}
 		}
@@ -289,11 +289,11 @@ func (t *Table) unload(sb *Symbol) error {
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
 		if t.isActivated(sb) {
-			if err := t.call(sb, node.PortTerm); err != nil {
+			if err := t.exec(sb, node.PortTerm); err != nil {
 				return err
 			} else if err := t.unloadHooks.Unload(sb); err != nil {
 				return err
-			} else if err := t.call(sb, node.PortFinal); err != nil {
+			} else if err := t.exec(sb, node.PortFinal); err != nil {
 				return err
 			}
 		}
@@ -508,7 +508,7 @@ func (t *Table) isActivated(sb *Symbol) bool {
 	return true
 }
 
-func (t *Table) call(sb *Symbol, name string) error {
+func (t *Table) exec(sb *Symbol, name string) error {
 	out := port.NewOut()
 	defer out.Close()
 

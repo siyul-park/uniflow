@@ -20,7 +20,7 @@ func TestUnwrap(t *testing.T) {
 		n := NewOneToOneNode(nil)
 		defer n.Close()
 
-		assert.Equal(t, n, Unwrap(n))
+		assert.Nil(t, Unwrap(n))
 	})
 
 	t.Run("ProxyNode", func(t *testing.T) {

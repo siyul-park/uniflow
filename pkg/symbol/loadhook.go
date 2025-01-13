@@ -31,18 +31,15 @@ func LoadFunc(fn func(*Symbol) error) LoadHook {
 func LoadListenerHook(hook LoadHook) LoadHook {
 	return LoadFunc(func(symbol *Symbol) error {
 		var n node.Node = symbol
-		for {
+		for n != nil {
 			if listener, ok := n.(LoadListener); ok {
 				if err := listener.Load(hook); err != nil {
 					return err
 				}
 			}
-			if proxy, ok := n.(node.Proxy); ok {
-				n = proxy.Unwrap()
-			} else {
-				return nil
-			}
+			n = node.Unwrap(n)
 		}
+		return nil
 	})
 }
 

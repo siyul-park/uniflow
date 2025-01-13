@@ -20,8 +20,8 @@ const (
 	KeyNamespace   = "namespace"
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
-	KeyPorts       = "ports"
 	KeyEnv         = "env"
+	KeyPorts       = "ports"
 )
 
 var _ Spec = (*Unstructured)(nil)
@@ -39,10 +39,10 @@ func (u *Unstructured) Get(key string) (any, bool) {
 		return u.Name, true
 	case KeyAnnotations:
 		return u.Annotations, true
-	case KeyPorts:
-		return u.Ports, true
 	case KeyEnv:
 		return u.Env, true
+	case KeyPorts:
+		return u.Ports, true
 	default:
 		if u.Fields == nil {
 			return nil, false
@@ -75,13 +75,13 @@ func (u *Unstructured) Set(key string, val any) {
 		if v, ok := val.(map[string]string); ok {
 			u.Annotations = v
 		}
+	case KeyEnv:
+		if v, ok := val.(map[string]Value); ok {
+			u.Env = v
+		}
 	case KeyPorts:
 		if v, ok := val.(map[string][]Port); ok {
 			u.Ports = v
-		}
-	case KeyEnv:
-		if v, ok := val.(map[string][]Value); ok {
-			u.Env = v
 		}
 	default:
 		if u.Fields == nil {
@@ -94,10 +94,8 @@ func (u *Unstructured) Set(key string, val any) {
 // Build processes the fields and resolves environment variables using template execution.
 func (u *Unstructured) Build() error {
 	env := make(map[string]any)
-	for key, values := range u.Env {
-		for _, val := range values {
-			env[key] = val.Data
-		}
+	for key, val := range u.Env {
+		env[key] = val.Data
 	}
 
 	if len(env) > 0 {

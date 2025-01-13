@@ -32,14 +32,14 @@ type Spec interface {
 	GetAnnotations() map[string]string
 	// SetAnnotations assigns annotations to the node.
 	SetAnnotations(val map[string]string)
+	// GetEnv retrieves the environment values for the node.
+	GetEnv() map[string]Value
+	// SetEnv assigns environment values to the node.
+	SetEnv(val map[string]Value)
 	// GetPorts retrieves the port connections for the node.
 	GetPorts() map[string][]Port
 	// SetPorts assigns port connections to the node.
 	SetPorts(val map[string][]Port)
-	// GetEnv retrieves the environment values for the node.
-	GetEnv() map[string][]Value
-	// SetEnv assigns environment values to the node.
-	SetEnv(val map[string][]Value)
 }
 
 // Meta contains metadata for node specifications.
@@ -54,10 +54,10 @@ type Meta struct {
 	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
 	// Annotations hold additional metadata.
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	// Env contains sensitive data associated with the node.
+	Env map[string]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 	// Ports define connections to other nodes.
 	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty" map:"ports,omitempty"`
-	// Env contains sensitive data associated with the node.
-	Env map[string][]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty" map:"env,omitempty"`
 }
 
 // Port represents a network port or connection on a node.
@@ -147,6 +147,16 @@ func (m *Meta) SetAnnotations(val map[string]string) {
 	m.Annotations = val
 }
 
+// GetEnv returns the node's environment values.
+func (m *Meta) GetEnv() map[string]Value {
+	return m.Env
+}
+
+// SetEnv sets the node's environment values.
+func (m *Meta) SetEnv(val map[string]Value) {
+	m.Env = val
+}
+
 // GetPorts returns the node's connections.
 func (m *Meta) GetPorts() map[string][]Port {
 	return m.Ports
@@ -157,32 +167,20 @@ func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
 }
 
-// GetEnv returns the node's environment values.
-func (m *Meta) GetEnv() map[string][]Value {
-	return m.Env
-}
-
-// SetEnv sets the node's environment values.
-func (m *Meta) SetEnv(val map[string][]Value) {
-	m.Env = val
-}
-
 // IsBound checks if the spec is bound to any provided values.
 func (m *Meta) IsBound(values ...*value.Value) bool {
-	for _, vals := range m.Env {
-		for _, val := range vals {
-			var examples []*value.Value
-			if val.ID != uuid.Nil {
-				examples = append(examples, &value.Value{ID: val.ID})
-			}
-			if val.Name != "" {
-				examples = append(examples, &value.Value{Namespace: m.Namespace, Name: val.Name})
-			}
+	for _, val := range m.Env {
+		var examples []*value.Value
+		if val.ID != uuid.Nil {
+			examples = append(examples, &value.Value{ID: val.ID})
+		}
+		if val.Name != "" {
+			examples = append(examples, &value.Value{Namespace: m.Namespace, Name: val.Name})
+		}
 
-			for _, v := range values {
-				if len(resource.Match(v, examples...)) > 0 {
-					return true
-				}
+		for _, v := range values {
+			if len(resource.Match(v, examples...)) > 0 {
+				return true
 			}
 		}
 	}
@@ -191,38 +189,33 @@ func (m *Meta) IsBound(values ...*value.Value) bool {
 
 // Bind processes the spec by resolving environment variables using provided values.
 func (m *Meta) Bind(values ...*value.Value) error {
-	for _, vals := range m.Env {
-		ok := false
-		for i, val := range vals {
-			example := &value.Value{
-				ID:        val.ID,
-				Namespace: m.Namespace,
-				Name:      val.Name,
-			}
-
-			var value *value.Value
-			for _, v := range values {
-				if (!v.IsIdentified() && !val.IsIdentified()) || len(resource.Match(v, example)) > 0 {
-					value = v
-					break
-				}
-			}
-
-			if value != nil {
-				v, err := template.Execute(val.Data, value.Data)
-				if err != nil {
-					return err
-				}
-
-				val.ID = value.GetID()
-				val.Name = value.GetName()
-				val.Data = v
-				vals[i] = val
-			}
-
-			ok = ok || !val.IsIdentified() || value != nil
+	for key, val := range m.Env {
+		example := &value.Value{
+			ID:        val.ID,
+			Namespace: m.Namespace,
+			Name:      val.Name,
 		}
-		if !ok {
+
+		var value *value.Value
+		for _, v := range values {
+			if (!v.IsIdentified() && !val.IsIdentified()) || len(resource.Match(v, example)) > 0 {
+				value = v
+				break
+			}
+		}
+
+		if value != nil {
+			v, err := template.Execute(val.Data, value.Data)
+			if err != nil {
+				return err
+			}
+
+			val.ID = value.GetID()
+			val.Name = value.GetName()
+			val.Data = v
+
+			m.Env[key] = val
+		} else if val.IsIdentified() {
 			return errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 	}

@@ -50,12 +50,10 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"key": {
-					{
-						ID:   scrt.GetID(),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   scrt.GetID(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		}
@@ -109,12 +107,10 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"key": {
-					{
-						ID:   scrt.GetID(),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   scrt.GetID(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		}
@@ -152,12 +148,10 @@ func TestLoader_Load(t *testing.T) {
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"key": {
-					{
-						ID:   scrt.GetID(),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   scrt.GetID(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		}
@@ -203,18 +197,14 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"sec1": {
-					{
-						ID:   sec1.GetID(),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   sec1.GetID(),
+					Data: faker.UUIDHyphenated(),
 				},
 				"sec2": {
-					{
-						ID:   sec2.GetID(),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   sec2.GetID(),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		}
@@ -247,12 +237,10 @@ func TestLoader_Load(t *testing.T) {
 			Kind:      kind,
 			Namespace: resource.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
-			Env: map[string][]spec.Value{
+			Env: map[string]spec.Value{
 				"nonexist": {
-					{
-						ID:   uuid.Must(uuid.NewV7()),
-						Data: faker.UUIDHyphenated(),
-					},
+					ID:   uuid.Must(uuid.NewV7()),
+					Data: faker.UUIDHyphenated(),
 				},
 			},
 		}
