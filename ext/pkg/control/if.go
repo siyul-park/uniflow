@@ -2,7 +2,6 @@ package control
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/siyul-park/uniflow/ext/pkg/language"
@@ -36,22 +35,7 @@ func NewIfNodeCodec(compiler language.Compiler) scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-		return NewIfNode(func(ctx context.Context, env any) (bool, error) {
-			if spec.Timeout != 0 {
-				var cancel func()
-				ctx, cancel = context.WithTimeout(ctx, spec.Timeout)
-				defer cancel()
-			}
-
-			res, err := program.Run(ctx, []any{env})
-			if err != nil {
-				return false, err
-			}
-			if len(res) == 0 {
-				return false, nil
-			}
-			return !reflect.ValueOf(res[0]).IsZero(), nil
-		}), nil
+		return NewIfNode(language.Predicate[any](language.Timeout(program, spec.Timeout))), nil
 	})
 }
 

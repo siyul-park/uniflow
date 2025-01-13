@@ -42,22 +42,7 @@ func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
 			return nil, err
 		}
 
-		return NewSnippetNode(func(ctx context.Context, arg any) (any, error) {
-			if spec.Timeout != 0 {
-				var cancel func()
-				ctx, cancel = context.WithTimeout(ctx, spec.Timeout)
-				defer cancel()
-			}
-
-			res, err := program.Run(ctx, []any{arg})
-			if err != nil {
-				return nil, err
-			}
-			if len(res) == 0 {
-				return nil, nil
-			}
-			return res[0], nil
-		}), nil
+		return NewSnippetNode(language.Function[any, any](language.Timeout(program, spec.Timeout))), nil
 	})
 }
 

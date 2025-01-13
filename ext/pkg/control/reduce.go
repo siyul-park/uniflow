@@ -41,23 +41,7 @@ func NewReduceNodeCodec(compiler language.Compiler) scheme.Codec {
 		if err != nil {
 			return nil, err
 		}
-
-		return NewReduceNode(func(ctx context.Context, acc, cur any, index int) (any, error) {
-			if spec.Timeout != 0 {
-				var cancel func()
-				ctx, cancel = context.WithTimeout(ctx, spec.Timeout)
-				defer cancel()
-			}
-
-			res, err := program.Run(ctx, []any{acc, cur, index})
-			if err != nil {
-				return nil, err
-			}
-			if len(res) == 0 {
-				return nil, nil
-			}
-			return res[0], nil
-		}, spec.Init), nil
+		return NewReduceNode(language.TriFunction[any, any, int, any](language.Timeout(program, spec.Timeout)), spec.Init), nil
 	})
 }
 
