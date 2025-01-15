@@ -110,7 +110,7 @@
 
 - kind: if
   name: specs_read_or_watch
-  when: '!has(self.header.Connection) || !has(self.header.Upgrade)'
+  when: '!has(header.Connection) || !has(header.Upgrade)'
   ports:
     out[0]:
       - name: specs_read_with_query
@@ -124,7 +124,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: body
     - kind: syscall
       opcode: specs.create
     - kind: snippet
@@ -165,7 +165,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: body
     - kind: syscall
       opcode: specs.update
     - kind: snippet
@@ -205,7 +205,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.params) ? self.params : null'
+      code: params
     - kind: syscall
       opcode: specs.read
     - kind: snippet
@@ -256,7 +256,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.params) ? self.params : null'
+      code: params
     - kind: syscall
       opcode: specs.delete
     - kind: snippet
@@ -313,7 +313,7 @@
 
 - kind: if
   name: values_read_or_watch
-  when: '!has(self.header.Connection) || !has(self.header.Upgrade)'
+  when: '!has(header.Connection) || !has(header.Upgrade)'
   ports:
     out[0]:
       - name: values_read_with_query
@@ -327,7 +327,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: body
     - kind: syscall
       opcode: values.create
     - kind: snippet
@@ -368,7 +368,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.body) ? self.body : null'
+      code: body
     - kind: syscall
       opcode: values.update
     - kind: snippet
@@ -408,7 +408,7 @@
   specs:
     - kind: snippet
       language: cel
-      code: 'has(self.params) ? self.params : null'
+      code: params
     - kind: syscall
       opcode: values.read
     - kind: snippet
@@ -514,7 +514,7 @@
 - kind: switch
   name: catch
   matches:
-    - when: self == "unsupported type" || self == "unsupported value"
+    - when: 'self == "unsupported type" || self == "unsupported value"'
       port: out[0]
     - when: 'true'
       port: out[1]

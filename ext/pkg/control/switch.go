@@ -89,7 +89,7 @@ func (n *SwitchNode) action(proc *process.Process, inPck *packet.Packet) ([]*pac
 	outPcks := make([]*packet.Packet, len(n.conditions))
 	for i, condition := range n.conditions {
 		port := n.ports[i]
-		if ok, err := condition(proc.Context(), input); err != nil {
+		if ok, err := condition(proc, input); err != nil {
 			return nil, packet.New(types.NewError(err))
 		} else if ok {
 			outPcks[port] = inPck

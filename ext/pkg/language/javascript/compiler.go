@@ -55,6 +55,7 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 			New: func() any {
 				vm := goja.New()
 				vm.SetFieldNameMapper(&fieldNameMapper{})
+
 				module := vm.NewObject()
 				exports := vm.NewObject()
 
@@ -63,12 +64,12 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				_ = vm.Set(keyModule, module)
 				_ = vm.Set(keyExports, exports)
 
-				vm.RunProgram(program)
+				_, _ = vm.RunProgram(program)
 				return vm
 			},
 		}
 
-		return language.RunFunc(func(ctx context.Context, args []any) (_ []any, err error) {
+		return language.RunFunc(func(ctx context.Context, args ...any) (_ any, err error) {
 			defer func() { err, _ = recover().(error) }()
 
 			vm := vms.Get().(*goja.Runtime)
@@ -110,10 +111,10 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				}
 			}()
 
-			if result, err := run(goja.Undefined(), values...); err != nil {
+			if result, err := run(vm.ToValue(ctx), values...); err != nil {
 				return nil, err
 			} else {
-				return []any{result.Export()}, nil
+				return result.Export(), nil
 			}
 		}), nil
 	})

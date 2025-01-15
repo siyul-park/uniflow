@@ -18,7 +18,7 @@
 ```yaml
 - kind: snippet
   language: cel
-  code: 'has(self.body) ? self.body : null'
+  code: 'has(body) ? body : null'
   ports:
     out:
       - name: specs_create

@@ -9,7 +9,7 @@ import (
 )
 
 func TestTimeout(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args []any) ([]any, error) {
+	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		_, ok := ctx.Deadline()
 		assert.True(t, ok)
 		return nil, nil
@@ -21,7 +21,7 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestPredicate(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args []any) ([]any, error) {
+	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		return []any{1}, nil
 	})
 	predicate := Predicate[int](program)
@@ -32,8 +32,8 @@ func TestPredicate(t *testing.T) {
 }
 
 func TestFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args []any) ([]any, error) {
-		return []any{"result"}, nil
+	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+		return "result", nil
 	})
 	function := Function[int, string](program)
 
@@ -43,8 +43,8 @@ func TestFunction(t *testing.T) {
 }
 
 func TestBiFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args []any) ([]any, error) {
-		return []any{"result"}, nil
+	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+		return "result", nil
 	})
 	biFunction := BiFunction[int, int, string](program)
 
@@ -54,8 +54,8 @@ func TestBiFunction(t *testing.T) {
 }
 
 func TestTriFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args []any) ([]any, error) {
-		return []any{"result"}, nil
+	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+		return "result", nil
 	})
 	triFunction := TriFunction[int, int, int, string](program)
 

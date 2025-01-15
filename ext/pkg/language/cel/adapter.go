@@ -9,6 +9,8 @@ type adapter struct{}
 
 var _ types.Adapter = (*adapter)(nil)
 
+var TypeAdapter = &adapter{}
+
 func (*adapter) NativeToValue(value any) ref.Val {
 	switch v := value.(type) {
 	case error:

@@ -5,7 +5,7 @@ processing real-time events or system-level signals within the workflow.
 
 ## Specification
 
-- **opcode**: A string identifying the system operation to be listened. It is associated with the specified function and
+- **topic**: A string identifying the system operation to be listened. It is associated with the specified function and
   determines the node's behavior.
 
 ## Ports
@@ -16,7 +16,7 @@ processing real-time events or system-level signals within the workflow.
 
 ```yaml
 - kind: signal
-  opcode: specs
+  topic: specs
   ports:
     out:
       - name: next

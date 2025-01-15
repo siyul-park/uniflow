@@ -14,7 +14,6 @@ func TestNew(t *testing.T) {
 	defer proc.Exit(nil)
 
 	assert.NotZero(t, proc.ID())
-	assert.NotNil(t, proc.Context())
 	assert.Equal(t, nil, proc.Err())
 	assert.Equal(t, StatusRunning, proc.Status())
 }
@@ -26,29 +25,29 @@ func TestProcess_Keys(t *testing.T) {
 	k := faker.UUIDHyphenated()
 	v := faker.UUIDHyphenated()
 
-	proc.Store(k, v)
+	proc.SetValue(k, v)
 
 	keys := proc.Keys()
 	assert.Contains(t, keys, k)
 }
 
-func TestProcess_Load(t *testing.T) {
+func TestProcess_Value(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
 	k := faker.UUIDHyphenated()
 	v := faker.UUIDHyphenated()
 
-	r := proc.Load(k)
+	r := proc.Value(k)
 	assert.Nil(t, r)
 
-	proc.Store(k, v)
+	proc.SetValue(k, v)
 
-	r = proc.Load(k)
+	r = proc.Value(k)
 	assert.Equal(t, v, r)
 }
 
-func TestProcess_Store(t *testing.T) {
+func TestProcess_SetValue(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
@@ -56,42 +55,26 @@ func TestProcess_Store(t *testing.T) {
 	v1 := faker.UUIDHyphenated()
 	v2 := faker.UUIDHyphenated()
 
-	proc.Store(k, v1)
-	proc.Store(k, v2)
+	proc.SetValue(k, v1)
+	proc.SetValue(k, v2)
 
-	r := proc.Load(k)
+	r := proc.Value(k)
 	assert.Equal(t, v2, r)
 }
 
-func TestProcess_Delete(t *testing.T) {
+func TestProcess_RemoveValue(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
 	k := faker.UUIDHyphenated()
 	v := faker.UUIDHyphenated()
 
-	ok := proc.Delete(k)
-	assert.False(t, ok)
+	proc.SetValue(k, v)
 
-	proc.Store(k, v)
-
-	ok = proc.Delete(k)
-	assert.True(t, ok)
-}
-
-func TestProcess_LoadAndDelete(t *testing.T) {
-	proc := New()
-	defer proc.Exit(nil)
-
-	k := faker.UUIDHyphenated()
-	v := faker.UUIDHyphenated()
-
-	proc.Store(k, v)
-
-	r := proc.LoadAndDelete(k)
+	r := proc.RemoveValue(k)
 	assert.Equal(t, v, r)
 
-	r = proc.Load(k)
+	r = proc.Value(k)
 	assert.Nil(t, r)
 }
 
@@ -99,7 +82,7 @@ func TestProcess_Exit(t *testing.T) {
 	proc := New()
 
 	proc.Exit(nil)
-	assert.Equal(t, nil, proc.Err())
+	assert.Equal(t, context.Canceled, proc.Err())
 	assert.Equal(t, StatusTerminated, proc.Status())
 }
 
@@ -126,7 +109,7 @@ func TestProcess_Fork(t *testing.T) {
 	assert.Equal(t, proc, child.Parent())
 }
 
-func TestProcess_Wait(t *testing.T) {
+func TestProcess_Join(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 

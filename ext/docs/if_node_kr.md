@@ -17,7 +17,7 @@
 
 ```yaml
 - kind: if
-  when: "self.count > 10"
+  when: "count > 10"
   ports:
     out[0]:
       - name: true_path

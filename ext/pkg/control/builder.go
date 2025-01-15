@@ -27,7 +27,6 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			{KindMerge, NewMergeNodeCodec(), &MergeNodeSpec{}},
 			{KindNOP, NewNOPNodeCodec(), &NOPNodeSpec{}},
 			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
-			{KindReduce, NewReduceNodeCodec(expr), &ReduceNodeSpec{}},
 			{KindRetry, NewRetryNodeCodec(), &RetryNodeSpec{}},
 			{KindSession, NewSessionNodeCodec(), &SessionNodeSpec{}},
 			{KindSleep, NewSleepNodeCodec(), &SleepNodeSpec{}},

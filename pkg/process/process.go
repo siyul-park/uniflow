@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -11,11 +12,11 @@ import (
 type Process struct {
 	parent    *Process
 	id        uuid.UUID
-	data      map[string]any
+	data      map[any]any
 	status    Status
 	err       error
-	ctx       context.Context
 	exitHooks ExitHooks
+	done      chan struct{}
 	wait      sync.WaitGroup
 	mu        sync.RWMutex
 }
@@ -28,14 +29,14 @@ const (
 	StatusTerminated
 )
 
+var _ context.Context = (*Process)(nil)
+
 // New creates a new process with a background context and an exit hook.
 func New() *Process {
-	ctx, cancel := context.WithCancelCause(context.Background())
 	return &Process{
-		id:        uuid.Must(uuid.NewV7()),
-		data:      make(map[string]any),
-		ctx:       ctx,
-		exitHooks: []ExitHook{ExitFunc(cancel)},
+		id:   uuid.Must(uuid.NewV7()),
+		data: make(map[any]any),
+		done: make(chan struct{}),
 	}
 }
 
@@ -45,11 +46,11 @@ func (p *Process) ID() uuid.UUID {
 }
 
 // Keys returns all eager keys in the process.
-func (p *Process) Keys() []string {
+func (p *Process) Keys() []any {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	keys := make([]string, 0, len(p.data))
+	keys := make([]any, 0, len(p.data))
 	for key := range p.data {
 		keys = append(keys, key)
 	}
@@ -59,8 +60,8 @@ func (p *Process) Keys() []string {
 	return keys
 }
 
-// Load gets the value associated with the key.
-func (p *Process) Load(key string) any {
+// Value gets the value associated with the key.
+func (p *Process) Value(key any) any {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -68,31 +69,21 @@ func (p *Process) Load(key string) any {
 		return val
 	}
 	if p.parent != nil {
-		return p.parent.Load(key)
+		return p.parent.Value(key)
 	}
 	return nil
 }
 
-// Store saves a value with the given key.
-func (p *Process) Store(key string, val any) {
+// SetValue saves a value with the given key.
+func (p *Process) SetValue(key, val any) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	p.data[key] = val
 }
 
-// Delete removes the value by key.
-func (p *Process) Delete(key string) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	_, exists := p.data[key]
-	delete(p.data, key)
-	return exists
-}
-
-// LoadAndDelete retrieves and removes the value by key, checking the parent if not found.
-func (p *Process) LoadAndDelete(key string) any {
+// RemoveValue retrieves and removes the value by key, checking the parent if not found.
+func (p *Process) RemoveValue(key any) any {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -101,7 +92,7 @@ func (p *Process) LoadAndDelete(key string) any {
 		return val
 	}
 	if p.parent != nil {
-		return p.parent.LoadAndDelete(key)
+		return p.parent.RemoveValue(key)
 	}
 	return nil
 }
@@ -119,17 +110,31 @@ func (p *Process) Err() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return p.err
-}
+	if p.err != nil {
+		return p.err
+	}
 
-// Context returns the process context.
-func (p *Process) Context() context.Context {
-	return p.ctx
+	select {
+	case <-p.done:
+		return context.Canceled
+	default:
+		return nil
+	}
 }
 
 // Parent returns the parent process, if any.
 func (p *Process) Parent() *Process {
 	return p.parent
+}
+
+// Deadline returns the time when the process will be canceled, if any.
+func (p *Process) Deadline() (time.Time, bool) {
+	return time.Time{}, false
+}
+
+// Done returns a channel that is closed when the process is done.
+func (p *Process) Done() <-chan struct{} {
+	return p.done
 }
 
 // Join waits for all child processes to complete.
@@ -141,16 +146,16 @@ func (p *Process) Join() {
 func (p *Process) Fork() *Process {
 	p.wait.Add(1)
 
-	ctx, cancel := context.WithCancelCause(p.ctx)
 	child := &Process{
 		id:     uuid.Must(uuid.NewV7()),
-		data:   make(map[string]any),
-		ctx:    ctx,
+		data:   make(map[any]any),
 		parent: p,
 		exitHooks: []ExitHook{
-			ExitFunc(cancel),
-			ExitFunc(func(err error) { p.wait.Done() }),
+			ExitFunc(func(err error) {
+				p.wait.Done()
+			}),
 		},
+		done: make(chan struct{}),
 	}
 	p.AddExitHook(child)
 	return child
@@ -158,44 +163,41 @@ func (p *Process) Fork() *Process {
 
 // Exit terminates the process with an error, running exit hooks.
 func (p *Process) Exit(err error) {
-	exitHooks := func() ExitHooks {
-		p.mu.Lock()
-		defer p.mu.Unlock()
+	p.mu.Lock()
+	exitHooks := p.exitHooks
+	if p.status != StatusTerminated {
+		close(p.done)
 
-		if p.status == StatusTerminated {
-			return nil
-		}
-
-		exitHooks := p.exitHooks
-
-		p.data = make(map[string]any)
+		p.data = make(map[any]any)
 		p.status = StatusTerminated
 		p.err = err
 		p.exitHooks = nil
-
-		return exitHooks
-	}()
-
-	if exitHooks != nil {
-		exitHooks.Exit(err)
 	}
+	p.mu.Unlock()
+
+	exitHooks.Exit(err)
 }
 
 // AddExitHook adds an exit hook, executing immediately if terminated.
 func (p *Process) AddExitHook(hook ExitHook) bool {
-	if p.Status() == StatusTerminated {
-		hook.Exit(p.Err())
+	p.mu.Lock()
+
+	if p.status == StatusTerminated {
+		err := p.err
+		p.mu.Unlock()
+		hook.Exit(err)
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	for _, h := range p.exitHooks {
 		if h == hook {
+			p.mu.Unlock()
 			return false
 		}
 	}
 	p.exitHooks = append(p.exitHooks, hook)
+
+	p.mu.Unlock()
+
 	return true
 }

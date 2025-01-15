@@ -16,7 +16,6 @@ Precisely manage data flow.
 - **[Merge Node](./docs/merge_node.md)**: Combines multiple input packets into one.
 - **[NOP Node](./docs/nop_node.md)**: Responds to input packets with an empty packet, without any processing.
 - **[Pipe Node](./docs/pipe_node.md)**: Processes input packets and distributes results to multiple output ports, allowing for reusable data flows.
-- **[Reduce Node](./docs/reduce_node.md)**: Repeatedly processes input data to produce a single output value, useful for data aggregation.
 - **[Retry Node](./docs/retry_node.md)**: Retries packet processing a specified number of times upon encountering errors.
 - **[Session Node](./docs/session_node.md)**: Stores and manages process information, maintaining session continuity.
 - **[Sleep Node](./docs/sleep_node.md)**: Introduces a specified delay in processing to pace workflows or await external

@@ -50,7 +50,7 @@ func (n *IfNode) action(proc *process.Process, inPck *packet.Packet) ([]*packet.
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 
-	ok, err := n.condition(proc.Context(), input)
+	ok, err := n.condition(proc, input)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}

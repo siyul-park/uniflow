@@ -304,7 +304,7 @@ func (n *WebSocketConnNode) connection(proc *process.Process) (*websocket.Conn, 
 	select {
 	case conn := <-conns:
 		return conn, true
-	case <-proc.Context().Done():
+	case <-proc.Done():
 		return nil, false
 	}
 }

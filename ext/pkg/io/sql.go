@@ -89,8 +89,6 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	ctx := proc.Context()
-
 	query, ok := types.Get[string](inPck.Payload())
 	if !ok {
 		query, ok = types.Get[string](inPck.Payload(), 0)
@@ -100,7 +98,7 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
-		tx, err := n.db.BeginTxx(ctx, &sql.TxOptions{
+		tx, err := n.db.BeginTxx(proc, &sql.TxOptions{
 			Isolation: n.isolation,
 		})
 		if err != nil {
@@ -121,7 +119,7 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		return nil, packet.New(types.NewError(err))
 	}
 
-	stmt, err := tx.PrepareNamedContext(ctx, query)
+	stmt, err := tx.PrepareNamedContext(proc, query)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
@@ -130,7 +128,7 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
 		args, _ := types.Get[[]any](inPck.Payload(), 1)
-		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
+		if rows, err = tx.QueryxContext(proc, query, args...); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 	} else {
@@ -146,7 +144,7 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 			return nil, packet.New(types.NewError(errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())))
 		}
 
-		if rows, err = tx.QueryxContext(ctx, query, args...); err != nil {
+		if rows, err = tx.QueryxContext(proc, query, args...); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 	}

@@ -26,9 +26,9 @@ func TestProgram_Run(t *testing.T) {
 		return args;
 	}`)
 
-	args := []any{faker.UUIDHyphenated()}
+	input := faker.UUIDHyphenated()
 
-	res, err := p.Run(ctx, args)
+	output, err := p.Run(ctx, input)
 	assert.NoError(t, err)
-	assert.Equal(t, args, res)
+	assert.Equal(t, input, output)
 }

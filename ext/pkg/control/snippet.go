@@ -57,7 +57,7 @@ func (n *SnippetNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 	inPayload := inPck.Payload()
 	input := types.InterfaceOf(inPayload)
 
-	if output, err := n.fn(proc.Context(), input); err != nil {
+	if output, err := n.fn(proc, input); err != nil {
 		return nil, packet.New(types.NewError(err))
 	} else if outPayload, err := types.Marshal(output); err != nil {
 		return nil, packet.New(types.NewError(err))

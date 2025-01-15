@@ -6,9 +6,9 @@ WORKDIR /app
 COPY ./ .
 
 RUN make init
-RUN make build CGO_ENABLED=0
+RUN make build
 
-FROM alpine:latest
+FROM ubuntu:latest
 
 WORKDIR /root/
 

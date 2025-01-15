@@ -52,7 +52,6 @@ func NewSyscallNode(fn func(context.Context, []any) ([]any, error)) (*SyscallNod
 }
 
 func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-	ctx := proc.Context()
 	inPayload := inPck.Payload()
 
 	var arguments []any
@@ -62,7 +61,7 @@ func (n *SyscallNode) action(proc *process.Process, inPck *packet.Packet) (*pack
 		arguments = append(arguments, types.InterfaceOf(inPayload))
 	}
 
-	returns, err := n.fn(ctx, arguments)
+	returns, err := n.fn(proc, arguments)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
