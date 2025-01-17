@@ -189,6 +189,13 @@ func (a *Agent) Close() {
 
 // accept registers a process and notifies watchers.
 func (a *Agent) accept(proc *process.Process) {
+	a.mu.RLock()
+	if _, ok := a.processes[proc.ID()]; ok {
+		a.mu.RUnlock()
+		return
+	}
+	a.mu.RUnlock()
+
 	a.mu.Lock()
 
 	if _, ok := a.processes[proc.ID()]; ok {

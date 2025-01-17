@@ -7,8 +7,8 @@
 - **protocol**: 처리할 프로토콜을 지정합니다. 현재는 `http` 프로토콜을 지원합니다.
 - **host**: 서버의 호스트 주소를 지정합니다. (선택 사항)
 - **port**: 서버가 리슨할 포트 번호를 설정합니다.
-- **cert**: HTTPS를 사용할 때 TLS 인증서를 설정합니다. (선택 사항)
-- **key**: HTTPS를 사용할 때 TLS 비밀 키를 설정합니다. (선택 사항)
+- **tls.cert**: HTTPS를 사용할 때 TLS 인증서를 설정합니다. (선택 사항)
+- **tls.key**: HTTPS를 사용할 때 TLS 비밀 키를 설정합니다. (선택 사항)
 
 ## 포트
 
@@ -31,12 +31,13 @@ spec:
   protocol: http
   host: "localhost"
   port: 8080
-  cert: |
-    -----BEGIN CERTIFICATE-----
-    [certificate data]
-    -----END CERTIFICATE-----
-  key: |
-    -----BEGIN PRIVATE KEY-----
-    [key data]
-    -----END PRIVATE KEY-----
+  tls:
+    cert: |
+      -----BEGIN CERTIFICATE-----
+      [certificate data]
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      [key data]
+      -----END PRIVATE KEY-----
 ```

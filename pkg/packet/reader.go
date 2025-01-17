@@ -108,10 +108,10 @@ func (r *Reader) Receive(pck *Packet) bool {
 		return false
 	}
 
+	r.outbounds.Handle(pck)
+
 	w := r.writers[0]
 	r.writers = r.writers[1:]
-
-	r.outbounds.Handle(pck)
 
 	r.mu.Unlock()
 

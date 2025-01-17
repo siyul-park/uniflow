@@ -15,6 +15,7 @@ func TestNew(t *testing.T) {
 
 	assert.NotZero(t, proc.ID())
 	assert.Equal(t, nil, proc.Err())
+	assert.NotZero(t, proc.StartTime())
 	assert.Equal(t, StatusRunning, proc.Status())
 }
 
@@ -83,6 +84,7 @@ func TestProcess_Exit(t *testing.T) {
 
 	proc.Exit(nil)
 	assert.Equal(t, context.Canceled, proc.Err())
+	assert.NotZero(t, proc.EndTime())
 	assert.Equal(t, StatusTerminated, proc.Status())
 }
 

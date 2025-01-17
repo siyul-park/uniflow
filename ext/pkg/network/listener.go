@@ -27,8 +27,12 @@ type ListenNodeSpec struct {
 	Protocol  string `map:"protocol" validate:"required"`
 	Host      string `map:"host,omitempty" validate:"omitempty,hostname|ip"`
 	Port      int    `map:"port" validate:"required"`
-	Cert      string `map:"cert,omitempty"`
-	Key       string `map:"key,omitempty"`
+	TLS       TLS    `map:"tls"`
+}
+
+type TLS struct {
+	Cert string `map:"cert,omitempty"`
+	Key  string `map:"key,omitempty"`
 }
 
 // HTTPListenNode represents a Node for handling HTTP requests.
@@ -43,8 +47,8 @@ type HTTPListenNode struct {
 const KindListener = "listener"
 
 const (
-	KeyHTTPRequest        = "http.Request"
-	KeyHTTPResponseWriter = "http.ResponseWriter"
+	KeyHTTPRequest        = "__http.Request__"
+	KeyHTTPResponseWriter = "__http.ResponseWriter__"
 )
 
 var _ node.Node = (*HTTPListenNode)(nil)
@@ -56,8 +60,8 @@ func NewListenNodeCodec() scheme.Codec {
 		switch spec.Protocol {
 		case ProtocolHTTP:
 			n := NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
-			if spec.Cert != "" || spec.Key != "" {
-				if err := n.TLS(spec.Cert, spec.Key); err != nil {
+			if spec.TLS.Cert != "" || spec.TLS.Key != "" {
+				if err := n.TLS(spec.TLS.Cert, spec.TLS.Key); err != nil {
 					_ = n.Close()
 					return nil, err
 				}

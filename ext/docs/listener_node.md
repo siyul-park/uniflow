@@ -7,8 +7,8 @@
 - **protocol**: Specifies the protocol to handle. Currently, only the `http` protocol is supported.
 - **host**: Specifies the host address of the server. (Optional)
 - **port**: Sets the port number on which the server will listen.
-- **cert**: Sets the TLS certificate for HTTPS use. (Optional)
-- **key**: Sets the TLS private key for HTTPS use. (Optional)
+- **tls.cert**: Sets the TLS certificate for HTTPS use. (Optional)
+- **tls.key**: Sets the TLS private key for HTTPS use. (Optional)
 
 ## Ports
 
@@ -31,12 +31,13 @@ spec:
   protocol: http
   host: "localhost"
   port: 8080
-  cert: |
-    -----BEGIN CERTIFICATE-----
-    [certificate data]
-    -----END CERTIFICATE-----
-  key: |
-    -----BEGIN PRIVATE KEY-----
-    [key data]
-    -----END PRIVATE KEY-----
+  tls:
+    cert: |
+      -----BEGIN CERTIFICATE-----
+      [certificate data]
+      -----END CERTIFICATE-----
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      [key data]
+      -----END PRIVATE KEY-----
 ```
