@@ -36,6 +36,11 @@ func (s *Symbol) Kind() string {
 	return s.Spec.GetKind()
 }
 
+// SetKind sets the type of the Symbol.
+func (s *Symbol) SetKind(kind string) {
+	s.Spec.SetKind(kind)
+}
+
 // Namespace returns the namespace to which the Symbol belongs.
 func (s *Symbol) Namespace() string {
 	return s.Spec.GetNamespace()
