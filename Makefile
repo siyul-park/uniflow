@@ -51,6 +51,11 @@ update:
 		cd $$dir && go get -u all && go mod tidy; \
 	done
 
+clean-sum:
+	@for dir in $(MODULE_DIRS); do \
+		cd $$dir && rm go.sum; \
+	done
+
 clean-cache:
 	@for dir in $(MODULE_DIRS); do \
 		cd $$dir && go clean -modcache; \

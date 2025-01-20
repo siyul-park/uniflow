@@ -2,10 +2,90 @@ name: CD
 
 on:
   release:
-    types: [ published ]
+    types: [published]
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: siyul-park/notify-pkg-go-dev@v1
+      - run: |
+          # Parameters from the Action inputs
+          BASE_URL="https://pkg.go.dev/fetch"
+          REPO_URL="github.com/${{ github.repository }}"
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+
+          # If the tag contains '/', replace the last '/' with '@'
+          if [[ "$RELEASE_TAG" == *"/"* ]]; then
+            PACKAGE_URL="${REPO_URL}/${RELEASE_TAG%/*}"
+            PACKAGE_VERSION="${RELEASE_TAG##*/}"
+          else
+            PACKAGE_URL="${REPO_URL}"
+            PACKAGE_VERSION="${RELEASE_TAG}"
+          fi
+
+          # Construct the full URL
+          FULL_URL="${BASE_URL}/${PACKAGE_URL}@${PACKAGE_VERSION}"
+          echo "Sending POST request to $FULL_URL"
+
+          # Send the POST request
+          curl -X POST "$FULL_URL" --fail || echo "Failed to notify pkg.go.dev"
+
+  commit:
+    needs: refresh
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        go: ['1.22']
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+
+      - name: Update Dependency
+        run: |
+          REPO_URL="github.com/${{ github.repository }}"
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+
+          GO_WORK_FILE=".go.work"
+          GO_MOD_FILE="go.mod"
+
+          CURRENT_DIR=$(realpath .)
+          MODULE_DIRS=$(find ${CURRENT_DIR} -name go.mod -exec dirname {} \;)
+
+          if [[ "$RELEASE_TAG" == *"/"* ]]; then
+            PACKAGE_URL="${REPO_URL}/${RELEASE_TAG%/*}"
+            PACKAGE_VERSION="${RELEASE_TAG##*/}"
+          else
+            PACKAGE_URL="${REPO_URL}"
+            PACKAGE_VERSION="${RELEASE_TAG}"
+          fi
+
+          sed -i -E -e "s|${PACKAGE_URL} v[0-9]+\.[0-9]+\.[0-9]+|${PACKAGE_URL} ${PACKAGE_VERSION}|" "$GO_WORK_FILE"
+
+          for dir in ${MODULE_DIRS}; do \
+            cd $dir && \
+              sed -i -E -e "s|${PACKAGE_URL} v[0-9]+\.[0-9]+\.[0-9]+|${PACKAGE_URL} ${PACKAGE_VERSION}|" "$GO_MOD_FILE" && \
+              go get -u all && go mod tidy || \
+              true; \
+          done
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: deploy ${{ github.event.release.tag_name }}"
+          branch: main
