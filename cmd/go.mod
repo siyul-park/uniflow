@@ -16,7 +16,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/siyul-park/uniflow v0.13.0
 	github.com/siyul-park/uniflow/driver/mongo v0.12.1
-	github.com/siyul-park/uniflow/ext v0.12.0
+	github.com/siyul-park/uniflow/ext v0.13.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
