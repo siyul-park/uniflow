@@ -35,9 +35,7 @@ func NewNOPNode() *NOPNode {
 	n := &NOPNode{
 		inPort: port.NewIn(),
 	}
-
 	n.inPort.AddListener(port.ListenFunc(n.forward))
-
 	return n
 }
 

@@ -34,6 +34,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			{KindSplit, NewSplitNodeCodec(), &SplitNodeSpec{}},
 			{KindStep, NewStepNodeCodec(s), &StepNodeSpec{}},
 			{KindSwitch, NewSwitchNodeCodec(expr), &SwitchNodeSpec{}},
+			{KindThrow, NewThrowNodeCodec(), &ThrowNodeSpec{}},
 			{KindTry, NewTryNodeCodec(), &TryNodeSpec{}},
 		}
 
