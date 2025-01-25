@@ -97,7 +97,7 @@ func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
 		certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 		keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 
-		err = n.TLS(string(certPEM), string(keyPEM))
+		err = n.TLS(certPEM, keyPEM)
 		assert.NoError(t, err)
 
 		err = n.Listen()

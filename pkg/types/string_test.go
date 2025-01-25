@@ -121,6 +121,7 @@ func TestString_Decode(t *testing.T) {
 		{"uint16", NewString("1"), new(uint16), uint16(1)},
 		{"uint32", NewString("1"), new(uint32), uint32(1)},
 		{"uint64", NewString("1"), new(uint64), uint64(1)},
+		{"[]byte", NewString("Zm9v"), new([]byte), []byte("foo")},
 		{"any", NewString("foo"), new(any), "foo"},
 	}
 

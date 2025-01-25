@@ -32,12 +32,6 @@ spec:
   host: "localhost"
   port: 8080
   tls:
-    cert: |
-      -----BEGIN CERTIFICATE-----
-      [certificate data]
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN PRIVATE KEY-----
-      [key data]
-      -----END PRIVATE KEY-----
+    cert: [ base64 encoded cert ]
+    key: [ base64 encoded key ]
 ```

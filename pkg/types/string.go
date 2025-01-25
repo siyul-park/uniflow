@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding"
+	"encoding/base64"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -294,6 +295,19 @@ func newStringDecoder() encoding2.DecodeCompiler[Value] {
 							*(*uint64)(target) = v
 							return nil
 						}
+					}
+					return errors.WithStack(encoding2.ErrUnsupportedType)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
+				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(String); ok {
+						decode, err := base64.StdEncoding.DecodeString(s.String())
+						if err != nil {
+							return err
+						}
+						t := reflect.NewAt(typ.Elem(), target).Elem()
+						t.Set(reflect.AppendSlice(t, reflect.ValueOf(decode).Convert(t.Type())))
+						return nil
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil

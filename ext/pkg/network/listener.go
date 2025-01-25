@@ -31,8 +31,8 @@ type ListenNodeSpec struct {
 }
 
 type TLS struct {
-	Cert string `map:"cert,omitempty"`
-	Key  string `map:"key,omitempty"`
+	Cert []byte `map:"cert,omitempty"`
+	Key  []byte `map:"key,omitempty"`
 }
 
 // HTTPListenNode represents a Node for handling HTTP requests.
@@ -60,7 +60,7 @@ func NewListenNodeCodec() scheme.Codec {
 		switch spec.Protocol {
 		case ProtocolHTTP:
 			n := NewHTTPListenNode(fmt.Sprintf("%s:%d", spec.Host, spec.Port))
-			if spec.TLS.Cert != "" || spec.TLS.Key != "" {
+			if len(spec.TLS.Cert) > 0 || len(spec.TLS.Key) > 0 {
 				if err := n.TLS(spec.TLS.Cert, spec.TLS.Key); err != nil {
 					_ = n.Close()
 					return nil, err
@@ -117,11 +117,11 @@ func (n *HTTPListenNode) Address() net.Addr {
 }
 
 // TLS configures the HTTP server to use TLS with the provided certificate and key.
-func (n *HTTPListenNode) TLS(cert, key string) error {
+func (n *HTTPListenNode) TLS(cert, key []byte) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	certificate, err := tls.X509KeyPair([]byte(cert), []byte(key))
+	certificate, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		return err
 	}
