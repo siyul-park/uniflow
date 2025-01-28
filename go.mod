@@ -8,7 +8,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/samber/lo v1.47.0
+	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 )
