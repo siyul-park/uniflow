@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"fmt"
+
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
@@ -165,6 +167,14 @@ func (m *Meta) GetPorts() map[string][]Port {
 // SetPorts sets the node's connections.
 func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
+}
+
+// NamespacedName returns the namespaced identifier.
+func (m *Meta) NamespacedName() string {
+	if m.Name != "" {
+		return fmt.Sprintf("%s/%s", m.Namespace, m.Name)
+	}
+	return fmt.Sprintf("%s/%s", m.Namespace, m.ID)
 }
 
 // IsBound checks if the spec is bound to any provided values.

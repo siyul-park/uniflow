@@ -1,8 +1,6 @@
 package control
 
 import (
-	"fmt"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -23,7 +21,7 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
 		for _, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
-				sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
+				sp.SetNamespace(root.NamespacedName())
 			}
 
 			sp, err := s.Decode(sp)

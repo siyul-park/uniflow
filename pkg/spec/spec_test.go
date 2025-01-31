@@ -60,7 +60,7 @@ func TestMeta_Annotations(t *testing.T) {
 	assert.Equal(t, annotations, meta.GetAnnotations())
 }
 
-func TestMeta_SetEnv(t *testing.T) {
+func TestMeta_Env(t *testing.T) {
 	meta := &Meta{}
 	env := map[string]Value{
 		"FOO": {
@@ -73,7 +73,7 @@ func TestMeta_SetEnv(t *testing.T) {
 	assert.Equal(t, env, meta.GetEnv())
 }
 
-func TestMeta_SetPorts(t *testing.T) {
+func TestMeta_Ports(t *testing.T) {
 	meta := &Meta{}
 	ports := map[string][]Port{
 		"out": {
@@ -85,6 +85,32 @@ func TestMeta_SetPorts(t *testing.T) {
 	}
 	meta.SetPorts(ports)
 	assert.Equal(t, ports, meta.GetPorts())
+}
+
+func TestMeta_NamespacedName(t *testing.T) {
+	t.Run("ID", func(t *testing.T) {
+		meta := &Meta{
+			ID:          uuid.Must(uuid.NewV7()),
+			Kind:        faker.UUIDHyphenated(),
+			Namespace:   "default",
+			Annotations: map[string]string{"key": "value"},
+			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
+			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
+		}
+		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.NamespacedName())
+	})
+	t.Run("Name", func(t *testing.T) {
+		meta := &Meta{
+			ID:          uuid.Must(uuid.NewV7()),
+			Kind:        faker.UUIDHyphenated(),
+			Namespace:   "default",
+			Name:        faker.UUIDHyphenated(),
+			Annotations: map[string]string{"key": "value"},
+			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
+			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
+		}
+		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.NamespacedName())
+	})
 }
 
 func TestMeta_IsBound(t *testing.T) {
