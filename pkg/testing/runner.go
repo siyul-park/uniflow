@@ -12,7 +12,7 @@ type Runner struct {
 // NewRunner creates a new Runner with the provided reporter.
 func NewRunner(reporter Reporter) *Runner {
 	if reporter == nil {
-		reporter = NewTextReporter(nil)
+		reporter = Discard
 	}
 	return &Runner{reporter: reporter}
 }
@@ -22,7 +22,8 @@ func (r *Runner) Run(name string) *Tester {
 	t := NewTester(name)
 	t.Process().AddExitHook(process.ExitFunc(func(err error) {
 		_ = r.reporter.Report(&Result{
-			Name:      name,
+			ID:        t.ID(),
+			Name:      t.Name(),
 			Error:     err,
 			StartTime: t.Process().StartTime(),
 			EndTime:   t.Process().EndTime(),

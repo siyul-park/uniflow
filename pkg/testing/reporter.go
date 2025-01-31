@@ -13,6 +13,10 @@ type Reporter interface {
 // ReportFunc is a function type that implements the Reporter interface.
 type ReportFunc func(result *Result) error
 
+var Discard = ReportFunc(func(_ *Result) error {
+	return nil
+})
+
 // Report calls the ReportFunc with the given result.
 func (r ReportFunc) Report(result *Result) error {
 	return r(result)
@@ -24,11 +28,14 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 		logOutput = io.Discard
 	}
 	return ReportFunc(func(result *Result) error {
-		msg := "passed"
-		if result.Error != nil {
-			msg = fmt.Sprintf("failed: %v", result.Error)
+		if _, err := fmt.Fprintf(logOutput, "%s\t%s\t%v\n", result.Status(), result.Name, result.Duration()); err != nil {
+			return err
 		}
-		_, err := fmt.Fprintf(logOutput, "Test %s %s (Duration: %v)\n", result.Name, msg, result.Duration())
-		return err
+		if result.Error != nil {
+			if _, err := fmt.Fprintf(logOutput, "    %v\n", result.Error); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
