@@ -11,6 +11,9 @@ type Runner struct {
 
 // NewRunner creates a new Runner with the provided reporter.
 func NewRunner(reporter Reporter) *Runner {
+	if reporter == nil {
+		reporter = NewTextReporter(nil)
+	}
 	return &Runner{reporter: reporter}
 }
 

@@ -7,10 +7,15 @@ import (
 )
 
 func TestRunner_Run(t *testing.T) {
-	runner := NewRunner(NewTextReporter(nil))
+	count := 0
+	runner := NewRunner(ReportFunc(func(result *Result) error {
+		count += 1
+		return nil
+	}))
 
 	tester := runner.Run("foo")
 	assert.NotNil(t, tester)
 
 	tester.Close(nil)
+	assert.Equal(t, 1, count)
 }
