@@ -38,6 +38,26 @@
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
+### Test 명령어
+
+`test` 명령어는 지정된 네임스페이스 내에서 워크플로우 테스트를 실행합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
+
+```sh
+./dist/uniflow test --namespace default
+```
+
+특정 테스트만 실행하려면 정규식을 사용하여 필터링할 수 있습니다:
+
+```sh
+./dist/uniflow test ".*/my_test" --namespace default
+```
+
+네임스페이스가 비어 있을 경우, 초기 명세 및 변수를 적용할 수도 있습니다:
+
+```sh
+./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
+```
+
 ## Uniflowctl 사용하기
 
 `uniflowctl`는 네임스페이스 내에서 리소스를 관리하는 명령어입니다.

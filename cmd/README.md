@@ -39,6 +39,27 @@ You can specify an initial values file with the `--from-values` flag:
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
+### Test Command
+
+The `test` command runs workflow tests within the specified namespace. If no namespace is provided, the default
+namespace (`default`) is used.
+
+```sh
+./dist/uniflow test --namespace default
+```
+
+To run specific tests, you can filter them using a regular expression:
+
+```sh
+./dist/uniflow test ".*/my_test" --namespace default
+```
+
+If the namespace is empty, you can also apply initial specifications and values:
+
+```sh
+./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
+```
+
 ## Using Uniflowctl
 
 `uniflowctl` is a command used to manage resources within a namespace.

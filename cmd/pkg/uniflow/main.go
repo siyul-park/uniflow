@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
+
+	"github.com/siyul-park/uniflow/pkg/testing"
 
 	"github.com/iancoleman/strcase"
 	"github.com/knadh/koanf/parsers/toml"
@@ -92,6 +95,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	runner := testing.NewRunner(testing.NewTextReporter(os.Stdout))
+
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
 
@@ -156,6 +161,14 @@ func main() {
 		FS:    fs,
 	})
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
+		Scheme:     scheme,
+		Hook:       hook,
+		SpecStore:  specStore,
+		ValueStore: valueStore,
+		FS:         fs,
+	}))
+	cmd.AddCommand(cli.NewTestCommand(cli.TestConfig{
+		Runner:     runner,
 		Scheme:     scheme,
 		Hook:       hook,
 		SpecStore:  specStore,
