@@ -10,7 +10,7 @@ import (
 )
 
 func TestTextReporter_Report(t *testing.T) {
-	t.Run("pass", func(t *testing.T) {
+	t.Run("PASS", func(t *testing.T) {
 		output := &bytes.Buffer{}
 		reporter := NewTextReporter(output)
 		result := &Result{Name: "foo", StartTime: time.Now(), EndTime: time.Now()}
@@ -19,7 +19,7 @@ func TestTextReporter_Report(t *testing.T) {
 		assert.Contains(t, output.String(), "PASS\tfoo")
 	})
 
-	t.Run("failed", func(t *testing.T) {
+	t.Run("FAIL", func(t *testing.T) {
 		output := &bytes.Buffer{}
 		reporter := NewTextReporter(output)
 		result := &Result{Name: "foo", Error: fmt.Errorf("error"), StartTime: time.Now(), EndTime: time.Now()}
