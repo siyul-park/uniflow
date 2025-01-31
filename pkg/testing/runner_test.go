@@ -6,6 +6,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRunner_Register(t *testing.T) {
+	runner := NewRunner(nil)
+	s := RunFunc(func(tester *Tester) {})
+
+	ok := runner.Register("foo", s)
+	assert.True(t, ok)
+
+	ok = runner.Register("foo", s)
+	assert.False(t, ok)
+}
+
+func TestRunner_Unregister(t *testing.T) {
+	runner := NewRunner(nil)
+	s := RunFunc(func(tester *Tester) {})
+
+	runner.Register("foo", s)
+
+	ok := runner.Unregister("foo")
+	assert.True(t, ok)
+
+	ok = runner.Unregister("foo")
+	assert.False(t, ok)
+}
+
 func TestRunner_Run(t *testing.T) {
 	count := 0
 	runner := NewRunner(ReportFunc(func(result *Result) error {
@@ -13,9 +37,9 @@ func TestRunner_Run(t *testing.T) {
 		return nil
 	}))
 
-	tester := runner.Run("foo")
-	assert.NotNil(t, tester)
+	runner.Register("foo", RunFunc(func(tester *Tester) {}))
+	runner.Register("bar", RunFunc(func(tester *Tester) {}))
 
-	tester.Close(nil)
-	assert.Equal(t, 1, count)
+	runner.Run(nil)
+	assert.Equal(t, 2, count)
 }

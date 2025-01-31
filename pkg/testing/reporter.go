@@ -17,6 +17,8 @@ var Discard = ReportFunc(func(_ *Result) error {
 	return nil
 })
 
+var _ Reporter = ReportFunc(nil)
+
 // Report calls the ReportFunc with the given result.
 func (r ReportFunc) Report(result *Result) error {
 	return r(result)
