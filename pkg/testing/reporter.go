@@ -3,6 +3,7 @@ package testing
 import (
 	"fmt"
 	"io"
+	"sync"
 )
 
 // Reporter interface defines a method to report test results.
@@ -29,7 +30,12 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 	if logOutput == nil {
 		logOutput = io.Discard
 	}
+
+	var mu sync.Mutex
 	return ReportFunc(func(result *Result) error {
+		mu.Lock()
+		defer mu.Unlock()
+
 		if _, err := fmt.Fprintf(logOutput, "%s\t%s\t%v\n", result.Status(), result.Name, result.Duration()); err != nil {
 			return err
 		}

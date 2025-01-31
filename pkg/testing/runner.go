@@ -57,28 +57,29 @@ func (r *Runner) Run(match func(string) bool) {
 		match = func(string) bool { return true }
 	}
 
-	for name := range r.suites {
+	wg := sync.WaitGroup{}
+	for name, s := range r.suites {
 		if match(name) {
-			r.run(name)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				tester := NewTester(name)
+				defer tester.Close(nil)
+
+				tester.Process().AddExitHook(process.ExitFunc(func(err error) {
+					_ = r.reporter.Report(&Result{
+						ID:        tester.ID(),
+						Name:      tester.Name(),
+						Error:     err,
+						StartTime: tester.Process().StartTime(),
+						EndTime:   tester.Process().EndTime(),
+					})
+				}))
+
+				s.Run(tester)
+			}()
 		}
 	}
-}
-
-func (r *Runner) run(name string) {
-	if s, ok := r.suites[name]; ok {
-		tester := NewTester(name)
-		defer tester.Close(nil)
-
-		tester.Process().AddExitHook(process.ExitFunc(func(err error) {
-			_ = r.reporter.Report(&Result{
-				ID:        tester.ID(),
-				Name:      tester.Name(),
-				Error:     err,
-				StartTime: tester.Process().StartTime(),
-				EndTime:   tester.Process().EndTime(),
-			})
-		}))
-
-		s.Run(tester)
-	}
+	wg.Wait()
 }

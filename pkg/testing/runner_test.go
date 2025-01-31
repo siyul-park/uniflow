@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,9 +32,9 @@ func TestRunner_Unregister(t *testing.T) {
 }
 
 func TestRunner_Run(t *testing.T) {
-	count := 0
+	var count atomic.Int32
 	runner := NewRunner(ReportFunc(func(result *Result) error {
-		count += 1
+		count.Add(1)
 		return nil
 	}))
 
@@ -41,5 +42,5 @@ func TestRunner_Run(t *testing.T) {
 	runner.Register("bar", RunFunc(func(tester *Tester) {}))
 
 	runner.Run(nil)
-	assert.Equal(t, 2, count)
+	assert.Equal(t, int32(2), count.Load())
 }
