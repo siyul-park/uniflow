@@ -60,7 +60,7 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			return err
 		}
 
-		match := func(string) bool { return true } // 기본값 설정
+		match := func(string) bool { return true }
 		if len(args) > 0 {
 			exp, err := regexp.Compile(args[0])
 			if err != nil {

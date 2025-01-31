@@ -15,14 +15,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	utesting "github.com/siyul-park/uniflow/pkg/testing"
+	testingutil "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTestCommand_Execute(t *testing.T) {
-	r := utesting.NewRunner(nil)
+	r := testingutil.NewRunner(nil)
 
 	s := scheme.New()
 	h := hook.New()
