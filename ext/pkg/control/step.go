@@ -1,6 +1,8 @@
 package control
 
 import (
+	"fmt"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -19,9 +21,13 @@ const KindStep = "step"
 func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 	return scheme.CodecWithType(func(root *StepNodeSpec) (node.Node, error) {
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
-		for _, sp := range root.Specs {
+		for i, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
 				sp.SetNamespace(root.GetNamespacedName())
+			}
+
+			if sp.GetName() == "" {
+				sp.SetName(fmt.Sprintf("$%d", i))
 			}
 
 			sp, err := s.Decode(sp)
