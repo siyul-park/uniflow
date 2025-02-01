@@ -98,13 +98,13 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 					}
 				}()
 
-				tester.Process().AddExitHook(process.ExitFunc(func(err error) {
+				tester.AddExitHook(process.ExitFunc(func(err error) {
 					_ = r.reporters.Report(&Result{
 						ID:        tester.ID(),
 						Name:      tester.Name(),
 						Error:     err,
-						StartTime: tester.Process().StartTime(),
-						EndTime:   tester.Process().EndTime(),
+						StartTime: tester.StartTime(),
+						EndTime:   tester.EndTime(),
 					})
 				}))
 
