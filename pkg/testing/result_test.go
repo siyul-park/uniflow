@@ -12,7 +12,7 @@ import (
 func TestResult_Status(t *testing.T) {
 	t.Run(StatusPass, func(t *testing.T) {
 		result := Result{
-			ID:        uuid.Must(uuid.NewV4()),
+			ID:        uuid.Must(uuid.NewV7()),
 			Name:      "TestSuite",
 			Error:     nil,
 			StartTime: time.Now(),
@@ -23,7 +23,7 @@ func TestResult_Status(t *testing.T) {
 
 	t.Run(StatusFail, func(t *testing.T) {
 		result := Result{
-			ID:        uuid.Must(uuid.NewV4()),
+			ID:        uuid.Must(uuid.NewV7()),
 			Name:      "TestSuite",
 			Error:     fmt.Errorf("test error"),
 			StartTime: time.Now(),
@@ -37,7 +37,7 @@ func TestResult_Duration(t *testing.T) {
 	startTime := time.Now()
 	endTime := startTime.Add(2 * time.Second)
 	result := Result{
-		ID:        uuid.Must(uuid.NewV4()),
+		ID:        uuid.Must(uuid.NewV7()),
 		Name:      "TestSuite",
 		Error:     nil,
 		StartTime: startTime,

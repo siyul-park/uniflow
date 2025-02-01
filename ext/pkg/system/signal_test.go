@@ -74,7 +74,7 @@ func TestSignalNode_SendAndReceive(t *testing.T) {
 		}
 	}))
 
-	signal <- uuid.Must(uuid.NewV4())
+	signal <- uuid.Must(uuid.NewV7())
 
 	select {
 	case <-done:

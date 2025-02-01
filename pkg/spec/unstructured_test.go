@@ -13,7 +13,7 @@ import (
 func TestUnstructured_GetAndSet(t *testing.T) {
 	t.Run("KeyID", func(t *testing.T) {
 		unstructured := &Unstructured{}
-		id := uuid.Must(uuid.NewV4())
+		id := uuid.Must(uuid.NewV7())
 		unstructured.Set(KeyID, id)
 		val, ok := unstructured.Get(KeyID)
 		assert.True(t, ok)

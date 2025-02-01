@@ -80,7 +80,7 @@ func TestMatch(t *testing.T) {
 
 func TestMeta_ID(t *testing.T) {
 	meta := &Meta{}
-	id := uuid.Must(uuid.NewV4())
+	id := uuid.Must(uuid.NewV7())
 	meta.SetID(id)
 	assert.Equal(t, id, meta.GetID())
 }
