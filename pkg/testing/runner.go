@@ -87,7 +87,6 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 		if match(name) {
 			g.Go(func() error {
 				tester := NewTester(name)
-				defer tester.Close(nil)
 
 				errors := make(chan error)
 				defer close(errors)
@@ -110,7 +109,10 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 					}
 				}()
 
-				go suite.Run(tester)
+				go func() {
+					suite.Run(tester)
+					tester.Close(nil)
+				}()
 
 				return <-errors
 			})
