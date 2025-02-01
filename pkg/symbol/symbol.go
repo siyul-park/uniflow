@@ -1,7 +1,6 @@
 package symbol
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -64,10 +63,7 @@ func (s *Symbol) SetName(name string) {
 
 // NamespacedName returns the namespaced identifier.
 func (s *Symbol) NamespacedName() string {
-	if s.Name() != "" {
-		return fmt.Sprintf("%s/%s", s.Namespace(), s.Name())
-	}
-	return fmt.Sprintf("%s/%s", s.Namespace(), s.ID())
+	return s.Spec.GetNamespacedName()
 }
 
 // Annotations returns the annotations associated with the Symbol.

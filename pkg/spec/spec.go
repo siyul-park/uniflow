@@ -12,35 +12,37 @@ import (
 	"github.com/siyul-park/uniflow/pkg/value"
 )
 
-// Spec defines the behavior and connections of each node.
+// Spec defines the structure and behavior of a node.
 type Spec interface {
-	// GetID retrieves the unique identifier of the node.
+	// GetID returns the unique identifier of the node.
 	GetID() uuid.UUID
-	// SetID assigns a unique identifier to the node.
+	// SetID sets the unique identifier of the node.
 	SetID(val uuid.UUID)
-	// GetKind fetches the type or category of the node.
+	// GetKind returns the type of the node.
 	GetKind() string
-	// SetKind assigns a type or category to the node.
+	// SetKind sets the type of the node.
 	SetKind(val string)
-	// GetNamespace retrieves the logical grouping of nodes.
+	// GetNamespace returns the namespace of the node.
 	GetNamespace() string
-	// SetNamespace assigns a logical grouping to the node.
+	// SetNamespace sets the namespace of the node.
 	SetNamespace(val string)
-	// GetName retrieves the human-readable name of the node.
+	// GetName returns the name of the node.
 	GetName() string
-	// SetName assigns a human-readable name to the node.
+	// SetName sets the name of the node.
 	SetName(val string)
-	// GetAnnotations retrieves the annotations associated with the node.
+	// GetNamespacedName returns the fully qualified name of the node.
+	GetNamespacedName() string
+	// GetAnnotations returns the annotations of the node.
 	GetAnnotations() map[string]string
-	// SetAnnotations assigns annotations to the node.
+	// SetAnnotations sets the annotations of the node.
 	SetAnnotations(val map[string]string)
-	// GetEnv retrieves the environment values for the node.
+	// GetEnv returns the environment variables of the node.
 	GetEnv() map[string]Value
-	// SetEnv assigns environment values to the node.
+	// SetEnv sets the environment variables of the node.
 	SetEnv(val map[string]Value)
-	// GetPorts retrieves the port connections for the node.
+	// GetPorts returns the ports of the node.
 	GetPorts() map[string][]Port
-	// SetPorts assigns port connections to the node.
+	// SetPorts sets the ports of the node.
 	SetPorts(val map[string][]Port)
 }
 
@@ -139,6 +141,14 @@ func (m *Meta) SetName(val string) {
 	m.Name = val
 }
 
+// GetNamespacedName returns the namespaced identifier.
+func (m *Meta) GetNamespacedName() string {
+	if m.Name != "" {
+		return fmt.Sprintf("%s/%s", m.Namespace, m.Name)
+	}
+	return fmt.Sprintf("%s/%s", m.Namespace, m.ID)
+}
+
 // GetAnnotations returns the node's annotations.
 func (m *Meta) GetAnnotations() map[string]string {
 	return m.Annotations
@@ -167,14 +177,6 @@ func (m *Meta) GetPorts() map[string][]Port {
 // SetPorts sets the node's connections.
 func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
-}
-
-// GetNamespacedName returns the namespaced identifier.
-func (m *Meta) GetNamespacedName() string {
-	if m.Name != "" {
-		return fmt.Sprintf("%s/%s", m.Namespace, m.Name)
-	}
-	return fmt.Sprintf("%s/%s", m.Namespace, m.ID)
 }
 
 // IsBound checks if the spec is bound to any provided values.
