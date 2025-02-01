@@ -15,12 +15,17 @@ type Result struct {
 	EndTime   time.Time
 }
 
+const (
+	StatusPass = "PASS"
+	StatusFail = "FAIL"
+)
+
 // Status returns the status of the test as a string.
 func (r *Result) Status() string {
 	if r.Error != nil {
-		return "FAIL"
+		return StatusFail
 	}
-	return "PASS"
+	return StatusPass
 }
 
 // Duration calculates the duration of the test.

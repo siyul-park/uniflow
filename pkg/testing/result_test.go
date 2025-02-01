@@ -10,7 +10,7 @@ import (
 )
 
 func TestResult_Status(t *testing.T) {
-	t.Run("PASS", func(t *testing.T) {
+	t.Run(StatusPass, func(t *testing.T) {
 		result := Result{
 			ID:        uuid.Must(uuid.NewV4()),
 			Name:      "TestSuite",
@@ -18,10 +18,10 @@ func TestResult_Status(t *testing.T) {
 			StartTime: time.Now(),
 			EndTime:   time.Now().Add(1 * time.Second),
 		}
-		assert.Equal(t, "PASS", result.Status())
+		assert.Equal(t, StatusPass, result.Status())
 	})
 
-	t.Run("FAIL", func(t *testing.T) {
+	t.Run(StatusFail, func(t *testing.T) {
 		result := Result{
 			ID:        uuid.Must(uuid.NewV4()),
 			Name:      "TestSuite",
@@ -29,7 +29,7 @@ func TestResult_Status(t *testing.T) {
 			StartTime: time.Now(),
 			EndTime:   time.Now().Add(1 * time.Second),
 		}
-		assert.Equal(t, "FAIL", result.Status())
+		assert.Equal(t, StatusFail, result.Status())
 	})
 }
 
