@@ -11,9 +11,9 @@ import (
 
 // Runner executes test suites and reports results.
 type Runner struct {
-	mu        sync.RWMutex
 	reporters Reporters
 	suites    map[string]Suite
+	mu        sync.RWMutex
 }
 
 // NewRunner creates a new Runner instance.
