@@ -1,24 +1,25 @@
 package testing
 
 import (
+	"context"
 	"sync"
 
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
-// Runner represents a test runner that uses a reporter to report test results.
+// Runner executes test suites and reports results.
 type Runner struct {
+	mu        sync.RWMutex
 	reporters Reporters
 	suites    map[string]Suite
-	mu        sync.RWMutex
 }
 
-// NewRunner creates a new Runner with the provided reporter.
+// NewRunner creates a new Runner instance.
 func NewRunner() *Runner {
 	return &Runner{suites: make(map[string]Suite)}
 }
 
-// AddReporter sets the reporter for the runner.
+// AddReporter adds a reporter if it's not already present.
 func (r *Runner) AddReporter(reporter Reporter) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -32,7 +33,7 @@ func (r *Runner) AddReporter(reporter Reporter) bool {
 	return true
 }
 
-// RemoveReporter removes the specified reporter from the runner.
+// RemoveReporter removes a reporter if it exists.
 func (r *Runner) RemoveReporter(reporter Reporter) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -46,7 +47,7 @@ func (r *Runner) RemoveReporter(reporter Reporter) bool {
 	return false
 }
 
-// Register adds a suite to the runner to be executed later.
+// Register adds a test suite if it's not already registered.
 func (r *Runner) Register(name string, suite Suite) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -58,7 +59,7 @@ func (r *Runner) Register(name string, suite Suite) bool {
 	return true
 }
 
-// Unregister removes a suite from the runner.
+// Unregister removes a registered test suite.
 func (r *Runner) Unregister(name string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -70,8 +71,8 @@ func (r *Runner) Unregister(name string) bool {
 	return true
 }
 
-// Run executes all registered test suites that match the given criteria and reports their results.
-func (r *Runner) Run(match func(string) bool) {
+// Run executes all test suites matching the filter concurrently.
+func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -79,8 +80,8 @@ func (r *Runner) Run(match func(string) bool) {
 		match = func(string) bool { return true }
 	}
 
-	wg := sync.WaitGroup{}
-	for name, s := range r.suites {
+	var wg sync.WaitGroup
+	for name, suite := range r.suites {
 		if match(name) {
 			wg.Add(1)
 			go func() {
@@ -88,6 +89,14 @@ func (r *Runner) Run(match func(string) bool) {
 
 				tester := NewTester(name)
 				defer tester.Close(nil)
+
+				go func() {
+					select {
+					case <-ctx.Done():
+						tester.Close(ctx.Err())
+					case <-tester.Done():
+					}
+				}()
 
 				tester.Process().AddExitHook(process.ExitFunc(func(err error) {
 					_ = r.reporters.Report(&Result{
@@ -99,7 +108,7 @@ func (r *Runner) Run(match func(string) bool) {
 					})
 				}))
 
-				s.Run(tester)
+				suite.Run(tester)
 			}()
 		}
 	}

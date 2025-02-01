@@ -1,8 +1,10 @@
 package testing
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -60,6 +62,9 @@ func TestRunner_Unregister(t *testing.T) {
 }
 
 func TestRunner_Run(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
 	runner := NewRunner()
 
 	var count atomic.Int32
@@ -71,6 +76,6 @@ func TestRunner_Run(t *testing.T) {
 	runner.Register("foo", RunFunc(func(tester *Tester) {}))
 	runner.Register("bar", RunFunc(func(tester *Tester) {}))
 
-	runner.Run(nil)
+	runner.Run(ctx, nil)
 	assert.Equal(t, int32(2), count.Load())
 }

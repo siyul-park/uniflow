@@ -31,6 +31,11 @@ func (t *Tester) Process() *process.Process {
 	return t.proc
 }
 
+// Done returns a channel that is closed when the process is done.
+func (t *Tester) Done() <-chan struct{} {
+	return t.proc.Done()
+}
+
 // Close exits the process with the given error.
 func (t *Tester) Close(err error) {
 	t.proc.Exit(err)
