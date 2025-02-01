@@ -11,7 +11,7 @@ import (
 
 func TestRunner_AddReporter(t *testing.T) {
 	runner := NewRunner()
-	r := ReportFunc(func(_ *Result) error {
+	r := ReportFunc(func(_ context.Context, _ *Result) error {
 		return nil
 	})
 
@@ -24,7 +24,7 @@ func TestRunner_AddReporter(t *testing.T) {
 
 func TestRunner_RemoveReporter(t *testing.T) {
 	runner := NewRunner()
-	r := ReportFunc(func(_ *Result) error {
+	r := ReportFunc(func(_ context.Context, _ *Result) error {
 		return nil
 	})
 
@@ -68,7 +68,7 @@ func TestRunner_Run(t *testing.T) {
 	runner := NewRunner()
 
 	var count atomic.Int32
-	runner.AddReporter(ReportFunc(func(_ *Result) error {
+	runner.AddReporter(ReportFunc(func(_ context.Context, _ *Result) error {
 		count.Add(1)
 		return nil
 	}))

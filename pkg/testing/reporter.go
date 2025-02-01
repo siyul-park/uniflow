@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -8,21 +9,21 @@ import (
 
 // Reporter interface defines a method to report test results.
 type Reporter interface {
-	Report(result *Result) error
+	Report(ctx context.Context, result *Result) error
 }
 
 // Reporters is a collection of Reporter instances.
 type Reporters []Reporter
 
 type reporter struct {
-	report func(result *Result) error
+	report func(ctx context.Context, result *Result) error
 }
 
 var _ Reporter = (Reporters)(nil)
 var _ Reporter = (*reporter)(nil)
 
 // ReportFunc is a function type that implements the Reporter interface.
-func ReportFunc(fn func(result *Result) error) Reporter {
+func ReportFunc(fn func(ctx context.Context, result *Result) error) Reporter {
 	return &reporter{report: fn}
 }
 
@@ -33,7 +34,7 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 	}
 
 	var mu sync.Mutex
-	return ReportFunc(func(result *Result) error {
+	return ReportFunc(func(_ context.Context, result *Result) error {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -50,9 +51,9 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 }
 
 // Report reports the test result using all Reporter instances in the collection.
-func (r Reporters) Report(result *Result) error {
+func (r Reporters) Report(ctx context.Context, result *Result) error {
 	for _, r := range r {
-		if err := r.Report(result); err != nil {
+		if err := r.Report(ctx, result); err != nil {
 			return err
 		}
 	}
@@ -60,6 +61,6 @@ func (r Reporters) Report(result *Result) error {
 }
 
 // Report method calls the underlying report function to report the test result.
-func (r *reporter) Report(result *Result) error {
-	return r.report(result)
+func (r *reporter) Report(ctx context.Context, result *Result) error {
+	return r.report(ctx, result)
 }

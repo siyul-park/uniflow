@@ -93,7 +93,7 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 				defer close(errors)
 
 				tester.AddExitHook(process.ExitFunc(func(err error) {
-					errors <- r.reporters.Report(&Result{
+					errors <- r.reporters.Report(ctx, &Result{
 						ID:        tester.ID(),
 						Name:      tester.Name(),
 						Error:     err,
