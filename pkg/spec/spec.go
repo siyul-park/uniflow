@@ -169,8 +169,8 @@ func (m *Meta) SetPorts(val map[string][]Port) {
 	m.Ports = val
 }
 
-// NamespacedName returns the namespaced identifier.
-func (m *Meta) NamespacedName() string {
+// GetNamespacedName returns the namespaced identifier.
+func (m *Meta) GetNamespacedName() string {
 	if m.Name != "" {
 		return fmt.Sprintf("%s/%s", m.Namespace, m.Name)
 	}

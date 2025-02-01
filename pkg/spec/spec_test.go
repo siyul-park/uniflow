@@ -97,7 +97,7 @@ func TestMeta_NamespacedName(t *testing.T) {
 			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
 			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
 		}
-		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.NamespacedName())
+		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.GetNamespacedName())
 	})
 	t.Run("Name", func(t *testing.T) {
 		meta := &Meta{
@@ -109,7 +109,7 @@ func TestMeta_NamespacedName(t *testing.T) {
 			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
 			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
 		}
-		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.NamespacedName())
+		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.GetNamespacedName())
 	})
 }
 

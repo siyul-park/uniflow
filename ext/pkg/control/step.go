@@ -21,7 +21,7 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
 		for _, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
-				sp.SetNamespace(root.NamespacedName())
+				sp.SetNamespace(root.GetNamespacedName())
 			}
 
 			sp, err := s.Decode(sp)
