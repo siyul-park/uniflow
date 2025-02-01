@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/siyul-park/uniflow/pkg/testing"
@@ -95,7 +94,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	runner := testing.NewRunner(testing.NewTextReporter(os.Stdout))
+	runner := testing.NewRunner(nil)
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()

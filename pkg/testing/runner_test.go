@@ -7,6 +7,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRunner_SetReporter(t *testing.T) {
+	runner := NewRunner(nil)
+	r := ReportFunc(func(result *Result) error {
+		return nil
+	})
+
+	runner.SetReporter(r)
+	assert.Equal(t, r, runner.Reporter())
+}
+
+func TestRunner_Reporter(t *testing.T) {
+	runner := NewRunner(nil)
+	assert.Equal(t, Discard, runner.Reporter())
+}
+
 func TestRunner_Register(t *testing.T) {
 	runner := NewRunner(nil)
 	s := RunFunc(func(tester *Tester) {})

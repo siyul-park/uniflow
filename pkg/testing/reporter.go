@@ -11,21 +11,23 @@ type Reporter interface {
 	Report(result *Result) error
 }
 
-// ReportFunc is a function type that implements the Reporter interface.
-type ReportFunc func(result *Result) error
+type reporter struct {
+	report func(result *Result) error
+}
 
+// Discard is a Reporter that discards all results.
 var Discard = ReportFunc(func(_ *Result) error {
 	return nil
 })
 
-var _ Reporter = ReportFunc(nil)
+var _ Reporter = (*reporter)(nil)
 
-// Report calls the ReportFunc with the given result.
-func (r ReportFunc) Report(result *Result) error {
-	return r(result)
+// ReportFunc is a function type that implements the Reporter interface.
+func ReportFunc(fn func(result *Result) error) Reporter {
+	return &reporter{report: fn}
 }
 
-// NewTextReporter creates a new TextReporter.
+// NewTextReporter creates a new TextReporter that writes test results to the provided io.Writer.
 func NewTextReporter(logOutput io.Writer) Reporter {
 	if logOutput == nil {
 		logOutput = io.Discard
@@ -46,4 +48,9 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 		}
 		return nil
 	})
+}
+
+// Report method calls the underlying report function to report the test result.
+func (r *reporter) Report(result *Result) error {
+	return r.report(result)
 }

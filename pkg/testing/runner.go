@@ -15,13 +15,28 @@ type Runner struct {
 
 // NewRunner creates a new Runner with the provided reporter.
 func NewRunner(reporter Reporter) *Runner {
+	r := &Runner{suites: make(map[string]Suite)}
+	r.SetReporter(reporter)
+	return r
+}
+
+// SetReporter sets the reporter for the runner.
+func (r *Runner) SetReporter(reporter Reporter) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if reporter == nil {
 		reporter = Discard
 	}
-	return &Runner{
-		reporter: reporter,
-		suites:   make(map[string]Suite),
-	}
+	r.reporter = reporter
+}
+
+// Reporter returns the reporter for the runner.
+func (r *Runner) Reporter() Reporter {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.reporter
 }
 
 // Register adds a suite to the runner to be executed later.
