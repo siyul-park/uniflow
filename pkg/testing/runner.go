@@ -90,14 +90,6 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 				tester := NewTester(name)
 				defer tester.Close(nil)
 
-				go func() {
-					select {
-					case <-ctx.Done():
-						tester.Close(ctx.Err())
-					case <-tester.Done():
-					}
-				}()
-
 				tester.AddExitHook(process.ExitFunc(func(err error) {
 					_ = r.reporters.Report(&Result{
 						ID:        tester.ID(),
@@ -107,6 +99,14 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 						EndTime:   tester.EndTime(),
 					})
 				}))
+
+				go func() {
+					select {
+					case <-ctx.Done():
+						tester.Close(ctx.Err())
+					case <-tester.Done():
+					}
+				}()
 
 				suite.Run(tester)
 			}()
