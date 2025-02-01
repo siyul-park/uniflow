@@ -30,26 +30,6 @@ func TestTester_EndTime(t *testing.T) {
 	assert.Zero(t, tester.EndTime())
 }
 
-func TestTester_AddExitHook(t *testing.T) {
-	tester := NewTester("foo")
-	hook := process.ExitFunc(func(err error) {})
-	assert.True(t, tester.AddExitHook(hook))
-}
-
-func TestTester_CloseWithError(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	tester := NewTester("foo")
-	tester.Close(assert.AnError)
-
-	select {
-	case <-tester.Done():
-	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
-	}
-}
-
 func TestTester_Process(t *testing.T) {
 	tester := NewTester("foo")
 	assert.NotNil(t, tester.Process())
@@ -67,4 +47,10 @@ func TestTester_Close(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	}
+}
+
+func TestTester_AddExitHook(t *testing.T) {
+	tester := NewTester("foo")
+	hook := process.ExitFunc(func(err error) {})
+	assert.True(t, tester.AddExitHook(hook))
 }

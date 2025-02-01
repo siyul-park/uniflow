@@ -38,11 +38,6 @@ func (t *Tester) EndTime() time.Time {
 	return t.proc.EndTime()
 }
 
-// AddExitHook registers a function to execute when the process terminates.
-func (t *Tester) AddExitHook(hook process.ExitHook) bool {
-	return t.proc.AddExitHook(hook)
-}
-
 // Process returns the underlying test process.
 func (t *Tester) Process() *process.Process {
 	return t.proc
@@ -56,4 +51,9 @@ func (t *Tester) Done() <-chan struct{} {
 // Close terminates the test process with the given error.
 func (t *Tester) Close(err error) {
 	t.proc.Exit(err)
+}
+
+// AddExitHook registers a function to execute when the process terminates.
+func (t *Tester) AddExitHook(hook process.ExitHook) bool {
+	return t.proc.AddExitHook(hook)
 }
