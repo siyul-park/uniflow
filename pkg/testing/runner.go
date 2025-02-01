@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/siyul-park/uniflow/pkg/process"
 )
 
@@ -72,7 +74,7 @@ func (r *Runner) Unregister(name string) bool {
 }
 
 // Run executes all test suites matching the filter concurrently.
-func (r *Runner) Run(ctx context.Context, match func(string) bool) {
+func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -80,18 +82,18 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 		match = func(string) bool { return true }
 	}
 
-	var wg sync.WaitGroup
+	g, ctx := errgroup.WithContext(ctx)
 	for name, suite := range r.suites {
 		if match(name) {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-
+			g.Go(func() error {
 				tester := NewTester(name)
 				defer tester.Close(nil)
 
+				errors := make(chan error)
+				defer close(errors)
+
 				tester.AddExitHook(process.ExitFunc(func(err error) {
-					_ = r.reporters.Report(&Result{
+					errors <- r.reporters.Report(&Result{
 						ID:        tester.ID(),
 						Name:      tester.Name(),
 						Error:     err,
@@ -108,9 +110,11 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) {
 					}
 				}()
 
-				suite.Run(tester)
-			}()
+				go suite.Run(tester)
+
+				return <-errors
+			})
 		}
 	}
-	wg.Wait()
+	return g.Wait()
 }

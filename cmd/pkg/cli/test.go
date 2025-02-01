@@ -111,7 +111,6 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			return err
 		}
 
-		config.Runner.Run(ctx, match)
-		return nil
+		return config.Runner.Run(ctx, match)
 	}
 }
