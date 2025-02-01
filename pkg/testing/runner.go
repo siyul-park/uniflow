@@ -8,35 +8,42 @@ import (
 
 // Runner represents a test runner that uses a reporter to report test results.
 type Runner struct {
-	reporter Reporter
-	suites   map[string]Suite
-	mu       sync.RWMutex
+	reporters Reporters
+	suites    map[string]Suite
+	mu        sync.RWMutex
 }
 
 // NewRunner creates a new Runner with the provided reporter.
-func NewRunner(reporter Reporter) *Runner {
-	r := &Runner{suites: make(map[string]Suite)}
-	r.SetReporter(reporter)
-	return r
+func NewRunner() *Runner {
+	return &Runner{suites: make(map[string]Suite)}
 }
 
-// SetReporter sets the reporter for the runner.
-func (r *Runner) SetReporter(reporter Reporter) {
+// AddReporter sets the reporter for the runner.
+func (r *Runner) AddReporter(reporter Reporter) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if reporter == nil {
-		reporter = Discard
+	for _, rp := range r.reporters {
+		if rp == reporter {
+			return false
+		}
 	}
-	r.reporter = reporter
+	r.reporters = append(r.reporters, reporter)
+	return true
 }
 
-// Reporter returns the reporter for the runner.
-func (r *Runner) Reporter() Reporter {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+// RemoveReporter removes the specified reporter from the runner.
+func (r *Runner) RemoveReporter(reporter Reporter) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	return r.reporter
+	for i, rp := range r.reporters {
+		if rp == reporter {
+			r.reporters = append(r.reporters[:i], r.reporters[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // Register adds a suite to the runner to be executed later.
@@ -83,7 +90,7 @@ func (r *Runner) Run(match func(string) bool) {
 				defer tester.Close(nil)
 
 				tester.Process().AddExitHook(process.ExitFunc(func(err error) {
-					_ = r.reporter.Report(&Result{
+					_ = r.reporters.Report(&Result{
 						ID:        tester.ID(),
 						Name:      tester.Name(),
 						Error:     err,

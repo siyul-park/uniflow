@@ -7,23 +7,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRunner_SetReporter(t *testing.T) {
-	runner := NewRunner(nil)
+func TestRunner_AddReporter(t *testing.T) {
+	runner := NewRunner()
 	r := ReportFunc(func(result *Result) error {
 		return nil
 	})
 
-	runner.SetReporter(r)
-	assert.Equal(t, r, runner.Reporter())
+	ok := runner.AddReporter(r)
+	assert.True(t, ok)
+
+	ok = runner.AddReporter(r)
+	assert.False(t, ok)
 }
 
-func TestRunner_Reporter(t *testing.T) {
-	runner := NewRunner(nil)
-	assert.Equal(t, Discard, runner.Reporter())
+func TestRunner_RemoveReporter(t *testing.T) {
+	runner := NewRunner()
+	r := ReportFunc(func(result *Result) error {
+		return nil
+	})
+
+	runner.AddReporter(r)
+
+	ok := runner.RemoveReporter(r)
+	assert.True(t, ok)
+
+	ok = runner.RemoveReporter(r)
+	assert.False(t, ok)
 }
 
 func TestRunner_Register(t *testing.T) {
-	runner := NewRunner(nil)
+	runner := NewRunner()
 	s := RunFunc(func(tester *Tester) {})
 
 	ok := runner.Register("foo", s)
@@ -34,7 +47,7 @@ func TestRunner_Register(t *testing.T) {
 }
 
 func TestRunner_Unregister(t *testing.T) {
-	runner := NewRunner(nil)
+	runner := NewRunner()
 	s := RunFunc(func(tester *Tester) {})
 
 	runner.Register("foo", s)
@@ -47,8 +60,10 @@ func TestRunner_Unregister(t *testing.T) {
 }
 
 func TestRunner_Run(t *testing.T) {
+	runner := NewRunner()
+
 	var count atomic.Int32
-	runner := NewRunner(ReportFunc(func(result *Result) error {
+	runner.AddReporter(ReportFunc(func(result *Result) error {
 		count.Add(1)
 		return nil
 	}))

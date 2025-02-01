@@ -94,7 +94,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	runner := testing.NewRunner(nil)
+	runner := testing.NewRunner()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()

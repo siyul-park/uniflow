@@ -22,7 +22,7 @@ import (
 )
 
 func TestTestCommand_Execute(t *testing.T) {
-	r := testingutil.NewRunner(nil)
+	r := testingutil.NewRunner()
 
 	s := scheme.New()
 	h := hook.New()

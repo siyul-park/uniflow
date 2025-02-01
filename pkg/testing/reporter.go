@@ -11,15 +11,14 @@ type Reporter interface {
 	Report(result *Result) error
 }
 
+// Reporters is a collection of Reporter instances.
+type Reporters []Reporter
+
 type reporter struct {
 	report func(result *Result) error
 }
 
-// Discard is a Reporter that discards all results.
-var Discard = ReportFunc(func(_ *Result) error {
-	return nil
-})
-
+var _ Reporter = (Reporters)(nil)
 var _ Reporter = (*reporter)(nil)
 
 // ReportFunc is a function type that implements the Reporter interface.
@@ -48,6 +47,16 @@ func NewTextReporter(logOutput io.Writer) Reporter {
 		}
 		return nil
 	})
+}
+
+// Report reports the test result using all Reporter instances in the collection.
+func (r Reporters) Report(result *Result) error {
+	for _, r := range r {
+		if err := r.Report(result); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Report method calls the underlying report function to report the test result.

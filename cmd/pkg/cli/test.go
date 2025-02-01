@@ -71,10 +71,10 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			}
 		}
 
-		reporter := config.Runner.Reporter()
+		reporter := testing.NewTextReporter(cmd.OutOrStdout())
 
-		config.Runner.SetReporter(testing.NewTextReporter(cmd.OutOrStdout()))
-		defer config.Runner.SetReporter(reporter)
+		config.Runner.AddReporter(reporter)
+		defer config.Runner.RemoveReporter(reporter)
 
 		out := cmd.OutOrStdout()
 		if out == os.Stdout {
