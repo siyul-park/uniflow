@@ -35,12 +35,12 @@ func TestTester_Process(t *testing.T) {
 	assert.NotNil(t, tester.Process())
 }
 
-func TestTester_Close(t *testing.T) {
+func TestTester_Exit(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	tester := NewTester("foo")
-	tester.Close(nil)
+	tester.Exit(nil)
 
 	select {
 	case <-tester.Done():

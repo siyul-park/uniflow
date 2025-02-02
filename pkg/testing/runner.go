@@ -104,14 +104,14 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 				go func() {
 					select {
 					case <-ctx.Done():
-						tester.Close(ctx.Err())
+						tester.Exit(ctx.Err())
 					case <-tester.Done():
 					}
 				}()
 
 				go func() {
 					suite.Run(tester)
-					tester.Close(nil)
+					tester.Exit(nil)
 				}()
 
 				return <-errors

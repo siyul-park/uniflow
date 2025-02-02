@@ -48,8 +48,8 @@ func (t *Tester) Done() <-chan struct{} {
 	return t.proc.Done()
 }
 
-// Close terminates the test process with the given error.
-func (t *Tester) Close(err error) {
+// Exit terminates the test process with the given error.
+func (t *Tester) Exit(err error) {
 	t.proc.Exit(err)
 }
 
