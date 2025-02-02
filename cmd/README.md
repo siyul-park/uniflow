@@ -21,28 +21,35 @@ If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](ht
 
 ### Start Command
 
-The `start` command executes all node specifications in the specified namespace. If no namespace is provided, the default namespace (`default`) is used.
+The `start` command executes all node specifications within the specified namespace. If no namespace is provided, the
+`default` namespace is used.
 
 ```sh
 ./dist/uniflow start --namespace default
 ```
 
-If the namespace is empty, you can provide an initial node specification using the `--from-specs` flag:
+If the namespace is empty, you can provide initial node specifications using the `--from-specs` flag:
 
 ```sh
 ./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
-You can specify an initial values file with the `--from-values` flag:
+You can set initial variable files using the `--from-values` flag:
 
 ```sh
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
+Environment variables can be specified using the `--env` flag:
+
+```sh
+./dist/uniflow start --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+```
+
 ### Test Command
 
-The `test` command runs workflow tests within the specified namespace. If no namespace is provided, the default
-namespace (`default`) is used.
+The `test` command runs workflow tests within the specified namespace. If no namespace is provided, the `default`
+namespace is used.
 
 ```sh
 ./dist/uniflow test --namespace default
@@ -54,13 +61,19 @@ To run specific tests, you can filter them using a regular expression:
 ./dist/uniflow test ".*/my_test" --namespace default
 ```
 
-If the namespace is empty, you can also apply initial specifications and values:
+If the namespace is empty, you can apply initial specifications and variables:
 
 ```sh
 ./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
 ```
 
-## Using Uniflowctl
+Environment variables can be set using the `--env` flag:
+
+```sh
+./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+```
+
+## Using Uniflow CTL
 
 `uniflowctl` is a command used to manage resources within a namespace.
 
