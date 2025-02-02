@@ -82,17 +82,20 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 		match = func(string) bool { return true }
 	}
 
+	errorReporter := NewErrorReporter()
+	reporters := append(r.reporters, errorReporter)
 	g, ctx := errgroup.WithContext(ctx)
+
 	for name, suite := range r.suites {
 		if match(name) {
 			g.Go(func() error {
 				tester := NewTester(name)
 
-				errors := make(chan error)
-				defer close(errors)
+				errs := make(chan error)
+				defer close(errs)
 
 				tester.AddExitHook(process.ExitFunc(func(err error) {
-					errors <- r.reporters.Report(ctx, &Result{
+					errs <- reporters.Report(ctx, &Result{
 						ID:        tester.ID(),
 						Name:      tester.Name(),
 						Error:     err,
@@ -114,9 +117,13 @@ func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
 					tester.Exit(nil)
 				}()
 
-				return <-errors
+				return <-errs
 			})
 		}
 	}
-	return g.Wait()
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return errorReporter.Error()
 }

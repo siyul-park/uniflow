@@ -71,14 +71,10 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			}
 		}
 
-		textReporter := testing.NewTextReporter(cmd.OutOrStdout())
-		errorReporter := testing.NewErrorReporter()
+		reporter := testing.NewTextReporter(cmd.OutOrStdout())
 
-		config.Runner.AddReporter(textReporter)
-		defer config.Runner.RemoveReporter(textReporter)
-
-		config.Runner.AddReporter(errorReporter)
-		defer config.Runner.RemoveReporter(errorReporter)
+		config.Runner.AddReporter(reporter)
+		defer config.Runner.RemoveReporter(reporter)
 
 		out := cmd.OutOrStdout()
 		if out == os.Stdout {
@@ -115,9 +111,6 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			return err
 		}
 
-		if err := config.Runner.Run(ctx, match); err != nil {
-			return err
-		}
-		return errorReporter.Error()
+		return config.Runner.Run(ctx, match)
 	}
 }
