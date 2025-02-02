@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
+	"github.com/pkg/errors"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +25,20 @@ func TestReporters_Report(t *testing.T) {
 
 	err := reporters.Report(ctx, result)
 	assert.NoError(t, err)
+}
+
+func TestErrorReporter_Report(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	reporter := NewErrorReporter()
+	result := &Result{Name: "foo", Error: errors.New(faker.Sentence()), StartTime: time.Now(), EndTime: time.Now()}
+
+	err := reporter.Report(ctx, result)
+	assert.NoError(t, err)
+
+	err = reporter.Error()
+	assert.Error(t, err)
 }
 
 func TestTextReporter_Report(t *testing.T) {
