@@ -20,8 +20,10 @@ func NewCommand(config Config) *cobra.Command {
 	var cpuprof afero.File
 
 	cmd := &cobra.Command{
-		Use:   config.Use,
-		Short: config.Short,
+		Use:           config.Use,
+		Short:         config.Short,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cpuprofile, err := cmd.Flags().GetString(flagCPUProfile)
 			if err != nil {

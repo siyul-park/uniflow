@@ -61,6 +61,11 @@ func (s *Symbol) SetName(name string) {
 	s.Spec.SetName(name)
 }
 
+// NamespacedName returns the namespaced identifier.
+func (s *Symbol) NamespacedName() string {
+	return s.Spec.GetNamespacedName()
+}
+
 // Annotations returns the annotations associated with the Symbol.
 func (s *Symbol) Annotations() map[string]string {
 	return s.Spec.GetAnnotations()

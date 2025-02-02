@@ -42,6 +42,7 @@ func TestSymbol_Getter(t *testing.T) {
 	assert.Equal(t, meta.GetKind(), sb.Kind())
 	assert.Equal(t, meta.GetNamespace(), sb.Namespace())
 	assert.Equal(t, meta.GetName(), sb.Name())
+	assert.Equal(t, meta.GetNamespacedName(), sb.NamespacedName())
 	assert.Equal(t, meta.GetAnnotations(), sb.Annotations())
 	assert.Equal(t, meta.GetPorts(), sb.Ports())
 	assert.Equal(t, meta.GetEnv(), sb.Env())

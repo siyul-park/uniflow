@@ -33,7 +33,7 @@ func As[T any](source Node, target *T) bool {
 	return false
 }
 
-// NoCloser returns a Node with a no-op Close method.
+// NoCloser returns a Node with a no-op Exit method.
 func NoCloser(node Node) Node {
 	return &noCloseNode{Node: node}
 }
