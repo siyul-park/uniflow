@@ -25,7 +25,11 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
 		for i, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
-				sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
+				sp.SetNamespace(root.GetNamespacedName())
+			}
+
+			if sp.GetName() == "" {
+				sp.SetName(fmt.Sprintf("$%d", i))
 			}
 
 			sp, err := s.Decode(sp)
@@ -42,10 +46,6 @@ func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
 					_ = sb.Close()
 				}
 				return nil, err
-			}
-
-			if sp.GetName() == "" {
-				sp.SetName(fmt.Sprintf("$%d", i))
 			}
 
 			symbols = append(symbols, &symbol.Symbol{
