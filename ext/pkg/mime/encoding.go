@@ -79,7 +79,7 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 	switch typ {
 	case ApplicationJSON:
-		if err := json.NewEncoder(w).Encode(types.InterfaceOf(value)); err != nil {
+		if err := json.NewEncoder(w).Encode(value); err != nil {
 			return err
 		}
 		return nil

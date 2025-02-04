@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -114,6 +115,45 @@ func TestFloat_Compare(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.compare, tt.v1.Compare(tt.v2))
+		})
+	}
+}
+
+func TestFloat_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		source Float
+		want   string
+	}{
+		{"Float32", NewFloat32(3.14), "3.14"},
+		{"Float64", NewFloat64(6.28), "6.28"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encoded, err := json.Marshal(tt.source)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, string(encoded))
+		})
+	}
+}
+
+func TestFloat_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   Float
+	}{
+		{"Float32", "3.14", NewFloat32(3.14)},
+		{"Float64", "6.28", NewFloat64(6.28)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decoded := reflect.New(reflect.TypeOf(tt.want)).Interface().(Float)
+			err := json.Unmarshal([]byte(tt.source), decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.Interface(), decoded.Interface())
 		})
 	}
 }

@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"hash/fnv"
 	"reflect"
 	"slices"
@@ -71,6 +72,10 @@ const tagMap = "map"
 
 var _ Map = (*immutableMap)(nil)
 var _ Map = (*mutableMap)(nil)
+var _ json.Marshaler = (*immutableMap)(nil)
+var _ json.Marshaler = (*mutableMap)(nil)
+var _ json.Unmarshaler = (*immutableMap)(nil)
+var _ json.Unmarshaler = (*mutableMap)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {
@@ -130,7 +135,7 @@ func (m *immutableMap) Set(key, val Value) Map {
 	if m.Has(key) && Equal(m.Get(key), val) {
 		return m
 	}
-	return m.Mutable().Set(key, val).Immutable()
+	return m.mutable().Set(key, val).Immutable()
 }
 
 // Delete removes a key-value pair from the map by key.
@@ -138,7 +143,7 @@ func (m *immutableMap) Delete(key Value) Map {
 	if !m.Has(key) {
 		return m
 	}
-	return m.Mutable().Delete(key).Immutable()
+	return m.mutable().Delete(key).Immutable()
 }
 
 // Clear all key-value pairs in the mutable map.
@@ -215,11 +220,7 @@ func (m *immutableMap) Immutable() Map {
 
 // Mutable returns a mutable version of the map.
 func (m *immutableMap) Mutable() Map {
-	value := make(map[uint64][][2]Value, len(m.value))
-	for hash, bucket := range m.value {
-		value[hash] = bucket
-	}
-	return &mutableMap{value: value}
+	return m.mutable()
 }
 
 // Map converts the map into a native Go map.
@@ -376,6 +377,54 @@ func (m *immutableMap) Compare(other Value) int {
 	return compare(m.Kind(), KindOf(other))
 }
 
+// MarshalJSON converts the map into a JSON byte array.
+func (m *immutableMap) MarshalJSON() ([]byte, error) {
+	buf := make([]byte, 0, 1024)
+	buf = append(buf, '{')
+	for k, v := range m.Range() {
+		if len(buf) > 1 {
+			buf = append(buf, ',')
+		}
+
+		key, err := json.Marshal(k)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, key...)
+		buf = append(buf, ':')
+
+		value, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		buf = append(buf, value...)
+	}
+	buf = append(buf, '}')
+	return buf, nil
+}
+
+// UnmarshalJSON converts the JSON byte array into a map.
+func (m *immutableMap) UnmarshalJSON(bytes []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	mutable := &mutableMap{value: make(map[uint64][][2]Value)}
+	if err := mutable.UnmarshalJSON(bytes); err != nil {
+		return err
+	}
+	m.value = mutable.value
+	m.hash = 0
+	return nil
+}
+
+func (m *immutableMap) mutable() *mutableMap {
+	value := make(map[uint64][][2]Value, len(m.value))
+	for hash, bucket := range m.value {
+		value[hash] = bucket
+	}
+	return &mutableMap{value: value}
+}
+
 // Has checks if the map contains the specified key.
 func (m *mutableMap) Has(key Value) bool {
 	return m.Immutable().Has(key)
@@ -457,32 +506,32 @@ func (m *mutableMap) Clear() Map {
 
 // Keys returns all keys in the map.
 func (m *mutableMap) Keys() []Value {
-	return m.Immutable().Keys()
+	return m.immutable().Keys()
 }
 
 // Values returns all values in the map.
 func (m *mutableMap) Values() []Value {
-	return m.Immutable().Values()
+	return m.immutable().Values()
 }
 
 // Pairs returns all key-value pairs in the map.
 func (m *mutableMap) Pairs() []Value {
-	return m.Immutable().Pairs()
+	return m.immutable().Pairs()
 }
 
 // Len returns the number of key-value pairs in the map.
 func (m *mutableMap) Len() int {
-	return m.Immutable().Len()
+	return m.immutable().Len()
 }
 
 // Range provides an iterator function for traversing key-value pairs.
 func (m *mutableMap) Range() func(func(key, value Value) bool) {
-	return m.Immutable().Range()
+	return m.immutable().Range()
 }
 
 // Immutable returns the immutable version of the map.
 func (m *mutableMap) Immutable() Map {
-	return &immutableMap{value: m.value}
+	return m.immutable()
 }
 
 // Mutable returns a mutable version of the map.
@@ -492,7 +541,7 @@ func (m *mutableMap) Mutable() Map {
 
 // Map converts the map into a native Go map.
 func (m *mutableMap) Map() map[any]any {
-	return m.Immutable().Map()
+	return m.immutable().Map()
 }
 
 // Kind returns the kind of the map.
@@ -502,22 +551,49 @@ func (m *mutableMap) Kind() Kind {
 
 // Hash calculates the hash code for the map.
 func (m *mutableMap) Hash() uint64 {
-	return m.Immutable().Hash()
+	return m.immutable().Hash()
 }
 
 // Interface converts the Map to an any.
 func (m *mutableMap) Interface() any {
-	return m.Immutable().Interface()
+	return m.immutable().Interface()
 }
 
 // Equal checks if two Map instances are equal.
 func (m *mutableMap) Equal(other Value) bool {
-	return m.Immutable().Equal(other)
+	return m.immutable().Equal(other)
 }
 
 // Compare checks whether another Object is equal to this Map instance.
 func (m *mutableMap) Compare(other Value) int {
-	return m.Immutable().Compare(other)
+	return m.immutable().Compare(other)
+}
+
+// MarshalJSON converts the map into a JSON byte array.
+func (m *mutableMap) MarshalJSON() ([]byte, error) {
+	return m.immutable().MarshalJSON()
+}
+
+// UnmarshalJSON converts the JSON byte array into a map.
+func (m *mutableMap) UnmarshalJSON(bytes []byte) error {
+	var value map[string]any
+	if err := json.Unmarshal(bytes, &value); err != nil {
+		return err
+	}
+
+	for k, v := range value {
+		key := NewString(k)
+		val, err := Marshal(v)
+		if err != nil {
+			return err
+		}
+		m.Set(key, val)
+	}
+	return nil
+}
+
+func (m *mutableMap) immutable() *immutableMap {
+	return &immutableMap{value: m.value}
 }
 
 func newMapEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.EncodeCompiler[any, Value] {

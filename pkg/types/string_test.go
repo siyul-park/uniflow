@@ -72,6 +72,22 @@ func TestString_Compare(t *testing.T) {
 	assert.Equal(t, 1, v2.Compare(v1))
 }
 
+func TestString_MarshalText(t *testing.T) {
+	v := NewString("hello")
+
+	text, err := v.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", string(text))
+}
+
+func TestString_UnmarshalText(t *testing.T) {
+	v := NewString("hello")
+
+	err := v.UnmarshalText([]byte("world"))
+	assert.NoError(t, err)
+	assert.Equal(t, NewString("world"), v)
+}
+
 func TestString_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())

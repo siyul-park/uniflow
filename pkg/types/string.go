@@ -18,6 +18,8 @@ type String struct {
 }
 
 var _ Value = String{}
+var _ encoding.TextMarshaler = String{}
+var _ encoding.TextUnmarshaler = (*String)(nil)
 
 // NewString creates a new String instance.
 func NewString(value string) String {
@@ -74,6 +76,17 @@ func (s String) Compare(other Value) int {
 		return compare(s.value, o.value)
 	}
 	return compare(s.Kind(), KindOf(other))
+}
+
+// MarshalText implements the encoding.TextMarshaler interface.
+func (s String) MarshalText() ([]byte, error) {
+	return []byte(s.value), nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (s *String) UnmarshalText(text []byte) error {
+	s.value = string(text)
+	return nil
 }
 
 func newStringEncoder() encoding2.EncodeCompiler[any, Value] {

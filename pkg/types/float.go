@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"reflect"
@@ -29,6 +30,10 @@ type Float64 struct {
 
 var _ Float = Float32{}
 var _ Float = Float64{}
+var _ json.Marshaler = Float32{}
+var _ json.Marshaler = Float64{}
+var _ json.Unmarshaler = (*Float32)(nil)
+var _ json.Unmarshaler = (*Float64)(nil)
 
 // NewFloat32 returns a new Float32 instance.
 func NewFloat32(value float32) Float32 {
@@ -73,6 +78,19 @@ func (f Float32) Compare(other Value) int {
 	return compare(f.Kind(), KindOf(other))
 }
 
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (f Float32) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (f *Float32) UnmarshalJSON(bytes []byte) error {
+	if err := json.Unmarshal(bytes, &f.value); err != nil {
+		return errors.Wrap(encoding.ErrUnsupportedValue, err.Error())
+	}
+	return nil
+}
+
 // NewFloat64 returns a new Float64 instance.
 func NewFloat64(value float64) Float64 {
 	return Float64{value: value}
@@ -114,6 +132,19 @@ func (f Float64) Compare(other Value) int {
 		return compare(f.value, o.value)
 	}
 	return compare(f.Kind(), KindOf(other))
+}
+
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (f Float64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (f *Float64) UnmarshalJSON(bytes []byte) error {
+	if err := json.Unmarshal(bytes, &f.value); err != nil {
+		return errors.Wrap(encoding.ErrUnsupportedValue, err.Error())
+	}
+	return nil
 }
 
 func newFloatEncoder() encoding.EncodeCompiler[any, Value] {

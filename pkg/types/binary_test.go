@@ -28,6 +28,12 @@ func TestBinary_Bytes(t *testing.T) {
 	assert.Equal(t, []byte{0}, v.Bytes())
 }
 
+func TestBinary_String(t *testing.T) {
+	v := NewBinary([]byte{0})
+
+	assert.Equal(t, "AA==", v.String())
+}
+
 func TestBinary_Kind(t *testing.T) {
 	v := NewBinary([]byte{0})
 
@@ -64,6 +70,34 @@ func TestBinary_Compare(t *testing.T) {
 	assert.Equal(t, 0, v2.Compare(v2))
 	assert.Equal(t, -1, v1.Compare(v2))
 	assert.Equal(t, 1, v2.Compare(v1))
+}
+
+func TestBinary_MarshalText(t *testing.T) {
+	b := NewBinary([]byte{0, 1, 2})
+	text, err := b.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, "AAEC", string(text))
+}
+
+func TestBinary_UnmarshalText(t *testing.T) {
+	b := NewBinary(nil)
+	err := b.UnmarshalText([]byte("AAEC"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte{0, 1, 2}, b.Bytes())
+}
+
+func TestBinary_MarshalBinary(t *testing.T) {
+	b := NewBinary([]byte{0, 1, 2})
+	data, err := b.MarshalBinary()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte{0, 1, 2}, data)
+}
+
+func TestBinary_UnmarshalBinary(t *testing.T) {
+	b := NewBinary(nil)
+	err := b.UnmarshalBinary([]byte{0, 1, 2})
+	assert.NoError(t, err)
+	assert.Equal(t, []byte{0, 1, 2}, b.Bytes())
 }
 
 func TestBinary_Encode(t *testing.T) {

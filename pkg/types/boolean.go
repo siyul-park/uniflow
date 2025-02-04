@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"reflect"
@@ -15,13 +16,15 @@ type Boolean struct {
 	value bool
 }
 
-var _ Value = Boolean{}
-
 // Predefined True and False values for optimization.
 var (
 	True  = Boolean{value: true}
 	False = Boolean{value: false}
 )
+
+var _ Value = Boolean{}
+var _ json.Marshaler = Boolean{}
+var _ json.Unmarshaler = (*Boolean)(nil)
 
 // NewBoolean returns the predefined True or False instance.
 func NewBoolean(value bool) Boolean {
@@ -77,6 +80,19 @@ func (b Boolean) Compare(other Value) int {
 		return -1
 	}
 	return compare(b.Kind(), KindOf(other))
+}
+
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (b Boolean) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (b *Boolean) UnmarshalJSON(bytes []byte) error {
+	if err := json.Unmarshal(bytes, &b.value); err != nil {
+		return errors.Wrap(encoding.ErrUnsupportedValue, err.Error())
+	}
+	return nil
 }
 
 func newBooleanEncoder() encoding.EncodeCompiler[any, Value] {
