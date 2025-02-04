@@ -119,6 +119,16 @@ func TestBuffer_Decode(t *testing.T) {
 		assert.Equal(t, source, decoded)
 	})
 
+	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
+		source := uuid.Must(uuid.NewV7())
+		v := NewBuffer(strings.NewReader(source.String()))
+
+		decoded := NewString("")
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source.String(), decoded.String())
+	})
+
 	t.Run("io.Reader", func(t *testing.T) {
 		source := strings.NewReader("test")
 		v := NewBuffer(source)

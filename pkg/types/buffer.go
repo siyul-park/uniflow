@@ -35,14 +35,14 @@ func (b Buffer) Read(p []byte) (n int, err error) {
 
 // Bytes returns the raw byte slice.
 func (b Buffer) Bytes() ([]byte, error) {
-	bytes, err := io.ReadAll(b.value)
+	data, err := io.ReadAll(b.value)
 	if err != nil {
 		return nil, err
 	}
 	if err := b.Close(); err != nil {
 		return nil, err
 	}
-	return bytes, nil
+	return data, nil
 }
 
 // Close closes the buffer.
