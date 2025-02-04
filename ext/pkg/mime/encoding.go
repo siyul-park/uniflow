@@ -3,6 +3,7 @@ package mime
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
@@ -60,18 +61,6 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 		defer c.Close()
 	}
 
-	if v, ok := value.(types.Buffer); ok {
-		if _, err := io.Copy(w, v); err != nil {
-			return err
-		}
-		return nil
-	} else if v, ok := value.(types.Binary); ok {
-		if _, err := w.Write(v.Bytes()); err != nil {
-			return err
-		}
-		return nil
-	}
-
 	typ, params, err := mime.ParseMediaType(typ)
 	if err != nil {
 		return err
@@ -79,141 +68,138 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 
 	switch typ {
 	case ApplicationJSON:
-		if err := json.NewEncoder(w).Encode(value); err != nil {
-			return err
-		}
-		return nil
+		return json.NewEncoder(w).Encode(value)
 	case ApplicationFormURLEncoded:
 		urlValues := url.Values{}
-		if err := types.Unmarshal(value, &urlValues); err != nil {
-			return err
-		}
-		if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
-			return err
-		}
-		return nil
-	case TextPlain:
-		if v, ok := value.(types.String); ok {
-			if _, err := w.Write([]byte(v.String())); err != nil {
+		if err := types.Unmarshal(value, &urlValues); err == nil {
+			if _, err := w.Write([]byte(urlValues.Encode())); err != nil {
 				return err
 			}
 			return nil
 		}
-		return nil
+	case TextPlain:
+		if v, ok := value.(encoding.TextMarshaler); ok {
+			if data, err := v.MarshalText(); err != nil {
+				return err
+			} else if _, err := w.Write(data); err != nil {
+				return err
+			}
+			return nil
+		}
 	case MultipartFormData:
-		boundary := params["boundary"]
-		if boundary == "" {
-			boundary = randomMultipartBoundary()
-			params["boundary"] = boundary
-			header.Set(HeaderContentType, mime.FormatMediaType(typ, params))
-		}
-
-		mw := multipart.NewWriter(w)
-		if err := mw.SetBoundary(boundary); err != nil {
-			return err
-		}
-
-		writeFormField := func(obj types.Map, key types.Value) error {
-			if key, ok := key.(types.String); ok {
-				value := obj.Get(key)
-
-				var elements types.Slice
-				if v, ok := value.(types.Slice); ok {
-					elements = v
-				} else {
-					elements = types.NewSlice(value)
-				}
-
-				for _, element := range elements.Range() {
-					h := textproto.MIMEHeader{}
-					h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, escapeQuotes.Replace(key.String())))
-
-					if w, err := mw.CreatePart(h); err != nil {
-						return err
-					} else if err := Encode(w, element, h); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		}
-
-		writeFormFields := func(value types.Value) error {
-			if value, ok := value.(types.Map); ok {
-				for key := range value.Range() {
-					if err := writeFormField(value, key); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		}
-
-		writeFormFiles := func(value types.Value) error {
-			if value, ok := value.(types.Map); ok {
-				for key := range value.Range() {
-					if key, ok := key.(types.String); ok {
-						value := value.Get(key)
-
-						var elements types.Slice
-						if v, ok := value.(types.Slice); ok {
-							elements = v
-						} else {
-							elements = types.NewSlice(value)
-						}
-
-						for _, element := range elements.Values() {
-							data, ok := types.Get[types.Value](element, "data")
-							if !ok {
-								data = element
-							}
-							filename, ok := types.Get[string](element, "filename")
-							if !ok {
-								filename = key.String()
-							}
-
-							header, _ := types.Get[types.Value](element, "header")
-
-							h := textproto.MIMEHeader{}
-							_ = types.Unmarshal(header, &h)
-
-							typ := h.Get(HeaderContentType)
-							if typ == "" {
-								if detects := DetectTypesFromValue(data); len(detects) > 0 {
-									typ = detects[0]
-									h.Set(HeaderContentType, typ)
-								}
-							}
-
-							typ, params, err := mime.ParseMediaType(typ)
-							if err != nil {
-								return err
-							}
-
-							if typ == MultipartFormData {
-								boundary := params["boundary"]
-								if boundary == "" {
-									boundary = randomMultipartBoundary()
-									params["boundary"] = boundary
-									h.Set(HeaderContentType, mime.FormatMediaType(typ, params))
-								}
-							}
-
-							h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, escapeQuotes.Replace(key.String()), escapeQuotes.Replace(filename)))
-
-							if writer, err := mw.CreatePart(h); err != nil {
-								return err
-							} else if err := Encode(writer, data, h); err != nil {
-								return err
-							}
-						}
-					}
-				}
-			}
-			return nil
-		}
-
 		if v, ok := value.(types.Map); ok {
+			boundary := params["boundary"]
+			if boundary == "" {
+				boundary = randomMultipartBoundary()
+				params["boundary"] = boundary
+				header.Set(HeaderContentType, mime.FormatMediaType(typ, params))
+			}
+
+			mw := multipart.NewWriter(w)
+			if err := mw.SetBoundary(boundary); err != nil {
+				return err
+			}
+
+			writeFormField := func(obj types.Map, key types.Value) error {
+				if key, ok := key.(types.String); ok {
+					value := obj.Get(key)
+
+					var elements types.Slice
+					if v, ok := value.(types.Slice); ok {
+						elements = v
+					} else {
+						elements = types.NewSlice(value)
+					}
+
+					for _, element := range elements.Range() {
+						h := textproto.MIMEHeader{}
+						h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"`, escapeQuotes.Replace(key.String())))
+
+						if w, err := mw.CreatePart(h); err != nil {
+							return err
+						} else if err := Encode(w, element, h); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			}
+
+			writeFormFields := func(value types.Value) error {
+				if value, ok := value.(types.Map); ok {
+					for key := range value.Range() {
+						if err := writeFormField(value, key); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			}
+
+			writeFormFiles := func(value types.Value) error {
+				if value, ok := value.(types.Map); ok {
+					for key := range value.Range() {
+						if key, ok := key.(types.String); ok {
+							value := value.Get(key)
+
+							var elements types.Slice
+							if v, ok := value.(types.Slice); ok {
+								elements = v
+							} else {
+								elements = types.NewSlice(value)
+							}
+
+							for _, element := range elements.Values() {
+								data, ok := types.Get[types.Value](element, "data")
+								if !ok {
+									data = element
+								}
+								filename, ok := types.Get[string](element, "filename")
+								if !ok {
+									filename = key.String()
+								}
+
+								header, _ := types.Get[types.Value](element, "header")
+
+								h := textproto.MIMEHeader{}
+								_ = types.Unmarshal(header, &h)
+
+								typ := h.Get(HeaderContentType)
+								if typ == "" {
+									if detects := DetectTypesFromValue(data); len(detects) > 0 {
+										typ = detects[0]
+										h.Set(HeaderContentType, typ)
+									}
+								}
+
+								typ, params, err := mime.ParseMediaType(typ)
+								if err != nil {
+									return err
+								}
+
+								if typ == MultipartFormData {
+									boundary := params["boundary"]
+									if boundary == "" {
+										boundary = randomMultipartBoundary()
+										params["boundary"] = boundary
+										h.Set(HeaderContentType, mime.FormatMediaType(typ, params))
+									}
+								}
+
+								h.Set(HeaderContentDisposition, fmt.Sprintf(`form-data; name="%s"; filename="%s"`, escapeQuotes.Replace(key.String()), escapeQuotes.Replace(filename)))
+
+								if writer, err := mw.CreatePart(h); err != nil {
+									return err
+								} else if err := Encode(writer, data, h); err != nil {
+									return err
+								}
+							}
+						}
+					}
+				}
+				return nil
+			}
+
 			for key, value := range v.Range() {
 				if key.Equal(keyValues) {
 					if err := writeFormFields(value); err != nil {
@@ -227,15 +213,28 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 					return err
 				}
 			}
-		}
 
-		if err := mw.Close(); err != nil {
+			if err := mw.Close(); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	if v, ok := value.(io.Reader); ok {
+		if _, err := io.Copy(w, v); err != nil {
+			return err
+		}
+		return nil
+	} else if v, ok := value.(encoding.BinaryMarshaler); ok {
+		if data, err := v.MarshalBinary(); err != nil {
+			return err
+		} else if _, err := w.Write(data); err != nil {
 			return err
 		}
 		return nil
 	}
-
-	return errors.WithStack(encoding.ErrUnsupportedType)
+	return errors.WithStack(encoding2.ErrUnsupportedType)
 }
 
 // Decode decodes the given reader with the specified MIME headers into types.

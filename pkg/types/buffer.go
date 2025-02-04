@@ -42,11 +42,8 @@ func (b Buffer) Bytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	closer, ok := b.value.(io.Closer)
-	if ok {
-		if err := closer.Close(); err != nil {
-			return nil, err
-		}
+	if err := b.Close(); err != nil {
+		return nil, err
 	}
 	return bytes, nil
 }
