@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"encoding"
-	"encoding/base64"
 	"io"
 	"reflect"
 	"unsafe"
@@ -21,8 +20,6 @@ type _buffer struct {
 
 var _ Value = (Buffer)(nil)
 var _ io.Reader = (Buffer)(nil)
-var _ encoding.TextMarshaler = (Buffer)(nil)
-var _ encoding.TextUnmarshaler = (Buffer)(nil)
 var _ encoding.BinaryMarshaler = (Buffer)(nil)
 var _ encoding.BinaryUnmarshaler = (Buffer)(nil)
 
@@ -46,15 +43,6 @@ func (b Buffer) Bytes() ([]byte, error) {
 		return nil, err
 	}
 	return bytes, nil
-}
-
-// String returns the string representation of the buffer data.
-func (b Buffer) String() (string, error) {
-	bytes, err := b.Bytes()
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
 // Close closes the buffer.
@@ -94,30 +82,6 @@ func (b Buffer) Compare(other Value) int {
 		return compare(b.Hash(), o.Hash())
 	}
 	return compare(b.Kind(), KindOf(other))
-}
-
-// MarshalText implements the encoding.TextMarshaler interface.
-func (b Buffer) MarshalText() ([]byte, error) {
-	data, err := b.Bytes()
-	if err != nil {
-		return nil, err
-	}
-	return []byte(base64.StdEncoding.EncodeToString(data)), nil
-}
-
-// UnmarshalText implements the encoding.TextUnmarshaler interface.
-func (b Buffer) UnmarshalText(text []byte) error {
-	if err := b.Close(); err != nil {
-		return err
-	}
-
-	data, err := base64.StdEncoding.DecodeString(string(text))
-	if err != nil {
-		return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
-	}
-
-	b.value = bytes.NewBuffer(data)
-	return nil
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
@@ -163,9 +127,9 @@ func newBufferDecoder() encoding2.DecodeCompiler[Value] {
 			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Buffer); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
-					if bytes, err := s.Bytes(); err != nil {
+					if data, err := s.Bytes(); err != nil {
 						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
-					} else if err := t.UnmarshalBinary(bytes); err != nil {
+					} else if err := t.UnmarshalBinary(data); err != nil {
 						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
 					}
 					return nil
@@ -176,9 +140,9 @@ func newBufferDecoder() encoding2.DecodeCompiler[Value] {
 			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Buffer); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
-					if str, err := s.String(); err != nil {
+					if data, err := s.Bytes(); err != nil {
 						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
-					} else if err := t.UnmarshalText([]byte(str)); err != nil {
+					} else if err := t.UnmarshalText(data); err != nil {
 						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
 					}
 					return nil
@@ -198,12 +162,12 @@ func newBufferDecoder() encoding2.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Slice && typ.Elem().Elem().Kind() == reflect.Uint8 {
 				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Buffer); ok {
-						bytes, err := s.Bytes()
+						data, err := s.Bytes()
 						if err != nil {
 							return err
 						}
 						t := reflect.NewAt(typ.Elem(), target).Elem()
-						t.Set(reflect.AppendSlice(t, reflect.ValueOf(bytes).Convert(t.Type())))
+						t.Set(reflect.AppendSlice(t, reflect.ValueOf(data).Convert(t.Type())))
 						return nil
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)
@@ -211,12 +175,12 @@ func newBufferDecoder() encoding2.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.Array && typ.Elem().Elem().Kind() == reflect.Uint8 {
 				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Buffer); ok {
-						bytes, err := s.Bytes()
+						data, err := s.Bytes()
 						if err != nil {
 							return err
 						}
 						t := reflect.NewAt(typ.Elem(), target).Elem()
-						reflect.Copy(t, reflect.ValueOf(bytes).Convert(t.Type()))
+						reflect.Copy(t, reflect.ValueOf(data).Convert(t.Type()))
 						return nil
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)
@@ -224,11 +188,11 @@ func newBufferDecoder() encoding2.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.String {
 				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Buffer); ok {
-						str, err := s.String()
+						data, err := s.Bytes()
 						if err != nil {
 							return err
 						}
-						*(*string)(target) = str
+						*(*string)(target) = string(data)
 						return nil
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)

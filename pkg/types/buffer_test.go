@@ -2,7 +2,6 @@ package types
 
 import (
 	"bytes"
-	"encoding/base64"
 	"io"
 	"strings"
 	"testing"
@@ -29,14 +28,6 @@ func TestBuffer_Bytes(t *testing.T) {
 	p, err := b.Bytes()
 	assert.NoError(t, err)
 	assert.Equal(t, "test", string(p))
-}
-
-func TestBuffer_String(t *testing.T) {
-	r := strings.NewReader("test")
-	b := NewBuffer(r)
-	s, err := b.String()
-	assert.NoError(t, err)
-	assert.Equal(t, "dGVzdA==", s)
 }
 
 func TestBuffer_Close(t *testing.T) {
@@ -81,23 +72,6 @@ func TestBuffer_Compare(t *testing.T) {
 	b2 := NewBuffer(r2)
 	assert.Equal(t, 0, b1.Compare(b1))
 	assert.NotEqual(t, 0, b1.Compare(b2))
-}
-
-func TestBuffer_MarshalText(t *testing.T) {
-	b := NewBuffer(strings.NewReader("test"))
-	text, err := b.MarshalText()
-	assert.NoError(t, err)
-	assert.Equal(t, "dGVzdA==", string(text))
-}
-
-func TestBuffer_UnmarshalText(t *testing.T) {
-	b := NewBuffer(nil)
-	err := b.UnmarshalText([]byte("dGVzdA=="))
-	assert.NoError(t, err)
-
-	data, err := b.Bytes()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("test"), data)
 }
 
 func TestBuffer_MarshalBinary(t *testing.T) {
@@ -182,10 +156,7 @@ func TestBuffer_Decode(t *testing.T) {
 		var decoded string
 		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
-
-		d, err := base64.StdEncoding.DecodeString(decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, []byte("test"), d)
+		assert.Equal(t, "test", decoded)
 	})
 
 	t.Run("any", func(t *testing.T) {
