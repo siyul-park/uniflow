@@ -126,8 +126,7 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		decoded := NewBuffer(nil)
-		err := dec.Decode(v, decoded)
-		assert.NoError(t, err)
+		assert.NoError(t, dec.Decode(v, decoded))
 
 		data, err := decoded.Bytes()
 		assert.NoError(t, err)
@@ -139,8 +138,7 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		decoded := NewString("")
-		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
+		assert.NoError(t, dec.Decode(v, &decoded))
 		assert.Equal(t, source.Error(), decoded.String())
 	})
 
@@ -158,8 +156,16 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		var decoded string
-		source = dec.Decode(v, &decoded)
-		assert.NoError(t, source)
+		assert.NoError(t, dec.Decode(v, &decoded))
 		assert.Equal(t, "test error", decoded)
+	})
+
+	t.Run("any", func(t *testing.T) {
+		source := errors.New("test error")
+		v := NewError(source)
+
+		var decoded any
+		assert.NoError(t, dec.Decode(v, &decoded))
+		assert.Equal(t, source, decoded)
 	})
 }
