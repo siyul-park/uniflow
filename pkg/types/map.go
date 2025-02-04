@@ -412,6 +412,7 @@ func (m *immutableMap) UnmarshalJSON(bytes []byte) error {
 	if err := mutable.UnmarshalJSON(bytes); err != nil {
 		return err
 	}
+
 	m.value = mutable.value
 	m.hash = 0
 	return nil
