@@ -16,6 +16,11 @@ import (
 // Binary is a representation of a []byte.
 type Binary = *binary_
 
+var _ encoding.TextMarshaler = (Binary)(nil)
+var _ encoding.TextUnmarshaler = (Binary)(nil)
+var _ encoding.BinaryMarshaler = (Binary)(nil)
+var _ encoding.BinaryUnmarshaler = (Binary)(nil)
+
 type binary_ struct {
 	value []byte
 	hash  uint64
@@ -47,6 +52,11 @@ func (b Binary) Get(index int) byte {
 // Bytes returns the raw byte slice.
 func (b Binary) Bytes() []byte {
 	return b.value
+}
+
+// String returns the string representation of the binary data.
+func (b Binary) String() string {
+	return base64.StdEncoding.EncodeToString(b.value)
 }
 
 // Kind returns the type of the binary data.
@@ -89,6 +99,41 @@ func (b Binary) Compare(other Value) int {
 		return bytes.Compare(b.Bytes(), o.Bytes())
 	}
 	return compare(b.Kind(), KindOf(other))
+}
+
+// MarshalText implements the encoding.TextMarshaler interface.
+func (b Binary) MarshalText() ([]byte, error) {
+	return []byte(b.String()), nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (b Binary) UnmarshalText(text []byte) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	data, err := base64.StdEncoding.DecodeString(string(text))
+	if err != nil {
+		return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
+	}
+
+	b.value = data
+	b.hash = 0
+	return nil
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (b Binary) MarshalBinary() ([]byte, error) {
+	return b.value, nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (b Binary) UnmarshalBinary(data []byte) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.value = data
+	b.hash = 0
+	return nil
 }
 
 func newBinaryEncoder() encoding2.EncodeCompiler[any, Value] {
@@ -145,7 +190,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				if s, ok := source.(Binary); ok {
 					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
-					if err := t.UnmarshalText(s.Bytes()); err != nil {
+					if err := t.UnmarshalText([]byte(s.String())); err != nil {
 						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
 					}
 					return nil
@@ -174,7 +219,7 @@ func newBinaryDecoder() encoding2.DecodeCompiler[Value] {
 			} else if typ.Elem().Kind() == reflect.String {
 				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Binary); ok {
-						*(*string)(target) = base64.StdEncoding.EncodeToString(s.Bytes())
+						*(*string)(target) = s.String()
 						return nil
 					}
 					return errors.WithStack(encoding2.ErrUnsupportedType)

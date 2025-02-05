@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -141,6 +142,51 @@ func TestInteger_Compare(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.compare, tt.v1.Compare(tt.v2))
+		})
+	}
+}
+
+func TestInteger_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		source Integer
+		want   string
+	}{
+		{"Int", NewInt(42), "42"},
+		{"Int8", NewInt8(42), "42"},
+		{"Int16", NewInt16(42), "42"},
+		{"Int32", NewInt32(42), "42"},
+		{"Int64", NewInt64(42), "42"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := json.Marshal(tt.source)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, string(b))
+		})
+	}
+}
+
+func TestInteger_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   Integer
+	}{
+		{"Int", "42", NewInt(42)},
+		{"Int8", "42", NewInt8(42)},
+		{"Int16", "42", NewInt16(42)},
+		{"Int32", "42", NewInt32(42)},
+		{"Int64", "42", NewInt64(42)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decoded := reflect.New(reflect.TypeOf(tt.want)).Interface().(Integer)
+			err := json.Unmarshal([]byte(tt.source), decoded)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.Interface(), decoded.Interface())
 		})
 	}
 }

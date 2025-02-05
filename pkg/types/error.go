@@ -1,12 +1,13 @@
 package types
 
 import (
+	"encoding"
 	"hash/fnv"
 	"reflect"
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Error represents an error types.
@@ -18,6 +19,8 @@ type _error struct {
 
 var _ Value = (Error)(nil)
 var _ error = (Error)(nil)
+var _ encoding.TextMarshaler = (Error)(nil)
+var _ encoding.TextUnmarshaler = (Error)(nil)
 
 // NewError creates a new Error instance.
 func NewError(value error) Error {
@@ -67,44 +70,99 @@ func (e Error) Compare(other Value) int {
 	return compare(e.Kind(), KindOf(other))
 }
 
-func newErrorEncoder() encoding.EncodeCompiler[any, Value] {
+// MarshalText implements the encoding.TextMarshaler interface.
+func (e Error) MarshalText() ([]byte, error) {
+	return []byte(e.Error()), nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (e Error) UnmarshalText(text []byte) error {
+	e.value = errors.New(string(text))
+	return nil
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (e Error) MarshalBinary() (data []byte, err error) {
+	return e.MarshalText()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (e Error) UnmarshalBinary(data []byte) error {
+	return e.UnmarshalText(data)
+}
+
+func newErrorEncoder() encoding2.EncodeCompiler[any, Value] {
 	typeError := reflect.TypeOf((*error)(nil)).Elem()
 
-	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
+	return encoding2.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding2.Encoder[any, Value], error) {
 		if typ != nil && typ.ConvertibleTo(typeError) {
-			return encoding.EncodeFunc(func(source any) (Value, error) {
+			return encoding2.EncodeFunc(func(source any) (Value, error) {
 				s := source.(error)
 				return NewError(s), nil
 			}), nil
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }
 
-func newErrorDecoder() encoding.DecodeCompiler[Value] {
+func newErrorDecoder() encoding2.DecodeCompiler[Value] {
 	typeError := reflect.TypeOf((*error)(nil)).Elem()
+	typeTextUnmarshaler := reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+	typeBinaryUnmarshaler := reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 
-	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
-		if typ != nil && typ.Kind() == reflect.Pointer {
+	return encoding2.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding2.Decoder[Value, unsafe.Pointer], error) {
+		if typ == nil {
+			return nil, errors.WithStack(encoding2.ErrUnsupportedType)
+		} else if typ.ConvertibleTo(typeTextUnmarshaler) {
+			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+				if s, ok := source.(Error); ok {
+					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.TextUnmarshaler)
+					if err := t.UnmarshalText([]byte(s.Error())); err != nil {
+						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
+					}
+					return nil
+				}
+				return errors.WithStack(encoding2.ErrUnsupportedType)
+			}), nil
+		} else if typ.ConvertibleTo(typeBinaryUnmarshaler) {
+			return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+				if s, ok := source.(Error); ok {
+					t := reflect.NewAt(typ.Elem(), target).Interface().(encoding.BinaryUnmarshaler)
+					if err := t.UnmarshalBinary([]byte(s.Error())); err != nil {
+						return errors.Wrap(encoding2.ErrUnsupportedValue, err.Error())
+					}
+					return nil
+				}
+				return errors.WithStack(encoding2.ErrUnsupportedType)
+			}), nil
+		} else if typ.Kind() == reflect.Pointer {
 			if typ.Elem().ConvertibleTo(typeError) {
-				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						t := reflect.NewAt(typ.Elem(), target)
 						t.Elem().Set(reflect.ValueOf(s.Interface()))
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedType)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
+				}), nil
+			} else if typ.Elem().Kind() == reflect.String {
+				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+					if s, ok := source.(Error); ok {
+						*(*string)(target) = s.Error()
+						return nil
+					}
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			} else if typ.Elem() == types[KindUnknown] {
-				return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
+				return encoding2.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 					if s, ok := source.(Error); ok {
 						*(*any)(target) = s.Interface()
 						return nil
 					}
-					return errors.WithStack(encoding.ErrUnsupportedType)
+					return errors.WithStack(encoding2.ErrUnsupportedType)
 				}), nil
 			}
 		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		return nil, errors.WithStack(encoding2.ErrUnsupportedType)
 	})
 }

@@ -44,6 +44,42 @@ func TestBoolean_Compare(t *testing.T) {
 	assert.Equal(t, 1, True.Compare(False))
 }
 
+func TestBoolean_MarshalJSON(t *testing.T) {
+	t.Run("true", func(t *testing.T) {
+		v := NewBoolean(true)
+
+		data, err := v.MarshalJSON()
+		assert.NoError(t, err)
+		assert.Equal(t, "true", string(data))
+	})
+
+	t.Run("false", func(t *testing.T) {
+		v := NewBoolean(false)
+
+		data, err := v.MarshalJSON()
+		assert.NoError(t, err)
+		assert.Equal(t, "false", string(data))
+	})
+}
+
+func TestBoolean_UnmarshalJSON(t *testing.T) {
+	t.Run("true", func(t *testing.T) {
+		v := NewBoolean(false)
+
+		err := v.UnmarshalJSON([]byte("true"))
+		assert.NoError(t, err)
+		assert.Equal(t, True, v)
+	})
+
+	t.Run("false", func(t *testing.T) {
+		v := NewBoolean(true)
+
+		err := v.UnmarshalJSON([]byte("false"))
+		assert.NoError(t, err)
+		assert.Equal(t, False, v)
+	})
+}
+
 func TestBoolean_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newBooleanEncoder())

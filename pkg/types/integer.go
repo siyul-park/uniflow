@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"reflect"
@@ -47,6 +48,16 @@ var _ Integer = Int8{}
 var _ Integer = Int16{}
 var _ Integer = Int32{}
 var _ Integer = Int64{}
+var _ json.Marshaler = Int{}
+var _ json.Marshaler = Int8{}
+var _ json.Marshaler = Int16{}
+var _ json.Marshaler = Int32{}
+var _ json.Marshaler = Int64{}
+var _ json.Unmarshaler = (*Int)(nil)
+var _ json.Unmarshaler = (*Int8)(nil)
+var _ json.Unmarshaler = (*Int16)(nil)
+var _ json.Unmarshaler = (*Int32)(nil)
+var _ json.Unmarshaler = (*Int64)(nil)
 
 // NewInt returns a new Int instance.
 func NewInt(value int) Int {
@@ -89,6 +100,16 @@ func (i Int) Compare(other Value) int {
 		return compare(i.value, o.value)
 	}
 	return compare(i.Kind(), KindOf(other))
+}
+
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (i Int) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (i *Int) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &i.value)
 }
 
 // NewInt8 returns a new Int8 instance.
@@ -134,6 +155,16 @@ func (i Int8) Compare(other Value) int {
 	return compare(i.Kind(), KindOf(other))
 }
 
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (i Int8) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (i *Int8) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &i.value)
+}
+
 // NewInt16 returns a new Int16 instance.
 func NewInt16(value int16) Int16 {
 	return Int16{value: value}
@@ -175,6 +206,16 @@ func (i Int16) Compare(other Value) int {
 		return compare(i.value, o.value)
 	}
 	return compare(i.Kind(), KindOf(other))
+}
+
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (i Int16) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (i *Int16) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &i.value)
 }
 
 // NewInt32 returns a new Int32 instance.
@@ -220,6 +261,16 @@ func (i Int32) Compare(other Value) int {
 	return compare(i.Kind(), KindOf(other))
 }
 
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (i Int32) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (i *Int32) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &i.value)
+}
+
 // NewInt64 returns a new Int64 instance.
 func NewInt64(value int64) Int64 {
 	return Int64{value: value}
@@ -261,6 +312,16 @@ func (i Int64) Compare(other Value) int {
 		return compare(i.value, o.value)
 	}
 	return compare(i.Kind(), KindOf(other))
+}
+
+// MarshalJSON implements the encoding.MarshalJSON interface.
+func (i Int64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
+// UnmarshalJSON implements the encoding.UnmarshalJSON interface.
+func (i *Int64) UnmarshalJSON(bytes []byte) error {
+	return json.Unmarshal(bytes, &i.value)
 }
 
 func newIntegerEncoder() encoding.EncodeCompiler[any, Value] {

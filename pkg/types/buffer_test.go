@@ -1,10 +1,12 @@
 package types
 
 import (
-	"encoding/base64"
+	"bytes"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/assert"
@@ -72,6 +74,23 @@ func TestBuffer_Compare(t *testing.T) {
 	assert.NotEqual(t, 0, b1.Compare(b2))
 }
 
+func TestBuffer_MarshalBinary(t *testing.T) {
+	b := NewBuffer(strings.NewReader("test"))
+	data, err := b.MarshalBinary()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test"), data)
+}
+
+func TestBuffer_UnmarshalBinary(t *testing.T) {
+	b := NewBuffer(nil)
+	err := b.UnmarshalBinary([]byte("test"))
+	assert.NoError(t, err)
+
+	data, err := b.Bytes()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test"), data)
+}
+
 func TestBuffer_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newBufferEncoder())
@@ -89,6 +108,26 @@ func TestBuffer_Encode(t *testing.T) {
 func TestBuffer_Decode(t *testing.T) {
 	dec := encoding.NewDecodeAssembler[Value, any]()
 	dec.Add(newBufferDecoder())
+
+	t.Run("encoding.BinaryUnmarshaler", func(t *testing.T) {
+		source := uuid.Must(uuid.NewV7())
+		v := NewBuffer(bytes.NewBuffer(source.Bytes()))
+
+		var decoded uuid.UUID
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source, decoded)
+	})
+
+	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
+		source := uuid.Must(uuid.NewV7())
+		v := NewBuffer(strings.NewReader(source.String()))
+
+		decoded := NewString("")
+		err := dec.Decode(v, &decoded)
+		assert.NoError(t, err)
+		assert.Equal(t, source.String(), decoded.String())
+	})
 
 	t.Run("io.Reader", func(t *testing.T) {
 		source := strings.NewReader("test")
@@ -127,10 +166,7 @@ func TestBuffer_Decode(t *testing.T) {
 		var decoded string
 		err := dec.Decode(v, &decoded)
 		assert.NoError(t, err)
-
-		d, err := base64.StdEncoding.DecodeString(decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, []byte("test"), d)
+		assert.Equal(t, "test", decoded)
 	})
 
 	t.Run("any", func(t *testing.T) {

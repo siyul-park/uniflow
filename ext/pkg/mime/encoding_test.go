@@ -24,7 +24,7 @@ func TestEncode(t *testing.T) {
 		{
 			whenValue: types.NewBinary([]byte("testtesttest")),
 			whenType:  TextPlain,
-			expect:    []byte("testtesttest"),
+			expect:    []byte("dGVzdHRlc3R0ZXN0"),
 		},
 		{
 			whenValue: types.NewMap(

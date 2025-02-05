@@ -119,6 +119,22 @@ func TestSlice_Compare(t *testing.T) {
 	assert.Equal(t, 1, v2.Compare(v1))
 }
 
+func TestSlice_MarshalJSON(t *testing.T) {
+	v := NewSlice(NewString("hello"))
+
+	data, err := v.MarshalJSON()
+	assert.NoError(t, err)
+	assert.JSONEq(t, `["hello"]`, string(data))
+}
+
+func TestSlice_UnmarshalJSON(t *testing.T) {
+	v := NewSlice()
+
+	err := v.UnmarshalJSON([]byte(`["hello"]`))
+	assert.NoError(t, err)
+	assert.Equal(t, NewSlice(NewString("hello")), v)
+}
+
 func TestSlice_Encode(t *testing.T) {
 	enc := encoding.NewEncodeAssembler[any, Value]()
 	enc.Add(newStringEncoder())

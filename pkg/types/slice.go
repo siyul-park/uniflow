@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"hash/fnv"
 	"reflect"
 	"sync"
@@ -21,6 +22,8 @@ type _slice struct {
 }
 
 var _ Value = (Slice)(nil)
+var _ json.Marshaler = (Slice)(nil)
+var _ json.Unmarshaler = (Slice)(nil)
 
 // NewSlice returns a new Slice.
 func NewSlice(elements ...Value) Slice {
@@ -197,6 +200,35 @@ func (s Slice) Compare(other Value) int {
 		return compare(len(s.value), len(o.value))
 	}
 	return compare(s.Kind(), KindOf(other))
+}
+
+// MarshalJSON converts the map into a JSON byte array.
+func (s Slice) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.value)
+}
+
+// UnmarshalJSON converts the JSON byte array into a map.
+func (s Slice) UnmarshalJSON(bytes []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var value []any
+	if err := json.Unmarshal(bytes, &value); err != nil {
+		return err
+	}
+
+	s.value = make([]Value, 0, len(value))
+	s.hash = 0
+
+	for _, v := range value {
+		val, err := Marshal(v)
+		if err != nil {
+			return err
+		}
+		s.value = append(s.value, val)
+	}
+	return nil
+
 }
 
 func newSliceEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.EncodeCompiler[any, Value] {

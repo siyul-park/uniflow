@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -169,6 +170,32 @@ func TestMap_Interface(t *testing.T) {
 
 		assert.Equal(t, [][2]any{{k1.Interface(), v1.Interface()}}, o.Interface())
 	})
+}
+
+func TestMap_MarshalJSON(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	data, err := json.Marshal(o)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"`+k1.String()+`":"`+v1.String()+`"}`, string(data))
+}
+
+func TestMap_UnmarshalJSON(t *testing.T) {
+	k1 := NewString(faker.UUIDHyphenated())
+	v1 := NewString(faker.UUIDHyphenated())
+
+	o := NewMap(k1, v1)
+
+	data, err := json.Marshal(o)
+	assert.NoError(t, err)
+
+	decoded := NewMap()
+	err = json.Unmarshal(data, &decoded)
+	assert.NoError(t, err)
+	assert.True(t, o.Equal(decoded))
 }
 
 func TestMap_Encode(t *testing.T) {
