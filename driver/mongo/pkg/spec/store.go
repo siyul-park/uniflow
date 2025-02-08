@@ -10,7 +10,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -132,13 +131,8 @@ func (s *Store) Store(ctx context.Context, specs ...spec.Spec) (int, error) {
 			return 0, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
 		}
 
-		doc, err := types.Marshal(sp)
-		if err != nil {
-			return 0, err
-		}
-
 		unstructured := &spec.Unstructured{}
-		if err := types.Unmarshal(doc, &unstructured); err != nil {
+		if err := spec.As(sp, unstructured); err != nil {
 			return 0, err
 		}
 
@@ -196,13 +190,8 @@ func (s *Store) Swap(ctx context.Context, specs ...spec.Spec) (int, error) {
 
 		sp.SetNamespace(exist.GetNamespace())
 
-		doc, err := types.Marshal(sp)
-		if err != nil {
-			return 0, err
-		}
-
 		unstructured := &spec.Unstructured{}
-		if err := types.Unmarshal(doc, &unstructured); err != nil {
+		if err := spec.As(sp, unstructured); err != nil {
 			return 0, err
 		}
 
