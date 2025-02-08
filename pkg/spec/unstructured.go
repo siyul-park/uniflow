@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"fmt"
+
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
@@ -111,4 +113,40 @@ func (u *Unstructured) Build() error {
 		}
 	}
 	return nil
+}
+
+// ProcessTemplates processes all templates in the unstructured spec using the provided environment variables.
+func ProcessTemplates(spec *Unstructured, env map[string]string) (*Unstructured, error) {
+	if spec == nil {
+		return nil, nil
+	}
+
+	// Create a copy of the spec to avoid modifying the original
+	processed := &Unstructured{
+		Meta:   spec.Meta,
+		Fields: make(map[string]any),
+	}
+	for k, v := range spec.Fields {
+		processed.Fields[k] = v
+	}
+
+	// Convert env map[string]string to map[string]any for template execution
+	envAny := make(map[string]any)
+	for k, v := range env {
+		envAny[k] = v
+	}
+
+	// Process templates in the spec
+	result, err := template.Execute(processed.Fields, envAny)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert back to map[string]any
+	if m, ok := result.(map[string]any); ok {
+		processed.Fields = m
+		return processed, nil
+	}
+
+	return nil, fmt.Errorf("template execution result is not a map: %T", result)
 }

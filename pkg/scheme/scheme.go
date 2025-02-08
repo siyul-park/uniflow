@@ -1,6 +1,7 @@
 package scheme
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
@@ -124,6 +126,10 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 
 	typ, ok := s.types[sp.GetKind()]
 	if !ok {
+		// Even if the type is not registered, we should still validate the spec
+		if err := s.validate.Struct(sp); err != nil {
+			return nil, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
+		}
 		return sp, nil
 	}
 
@@ -144,6 +150,11 @@ func (s *Scheme) Decode(sp spec.Spec) (spec.Spec, error) {
 		structured.SetID(uuid.Must(uuid.NewV7()))
 	}
 
+	// Set default namespace if not specified
+	if structured.GetNamespace() == "" {
+		structured.SetNamespace(resource.DefaultNamespace)
+	}
+
 	if err := s.validate.Struct(structured); err != nil {
 		return nil, errors.WithMessage(encoding.ErrUnsupportedValue, err.Error())
 	}
@@ -158,7 +169,8 @@ func (s *Scheme) Compile(sp spec.Spec) (node.Node, error) {
 
 	cdc := s.Codec(sp.GetKind())
 	if cdc == nil {
-		return nil, errors.WithStack(encoding.ErrUnsupportedType)
+		return nil, fmt.Errorf("no codec found for kind %q", sp.GetKind())
 	}
+
 	return cdc.Compile(sp)
 }

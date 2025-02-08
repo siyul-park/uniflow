@@ -1,0 +1,70 @@
+- kind: test
+  name: workflow_test
+  ports:
+    in:
+      - name: workflow_test
+        port: in
+  specs:
+    - kind: step
+      name: step_test
+      specs:
+        - kind: snippet
+          name: step_snippet
+          language: javascript
+          code: |
+            export default function() {
+              return { message: "Step test passed" };
+            }
+    
+    - kind: block
+      name: block_test
+      specs:
+        - kind: if
+          name: condition_test
+          when: 'message == "Step test passed"'
+          ports:
+            out[0]:
+              - name: success_path
+                port: in
+            out[1]:
+              - name: failure_path
+                port: in
+        
+        - kind: step
+          name: success_path
+          specs:
+            - kind: snippet
+              name: success_snippet
+              language: javascript
+              code: |
+                export default function(input) {
+                  return { ...input, block_result: "Block test passed" };
+                }
+        
+        - kind: step
+          name: failure_path
+          specs:
+            - kind: snippet
+              name: failure_snippet
+              language: javascript
+              code: |
+                export default function() {
+                  return { error: "Block test failed" };
+                }
+    
+    - kind: step
+      name: validate_test
+      specs:
+        - kind: snippet
+          name: validate_snippet
+          language: javascript
+          code: |
+            export default function(input) {
+              if (input.message === "Step test passed" && input.block_result === "Block test passed") {
+                return { status: "success", message: "All tests passed" };
+              }
+              return { status: "failure", message: "Tests failed" };
+            }
+        - kind: assert
+          name: validate_assert
+          condition: 'status == "success"' 

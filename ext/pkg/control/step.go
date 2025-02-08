@@ -19,9 +19,14 @@ const KindStep = "step"
 
 // NewStepNodeCodec creates a new codec for StepNodeSpec.
 func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(root *StepNodeSpec) (node.Node, error) {
+	return scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
+		var root StepNodeSpec
+		if err := spec.As(sp, &root); err != nil {
+			return nil, err
+		}
+
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
-		for _, sp := range root.Specs {
+		for i, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
 				sp.SetNamespace(fmt.Sprintf("%s/%s", root.GetNamespace(), root.GetID()))
 			}
@@ -42,7 +47,9 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 				return nil, err
 			}
 
-			sp.SetPorts(nil)
+			if sp.GetName() == "" {
+				sp.SetName(fmt.Sprintf("$%d", i))
+			}
 
 			symbols = append(symbols, &symbol.Symbol{
 				Spec: sp,

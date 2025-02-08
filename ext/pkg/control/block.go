@@ -21,7 +21,12 @@ const KindBlock = "block"
 
 // NewBlockNodeCodec creates a new codec for BlockNodeSpec.
 func NewBlockNodeCodec(s *scheme.Scheme) scheme.Codec {
-	return scheme.CodecWithType(func(root *BlockNodeSpec) (node.Node, error) {
+	return scheme.CodecFunc(func(sp spec.Spec) (node.Node, error) {
+		var root BlockNodeSpec
+		if err := spec.As(sp, &root); err != nil {
+			return nil, err
+		}
+
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
 		for i, sp := range root.Specs {
 			if sp.GetNamespace() == "" {

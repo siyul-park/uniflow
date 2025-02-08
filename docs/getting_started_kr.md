@@ -78,7 +78,7 @@ make build
 다음 명령어로 워크플로우를 실행합니다:
 
 ```sh
-uniflow start --from-specs example/ping.yaml
+uniflow start --from-specs examples/ping.yaml
 ```
 
 정상 작동 여부를 확인하려면 HTTP 엔드포인트를 호출하세요:

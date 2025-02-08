@@ -1,9 +1,14 @@
 package cli
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,6 +20,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // StartConfig holds the configuration for the start command.
@@ -24,6 +30,80 @@ type StartConfig struct {
 	SpecStore  spec.Store
 	ValueStore value.Store
 	FS         afero.Fs
+}
+
+// loadSpecs loads specs from a file and stores them in the spec store.
+func loadSpecs(ctx context.Context, filename string, store spec.Store, fs afero.Fs, env map[string]string) error {
+	file, err := fs.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open specs file: %v", err)
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("failed to read specs file: %v", err)
+	}
+
+	var unstructuredSpecs []*spec.Unstructured
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(data, &unstructuredSpecs); err != nil {
+			return fmt.Errorf("failed to parse YAML specs: %v", err)
+		}
+	case ".json":
+		if err := json.Unmarshal(data, &unstructuredSpecs); err != nil {
+			return fmt.Errorf("failed to parse JSON specs: %v", err)
+		}
+	default:
+		return fmt.Errorf("unsupported file format: %s", ext)
+	}
+
+	for _, unstructured := range unstructuredSpecs {
+		if _, err := store.Store(ctx, unstructured); err != nil {
+			return fmt.Errorf("failed to store spec: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// loadValues loads values from a file and stores them in the value store.
+func loadValues(ctx context.Context, filename string, store value.Store, fs afero.Fs) error {
+	file, err := fs.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open values file: %v", err)
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("failed to read values file: %v", err)
+	}
+
+	var values []value.Value
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(data, &values); err != nil {
+			return fmt.Errorf("failed to parse YAML values: %v", err)
+		}
+	case ".json":
+		if err := json.Unmarshal(data, &values); err != nil {
+			return fmt.Errorf("failed to parse JSON values: %v", err)
+		}
+	default:
+		return fmt.Errorf("unsupported file format: %s", ext)
+	}
+
+	for _, v := range values {
+		if _, err := store.Store(ctx, &v); err != nil {
+			return fmt.Errorf("failed to store value: %v", err)
+		}
+	}
+
+	return nil
 }
 
 // NewStartCommand creates a new cobra.Command for the start command.
@@ -45,14 +125,15 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 
 // runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
-	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
-	applyValues := runApplyCommand(config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
-
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
+		// By default, silence usage unless we have a setup error
+		cmd.SilenceUsage = true
+
 		namespace, err := cmd.Flags().GetString(flagNamespace)
 		if err != nil {
+			cmd.SilenceUsage = false
 			return err
 		}
 		enableDebug, err := cmd.Flags().GetBool(flagDebug)
@@ -71,11 +152,18 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 		cmd.SetOut(io.Discard)
 
-		if err := applySpecs(cmd); err != nil {
-			return err
+		// Load specs from file if specified
+		if specsFile, _ := cmd.Flags().GetString(flagFromSpecs); specsFile != "" {
+			if err := loadSpecs(ctx, specsFile, config.SpecStore, config.FS, environment); err != nil {
+				return err
+			}
 		}
-		if err := applyValues(cmd); err != nil {
-			return err
+
+		// Load values from file if specified
+		if valuesFile, _ := cmd.Flags().GetString(flagFromValues); valuesFile != "" {
+			if err := loadValues(ctx, valuesFile, config.ValueStore, config.FS); err != nil {
+				return err
+			}
 		}
 
 		cmd.SetOut(out)

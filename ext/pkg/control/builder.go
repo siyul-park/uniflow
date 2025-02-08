@@ -36,6 +36,7 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			{KindSwitch, NewSwitchNodeCodec(expr), &SwitchNodeSpec{}},
 			{KindThrow, NewThrowNodeCodec(), &ThrowNodeSpec{}},
 			{KindTry, NewTryNodeCodec(), &TryNodeSpec{}},
+			{KindAssert, NewAssertNodeCodec(expr), &AssertNodeSpec{}},
 		}
 
 		for _, def := range definitions {
