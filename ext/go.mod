@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/dop251/goja v0.0.0-20250125213203-5ef83b82af17
 	github.com/evanphx/json-patch/v5 v5.9.11
-	github.com/evanw/esbuild v0.24.2
+	github.com/evanw/esbuild v0.25.0
 	github.com/go-faker/faker/v4 v4.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/cel-go v0.23.2
