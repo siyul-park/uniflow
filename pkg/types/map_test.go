@@ -215,8 +215,8 @@ func TestMap_Encode(t *testing.T) {
 
 		t.Run("struct", func(t *testing.T) {
 			source := struct {
-				Foo string `map:"foo"`
-				Bar string `map:"bar,omitempty"`
+				Foo string `json:"foo"`
+				Bar string `json:"bar,omitempty"`
 			}{
 				Foo: "bar",
 			}
@@ -240,8 +240,8 @@ func TestMap_Encode(t *testing.T) {
 
 		t.Run("struct", func(t *testing.T) {
 			source := struct {
-				Foo any `map:"foo"`
-				Bar any `map:"bar,omitempty"`
+				Foo any `json:"foo"`
+				Bar any `json:"bar,omitempty"`
 			}{
 				Foo: "bar",
 			}
@@ -278,8 +278,8 @@ func TestMap_Decode(t *testing.T) {
 
 		t.Run("struct", func(t *testing.T) {
 			source := struct {
-				Foo string `map:"foo"`
-				Bar string `map:"bar"`
+				Foo string `json:"foo"`
+				Bar string `json:"bar"`
 			}{
 				Foo: "foo",
 				Bar: "bar",
@@ -290,8 +290,8 @@ func TestMap_Decode(t *testing.T) {
 			)
 
 			var decoded struct {
-				Foo string `map:"foo"`
-				Bar string `map:"bar"`
+				Foo string `json:"foo"`
+				Bar string `json:"bar"`
 			}
 			err := dec.Decode(v, &decoded)
 			assert.NoError(t, err)
@@ -312,8 +312,8 @@ func TestMap_Decode(t *testing.T) {
 
 		t.Run("struct", func(t *testing.T) {
 			source := struct {
-				Foo any `map:"foo"`
-				Bar any `map:"bar"`
+				Foo any `json:"foo"`
+				Bar any `json:"bar"`
 			}{
 				Foo: "foo",
 				Bar: "bar",
@@ -324,8 +324,8 @@ func TestMap_Decode(t *testing.T) {
 			)
 
 			var decoded struct {
-				Foo any `map:"foo"`
-				Bar any `map:"bar"`
+				Foo any `json:"foo"`
+				Bar any `json:"bar"`
 			}
 			err := dec.Decode(v, &decoded)
 			assert.NoError(t, err)
@@ -434,8 +434,8 @@ func BenchmarkMap_Encode(b *testing.B) {
 
 		b.Run("struct", func(b *testing.B) {
 			source := struct {
-				Foo string `map:"foo"`
-				Bar string `map:"bar"`
+				Foo string `json:"foo"`
+				Bar string `json:"bar"`
 			}{
 				Foo: "foo",
 				Bar: "bar",
@@ -460,8 +460,8 @@ func BenchmarkMap_Encode(b *testing.B) {
 
 		b.Run("struct", func(b *testing.B) {
 			source := struct {
-				Foo any `map:"foo"`
-				Bar any `map:"bar"`
+				Foo any `json:"foo"`
+				Bar any `json:"bar"`
 			}{
 				Foo: "foo",
 				Bar: "bar",
@@ -500,8 +500,8 @@ func BenchmarkMap_Decode(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				var decoded struct {
-					Foo string `map:"foo"`
-					Bar string `map:"bar"`
+					Foo string `json:"foo"`
+					Bar string `json:"bar"`
 				}
 				_ = dec.Decode(v, &decoded)
 			}
@@ -529,8 +529,8 @@ func BenchmarkMap_Decode(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				var decoded struct {
-					Foo any `map:"foo"`
-					Bar any `map:"bar"`
+					Foo any `json:"foo"`
+					Bar any `json:"bar"`
 				}
 				_ = dec.Decode(v, &decoded)
 			}

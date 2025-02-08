@@ -12,7 +12,7 @@ import (
 
 // PipeNodeSpec holds the specification for creating a PipeNode.
 type PipeNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // PipeNode processes an input packet and sends the result to multiple output ports.

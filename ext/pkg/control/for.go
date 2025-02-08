@@ -12,7 +12,7 @@ import (
 
 // ForNodeSpec defines the specifications for creating a ForNode.
 type ForNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // ForNode processes input data in batches, splitting packets into sub-packets and handling them accordingly.

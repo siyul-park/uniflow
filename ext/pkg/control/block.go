@@ -11,10 +11,10 @@ import (
 
 // BlockNodeSpec defines the specification for creating a BlockNode.
 type BlockNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Specs     []*spec.Unstructured   `map:"specs"`
-	Inbounds  map[string][]spec.Port `map:"inbounds,omitempty"`
-	Outbounds map[string][]spec.Port `map:"outbounds,omitempty"`
+	spec.Meta `json:",inline"`
+	Specs     []*spec.Unstructured   `json:"specs"`
+	Inbounds  map[string][]spec.Port `json:"inbounds,omitempty"`
+	Outbounds map[string][]spec.Port `json:"outbounds,omitempty"`
 }
 
 const KindBlock = "block"

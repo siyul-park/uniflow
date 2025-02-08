@@ -12,7 +12,7 @@ import (
 
 // TryNodeSpec defines the specification for creating a TryNode.
 type TryNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // TryNode represents a node that processes packets and handles errors.

@@ -15,7 +15,7 @@ import (
 
 // ThrowNodeSpec defines the specification for the ThrowNode.
 type ThrowNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // ThrowNode represents a node that throws errors based on incoming packets.

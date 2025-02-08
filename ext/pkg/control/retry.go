@@ -14,8 +14,8 @@ import (
 
 // RetryNodeSpec defines the configuration for RetryNode.
 type RetryNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Threshold int `map:"threshold,omitempty"`
+	spec.Meta `json:",inline"`
+	Threshold int `json:"threshold,omitempty"`
 }
 
 // RetryNode attempts to process packets up to a specified retry limit.

@@ -11,8 +11,8 @@ import (
 
 // StepNodeSpec defines the specification for creating a StepNode.
 type StepNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Specs     []*spec.Unstructured `map:"specs"`
+	spec.Meta `json:",inline"`
+	Specs     []*spec.Unstructured `json:"specs"`
 }
 
 const KindStep = "step"

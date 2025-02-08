@@ -21,9 +21,9 @@ import (
 
 // WebSocketNodeSpec defines the specifications for creating a WebSocketNode.
 type WebSocketNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URL       string        `map:"url" validate:"required,url"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
+	spec.Meta `json:",inline"`
+	URL       string        `json:"url" validate:"required,url"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
 }
 
 // WebSocketNode represents a node for establishing WebSocket client connection.
@@ -46,8 +46,8 @@ type WebSocketConnNode struct {
 
 // WebSocketPayload represents the payload structure for WebSocket messages.
 type WebSocketPayload struct {
-	Type int         `map:"type"`
-	Data types.Value `map:"data,omitempty"`
+	Type int         `json:"type"`
+	Data types.Value `json:"data,omitempty"`
 }
 
 const KindWebSocket = "websocket"

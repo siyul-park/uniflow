@@ -14,9 +14,9 @@ import (
 
 // CacheNodeSpec represents the specification for a cache node.
 type CacheNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Capacity  int           `map:"capacity,omitempty"`
-	Interval  time.Duration `map:"interval,omitempty"`
+	spec.Meta `json:",inline"`
+	Capacity  int           `json:"capacity,omitempty"`
+	Interval  time.Duration `json:"interval,omitempty"`
 }
 
 // CacheNode represents a node in the cache.

@@ -11,7 +11,7 @@ import (
 
 // NOPNodeSpec defines the specification for creating a NOPNode.
 type NOPNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // NOPNode represents a node that performs no operation and simply forwards incoming packets.

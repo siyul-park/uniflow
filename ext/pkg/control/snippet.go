@@ -15,10 +15,10 @@ import (
 
 // SnippetNodeSpec defines the specifications for creating a SnippetNode.
 type SnippetNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Language  string        `map:"language" validate:"required"`
-	Code      string        `map:"code" validate:"required"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
+	spec.Meta `json:",inline"`
+	Language  string        `json:"language" validate:"required"`
+	Code      string        `json:"code" validate:"required"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
 }
 
 // SnippetNode represents a node that executes code snippets in various languages.

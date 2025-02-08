@@ -17,15 +17,15 @@ import (
 
 // RouteNodeSpec defines the specification for configuring a RouteNode.
 type RouteNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Routes    []Route `map:"routes" validate:"required"`
+	spec.Meta `json:",inline"`
+	Routes    []Route `json:"routes" validate:"required"`
 }
 
 // Route represents a routing configuration with a specific HTTP method, path, and port.
 type Route struct {
-	Method string `map:"method" validate:"required"`
-	Path   string `map:"path" validate:"required"`
-	Port   string `map:"port" validate:"required"`
+	Method string `json:"method" validate:"required"`
+	Path   string `json:"path" validate:"required"`
+	Port   string `json:"port" validate:"required"`
 }
 
 // RouteNode represents a node for routing based on HTTP method, path, and port.

@@ -11,7 +11,7 @@ import (
 
 // SplitNodeSpec defines the specifications for creating a SplitNode.
 type SplitNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // SplitNode represents a node that splits incoming packets into multiple packets.

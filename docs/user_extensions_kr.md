@@ -59,8 +59,8 @@ Env map[string][]Value // 노드에 필요한 환경 변수를 지정합니다.
 
 ```go
 type ProxyNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URLs      []string `map:"urls"`
+	spec.Meta `json:",inline"`
+	URLs      []string `json:"urls"`
 }
 ```
 

@@ -59,8 +59,8 @@ You can simplify this with `spec.Meta`:
 
 ```go
 type ProxyNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URLs      []string `map:"urls"`
+	spec.Meta `json:",inline"`
+	URLs      []string `json:"urls"`
 }
 ```
 
