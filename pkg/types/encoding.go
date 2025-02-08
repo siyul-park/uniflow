@@ -8,16 +8,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
-// Marshaler is an interface for types that can marshal themselves into a Value.
-type Marshaler interface {
-	Marshal() (Value, error)
-}
-
-// Unmarshaler is an interface for types that can unmarshal a Value into themselves.
-type Unmarshaler interface {
-	Unmarshal(Value) error
-}
-
 var (
 	// Encoder is a global encoding assembler used to encode values into the custom Value type.
 	Encoder = encoding.NewEncodeAssembler[any, Value]()
@@ -40,7 +30,6 @@ func init() {
 	Encoder.Add(newErrorEncoder())
 	Encoder.Add(newTimeEncoder())
 	Encoder.Add(newDurationEncoder())
-	Encoder.Add(newExpandedEncoder())
 	Encoder.Add(newShortcutEncoder())
 
 	Decoder.Add(newPointerDecoder(Decoder))
@@ -57,7 +46,6 @@ func init() {
 	Decoder.Add(newErrorDecoder())
 	Decoder.Add(newTimeDecoder())
 	Decoder.Add(newDurationDecoder())
-	Decoder.Add(newExpandedDecoder())
 	Decoder.Add(newShortcutDecoder())
 }
 
@@ -93,34 +81,6 @@ func newShortcutDecoder() encoding.DecodeCompiler[Value] {
 			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				*(*Value)(target) = source
 				return nil
-			}), nil
-		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedType)
-	})
-}
-
-func newExpandedEncoder() encoding.EncodeCompiler[any, Value] {
-	typeMarshaler := reflect.TypeOf((*Marshaler)(nil)).Elem()
-
-	return encoding.EncodeCompilerFunc[any, Value](func(typ reflect.Type) (encoding.Encoder[any, Value], error) {
-		if typ != nil && typ.Kind() == reflect.Pointer && typ.ConvertibleTo(typeMarshaler) {
-			return encoding.EncodeFunc(func(source any) (Value, error) {
-				s := source.(Marshaler)
-				return s.Marshal()
-			}), nil
-		}
-		return nil, errors.WithStack(encoding.ErrUnsupportedType)
-	})
-}
-
-func newExpandedDecoder() encoding.DecodeCompiler[Value] {
-	typeUnmarshaler := reflect.TypeOf((*Unmarshaler)(nil)).Elem()
-
-	return encoding.DecodeCompilerFunc[Value](func(typ reflect.Type) (encoding.Decoder[Value, unsafe.Pointer], error) {
-		if typ != nil && typ.ConvertibleTo(typeUnmarshaler) {
-			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
-				t := reflect.NewAt(typ.Elem(), target).Interface().(Unmarshaler)
-				return t.Unmarshal(source)
 			}), nil
 		}
 		return nil, errors.WithStack(encoding.ErrUnsupportedType)
