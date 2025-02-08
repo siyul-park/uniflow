@@ -11,7 +11,7 @@ import (
 
 // MergeNodeSpec defines the specifications for creating a MergeNode.
 type MergeNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // MergeNode represents a node that merges multiple input packets into a single output packet.

@@ -12,7 +12,7 @@ import (
 
 // SessionNodeSpec defines the specification for creating a SessionNode.
 type SessionNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // SessionNode manages session data flow and process interactions through its ports.

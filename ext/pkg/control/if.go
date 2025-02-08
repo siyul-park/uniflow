@@ -15,9 +15,9 @@ import (
 
 // IfNodeSpec defines the specifications for creating an IfNode.
 type IfNodeSpec struct {
-	spec.Meta `map:",inline"`
-	When      string        `map:"when" validate:"required"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
+	spec.Meta `json:",inline"`
+	When      string        `json:"when" validate:"required"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
 }
 
 // IfNode evaluates a condition and routes packets based on the result.

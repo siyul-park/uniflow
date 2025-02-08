@@ -19,10 +19,10 @@ import (
 
 // UpgradeNodeSpec defines the specifications for creating a UpgradeNode.
 type UpgradeNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Protocol  string        `map:"protocol" validate:"required"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
-	Buffer    int           `map:"buffer,omitempty"`
+	spec.Meta `json:",inline"`
+	Protocol  string        `json:"protocol" validate:"required"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
+	Buffer    int           `json:"buffer,omitempty"`
 }
 
 // WebSocketUpgradeNode is a node for upgrading an HTTP connection to a WebSocket connection.

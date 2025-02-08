@@ -18,8 +18,8 @@ import (
 
 // ScanNodeSpec specifies the ScanNode configuration, including metadata and filename.
 type ScanNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Filename  string `map:"filename,omitempty"`
+	spec.Meta `json:",inline"`
+	Filename  string `json:"filename,omitempty"`
 }
 
 // ScanNode reads from a file and parses data according to a format string.

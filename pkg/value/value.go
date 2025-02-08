@@ -8,15 +8,15 @@ import (
 // Value defines the interface for a value with various attributes.
 type Value struct {
 	// ID is the unique identifier of the value.
-	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" map:"id" validate:"required"`
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
 	// Namespace groups values logically.
-	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" map:"namespace" validate:"required"`
+	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" validate:"required"`
 	// Name is the human-readable name of the value.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty" map:"name,omitempty"`
+	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty"`
 	// Annotations hold additional metadata.
-	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty" map:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty"`
 	// Data holds the value's actual data.
-	Data any `json:"data" bson:"data" yaml:"data" map:"data" validate:"required"`
+	Data any `json:"data" bson:"data" yaml:"data" validate:"required"`
 }
 
 // Key constants for commonly used fields.

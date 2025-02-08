@@ -49,6 +49,11 @@ type Map interface {
 
 	// Map converts the map into a native Go map.
 	Map() map[any]any
+
+	// MarshalJSON converts the map into a JSON byte array.
+	MarshalJSON() ([]byte, error)
+	// UnmarshalJSON converts the JSON byte array into a map.
+	UnmarshalJSON([]byte) error
 }
 
 type immutableMap struct {
@@ -68,14 +73,10 @@ type mapMeta struct {
 	inline    bool
 }
 
-const tagMap = "map"
+const tagMap = "json"
 
 var _ Map = (*immutableMap)(nil)
 var _ Map = (*mutableMap)(nil)
-var _ json.Marshaler = (*immutableMap)(nil)
-var _ json.Marshaler = (*mutableMap)(nil)
-var _ json.Unmarshaler = (*immutableMap)(nil)
-var _ json.Unmarshaler = (*mutableMap)(nil)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {

@@ -21,9 +21,9 @@ import (
 
 // HTTPNodeSpec defines the specifications for creating an HTTPNode.
 type HTTPNodeSpec struct {
-	spec.Meta `map:",inline"`
-	URL       string        `map:"url" validate:"required,url"`
-	Timeout   time.Duration `map:"timeout,omitempty"`
+	spec.Meta `json:",inline"`
+	URL       string        `json:"url" validate:"required,url"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
 }
 
 // HTTPNode represents a node for making HTTP client requests.
@@ -37,15 +37,15 @@ type HTTPNode struct {
 
 // HTTPPayload is the payload structure for HTTP requests and responses.
 type HTTPPayload struct {
-	Method   string      `map:"method,omitempty"`
-	Scheme   string      `map:"scheme,omitempty"`
-	Host     string      `map:"host,omitempty"`
-	Path     string      `map:"path,omitempty"`
-	Query    url.Values  `map:"query,omitempty"`
-	Protocol string      `map:"protocol,omitempty"`
-	Header   http.Header `map:"header,omitempty"`
-	Body     types.Value `map:"body,omitempty"`
-	Status   int         `map:"status"`
+	Method   string      `json:"method,omitempty"`
+	Scheme   string      `json:"scheme,omitempty"`
+	Host     string      `json:"host,omitempty"`
+	Path     string      `json:"path,omitempty"`
+	Query    url.Values  `json:"query,omitempty"`
+	Protocol string      `json:"protocol,omitempty"`
+	Header   http.Header `json:"header,omitempty"`
+	Body     types.Value `json:"body,omitempty"`
+	Status   int         `json:"status"`
 }
 
 const KindHTTP = "http"

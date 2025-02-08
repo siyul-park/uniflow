@@ -12,8 +12,8 @@ import (
 
 // SleepNodeSpec defines the configuration for SleepNode.
 type SleepNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Interval  time.Duration `map:"interval" validate:"required"`
+	spec.Meta `json:",inline"`
+	Interval  time.Duration `json:"interval" validate:"required"`
 }
 
 // SleepNode adds a delay to packet processing, using a specified interval.

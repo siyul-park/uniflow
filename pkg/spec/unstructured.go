@@ -9,8 +9,8 @@ import (
 
 // Unstructured implements the Spec interface with a flexible key-value structure.
 type Unstructured struct {
-	Meta   `json:",inline" bson:",inline" yaml:",inline" map:",inline"`
-	Fields map[string]any `json:",inline" bson:",inline" yaml:",inline" map:",inline"`
+	Meta   `json:",inline" bson:",inline" yaml:",inline"`
+	Fields map[string]any `json:",inline" bson:",inline" yaml:",inline"`
 }
 
 // Key constants for commonly used fields in Unstructured.

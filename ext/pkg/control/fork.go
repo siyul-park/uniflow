@@ -12,7 +12,7 @@ import (
 
 // ForkNodeSpec defines the specification for creating a ForkNode.
 type ForkNodeSpec struct {
-	spec.Meta `map:",inline"`
+	spec.Meta `json:",inline"`
 }
 
 // ForkNode asynchronously branches the data processing flow into separate processes.

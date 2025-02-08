@@ -23,16 +23,16 @@ import (
 
 // ListenNodeSpec defines the specifications for creating a ListenNode.
 type ListenNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Protocol  string `map:"protocol" validate:"required"`
-	Host      string `map:"host,omitempty" validate:"omitempty,hostname|ip"`
-	Port      int    `map:"port" validate:"required"`
-	TLS       TLS    `map:"tls"`
+	spec.Meta `json:",inline"`
+	Protocol  string `json:"protocol" validate:"required"`
+	Host      string `json:"host,omitempty" validate:"omitempty,hostname|ip"`
+	Port      int    `json:"port" validate:"required"`
+	TLS       TLS    `json:"tls"`
 }
 
 type TLS struct {
-	Cert []byte `map:"cert,omitempty"`
-	Key  []byte `map:"key,omitempty"`
+	Cert []byte `json:"cert,omitempty"`
+	Key  []byte `json:"key,omitempty"`
 }
 
 // HTTPListenNode represents a Node for handling HTTP requests.

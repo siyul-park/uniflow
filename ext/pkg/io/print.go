@@ -17,8 +17,8 @@ import (
 
 // PrintNodeSpec specifies the PrintNode configuration, including metadata and filename.
 type PrintNodeSpec struct {
-	spec.Meta `map:",inline"`
-	Filename  string `map:"filename,omitempty"`
+	spec.Meta `json:",inline"`
+	Filename  string `json:"filename,omitempty"`
 }
 
 // PrintNode writes data to a file according to a format string.
