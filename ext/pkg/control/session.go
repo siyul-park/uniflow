@@ -112,13 +112,13 @@ func (n *SessionNode) forward(proc *process.Process) {
 			child := parent.Fork()
 			outPck := packet.New(types.NewSlice(value, inPck.Payload()))
 
-			n.tracer.Transform(inPck, outPck)
+			n.tracer.Link(inPck, outPck)
 
 			children = append(children, child)
 			outPcks = append(outPcks, outPck)
 		}
 
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
+		n.tracer.Dispatch(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 			var err error
 			if v, ok := backPck.Payload().(types.Error); ok {
 				err = v.Unwrap()
@@ -135,7 +135,7 @@ func (n *SessionNode) forward(proc *process.Process) {
 			n.tracer.Write(outWriter, outPck)
 		}
 		if len(outPcks) == 0 {
-			n.tracer.Reduce(inPck)
+			n.tracer.Write(nil, inPck)
 		}
 	}
 }

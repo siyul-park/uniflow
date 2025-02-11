@@ -112,11 +112,11 @@ func (n *ForNode) forward(proc *process.Process) {
 		for i, outPayload := range outPayloads {
 			outPck := packet.New(outPayload)
 			outPcks[i] = outPck
-			n.tracer.Transform(inPck, outPck)
+			n.tracer.Link(inPck, outPck)
 		}
 
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
+		n.tracer.Dispatch(inPck, packet.HookFunc(func(backPck *packet.Packet) {
+			n.tracer.Link(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
 				if errWriter == nil {
 					errWriter = n.errPort.Open(proc)

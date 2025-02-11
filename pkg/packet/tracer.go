@@ -20,7 +20,7 @@ type Tracer struct {
 	mu       sync.Mutex
 }
 
-// NewTracer initializes a new Tracer instance.
+// NewTracer initializes and returns a new Tracer instance.
 func NewTracer() *Tracer {
 	return &Tracer{
 		hooks:    make(map[uuid.UUID]Hooks),
@@ -33,16 +33,16 @@ func NewTracer() *Tracer {
 	}
 }
 
-// AddHook adds a Handler to be invoked when a packet completes processing.
-func (t *Tracer) AddHook(pck *Packet, hook Hook) {
+// Dispatch registers a hook to be executed when a packet completes processing.
+func (t *Tracer) Dispatch(pck *Packet, hook Hook) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	t.hooks[pck.ID()] = append(t.hooks[pck.ID()], hook)
 }
 
-// Transform tracks the transformation of a source packet into a target packet.
-func (t *Tracer) Transform(source, target *Packet) {
+// Link establishes a relationship between a source packet and a transformed target packet.
+func (t *Tracer) Link(source, target *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -55,17 +55,7 @@ func (t *Tracer) Transform(source, target *Packet) {
 	t.receives[source.ID()] = append(t.receives[source.ID()], nil)
 }
 
-// Reduce processes a packet and its subsequent transformations.
-func (t *Tracer) Reduce(pck *Packet) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.reduce(pck.ID(), pck)
-	t.handle(pck.ID())
-	t.receive(pck.ID())
-}
-
-// Read logs a packet being read by a specific reader.
+// Read logs that a packet was read by a specific reader.
 func (t *Tracer) Read(reader *Reader, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -74,8 +64,7 @@ func (t *Tracer) Read(reader *Reader, pck *Packet) {
 	t.reader[pck.ID()] = reader
 }
 
-// Write logs a packet being written by a specific writer. If the writer's write
-// operation is successful, it updates the tracking maps; otherwise, it processes the packet.
+// Write logs a packet write; on failure, it processes the packet immediately.
 func (t *Tracer) Write(writer *Writer, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -84,13 +73,12 @@ func (t *Tracer) Write(writer *Writer, pck *Packet) {
 		t.writes[writer] = append(t.writes[writer], pck.ID())
 		t.receives[pck.ID()] = append(t.receives[pck.ID()], nil)
 	} else {
-		t.reduce(pck.ID(), pck)
-		t.handle(pck.ID())
-		t.receive(pck.ID())
+		t.receive(pck.ID(), pck)
+		t.resolve(pck.ID())
 	}
 }
 
-// Receive handles the receipt of a packet by a writer and processes it further if necessary.
+// Receive processes a packet received by a writer and continues tracking it.
 func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -107,12 +95,11 @@ func (t *Tracer) Receive(writer *Writer, pck *Packet) {
 		delete(t.writes, writer)
 	}
 
-	t.reduce(write, pck)
-	t.handle(write)
-	t.receive(write)
+	t.receive(write, pck)
+	t.resolve(write)
 }
 
-// Close terminates readers and clears internal resources.
+// Close releases resources and signals readers with an error before shutting down.
 func (t *Tracer) Close() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -130,20 +117,11 @@ func (t *Tracer) Close() {
 	t.reader = make(map[uuid.UUID]*Reader)
 }
 
-func (t *Tracer) reduce(source uuid.UUID, target *Packet) {
-	targets := t.targets[source]
+// receive updates tracking for a source packet when it is transformed into a target.
+func (t *Tracer) receive(source uuid.UUID, target *Packet) {
 	receives := t.receives[source]
-
-	offset := 0
-	for i := 0; i < len(targets); i++ {
-		if receives[i+offset] != nil {
-			i--
-			offset++
-		}
-	}
-
 	ok := false
-	for i := len(targets) + offset; i < len(receives); i++ {
+	for i := 0; i < len(receives); i++ {
 		if receives[i] == nil {
 			receives[i] = target
 			ok = true
@@ -156,9 +134,24 @@ func (t *Tracer) reduce(source uuid.UUID, target *Packet) {
 	}
 }
 
-func (t *Tracer) receive(id uuid.UUID) {
+func (t *Tracer) resolve(id uuid.UUID) {
 	receives := t.receives[id]
+	if slices.Contains(receives, nil) {
+		return
+	}
 
+	if hooks := t.hooks[id]; len(hooks) > 0 {
+		join := Join(receives...)
+
+		delete(t.hooks, id)
+		delete(t.receives, id)
+
+		t.mu.Unlock()
+		hooks.Handle(join)
+		t.mu.Lock()
+	}
+
+	receives = t.receives[id]
 	if slices.Contains(receives, nil) {
 		return
 	}
@@ -192,8 +185,7 @@ func (t *Tracer) receive(id uuid.UUID) {
 				delete(t.targets, source)
 			}
 
-			t.handle(source)
-			t.receive(source)
+			t.resolve(source)
 		}
 	}
 
@@ -223,24 +215,5 @@ func (t *Tracer) receive(id uuid.UUID) {
 		}
 	} else {
 		delete(t.receives, id)
-	}
-}
-
-func (t *Tracer) handle(id uuid.UUID) {
-	receives := t.receives[id]
-
-	if slices.Contains(receives, nil) {
-		return
-	}
-
-	if hooks := t.hooks[id]; len(hooks) > 0 {
-		join := Join(receives...)
-
-		delete(t.hooks, id)
-		delete(t.receives, id)
-
-		t.mu.Unlock()
-		hooks.Handle(join)
-		t.mu.Lock()
 	}
 }

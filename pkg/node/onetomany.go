@@ -104,12 +104,12 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			if errWriter == nil {
 				errWriter = n.errPort.Open(proc)
 			}
-			n.tracer.Transform(inPck, errPck)
+			n.tracer.Link(inPck, errPck)
 			n.tracer.Write(errWriter, errPck)
 		} else {
 			for i, outPck := range outPcks {
 				if i < len(outWriters) && outPck != nil {
-					n.tracer.Transform(inPck, outPck)
+					n.tracer.Link(inPck, outPck)
 				}
 			}
 
@@ -125,7 +125,7 @@ func (n *OneToManyNode) forward(proc *process.Process) {
 			}
 
 			if count == 0 {
-				n.tracer.Reduce(inPck)
+				n.tracer.Write(nil, inPck)
 			}
 		}
 	}

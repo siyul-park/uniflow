@@ -92,15 +92,15 @@ func (n *CacheNode) forward(proc *process.Process) {
 		inPayload := inPck.Payload()
 		if outPayload, ok := n.lru.Load(inPayload); ok {
 			outPck := packet.New(outPayload)
-			n.tracer.Transform(inPck, outPck)
-			n.tracer.Reduce(outPck)
+			n.tracer.Link(inPck, outPck)
+			n.tracer.Write(nil, outPck)
 		} else {
-			n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
+			n.tracer.Dispatch(inPck, packet.HookFunc(func(backPck *packet.Packet) {
 				if _, ok := backPck.Payload().(types.Error); !ok {
 					n.lru.Store(inPayload, backPck.Payload())
 				}
-				n.tracer.Transform(inPck, backPck)
-				n.tracer.Reduce(backPck)
+				n.tracer.Link(inPck, backPck)
+				n.tracer.Write(nil, backPck)
 			}))
 
 			if outWriter == nil {

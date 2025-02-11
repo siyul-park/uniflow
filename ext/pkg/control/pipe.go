@@ -99,8 +99,8 @@ func (n *PipeNode) forward(proc *process.Process) {
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
+		n.tracer.Dispatch(inPck, packet.HookFunc(func(backPck *packet.Packet) {
+			n.tracer.Link(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
 				if errWriter == nil {
 					errWriter = n.errPort.Open(proc)

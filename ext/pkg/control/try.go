@@ -93,15 +93,15 @@ func (n *TryNode) forward(proc *process.Process) {
 			outWriter = n.outPort.Open(proc)
 		}
 
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
+		n.tracer.Dispatch(inPck, packet.HookFunc(func(backPck *packet.Packet) {
+			n.tracer.Link(inPck, backPck)
 			if _, ok := backPck.Payload().(types.Error); ok {
 				if errWriter == nil {
 					errWriter = n.errPort.Open(proc)
 				}
 				n.tracer.Write(errWriter, backPck)
 			} else {
-				n.tracer.Reduce(backPck)
+				n.tracer.Write(nil, backPck)
 			}
 		}))
 
