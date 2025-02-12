@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrite(t *testing.T) {
+func TestSend(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
 
@@ -34,7 +34,7 @@ func TestWrite(t *testing.T) {
 	assert.Equal(t, outPck.Payload(), backPck.Payload())
 }
 
-func TestCallOrReturn(t *testing.T) {
+func TestSendOrFallback(t *testing.T) {
 	t.Run("Call", func(t *testing.T) {
 		w := NewWriter()
 		defer w.Close()
@@ -103,6 +103,53 @@ func TestWriter_AddHook(t *testing.T) {
 	assert.Equal(t, 2, count)
 }
 
+func TestWriter_Link(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	ok := w.Link(r)
+	assert.True(t, ok)
+	assert.Len(t, w.Links(), 1)
+
+	ok = w.Link(r)
+	assert.False(t, ok)
+}
+
+func TestWriter_Unlink(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	w.Link(r)
+
+	pck1 := New(types.NewString(faker.UUIDHyphenated()))
+
+	w.Write(pck1)
+
+	pck2, ok := <-r.Read()
+	assert.True(t, ok)
+	assert.Equal(t, pck1.Payload(), pck2.Payload())
+
+	ok = w.Unlink(r)
+	assert.True(t, ok)
+	assert.Len(t, w.Links(), 0)
+
+	pck3, ok := <-w.Receive()
+	assert.True(t, ok)
+	assert.Equal(t, ErrDroppedPacket, pck3.Payload())
+
+	ok = r.Receive(None)
+	assert.False(t, ok)
+
+	ok = w.Unlink(r)
+	assert.False(t, ok)
+}
+
 func TestWriter_Write(t *testing.T) {
 	w := NewWriter()
 	defer w.Close()
@@ -112,22 +159,22 @@ func TestWriter_Write(t *testing.T) {
 
 	w.Link(r)
 
-	out1 := New(types.NewString(faker.UUIDHyphenated()))
-	out2 := New(types.NewString(faker.UUIDHyphenated()))
+	pck1 := New(types.NewString(faker.UUIDHyphenated()))
+	pck2 := New(types.NewString(faker.UUIDHyphenated()))
 
-	count := w.Write(out1)
+	count := w.Write(pck1)
 	assert.Equal(t, 1, count)
 
-	count = w.Write(out2)
+	count = w.Write(pck2)
 	assert.Equal(t, 1, count)
 
-	in1, ok := <-r.Read()
+	pck3, ok := <-r.Read()
 	assert.True(t, ok)
-	assert.Equal(t, out1.Payload(), in1.Payload())
+	assert.Equal(t, pck1.Payload(), pck3.Payload())
 
-	in2, ok := <-r.Read()
+	pck4, ok := <-r.Read()
 	assert.True(t, ok)
-	assert.Equal(t, out2.Payload(), in2.Payload())
+	assert.Equal(t, pck2.Payload(), pck4.Payload())
 }
 
 func BenchmarkWriter_Write(b *testing.B) {

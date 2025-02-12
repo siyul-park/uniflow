@@ -90,7 +90,7 @@ func TestCluster_Load(t *testing.T) {
 	assert.NoError(t, err)
 
 	out := sb2.Node.Out(node.PortOut)
-	assert.Equal(t, 1, out.Links())
+	assert.Len(t, out.Links(), 1)
 }
 
 func TestCluster_Unload(t *testing.T) {
@@ -125,7 +125,7 @@ func TestCluster_Unload(t *testing.T) {
 	assert.NoError(t, err)
 
 	out := sb2.Node.Out(node.PortOut)
-	assert.Equal(t, 0, out.Links())
+	assert.Len(t, out.Links(), 0)
 }
 
 func TestCluster_SendAndReceive(t *testing.T) {

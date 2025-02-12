@@ -19,7 +19,7 @@ type PipeNodeSpec struct {
 type PipeNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort
-	outPorts []*port.OutPort
+	outPorts [2]*port.OutPort
 	errPort  *port.OutPort
 }
 
@@ -39,13 +39,13 @@ func NewPipeNode() *PipeNode {
 	n := &PipeNode{
 		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
-		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
+		outPorts: [2]*port.OutPort{port.NewOut(), port.NewOut()},
 		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
-	n.outPorts[0].AddListener(n.backward(0))
-	n.outPorts[1].AddListener(n.backward(1))
+	n.outPorts[0].AddListener(port.ListenFunc(n.backward0))
+	n.outPorts[1].AddListener(port.ListenFunc(n.backward1))
 	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
@@ -93,26 +93,9 @@ func (n *PipeNode) Close() error {
 func (n *PipeNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	var outWriter0 *packet.Writer
-	var outWriter1 *packet.Writer
-	var errWriter *packet.Writer
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
-
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
-			if _, ok := backPck.Payload().(types.Error); ok {
-				if errWriter == nil {
-					errWriter = n.errPort.Open(proc)
-				}
-				n.tracer.Write(errWriter, backPck)
-			} else {
-				if outWriter1 == nil {
-					outWriter1 = n.outPorts[1].Open(proc)
-				}
-				n.tracer.Write(outWriter1, backPck)
-			}
-		}))
 
 		if outWriter0 == nil {
 			outWriter0 = n.outPorts[0].Open(proc)
@@ -121,14 +104,39 @@ func (n *PipeNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *PipeNode) backward(index int) port.Listener {
-	return port.ListenFunc(func(proc *process.Process) {
-		outWriter := n.outPorts[index].Open(proc)
+func (n *PipeNode) backward0(proc *process.Process) {
+	outWriter0 := n.outPorts[0].Open(proc)
+	var outWriter1 *packet.Writer
+	var errWriter *packet.Writer
 
-		for backPck := range outWriter.Receive() {
-			n.tracer.Receive(outWriter, backPck)
+	for backPck := range outWriter0.Receive() {
+		outPcks := n.tracer.Writes(outWriter0)
+		if len(outPcks) > 0 {
+			n.tracer.Link(outPcks[0], backPck)
 		}
-	})
+
+		if _, ok := backPck.Payload().(types.Error); ok {
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
+			n.tracer.Write(errWriter, backPck)
+		} else {
+			if outWriter1 == nil {
+				outWriter1 = n.outPorts[1].Open(proc)
+			}
+			n.tracer.Write(outWriter1, backPck)
+		}
+
+		n.tracer.Receive(outWriter0, nil)
+	}
+}
+
+func (n *PipeNode) backward1(proc *process.Process) {
+	outWriter := n.outPorts[1].Open(proc)
+
+	for backPck := range outWriter.Receive() {
+		n.tracer.Receive(outWriter, backPck)
+	}
 }
 
 func (n *PipeNode) catch(proc *process.Process) {

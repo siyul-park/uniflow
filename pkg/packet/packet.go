@@ -17,7 +17,7 @@ type Packet struct {
 var None = New(nil)
 
 // ErrDroppedPacket is an error indicating a dropped packet.
-var ErrDroppedPacket = errors.New("dropped packet")
+var ErrDroppedPacket = types.NewError(errors.New("dropped packet"))
 
 // Join combines multiple packets into one, handling errors and payloads.
 func Join(pcks ...*Packet) *Packet {

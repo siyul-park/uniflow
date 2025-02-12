@@ -1,9 +1,8 @@
 package packet
 
 import (
+	"slices"
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Writer represents a packet writer that sends packets to linked readers.
@@ -15,7 +14,7 @@ type Writer struct {
 	done      bool
 	inbounds  Hooks
 	outbounds Hooks
-	mu        sync.Mutex
+	mu        sync.RWMutex
 }
 
 var ClosedWriter *Writer
@@ -108,16 +107,64 @@ func (w *Writer) AddOutboundHook(hook Hook) bool {
 	return true
 }
 
+// Links returns a list of readers linked to the writer.
+func (w *Writer) Links() []*Reader {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	return append([]*Reader(nil), w.readers...)
+}
+
 // Link connects a reader to the writer.
-func (w *Writer) Link(reader *Reader) {
+func (w *Writer) Link(reader *Reader) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if w.done {
-		return
+		return false
 	}
 
+	for _, r := range w.readers {
+		if r == reader {
+			return false
+		}
+	}
 	w.readers = append(w.readers, reader)
+	return true
+}
+
+// Unlink removes the given reader from the writer, ensuring proper disconnection.
+func (w *Writer) Unlink(reader *Reader) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.done {
+		return false
+	}
+
+	for i, r := range w.readers {
+		if r == reader {
+			w.readers = append(w.readers[:i], w.readers[i+1:]...)
+
+			for j := range w.receives {
+				w.receives[j] = append(w.receives[j][:i], w.receives[j][i+1:]...)
+			}
+
+			for len(w.receives) > 0 && !slices.Contains(w.receives[0], nil) {
+				pck := New(ErrDroppedPacket)
+				if len(w.receives[0]) > 0 {
+					pck = Join(w.receives[0]...)
+				}
+
+				w.receives = w.receives[1:]
+
+				w.inbounds.Handle(pck)
+				w.in <- pck
+			}
+			return true
+		}
+	}
+	return false
 }
 
 // Write writes a packet to all linked readers and returns the count of successful writes.
@@ -148,7 +195,7 @@ func (w *Writer) Write(pck *Packet) int {
 	if count > 0 {
 		w.receives = append(w.receives, receives)
 	} else {
-		pck := New(types.NewError(ErrDroppedPacket))
+		pck := New(ErrDroppedPacket)
 		w.inbounds.Handle(pck)
 		w.in <- pck
 	}
@@ -170,7 +217,7 @@ func (w *Writer) Close() {
 		return
 	}
 
-	pck := New(types.NewError(ErrDroppedPacket))
+	pck := New(ErrDroppedPacket)
 	for range w.receives {
 		w.inbounds.Handle(pck)
 		w.in <- pck
@@ -207,10 +254,8 @@ func (w *Writer) receive(pck *Packet, reader *Reader) bool {
 	receives[index] = pck
 
 	if head == 0 {
-		for _, pck := range receives {
-			if pck == nil {
-				return true
-			}
+		if slices.Contains(receives, nil) {
+			return true
 		}
 
 		w.receives = w.receives[1:]

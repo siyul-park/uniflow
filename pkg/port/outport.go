@@ -95,36 +95,43 @@ func (p *OutPort) AddListener(listener Listener) bool {
 }
 
 // Links returns the number of input ports this port is connected to.
-func (p *OutPort) Links() int {
+func (p *OutPort) Links() []*InPort {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return len(p.ins)
+	return append([]*InPort(nil), p.ins...)
 }
 
 // Link connects this output port to an input port.
-func (p *OutPort) Link(in *InPort) {
+func (p *OutPort) Link(in *InPort) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.ins = append(p.ins, in)
+	for _, e := range p.ins {
+		if e == in {
+			return false
+		}
+	}
 
+	p.ins = append(p.ins, in)
 	in.AddCloseHook(CloseHookFunc(func() {
 		p.Unlink(in)
 	}))
+	return true
 }
 
 // Unlink disconnects this output port from an input port.
-func (p *OutPort) Unlink(in *InPort) {
+func (p *OutPort) Unlink(in *InPort) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for i, cur := range p.ins {
-		if cur == in {
+	for i, e := range p.ins {
+		if e == in {
 			p.ins = append(p.ins[:i], p.ins[i+1:]...)
-			break
+			return true
 		}
 	}
+	return false
 }
 
 // Open opens the output port for the given process and returns a writer.

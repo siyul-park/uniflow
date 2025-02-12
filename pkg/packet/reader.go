@@ -2,8 +2,6 @@ package packet
 
 import (
 	"sync"
-
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Reader represents a packet reader that manages incoming packets from multiple writers.
@@ -127,7 +125,7 @@ func (r *Reader) Close() {
 		return
 	}
 
-	pck := New(types.NewError(ErrDroppedPacket))
+	pck := New(ErrDroppedPacket)
 	for _, w := range r.writers {
 		r.outbounds.Handle(pck)
 		go w.receive(pck, r)

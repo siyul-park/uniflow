@@ -123,9 +123,9 @@ func TestTable_Insert(t *testing.T) {
 	p2 := sym2.Out(node.PortOut)
 	p3 := sym3.Out(node.PortOut)
 
-	assert.Equal(t, 1, p1.Links())
-	assert.Equal(t, 1, p2.Links())
-	assert.Equal(t, 1, p3.Links())
+	assert.Len(t, p1.Links(), 1)
+	assert.Len(t, p2.Links(), 1)
+	assert.Len(t, p3.Links(), 1)
 }
 
 func TestTable_Free(t *testing.T) {
@@ -187,30 +187,30 @@ func TestTable_Free(t *testing.T) {
 	p2 := sym2.Out(node.PortOut)
 	p3 := sym3.Out(node.PortOut)
 
-	assert.Equal(t, 1, p1.Links())
-	assert.Equal(t, 1, p2.Links())
-	assert.Equal(t, 1, p3.Links())
+	assert.Len(t, p1.Links(), 1)
+	assert.Len(t, p2.Links(), 1)
+	assert.Len(t, p3.Links(), 1)
 
 	ok, err := tb.Free(meta1.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	assert.Equal(t, 0, p1.Links())
+	assert.Len(t, p1.Links(), 0)
 
 	ok, err = tb.Free(meta2.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	assert.Equal(t, 0, p1.Links())
-	assert.Equal(t, 0, p2.Links())
+	assert.Len(t, p1.Links(), 0)
+	assert.Len(t, p2.Links(), 0)
 
 	ok, err = tb.Free(meta3.GetID())
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
-	assert.Equal(t, 0, p1.Links())
-	assert.Equal(t, 0, p2.Links())
-	assert.Equal(t, 0, p3.Links())
+	assert.Len(t, p1.Links(), 0)
+	assert.Len(t, p2.Links(), 0)
+	assert.Len(t, p3.Links(), 0)
 }
 
 func TestTable_Lookup(t *testing.T) {

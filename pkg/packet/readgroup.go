@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"slices"
 	"sync"
 )
 
@@ -23,12 +24,24 @@ func (r *ReadGroup) Read(reader *Reader, pck *Packet) []*Packet {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	index := r.findReaderIndex(reader)
+	index := -1
+	for i, r := range r.readers {
+		if r == reader {
+			index = i
+			break
+		}
+	}
 	if index < 0 {
 		return nil
 	}
 
-	head := r.findHeadIndex(index)
+	head := -1
+	for i, reads := range r.reads {
+		if reads[index] == nil {
+			head = i
+			break
+		}
+	}
 	if head < 0 {
 		r.reads = append(r.reads, make([]*Packet, len(r.readers)))
 		head = len(r.reads) - 1
@@ -36,12 +49,11 @@ func (r *ReadGroup) Read(reader *Reader, pck *Packet) []*Packet {
 
 	r.reads[head][index] = pck
 
-	if head == 0 && r.isComplete(r.reads[head]) {
-		completeSet := r.reads[0]
+	if head == 0 && !slices.Contains(r.reads[head], nil) {
+		read := r.reads[0]
 		r.reads = r.reads[1:]
-		return completeSet
+		return read
 	}
-
 	return nil
 }
 
@@ -52,34 +64,4 @@ func (r *ReadGroup) Close() {
 
 	r.readers = nil
 	r.reads = nil
-}
-
-// findReaderIndex returns the index of the reader in the readers slice.
-func (r *ReadGroup) findReaderIndex(reader *Reader) int {
-	for i, r := range r.readers {
-		if r == reader {
-			return i
-		}
-	}
-	return -1
-}
-
-// findHeadIndex returns the index of the first incomplete set of packets for the reader.
-func (r *ReadGroup) findHeadIndex(index int) int {
-	for i, reads := range r.reads {
-		if reads[index] == nil {
-			return i
-		}
-	}
-	return -1
-}
-
-// isComplete checks if all packets in the set are present.
-func (r *ReadGroup) isComplete(pcks []*Packet) bool {
-	for _, pck := range pcks {
-		if pck == nil {
-			return false
-		}
-	}
-	return true
 }

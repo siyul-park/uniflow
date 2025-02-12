@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTracer_AddHook(t *testing.T) {
+func TestTracer_Dispatch(t *testing.T) {
 	w1 := NewWriter()
 	defer w1.Close()
 
@@ -42,7 +42,7 @@ func TestTracer_AddHook(t *testing.T) {
 	w2.Receive()
 
 	count := 0
-	tr.AddHook(pck1, HookFunc(func(pck *Packet) {
+	tr.Dispatch(pck1, HookFunc(func(pck *Packet) {
 		count++
 	}))
 
@@ -50,107 +50,153 @@ func TestTracer_AddHook(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestTracer_Transform(t *testing.T) {
-	w1 := NewWriter()
-	defer w1.Close()
-
-	w2 := NewWriter()
-	defer w2.Close()
-
-	r1 := NewReader()
-	defer r1.Close()
-
-	r2 := NewReader()
-	defer r2.Close()
-
-	w1.Link(r1)
-	w2.Link(r2)
-
+func TestTracer_Link(t *testing.T) {
 	tr := NewTracer()
 	defer tr.Close()
 
 	pck1 := New(nil)
 	pck2 := New(nil)
-	pck3 := New(nil)
 
-	w1.Write(pck1)
-	<-r1.Read()
+	tr.Link(pck1, pck2)
 
-	tr.Read(r1, pck1)
-	tr.Transform(pck1, pck2)
-	tr.Write(w2, pck2)
-
-	<-r2.Read()
-	r2.Receive(pck3)
-	w2.Receive()
-
-	tr.Receive(w2, pck3)
-
-	pck4, ok := <-w1.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, pck3, pck4)
+	assert.Equal(t, tr.Links(pck1, nil), []*Packet{pck1, pck2})
+	assert.Equal(t, tr.Links(nil, pck2), []*Packet{pck2, pck1})
+	assert.Equal(t, tr.Links(pck1, pck2), []*Packet{pck1, pck2})
 }
 
-func TestTracer_Reduce(t *testing.T) {
-	w1 := NewWriter()
-	defer w1.Close()
+func TestTracer_Read(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
 
-	r1 := NewReader()
-	defer r1.Close()
+	r := NewReader()
+	defer r.Close()
 
-	w1.Link(r1)
+	w.Link(r)
+
+	tr := NewTracer()
+	defer tr.Close()
+
+	pck := New(nil)
+
+	w.Write(pck)
+	<-r.Read()
+
+	tr.Read(r, pck)
+	assert.Contains(t, tr.Reads(r), pck)
+}
+
+func TestTracer_Write(t *testing.T) {
+	w := NewWriter()
+	defer w.Close()
+
+	r := NewReader()
+	defer r.Close()
+
+	w.Link(r)
 
 	tr := NewTracer()
 	defer tr.Close()
 
 	pck1 := New(types.NewString(faker.UUIDHyphenated()))
 
-	w1.Write(pck1)
-	<-r1.Read()
+	tr.Write(w, pck1)
+	assert.Contains(t, tr.Writes(w), pck1)
 
-	tr.Read(r1, pck1)
-	tr.Reduce(pck1)
-
-	pck2, ok := <-w1.Receive()
+	pck2, ok := <-r.Read()
 	assert.True(t, ok)
-	assert.Equal(t, pck1.Payload(), pck2.Payload())
+	assert.Equal(t, pck2.Payload(), pck1.Payload())
 }
 
-func TestTracer_ReadAndWriteAndReceive(t *testing.T) {
-	w1 := NewWriter()
-	defer w1.Close()
+func TestTracer_Receive(t *testing.T) {
+	t.Run("Receive", func(t *testing.T) {
+		w1 := NewWriter()
+		defer w1.Close()
 
-	w2 := NewWriter()
-	defer w2.Close()
+		w2 := NewWriter()
+		defer w2.Close()
 
-	r1 := NewReader()
-	defer r1.Close()
+		r1 := NewReader()
+		defer r1.Close()
 
-	r2 := NewReader()
-	defer r2.Close()
+		r2 := NewReader()
+		defer r2.Close()
 
-	w1.Link(r1)
-	w2.Link(r2)
+		w1.Link(r1)
+		w2.Link(r2)
 
-	tr := NewTracer()
-	defer tr.Close()
+		tr := NewTracer()
+		defer tr.Close()
 
-	pck1 := New(nil)
-	pck2 := New(nil)
+		pck1 := New(nil)
+		pck2 := New(nil)
+		pck3 := New(nil)
 
-	w1.Write(pck1)
-	<-r1.Read()
+		w1.Write(pck1)
+		<-r1.Read()
 
-	tr.Read(r1, pck1)
-	tr.Write(w2, pck1)
+		tr.Read(r1, pck1)
+		tr.Link(pck1, pck3)
+		tr.Write(w2, pck3)
 
-	<-r2.Read()
-	r2.Receive(pck2)
-	w2.Receive()
+		<-r2.Read()
+		r2.Receive(pck2)
+		w2.Receive()
 
-	tr.Receive(w2, pck2)
+		tr.Receive(w2, pck2)
 
-	pck3, ok := <-w1.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, pck2, pck3)
+		pck4, ok := <-w1.Receive()
+		assert.True(t, ok)
+		assert.Equal(t, pck2, pck4)
+
+		assert.Len(t, tr.Writes(w2), 0)
+		assert.Len(t, tr.Reads(r1), 0)
+		assert.Len(t, tr.Receives(pck3), 0)
+		assert.Len(t, tr.Receives(pck1), 0)
+	})
+
+	t.Run("Discard", func(t *testing.T) {
+		w1 := NewWriter()
+		defer w1.Close()
+
+		w2 := NewWriter()
+		defer w2.Close()
+
+		r1 := NewReader()
+		defer r1.Close()
+
+		r2 := NewReader()
+		defer r2.Close()
+
+		w1.Link(r1)
+		w2.Link(r2)
+
+		tr := NewTracer()
+		defer tr.Close()
+
+		pck1 := New(nil)
+		pck2 := New(nil)
+		pck3 := New(nil)
+
+		w1.Write(pck1)
+		<-r1.Read()
+
+		tr.Read(r1, pck1)
+		tr.Link(pck1, pck3)
+		tr.Write(w2, pck3)
+
+		<-r2.Read()
+		r2.Receive(pck2)
+		w2.Receive()
+
+		tr.Receive(w2, nil)
+
+		pck4, ok := <-w1.Receive()
+		assert.True(t, ok)
+		assert.Equal(t, None, pck4)
+
+		assert.Len(t, tr.Writes(w2), 0)
+		assert.Len(t, tr.Reads(r1), 0)
+		assert.Len(t, tr.Receives(pck3), 0)
+		assert.Len(t, tr.Receives(pck1), 0)
+	})
 }

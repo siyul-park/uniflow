@@ -23,9 +23,21 @@ func TestOutPort_Open(t *testing.T) {
 }
 
 func TestOutPort_Link(t *testing.T) {
-	proc := process.New()
-	defer proc.Exit(nil)
+	in := NewIn()
+	defer in.Close()
 
+	out := NewOut()
+	defer out.Close()
+
+	ok := out.Link(in)
+	assert.True(t, ok)
+	assert.Len(t, out.Links(), 1)
+
+	ok = out.Link(in)
+	assert.False(t, ok)
+}
+
+func TestOutPort_Unlink(t *testing.T) {
 	in := NewIn()
 	defer in.Close()
 
@@ -33,7 +45,13 @@ func TestOutPort_Link(t *testing.T) {
 	defer out.Close()
 
 	out.Link(in)
-	assert.Equal(t, 1, out.Links())
+
+	ok := out.Unlink(in)
+	assert.True(t, ok)
+	assert.Len(t, out.Links(), 0)
+
+	ok = out.Unlink(in)
+	assert.False(t, ok)
 }
 
 func TestOutPort_OpenHook(t *testing.T) {

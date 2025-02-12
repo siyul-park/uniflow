@@ -84,7 +84,6 @@ func (n *TryNode) Close() error {
 func (n *TryNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	var outWriter *packet.Writer
-	var errWriter *packet.Writer
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
@@ -92,28 +91,29 @@ func (n *TryNode) forward(proc *process.Process) {
 		if outWriter == nil {
 			outWriter = n.outPort.Open(proc)
 		}
-
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
-			if _, ok := backPck.Payload().(types.Error); ok {
-				if errWriter == nil {
-					errWriter = n.errPort.Open(proc)
-				}
-				n.tracer.Write(errWriter, backPck)
-			} else {
-				n.tracer.Reduce(backPck)
-			}
-		}))
-
 		n.tracer.Write(outWriter, inPck)
 	}
 }
 
 func (n *TryNode) backward(proc *process.Process) {
 	outWriter := n.outPort.Open(proc)
+	var errWriter *packet.Writer
 
 	for backPck := range outWriter.Receive() {
-		n.tracer.Receive(outWriter, backPck)
+		if _, ok := backPck.Payload().(types.Error); ok {
+			outPcks := n.tracer.Writes(outWriter)
+			if len(outPcks) > 0 {
+				n.tracer.Link(outPcks[0], backPck)
+			}
+
+			if errWriter == nil {
+				errWriter = n.errPort.Open(proc)
+			}
+			n.tracer.Write(errWriter, backPck)
+			n.tracer.Receive(outWriter, nil)
+		} else {
+			n.tracer.Receive(outWriter, backPck)
+		}
 	}
 }
 

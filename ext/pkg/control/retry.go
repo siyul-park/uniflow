@@ -96,8 +96,8 @@ func (n *RetryNode) forward(proc *process.Process) {
 				_, fail := backPck.Payload().(types.Error)
 				if !fail || count == n.threshold {
 					attempts.Delete(inPck)
-					n.tracer.Transform(inPck, backPck)
-					n.tracer.Reduce(backPck)
+					n.tracer.Link(inPck, backPck)
+					n.tracer.Write(nil, backPck)
 					return
 				}
 
@@ -109,14 +109,14 @@ func (n *RetryNode) forward(proc *process.Process) {
 			if outWriter == nil {
 				outWriter = n.outPort.Open(proc)
 			}
-			n.tracer.AddHook(inPck, hook)
+			n.tracer.Dispatch(inPck, hook)
 			n.tracer.Write(outWriter, inPck)
 		})
 
 		if outWriter == nil {
 			outWriter = n.outPort.Open(proc)
 		}
-		n.tracer.AddHook(inPck, hook)
+		n.tracer.Dispatch(inPck, hook)
 		n.tracer.Write(outWriter, inPck)
 	}
 }
