@@ -384,7 +384,7 @@ func (m *immutableMap) Compare(other Value) int {
 
 // MarshalJSON converts the map into a JSON byte array.
 func (m *immutableMap) MarshalJSON() ([]byte, error) {
-	buf := make([]byte, 0, 1024)
+	buf := make([]byte, 0, 512)
 	buf = append(buf, '{')
 	for k, v := range m.Range() {
 		if len(buf) > 1 {
@@ -743,9 +743,9 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 							return err
 						} else if err := valueDecoder.Decode(value, v.UnsafePointer()); err != nil {
 							return err
-						} else {
-							t.SetMapIndex(k.Elem(), v.Elem())
 						}
+
+						t.SetMapIndex(k.Elem(), v.Elem())
 					}
 
 					m.Clear()
@@ -844,9 +844,8 @@ func getMapMeta(f reflect.StructField) mapMeta {
 				meta.inline = true
 			}
 			return meta
-		} else {
-			return mapMeta{alias: tag}
 		}
+		return mapMeta{alias: tag}
 	}
 	return mapMeta{alias: key}
 }
