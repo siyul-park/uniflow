@@ -43,6 +43,11 @@ func (t *Tester) Process() *process.Process {
 	return t.proc
 }
 
+// Err returns the error associated with the test process, if any.
+func (t *Tester) Err() error {
+	return t.proc.Err()
+}
+
 // Done returns a channel that closes when the test process completes.
 func (t *Tester) Done() <-chan struct{} {
 	return t.proc.Done()
