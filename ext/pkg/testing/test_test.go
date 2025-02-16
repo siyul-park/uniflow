@@ -35,17 +35,26 @@ func TestTestNode_SimpleExecution(t *testing.T) {
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
+	out := port.NewIn()
+	simpleNode.Out(node.PortOut).Link(out)
+
 	proc := process.New()
 	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
+	outReader := out.Open(proc)
 
 	inPck := packet.New(types.NewString("test"))
 	inWriter.Write(inPck)
 
 	select {
-	case backPck := <-inWriter.Receive():
-		assert.NotNil(t, backPck)
+	case outPck := <-outReader.Read():
+		payload := outPck.Payload()
+		value, ok := payload.(types.String)
+		assert.True(t, ok)
+		assert.Equal(t, "success", value.String())
+
+		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}
@@ -68,26 +77,26 @@ func TestTestNode_SimpleExecutionError(t *testing.T) {
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
-	err := port.NewIn()
-	n.Out(node.PortError).Link(err)
+	out := port.NewIn()
+	errorNode.Out(node.PortError).Link(out)
 
 	proc := process.New()
 	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
-	errReader := err.Open(proc)
+	outReader := out.Open(proc)
 
 	inPck := packet.New(types.NewString("test"))
 	inWriter.Write(inPck)
 
 	select {
-	case errPck := <-errReader.Read():
-		payload := errPck.Payload()
+	case outPck := <-outReader.Read():
+		payload := outPck.Payload()
 		e, ok := payload.(types.Error)
 		assert.True(t, ok)
 		assert.Equal(t, "test error", e.Error())
 
-		errReader.Receive(errPck)
+		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}
@@ -168,7 +177,26 @@ func TestTestNode_ExtendedExecutionError(t *testing.T) {
 	defer errorNode.Close()
 
 	validationNode := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-		return packet.New(types.NewString("validation should not be called")), nil
+		payload := inPck.Payload()
+		slice, ok := payload.(types.Slice)
+		if !ok {
+			return nil, packet.New(types.NewError(errors.New("invalid payload type")))
+		}
+
+		value, ok := slice.Get(0).(types.Error)
+		if !ok {
+			return nil, packet.New(types.NewError(errors.New("expected error value")))
+		}
+		if value.Error() != "workflow error" {
+			return nil, packet.New(types.NewError(errors.New("unexpected error message")))
+		}
+
+		index, ok := types.Get[int](slice, 1)
+		if !ok || index != -1 {
+			return nil, packet.New(types.NewError(errors.New("unexpected index")))
+		}
+
+		return packet.New(types.NewString("validation success")), nil
 	})
 	defer validationNode.Close()
 
@@ -181,26 +209,26 @@ func TestTestNode_ExtendedExecutionError(t *testing.T) {
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
-	err := port.NewIn()
-	n.Out(node.PortError).Link(err)
+	out := port.NewIn()
+	validationNode.Out(node.PortOut).Link(out)
 
 	proc := process.New()
 	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
-	errReader := err.Open(proc)
+	outReader := out.Open(proc)
 
 	inPck := packet.New(types.NewString("test"))
 	inWriter.Write(inPck)
 
 	select {
-	case errPck := <-errReader.Read():
-		payload := errPck.Payload()
-		e, ok := payload.(types.Error)
+	case outPck := <-outReader.Read():
+		payload := outPck.Payload()
+		value, ok := payload.(types.String)
 		assert.True(t, ok)
-		assert.Equal(t, "workflow error", e.Error())
+		assert.Equal(t, "validation success", value.String())
 
-		errReader.Receive(errPck)
+		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}
@@ -216,6 +244,22 @@ func TestTestNode_ExtendedValidationError(t *testing.T) {
 	defer workflowNode.Close()
 
 	validationNode := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+		payload := inPck.Payload()
+		slice, ok := payload.(types.Slice)
+		if !ok {
+			return nil, packet.New(types.NewError(errors.New("invalid payload type")))
+		}
+
+		value, ok := types.Get[string](slice, 0)
+		if !ok || value != "wrong result" {
+			return nil, packet.New(types.NewError(errors.New("unexpected value")))
+		}
+
+		index, ok := types.Get[int](slice, 1)
+		if !ok || index != -1 {
+			return nil, packet.New(types.NewError(errors.New("unexpected index")))
+		}
+
 		return nil, packet.New(types.NewError(errors.New("validation error")))
 	})
 	defer validationNode.Close()
@@ -229,26 +273,26 @@ func TestTestNode_ExtendedValidationError(t *testing.T) {
 	in := port.NewOut()
 	in.Link(n.In(node.PortIn))
 
-	err := port.NewIn()
-	n.Out(node.PortError).Link(err)
+	out := port.NewIn()
+	workflowNode.Out(node.PortOut).Link(out)
 
 	proc := process.New()
 	defer proc.Exit(nil)
 
 	inWriter := in.Open(proc)
-	errReader := err.Open(proc)
+	outReader := out.Open(proc)
 
 	inPck := packet.New(types.NewString("test"))
 	inWriter.Write(inPck)
 
 	select {
-	case errPck := <-errReader.Read():
-		payload := errPck.Payload()
-		e, ok := payload.(types.Error)
+	case outPck := <-outReader.Read():
+		payload := outPck.Payload()
+		value, ok := payload.(types.String)
 		assert.True(t, ok)
-		assert.Equal(t, "validation error", e.Error())
+		assert.Equal(t, "wrong result", value.String())
 
-		errReader.Receive(errPck)
+		outReader.Receive(outPck)
 	case <-ctx.Done():
 		assert.Fail(t, "timeout")
 	}

@@ -20,7 +20,6 @@ type TestNode struct {
 	tracer   *packet.Tracer
 	inPort   *port.InPort
 	outPorts []*port.OutPort
-	errPort  *port.OutPort
 }
 
 const KindTest = "test"
@@ -38,13 +37,11 @@ func NewTestNode() *TestNode {
 		tracer:   packet.NewTracer(),
 		inPort:   port.NewIn(),
 		outPorts: []*port.OutPort{port.NewOut(), port.NewOut()},
-		errPort:  port.NewOut(),
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
 	n.outPorts[0].AddListener(port.ListenFunc(n.backward0))
 	n.outPorts[1].AddListener(port.ListenFunc(n.backward1))
-	n.errPort.AddListener(port.ListenFunc(n.catch))
 
 	return n
 }
@@ -62,8 +59,6 @@ func (n *TestNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
 		return n.outPorts[0]
-	case node.PortError:
-		return n.errPort
 	default:
 		if node.NameOfPort(name) == node.PortOut {
 			index, ok := node.IndexOfPort(name)
@@ -80,7 +75,6 @@ func (n *TestNode) Close() error {
 	for _, outPort := range n.outPorts {
 		outPort.Close()
 	}
-	n.errPort.Close()
 	n.tracer.Close()
 	return nil
 }
@@ -89,22 +83,14 @@ func (n *TestNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	outWriter0 := n.outPorts[0].Open(proc)
 	outWriter1 := n.outPorts[1].Open(proc)
-	errWriter := n.errPort.Open(proc)
 
 	for inPck := range inReader.Read() {
 		n.tracer.Read(inReader, inPck)
 		currentPck := inPck
 
-		n.tracer.AddHook(inPck, packet.HookFunc(func(backPck *packet.Packet) {
-			n.tracer.Transform(inPck, backPck)
-
-			if err, ok := backPck.Payload().(types.Error); ok {
-				n.writeError(errWriter, err)
-				inReader.Receive(currentPck)
-				return
-			}
-
-			n.handleValidation(backPck.Payload(), outWriter1, errWriter)
+		n.tracer.AddHook(inPck, packet.HookFunc(func(resultPck *packet.Packet) {
+			n.tracer.Transform(inPck, resultPck)
+			n.handleResult(resultPck, outWriter0, outWriter1)
 			inReader.Receive(currentPck)
 		}))
 
@@ -112,36 +98,38 @@ func (n *TestNode) forward(proc *process.Process) {
 	}
 }
 
-func (n *TestNode) handleValidation(payload any, outWriter1, errWriter *packet.Writer) {
-	if slice, ok := payload.(types.Slice); ok {
-		n.validateFrame(slice.Get(0), -1, outWriter1, errWriter, func() {
-			for i := 1; i < slice.Len(); i++ {
-				n.validateFrame(slice.Get(i), i-1, outWriter1, errWriter, nil)
-			}
-		})
-	} else {
-		n.validateFrame(payload, -1, outWriter1, errWriter, nil)
+func (n *TestNode) handleResult(resultPck *packet.Packet, outWriter0, outWriter1 *packet.Writer) {
+	n.tracer.Write(outWriter0, resultPck)
+
+	if n.Out(node.PortWithIndex(node.PortOut, 1)).Links() > 0 {
+		n.handleValidation(resultPck.Payload(), outWriter1, outWriter0)
 	}
 }
 
-func (n *TestNode) validateFrame(value any, index int, outWriter1, errWriter *packet.Writer, callback func()) {
-	var validationValue types.Value
-	switch v := value.(type) {
-	case nil:
-		validationValue = nil
-	case types.Value:
-		validationValue = v
-	default:
-		n.writeError(errWriter, types.NewError(fmt.Errorf("invalid value type")))
-		return
+func (n *TestNode) handleValidation(payload any, outWriter1, outWriter0 *packet.Writer) {
+	if slice, ok := payload.(types.Slice); ok {
+		n.validateFrames(slice, outWriter1, outWriter0)
+	} else {
+		n.validateFrame(payload, -1, outWriter1, outWriter0, nil)
 	}
+}
 
+func (n *TestNode) validateFrames(slice types.Slice, outWriter1, outWriter0 *packet.Writer) {
+	n.validateFrame(slice.Get(0), -1, outWriter1, outWriter0, func() {
+		for i := 1; i < slice.Len(); i++ {
+			n.validateFrame(slice.Get(i), i-1, outWriter1, outWriter0, nil)
+		}
+	})
+}
+
+func (n *TestNode) validateFrame(value any, index int, outWriter1, outWriter0 *packet.Writer, callback func()) {
+	validationValue := n.convertToValue(value)
 	validationPck := packet.New(types.NewSlice(validationValue, types.NewInt(index)))
 	n.tracer.Write(outWriter1, validationPck)
 
 	n.tracer.AddHook(validationPck, packet.HookFunc(func(validationResult *packet.Packet) {
 		if err, ok := validationResult.Payload().(types.Error); ok {
-			n.writeError(errWriter, err)
+			n.tracer.Write(outWriter0, packet.New(err))
 		}
 		if callback != nil {
 			callback()
@@ -149,27 +137,29 @@ func (n *TestNode) validateFrame(value any, index int, outWriter1, errWriter *pa
 	}))
 }
 
-func (n *TestNode) writeError(errWriter *packet.Writer, err types.Error) {
-	n.tracer.Write(errWriter, packet.New(err))
+func (n *TestNode) convertToValue(v any) types.Value {
+	switch val := v.(type) {
+	case nil:
+		return nil
+	case types.Error:
+		return val
+	case types.Value:
+		return val
+	default:
+		return types.NewString(fmt.Sprintf("%v", val))
+	}
 }
 
 func (n *TestNode) backward0(proc *process.Process) {
-	outWriter := n.outPorts[0].Open(proc)
-	for backPck := range outWriter.Receive() {
-		n.tracer.Receive(outWriter, backPck)
-	}
+	n.handleBackward(n.outPorts[0].Open(proc))
 }
 
 func (n *TestNode) backward1(proc *process.Process) {
-	outWriter := n.outPorts[1].Open(proc)
-	for backPck := range outWriter.Receive() {
-		n.tracer.Receive(outWriter, backPck)
-	}
+	n.handleBackward(n.outPorts[1].Open(proc))
 }
 
-func (n *TestNode) catch(proc *process.Process) {
-	errWriter := n.errPort.Open(proc)
-	for backPck := range errWriter.Receive() {
-		n.tracer.Receive(errWriter, backPck)
+func (n *TestNode) handleBackward(outWriter *packet.Writer) {
+	for backPck := range outWriter.Receive() {
+		n.tracer.Receive(outWriter, backPck)
 	}
 }
