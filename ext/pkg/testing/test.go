@@ -24,24 +24,24 @@ func NewTestNode() *TestNode {
 
 func (n *TestNode) Run(t *testing.Tester) {
 	// 1. open writer0, writer1
-	process := t.Process()
-	writer0 := n.outPorts[0].Open(process)
-	writer1 := n.outPorts[1].Open(process)
+	proc := t.Process()
+	writer0 := n.outPorts[0].Open(proc)
+	writer1 := n.outPorts[1].Open(proc)
 
 	// 2. write outPck0 to writer0, payload is nil
 	outPck0 := packet.New(nil)
 	writer0.Write(outPck0)
-	// if writer0.Write(outPck0) == 0 {
-	// 	t.Exit(nil)
-	// 	return
-	// }
+	if writer0.Write(outPck0) == 0 {
+		t.Exit(nil)
+		return
+	}
 
 	// 3. receive backPck0 in writer0
 	backPck0 := <-writer0.Receive()
-	// if backPck0 == packet.None {
-	// 	t.Exit(nil)
-	// 	return
-	// }
+	if backPck0 == packet.None {
+		t.Exit(nil)
+		return
+	}
 
 	// 4. create outPck1, payload is [backPck0.Payload(), -1]
 	outPck1 := packet.New(types.NewSlice(backPck0.Payload(), types.NewInt32(-1)))
@@ -62,10 +62,10 @@ func (n *TestNode) Run(t *testing.Tester) {
 
 	// 8. if write is success, receive backPck1 in writer1
 	backPck1 := <-writer1.Receive()
-	// if backPck1 == packet.None {
-	// 	t.Exit(nil)
-	// 	return
-	// }
+	if backPck1 == packet.None {
+		t.Exit(nil)
+		return
+	}
 
 	// 9. if backPck1 payload is error, exit tester as backPck1 error payload
 	if err, ok := backPck1.Payload().(types.Error); ok {
