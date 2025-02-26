@@ -83,7 +83,7 @@ func TestProcess_Exit(t *testing.T) {
 	proc := New()
 
 	proc.Exit(nil)
-	assert.Equal(t, context.Canceled, proc.Err())
+	assert.ErrorIs(t, proc.Err(), context.Canceled)
 	assert.NotZero(t, proc.EndTime())
 	assert.Equal(t, StatusTerminated, proc.Status())
 }
