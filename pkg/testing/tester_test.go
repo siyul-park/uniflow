@@ -35,6 +35,11 @@ func TestTester_Process(t *testing.T) {
 	assert.NotNil(t, tester.Process())
 }
 
+func TestTester_Err(t *testing.T) {
+	tester := NewTester("foo")
+	assert.NoError(t, tester.Err())
+}
+
 func TestTester_Exit(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
