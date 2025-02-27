@@ -47,6 +47,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		defer n2.Close()
 
 		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
+		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n2.In(node.PortIn))
 
 		tester := testing2.NewTester("")
 		defer tester.Exit(nil)
@@ -55,8 +56,8 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(1), count.Load())
-			assert.Error(t, tester.Err())
+			assert.Equal(t, int32(2), count.Load())
+			assert.ErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -77,6 +78,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		defer n2.Close()
 
 		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
+		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n2.In(node.PortIn))
 
 		tester := testing2.NewTester("")
 		defer tester.Exit(nil)
@@ -87,6 +89,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		case <-tester.Done():
 			assert.Equal(t, int32(1), count.Load())
 			assert.Error(t, tester.Err())
+			assert.NotErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -131,7 +134,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		select {
 		case <-tester.Done():
 			assert.Equal(t, int32(2), count.Load())
-			assert.Error(t, tester.Err())
+			assert.ErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
@@ -152,8 +155,14 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		})
 		defer n2.Close()
 
+		n3 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+			count.Add(1)
+			return nil, packet.New(types.NewError(errors.New(faker.Sentence())))
+		})
+		defer n3.Close()
+
 		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n2.In(node.PortIn))
+		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
 
 		tester := testing2.NewTester("")
 		defer tester.Exit(nil)
@@ -164,6 +173,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		case <-tester.Done():
 			assert.Equal(t, int32(2), count.Load())
 			assert.Error(t, tester.Err())
+			assert.NotErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
 		}
