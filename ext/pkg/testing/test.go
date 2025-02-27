@@ -1,6 +1,8 @@
 package testing
 
 import (
+	"errors"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -24,17 +26,16 @@ func NewTestNode() *TestNode {
 
 func (n *TestNode) Run(t *testing.Tester) {
 	proc := t.Process()
+
 	writer0 := n.outPorts[0].Open(proc)
 	writer1 := n.outPorts[1].Open(proc)
 
 	outPck0 := packet.New(nil)
 	backPck0 := packet.Send(writer0, outPck0)
-
 	if backPck0 == packet.None {
-		t.Exit(nil)
+		t.Exit(errors.New("no response from first port"))
 		return
 	}
-
 	if err, ok := backPck0.Payload().(types.Error); ok {
 		t.Exit(err.Unwrap())
 		return
@@ -42,12 +43,10 @@ func (n *TestNode) Run(t *testing.Tester) {
 
 	outPck1 := packet.New(types.NewSlice(backPck0.Payload(), types.NewInt32(-1)))
 	backPck1 := packet.Send(writer1, outPck1)
-
 	if backPck1 == packet.None {
-		t.Exit(nil)
+		t.Exit(errors.New("no response from second port"))
 		return
 	}
-
 	if err, ok := backPck1.Payload().(types.Error); ok {
 		t.Exit(err.Unwrap())
 		return
