@@ -47,7 +47,6 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		defer n2.Close()
 
 		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n2.In(node.PortIn))
 
 		tester := testing2.NewTester("")
 		defer tester.Exit(nil)
@@ -56,7 +55,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(2), count.Load())
+			assert.Equal(t, int32(1), count.Load())
 			assert.ErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
 			assert.Fail(t, ctx.Err().Error())
@@ -78,7 +77,6 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 		defer n2.Close()
 
 		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n2.In(node.PortIn))
 
 		tester := testing2.NewTester("")
 		defer tester.Exit(nil)
@@ -117,7 +115,7 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, 2, inPayload.Len())
 			assert.Equal(t, types.KindString, inPayload.Get(0).Kind())
-			assert.Equal(t, types.KindInt32, inPayload.Get(1).Kind())
+			assert.Equal(t, types.KindInt, inPayload.Get(1).Kind())
 
 			return inPck, nil
 		})
@@ -157,6 +155,13 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		n3 := node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
 			count.Add(1)
+
+			inPayload, ok := inPck.Payload().(types.Slice)
+			assert.True(t, ok)
+			assert.Equal(t, 2, inPayload.Len())
+			assert.Equal(t, types.KindString, inPayload.Get(0).Kind())
+			assert.Equal(t, types.KindInt, inPayload.Get(1).Kind())
+
 			return nil, packet.New(types.NewError(errors.New(faker.Sentence())))
 		})
 		defer n3.Close()
