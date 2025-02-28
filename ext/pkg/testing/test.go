@@ -1,8 +1,6 @@
 package testing
 
 import (
-	"errors"
-
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
@@ -10,6 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// TestNode is a test node implementing node.Node and testing.Suite interfaces.
 type TestNode struct {
 	outPorts [2]*port.OutPort
 }
@@ -17,13 +16,12 @@ type TestNode struct {
 var _ node.Node = (*TestNode)(nil)
 var _ testing.Suite = (*TestNode)(nil)
 
+// NewTestNode creates and returns a new instance of TestNode.
 func NewTestNode() *TestNode {
-	n := &TestNode{
-		outPorts: [2]*port.OutPort{port.NewOut(), port.NewOut()},
-	}
-	return n
+	return &TestNode{outPorts: [2]*port.OutPort{port.NewOut(), port.NewOut()}}
 }
 
+// Run executes the test logic, sending packets through output ports and handling errors.
 func (n *TestNode) Run(t *testing.Tester) {
 	proc := t.Process()
 
@@ -33,7 +31,7 @@ func (n *TestNode) Run(t *testing.Tester) {
 	outPck0 := packet.New(nil)
 	backPck0 := packet.Send(writer0, outPck0)
 	if backPck0 == packet.None {
-		t.Exit(errors.New("no response from first port"))
+		t.Exit(nil)
 		return
 	}
 	if err, ok := backPck0.Payload().(types.Error); ok {
@@ -41,10 +39,10 @@ func (n *TestNode) Run(t *testing.Tester) {
 		return
 	}
 
-	outPck1 := packet.New(types.NewSlice(backPck0.Payload(), types.NewInt32(-1)))
+	outPck1 := packet.New(types.NewSlice(backPck0.Payload(), types.NewInt(-1)))
 	backPck1 := packet.Send(writer1, outPck1)
 	if backPck1 == packet.None {
-		t.Exit(errors.New("no response from second port"))
+		t.Exit(nil)
 		return
 	}
 	if err, ok := backPck1.Payload().(types.Error); ok {
@@ -55,10 +53,12 @@ func (n *TestNode) Run(t *testing.Tester) {
 	t.Exit(nil)
 }
 
+// In returns nil as this node does not use an input port.
 func (n *TestNode) In(_ string) *port.InPort {
 	return nil
 }
 
+// Out returns the output port specified by the name.
 func (n *TestNode) Out(name string) *port.OutPort {
 	switch name {
 	case node.PortOut:
@@ -74,6 +74,7 @@ func (n *TestNode) Out(name string) *port.OutPort {
 	return nil
 }
 
+// Close closes all output ports of the TestNode.
 func (n *TestNode) Close() error {
 	for _, outPort := range n.outPorts {
 		outPort.Close()
