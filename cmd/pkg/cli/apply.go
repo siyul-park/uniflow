@@ -94,7 +94,7 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 		for _, rsc := range resources {
 			exists := false
 			for _, r := range loads {
-				if len(resourcebase.Match(r, rsc)) > 0 {
+				if resourcebase.Is(rsc, r) {
 					rsc.SetID(r.GetID())
 					updates = append(updates, rsc)
 					exists = true

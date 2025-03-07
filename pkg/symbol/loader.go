@@ -112,18 +112,30 @@ func (l *Loader) Load(ctx context.Context, specs ...spec.Spec) error {
 
 	for _, id := range l.table.Keys() {
 		sb := l.table.Lookup(id)
-		if sb != nil && len(resource.Match(sb.Spec, examples...)) > 0 {
-			ok := false
-			for _, s := range symbols {
-				if s.ID() == id {
-					ok = true
-					break
-				}
+		if sb == nil {
+			continue
+		}
+
+		ok := false
+		for _, example := range examples {
+			if resource.Is(sb.Spec, example) {
+				ok = true
 			}
-			if !ok {
-				if _, err := l.table.Free(id); err != nil {
-					errs = append(errs, err)
-				}
+		}
+		if !ok && len(examples) > 0 {
+			continue
+		}
+
+		ok = false
+		for _, s := range symbols {
+			if s.ID() == id {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			if _, err := l.table.Free(id); err != nil {
+				errs = append(errs, err)
 			}
 		}
 	}

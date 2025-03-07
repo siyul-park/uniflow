@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMatch(t *testing.T) {
+func TestIs(t *testing.T) {
 	id := uuid.Must(uuid.NewV7())
 
 	tests := []struct {
-		source   *Meta
-		examples []*Meta
-		matches  []int
+		source Resource
+		target Resource
+		expect bool
 	}{
 		{
 			source: &Meta{
@@ -23,15 +23,8 @@ func TestMatch(t *testing.T) {
 				Namespace: DefaultNamespace,
 				Name:      "node1",
 			},
-			examples: []*Meta{
-				{
-					ID: id,
-				},
-				{
-					ID: uuid.Must(uuid.NewV7()),
-				},
-			},
-			matches: []int{0},
+			target: &Meta{ID: id},
+			expect: true,
 		},
 		{
 			source: &Meta{
@@ -39,15 +32,8 @@ func TestMatch(t *testing.T) {
 				Namespace: DefaultNamespace,
 				Name:      "node1",
 			},
-			examples: []*Meta{
-				{
-					Namespace: DefaultNamespace,
-				},
-				{
-					Namespace: "other",
-				},
-			},
-			matches: []int{0},
+			target: &Meta{ID: uuid.Must(uuid.NewV7())},
+			expect: false,
 		},
 		{
 			source: &Meta{
@@ -55,25 +41,41 @@ func TestMatch(t *testing.T) {
 				Namespace: DefaultNamespace,
 				Name:      "node1",
 			},
-			examples: []*Meta{
-				{
-					Name: "node1",
-				},
-				{
-					Name: "node2",
-				},
+			target: &Meta{Namespace: DefaultNamespace},
+			expect: true,
+		},
+		{
+			source: &Meta{
+				ID:        id,
+				Namespace: DefaultNamespace,
+				Name:      "node1",
 			},
-			matches: []int{0},
+			target: &Meta{Namespace: "other"},
+			expect: false,
+		},
+		{
+			source: &Meta{
+				ID:        id,
+				Namespace: DefaultNamespace,
+				Name:      "node1",
+			},
+			target: &Meta{Name: "node1"},
+			expect: true,
+		},
+		{
+			source: &Meta{
+				ID:        id,
+				Namespace: DefaultNamespace,
+				Name:      "node1",
+			},
+			target: &Meta{Name: "node2"},
+			expect: false,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%v, %v", tt.source, tt.examples), func(t *testing.T) {
-			expected := make([]*Meta, 0, len(tt.matches))
-			for _, i := range tt.matches {
-				expected = append(expected, tt.examples[i])
-			}
-			assert.Equal(t, expected, Match(tt.source, tt.examples...))
+		t.Run(fmt.Sprintf("%v, %v", tt.source, tt.target), func(t *testing.T) {
+			assert.Equal(t, tt.expect, Is(tt.source, tt.target))
 		})
 	}
 }

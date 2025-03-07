@@ -223,11 +223,16 @@ func (s *store[T]) Delete(_ context.Context, resources ...T) (int, error) {
 	return count, nil
 }
 
-func (s *store[T]) match(resource T, examples ...T) bool {
-	if len(examples) == 0 {
+func (s *store[T]) match(source T, targets ...T) bool {
+	if len(targets) == 0 {
 		return true
 	}
-	return len(Match(resource, examples...)) > 0
+	for _, target := range targets {
+		if Is(source, target) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *store[T]) insert(res T) bool {

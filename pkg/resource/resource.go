@@ -41,22 +41,18 @@ const DefaultNamespace = "default"
 
 var _ Resource = (*Meta)(nil)
 
-// Match returns all resources that match the given specification based on ID, namespace, or name.
-func Match[T Resource](source T, examples ...T) []T {
-	var matched []T
-	for _, example := range examples {
-		if example.GetID() != uuid.Nil && source.GetID() != example.GetID() {
-			continue
-		}
-		if example.GetNamespace() != "" && source.GetNamespace() != example.GetNamespace() {
-			continue
-		}
-		if example.GetName() != "" && source.GetName() != example.GetName() {
-			continue
-		}
-		matched = append(matched, example)
+// Is checks whether all non-zero fields in the target exist in the source with matching values.
+func Is[T Resource](source, target T) bool {
+	if target.GetID() != uuid.Nil && target.GetID() != source.GetID() {
+		return false
 	}
-	return matched
+	if target.GetNamespace() != "" && source.GetNamespace() != target.GetNamespace() {
+		return false
+	}
+	if target.GetName() != "" && source.GetName() != target.GetName() {
+		return false
+	}
+	return true
 }
 
 // GetID returns the resource's unique identifier.

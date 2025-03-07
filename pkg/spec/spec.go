@@ -182,16 +182,13 @@ func (m *Meta) SetPorts(val map[string][]Port) {
 // IsBound checks if the spec is bound to any provided values.
 func (m *Meta) IsBound(values ...*value.Value) bool {
 	for _, val := range m.Env {
-		var examples []*value.Value
-		if val.ID != uuid.Nil {
-			examples = append(examples, &value.Value{ID: val.ID})
+		target := &value.Value{
+			ID:        val.ID,
+			Namespace: m.Namespace,
+			Name:      val.Name,
 		}
-		if val.Name != "" {
-			examples = append(examples, &value.Value{Namespace: m.Namespace, Name: val.Name})
-		}
-
 		for _, v := range values {
-			if len(resource.Match(v, examples...)) > 0 {
+			if resource.Is(v, target) {
 				return true
 			}
 		}
@@ -210,7 +207,7 @@ func (m *Meta) Bind(values ...*value.Value) error {
 
 		var value *value.Value
 		for _, v := range values {
-			if (!v.IsIdentified() && !val.IsIdentified()) || len(resource.Match(v, example)) > 0 {
+			if (!v.IsIdentified() && !val.IsIdentified()) || resource.Is(v, example) {
 				value = v
 				break
 			}
