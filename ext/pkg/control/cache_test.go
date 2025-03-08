@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCacheNodeCodec_Compile(t *testing.T) {
@@ -23,23 +23,23 @@ func TestCacheNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewCacheNode(t *testing.T) {
 	n := NewCacheNode(0, 0)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestCacheNode_Port(t *testing.T) {
 	n := NewCacheNode(0, 0)
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
 }
 
 func TestCacheNode_SendAndReceive(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCacheNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-inWriter.Receive():
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 
 	inWriter.Write(inPck)
@@ -80,7 +80,7 @@ func TestCacheNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-inWriter.Receive():
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

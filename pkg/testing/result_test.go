@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestResult_Status(t *testing.T) {
@@ -18,7 +18,7 @@ func TestResult_Status(t *testing.T) {
 			StartTime: time.Now(),
 			EndTime:   time.Now().Add(1 * time.Second),
 		}
-		assert.Equal(t, StatusPass, result.Status())
+		require.Equal(t, StatusPass, result.Status())
 	})
 
 	t.Run(StatusFail, func(t *testing.T) {
@@ -29,7 +29,7 @@ func TestResult_Status(t *testing.T) {
 			StartTime: time.Now(),
 			EndTime:   time.Now().Add(1 * time.Second),
 		}
-		assert.Equal(t, StatusFail, result.Status())
+		require.Equal(t, StatusFail, result.Status())
 	})
 }
 
@@ -43,5 +43,5 @@ func TestResult_Duration(t *testing.T) {
 		StartTime: startTime,
 		EndTime:   endTime,
 	}
-	assert.Equal(t, 2*time.Second, result.Duration())
+	require.Equal(t, 2*time.Second, result.Duration())
 }

@@ -19,7 +19,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHTTPNodeCodec_Compile(t *testing.T) {
@@ -34,15 +34,15 @@ func TestHTTPNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewHTTPNode(t *testing.T) {
 	n := NewHTTPNode(nil)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestHTTPNode_SendAndReceive(t *testing.T) {
@@ -51,11 +51,11 @@ func TestHTTPNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		s := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
-			assert.Equal(t, "HTTP/1.1", req.Proto)
+			require.Equal(t, "HTTP/1.1", req.Proto)
 
 			body, err := io.ReadAll(req.Body)
-			assert.NoError(t, err)
-			assert.NotZero(t, len(body))
+			require.NoError(t, err)
+			require.NotZero(t, len(body))
 		}))
 		defer s.Close()
 
@@ -83,9 +83,9 @@ func TestHTTPNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-inWriter.Receive():
 			_, ok := outPck.Payload().(types.Error)
-			assert.False(t, ok)
+			require.False(t, ok)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -94,11 +94,11 @@ func TestHTTPNode_SendAndReceive(t *testing.T) {
 		defer cancel()
 
 		s := httptest.NewUnstartedServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
-			assert.Equal(t, "HTTP/2.0", req.Proto)
+			require.Equal(t, "HTTP/2.0", req.Proto)
 
 			body, err := io.ReadAll(req.Body)
-			assert.NoError(t, err)
-			assert.NotZero(t, len(body))
+			require.NoError(t, err)
+			require.NotZero(t, len(body))
 		}))
 		_ = http2.ConfigureServer(s.Config, nil)
 
@@ -140,9 +140,9 @@ func TestHTTPNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-inWriter.Receive():
 			_, ok := outPck.Payload().(types.Error)
-			assert.False(t, ok)
+			require.False(t, ok)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

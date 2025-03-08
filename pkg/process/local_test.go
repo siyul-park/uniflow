@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLocal_AddStoreHook(t *testing.T) {
@@ -20,22 +20,22 @@ func TestLocal_AddStoreHook(t *testing.T) {
 	})
 
 	ok := l.AddStoreHook(proc, h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	v := faker.UUIDHyphenated()
 
 	l.Store(proc, v)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 
 	ok = l.RemoveStoreHook(proc, h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = l.AddStoreHook(proc, h)
-	assert.True(t, ok)
-	assert.Equal(t, 2, count)
+	require.True(t, ok)
+	require.Equal(t, 2, count)
 
 	ok = l.RemoveStoreHook(proc, h)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestLocal_Keys(t *testing.T) {
@@ -50,7 +50,7 @@ func TestLocal_Keys(t *testing.T) {
 	l.Store(proc, v)
 
 	keys := l.Keys()
-	assert.Contains(t, keys, proc)
+	require.Contains(t, keys, proc)
 }
 
 func TestLocal_Load(t *testing.T) {
@@ -63,13 +63,13 @@ func TestLocal_Load(t *testing.T) {
 	v := faker.UUIDHyphenated()
 
 	_, ok := l.Load(proc)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	l.Store(proc, v)
 
 	r, ok := l.Load(proc)
-	assert.True(t, ok)
-	assert.Equal(t, v, r)
+	require.True(t, ok)
+	require.Equal(t, v, r)
 }
 
 func TestLocal_Store(t *testing.T) {
@@ -86,8 +86,8 @@ func TestLocal_Store(t *testing.T) {
 	l.Store(proc, v2)
 
 	r, ok := l.Load(proc)
-	assert.True(t, ok)
-	assert.Equal(t, v2, r)
+	require.True(t, ok)
+	require.Equal(t, v2, r)
 }
 
 func TestLocal_Delete(t *testing.T) {
@@ -100,12 +100,12 @@ func TestLocal_Delete(t *testing.T) {
 	v := faker.UUIDHyphenated()
 
 	ok := l.Delete(proc)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	l.Store(proc, v)
 
 	ok = l.Delete(proc)
-	assert.True(t, ok)
+	require.True(t, ok)
 }
 
 func TestLocal_LoadOrStore(t *testing.T) {
@@ -120,6 +120,6 @@ func TestLocal_LoadOrStore(t *testing.T) {
 	r, err := l.LoadOrStore(proc, func() (string, error) {
 		return v, nil
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, v, r)
+	require.NoError(t, err)
+	require.Equal(t, v, r)
 }

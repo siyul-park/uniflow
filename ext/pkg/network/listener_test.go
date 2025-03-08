@@ -26,13 +26,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 )
 
 func TestListenNodeCodec_Compile(t *testing.T) {
 	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	codec := NewListenNodeCodec()
 
@@ -42,35 +42,35 @@ func TestListenNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewHTTPListenNode(t *testing.T) {
 	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestHTTPListenNode_Port(t *testing.T) {
 	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
 
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
 }
 
 func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
 	t.Run("TLS", func(t *testing.T) {
 		port, err := freeport.GetFreePort()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 		defer n.Close()
@@ -98,10 +98,10 @@ func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
 		keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 
 		err = n.TLS(certPEM, keyPEM)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = n.Listen()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		client := &http.Client{
 			Timeout: 5 * time.Second,
@@ -113,41 +113,41 @@ func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
 		}
 
 		_, err = client.Get(fmt.Sprintf("https://127.0.0.1:%d", port))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = n.Shutdown()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 	})
 
 	t.Run("HTTP/1.1", func(t *testing.T) {
 		port, err := freeport.GetFreePort()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 		defer n.Close()
 
 		err = n.Listen()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		client := http.Client{}
 
 		_, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = n.Shutdown()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("HTTP/2", func(t *testing.T) {
 		port, err := freeport.GetFreePort()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 		defer n.Close()
 
 		err = n.Listen()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		client := http.Client{
 			Transport: &http2.Transport{
@@ -160,10 +160,10 @@ func TestHTTPListenNode_ListenAndShutdown(t *testing.T) {
 		}
 
 		_, err = client.Get(fmt.Sprintf("http://127.0.0.1:%d", port))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = n.Shutdown()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -177,8 +177,8 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, "", w.Body.String())
+		require.Equal(t, http.StatusOK, w.Result().StatusCode)
+		require.Equal(t, "", w.Body.String())
 	})
 
 	t.Run("HTTPPayloadResponse", func(t *testing.T) {
@@ -208,8 +208,8 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, body, w.Body.String())
+		require.Equal(t, http.StatusOK, w.Result().StatusCode)
+		require.Equal(t, body, w.Body.String())
 	})
 
 	t.Run("BodyResponse", func(t *testing.T) {
@@ -245,8 +245,8 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, body, w.Body.String())
+		require.Equal(t, http.StatusOK, w.Result().StatusCode)
+		require.Equal(t, body, w.Body.String())
 	})
 
 	t.Run("ErrorResponse", func(t *testing.T) {
@@ -277,8 +277,8 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
-		assert.Equal(t, "Internal Server Error", w.Body.String())
+		require.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		require.Equal(t, "Internal Server Error", w.Body.String())
 	})
 
 	t.Run("HandleErrorResponse", func(t *testing.T) {
@@ -329,9 +329,9 @@ func TestHTTPListenNode_ServeHTTP(t *testing.T) {
 
 		n.ServeHTTP(w, r)
 
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-		assert.Equal(t, mime.TextPlainCharsetUTF8, w.Header().Get(mime.HeaderContentType))
-		assert.NotEmpty(t, w.Body.String())
+		require.Equal(t, http.StatusOK, w.Result().StatusCode)
+		require.Equal(t, mime.TextPlainCharsetUTF8, w.Header().Get(mime.HeaderContentType))
+		require.NotEmpty(t, w.Body.String())
 	})
 }
 

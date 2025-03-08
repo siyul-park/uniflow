@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCommand_Execute(t *testing.T) {
@@ -41,5 +41,5 @@ func TestCommand_Execute(t *testing.T) {
 	cmd.SetArgs([]string{"dummy", fmt.Sprintf("--%s", flagCPUProfile), cpuprofile, fmt.Sprintf("--%s", flagMemProfile), memprofile})
 
 	err := cmd.Execute()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

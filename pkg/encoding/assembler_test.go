@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncodeAssembler_Add(t *testing.T) {
@@ -16,7 +16,7 @@ func TestEncodeAssembler_Add(t *testing.T) {
 		return nil, nil
 	}))
 
-	assert.Equal(t, 1, a.Len())
+	require.Equal(t, 1, a.Len())
 }
 
 func TestEncodeAssembler_Compile(t *testing.T) {
@@ -32,8 +32,8 @@ func TestEncodeAssembler_Compile(t *testing.T) {
 
 	source := "test"
 	e, err := a.Compile(reflect.TypeOf(source))
-	assert.NoError(t, err)
-	assert.NotNil(t, e)
+	require.NoError(t, err)
+	require.NotNil(t, e)
 }
 
 func TestEncodeAssembler_Encode(t *testing.T) {
@@ -49,8 +49,8 @@ func TestEncodeAssembler_Encode(t *testing.T) {
 
 	source := "test"
 	target, err := a.Encode(source)
-	assert.NoError(t, err)
-	assert.Equal(t, source, target)
+	require.NoError(t, err)
+	require.Equal(t, source, target)
 }
 
 func TestDecodeAssembler_Add(t *testing.T) {
@@ -59,7 +59,7 @@ func TestDecodeAssembler_Add(t *testing.T) {
 		return nil, nil
 	}))
 
-	assert.Equal(t, 1, a.Len())
+	require.Equal(t, 1, a.Len())
 }
 
 func TestDecodeAssembler_Compile(t *testing.T) {
@@ -75,8 +75,8 @@ func TestDecodeAssembler_Compile(t *testing.T) {
 
 	source := "test"
 	d, err := a.Compile(reflect.TypeOf(&source))
-	assert.NoError(t, err)
-	assert.NotNil(t, d)
+	require.NoError(t, err)
+	require.NotNil(t, d)
 }
 
 func TestDecodeAssembler_Decode(t *testing.T) {
@@ -98,6 +98,6 @@ func TestDecodeAssembler_Decode(t *testing.T) {
 	target := ""
 
 	err := a.Decode(&source, &target)
-	assert.NoError(t, err)
-	assert.Equal(t, source, target)
+	require.NoError(t, err)
+	require.Equal(t, source, target)
 }

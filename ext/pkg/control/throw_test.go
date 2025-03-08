@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestThrowNodeCodec_Compile(t *testing.T) {
@@ -20,22 +20,22 @@ func TestThrowNodeCodec_Compile(t *testing.T) {
 	spec := &ThrowNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewThrowNode(t *testing.T) {
 	n := NewThrowNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestThrowNode_Port(t *testing.T) {
 	n := NewThrowNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.In(node.PortIn))
 }
 
 func TestThrowNode_SendAndReceive(t *testing.T) {
@@ -60,9 +60,9 @@ func TestThrowNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case backPck := <-inWriter.Receive():
-		assert.IsType(t, backPck.Payload(), types.NewError(nil))
+		require.IsType(t, backPck.Payload(), types.NewError(nil))
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

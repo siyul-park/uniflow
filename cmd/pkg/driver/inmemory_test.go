@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewInMemoryDriver(t *testing.T) {
@@ -13,8 +13,8 @@ func TestNewInMemoryDriver(t *testing.T) {
 	defer cancel()
 
 	driver := NewInMemoryDriver()
-	assert.NotNil(t, driver)
-	assert.NoError(t, driver.Close(ctx))
+	require.NotNil(t, driver)
+	require.NoError(t, driver.Close(ctx))
 }
 
 func TestInMemoryDriver_SpecStore(t *testing.T) {
@@ -25,8 +25,8 @@ func TestInMemoryDriver_SpecStore(t *testing.T) {
 	defer driver.Close(ctx)
 
 	store, err := driver.NewSpecStore(ctx, "")
-	assert.NoError(t, err)
-	assert.NotNil(t, store)
+	require.NoError(t, err)
+	require.NotNil(t, store)
 }
 
 func TestInMemoryDriver_ValueStore(t *testing.T) {
@@ -37,6 +37,6 @@ func TestInMemoryDriver_ValueStore(t *testing.T) {
 	defer driver.Close(ctx)
 
 	store, err := driver.NewValueStore(ctx, "")
-	assert.NoError(t, err)
-	assert.NotNil(t, store)
+	require.NoError(t, err)
+	require.NotNil(t, store)
 }

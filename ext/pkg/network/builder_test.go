@@ -9,17 +9,17 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddToHook(t *testing.T) {
 	h := hook.New()
 
 	err := AddToHook().AddToHook(h)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	port, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	n := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 	defer n.Close()
@@ -30,24 +30,24 @@ func TestAddToHook(t *testing.T) {
 	}
 
 	err = h.Load(sb)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = h.Unload(sb)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
 	err := AddToScheme().AddToScheme(s)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := []string{KindHTTP, KindListener, KindRouter, KindWebSocket, KindUpgrader}
 
 	for _, tt := range tests {
 		t.Run(tt, func(t *testing.T) {
-			assert.NotNil(t, s.KnownType(tt))
-			assert.NotNil(t, s.Codec(tt))
+			require.NotNil(t, s.KnownType(tt))
+			require.NotNil(t, s.Codec(tt))
 		})
 	}
 }

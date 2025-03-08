@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestForNodeCodec_Compile(t *testing.T) {
@@ -21,26 +21,26 @@ func TestForNodeCodec_Compile(t *testing.T) {
 	spec := &ForNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewForNode(t *testing.T) {
 	n := NewForNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestForNode_Port(t *testing.T) {
 	n := NewForNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
 func TestForNode_SendAndReceive(t *testing.T) {
@@ -74,17 +74,17 @@ func TestForNode_SendAndReceive(t *testing.T) {
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader.Read():
-				assert.Equal(t, inPayload.Get(i), outPck.Payload())
+				require.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader.Receive(outPck)
 			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
+				require.Fail(t, ctx.Err().Error())
 			}
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -122,10 +122,10 @@ func TestForNode_SendAndReceive(t *testing.T) {
 		for i := 0; i < inPayload.Len(); i++ {
 			select {
 			case outPck := <-outReader0.Read():
-				assert.Equal(t, inPayload.Get(i), outPck.Payload())
+				require.Equal(t, inPayload.Get(i), outPck.Payload())
 				outReader0.Receive(outPck)
 			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
+				require.Fail(t, ctx.Err().Error())
 			}
 		}
 
@@ -133,13 +133,13 @@ func TestForNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader1.Read():
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -176,14 +176,14 @@ func TestForNode_SendAndReceive(t *testing.T) {
 				backPck := packet.New(types.NewError(errors.New(faker.Sentence())))
 				outReader0.Receive(backPck)
 			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
+				require.Fail(t, ctx.Err().Error())
 			}
 		}
 
 		select {
 		case <-inWriter.Receive():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

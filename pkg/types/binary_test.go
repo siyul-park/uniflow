@@ -7,97 +7,97 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBinary_Len(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, 1, v.Len())
+	require.Equal(t, 1, v.Len())
 }
 
 func TestBinary_Get(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, byte(0), v.Get(0))
+	require.Equal(t, byte(0), v.Get(0))
 }
 
 func TestBinary_Bytes(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, []byte{0}, v.Bytes())
+	require.Equal(t, []byte{0}, v.Bytes())
 }
 
 func TestBinary_String(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, "AA==", v.String())
+	require.Equal(t, "AA==", v.String())
 }
 
 func TestBinary_Kind(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, KindBinary, v.Kind())
+	require.Equal(t, KindBinary, v.Kind())
 }
 
 func TestBinary_Hash(t *testing.T) {
 	v1 := NewBinary([]byte{0})
 	v2 := NewBinary([]byte{1})
 
-	assert.NotEqual(t, v1.Hash(), v2.Hash())
+	require.NotEqual(t, v1.Hash(), v2.Hash())
 }
 
 func TestBinary_Interface(t *testing.T) {
 	v := NewBinary([]byte{0})
 
-	assert.Equal(t, []byte{0}, v.Interface())
+	require.Equal(t, []byte{0}, v.Interface())
 }
 
 func TestBinary_Equal(t *testing.T) {
 	v1 := NewBinary([]byte{0})
 	v2 := NewBinary([]byte{1})
 
-	assert.True(t, v1.Equal(v1))
-	assert.True(t, v2.Equal(v2))
-	assert.False(t, v1.Equal(v2))
+	require.True(t, v1.Equal(v1))
+	require.True(t, v2.Equal(v2))
+	require.False(t, v1.Equal(v2))
 }
 
 func TestBinary_Compare(t *testing.T) {
 	v1 := NewBinary([]byte{0})
 	v2 := NewBinary([]byte{1})
 
-	assert.Equal(t, 0, v1.Compare(v1))
-	assert.Equal(t, 0, v2.Compare(v2))
-	assert.Equal(t, -1, v1.Compare(v2))
-	assert.Equal(t, 1, v2.Compare(v1))
+	require.Equal(t, 0, v1.Compare(v1))
+	require.Equal(t, 0, v2.Compare(v2))
+	require.Equal(t, -1, v1.Compare(v2))
+	require.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestBinary_MarshalText(t *testing.T) {
 	b := NewBinary([]byte{0, 1, 2})
 	text, err := b.MarshalText()
-	assert.NoError(t, err)
-	assert.Equal(t, "AAEC", string(text))
+	require.NoError(t, err)
+	require.Equal(t, "AAEC", string(text))
 }
 
 func TestBinary_UnmarshalText(t *testing.T) {
 	b := NewBinary(nil)
 	err := b.UnmarshalText([]byte("AAEC"))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte{0, 1, 2}, b.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, []byte{0, 1, 2}, b.Bytes())
 }
 
 func TestBinary_MarshalBinary(t *testing.T) {
 	b := NewBinary([]byte{0, 1, 2})
 	data, err := b.MarshalBinary()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte{0, 1, 2}, data)
+	require.NoError(t, err)
+	require.Equal(t, []byte{0, 1, 2}, data)
 }
 
 func TestBinary_UnmarshalBinary(t *testing.T) {
 	b := NewBinary(nil)
 	err := b.UnmarshalBinary([]byte{0, 1, 2})
-	assert.NoError(t, err)
-	assert.Equal(t, []byte{0, 1, 2}, b.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, []byte{0, 1, 2}, b.Bytes())
 }
 
 func TestBinary_Encode(t *testing.T) {
@@ -109,8 +109,8 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source.Bytes())
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 
 	t.Run("slice", func(t *testing.T) {
@@ -118,8 +118,8 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source)
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 
 	t.Run("array", func(t *testing.T) {
@@ -127,8 +127,8 @@ func TestBinary_Encode(t *testing.T) {
 		v := NewBinary(source[:])
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 }
 
@@ -142,8 +142,8 @@ func TestBinary_Decode(t *testing.T) {
 
 		var decoded uuid.UUID
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 
 	t.Run("slice", func(t *testing.T) {
@@ -152,8 +152,8 @@ func TestBinary_Decode(t *testing.T) {
 
 		var decoded []byte
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 
 	t.Run("array", func(t *testing.T) {
@@ -162,8 +162,8 @@ func TestBinary_Decode(t *testing.T) {
 
 		var decoded [3]byte
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.EqualValues(t, source, decoded)
+		require.NoError(t, err)
+		require.EqualValues(t, source, decoded)
 	})
 
 	t.Run("string", func(t *testing.T) {
@@ -172,11 +172,11 @@ func TestBinary_Decode(t *testing.T) {
 
 		var decoded string
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		d, err := base64.StdEncoding.DecodeString(decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, d)
+		require.NoError(t, err)
+		require.Equal(t, source, d)
 	})
 
 	t.Run("any", func(t *testing.T) {
@@ -185,8 +185,8 @@ func TestBinary_Decode(t *testing.T) {
 
 		var decoded any
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 }
 

@@ -20,14 +20,14 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewDebugger(t *testing.T) {
 	d := NewDebugger(runtime.NewAgent())
 	defer d.Kill()
 
-	assert.NotNil(t, d)
+	require.NotNil(t, d)
 }
 
 func TestDebugModel_Update(t *testing.T) {
@@ -61,7 +61,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("break %s %s", sb.Name(), node.PortIn))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Len(t, d.Breakpoints(), 1)
+		require.Len(t, d.Breakpoints(), 1)
 	})
 
 	t.Run("break", func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("break")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Len(t, d.Breakpoints(), 1)
+		require.Len(t, d.Breakpoints(), 1)
 	})
 
 	t.Run("continue", func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("continue")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		// TODO: assert
+		// TODO: require
 	})
 
 	t.Run("delete <breakpoint>", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("delete %s", d.Breakpoints()[0].ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Len(t, d.Breakpoints(), 0)
+		require.Len(t, d.Breakpoints(), 0)
 	})
 
 	t.Run("breakpoints", func(t *testing.T) {
@@ -202,7 +202,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("breakpoints")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 	})
 
 	t.Run("breakpoint <breakpoint>", func(t *testing.T) {
@@ -238,7 +238,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("breakpoint %s", d.Breakpoints()[0].ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 	})
 
 	t.Run("breakpoint", func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("breakpoint")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -331,7 +331,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("symbols")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 	})
 
 	t.Run("symbol <symbol>", func(t *testing.T) {
@@ -367,7 +367,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("symbol %s", sb.Name()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 	})
 
 	t.Run("symbol", func(t *testing.T) {
@@ -425,7 +425,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("symbol")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.Name())
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -486,7 +486,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("processes")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), proc.ID().String())
+		require.Contains(t, m.View(), proc.ID().String())
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -546,7 +546,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("process %s", proc.ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), proc.ID().String())
+		require.Contains(t, m.View(), proc.ID().String())
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -606,7 +606,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("process")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		assert.Contains(t, m.View(), proc.ID().String())
+		require.Contains(t, m.View(), proc.ID().String())
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -669,7 +669,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data, _ := json.Marshal(types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), string(data))
+		require.Contains(t, m.View(), string(data))
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -732,7 +732,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), data)
+		require.Contains(t, m.View(), data)
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})
@@ -795,7 +795,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		data := fmt.Sprintf("%v", types.InterfaceOf(payload))
-		assert.Contains(t, m.View(), data)
+		require.Contains(t, m.View(), data)
 
 		d.RemoveBreakpoint(d.Breakpoint())
 	})

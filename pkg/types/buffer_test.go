@@ -9,7 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuffer_Read(t *testing.T) {
@@ -17,29 +17,29 @@ func TestBuffer_Read(t *testing.T) {
 	b := NewBuffer(r)
 	p := make([]byte, 4)
 	n, err := b.Read(p)
-	assert.NoError(t, err)
-	assert.Equal(t, 4, n)
-	assert.Equal(t, "test", string(p))
+	require.NoError(t, err)
+	require.Equal(t, 4, n)
+	require.Equal(t, "test", string(p))
 }
 
 func TestBuffer_Bytes(t *testing.T) {
 	r := strings.NewReader("test")
 	b := NewBuffer(r)
 	p, err := b.Bytes()
-	assert.NoError(t, err)
-	assert.Equal(t, "test", string(p))
+	require.NoError(t, err)
+	require.Equal(t, "test", string(p))
 }
 
 func TestBuffer_Close(t *testing.T) {
 	r := strings.NewReader("test")
 	b := NewBuffer(r)
-	assert.NoError(t, b.Close())
+	require.NoError(t, b.Close())
 }
 
 func TestBuffer_Kind(t *testing.T) {
 	r := strings.NewReader("test")
 	b := NewBuffer(r)
-	assert.Equal(t, KindBuffer, b.Kind())
+	require.Equal(t, KindBuffer, b.Kind())
 }
 
 func TestBuffer_Hash(t *testing.T) {
@@ -47,13 +47,13 @@ func TestBuffer_Hash(t *testing.T) {
 	r2 := strings.NewReader("test2")
 	b1 := NewBuffer(r1)
 	b2 := NewBuffer(r2)
-	assert.NotEqual(t, b1.Hash(), b2.Hash())
+	require.NotEqual(t, b1.Hash(), b2.Hash())
 }
 
 func TestBuffer_Interface(t *testing.T) {
 	r := strings.NewReader("test")
 	b := NewBuffer(r)
-	assert.Equal(t, r, b.Interface())
+	require.Equal(t, r, b.Interface())
 }
 
 func TestBuffer_Equal(t *testing.T) {
@@ -61,8 +61,8 @@ func TestBuffer_Equal(t *testing.T) {
 	r2 := strings.NewReader("test2")
 	b1 := NewBuffer(r1)
 	b2 := NewBuffer(r2)
-	assert.True(t, b1.Equal(b1))
-	assert.False(t, b1.Equal(b2))
+	require.True(t, b1.Equal(b1))
+	require.False(t, b1.Equal(b2))
 }
 
 func TestBuffer_Compare(t *testing.T) {
@@ -70,25 +70,25 @@ func TestBuffer_Compare(t *testing.T) {
 	r2 := strings.NewReader("test2")
 	b1 := NewBuffer(r1)
 	b2 := NewBuffer(r2)
-	assert.Equal(t, 0, b1.Compare(b1))
-	assert.NotEqual(t, 0, b1.Compare(b2))
+	require.Equal(t, 0, b1.Compare(b1))
+	require.NotEqual(t, 0, b1.Compare(b2))
 }
 
 func TestBuffer_MarshalBinary(t *testing.T) {
 	b := NewBuffer(strings.NewReader("test"))
 	data, err := b.MarshalBinary()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("test"), data)
+	require.NoError(t, err)
+	require.Equal(t, []byte("test"), data)
 }
 
 func TestBuffer_UnmarshalBinary(t *testing.T) {
 	b := NewBuffer(nil)
 	err := b.UnmarshalBinary([]byte("test"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	data, err := b.Bytes()
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("test"), data)
+	require.NoError(t, err)
+	require.Equal(t, []byte("test"), data)
 }
 
 func TestBuffer_Encode(t *testing.T) {
@@ -100,8 +100,8 @@ func TestBuffer_Encode(t *testing.T) {
 		v := NewBuffer(source)
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 }
 
@@ -115,8 +115,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded uuid.UUID
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -125,8 +125,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		decoded := NewString("")
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source.String(), decoded.String())
+		require.NoError(t, err)
+		require.Equal(t, source.String(), decoded.String())
 	})
 
 	t.Run("io.Reader", func(t *testing.T) {
@@ -135,8 +135,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded io.Reader
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 
 	t.Run("slice", func(t *testing.T) {
@@ -145,8 +145,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded []byte
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, []byte("test"), decoded)
+		require.NoError(t, err)
+		require.Equal(t, []byte("test"), decoded)
 	})
 
 	t.Run("array", func(t *testing.T) {
@@ -155,8 +155,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded [3]byte
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.EqualValues(t, []byte("test"), decoded)
+		require.NoError(t, err)
+		require.EqualValues(t, []byte("test"), decoded)
 	})
 
 	t.Run("string", func(t *testing.T) {
@@ -165,8 +165,8 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded string
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, "test", decoded)
+		require.NoError(t, err)
+		require.Equal(t, "test", decoded)
 	})
 
 	t.Run("any", func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestBuffer_Decode(t *testing.T) {
 
 		var decoded any
 		err := dec.Decode(v, &decoded)
-		assert.NoError(t, err)
-		assert.Equal(t, source, decoded)
+		require.NoError(t, err)
+		require.Equal(t, source, decoded)
 	})
 }

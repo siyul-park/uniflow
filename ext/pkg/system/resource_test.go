@@ -8,7 +8,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWatchResource(t *testing.T) {
@@ -19,7 +19,7 @@ func TestWatchResource(t *testing.T) {
 	fn := WatchResource(st)
 
 	_, err := fn(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestCreateResource(t *testing.T) {
@@ -35,8 +35,8 @@ func TestCreateResource(t *testing.T) {
 	}
 
 	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
+	require.NoError(t, err)
+	require.Len(t, res, 1)
 }
 
 func TestReadResource(t *testing.T) {
@@ -52,11 +52,11 @@ func TestReadResource(t *testing.T) {
 	}
 
 	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
+	require.NoError(t, err)
+	require.Len(t, res, 1)
 }
 
 func TestUpdateResource(t *testing.T) {
@@ -72,11 +72,11 @@ func TestUpdateResource(t *testing.T) {
 	}
 
 	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
+	require.NoError(t, err)
+	require.Len(t, res, 1)
 }
 
 func TestDeleteResource(t *testing.T) {
@@ -92,9 +92,9 @@ func TestDeleteResource(t *testing.T) {
 	}
 
 	_, err := st.Store(ctx, meta)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	res, err := fn(ctx, []resource.Resource{meta})
-	assert.NoError(t, err)
-	assert.Len(t, res, 1)
+	require.NoError(t, err)
+	require.Len(t, res, 1)
 }

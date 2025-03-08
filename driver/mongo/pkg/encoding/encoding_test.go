@@ -5,7 +5,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -19,8 +19,8 @@ func TestBSONEncoder_Encode(t *testing.T) {
 	b := types.NewBinary(binary.Data)
 
 	decoded, err := enc.Encode(binary)
-	assert.NoError(t, err)
-	assert.Equal(t, b, decoded)
+	require.NoError(t, err)
+	require.Equal(t, b, decoded)
 }
 
 func TestBSONDecoder_Decode(t *testing.T) {
@@ -34,6 +34,6 @@ func TestBSONDecoder_Decode(t *testing.T) {
 
 	decoded := bson.Binary{}
 	err := dec.Decode(b, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, binary, decoded)
+	require.NoError(t, err)
+	require.Equal(t, binary, decoded)
 }

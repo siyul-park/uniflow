@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTime_Encode(t *testing.T) {
@@ -15,10 +15,10 @@ func TestTime_Encode(t *testing.T) {
 	timestamp := time.Date(2024, time.November, 16, 12, 0, 0, 0, time.UTC)
 
 	encoded, err := enc.Encode(timestamp)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expected := NewInt64(timestamp.UnixMilli())
-	assert.Equal(t, expected, encoded)
+	require.Equal(t, expected, encoded)
 }
 
 func TestTime_Decode(t *testing.T) {
@@ -30,8 +30,8 @@ func TestTime_Decode(t *testing.T) {
 
 	var decoded time.Time
 	err := dec.Decode(encoded, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, timestamp, decoded)
+	require.NoError(t, err)
+	require.Equal(t, timestamp, decoded)
 }
 
 func TestDuration_Encode(t *testing.T) {
@@ -41,10 +41,10 @@ func TestDuration_Encode(t *testing.T) {
 	duration := 1500 * time.Millisecond
 
 	encoded, err := enc.Encode(duration)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expected := NewInt64(1500)
-	assert.Equal(t, expected, encoded)
+	require.Equal(t, expected, encoded)
 }
 
 func TestDuration_Decode(t *testing.T) {
@@ -56,6 +56,6 @@ func TestDuration_Decode(t *testing.T) {
 
 	var decoded time.Duration
 	err := dec.Decode(encoded, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, duration, decoded)
+	require.NoError(t, err)
+	require.Equal(t, duration, decoded)
 }

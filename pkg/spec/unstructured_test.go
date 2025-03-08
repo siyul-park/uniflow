@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnstructured_GetAndSet(t *testing.T) {
@@ -16,8 +16,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		id := uuid.Must(uuid.NewV7())
 		unstructured.Set(KeyID, id)
 		val, ok := unstructured.Get(KeyID)
-		assert.True(t, ok)
-		assert.Equal(t, id, val)
+		require.True(t, ok)
+		require.Equal(t, id, val)
 	})
 
 	t.Run("KeyKind", func(t *testing.T) {
@@ -25,16 +25,16 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 		unstructured.Set(KeyKind, kind)
 		val, ok := unstructured.Get(KeyKind)
-		assert.True(t, ok)
-		assert.Equal(t, kind, val)
+		require.True(t, ok)
+		require.Equal(t, kind, val)
 	})
 
 	t.Run("KeyNamespace", func(t *testing.T) {
 		unstructured := &Unstructured{}
 		unstructured.Set(KeyNamespace, "default")
 		val, ok := unstructured.Get(KeyNamespace)
-		assert.True(t, ok)
-		assert.Equal(t, "default", val)
+		require.True(t, ok)
+		require.Equal(t, "default", val)
 	})
 
 	t.Run("KeyName", func(t *testing.T) {
@@ -42,8 +42,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		name := faker.UUIDHyphenated()
 		unstructured.Set(KeyName, name)
 		val, ok := unstructured.Get(KeyName)
-		assert.True(t, ok)
-		assert.Equal(t, name, val)
+		require.True(t, ok)
+		require.Equal(t, name, val)
 	})
 
 	t.Run("KeyAnnotations", func(t *testing.T) {
@@ -51,8 +51,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		annotations := map[string]string{"key": "value"}
 		unstructured.Set(KeyAnnotations, annotations)
 		val, ok := unstructured.Get(KeyAnnotations)
-		assert.True(t, ok)
-		assert.Equal(t, annotations, val)
+		require.True(t, ok)
+		require.Equal(t, annotations, val)
 	})
 
 	t.Run("KeyPorts", func(t *testing.T) {
@@ -67,8 +67,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		}
 		unstructured.Set(KeyPorts, ports)
 		val, ok := unstructured.Get(KeyPorts)
-		assert.True(t, ok)
-		assert.Equal(t, ports, val)
+		require.True(t, ok)
+		require.Equal(t, ports, val)
 	})
 
 	t.Run("KeyEnv", func(t *testing.T) {
@@ -76,8 +76,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		env := map[string]Value{"env1": {Name: "value1", Data: "value1"}}
 		unstructured.Set(KeyEnv, env)
 		val, ok := unstructured.Get(KeyEnv)
-		assert.True(t, ok)
-		assert.Equal(t, env, val)
+		require.True(t, ok)
+		require.Equal(t, env, val)
 	})
 
 	t.Run("CustomField", func(t *testing.T) {
@@ -86,8 +86,8 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		customValue := "customValue"
 		unstructured.Set(customKey, customValue)
 		val, ok := unstructured.Get(customKey)
-		assert.True(t, ok)
-		assert.Equal(t, customValue, val)
+		require.True(t, ok)
+		require.Equal(t, customValue, val)
 	})
 }
 
@@ -108,6 +108,6 @@ func TestUnstructured_Build(t *testing.T) {
 	}
 
 	err := unstructured.Build()
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", unstructured.Fields["foo"])
+	require.NoError(t, err)
+	require.Equal(t, "foo", unstructured.Fields["foo"])
 }

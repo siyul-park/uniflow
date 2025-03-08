@@ -8,84 +8,84 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestString_Len(t *testing.T) {
 	v := NewString("hello")
 
-	assert.Equal(t, 5, v.Len())
+	require.Equal(t, 5, v.Len())
 }
 
 func TestString_Get(t *testing.T) {
 	v := NewString("hello")
 
-	assert.Equal(t, 'h', v.Get(0))
-	assert.Equal(t, 'e', v.Get(1))
-	assert.Equal(t, 'l', v.Get(2))
-	assert.Equal(t, 'l', v.Get(3))
-	assert.Equal(t, 'o', v.Get(4))
-	assert.Equal(t, rune(0), v.Get(5))
+	require.Equal(t, 'h', v.Get(0))
+	require.Equal(t, 'e', v.Get(1))
+	require.Equal(t, 'l', v.Get(2))
+	require.Equal(t, 'l', v.Get(3))
+	require.Equal(t, 'o', v.Get(4))
+	require.Equal(t, rune(0), v.Get(5))
 }
 
 func TestString_String(t *testing.T) {
 	v := NewString("hello")
 
-	assert.Equal(t, "hello", v.String())
+	require.Equal(t, "hello", v.String())
 }
 
 func TestString_Kind(t *testing.T) {
 	v := NewString("hello")
 
-	assert.Equal(t, KindString, v.Kind())
+	require.Equal(t, KindString, v.Kind())
 }
 
 func TestString_Hash(t *testing.T) {
 	v1 := NewString("hello")
 	v2 := NewString("world")
 
-	assert.NotEqual(t, v1.Hash(), v2.Hash())
+	require.NotEqual(t, v1.Hash(), v2.Hash())
 }
 
 func TestString_Interface(t *testing.T) {
 	v := NewString("hello")
 
-	assert.Equal(t, "hello", v.Interface())
+	require.Equal(t, "hello", v.Interface())
 }
 
 func TestString_Equal(t *testing.T) {
 	v1 := NewString("hello")
 	v2 := NewString("world")
 
-	assert.True(t, v1.Equal(v1))
-	assert.True(t, v2.Equal(v2))
-	assert.False(t, v1.Equal(v2))
+	require.True(t, v1.Equal(v1))
+	require.True(t, v2.Equal(v2))
+	require.False(t, v1.Equal(v2))
 }
 
 func TestString_Compare(t *testing.T) {
 	v1 := NewString("hello")
 	v2 := NewString("world")
 
-	assert.Equal(t, 0, v1.Compare(v1))
-	assert.Equal(t, 0, v2.Compare(v2))
-	assert.Equal(t, -1, v1.Compare(v2))
-	assert.Equal(t, 1, v2.Compare(v1))
+	require.Equal(t, 0, v1.Compare(v1))
+	require.Equal(t, 0, v2.Compare(v2))
+	require.Equal(t, -1, v1.Compare(v2))
+	require.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestString_MarshalText(t *testing.T) {
 	v := NewString("hello")
 
 	text, err := v.MarshalText()
-	assert.NoError(t, err)
-	assert.Equal(t, "hello", string(text))
+	require.NoError(t, err)
+	require.Equal(t, "hello", string(text))
 }
 
 func TestString_UnmarshalText(t *testing.T) {
 	v := NewString("hello")
 
 	err := v.UnmarshalText([]byte("world"))
-	assert.NoError(t, err)
-	assert.Equal(t, NewString("world"), v)
+	require.NoError(t, err)
+	require.Equal(t, NewString("world"), v)
 }
 
 func TestString_Encode(t *testing.T) {
@@ -97,8 +97,8 @@ func TestString_Encode(t *testing.T) {
 		v := NewString(source.String())
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 
 	t.Run("string", func(t *testing.T) {
@@ -106,8 +106,8 @@ func TestString_Encode(t *testing.T) {
 		v := NewString(source)
 
 		decoded, err := enc.Encode(source)
-		assert.NoError(t, err)
-		assert.Equal(t, v, decoded)
+		require.NoError(t, err)
+		require.Equal(t, v, decoded)
 	})
 }
 
@@ -144,8 +144,8 @@ func TestString_Decode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := dec.Decode(tt.source, tt.target)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
+			require.NoError(t, err)
+			require.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
 		})
 	}
 }

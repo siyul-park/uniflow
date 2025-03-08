@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCompiler_Compile(t *testing.T) {
 	c := NewCompiler()
 	_, err := c.Compile("foo")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestProgram_Run(t *testing.T) {
@@ -22,6 +22,6 @@ func TestProgram_Run(t *testing.T) {
 	p, _ := c.Compile("foo")
 
 	output, err := p.Run(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, "foo", output)
+	require.NoError(t, err)
+	require.Equal(t, "foo", output)
 }

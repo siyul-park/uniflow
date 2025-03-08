@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewEncoderGroup(t *testing.T) {
 	e := NewEncoderGroup[any, any]()
-	assert.NotNil(t, e)
+	require.NotNil(t, e)
 }
 
 func TestEncoderGroup_Add(t *testing.T) {
@@ -19,7 +19,7 @@ func TestEncoderGroup_Add(t *testing.T) {
 	e.Add(EncodeFunc(func(source any) (any, error) {
 		return nil, errors.WithStack(ErrUnsupportedType)
 	}))
-	assert.Equal(t, 1, e.Len())
+	require.Equal(t, 1, e.Len())
 }
 
 func TestEncoderGroup_Encode(t *testing.T) {
@@ -36,13 +36,13 @@ func TestEncoderGroup_Encode(t *testing.T) {
 	v := faker.UUIDHyphenated()
 	res, err := e.Encode(v)
 
-	assert.NoError(t, err)
-	assert.Equal(t, v+suffix, res)
+	require.NoError(t, err)
+	require.Equal(t, v+suffix, res)
 }
 
 func TestNewDecoderGroup(t *testing.T) {
 	e := NewDecoderGroup[any, any]()
-	assert.NotNil(t, e)
+	require.NotNil(t, e)
 }
 
 func TestDecoderGroup_Add(t *testing.T) {
@@ -51,7 +51,7 @@ func TestDecoderGroup_Add(t *testing.T) {
 		return errors.WithStack(ErrUnsupportedType)
 	}))
 
-	assert.Equal(t, 1, e.Len())
+	require.Equal(t, 1, e.Len())
 }
 
 func TestDecoderGroup_Decode(t *testing.T) {
@@ -74,6 +74,6 @@ func TestDecoderGroup_Decode(t *testing.T) {
 	}))
 
 	err := e.Decode(v+suffix, &res)
-	assert.NoError(t, err)
-	assert.Equal(t, v, res)
+	require.NoError(t, err)
+	require.Equal(t, v, res)
 }

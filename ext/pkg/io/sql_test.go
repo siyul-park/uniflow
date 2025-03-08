@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSQLNodeCodec_Compile(t *testing.T) {
@@ -26,9 +26,9 @@ func TestSQLNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewSQLNode(t *testing.T) {
@@ -36,8 +36,8 @@ func TestNewSQLNode(t *testing.T) {
 	defer db.Close()
 
 	n := NewSQLNode(db)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestSQLNode_Isolation(t *testing.T) {
@@ -49,7 +49,7 @@ func TestSQLNode_Isolation(t *testing.T) {
 
 	isolation := sql.LevelSerializable
 	n.SetIsolation(isolation)
-	assert.Equal(t, isolation, n.Isolation())
+	require.Equal(t, isolation, n.Isolation())
 }
 
 func TestSQLNode_SendAndReceive(t *testing.T) {
@@ -69,7 +69,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 				"name VARCHAR(255) NOT NULL"+
 				")",
 		)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -90,9 +90,9 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, nil, outPck.Payload().Interface())
+			require.Equal(t, nil, outPck.Payload().Interface())
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		inPayload = types.NewString("SELECT * FROM Foo")
@@ -103,10 +103,10 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-inWriter.Receive():
 			outPayload, ok := outPck.Payload().(types.Slice)
-			assert.True(t, ok)
-			assert.Equal(t, 1, outPayload.Len())
+			require.True(t, ok)
+			require.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -126,7 +126,7 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 				"name VARCHAR(255) NOT NULL"+
 				")",
 		)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		in := port.NewOut()
 		in.Link(n.In(node.PortIn))
@@ -150,9 +150,9 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-inWriter.Receive():
-			assert.Equal(t, nil, outPck.Payload().Interface())
+			require.Equal(t, nil, outPck.Payload().Interface())
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		inPayload = types.NewString("SELECT * FROM Foo")
@@ -163,10 +163,10 @@ func TestSQLNode_SendAndReceive(t *testing.T) {
 		select {
 		case outPck := <-inWriter.Receive():
 			outPayload, ok := outPck.Payload().(types.Slice)
-			assert.True(t, ok)
-			assert.Equal(t, 1, outPayload.Len())
+			require.True(t, ok)
+			require.Equal(t, 1, outPayload.Len())
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

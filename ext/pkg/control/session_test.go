@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSessionNodeCodec_Compile(t *testing.T) {
@@ -19,24 +19,24 @@ func TestSessionNodeCodec_Compile(t *testing.T) {
 	spec := &SessionNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewSessionNode(t *testing.T) {
 	n := NewSessionNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestSessionNode_Port(t *testing.T) {
 	n := NewSessionNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIO))
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.In(node.PortIO))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
 }
 
 func TestSessionNode_SendAndReceive(t *testing.T) {
@@ -68,9 +68,9 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-ioWriter.Receive():
-		assert.Equal(t, packet.None, outPck)
+		require.Equal(t, packet.None, outPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 
 	inPayload := types.NewMap(types.NewString("foo"), types.NewString("baz"))
@@ -81,10 +81,10 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, types.NewSlice(ioPayload, inPayload), outPck.Payload())
+			require.Equal(t, types.NewSlice(ioPayload, inPayload), outPck.Payload())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	}))
 
@@ -92,9 +92,9 @@ func TestSessionNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case backPck := <-inWriter.Receive():
-		assert.NotNil(t, backPck)
+		require.NotNil(t, backPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

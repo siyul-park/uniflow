@@ -15,7 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDebugger_AddBreakpoint(t *testing.T) {
@@ -39,10 +39,10 @@ func TestDebugger_AddBreakpoint(t *testing.T) {
 	bp := NewBreakpoint(BreakWithSymbol(sb))
 
 	ok := d.AddBreakpoint(bp)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = d.AddBreakpoint(bp)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestDebugger_RemoveBreakpoint(t *testing.T) {
@@ -68,10 +68,10 @@ func TestDebugger_RemoveBreakpoint(t *testing.T) {
 	d.AddBreakpoint(bp)
 
 	ok := d.RemoveBreakpoint(bp)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = d.RemoveBreakpoint(bp)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestDebugger_Breakpoints(t *testing.T) {
@@ -97,7 +97,7 @@ func TestDebugger_Breakpoints(t *testing.T) {
 	d.AddBreakpoint(bp)
 
 	bps := d.Breakpoints()
-	assert.Len(t, bps, 1)
+	require.Len(t, bps, 1)
 }
 
 func TestDebugger_Pause(t *testing.T) {
@@ -147,7 +147,7 @@ func TestDebugger_Pause(t *testing.T) {
 	}()
 
 	ok := d.Pause(ctx)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	d.RemoveBreakpoint(bp)
 }
@@ -199,7 +199,7 @@ func TestDebugger_Step(t *testing.T) {
 	}()
 
 	ok := d.Step(ctx)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	d.RemoveBreakpoint(bp)
 }
@@ -253,7 +253,7 @@ func TestDebugger_Breakpoint(t *testing.T) {
 	d.Pause(ctx)
 
 	cur := d.Breakpoint()
-	assert.Equal(t, bp, cur)
+	require.Equal(t, bp, cur)
 
 	d.RemoveBreakpoint(bp)
 }
@@ -307,7 +307,7 @@ func TestDebugger_Frame(t *testing.T) {
 	d.Pause(ctx)
 
 	cur := d.Frame()
-	assert.NotNil(t, cur)
+	require.NotNil(t, cur)
 
 	d.RemoveBreakpoint(bp)
 }
@@ -361,7 +361,7 @@ func TestDebugger_Process(t *testing.T) {
 	d.Pause(ctx)
 
 	cur := d.Process()
-	assert.Equal(t, proc, cur)
+	require.Equal(t, proc, cur)
 
 	d.RemoveBreakpoint(bp)
 }
@@ -415,7 +415,7 @@ func TestDebugger_Symbol(t *testing.T) {
 	d.Pause(ctx)
 
 	cur := d.Symbol()
-	assert.Equal(t, sb, cur)
+	require.Equal(t, sb, cur)
 
 	d.RemoveBreakpoint(bp)
 }

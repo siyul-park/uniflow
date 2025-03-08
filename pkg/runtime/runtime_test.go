@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRuntime_Load(t *testing.T) {
@@ -47,7 +47,7 @@ func TestRuntime_Load(t *testing.T) {
 	_, _ = specStore.Store(ctx, meta)
 
 	err := r.Load(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRuntime_Reconcile(t *testing.T) {
@@ -87,7 +87,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		defer r.Close()
 
 		err := r.Watch(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		go r.Reconcile(ctx)
 
@@ -101,18 +101,18 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		select {
 		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
+			require.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
+			require.NoError(t, ctx.Err())
 		}
 
 		specStore.Delete(ctx, meta)
 
 		select {
 		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
+			require.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
+			require.NoError(t, ctx.Err())
 		}
 	})
 
@@ -151,7 +151,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		})
 
 		err := r.Watch(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		go r.Reconcile(ctx)
 
@@ -176,19 +176,19 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		select {
 		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
-			assert.Equal(t, scrt.Data, sb.Env()["key"].Data)
+			require.Equal(t, meta.GetID(), sb.ID())
+			require.Equal(t, scrt.Data, sb.Env()["key"].Data)
 		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
+			require.NoError(t, ctx.Err())
 		}
 
 		valueStore.Delete(ctx, scrt)
 
 		select {
 		case sb := <-symbols:
-			assert.Equal(t, meta.GetID(), sb.ID())
+			require.Equal(t, meta.GetID(), sb.ID())
 		case <-ctx.Done():
-			assert.NoError(t, ctx.Err())
+			require.NoError(t, ctx.Err())
 		}
 	})
 }
@@ -225,7 +225,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		defer r.Close()
 
 		err := r.Watch(ctx)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 
 		go r.Reconcile(ctx)
 
@@ -275,7 +275,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		})
 
 		err := r.Watch(ctx)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 
 		go r.Reconcile(ctx)
 

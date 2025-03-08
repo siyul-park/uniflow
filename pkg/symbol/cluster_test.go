@@ -13,13 +13,13 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewCluster(t *testing.T) {
 	n := NewCluster(nil)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestCluster_Inbound(t *testing.T) {
@@ -38,7 +38,7 @@ func TestCluster_Inbound(t *testing.T) {
 		ID:   sb.ID(),
 		Port: node.PortIn,
 	})
-	assert.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.In(node.PortIn))
 }
 
 func TestCluster_Outbound(t *testing.T) {
@@ -57,7 +57,7 @@ func TestCluster_Outbound(t *testing.T) {
 		ID:   sb.ID(),
 		Port: node.PortOut,
 	})
-	assert.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortOut))
 }
 
 func TestCluster_Load(t *testing.T) {
@@ -87,10 +87,10 @@ func TestCluster_Load(t *testing.T) {
 	defer n.Close()
 
 	err := n.Load(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	out := sb2.Node.Out(node.PortOut)
-	assert.Len(t, out.Links(), 1)
+	require.Len(t, out.Links(), 1)
 }
 
 func TestCluster_Unload(t *testing.T) {
@@ -122,10 +122,10 @@ func TestCluster_Unload(t *testing.T) {
 	_ = n.Load(nil)
 
 	err := n.Unload(nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	out := sb2.Node.Out(node.PortOut)
-	assert.Len(t, out.Links(), 0)
+	require.Len(t, out.Links(), 0)
 }
 
 func TestCluster_SendAndReceive(t *testing.T) {
@@ -172,6 +172,6 @@ func TestCluster_SendAndReceive(t *testing.T) {
 	select {
 	case <-inWriter.Receive():
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }

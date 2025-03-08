@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSpecDecoder_Decode(t *testing.T) {
@@ -27,7 +27,7 @@ func TestSpecDecoder_Decode(t *testing.T) {
 
 	var decoded Spec
 	err := dec.Decode(v, &decoded)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, unstructured, decoded)
+	require.Equal(t, unstructured, decoded)
 }

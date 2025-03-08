@@ -3,7 +3,7 @@ package hook
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHooksBuilder_Register(t *testing.T) {
@@ -12,7 +12,7 @@ func TestHooksBuilder_Register(t *testing.T) {
 	b.Register(RegisterFunc(func(_ *Hook) error {
 		return nil
 	}))
-	assert.Len(t, b, 1)
+	require.Len(t, b, 1)
 }
 
 func TestHooksBuilder_AddToScheme(t *testing.T) {
@@ -23,5 +23,5 @@ func TestHooksBuilder_AddToScheme(t *testing.T) {
 	}))
 
 	err := b.AddToHook(New())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

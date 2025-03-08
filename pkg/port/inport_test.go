@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInPort_Open(t *testing.T) {
@@ -19,7 +19,7 @@ func TestInPort_Open(t *testing.T) {
 	r1 := in.Open(proc)
 	r2 := in.Open(proc)
 
-	assert.Equal(t, r1, r2)
+	require.Equal(t, r1, r2)
 }
 
 func TestInPort_OpenHook(t *testing.T) {
@@ -35,10 +35,10 @@ func TestInPort_OpenHook(t *testing.T) {
 	})
 
 	ok := in.AddOpenHook(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = in.AddOpenHook(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	_ = in.Open(proc)
 
@@ -48,14 +48,14 @@ func TestInPort_OpenHook(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 
 	ok = in.RemoveOpenHook(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = in.RemoveOpenHook(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestInPort_CloseHook(t *testing.T) {
@@ -68,10 +68,10 @@ func TestInPort_CloseHook(t *testing.T) {
 	})
 
 	ok := in.AddCloseHook(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = in.AddCloseHook(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	in.Close()
 
@@ -81,7 +81,7 @@ func TestInPort_CloseHook(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 
@@ -98,10 +98,10 @@ func TestInPort_Listener(t *testing.T) {
 	})
 
 	ok := in.AddListener(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = in.AddListener(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	_ = in.Open(proc)
 
@@ -111,7 +111,7 @@ func TestInPort_Listener(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 

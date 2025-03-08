@@ -3,7 +3,7 @@ package packet
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReader_AddHook(t *testing.T) {
@@ -28,14 +28,14 @@ func TestReader_AddHook(t *testing.T) {
 	w.Write(out)
 
 	in := <-r.Read()
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 
 	r.Receive(in)
-	assert.Equal(t, 2, count)
+	require.Equal(t, 2, count)
 
 	back, ok := <-w.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, in, back)
+	require.True(t, ok)
+	require.Equal(t, in, back)
 }
 
 func TestReader_Receive(t *testing.T) {
@@ -57,18 +57,18 @@ func TestReader_Receive(t *testing.T) {
 	in2 := <-r.Read()
 
 	ok := r.Receive(in1)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = r.Receive(in2)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	back1, ok := <-w.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, in1, back1)
+	require.True(t, ok)
+	require.Equal(t, in1, back1)
 
 	back2, ok := <-w.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, in2, back2)
+	require.True(t, ok)
+	require.Equal(t, in2, back2)
 }
 
 func BenchmarkReader_Receive(b *testing.B) {
@@ -87,20 +87,20 @@ func BenchmarkReader_Receive(b *testing.B) {
 			b.StopTimer()
 
 			count := w.Write(out)
-			assert.Equal(b, 1, count)
+			require.Equal(b, 1, count)
 
 			in, ok := <-r.Read()
-			assert.True(b, ok)
-			assert.Equal(b, out, in)
+			require.True(b, ok)
+			require.Equal(b, out, in)
 
 			b.StartTimer()
 
 			ok = r.Receive(in)
-			assert.True(b, ok)
+			require.True(b, ok)
 
 			back, ok := <-w.Receive()
-			assert.True(b, ok)
-			assert.Equal(b, in, back)
+			require.True(b, ok)
+			require.Equal(b, in, back)
 		}
 	})
 }

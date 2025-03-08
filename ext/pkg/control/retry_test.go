@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRetryNodeCodec_Compile(t *testing.T) {
@@ -23,23 +23,23 @@ func TestRetryNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewRetryNode(t *testing.T) {
 	n := NewRetryNode(0)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestRetryNode_Port(t *testing.T) {
 	n := NewRetryNode(0)
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
 }
 
 func TestRetryNode_SendAndReceive(t *testing.T) {
@@ -75,10 +75,10 @@ func TestRetryNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, limit+1, count)
-		assert.IsType(t, outPck.Payload(), types.NewError(nil))
+		require.Equal(t, limit+1, count)
+		require.IsType(t, outPck.Payload(), types.NewError(nil))
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

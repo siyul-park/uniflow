@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCompress(t *testing.T) {
@@ -23,23 +23,23 @@ func TestCompress(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var encoded bytes.Buffer
 			writer, err := Compress(&encoded, tt.encoding)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			data := []byte("hello, world")
 			_, err = writer.Write(data)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			if closer, ok := writer.(io.Closer); ok {
-				assert.NoError(t, closer.Close())
+				require.NoError(t, closer.Close())
 			}
 
 			var decoded bytes.Buffer
 			reader, err := Decompress(&encoded, tt.encoding)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			_, err = io.Copy(&decoded, reader)
-			assert.NoError(t, err)
-			assert.Equal(t, data, decoded.Bytes())
+			require.NoError(t, err)
+			require.Equal(t, data, decoded.Bytes())
 		})
 	}
 }

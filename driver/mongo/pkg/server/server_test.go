@@ -3,12 +3,12 @@ package server
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAndRelease(t *testing.T) {
 	s := New()
-	assert.NotNil(t, s)
+	require.NotNil(t, s)
 
 	Release(s)
 }

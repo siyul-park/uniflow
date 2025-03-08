@@ -8,7 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -26,7 +26,7 @@ func TestStore_Index(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	err := st.Index(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestStore_Watch(t *testing.T) {
@@ -44,15 +44,15 @@ func TestStore_Watch(t *testing.T) {
 	st := NewStore(c.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	stream, err := st.Watch(ctx)
-	assert.NoError(t, err)
-	assert.NotNil(t, stream)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
 
 	defer stream.Close()
 
 	go func() {
 		for {
 			if event, ok := <-stream.Next(); ok {
-				assert.NotZero(t, event.ID)
+				require.NotZero(t, event.ID)
 			} else {
 				return
 			}
@@ -93,12 +93,12 @@ func TestStore_Load(t *testing.T) {
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	loaded, err := st.Load(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Len(t, loaded, 2)
+	require.NoError(t, err)
+	require.Len(t, loaded, 2)
 }
 
 func TestStore_Store(t *testing.T) {
@@ -125,12 +125,12 @@ func TestStore_Store(t *testing.T) {
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	loaded, err := st.Load(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Len(t, loaded, 2)
+	require.NoError(t, err)
+	require.Len(t, loaded, 2)
 }
 
 func TestStore_Swap(t *testing.T) {
@@ -157,16 +157,16 @@ func TestStore_Swap(t *testing.T) {
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	count, err = st.Swap(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	loaded, err := st.Load(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Len(t, loaded, 2)
+	require.NoError(t, err)
+	require.Len(t, loaded, 2)
 }
 
 func TestMemStore_Delete(t *testing.T) {
@@ -193,14 +193,14 @@ func TestMemStore_Delete(t *testing.T) {
 	}
 
 	count, err := st.Store(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	count, err = st.Delete(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	require.NoError(t, err)
+	require.Equal(t, count, 2)
 
 	loaded, err := st.Load(ctx, meta1, meta2)
-	assert.NoError(t, err)
-	assert.Len(t, loaded, 0)
+	require.NoError(t, err)
+	require.Len(t, loaded, 0)
 }

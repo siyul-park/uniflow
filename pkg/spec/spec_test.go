@@ -6,7 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAs(t *testing.T) {
@@ -22,42 +22,42 @@ func TestAs(t *testing.T) {
 
 	unstructured := &Unstructured{}
 	err := As(meta, unstructured)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestMeta_ID(t *testing.T) {
 	meta := &Meta{}
 	id := uuid.Must(uuid.NewV7())
 	meta.SetID(id)
-	assert.Equal(t, id, meta.GetID())
+	require.Equal(t, id, meta.GetID())
 }
 
 func TestMeta_Kind(t *testing.T) {
 	meta := &Meta{}
 	kind := faker.UUIDHyphenated()
 	meta.SetKind(kind)
-	assert.Equal(t, kind, meta.GetKind())
+	require.Equal(t, kind, meta.GetKind())
 }
 
 func TestMeta_Namespace(t *testing.T) {
 	meta := &Meta{}
 	namespace := faker.UUIDHyphenated()
 	meta.SetNamespace(namespace)
-	assert.Equal(t, namespace, meta.GetNamespace())
+	require.Equal(t, namespace, meta.GetNamespace())
 }
 
 func TestMeta_Name(t *testing.T) {
 	meta := &Meta{}
 	name := faker.UUIDHyphenated()
 	meta.SetName(name)
-	assert.Equal(t, name, meta.GetName())
+	require.Equal(t, name, meta.GetName())
 }
 
 func TestMeta_Annotations(t *testing.T) {
 	meta := &Meta{}
 	annotations := map[string]string{"key": "value"}
 	meta.SetAnnotations(annotations)
-	assert.Equal(t, annotations, meta.GetAnnotations())
+	require.Equal(t, annotations, meta.GetAnnotations())
 }
 
 func TestMeta_Env(t *testing.T) {
@@ -70,7 +70,7 @@ func TestMeta_Env(t *testing.T) {
 		},
 	}
 	meta.SetEnv(env)
-	assert.Equal(t, env, meta.GetEnv())
+	require.Equal(t, env, meta.GetEnv())
 }
 
 func TestMeta_Ports(t *testing.T) {
@@ -84,7 +84,7 @@ func TestMeta_Ports(t *testing.T) {
 		},
 	}
 	meta.SetPorts(ports)
-	assert.Equal(t, ports, meta.GetPorts())
+	require.Equal(t, ports, meta.GetPorts())
 }
 
 func TestMeta_NamespacedName(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMeta_NamespacedName(t *testing.T) {
 			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
 			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
 		}
-		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.GetNamespacedName())
+		require.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.GetNamespacedName())
 	})
 	t.Run("Name", func(t *testing.T) {
 		meta := &Meta{
@@ -109,7 +109,7 @@ func TestMeta_NamespacedName(t *testing.T) {
 			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
 			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
 		}
-		assert.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.GetNamespacedName())
+		require.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.GetNamespacedName())
 	})
 }
 
@@ -132,8 +132,8 @@ func TestMeta_IsBound(t *testing.T) {
 		},
 	}
 
-	assert.True(t, meta.IsBound(sec1))
-	assert.False(t, meta.IsBound(sec2))
+	require.True(t, meta.IsBound(sec1))
+	require.False(t, meta.IsBound(sec2))
 }
 
 func TestMeta_Bind(t *testing.T) {
@@ -153,6 +153,6 @@ func TestMeta_Bind(t *testing.T) {
 	}
 
 	err := meta.Bind(sec)
-	assert.NoError(t, err)
-	assert.Equal(t, sec.Data, meta.GetEnv()["FOO"].Data)
+	require.NoError(t, err)
+	require.Equal(t, sec.Data, meta.GetEnv()["FOO"].Data)
 }

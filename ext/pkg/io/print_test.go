@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrintNodeCodec_Compile(t *testing.T) {
@@ -26,9 +26,9 @@ func TestPrintNodeCodec_Compile(t *testing.T) {
 		}
 
 		n, err := codec.Compile(spec)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-		assert.NoError(t, n.Close())
+		require.NoError(t, err)
+		require.NotNil(t, n)
+		require.NoError(t, n.Close())
 	})
 
 	t.Run("dynamic", func(t *testing.T) {
@@ -39,17 +39,17 @@ func TestPrintNodeCodec_Compile(t *testing.T) {
 		spec := &PrintNodeSpec{}
 
 		n, err := codec.Compile(spec)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-		assert.NoError(t, n.Close())
+		require.NoError(t, err)
+		require.NotNil(t, n)
+		require.NoError(t, n.Close())
 	})
 }
 
 func TestNewPrintNode(t *testing.T) {
 	buf := &bytes.Buffer{}
 	n := NewPrintNode(&nopReadWriteCloser{ReadWriter: buf})
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestPrintNode_SendAndReceive(t *testing.T) {
@@ -79,9 +79,9 @@ func TestPrintNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case <-inWriter.Receive():
-		assert.Equal(t, "hello 123", buf.String())
+		require.Equal(t, "hello 123", buf.String())
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 
@@ -90,8 +90,8 @@ func TestNewDynPrintNode(t *testing.T) {
 		return &nopReadWriteCloser{bytes.NewBuffer(nil)}, nil
 	})
 	n := NewDynPrintNode(fs)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestDynPrintNode_SendAndReceive(t *testing.T) {
@@ -125,8 +125,8 @@ func TestDynPrintNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case <-inWriter.Receive():
-		assert.Equal(t, "hello 123", buf.String())
+		require.Equal(t, "hello 123", buf.String())
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }

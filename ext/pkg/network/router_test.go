@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRouteNodeCodec_Compile(t *testing.T) {
@@ -29,15 +29,15 @@ func TestRouteNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewRouteNode(t *testing.T) {
 	n := NewRouteNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestRouteNode_Add(t *testing.T) {
@@ -104,8 +104,8 @@ func TestRouteNode_Add(t *testing.T) {
 				}
 
 				port, param := n.Find(http.MethodGet, expectPath)
-				assert.Equal(t, expectPort, port)
-				assert.Equal(t, expectParam, param)
+				require.Equal(t, expectPort, port)
+				require.Equal(t, expectParam, param)
 			}
 		})
 	}
@@ -160,8 +160,8 @@ func TestRouteNode_Find(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s %s", tt.whenMethod, tt.whenPath), func(t *testing.T) {
 			port, params := n.Find(tt.whenMethod, tt.whenPath)
-			assert.Equal(t, tt.expectPort, port)
-			assert.Equal(t, tt.expectParams, params)
+			require.Equal(t, tt.expectPort, port)
+			require.Equal(t, tt.expectParams, params)
 		})
 	}
 }
@@ -252,17 +252,17 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 			select {
 			case outPck := <-outReader.Read():
 				params, _ := types.Get[map[string]string](outPck.Payload(), "params")
-				assert.Equal(t, tt.expectParams, params)
+				require.Equal(t, tt.expectParams, params)
 				outReader.Receive(outPck)
 			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
+				require.Fail(t, ctx.Err().Error())
 			}
 
 			select {
 			case backPck := <-inWriter.Receive():
-				assert.NotNil(t, backPck)
+				require.NotNil(t, backPck)
 			case <-ctx.Done():
-				assert.Fail(t, ctx.Err().Error())
+				require.Fail(t, ctx.Err().Error())
 			}
 		})
 	}

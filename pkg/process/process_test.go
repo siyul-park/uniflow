@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
 	proc := New()
 	defer proc.Exit(nil)
 
-	assert.NotZero(t, proc.ID())
-	assert.Equal(t, nil, proc.Err())
-	assert.NotZero(t, proc.StartTime())
-	assert.Equal(t, StatusRunning, proc.Status())
+	require.NotZero(t, proc.ID())
+	require.Equal(t, nil, proc.Err())
+	require.NotZero(t, proc.StartTime())
+	require.Equal(t, StatusRunning, proc.Status())
 }
 
 func TestProcess_Keys(t *testing.T) {
@@ -29,7 +29,7 @@ func TestProcess_Keys(t *testing.T) {
 	proc.SetValue(k, v)
 
 	keys := proc.Keys()
-	assert.Contains(t, keys, k)
+	require.Contains(t, keys, k)
 }
 
 func TestProcess_Value(t *testing.T) {
@@ -40,12 +40,12 @@ func TestProcess_Value(t *testing.T) {
 	v := faker.UUIDHyphenated()
 
 	r := proc.Value(k)
-	assert.Nil(t, r)
+	require.Nil(t, r)
 
 	proc.SetValue(k, v)
 
 	r = proc.Value(k)
-	assert.Equal(t, v, r)
+	require.Equal(t, v, r)
 }
 
 func TestProcess_SetValue(t *testing.T) {
@@ -60,7 +60,7 @@ func TestProcess_SetValue(t *testing.T) {
 	proc.SetValue(k, v2)
 
 	r := proc.Value(k)
-	assert.Equal(t, v2, r)
+	require.Equal(t, v2, r)
 }
 
 func TestProcess_RemoveValue(t *testing.T) {
@@ -73,19 +73,19 @@ func TestProcess_RemoveValue(t *testing.T) {
 	proc.SetValue(k, v)
 
 	r := proc.RemoveValue(k)
-	assert.Equal(t, v, r)
+	require.Equal(t, v, r)
 
 	r = proc.Value(k)
-	assert.Nil(t, r)
+	require.Nil(t, r)
 }
 
 func TestProcess_Exit(t *testing.T) {
 	proc := New()
 
 	proc.Exit(nil)
-	assert.ErrorIs(t, proc.Err(), context.Canceled)
-	assert.NotZero(t, proc.EndTime())
-	assert.Equal(t, StatusTerminated, proc.Status())
+	require.ErrorIs(t, proc.Err(), context.Canceled)
+	require.NotZero(t, proc.EndTime())
+	require.Equal(t, StatusTerminated, proc.Status())
 }
 
 func TestProcess_AddExitHook(t *testing.T) {
@@ -98,7 +98,7 @@ func TestProcess_AddExitHook(t *testing.T) {
 	proc.AddExitHook(h)
 
 	proc.Exit(nil)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 }
 
 func TestProcess_Fork(t *testing.T) {
@@ -108,7 +108,7 @@ func TestProcess_Fork(t *testing.T) {
 	child := proc.Fork()
 	defer child.Exit(nil)
 
-	assert.Equal(t, proc, child.Parent())
+	require.Equal(t, proc, child.Parent())
 }
 
 func TestProcess_Join(t *testing.T) {
@@ -130,7 +130,7 @@ func TestProcess_Join(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 
 	done = make(chan struct{})
@@ -144,7 +144,7 @@ func TestProcess_Join(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 

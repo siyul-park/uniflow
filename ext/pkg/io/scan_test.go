@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScanNodeCodec_Compile(t *testing.T) {
@@ -26,9 +26,9 @@ func TestScanNodeCodec_Compile(t *testing.T) {
 		}
 
 		n, err := codec.Compile(spec)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-		assert.NoError(t, n.Close())
+		require.NoError(t, err)
+		require.NotNil(t, n)
+		require.NoError(t, n.Close())
 	})
 
 	t.Run("dynamic", func(t *testing.T) {
@@ -39,16 +39,16 @@ func TestScanNodeCodec_Compile(t *testing.T) {
 		spec := &ScanNodeSpec{}
 
 		n, err := codec.Compile(spec)
-		assert.NoError(t, err)
-		assert.NotNil(t, n)
-		assert.NoError(t, n.Close())
+		require.NoError(t, err)
+		require.NotNil(t, n)
+		require.NoError(t, n.Close())
 	})
 }
 
 func TestNewScanNode(t *testing.T) {
 	n := NewScanNode(&nopReadWriteCloser{bytes.NewBuffer(nil)})
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestScanNode_SendAndReceive(t *testing.T) {
@@ -75,16 +75,16 @@ func TestScanNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, types.KindSlice, outPck.Payload().Kind())
+		require.Equal(t, types.KindSlice, outPck.Payload().Kind())
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 
 func TestNewDynScanNode(t *testing.T) {
 	n := NewDynScanNode(NewOSFileSystem())
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestDynScanNode_SendAndReceive(t *testing.T) {
@@ -117,8 +117,8 @@ func TestDynScanNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.Equal(t, types.KindSlice, outPck.Payload().Kind())
+		require.Equal(t, types.KindSlice, outPck.Payload().Kind())
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }

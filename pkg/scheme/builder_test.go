@@ -3,7 +3,7 @@ package scheme
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSchemeBuilder_Register(t *testing.T) {
@@ -12,7 +12,7 @@ func TestSchemeBuilder_Register(t *testing.T) {
 	b.Register(RegisterFunc(func(_ *Scheme) error {
 		return nil
 	}))
-	assert.Len(t, b, 1)
+	require.Len(t, b, 1)
 }
 
 func TestSchemeBuilder_AddToScheme(t *testing.T) {
@@ -23,7 +23,7 @@ func TestSchemeBuilder_AddToScheme(t *testing.T) {
 	}))
 
 	err := b.AddToScheme(New())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSchemeBuilder_Build(t *testing.T) {
@@ -34,6 +34,6 @@ func TestSchemeBuilder_Build(t *testing.T) {
 	}))
 
 	s, err := b.Build()
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
+	require.NoError(t, err)
+	require.NotNil(t, s)
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMarshal(t *testing.T) {
@@ -76,8 +76,8 @@ func TestMarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
 			res, err := Marshal(tt.when)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expect, res)
+			require.NoError(t, err)
+			require.Equal(t, tt.expect, res)
 		})
 	}
 }
@@ -147,8 +147,8 @@ func TestUnmarshal(t *testing.T) {
 			zero := reflect.New(reflect.ValueOf(tt.expect).Type())
 
 			err := Unmarshal(tt.when, zero.Interface())
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expect, zero.Elem().Interface())
+			require.NoError(t, err)
+			require.Equal(t, tt.expect, zero.Elem().Interface())
 		})
 	}
 }
@@ -160,8 +160,8 @@ func TestShortcut_Encode(t *testing.T) {
 	source := True
 
 	decoded, err := enc.Encode(source)
-	assert.NoError(t, err)
-	assert.Equal(t, source, decoded)
+	require.NoError(t, err)
+	require.Equal(t, source, decoded)
 }
 
 func TestShortcut_Decode(t *testing.T) {
@@ -172,8 +172,8 @@ func TestShortcut_Decode(t *testing.T) {
 
 	var decoded Value
 	err := dec.Decode(source, &decoded)
-	assert.NoError(t, err)
-	assert.Equal(t, source, decoded)
+	require.NoError(t, err)
+	require.Equal(t, source, decoded)
 }
 
 func TestPointer_Encode(t *testing.T) {
@@ -184,8 +184,8 @@ func TestPointer_Encode(t *testing.T) {
 	source := True
 
 	decoded, err := enc.Encode(source)
-	assert.NoError(t, err)
-	assert.Equal(t, source, decoded)
+	require.NoError(t, err)
+	require.Equal(t, source, decoded)
 }
 
 func TestPointer_Decode(t *testing.T) {
@@ -197,6 +197,6 @@ func TestPointer_Decode(t *testing.T) {
 
 	var decoded Value
 	err := dec.Decode(source, lo.ToPtr(&decoded))
-	assert.NoError(t, err)
-	assert.Equal(t, source, decoded)
+	require.NoError(t, err)
+	require.Equal(t, source, decoded)
 }

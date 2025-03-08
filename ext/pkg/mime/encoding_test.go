@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncode(t *testing.T) {
@@ -130,8 +130,8 @@ func TestEncode(t *testing.T) {
 			err := Encode(w, tt.whenValue, textproto.MIMEHeader{
 				HeaderContentType: []string{tt.whenType},
 			})
-			assert.NoError(t, err)
-			assert.Equal(t, string(tt.expect), w.String())
+			require.NoError(t, err)
+			require.Equal(t, string(tt.expect), w.String())
 		})
 	}
 }
@@ -209,13 +209,13 @@ func TestDecode(t *testing.T) {
 			decode, err := Decode(bytes.NewBuffer(tt.whenValue), textproto.MIMEHeader{
 				HeaderContentType: []string{tt.whenType},
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var expect any
 			var actual any
 			_ = types.Unmarshal(tt.expect, &expect)
 			_ = types.Unmarshal(decode, &actual)
-			assert.Equal(t, expect, actual)
+			require.Equal(t, expect, actual)
 		})
 	}
 }

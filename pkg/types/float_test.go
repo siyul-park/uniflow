@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFloat_Float(t *testing.T) {
@@ -21,7 +21,7 @@ func TestFloat_Float(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.source.Float())
+			require.Equal(t, tt.want, tt.source.Float())
 		})
 	}
 }
@@ -38,7 +38,7 @@ func TestFloat_Kind(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.source.Kind())
+			require.Equal(t, tt.want, tt.source.Kind())
 		})
 	}
 }
@@ -55,7 +55,7 @@ func TestFloat_Hash(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NotEqual(t, tt.v1.Hash(), tt.v2.Hash())
+			require.NotEqual(t, tt.v1.Hash(), tt.v2.Hash())
 		})
 	}
 }
@@ -72,7 +72,7 @@ func TestFloat_Interface(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.source.Interface())
+			require.Equal(t, tt.want, tt.source.Interface())
 		})
 	}
 }
@@ -92,7 +92,7 @@ func TestFloat_Equal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.equals, tt.v1.Equal(tt.v2))
+			require.Equal(t, tt.equals, tt.v1.Equal(tt.v2))
 		})
 	}
 }
@@ -114,7 +114,7 @@ func TestFloat_Compare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.compare, tt.v1.Compare(tt.v2))
+			require.Equal(t, tt.compare, tt.v1.Compare(tt.v2))
 		})
 	}
 }
@@ -132,8 +132,8 @@ func TestFloat_MarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			encoded, err := json.Marshal(tt.source)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, string(encoded))
+			require.NoError(t, err)
+			require.Equal(t, tt.want, string(encoded))
 		})
 	}
 }
@@ -152,8 +152,8 @@ func TestFloat_UnmarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			decoded := reflect.New(reflect.TypeOf(tt.want)).Interface().(Float)
 			err := json.Unmarshal([]byte(tt.source), decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want.Interface(), decoded.Interface())
+			require.NoError(t, err)
+			require.Equal(t, tt.want.Interface(), decoded.Interface())
 		})
 	}
 }
@@ -174,8 +174,8 @@ func TestFloat_Encode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			decoded, err := enc.Encode(tt.source)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, decoded)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, decoded)
 		})
 	}
 }
@@ -208,8 +208,8 @@ func TestFloat_Decode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := dec.Decode(tt.source, tt.target)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
+			require.NoError(t, err)
+			require.Equal(t, tt.want, reflect.ValueOf(tt.target).Elem().Interface())
 		})
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
@@ -33,17 +33,17 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		}
 
 		data, err := json.Marshal(meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		file, err := fs.Create(filename)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer file.Close()
 
 		_, err = file.Write(data)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		_, err = specStore.Store(ctx, meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
 			SpecStore:  specStore,
@@ -54,11 +54,11 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		cmd.SetArgs([]string{specs, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		r, err := specStore.Load(ctx, meta)
-		assert.NoError(t, err)
-		assert.Len(t, r, 0)
+		require.NoError(t, err)
+		require.Len(t, r, 0)
 	})
 
 	t.Run("DeleteValue", func(t *testing.T) {
@@ -73,17 +73,17 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		}
 
 		data, err := json.Marshal(scrt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		file, err := fs.Create(filename)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer file.Close()
 
 		_, err = file.Write(data)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		_, err = valueStore.Store(ctx, scrt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
 			SpecStore:  specStore,
@@ -94,10 +94,10 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		cmd.SetArgs([]string{values, fmt.Sprintf("--%s", flagFilename), filename})
 
 		err = cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		rValue, err := valueStore.Load(ctx, scrt)
-		assert.NoError(t, err)
-		assert.Len(t, rValue, 0)
+		require.NoError(t, err)
+		require.Len(t, rValue, 0)
 	})
 }

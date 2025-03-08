@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAgent_Watch(t *testing.T) {
@@ -22,16 +22,16 @@ func TestAgent_Watch(t *testing.T) {
 	w := NewProcessWatcher(func(proc *process.Process) {})
 
 	ok := a.Watch(w)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = a.Watch(w)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = a.Unwatch(w)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = a.Unwatch(w)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestAgent_Symbol(t *testing.T) {
@@ -52,8 +52,8 @@ func TestAgent_Symbol(t *testing.T) {
 	a.Load(sb)
 	defer a.Unload(sb)
 
-	assert.Equal(t, sb, a.Symbol(sb.ID()))
-	assert.Contains(t, a.Symbols(), sb)
+	require.Equal(t, sb, a.Symbol(sb.ID()))
+	require.Contains(t, a.Symbols(), sb)
 }
 
 func TestAgent_Process(t *testing.T) {
@@ -64,8 +64,8 @@ func TestAgent_Process(t *testing.T) {
 	a.Watch(NewProcessWatcher(func(proc *process.Process) {
 		defer close(done)
 
-		assert.Equal(t, proc, a.Process(proc.ID()))
-		assert.Contains(t, a.Processes(), proc)
+		require.Equal(t, proc, a.Process(proc.ID()))
+		require.Contains(t, a.Processes(), proc)
 	}))
 
 	sb := &symbol.Symbol{
@@ -102,7 +102,7 @@ func TestAgent_Frames(t *testing.T) {
 	a.Watch(NewFrameWatcher(func(frame *Frame) {
 		count += 1
 
-		assert.Contains(t, a.Frames(frame.Process.ID()), frame)
+		require.Contains(t, a.Frames(frame.Process.ID()), frame)
 	}))
 
 	sb := &symbol.Symbol{
@@ -144,5 +144,5 @@ func TestAgent_Frames(t *testing.T) {
 	outReader.Receive(pck)
 	<-inWriter.Receive()
 
-	assert.Equal(t, 4, count)
+	require.Equal(t, 4, count)
 }

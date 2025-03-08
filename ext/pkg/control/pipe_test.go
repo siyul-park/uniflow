@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPipeNodeCodec_Compile(t *testing.T) {
@@ -21,26 +21,26 @@ func TestPipeNodeCodec_Compile(t *testing.T) {
 	spec := &PipeNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewPipeNode(t *testing.T) {
 	n := NewPipeNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestPipeNode_Port(t *testing.T) {
 	n := NewPipeNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
 func TestPipeNode_SendAndReceive(t *testing.T) {
@@ -77,17 +77,17 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader1.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
+			require.Equal(t, inPayload, outPck.Payload())
 			outReader1.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
-			assert.Equal(t, inPayload, backPck.Payload())
+			require.Equal(t, inPayload, backPck.Payload())
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -124,17 +124,17 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-errReader.Read():
-			assert.NotNil(t, outPck)
+			require.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-inWriter.Receive():
-			assert.NotNil(t, backPck)
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

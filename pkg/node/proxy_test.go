@@ -3,7 +3,7 @@ package node
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNoCloser(t *testing.T) {
@@ -11,8 +11,8 @@ func TestNoCloser(t *testing.T) {
 	defer n.Close()
 
 	p := NoCloser(n)
-	assert.Equal(t, n, Unwrap(p))
-	assert.NoError(t, p.Close())
+	require.Equal(t, n, Unwrap(p))
+	require.NoError(t, p.Close())
 }
 
 func TestUnwrap(t *testing.T) {
@@ -20,7 +20,7 @@ func TestUnwrap(t *testing.T) {
 		n := NewOneToOneNode(nil)
 		defer n.Close()
 
-		assert.Nil(t, Unwrap(n))
+		require.Nil(t, Unwrap(n))
 	})
 
 	t.Run("ProxyNode", func(t *testing.T) {
@@ -28,7 +28,7 @@ func TestUnwrap(t *testing.T) {
 		defer n.Close()
 
 		p := NoCloser(n)
-		assert.Equal(t, n, Unwrap(p))
+		require.Equal(t, n, Unwrap(p))
 	})
 }
 
@@ -38,8 +38,8 @@ func TestAs(t *testing.T) {
 		defer n.Close()
 
 		var target *OneToOneNode
-		assert.True(t, As(n, &target))
-		assert.Equal(t, n, target)
+		require.True(t, As(n, &target))
+		require.Equal(t, n, target)
 	})
 
 	t.Run("ProxyNode", func(t *testing.T) {
@@ -48,8 +48,8 @@ func TestAs(t *testing.T) {
 
 		p := NoCloser(n)
 		var target *OneToOneNode
-		assert.True(t, As(p, &target))
-		assert.Equal(t, n, target)
+		require.True(t, As(p, &target))
+		require.Equal(t, n, target)
 	})
 }
 
@@ -58,5 +58,5 @@ func TestNoCloser_Close(t *testing.T) {
 	defer n.Close()
 
 	p := NoCloser(n)
-	assert.NoError(t, p.Close())
+	require.NoError(t, p.Close())
 }

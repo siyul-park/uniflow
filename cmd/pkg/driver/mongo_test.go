@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewMongoDriver(t *testing.T) {
@@ -12,9 +12,9 @@ func TestNewMongoDriver(t *testing.T) {
 	defer cancel()
 
 	driver, err := NewMongoDriver("memongodb://", "")
-	assert.NoError(t, err)
-	assert.NotNil(t, driver)
-	assert.NoError(t, driver.Close(ctx))
+	require.NoError(t, err)
+	require.NotNil(t, driver)
+	require.NoError(t, driver.Close(ctx))
 }
 
 func TestMongoDriver_SpecStore(t *testing.T) {
@@ -25,8 +25,8 @@ func TestMongoDriver_SpecStore(t *testing.T) {
 	defer driver.Close(ctx)
 
 	store, err := driver.NewSpecStore(ctx, "")
-	assert.NoError(t, err)
-	assert.NotNil(t, store)
+	require.NoError(t, err)
+	require.NotNil(t, store)
 }
 
 func TestMongoDriver_ValueStore(t *testing.T) {
@@ -37,6 +37,6 @@ func TestMongoDriver_ValueStore(t *testing.T) {
 	defer driver.Close(ctx)
 
 	store, err := driver.NewValueStore(ctx, "")
-	assert.NoError(t, err)
-	assert.NotNil(t, store)
+	require.NoError(t, err)
+	require.NotNil(t, store)
 }

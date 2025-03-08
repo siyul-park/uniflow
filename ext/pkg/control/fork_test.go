@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestForkNodeCodec_Compile(t *testing.T) {
@@ -19,24 +19,24 @@ func TestForkNodeCodec_Compile(t *testing.T) {
 	spec := &ForkNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewForkNode(t *testing.T) {
 	n := NewForkNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestForkNode_Port(t *testing.T) {
 	n := NewForkNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
 }
 
 func TestForkNode_SendAndReceive(t *testing.T) {
@@ -66,10 +66,10 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-outReader.Read():
-			assert.Equal(t, inPayload, outPck.Payload())
+			require.Equal(t, inPayload, outPck.Payload())
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	}))
 
@@ -77,9 +77,9 @@ func TestForkNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case backPck := <-inWriter.Receive():
-		assert.NotNil(t, backPck)
+		require.NotNil(t, backPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

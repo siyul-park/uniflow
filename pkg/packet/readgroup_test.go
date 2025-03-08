@@ -3,7 +3,7 @@ package packet
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadGroup_Read(t *testing.T) {
@@ -19,8 +19,8 @@ func TestReadGroup_Read(t *testing.T) {
 	pck := New(nil)
 
 	reads := rg.Read(r1, pck)
-	assert.Len(t, reads, 0)
+	require.Len(t, reads, 0)
 
 	reads = rg.Read(r2, pck)
-	assert.Len(t, reads, 2)
+	require.Len(t, reads, 2)
 }

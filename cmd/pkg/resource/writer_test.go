@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWriter_Write(t *testing.T) {
@@ -52,8 +52,8 @@ func TestWriter_Write(t *testing.T) {
 			writer := NewWriter(&buf)
 
 			err := writer.Write(tt.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, buf.String())
+			require.NoError(t, err)
+			require.Equal(t, tt.expected, buf.String())
 		})
 	}
 }

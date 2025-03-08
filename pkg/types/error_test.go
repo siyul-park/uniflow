@@ -5,29 +5,29 @@ import (
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestError_NewError(t *testing.T) {
 	source := errors.New("test error")
 	v := NewError(source)
 
-	assert.NotNil(t, v)
-	assert.Equal(t, source, v.value)
+	require.NotNil(t, v)
+	require.Equal(t, source, v.value)
 }
 
 func TestError_Error(t *testing.T) {
 	source := errors.New("test error")
 	v := NewError(source)
 
-	assert.Equal(t, "test error", v.Error())
+	require.Equal(t, "test error", v.Error())
 }
 
 func TestError_Kind(t *testing.T) {
 	source := errors.New("test error")
 	v := NewError(source)
 
-	assert.Equal(t, KindError, v.Kind())
+	require.Equal(t, KindError, v.Kind())
 }
 
 func TestError_Hash(t *testing.T) {
@@ -37,14 +37,14 @@ func TestError_Hash(t *testing.T) {
 	v1 := NewError(source1)
 	v2 := NewError(source2)
 
-	assert.NotEqual(t, v1.Hash(), v2.Hash())
+	require.NotEqual(t, v1.Hash(), v2.Hash())
 }
 
 func TestError_Interface(t *testing.T) {
 	err := errors.New("test error")
 	v := NewError(err)
 
-	assert.Equal(t, err, v.Interface())
+	require.Equal(t, err, v.Interface())
 }
 
 func TestError_Equal(t *testing.T) {
@@ -54,9 +54,9 @@ func TestError_Equal(t *testing.T) {
 	v1 := NewError(source1)
 	v2 := NewError(source2)
 
-	assert.True(t, v1.Equal(v1))
-	assert.True(t, v2.Equal(v2))
-	assert.False(t, v1.Equal(v2))
+	require.True(t, v1.Equal(v1))
+	require.True(t, v2.Equal(v2))
+	require.False(t, v1.Equal(v2))
 }
 
 func TestError_Compare(t *testing.T) {
@@ -66,9 +66,9 @@ func TestError_Compare(t *testing.T) {
 	v1 := NewError(source1)
 	v2 := NewError(source2)
 
-	assert.Equal(t, 0, v1.Compare(v1))
-	assert.NotEqual(t, 0, v1.Compare(v2))
-	assert.NotEqual(t, 0, v2.Compare(v1))
+	require.Equal(t, 0, v1.Compare(v1))
+	require.NotEqual(t, 0, v1.Compare(v2))
+	require.NotEqual(t, 0, v2.Compare(v1))
 }
 
 func TestError_MarshalText(t *testing.T) {
@@ -76,16 +76,16 @@ func TestError_MarshalText(t *testing.T) {
 	v := NewError(source)
 
 	text, source := v.MarshalText()
-	assert.NoError(t, source)
-	assert.Equal(t, "test error", string(text))
+	require.NoError(t, source)
+	require.Equal(t, "test error", string(text))
 }
 
 func TestError_UnmarshalText(t *testing.T) {
 	v := NewError(errors.New("test error"))
 
 	err := v.UnmarshalText([]byte("test error"))
-	assert.NoError(t, err)
-	assert.Equal(t, "test error", v.Error())
+	require.NoError(t, err)
+	require.Equal(t, "test error", v.Error())
 }
 
 func TestError_MarshalBinary(t *testing.T) {
@@ -93,16 +93,16 @@ func TestError_MarshalBinary(t *testing.T) {
 	v := NewError(source)
 
 	data, source := v.MarshalBinary()
-	assert.NoError(t, source)
-	assert.Equal(t, []byte("test error"), data)
+	require.NoError(t, source)
+	require.Equal(t, []byte("test error"), data)
 }
 
 func TestError_UnmarshalBinary(t *testing.T) {
 	v := NewError(errors.New("test error"))
 
 	err := v.UnmarshalBinary([]byte("test error"))
-	assert.NoError(t, err)
-	assert.Equal(t, "test error", v.Error())
+	require.NoError(t, err)
+	require.Equal(t, "test error", v.Error())
 }
 
 func TestError_Encode(t *testing.T) {
@@ -113,8 +113,8 @@ func TestError_Encode(t *testing.T) {
 	v := NewError(source)
 
 	encoded, err := enc.Encode(source)
-	assert.NoError(t, err)
-	assert.Equal(t, v, encoded)
+	require.NoError(t, err)
+	require.Equal(t, v, encoded)
 }
 
 func TestError_Decode(t *testing.T) {
@@ -126,11 +126,11 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		decoded := NewBuffer(nil)
-		assert.NoError(t, dec.Decode(v, decoded))
+		require.NoError(t, dec.Decode(v, decoded))
 
 		data, err := decoded.Bytes()
-		assert.NoError(t, err)
-		assert.Equal(t, source.Error(), string(data))
+		require.NoError(t, err)
+		require.Equal(t, source.Error(), string(data))
 	})
 
 	t.Run("encoding.TextUnmarshaler", func(t *testing.T) {
@@ -138,8 +138,8 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		decoded := NewString("")
-		assert.NoError(t, dec.Decode(v, &decoded))
-		assert.Equal(t, source.Error(), decoded.String())
+		require.NoError(t, dec.Decode(v, &decoded))
+		require.Equal(t, source.Error(), decoded.String())
 	})
 
 	t.Run("error", func(t *testing.T) {
@@ -147,8 +147,8 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		var decoded error
-		assert.NoError(t, dec.Decode(v, &decoded))
-		assert.Equal(t, source, decoded)
+		require.NoError(t, dec.Decode(v, &decoded))
+		require.Equal(t, source, decoded)
 	})
 
 	t.Run("string", func(t *testing.T) {
@@ -156,8 +156,8 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		var decoded string
-		assert.NoError(t, dec.Decode(v, &decoded))
-		assert.Equal(t, "test error", decoded)
+		require.NoError(t, dec.Decode(v, &decoded))
+		require.Equal(t, "test error", decoded)
 	})
 
 	t.Run("any", func(t *testing.T) {
@@ -165,7 +165,7 @@ func TestError_Decode(t *testing.T) {
 		v := NewError(source)
 
 		var decoded any
-		assert.NoError(t, dec.Decode(v, &decoded))
-		assert.Equal(t, source, decoded)
+		require.NoError(t, dec.Decode(v, &decoded))
+		require.Equal(t, source, decoded)
 	})
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/types"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTracer_Dispatch(t *testing.T) {
@@ -47,7 +47,7 @@ func TestTracer_Dispatch(t *testing.T) {
 	}))
 
 	tr.Receive(w2, pck2)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 }
 
 func TestTracer_Link(t *testing.T) {
@@ -59,9 +59,9 @@ func TestTracer_Link(t *testing.T) {
 
 	tr.Link(pck1, pck2)
 
-	assert.Equal(t, tr.Links(pck1, nil), []*Packet{pck1, pck2})
-	assert.Equal(t, tr.Links(nil, pck2), []*Packet{pck2, pck1})
-	assert.Equal(t, tr.Links(pck1, pck2), []*Packet{pck1, pck2})
+	require.Equal(t, tr.Links(pck1, nil), []*Packet{pck1, pck2})
+	require.Equal(t, tr.Links(nil, pck2), []*Packet{pck2, pck1})
+	require.Equal(t, tr.Links(pck1, pck2), []*Packet{pck1, pck2})
 }
 
 func TestTracer_Read(t *testing.T) {
@@ -82,7 +82,7 @@ func TestTracer_Read(t *testing.T) {
 	<-r.Read()
 
 	tr.Read(r, pck)
-	assert.Contains(t, tr.Reads(r), pck)
+	require.Contains(t, tr.Reads(r), pck)
 }
 
 func TestTracer_Write(t *testing.T) {
@@ -100,11 +100,11 @@ func TestTracer_Write(t *testing.T) {
 	pck1 := New(types.NewString(faker.UUIDHyphenated()))
 
 	tr.Write(w, pck1)
-	assert.Contains(t, tr.Writes(w), pck1)
+	require.Contains(t, tr.Writes(w), pck1)
 
 	pck2, ok := <-r.Read()
-	assert.True(t, ok)
-	assert.Equal(t, pck2.Payload(), pck1.Payload())
+	require.True(t, ok)
+	require.Equal(t, pck2.Payload(), pck1.Payload())
 }
 
 func TestTracer_Receive(t *testing.T) {
@@ -145,13 +145,13 @@ func TestTracer_Receive(t *testing.T) {
 		tr.Receive(w2, pck2)
 
 		pck4, ok := <-w1.Receive()
-		assert.True(t, ok)
-		assert.Equal(t, pck2, pck4)
+		require.True(t, ok)
+		require.Equal(t, pck2, pck4)
 
-		assert.Len(t, tr.Writes(w2), 0)
-		assert.Len(t, tr.Reads(r1), 0)
-		assert.Len(t, tr.Receives(pck3), 0)
-		assert.Len(t, tr.Receives(pck1), 0)
+		require.Len(t, tr.Writes(w2), 0)
+		require.Len(t, tr.Reads(r1), 0)
+		require.Len(t, tr.Receives(pck3), 0)
+		require.Len(t, tr.Receives(pck1), 0)
 	})
 
 	t.Run("Discard", func(t *testing.T) {
@@ -191,12 +191,12 @@ func TestTracer_Receive(t *testing.T) {
 		tr.Receive(w2, nil)
 
 		pck4, ok := <-w1.Receive()
-		assert.True(t, ok)
-		assert.Equal(t, None, pck4)
+		require.True(t, ok)
+		require.Equal(t, None, pck4)
 
-		assert.Len(t, tr.Writes(w2), 0)
-		assert.Len(t, tr.Reads(r1), 0)
-		assert.Len(t, tr.Receives(pck3), 0)
-		assert.Len(t, tr.Receives(pck1), 0)
+		require.Len(t, tr.Writes(w2), 0)
+		require.Len(t, tr.Reads(r1), 0)
+		require.Len(t, tr.Receives(pck3), 0)
+		require.Len(t, tr.Receives(pck1), 0)
 	})
 }

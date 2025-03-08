@@ -14,7 +14,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpgradeNodeCodec_Compile(t *testing.T) {
@@ -26,15 +26,15 @@ func TestUpgradeNodeCodec_Compile(t *testing.T) {
 		Buffer:   64,
 	}
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewWebSocketUpgradeNode(t *testing.T) {
 	n := NewWebSocketUpgradeNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestWebSocket_Timeout(t *testing.T) {
@@ -44,7 +44,7 @@ func TestWebSocket_Timeout(t *testing.T) {
 	v := time.Second
 
 	n.SetTimeout(v)
-	assert.Equal(t, v, n.Timeout())
+	require.Equal(t, v, n.Timeout())
 }
 
 func TestWebSocket_ReadBufferSize(t *testing.T) {
@@ -54,7 +54,7 @@ func TestWebSocket_ReadBufferSize(t *testing.T) {
 	v := 64
 
 	n.SetReadBufferSize(v)
-	assert.Equal(t, v, n.ReadBufferSize())
+	require.Equal(t, v, n.ReadBufferSize())
 }
 
 func TestWebSocket_WriteBufferSize(t *testing.T) {
@@ -64,23 +64,23 @@ func TestWebSocket_WriteBufferSize(t *testing.T) {
 	v := 64
 
 	n.SetWriteBufferSize(v)
-	assert.Equal(t, v, n.WriteBufferSize())
+	require.Equal(t, v, n.WriteBufferSize())
 }
 
 func TestWebSocketUpgradeNode_Port(t *testing.T) {
 	n := NewWebSocketUpgradeNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIO))
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.In(node.PortIO))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
 }
 
 func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 	t.Run("Upgrade", func(t *testing.T) {
 		port, err := freeport.GetFreePort()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		http := NewHTTPListenNode(fmt.Sprintf(":%d", port))
 		defer http.Close()
@@ -91,10 +91,10 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		http.Out(node.PortOut).Link(ws.In(node.PortIO))
 		ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
-		assert.NoError(t, http.Listen())
+		require.NoError(t, http.Listen())
 
 		conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://localhost:%d", port), nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer conn.Close()
 
 		msg := faker.UUIDHyphenated()
@@ -102,9 +102,9 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 
 		typ, p, err := conn.ReadMessage()
-		assert.NoError(t, err)
-		assert.Equal(t, []byte(msg), p)
-		assert.Equal(t, websocket.TextMessage, typ)
+		require.NoError(t, err)
+		require.Equal(t, []byte(msg), p)
+		require.Equal(t, websocket.TextMessage, typ)
 	})
 
 	t.Run("IO -> Error -> IO", func(t *testing.T) {
@@ -133,17 +133,17 @@ func TestWebSocketUpgradeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case outPck := <-errReader.Read():
-			assert.NotNil(t, outPck)
+			require.NotNil(t, outPck)
 			errReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 
 		select {
 		case backPck := <-ioWriter.Receive():
-			assert.NotNil(t, backPck)
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

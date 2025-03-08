@@ -6,7 +6,7 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/types"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDetectTypesFromBytes(t *testing.T) {
@@ -39,7 +39,7 @@ func TestDetectTypesFromBytes(t *testing.T) {
 	for _, test := range tests {
 		t.Run(string(test.when), func(t *testing.T) {
 			actual := DetectTypesFromBytes(test.when)
-			assert.Equal(t, test.expect, actual)
+			require.Equal(t, test.expect, actual)
 		})
 	}
 }
@@ -78,7 +78,7 @@ func TestDetectTypesFromValue(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.when.Interface()), func(t *testing.T) {
 			actual := DetectTypesFromValue(test.when)
-			assert.Equal(t, test.expect, actual)
+			require.Equal(t, test.expect, actual)
 		})
 	}
 }
@@ -134,7 +134,7 @@ func TestIsCompatible(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s, %s", tt.whenX, tt.whenY), func(t *testing.T) {
 			ok := IsCompatible(tt.whenX, tt.whenY)
-			assert.Equal(t, tt.expect, ok)
+			require.Equal(t, tt.expect, ok)
 		})
 	}
 }

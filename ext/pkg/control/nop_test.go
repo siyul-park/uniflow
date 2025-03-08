@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNOPNodeCodec_Compile(t *testing.T) {
@@ -20,22 +20,22 @@ func TestNOPNodeCodec_Compile(t *testing.T) {
 	spec := &NOPNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewNOPNode(t *testing.T) {
 	n := NewNOPNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNOPNode_Port(t *testing.T) {
 	n := NewNOPNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.In(node.PortIn))
 }
 
 func TestNOPNode_SendAndReceive(t *testing.T) {
@@ -60,9 +60,9 @@ func TestNOPNode_SendAndReceive(t *testing.T) {
 
 	select {
 	case backPck := <-inWriter.Receive():
-		assert.Equal(t, packet.None, backPck)
+		require.Equal(t, packet.None, backPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

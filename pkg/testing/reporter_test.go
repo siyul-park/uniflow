@@ -10,7 +10,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/pkg/errors"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReporters_Report(t *testing.T) {
@@ -24,7 +24,7 @@ func TestReporters_Report(t *testing.T) {
 	result := &Result{Name: "foo", StartTime: time.Now(), EndTime: time.Now()}
 
 	err := reporters.Report(ctx, result)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestErrorReporter_Report(t *testing.T) {
@@ -35,10 +35,10 @@ func TestErrorReporter_Report(t *testing.T) {
 	result := &Result{Name: "foo", Error: errors.New(faker.Sentence()), StartTime: time.Now(), EndTime: time.Now()}
 
 	err := reporter.Report(ctx, result)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = reporter.Error()
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestTextReporter_Report(t *testing.T) {
@@ -51,8 +51,8 @@ func TestTextReporter_Report(t *testing.T) {
 		result := &Result{Name: "foo", StartTime: time.Now(), EndTime: time.Now()}
 
 		err := reporter.Report(ctx, result)
-		assert.NoError(t, err)
-		assert.Contains(t, output.String(), "PASS\tfoo")
+		require.NoError(t, err)
+		require.Contains(t, output.String(), "PASS\tfoo")
 	})
 
 	t.Run(StatusFail, func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestTextReporter_Report(t *testing.T) {
 		result := &Result{Name: "foo", Error: fmt.Errorf("error"), StartTime: time.Now(), EndTime: time.Now()}
 
 		err := reporter.Report(ctx, result)
-		assert.NoError(t, err)
-		assert.Contains(t, output.String(), "FAIL\tfoo")
+		require.NoError(t, err)
+		require.Contains(t, output.String(), "FAIL\tfoo")
 	})
 }

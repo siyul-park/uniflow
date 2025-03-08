@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCompiler_Compile(t *testing.T) {
 	c := NewCompiler()
 	_, err := c.Compile("self")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestProgram_Run(t *testing.T) {
@@ -25,6 +25,6 @@ func TestProgram_Run(t *testing.T) {
 	input := faker.UUIDHyphenated()
 
 	output, err := p.Run(ctx, input)
-	assert.NoError(t, err)
-	assert.Equal(t, input, output)
+	require.NoError(t, err)
+	require.Equal(t, input, output)
 }

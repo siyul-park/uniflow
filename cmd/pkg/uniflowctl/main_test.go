@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 func TestCommand(t *testing.T) {
 	exe, err := os.Executable()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := []struct {
 		args []string
@@ -44,7 +44,7 @@ func TestCommand(t *testing.T) {
 			cmd.Env = os.Environ()
 
 			err := cmd.Run()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

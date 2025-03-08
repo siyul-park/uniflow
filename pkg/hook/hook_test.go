@@ -6,7 +6,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHook_LoadHook(t *testing.T) {
@@ -20,15 +20,15 @@ func TestHook_LoadHook(t *testing.T) {
 		return nil
 	})
 
-	assert.True(t, hooks.AddLoadHook(h))
-	assert.False(t, hooks.AddLoadHook(h))
+	require.True(t, hooks.AddLoadHook(h))
+	require.False(t, hooks.AddLoadHook(h))
 
 	err := hooks.Load(&symbol.Symbol{
 		Spec: &spec.Meta{},
 		Node: n,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
 }
 
 func TestHook_UnloadHook(t *testing.T) {
@@ -42,13 +42,13 @@ func TestHook_UnloadHook(t *testing.T) {
 		return nil
 	})
 
-	assert.True(t, hooks.AddUnloadHook(h))
-	assert.False(t, hooks.AddUnloadHook(h))
+	require.True(t, hooks.AddUnloadHook(h))
+	require.False(t, hooks.AddUnloadHook(h))
 
 	err := hooks.Unload(&symbol.Symbol{
 		Spec: &spec.Meta{},
 		Node: n,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestJSON_Encode(t *testing.T) {
@@ -17,8 +17,8 @@ func TestJSON_Encode(t *testing.T) {
 	source := NewMap(NewString(faker.UUIDHyphenated()), NewString(faker.UUIDHyphenated()))
 
 	encoded, err := enc.Encode(source)
-	assert.NoError(t, err)
-	assert.True(t, encoded.Equal(source))
+	require.NoError(t, err)
+	require.True(t, encoded.Equal(source))
 }
 
 func TestJSON_Decode(t *testing.T) {
@@ -31,6 +31,6 @@ func TestJSON_Decode(t *testing.T) {
 
 	decoded := NewMap()
 	err := dec.Decode(source, decoded)
-	assert.NoError(t, err)
-	assert.True(t, decoded.Equal(source))
+	require.NoError(t, err)
+	require.True(t, decoded.Equal(source))
 }

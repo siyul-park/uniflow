@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSplitNodeCodec_Compile(t *testing.T) {
@@ -20,15 +20,15 @@ func TestSplitNodeCodec_Compile(t *testing.T) {
 	spec := &SplitNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewSplitNode(t *testing.T) {
 	n := NewSplitNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestSplitNode_SendAndReceive(t *testing.T) {
@@ -71,15 +71,15 @@ func TestSplitNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	}
 
 	select {
 	case backPck := <-inWriter.Receive():
-		assert.NotNil(t, backPck)
+		require.NotNil(t, backPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

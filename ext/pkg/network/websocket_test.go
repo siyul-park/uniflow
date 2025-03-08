@@ -15,7 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWebSocketNodeCodec_Compile(t *testing.T) {
@@ -25,25 +25,25 @@ func TestWebSocketNodeCodec_Compile(t *testing.T) {
 		URL: "ws://localhost:8080/",
 	}
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewWebSocketClient(t *testing.T) {
 	n := NewWebSocketNode(&url.URL{})
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestWebSocketNode_Port(t *testing.T) {
 	n := NewWebSocketNode(&url.URL{})
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIO))
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.In(node.PortIO))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
 }
 
 func TestWebSocketNode_SendAndReceive(t *testing.T) {
@@ -51,7 +51,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	defer cancel()
 
 	p, err := freeport.GetFreePort()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	u, _ := url.Parse(fmt.Sprintf("ws://localhost:%d", p))
 
@@ -67,7 +67,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	http.Out(node.PortOut).Link(ws.In(node.PortIO))
 	ws.Out(node.PortOut).Link(ws.In(node.PortIn))
 
-	assert.NoError(t, http.Listen())
+	require.NoError(t, http.Listen())
 
 	io := port.NewOut()
 	io.Link(client.In(node.PortIO))
@@ -112,7 +112,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-ioWriter.Receive():
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 
 	inPayload, _ = types.Marshal(&WebSocketPayload{
@@ -126,7 +126,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 
 	inPayload, _ = types.Marshal(&WebSocketPayload{
@@ -139,7 +139,7 @@ func TestWebSocketNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-inWriter.Receive():
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewSlice(t *testing.T) {
@@ -14,10 +14,10 @@ func TestNewSlice(t *testing.T) {
 
 	o := NewSlice(v1)
 
-	assert.Equal(t, KindSlice, o.Kind())
-	assert.NotEqual(t, uint64(0), o.Hash())
-	assert.Equal(t, []string{v1.String()}, o.Interface())
-	assert.Equal(t, []any{v1.Interface()}, o.Slice())
+	require.Equal(t, KindSlice, o.Kind())
+	require.NotEqual(t, uint64(0), o.Hash())
+	require.Equal(t, []string{v1.String()}, o.Interface())
+	require.Equal(t, []any{v1.Interface()}, o.Slice())
 }
 
 func TestSlice_Get(t *testing.T) {
@@ -26,10 +26,10 @@ func TestSlice_Get(t *testing.T) {
 	o := NewSlice(v1)
 
 	r := o.Get(0)
-	assert.Equal(t, v1, r)
+	require.Equal(t, v1, r)
 
 	r = o.Get(1)
-	assert.Nil(t, r)
+	require.Nil(t, r)
 }
 
 func TestSlice_Set(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSlice_Set(t *testing.T) {
 	o = o.Set(0, v2)
 
 	r := o.Get(0)
-	assert.Equal(t, v2, r)
+	require.Equal(t, v2, r)
 }
 
 func TestSlice_Prepend(t *testing.T) {
@@ -50,7 +50,7 @@ func TestSlice_Prepend(t *testing.T) {
 	o := NewSlice()
 	o = o.Prepend(v)
 
-	assert.Equal(t, 1, o.Len())
+	require.Equal(t, 1, o.Len())
 }
 
 func TestSlice_Append(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSlice_Append(t *testing.T) {
 	o := NewSlice()
 	o = o.Append(v)
 
-	assert.Equal(t, 1, o.Len())
+	require.Equal(t, 1, o.Len())
 }
 
 func TestSlice_Sub(t *testing.T) {
@@ -69,7 +69,7 @@ func TestSlice_Sub(t *testing.T) {
 	o := NewSlice(v1, v2)
 	o = o.Sub(0, 1)
 
-	assert.Equal(t, 1, o.Len())
+	require.Equal(t, 1, o.Len())
 }
 
 func TestSlice_Values(t *testing.T) {
@@ -78,7 +78,7 @@ func TestSlice_Values(t *testing.T) {
 
 	o := NewSlice(v1, v2)
 
-	assert.Equal(t, []Value{v1, v2}, o.Values())
+	require.Equal(t, []Value{v1, v2}, o.Values())
 }
 
 func TestSlice_Range(t *testing.T) {
@@ -87,7 +87,7 @@ func TestSlice_Range(t *testing.T) {
 	o := NewSlice(v1)
 
 	for _, v := range o.Range() {
-		assert.Equal(t, v1, v)
+		require.Equal(t, v1, v)
 	}
 }
 
@@ -97,42 +97,42 @@ func TestSlice_Len(t *testing.T) {
 
 	o := NewSlice(v1, v2)
 
-	assert.Equal(t, 2, o.Len())
+	require.Equal(t, 2, o.Len())
 }
 
 func TestSlice_Equal(t *testing.T) {
 	v1 := NewSlice(NewString("hello"))
 	v2 := NewSlice(NewString("world"))
 
-	assert.True(t, v1.Equal(v1))
-	assert.True(t, v2.Equal(v2))
-	assert.False(t, v1.Equal(v2))
+	require.True(t, v1.Equal(v1))
+	require.True(t, v2.Equal(v2))
+	require.False(t, v1.Equal(v2))
 }
 
 func TestSlice_Compare(t *testing.T) {
 	v1 := NewSlice(NewString("hello"))
 	v2 := NewSlice(NewString("world"))
 
-	assert.Equal(t, 0, v1.Compare(v1))
-	assert.Equal(t, 0, v2.Compare(v2))
-	assert.Equal(t, -1, v1.Compare(v2))
-	assert.Equal(t, 1, v2.Compare(v1))
+	require.Equal(t, 0, v1.Compare(v1))
+	require.Equal(t, 0, v2.Compare(v2))
+	require.Equal(t, -1, v1.Compare(v2))
+	require.Equal(t, 1, v2.Compare(v1))
 }
 
 func TestSlice_MarshalJSON(t *testing.T) {
 	v := NewSlice(NewString("hello"))
 
 	data, err := v.MarshalJSON()
-	assert.NoError(t, err)
-	assert.JSONEq(t, `["hello"]`, string(data))
+	require.NoError(t, err)
+	require.JSONEq(t, `["hello"]`, string(data))
 }
 
 func TestSlice_UnmarshalJSON(t *testing.T) {
 	v := NewSlice()
 
 	err := v.UnmarshalJSON([]byte(`["hello"]`))
-	assert.NoError(t, err)
-	assert.Equal(t, NewSlice(NewString("hello")), v)
+	require.NoError(t, err)
+	require.Equal(t, NewSlice(NewString("hello")), v)
 }
 
 func TestSlice_Encode(t *testing.T) {
@@ -146,8 +146,8 @@ func TestSlice_Encode(t *testing.T) {
 			v := NewSlice(NewString("foo"), NewString("bar"))
 
 			decoded, err := enc.Encode(source)
-			assert.NoError(t, err)
-			assert.Equal(t, v, decoded)
+			require.NoError(t, err)
+			require.Equal(t, v, decoded)
 		})
 
 		t.Run("array", func(t *testing.T) {
@@ -155,8 +155,8 @@ func TestSlice_Encode(t *testing.T) {
 			v := NewSlice(NewString("foo"), NewString("bar"))
 
 			decoded, err := enc.Encode(source)
-			assert.NoError(t, err)
-			assert.Equal(t, v, decoded)
+			require.NoError(t, err)
+			require.Equal(t, v, decoded)
 		})
 	})
 
@@ -166,8 +166,8 @@ func TestSlice_Encode(t *testing.T) {
 			v := NewSlice(NewString("foo"), NewString("bar"))
 
 			decoded, err := enc.Encode(source)
-			assert.NoError(t, err)
-			assert.Equal(t, v, decoded)
+			require.NoError(t, err)
+			require.Equal(t, v, decoded)
 		})
 
 		t.Run("array", func(t *testing.T) {
@@ -175,8 +175,8 @@ func TestSlice_Encode(t *testing.T) {
 			v := NewSlice(NewString("foo"), NewString("bar"))
 
 			decoded, err := enc.Encode(source)
-			assert.NoError(t, err)
-			assert.Equal(t, v, decoded)
+			require.NoError(t, err)
+			require.Equal(t, v, decoded)
 		})
 	})
 }
@@ -193,8 +193,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded []string
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, source, decoded)
+			require.NoError(t, err)
+			require.Equal(t, source, decoded)
 		})
 
 		t.Run("array", func(t *testing.T) {
@@ -203,8 +203,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded [2]string
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.EqualValues(t, source, decoded)
+			require.NoError(t, err)
+			require.EqualValues(t, source, decoded)
 		})
 
 		t.Run("element", func(t *testing.T) {
@@ -213,8 +213,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded []string
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, source, decoded)
+			require.NoError(t, err)
+			require.Equal(t, source, decoded)
 		})
 	})
 
@@ -225,8 +225,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded []any
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, source, decoded)
+			require.NoError(t, err)
+			require.Equal(t, source, decoded)
 		})
 
 		t.Run("array", func(t *testing.T) {
@@ -235,8 +235,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded [2]any
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.EqualValues(t, source, decoded)
+			require.NoError(t, err)
+			require.EqualValues(t, source, decoded)
 		})
 
 		t.Run("element", func(t *testing.T) {
@@ -245,8 +245,8 @@ func TestSlice_Decode(t *testing.T) {
 
 			var decoded []any
 			err := dec.Decode(v, &decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, source, decoded)
+			require.NoError(t, err)
+			require.Equal(t, source, decoded)
 		})
 	})
 }

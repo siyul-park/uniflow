@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTryNodeCodec_Compile(t *testing.T) {
@@ -21,24 +21,24 @@ func TestTryNodeCodec_Compile(t *testing.T) {
 	spec := &TryNodeSpec{}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewTryNode(t *testing.T) {
 	n := NewTryNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestTryNode_Port(t *testing.T) {
 	n := NewTryNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.In(node.PortIn))
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortError))
+	require.NotNil(t, n.In(node.PortIn))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortError))
 }
 
 func TestTryNode_SendAndReceive(t *testing.T) {
@@ -76,14 +76,14 @@ func TestTryNode_SendAndReceive(t *testing.T) {
 	case outPck := <-errReader.Read():
 		errReader.Receive(outPck)
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 
 	select {
 	case outPck := <-inWriter.Receive():
-		assert.IsType(t, outPck.Payload(), types.NewError(nil))
+		require.IsType(t, outPck.Payload(), types.NewError(nil))
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
 

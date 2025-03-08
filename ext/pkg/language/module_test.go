@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestModule_StoreAndLoad(t *testing.T) {
@@ -20,5 +20,5 @@ func TestModule_StoreAndLoad(t *testing.T) {
 	m.Store(lang, c)
 
 	_, err := m.Load(lang)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

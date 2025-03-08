@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewBreakpoint(t *testing.T) {
@@ -36,11 +36,11 @@ func TestNewBreakpoint(t *testing.T) {
 	)
 	defer b.Close()
 
-	assert.NotZero(t, b.ID())
-	assert.Equal(t, proc, b.Process())
-	assert.Equal(t, sb, b.Symbol())
-	assert.Equal(t, sb.In(node.PortIn), b.InPort())
-	assert.Equal(t, sb.Out(node.PortOut), b.OutPort())
+	require.NotZero(t, b.ID())
+	require.Equal(t, proc, b.Process())
+	require.Equal(t, sb, b.Symbol())
+	require.Equal(t, sb.In(node.PortIn), b.InPort())
+	require.Equal(t, sb.Out(node.PortOut), b.OutPort())
 }
 
 func TestBreakpoint_Next(t *testing.T) {
@@ -71,8 +71,8 @@ func TestBreakpoint_Next(t *testing.T) {
 
 	go b.OnFrame(frame)
 
-	assert.True(t, b.Next())
-	assert.Equal(t, frame, b.Frame())
+	require.True(t, b.Next())
+	require.Equal(t, frame, b.Frame())
 }
 
 func TestBreakpoint_Done(t *testing.T) {
@@ -103,9 +103,9 @@ func TestBreakpoint_Done(t *testing.T) {
 
 	go b.OnFrame(frame)
 
-	assert.True(t, b.Next())
-	assert.Equal(t, frame, b.Frame())
+	require.True(t, b.Next())
+	require.Equal(t, frame, b.Frame())
 
-	assert.True(t, b.Done())
-	assert.Nil(t, b.Frame())
+	require.True(t, b.Done())
+	require.Nil(t, b.Frame())
 }

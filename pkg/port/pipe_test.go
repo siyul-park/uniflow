@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPipe(t *testing.T) {
@@ -38,8 +38,8 @@ func TestPipe(t *testing.T) {
 
 	select {
 	case outPck := <-outReader.Read():
-		assert.Equal(t, inPck.Payload(), outPck.Payload())
+		require.Equal(t, inPck.Payload(), outPck.Payload())
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }

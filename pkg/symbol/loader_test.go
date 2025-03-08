@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoader_Load(t *testing.T) {
@@ -78,10 +78,10 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta3)
 
 		err := loader.Load(ctx, meta1, meta2, meta3)
-		assert.NoError(t, err)
-		assert.NotNil(t, table.Lookup(meta1.GetID()))
-		assert.NotNil(t, table.Lookup(meta2.GetID()))
-		assert.NotNil(t, table.Lookup(meta3.GetID()))
+		require.NoError(t, err)
+		require.NotNil(t, table.Lookup(meta1.GetID()))
+		require.NotNil(t, table.Lookup(meta2.GetID()))
+		require.NotNil(t, table.Lookup(meta3.GetID()))
 	})
 
 	t.Run("ReloadWithSameID", func(t *testing.T) {
@@ -119,10 +119,10 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = loader.Load(ctx, meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("ReloadAfterDelete", func(t *testing.T) {
@@ -160,13 +160,13 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		specStore.Delete(ctx, meta)
 
 		err = loader.Load(ctx, meta)
-		assert.NoError(t, err)
-		assert.Nil(t, table.Lookup(meta.GetID()))
+		require.NoError(t, err)
+		require.Nil(t, table.Lookup(meta.GetID()))
 	})
 
 	t.Run("LoadMultipleValues", func(t *testing.T) {
@@ -214,8 +214,8 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)
-		assert.NoError(t, err)
-		assert.NotNil(t, table.Lookup(meta.GetID()))
+		require.NoError(t, err)
+		require.NotNil(t, table.Lookup(meta.GetID()))
 	})
 
 	t.Run("LoadNonExistValue", func(t *testing.T) {
@@ -248,6 +248,6 @@ func TestLoader_Load(t *testing.T) {
 		specStore.Store(ctx, meta)
 
 		err := loader.Load(ctx, meta)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }

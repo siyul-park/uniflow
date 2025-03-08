@@ -8,7 +8,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetCommand_Execute(t *testing.T) {
@@ -27,7 +27,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		}
 
 		_, err := specStore.Store(ctx, meta)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		output := new(bytes.Buffer)
 
@@ -40,9 +40,9 @@ func TestGetCommand_Execute(t *testing.T) {
 		cmd.SetArgs([]string{specs})
 
 		err = cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Contains(t, output.String(), meta.Name)
+		require.Contains(t, output.String(), meta.Name)
 	})
 
 	t.Run("GetValue", func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		}
 
 		_, err := valueStore.Store(ctx, scrt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		output := new(bytes.Buffer)
 
@@ -68,8 +68,8 @@ func TestGetCommand_Execute(t *testing.T) {
 		cmd.SetArgs([]string{values})
 
 		err = cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Contains(t, output.String(), scrt.Name)
+		require.Contains(t, output.String(), scrt.Name)
 	})
 }

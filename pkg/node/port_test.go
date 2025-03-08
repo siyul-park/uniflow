@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPort_Format(t *testing.T) {
@@ -14,9 +14,9 @@ func TestPort_Format(t *testing.T) {
 	port := PortWithIndex(name, index)
 
 	n := NameOfPort(port)
-	assert.Equal(t, name, n)
+	require.Equal(t, name, n)
 
 	i, ok := IndexOfPort(port)
-	assert.True(t, ok)
-	assert.Equal(t, index, i)
+	require.True(t, ok)
+	require.Equal(t, index, i)
 }

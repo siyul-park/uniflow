@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOutPort_Open(t *testing.T) {
@@ -19,7 +19,7 @@ func TestOutPort_Open(t *testing.T) {
 	w1 := out.Open(proc)
 	w2 := out.Open(proc)
 
-	assert.Equal(t, w1, w2)
+	require.Equal(t, w1, w2)
 }
 
 func TestOutPort_Link(t *testing.T) {
@@ -30,11 +30,11 @@ func TestOutPort_Link(t *testing.T) {
 	defer out.Close()
 
 	ok := out.Link(in)
-	assert.True(t, ok)
-	assert.Len(t, out.Links(), 1)
+	require.True(t, ok)
+	require.Len(t, out.Links(), 1)
 
 	ok = out.Link(in)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestOutPort_Unlink(t *testing.T) {
@@ -47,11 +47,11 @@ func TestOutPort_Unlink(t *testing.T) {
 	out.Link(in)
 
 	ok := out.Unlink(in)
-	assert.True(t, ok)
-	assert.Len(t, out.Links(), 0)
+	require.True(t, ok)
+	require.Len(t, out.Links(), 0)
 
 	ok = out.Unlink(in)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestOutPort_OpenHook(t *testing.T) {
@@ -67,10 +67,10 @@ func TestOutPort_OpenHook(t *testing.T) {
 	})
 
 	ok := out.AddOpenHook(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = out.AddOpenHook(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	_ = out.Open(proc)
 
@@ -80,7 +80,7 @@ func TestOutPort_OpenHook(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 
@@ -94,10 +94,10 @@ func TestOutPort_CloseHook(t *testing.T) {
 	})
 
 	ok := out.AddCloseHook(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = out.AddCloseHook(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	out.Close()
 
@@ -107,7 +107,7 @@ func TestOutPort_CloseHook(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 
@@ -124,10 +124,10 @@ func TestOutPort_Listener(t *testing.T) {
 	})
 
 	ok := out.AddListener(h)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = out.AddListener(h)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	_ = out.Open(proc)
 
@@ -137,7 +137,7 @@ func TestOutPort_Listener(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.NoError(t, ctx.Err())
+		require.NoError(t, ctx.Err())
 	}
 }
 

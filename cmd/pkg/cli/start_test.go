@@ -18,7 +18,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStartCommand_Execute(t *testing.T) {
@@ -79,7 +79,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		select {
 		case <-symbols:
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -125,7 +125,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		select {
 		case <-symbols:
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -171,7 +171,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		select {
 		case <-specStream.Next():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -217,7 +217,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		select {
 		case <-valueStream.Next():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

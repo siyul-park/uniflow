@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScheme_Kinds(t *testing.T) {
@@ -22,7 +22,7 @@ func TestScheme_Kinds(t *testing.T) {
 	s.AddCodec(kind, c)
 
 	kinds := s.Kinds()
-	assert.Contains(t, kinds, kind)
+	require.Contains(t, kinds, kind)
 }
 
 func TestScheme_KnownType(t *testing.T) {
@@ -30,18 +30,18 @@ func TestScheme_KnownType(t *testing.T) {
 	kind := faker.UUIDHyphenated()
 
 	ok := s.AddKnownType(kind, &spec.Meta{})
-	assert.True(t, ok)
-	assert.NotNil(t, s.KnownType(kind))
+	require.True(t, ok)
+	require.NotNil(t, s.KnownType(kind))
 
 	ok = s.AddKnownType(kind, &spec.Meta{})
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = s.RemoveKnownType(kind)
-	assert.True(t, ok)
-	assert.Nil(t, s.KnownType(kind))
+	require.True(t, ok)
+	require.Nil(t, s.KnownType(kind))
 
 	ok = s.RemoveKnownType(kind)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestScheme_Codec(t *testing.T) {
@@ -53,18 +53,18 @@ func TestScheme_Codec(t *testing.T) {
 	})
 
 	ok := s.AddCodec(kind, c)
-	assert.True(t, ok)
-	assert.NotNil(t, s.Codec(kind))
+	require.True(t, ok)
+	require.NotNil(t, s.Codec(kind))
 
 	ok = s.AddCodec(kind, c)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = s.RemoveCodec(kind)
-	assert.True(t, ok)
-	assert.Nil(t, s.Codec(kind))
+	require.True(t, ok)
+	require.Nil(t, s.Codec(kind))
 
 	ok = s.RemoveCodec(kind)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestScheme_Decode(t *testing.T) {
@@ -82,8 +82,8 @@ func TestScheme_Decode(t *testing.T) {
 	}
 
 	decode, err := s.Decode(meta)
-	assert.NoError(t, err)
-	assert.IsType(t, decode, &spec.Meta{})
+	require.NoError(t, err)
+	require.IsType(t, decode, &spec.Meta{})
 }
 
 func TestScheme_Compile(t *testing.T) {
@@ -98,6 +98,6 @@ func TestScheme_Compile(t *testing.T) {
 	n, err := s.Compile(&spec.Meta{
 		Kind: kind,
 	})
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
+	require.NoError(t, err)
+	require.NotNil(t, n)
 }

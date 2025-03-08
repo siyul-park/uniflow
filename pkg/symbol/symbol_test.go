@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSymbol_Getter(t *testing.T) {
@@ -38,18 +38,18 @@ func TestSymbol_Getter(t *testing.T) {
 		Node: n,
 	}
 
-	assert.Equal(t, meta.GetID(), sb.ID())
-	assert.Equal(t, meta.GetKind(), sb.Kind())
-	assert.Equal(t, meta.GetNamespace(), sb.Namespace())
-	assert.Equal(t, meta.GetName(), sb.Name())
-	assert.Equal(t, meta.GetNamespacedName(), sb.NamespacedName())
-	assert.Equal(t, meta.GetAnnotations(), sb.Annotations())
-	assert.Equal(t, meta.GetPorts(), sb.Ports())
-	assert.Equal(t, meta.GetEnv(), sb.Env())
-	assert.Equal(t, n.In(node.PortIn), sb.In(node.PortIn))
-	assert.Equal(t, n.Out(node.PortOut), sb.Out(node.PortOut))
-	assert.Contains(t, sb.Ins(), node.PortIn)
-	assert.Contains(t, sb.Outs(), node.PortOut)
+	require.Equal(t, meta.GetID(), sb.ID())
+	require.Equal(t, meta.GetKind(), sb.Kind())
+	require.Equal(t, meta.GetNamespace(), sb.Namespace())
+	require.Equal(t, meta.GetName(), sb.Name())
+	require.Equal(t, meta.GetNamespacedName(), sb.NamespacedName())
+	require.Equal(t, meta.GetAnnotations(), sb.Annotations())
+	require.Equal(t, meta.GetPorts(), sb.Ports())
+	require.Equal(t, meta.GetEnv(), sb.Env())
+	require.Equal(t, n.In(node.PortIn), sb.In(node.PortIn))
+	require.Equal(t, n.Out(node.PortOut), sb.Out(node.PortOut))
+	require.Contains(t, sb.Ins(), node.PortIn)
+	require.Contains(t, sb.Outs(), node.PortOut)
 }
 
 func TestSymbol_Setter(t *testing.T) {
@@ -81,25 +81,25 @@ func TestSymbol_Setter(t *testing.T) {
 
 	id := uuid.Must(uuid.NewV7())
 	sb.SetID(id)
-	assert.Equal(t, id, sb.ID())
+	require.Equal(t, id, sb.ID())
 
 	kind := faker.UUIDHyphenated()
 	sb.SetKind(kind)
-	assert.Equal(t, kind, sb.Kind())
+	require.Equal(t, kind, sb.Kind())
 
 	namespace := faker.UUIDHyphenated()
 	sb.SetNamespace(namespace)
-	assert.Equal(t, namespace, sb.Namespace())
+	require.Equal(t, namespace, sb.Namespace())
 
 	name := faker.UUIDHyphenated()
 	sb.SetName(name)
-	assert.Equal(t, name, sb.Name())
+	require.Equal(t, name, sb.Name())
 
 	annotations := map[string]string{
 		faker.UUIDHyphenated(): faker.UUIDHyphenated(),
 	}
 	sb.SetAnnotations(annotations)
-	assert.Equal(t, annotations, sb.Annotations())
+	require.Equal(t, annotations, sb.Annotations())
 
 	ports := map[string][]spec.Port{
 		node.PortIn: {
@@ -110,7 +110,7 @@ func TestSymbol_Setter(t *testing.T) {
 		},
 	}
 	sb.SetPorts(ports)
-	assert.Equal(t, ports, sb.Ports())
+	require.Equal(t, ports, sb.Ports())
 
 	env := map[string]spec.Value{
 		faker.UUIDHyphenated(): {
@@ -118,5 +118,5 @@ func TestSymbol_Setter(t *testing.T) {
 		},
 	}
 	sb.SetEnv(env)
-	assert.Equal(t, env, sb.Env())
+	require.Equal(t, env, sb.Env())
 }

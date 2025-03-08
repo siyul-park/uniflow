@@ -6,7 +6,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/types"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSend(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSend(t *testing.T) {
 	outPck := New(types.NewString(faker.UUIDHyphenated()))
 
 	backPck := Send(w, outPck)
-	assert.Equal(t, outPck.Payload(), backPck.Payload())
+	require.Equal(t, outPck.Payload(), backPck.Payload())
 }
 
 func TestSendOrFallback(t *testing.T) {
@@ -57,7 +57,7 @@ func TestSendOrFallback(t *testing.T) {
 		outPck := New(types.NewString(faker.UUIDHyphenated()))
 
 		backPck := SendOrFallback(w, outPck, None)
-		assert.Equal(t, outPck.Payload(), backPck.Payload())
+		require.Equal(t, outPck.Payload(), backPck.Payload())
 	})
 
 	t.Run("Return", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSendOrFallback(t *testing.T) {
 		outPck := New(nil)
 
 		backPck := SendOrFallback(w, outPck, None)
-		assert.Equal(t, None, backPck)
+		require.Equal(t, None, backPck)
 	})
 }
 
@@ -91,16 +91,16 @@ func TestWriter_AddHook(t *testing.T) {
 	out := New(nil)
 
 	w.Write(out)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 
 	in := <-r.Read()
 
 	r.Receive(in)
 
 	back, ok := <-w.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, in, back)
-	assert.Equal(t, 2, count)
+	require.True(t, ok)
+	require.Equal(t, in, back)
+	require.Equal(t, 2, count)
 }
 
 func TestWriter_Link(t *testing.T) {
@@ -111,11 +111,11 @@ func TestWriter_Link(t *testing.T) {
 	defer r.Close()
 
 	ok := w.Link(r)
-	assert.True(t, ok)
-	assert.Len(t, w.Links(), 1)
+	require.True(t, ok)
+	require.Len(t, w.Links(), 1)
 
 	ok = w.Link(r)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestWriter_Unlink(t *testing.T) {
@@ -132,22 +132,22 @@ func TestWriter_Unlink(t *testing.T) {
 	w.Write(pck1)
 
 	pck2, ok := <-r.Read()
-	assert.True(t, ok)
-	assert.Equal(t, pck1.Payload(), pck2.Payload())
+	require.True(t, ok)
+	require.Equal(t, pck1.Payload(), pck2.Payload())
 
 	ok = w.Unlink(r)
-	assert.True(t, ok)
-	assert.Len(t, w.Links(), 0)
+	require.True(t, ok)
+	require.Len(t, w.Links(), 0)
 
 	pck3, ok := <-w.Receive()
-	assert.True(t, ok)
-	assert.Equal(t, ErrDroppedPacket, pck3.Payload())
+	require.True(t, ok)
+	require.Equal(t, ErrDroppedPacket, pck3.Payload())
 
 	ok = r.Receive(None)
-	assert.False(t, ok)
+	require.False(t, ok)
 
 	ok = w.Unlink(r)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestWriter_Write(t *testing.T) {
@@ -163,18 +163,18 @@ func TestWriter_Write(t *testing.T) {
 	pck2 := New(types.NewString(faker.UUIDHyphenated()))
 
 	count := w.Write(pck1)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 
 	count = w.Write(pck2)
-	assert.Equal(t, 1, count)
+	require.Equal(t, 1, count)
 
 	pck3, ok := <-r.Read()
-	assert.True(t, ok)
-	assert.Equal(t, pck1.Payload(), pck3.Payload())
+	require.True(t, ok)
+	require.Equal(t, pck1.Payload(), pck3.Payload())
 
 	pck4, ok := <-r.Read()
-	assert.True(t, ok)
-	assert.Equal(t, pck2.Payload(), pck4.Payload())
+	require.True(t, ok)
+	require.Equal(t, pck2.Payload(), pck4.Payload())
 }
 
 func BenchmarkWriter_Write(b *testing.B) {
@@ -191,11 +191,11 @@ func BenchmarkWriter_Write(b *testing.B) {
 
 		for p.Next() {
 			count := w.Write(out)
-			assert.Equal(b, 1, count)
+			require.Equal(b, 1, count)
 
 			in, ok := <-r.Read()
-			assert.True(b, ok)
-			assert.Equal(b, out, in)
+			require.True(b, ok)
+			require.Equal(b, out, in)
 		}
 	})
 }

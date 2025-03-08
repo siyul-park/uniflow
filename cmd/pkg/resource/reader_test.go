@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReader_Read(t *testing.T) {
@@ -61,8 +61,8 @@ key3: true
 
 			var result any
 			err := reader.Read(&result)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			require.NoError(t, err)
+			require.Equal(t, tt.expected, result)
 		})
 	}
 }

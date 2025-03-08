@@ -18,7 +18,7 @@ import (
 	testingutil "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTestCommand_Execute(t *testing.T) {
@@ -70,7 +70,7 @@ func TestTestCommand_Execute(t *testing.T) {
 		cmd.SetContext(ctx)
 
 		err := cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("Regexp", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestTestCommand_Execute(t *testing.T) {
 		cmd.SetArgs([]string{"foo"})
 
 		err := cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run(flagFromSpecs, func(t *testing.T) {
@@ -144,12 +144,12 @@ func TestTestCommand_Execute(t *testing.T) {
 		defer specStream.Close()
 
 		err := cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		select {
 		case <-specStream.Next():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -190,12 +190,12 @@ func TestTestCommand_Execute(t *testing.T) {
 		defer valueStream.Close()
 
 		err := cmd.Execute()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		select {
 		case <-valueStream.Next():
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }

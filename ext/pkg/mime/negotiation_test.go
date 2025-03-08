@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDetectTypes(t *testing.T) {
@@ -30,7 +30,7 @@ func TestDetectTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.when), func(t *testing.T) {
 			detects := DetectTypesFromValue(tt.when)
-			assert.Greater(t, len(detects), 0)
+			require.Greater(t, len(detects), 0)
 		})
 	}
 }
@@ -74,7 +74,7 @@ func TestNegotiate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.expect, func(t *testing.T) {
 			typ := Negotiate(tt.when, tt.offers)
-			assert.Equal(t, tt.expect, typ)
+			require.Equal(t, tt.expect, typ)
 		})
 	}
 }

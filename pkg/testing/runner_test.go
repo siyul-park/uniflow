@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunner_AddReporter(t *testing.T) {
@@ -16,10 +16,10 @@ func TestRunner_AddReporter(t *testing.T) {
 	})
 
 	ok := runner.AddReporter(r)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = runner.AddReporter(r)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestRunner_RemoveReporter(t *testing.T) {
@@ -31,10 +31,10 @@ func TestRunner_RemoveReporter(t *testing.T) {
 	runner.AddReporter(r)
 
 	ok := runner.RemoveReporter(r)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = runner.RemoveReporter(r)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestRunner_Register(t *testing.T) {
@@ -42,10 +42,10 @@ func TestRunner_Register(t *testing.T) {
 	s := RunFunc(func(tester *Tester) {})
 
 	ok := runner.Register("foo", s)
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = runner.Register("foo", s)
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestRunner_Unregister(t *testing.T) {
@@ -55,10 +55,10 @@ func TestRunner_Unregister(t *testing.T) {
 	runner.Register("foo", s)
 
 	ok := runner.Unregister("foo")
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	ok = runner.Unregister("foo")
-	assert.False(t, ok)
+	require.False(t, ok)
 }
 
 func TestRunner_Run(t *testing.T) {
@@ -77,6 +77,6 @@ func TestRunner_Run(t *testing.T) {
 	runner.Register("bar", RunFunc(func(tester *Tester) {}))
 
 	err := runner.Run(ctx, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, int32(2), count.Load())
+	require.NoError(t, err)
+	require.Equal(t, int32(2), count.Load())
 }

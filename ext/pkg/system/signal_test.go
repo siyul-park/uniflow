@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSignalNodeCodec_Compile(t *testing.T) {
@@ -27,22 +27,22 @@ func TestSignalNodeCodec_Compile(t *testing.T) {
 	}
 
 	n, err := codec.Compile(spec)
-	assert.NoError(t, err)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewSignalNode(t *testing.T) {
 	n := NewSignalNode(nil)
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestSignalNode_Port(t *testing.T) {
 	n := NewSignalNode(nil)
 	defer n.Close()
 
-	assert.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortOut))
 }
 
 func TestSignalNode_SendAndReceive(t *testing.T) {
@@ -70,7 +70,7 @@ func TestSignalNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			outReader.Receive(outPck)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	}))
 
@@ -79,6 +79,6 @@ func TestSignalNode_SendAndReceive(t *testing.T) {
 	select {
 	case <-done:
 	case <-ctx.Done():
-		assert.Fail(t, ctx.Err().Error())
+		require.Fail(t, ctx.Err().Error())
 	}
 }
