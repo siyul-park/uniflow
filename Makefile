@@ -48,7 +48,7 @@ tidy:
 
 update:
 	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && go get -u all && go mod tidy; \
+		cd $$dir && go get -u all; \
 	done
 
 clean-sum:
