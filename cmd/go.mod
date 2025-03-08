@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
-	github.com/go-faker/faker/v4 v4.5.0
+	github.com/go-faker/faker/v4 v4.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jedib0t/go-pretty/v6 v6.6.5
