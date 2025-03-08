@@ -5,7 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/siyul-park/uniflow/pkg/testing"
+	"github.com/siyul-park/uniflow/ext/pkg/testing"
+	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 
 	"github.com/iancoleman/strcase"
 	"github.com/knadh/koanf/parsers/toml"
@@ -94,7 +95,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	runner := testing.NewRunner()
+	runner := testing2.NewRunner()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
@@ -140,6 +141,7 @@ func main() {
 	schemeBuilder.Register(network.AddToScheme())
 	schemeBuilder.Register(systemAddToScheme)
 
+	hookBuilder.Register(testing.AddToHook(runner))
 	hookBuilder.Register(network.AddToHook())
 	hookBuilder.Register(system.AddToHook())
 
