@@ -37,7 +37,7 @@ func TestTester_Process(t *testing.T) {
 
 func TestTester_Err(t *testing.T) {
 	tester := NewTester("foo")
-	assert.NoError(t, tester.Err())
+	require.NoError(t, tester.Err())
 }
 
 func TestTester_Exit(t *testing.T) {

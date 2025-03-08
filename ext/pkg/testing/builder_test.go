@@ -7,7 +7,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddToHook(t *testing.T) {
@@ -16,7 +16,7 @@ func TestAddToHook(t *testing.T) {
 	runner := testing2.NewRunner()
 
 	err := AddToHook(runner).AddToHook(h)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	n := NewTestNode()
 	defer n.Close()
@@ -27,8 +27,8 @@ func TestAddToHook(t *testing.T) {
 	}
 
 	err = h.Load(sb)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = h.Unload(sb)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
