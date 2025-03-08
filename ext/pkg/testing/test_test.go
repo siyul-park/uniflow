@@ -13,22 +13,22 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewTestNode(t *testing.T) {
 	n := NewTestNode()
-	assert.NotNil(t, n)
-	assert.NoError(t, n.Close())
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestTestNode_Port(t *testing.T) {
 	n := NewTestNode()
 	defer n.Close()
 
-	assert.NotNil(t, n.Out(node.PortOut))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
-	assert.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
+	require.NotNil(t, n.Out(node.PortOut))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
+	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
 func TestPipeNode_SendAndReceive(t *testing.T) {
@@ -55,10 +55,10 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(1), count.Load())
-			assert.ErrorIs(t, tester.Err(), context.Canceled)
+			require.Equal(t, int32(1), count.Load())
+			require.ErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -85,11 +85,11 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(1), count.Load())
-			assert.Error(t, tester.Err())
-			assert.NotErrorIs(t, tester.Err(), context.Canceled)
+			require.Equal(t, int32(1), count.Load())
+			require.Error(t, tester.Err())
+			require.NotErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -112,10 +112,10 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 			count.Add(1)
 
 			inPayload, ok := inPck.Payload().(types.Slice)
-			assert.True(t, ok)
-			assert.Equal(t, 2, inPayload.Len())
-			assert.Equal(t, types.KindString, inPayload.Get(0).Kind())
-			assert.Equal(t, types.KindInt, inPayload.Get(1).Kind())
+			require.True(t, ok)
+			require.Equal(t, 2, inPayload.Len())
+			require.Equal(t, types.KindString, inPayload.Get(0).Kind())
+			require.Equal(t, types.KindInt, inPayload.Get(1).Kind())
 
 			return inPck, nil
 		})
@@ -131,10 +131,10 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(2), count.Load())
-			assert.ErrorIs(t, tester.Err(), context.Canceled)
+			require.Equal(t, int32(2), count.Load())
+			require.ErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
@@ -157,10 +157,10 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 			count.Add(1)
 
 			inPayload, ok := inPck.Payload().(types.Slice)
-			assert.True(t, ok)
-			assert.Equal(t, 2, inPayload.Len())
-			assert.Equal(t, types.KindString, inPayload.Get(0).Kind())
-			assert.Equal(t, types.KindInt, inPayload.Get(1).Kind())
+			require.True(t, ok)
+			require.Equal(t, 2, inPayload.Len())
+			require.Equal(t, types.KindString, inPayload.Get(0).Kind())
+			require.Equal(t, types.KindInt, inPayload.Get(1).Kind())
 
 			return nil, packet.New(types.NewError(errors.New(faker.Sentence())))
 		})
@@ -176,11 +176,11 @@ func TestPipeNode_SendAndReceive(t *testing.T) {
 
 		select {
 		case <-tester.Done():
-			assert.Equal(t, int32(2), count.Load())
-			assert.Error(t, tester.Err())
-			assert.NotErrorIs(t, tester.Err(), context.Canceled)
+			require.Equal(t, int32(2), count.Load())
+			require.Error(t, tester.Err())
+			require.NotErrorIs(t, tester.Err(), context.Canceled)
 		case <-ctx.Done():
-			assert.Fail(t, ctx.Err().Error())
+			require.Fail(t, ctx.Err().Error())
 		}
 	})
 }
