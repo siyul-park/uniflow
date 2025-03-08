@@ -39,6 +39,6 @@ ports:
     - name: sub
       port: in
   out[1]:
-    - name: require
+    - name: assert
       port: in
 ```
