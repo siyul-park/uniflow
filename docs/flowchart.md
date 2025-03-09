@@ -283,11 +283,13 @@ flowchart TD
 3. **Initial Packet Creation and Transmission**
    * Create a packet containing initial data.
    * The packet includes the following information:
-     - Data payload (interface{})
-     - Metadata (headers)
+     - Unique identifier (UUID)
+     - Data payload (actual data to be processed)
+   * Send the created packet to the input port of the starting node.
+   * During transmission, the runtime system separately tracks the following information:
      - Source information (origin node/port)
      - Target information (destination node/port)
-   * Send the created packet to the input port of the starting node.
+     - Packet processing status and related metadata
 
 4. **Packet and Process Forwarding**
    * The input port forwards the packet and process to registered listeners.
