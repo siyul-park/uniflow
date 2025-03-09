@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
@@ -31,4 +32,20 @@ func TestAddToHook(t *testing.T) {
 
 	err = h.Unload(sb)
 	require.NoError(t, err)
+}
+
+func TestAddToScheme(t *testing.T) {
+	s := scheme.New()
+
+	err := AddToScheme().AddToScheme(s)
+	require.NoError(t, err)
+
+	tests := []string{KindTest}
+
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			require.NotNil(t, s.KnownType(tt))
+			require.NotNil(t, s.Codec(tt))
+		})
+	}
 }
