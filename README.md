@@ -18,7 +18,7 @@ This system empowers you to deliver customized experiences through your service 
 
 - **Performance:** Optimized for maximum throughput and minimal latency.
 - **Flexibility:** Adapt workflows on-the-fly to meet evolving needs.
-- **Extensibility:** Easily integrate new components and expand your system’s functionality.
+- **Extensibility:** Easily integrate new components and expand your system's functionality.
 
 ## 🚀 Quick Start
 
@@ -145,6 +145,7 @@ Percentage of the requests served within a certain time (ms)
 - [Getting Started](./docs/getting_started.md): CLI usage and workflow management.
 - [Key Concepts](./docs/key_concepts.md): Understanding nodes, ports, and packets.
 - [Architecture](./docs/architecture.md): Workflow execution and node specification loading.
+- [Flowchart](./docs/flowchart.md): Detailed explanation of workflow compilation and runtime processes.
 - [Debugging](./docs/debugging.md): Debug workflows, set breakpoints, and start sessions.
 - [User Extensions](./docs/user_extensions.md): Add features and integrate external services.
 - [Kubernetes Operator](https://github.com/siyul-park/uniflow-operator): Detects workflow changes and generates CRD to
