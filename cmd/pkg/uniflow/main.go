@@ -141,9 +141,9 @@ func main() {
 	schemeBuilder.Register(systemAddToScheme)
 	schemeBuilder.Register(testing.AddToScheme())
 
-	hookBuilder.Register(testing.AddToHook(runner))
 	hookBuilder.Register(network.AddToHook())
 	hookBuilder.Register(system.AddToHook())
+	hookBuilder.Register(testing.AddToHook(runner))
 
 	scheme, err := schemeBuilder.Build()
 	if err != nil {
