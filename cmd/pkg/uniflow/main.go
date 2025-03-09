@@ -140,6 +140,7 @@ func main() {
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
 	schemeBuilder.Register(systemAddToScheme)
+	schemeBuilder.Register(testing.AddToScheme())
 
 	hookBuilder.Register(testing.AddToHook(runner))
 	hookBuilder.Register(network.AddToHook())
