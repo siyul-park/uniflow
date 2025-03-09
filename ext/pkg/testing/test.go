@@ -4,9 +4,16 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
+	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/types"
 )
+
+// TestNodeSpec defines the specifications for creating a TestNode.
+type TestNodeSpec struct {
+	spec.Meta `json:",inline"`
+}
 
 // TestNode is a test node implementing node.Node and testing.Suite interfaces.
 type TestNode struct {
@@ -15,6 +22,15 @@ type TestNode struct {
 
 var _ node.Node = (*TestNode)(nil)
 var _ testing.Suite = (*TestNode)(nil)
+
+const KindTest = "test"
+
+// NewTestNodeCodec creates and returns a codec for decoding TestNodeSpec.
+func NewTestNodeCodec() scheme.Codec {
+	return scheme.CodecWithType(func(_ *TestNodeSpec) (node.Node, error) {
+		return NewTestNode(), nil
+	})
+}
 
 // NewTestNode creates and returns a new instance of TestNode.
 func NewTestNode() *TestNode {
