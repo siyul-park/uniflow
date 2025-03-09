@@ -1,6 +1,12 @@
 # 🏗️ Architecture
 
-Each node specification declaratively defines the role of each node, and these specifications connect to form workflows. Each workflow is defined within a specific namespace, and each runtime environment executes a single namespace. Namespaces are isolated and cannot reference nodes from other namespaces.
+Based on nodes as the minimal unit of processing work, node specifications define the role each node will perform, and these nodes connect to each other to form workflows. Each workflow operates within a predefined namespace in a single runtime, and each runtime environment executes one namespace.
+
+> 💡 For detailed information on the initialization and execution process of workflows, please refer to the [Runtime Documentation](./runtime.md).
+> 
+> 💡 For detailed explanations of core terms and concepts used in the system, please refer to the [Key Concepts Documentation](./key_concepts.md).
+
+Namespaces are isolated and managed separately, and cannot arbitrarily reference nodes defined in other namespaces.
 
 ```text
    +-------------------------------------------------+
@@ -24,28 +30,19 @@ Each node specification declaratively defines the role of each node, and these s
    +-------------------------------------------------+
 ```
 
-The engine does not enforce specific nodes. Nodes connect to the engine through extensions and can be freely added or removed based on service requirements.
+The engine does not enforce specific nodes, and all nodes can be freely added or removed according to service requirements.
 
-To optimize execution, two key processes—compilation and runtime—are employed. These processes reduce complexity and improve performance.
+### Workflow Modification
 
-## Workflow Modification
+The engine does not provide an API for users to change node specifications, focusing instead on loading, compiling, and executing nodes. When node specifications need to be modified, they can be updated through a Command-Line Interface (CLI) or an HTTP API using a directly defined [workflow](../examples/system.yaml). Such workflows are typically defined in the `system` namespace.
 
-The engine does not expose an API for directly modifying node specifications. Instead, it focuses on loading, compiling, and activating nodes to make them executable.
+This approach allows for flexible system expansion while maintaining a stable runtime environment.
 
-Users can update node specifications by using a Command-Line Interface (CLI) or
-defining [workflows](../examples/system.yaml) that provide an HTTP API for modifications. Typically, these workflows are
-defined in the `system` namespace.
+### Compilation Process
 
-This approach ensures runtime stability while allowing flexible system expansion.
+The loader tracks changes to node specifications and variables in real-time through the database's change stream. When additions, modifications, or deletions occur, the loader reloads the specifications and compiles them into executable forms using codecs defined in the scheme. Caching and optimization processes are also performed to improve performance.
 
-## Compilation Process
-
-The loader tracks changes to node specifications and values in real-time through a change stream. When additions,
-modifications, or deletions occur, the loader dynamically reloads the specifications from the database. These
-specifications are compiled into executable forms using codecs defined in the schema, with caching and optimization to
-enhance performance.
-
-Compiled nodes are transformed into symbols and stored in a symbol table. The symbol table connects each symbol's ports based on the port connection information in the node specifications.
+Compiled nodes are combined with their specifications to form symbols, which are then stored in the symbol table. The symbol table connects each symbol's ports based on the port connection information defined in the node specifications.
 
 ```text
    +--------------------------+
@@ -61,10 +58,10 @@ Compiled nodes are transformed into symbols and stored in a symbol table. The sy
    +--------------------------+   |  |  +-------+  |  |
    |         Database         |   |  |  | Codec |  |  |--+
    |  +--------+  +--------+  |   |  |  +-------+  |  |  |
-   |  | Value  |  |  Value |  |-->|  +-------------+  |  |
+   |  | Value  |  | Value  |  |-->|  +-------------+  |  |
    |  +--------+  +--------+  |   +-------------------+  |
    |  +--------+  +--------+  |                          |
-   |  | Value  |  |  Value |  |                          |
+   |  | Value  |  | Value  |  |                          |
    |  +--------+  +--------+  |                          |
    +--------------------------+                          |
    +-------------------------+                           |
@@ -79,17 +76,11 @@ Compiled nodes are transformed into symbols and stored in a symbol table. The sy
    +-------------------------+
 ```
 
-Once all nodes in a workflow are loaded into the symbol table and ports are connected, load hooks are executed to activate nodes. If a node is removed, unload hooks deactivate dependent nodes.
+Compiled nodes are stored in the symbol table, and symbols are connected according to their defined ports. Once all nodes in a workflow are loaded into the symbol table, sequential operations to activate the nodes are executed. When nodes are removed, deactivation operations are also executed sequentially.
 
-Changes in node specifications propagate to all runtime environments.
+### Runtime Process
 
-## Runtime Process
-
-Activated nodes monitor sockets or files and execute workflows. Each node spawns an independent process, isolating its execution flow from other nodes to optimize resource management.
-
-Nodes open ports through these processes and create writers to send packets to connected nodes. The payload is converted into common types for transmission. Connected nodes create readers to process waiting packets and pass the results to the next node or return them.
-
-Connected nodes monitor whether a new process has opened the port and create readers accordingly. These readers continuously process waiting packets and pass the processed results to the next node or return them.
+Activated nodes execute workflows, managing resources through independent processes to avoid affecting other operations. Each node exchanges packets through inter-process communication, and payloads are converted to common types for transmission.
 
 ```text
    +-----------------------+          +-----------------------+
@@ -107,10 +98,12 @@ Connected nodes monitor whether a new process has opened the port and create rea
    +-----------------------+          +-----------------------+
 ```
 
-Each reader processes packets sequentially and responds. Writers must return packets as responses to ensure smooth node communication and data consistency.
+A single reader processes all packets sequentially and must return response packets for packets sent to the writer. This ensures smooth communication between nodes and guarantees data consistency and integrity.
 
-Nodes wait for responses to all sent packets before terminating the process and releasing allocated resources. If an error occurs, the node logs the error and terminates.
+The node that executes a workflow waits until it receives responses for all sent packets, then terminates the process and releases allocated resources. If an error occurs during packet processing and an error response is returned, the node logs the error and terminates the process.
 
-Upon process termination, the system releases all associated resources, including open file descriptors, memory, and database transactions. When a parent process terminates, all child processes terminate as well. The parent process typically waits until all child processes have completed.
+When a process terminates, it checks for normal termination and releases open file descriptors, allocated memory, database transactions, and other resources.
+
+When a parent process terminates, all child processes derived from it are also terminated. The parent process waits until all child processes have terminated.
 
 This architecture ensures efficient node communication, data integrity, and stable execution across workflows.
