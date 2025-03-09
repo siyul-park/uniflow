@@ -145,6 +145,7 @@ Percentage of the requests served within a certain time (ms)
 - [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 알아보세요.
 - [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등 주요 개념을 이해하세요.
 - [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 살펴보세요.
+- [플로우차트](./docs/flowchart_kr.md): 워크플로우 컴파일 및 런타임 프로세스에 대한 자세한 설명을 확인하세요.
 - [디버깅](./docs/debugging_kr.md): 워크플로우 디버깅을 통해 문제를 해결하는 방법을 배우세요.
 - [사용자 확장](./docs/user_extensions_kr.md): 시스템 확장 및 기존 서비스와의 통합 방법을 안내합니다.
 - [쿠버네티스 오퍼레이터](https://github.com/siyul-park/uniflow-operator): 워크플로우를 변경을 감지하고 CRD를 생성하여 서버리스 서비스를 제공합니다.
