@@ -20,10 +20,10 @@ type TestNode struct {
 	outPorts [2]*port.OutPort
 }
 
+const KindTest = "test"
+
 var _ node.Node = (*TestNode)(nil)
 var _ testing.Suite = (*TestNode)(nil)
-
-const KindTest = "test"
 
 // NewTestNodeCodec creates and returns a codec for decoding TestNodeSpec.
 func NewTestNodeCodec() scheme.Codec {
