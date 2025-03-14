@@ -104,6 +104,9 @@ func (s *store) Unindex(_ context.Context, fields []types.String) error {
 }
 
 func (s *store) Insert(_ context.Context, docs ...types.Map) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	for _, doc := range docs {
 		if err := s.section.Store(doc); err != nil {
 			return err
@@ -112,10 +115,35 @@ func (s *store) Insert(_ context.Context, docs ...types.Map) error {
 	return nil
 }
 
-func (s *store) Remove(ctx context.Context, query types.Map) (int, error) {
-	docs, err := s.Find(ctx, query)
+func (s *store) Remove(_ context.Context, query types.Map) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	docs := make([]types.Map, 0)
+
+	plan, err := s.explain(query)
 	if err != nil {
 		return 0, err
+	}
+
+	c := Cursor(s.section)
+	for plan != nil {
+		c = c.Scan(plan.key, plan.min, plan.max)
+		plan = plan.next
+	}
+
+	for _, doc := range c.Range() {
+		if query == nil {
+			docs = append(docs, doc.(types.Map))
+			continue
+		}
+		ok, err := s.match(doc, query)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			docs = append(docs, doc.(types.Map))
+		}
 	}
 
 	for _, doc := range docs {
@@ -127,6 +155,9 @@ func (s *store) Remove(ctx context.Context, query types.Map) (int, error) {
 }
 
 func (s *store) Find(_ context.Context, query types.Map) ([]types.Map, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	docs := make([]types.Map, 0)
 
 	plan, err := s.explain(query)
