@@ -18,9 +18,10 @@ type fieldNameMapper struct{}
 const Language = "javascript"
 
 const (
-	keyModule  = "module"
-	keyExports = "exports"
-	keyDefault = "default"
+	keyModule   = "module"
+	keyExports  = "exports"
+	keyDefault  = "default"
+	keyESModule = "__esModule"
 )
 
 var _ goja.FieldNameMapper = &fieldNameMapper{}
@@ -70,8 +71,6 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 		}
 
 		return language.RunFunc(func(ctx context.Context, args ...any) (_ any, err error) {
-			defer func() { err, _ = recover().(error) }()
-
 			vm := vms.Get().(*goja.Runtime)
 			defer vms.Put(vm)
 
@@ -85,7 +84,7 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				return nil, nil
 			}
 
-			exModule := exports.ToObject(vm).Get("__esModule")
+			exModule := exports.ToObject(vm).Get(keyESModule)
 			if exModule != nil && exModule.Export() == true {
 				exports = exports.ToObject(vm).Get(keyDefault)
 			}
