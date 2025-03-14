@@ -549,3 +549,103 @@
       },
       "status": 500
     }
+
+# Adding test nodes for specs operations
+- kind: test
+  name: test_specs_create
+  ports:
+    out[0]:
+      - name: specs_create
+        port: in
+
+- kind: test
+  name: test_specs_read
+  ports:
+    out[0]:
+      - name: specs_read_with_query
+        port: in
+
+- kind: test
+  name: test_specs_update
+  ports:
+    out[0]:
+      - name: specs_update
+        port: in
+
+- kind: test
+  name: test_specs_delete
+  ports:
+    out[0]:
+      - name: specs_delete_with_query
+        port: in
+
+- kind: test
+  name: test_specs_read_with_params
+  ports:
+    out[0]:
+      - name: specs_read_with_params
+        port: in
+
+- kind: test
+  name: test_specs_update_with_params
+  ports:
+    out[0]:
+      - name: specs_update_with_params
+        port: in
+
+- kind: test
+  name: test_specs_delete_with_params
+  ports:
+    out[0]:
+      - name: specs_delete_with_params
+        port: in
+
+# Adding test nodes for values operations
+- kind: test
+  name: test_values_create
+  ports:
+    out[0]:
+      - name: values_create
+        port: in
+
+- kind: test
+  name: test_values_read
+  ports:
+    out[0]:
+      - name: values_read_with_query
+        port: in
+
+- kind: test
+  name: test_values_update
+  ports:
+    out[0]:
+      - name: values_update
+        port: in
+
+- kind: test
+  name: test_values_delete
+  ports:
+    out[0]:
+      - name: values_delete_with_query
+        port: in
+
+- kind: test
+  name: test_values_read_with_params
+  ports:
+    out[0]:
+      - name: values_read_with_params
+        port: in
+
+- kind: test
+  name: test_values_update_with_params
+  ports:
+    out[0]:
+      - name: values_update_with_params
+        port: in
+
+- kind: test
+  name: test_values_delete_with_params
+  ports:
+    out[0]:
+      - name: values_delete_with_params
+        port: in
