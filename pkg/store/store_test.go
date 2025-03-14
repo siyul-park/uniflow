@@ -83,7 +83,7 @@ func TestStore_Remove(t *testing.T) {
 }
 
 func TestStore_Find(t *testing.T) {
-	t.Run("query: nil", func(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -103,7 +103,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'id': <id>}", func(t *testing.T) {
+	t.Run("{'id': <id>}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -123,7 +123,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'id': {'$eq': <id>}}", func(t *testing.T) {
+	t.Run("{'id': {'$eq': <id>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -143,7 +143,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'id': {'$ne': <id>}}", func(t *testing.T) {
+	t.Run("{'id': {'$ne': <id>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -163,7 +163,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'age': {'$gt': <age>}}", func(t *testing.T) {
+	t.Run("{'age': {'$gt': <age>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -183,7 +183,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'age': {'$gte': <age>}}", func(t *testing.T) {
+	t.Run("{'age': {'$gte': <age>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -203,7 +203,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'age': {'$lt': <age>}}", func(t *testing.T) {
+	t.Run("{'age': {'$lt': <age>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -223,7 +223,7 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("query: {'name': {'$lte': <name>}}", func(t *testing.T) {
+	t.Run("{'age': {'$lte': <name>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
