@@ -243,3 +243,103 @@ func TestStore_Find(t *testing.T) {
 		require.Equal(t, doc, docs[0])
 	})
 }
+
+func BenchmarkStore_Insert(b *testing.B) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	s := New()
+
+	for i := 0; i < b.N; i++ {
+		doc := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+			types.NewString("age"), types.NewInt(123),
+		)
+
+		err := s.Insert(ctx, doc)
+		require.NoError(b, err)
+	}
+}
+
+func BenchmarkStore_Remove(b *testing.B) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	defer cancel()
+
+	s := New()
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		doc := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+		)
+
+		_ = s.Insert(ctx, doc)
+
+		b.StartTimer()
+
+		count, err := s.Remove(ctx, types.NewMap(primaryKey, doc.Get(primaryKey)))
+		require.NoError(b, err)
+		require.Equal(b, 1, count)
+	}
+}
+
+func BenchmarkStore_Find(b *testing.B) {
+	b.Run("with index", func(b *testing.B) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		keys := make([]types.String, 0, b.N)
+
+		for i := 0; i < b.N; i++ {
+			doc := types.NewMap(
+				primaryKey, types.NewString(faker.UUIDHyphenated()),
+				types.NewString("name"), types.NewString(faker.Word()),
+				types.NewString("age"), types.NewInt(123),
+			)
+
+			_ = s.Insert(ctx, doc)
+			keys = append(keys, doc.Get(primaryKey).(types.String))
+		}
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			key := keys[i%len(keys)]
+			_, err := s.Find(ctx, types.NewMap(primaryKey, key))
+			require.NoError(b, err)
+		}
+	})
+
+	b.Run("without index", func(b *testing.B) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		keys := make([]types.String, 0, b.N)
+
+		for i := 0; i < b.N; i++ {
+			doc := types.NewMap(
+				primaryKey, types.NewString(faker.UUIDHyphenated()),
+				types.NewString("name"), types.NewString(faker.Word()),
+				types.NewString("age"), types.NewInt(123),
+			)
+
+			_ = s.Insert(ctx, doc)
+			keys = append(keys, doc.Get(types.NewString("name")).(types.String))
+		}
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			key := keys[i%len(keys)]
+			_, err := s.Find(ctx, types.NewMap(types.NewString("name"), key))
+			require.NoError(b, err)
+		}
+	})
+}
