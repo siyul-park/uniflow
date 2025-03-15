@@ -146,16 +146,9 @@ func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) er
 	}
 
 	for i := 0; i < len(s.indexes); i++ {
-		if len(s.indexes[i]) != len(idx) {
-			continue
+		if slices.Equal(s.indexes[i], idx) {
+			return nil
 		}
-		for j := 0; j < len(idx); j++ {
-			if !types.Equal(s.indexes[i][j], idx[j]) {
-				continue
-			}
-		}
-
-		return nil
 	}
 
 	if err := s.section.Index(idx, withUnique(unique), withFilter(filter)); err != nil {
@@ -180,17 +173,10 @@ func (s *store) Unindex(_ context.Context, keys []string) error {
 	}
 
 	for i := 0; i < len(s.indexes); i++ {
-		if len(s.indexes[i]) != len(idx) {
-			continue
+		if slices.Equal(s.indexes[i], idx) {
+			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
+			break
 		}
-		for j := 0; j < len(idx); j++ {
-			if !types.Equal(s.indexes[i][j], idx[j]) {
-				continue
-			}
-		}
-
-		s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
-		break
 	}
 	return nil
 }
