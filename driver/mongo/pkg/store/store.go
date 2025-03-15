@@ -237,7 +237,7 @@ func (s *Store) Find(ctx context.Context, filter any, opts ...store.FindOptions)
 		return nil, err
 	}
 
-	cur, err := s.collection.Find(ctx, filter)
+	cur, err := s.collection.Find(ctx, filter, option)
 	if err != nil {
 		return nil, err
 	}
