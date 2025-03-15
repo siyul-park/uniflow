@@ -137,7 +137,7 @@ func TestMeta_IsBound(t *testing.T) {
 }
 
 func TestMeta_Bind(t *testing.T) {
-	sec := &value.Value{
+	val := &value.Value{
 		ID:   uuid.Must(uuid.NewV7()),
 		Data: faker.UUIDHyphenated(),
 	}
@@ -146,13 +146,13 @@ func TestMeta_Bind(t *testing.T) {
 		Kind: faker.UUIDHyphenated(),
 		Env: map[string]Value{
 			"FOO": {
-				ID:   sec.ID,
+				ID:   val.ID,
 				Data: "{{ . }}",
 			},
 		},
 	}
 
-	err := meta.Bind(sec)
+	err := meta.Bind(val)
 	require.NoError(t, err)
-	require.Equal(t, sec.Data, meta.GetEnv()["FOO"].Data)
+	require.Equal(t, val.Data, meta.GetEnv()["FOO"].Data)
 }
