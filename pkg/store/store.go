@@ -576,19 +576,14 @@ func (s *store) match(doc, filter types.Value) (bool, error) {
 			if !ok {
 				return false, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
 			}
-			matched := false
 			for _, sub := range vals.Range() {
 				match, err := s.match(doc, sub)
 				if err != nil {
 					return false, err
 				}
 				if match {
-					matched = true
-					break
+					return true, nil
 				}
-			}
-			if !matched {
-				return false, nil
 			}
 		default:
 			return false, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
