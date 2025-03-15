@@ -26,7 +26,6 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/testing"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/spf13/afero"
 )
