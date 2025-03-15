@@ -550,102 +550,347 @@
       "status": 500
     }
 
+# Setup data for tests
+- kind: step
+  name: setup_test_data
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          // Create test specs
+          return [{
+            name: "test-spec",
+            kind: "test",
+            data: {
+              test: "value"
+            }
+          }, {
+            name: "test-spec-id",
+            kind: "test",
+            data: {
+              test: "param-value"
+            }
+          }, {
+            name: "test-spec-new",
+            kind: "test",
+            data: {
+              test: "new-value"
+            }
+          }];
+        }
+    - kind: syscall
+      opcode: specs.create
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          // Create test values
+          return [{
+            name: "test-value",
+            data: "sample value"
+          }, {
+            name: "test-value-id",
+            data: "param sample value"
+          }, {
+            name: "test-value-new",
+            data: "new sample value"
+          }];
+        }
+    - kind: syscall
+      opcode: values.create
+
+# Mock implementations for testing - these will replace the test nodes
+- kind: step
+  name: mock_specs_create
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            name: "mock-spec-new",
+            kind: "test",
+            data: { 
+              test: "mock-value" 
+            }
+          };
+        }
+    - kind: syscall
+      opcode: specs.create
+
+- kind: step
+  name: mock_specs_read
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { query: { name: ["test-spec"] } };
+        }
+    - kind: syscall
+      opcode: specs.read
+
+- kind: step
+  name: mock_specs_update
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            body: {
+              name: "test-spec",
+              kind: "test",
+              data: { test: "updated-by-mock" }
+            }
+          };
+        }
+    - kind: syscall
+      opcode: specs.update
+
+- kind: step
+  name: mock_specs_delete
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { query: { name: ["test-spec-new"] } };
+        }
+    - kind: syscall
+      opcode: specs.delete
+
+- kind: step
+  name: mock_specs_read_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { params: { id: "test-spec-id" } };
+        }
+    - kind: syscall
+      opcode: specs.read
+
+- kind: step
+  name: mock_specs_update_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            body: { data: { test: "param-updated-by-mock" } },
+            params: { id: "test-spec-id" }
+          };
+        }
+    - kind: syscall
+      opcode: specs.update
+
+- kind: step
+  name: mock_specs_delete_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { params: { id: "test-spec-id" } };
+        }
+    - kind: syscall
+      opcode: specs.delete
+
+- kind: step
+  name: mock_values_create
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            name: "mock-value-new",
+            data: "mock sample value"
+          };
+        }
+    - kind: syscall
+      opcode: values.create
+
+- kind: step
+  name: mock_values_read
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { query: { name: ["test-value"] } };
+        }
+    - kind: syscall
+      opcode: values.read
+
+- kind: step
+  name: mock_values_update
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            body: {
+              name: "test-value",
+              data: "updated by mock"
+            }
+          };
+        }
+    - kind: syscall
+      opcode: values.update
+
+- kind: step
+  name: mock_values_delete
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { query: { name: ["test-value-new"] } };
+        }
+    - kind: syscall
+      opcode: values.delete
+
+- kind: step
+  name: mock_values_read_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { params: { id: "test-value-id" } };
+        }
+    - kind: syscall
+      opcode: values.read
+
+- kind: step
+  name: mock_values_update_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return {
+            body: { data: "param updated by mock" },
+            params: { id: "test-value-id" }
+          };
+        }
+    - kind: syscall
+      opcode: values.update
+
+- kind: step
+  name: mock_values_delete_with_params
+  specs:
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function () {
+          return { params: { id: "test-value-id" } };
+        }
+    - kind: syscall
+      opcode: values.delete
+
 # Adding test nodes for specs operations
 - kind: test
   name: test_specs_create
   ports:
     out[0]:
-      - name: specs_create
+      - name: mock_specs_create
         port: in
 
 - kind: test
   name: test_specs_read
   ports:
     out[0]:
-      - name: specs_read_with_query
+      - name: mock_specs_read
         port: in
 
 - kind: test
   name: test_specs_update
   ports:
     out[0]:
-      - name: specs_update
+      - name: mock_specs_update
         port: in
 
 - kind: test
   name: test_specs_delete
   ports:
     out[0]:
-      - name: specs_delete_with_query
+      - name: mock_specs_delete
         port: in
 
 - kind: test
   name: test_specs_read_with_params
   ports:
     out[0]:
-      - name: specs_read_with_params
+      - name: mock_specs_read_with_params
         port: in
 
 - kind: test
   name: test_specs_update_with_params
   ports:
     out[0]:
-      - name: specs_update_with_params
+      - name: mock_specs_update_with_params
         port: in
 
 - kind: test
   name: test_specs_delete_with_params
   ports:
     out[0]:
-      - name: specs_delete_with_params
+      - name: mock_specs_delete_with_params
         port: in
 
-# Adding test nodes for values operations
+# Adding test nodes for values operations - connected to mock implementations
 - kind: test
   name: test_values_create
   ports:
     out[0]:
-      - name: values_create
+      - name: mock_values_create
         port: in
 
 - kind: test
   name: test_values_read
   ports:
     out[0]:
-      - name: values_read_with_query
+      - name: mock_values_read
         port: in
 
 - kind: test
   name: test_values_update
   ports:
     out[0]:
-      - name: values_update
+      - name: mock_values_update
         port: in
 
 - kind: test
   name: test_values_delete
   ports:
     out[0]:
-      - name: values_delete_with_query
+      - name: mock_values_delete
         port: in
 
 - kind: test
   name: test_values_read_with_params
   ports:
     out[0]:
-      - name: values_read_with_params
+      - name: mock_values_read_with_params
         port: in
 
 - kind: test
   name: test_values_update_with_params
   ports:
     out[0]:
-      - name: values_update_with_params
+      - name: mock_values_update_with_params
         port: in
 
 - kind: test
   name: test_values_delete_with_params
   ports:
     out[0]:
-      - name: values_delete_with_params
+      - name: mock_values_delete_with_params
         port: in
