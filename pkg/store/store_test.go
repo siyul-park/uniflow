@@ -119,7 +119,7 @@ func TestStore_Insert(t *testing.T) {
 }
 
 func TestStore_Update(t *testing.T) {
-	t.Run("nil", func(t *testing.T) {
+	t.Run("{'$set': <doc>}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -145,7 +145,33 @@ func TestStore_Update(t *testing.T) {
 		require.Equal(t, 1, count)
 	})
 
-	t.Run("{'upsert': true}", func(t *testing.T) {
+	t.Run("{'$unset': <doc>}", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		doc := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+
+		err := s.Insert(ctx, []any{doc})
+		require.NoError(t, err)
+
+		count, err := s.Update(
+			ctx,
+			map[string]any{"id": doc["id"]},
+			map[string]any{"$unset": map[string]any{"name": nil}},
+		)
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+	})
+
+	t.Run("{'$set': <doc>}, {'upsert': true}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
@@ -320,6 +346,45 @@ func TestStore_Find(t *testing.T) {
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
+	})
+
+	t.Run("{'id': {'$exists': <exists>}}", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
+
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
+
+		c, err := s.Find(ctx, map[string]any{"id": map[string]any{"$exists": 1}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
+		require.Len(t, docs, 2)
 	})
 
 	t.Run("{'id': {'$eq': <id>}}", func(t *testing.T) {
