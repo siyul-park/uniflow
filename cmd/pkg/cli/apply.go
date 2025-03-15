@@ -4,7 +4,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -24,8 +26,8 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{specs, values},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:  runApplyCommand(config.SpecStore, config.FS),
-			values: runApplyCommand(config.ValueStore, config.FS),
+			specs:  runApplyCommand[spec.Spec](config.SpecStore, config.FS),
+			values: runApplyCommand[*value.Value](config.ValueStore, config.FS),
 		}),
 	}
 
@@ -35,7 +37,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	return cmd
 }
 
-func runApplyCommand(st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runApplyCommand[T resourcebase.Resource](st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -69,7 +71,7 @@ func runApplyCommand(st store.Store, fs afero.Fs, alias ...func(map[string]strin
 		reader := resource.NewReader(file)
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		var resources []*resourcebase.Unstructured
+		var resources []T
 		if err := reader.Read(&resources); err != nil {
 			return err
 		}

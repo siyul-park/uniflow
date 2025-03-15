@@ -39,6 +39,14 @@ type Meta struct {
 // DefaultNamespace represents the default namespace for resources.
 const DefaultNamespace = "default"
 
+// Key constants for commonly used fields in Unstructured.
+const (
+	KeyID          = "id"
+	KeyNamespace   = "namespace"
+	KeyName        = "name"
+	KeyAnnotations = "annotations"
+)
+
 var _ Resource = (*Meta)(nil)
 
 // GetID returns the resource's unique identifier.

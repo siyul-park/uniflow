@@ -5,13 +5,14 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/siyul-park/uniflow/pkg/store"
-
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/testing"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -45,8 +46,8 @@ func NewTestCommand(config TestConfig) *cobra.Command {
 
 // runTestCommand runs the start command with the given configuration.
 func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) error {
-	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
-	applyValues := runApplyCommand(config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
+	applySpecs := runApplyCommand[spec.Spec](config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
+	applyValues := runApplyCommand[*value.Value](config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
 
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()

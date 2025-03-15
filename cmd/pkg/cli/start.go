@@ -6,13 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/siyul-park/uniflow/pkg/store"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -45,8 +46,8 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 
 // runStartCommand runs the start command with the given configuration.
 func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string) error {
-	applySpecs := runApplyCommand(config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
-	applyValues := runApplyCommand(config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
+	applySpecs := runApplyCommand[spec.Spec](config.SpecStore, config.FS, alias(flagFilename, flagFromSpecs))
+	applyValues := runApplyCommand[*value.Value](config.ValueStore, config.FS, alias(flagFilename, flagFromValues))
 
 	return func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
