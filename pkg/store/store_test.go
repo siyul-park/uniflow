@@ -16,15 +16,15 @@ func TestStore_Watch(t *testing.T) {
 
 	s := New()
 
-	c, err := s.Watch(ctx, nil)
+	strm, err := s.Watch(ctx, nil)
 	require.NoError(t, err)
-	require.NotNil(t, c)
+	require.NotNil(t, strm)
 
-	defer c.Close(ctx)
+	defer strm.Close(ctx)
 
 	var count atomic.Int32
 	go func() {
-		for c.Next(ctx) {
+		for strm.Next(ctx) {
 			count.Add(1)
 		}
 	}()
@@ -39,15 +39,11 @@ func TestStore_Watch(t *testing.T) {
 
 	err = s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
-		return count.Load() == 1
-	}, 1*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return count.Load() == 1 }, time.Second, 10*time.Millisecond)
 
 	_, err = s.Delete(ctx, map[string]any{"id": doc["id"]})
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
-		return count.Load() == 2
-	}, 1*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return count.Load() == 2 }, time.Second, 10*time.Millisecond)
 }
 
 func TestStore_Index(t *testing.T) {

@@ -27,41 +27,19 @@ type Resource interface {
 // Meta contains metadata for resources.
 type Meta struct {
 	// ID is the unique identifier of the resource.
-	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" validate:"required"`
 	// Namespace groups resources logically.
-	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" validate:"required"`
+	Namespace string `json:"namespace" yaml:"namespace" validate:"required"`
 	// Name is the human-readable name of the resource.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// Annotations hold additional metadata.
-	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
-
-// Key constants for commonly used fields.
-const (
-	KeyID          = "id"
-	KeyNamespace   = "namespace"
-	KeyName        = "name"
-	KeyAnnotations = "annotations"
-)
 
 // DefaultNamespace represents the default namespace for resources.
 const DefaultNamespace = "default"
 
 var _ Resource = (*Meta)(nil)
-
-// Is checks whether all non-zero fields in the target exist in the source with matching values.
-func Is[T Resource](source, target T) bool {
-	if target.GetID() != uuid.Nil && target.GetID() != source.GetID() {
-		return false
-	}
-	if target.GetNamespace() != "" && source.GetNamespace() != target.GetNamespace() {
-		return false
-	}
-	if target.GetName() != "" && source.GetName() != target.GetName() {
-		return false
-	}
-	return true
-}
 
 // GetID returns the resource's unique identifier.
 func (m *Meta) GetID() uuid.UUID {

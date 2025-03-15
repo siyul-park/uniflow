@@ -5,6 +5,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/store"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -12,8 +16,8 @@ import (
 )
 
 func TestGetCommand_Execute(t *testing.T) {
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	t.Run("GetSpec", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -22,11 +26,13 @@ func TestGetCommand_Execute(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
-			Kind: kind,
-			Name: faker.UUIDHyphenated(),
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 
-		_, err := specStore.Store(ctx, meta)
+		err := specStore.Insert(ctx, []any{meta})
 		require.NoError(t, err)
 
 		output := new(bytes.Buffer)
@@ -41,7 +47,6 @@ func TestGetCommand_Execute(t *testing.T) {
 
 		err = cmd.Execute()
 		require.NoError(t, err)
-
 		require.Contains(t, output.String(), meta.Name)
 	})
 
@@ -49,12 +54,14 @@ func TestGetCommand_Execute(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		scrt := &value.Value{
-			Name: faker.UUIDHyphenated(),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Data:      faker.UUIDHyphenated(),
 		}
 
-		_, err := valueStore.Store(ctx, scrt)
+		err := valueStore.Insert(ctx, []any{val})
 		require.NoError(t, err)
 
 		output := new(bytes.Buffer)
@@ -69,7 +76,6 @@ func TestGetCommand_Execute(t *testing.T) {
 
 		err = cmd.Execute()
 		require.NoError(t, err)
-
-		require.Contains(t, output.String(), scrt.Name)
+		require.Contains(t, output.String(), val.Name)
 	})
 }

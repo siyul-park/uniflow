@@ -79,7 +79,11 @@ func New(config Config) *Runtime {
 
 // Load loads symbols from the spec store into the symbol table.
 func (r *Runtime) Load(ctx context.Context, filter any) error {
-	filter = map[string]any{"$and": []any{filter, map[string]any{resource.KeyNamespace: r.namespace}}}
+	if filter == nil {
+		filter = map[string]any{resource.KeyNamespace: r.namespace}
+	} else {
+		filter = map[string]any{"$and": append([]any{filter}, map[string]any{resource.KeyNamespace: r.namespace})}
+	}
 
 	cursor, err := r.specStore.Find(ctx, filter)
 	if err != nil {

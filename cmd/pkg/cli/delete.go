@@ -1,18 +1,18 @@
 package cli
 
 import (
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/value"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // DeleteConfig represents the configuration for the delete command.
 type DeleteConfig struct {
-	SpecStore  spec.Store
-	ValueStore value.Store
+	SpecStore  store.Store
+	ValueStore store.Store
 	FS         afero.Fs
 }
 
@@ -24,8 +24,8 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{specs, values},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:  runDeleteCommand(config.SpecStore, config.FS, spec.New),
-			values: runDeleteCommand(config.ValueStore, config.FS, value.New),
+			specs:  runDeleteCommand(config.SpecStore, config.FS),
+			values: runDeleteCommand(config.ValueStore, config.FS),
 		}),
 	}
 
@@ -35,7 +35,7 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 	return cmd
 }
 
-func runDeleteCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runDeleteCommand(store store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -67,21 +67,29 @@ func runDeleteCommand[T resourcebase.Resource](store resourcebase.Store[T], fs a
 
 		reader := resource.NewReader(file)
 
-		var resources []T
+		var resources []*resourcebase.Unstructured
 		if err := reader.Read(&resources); err != nil {
 			return err
 		}
-		if len(resources) == 0 {
-			resources = append(resources, zero())
-		}
 
+		filters := make([]any, 0, len(resources))
 		for _, rsc := range resources {
-			if rsc.GetNamespace() == "" {
-				rsc.SetNamespace(namespace)
+			filter := map[string]any{}
+			if rsc.GetID() != uuid.Nil {
+				filter[resourcebase.KeyID] = rsc.GetID()
 			}
+			if rsc.GetName() != "" {
+				filter[resourcebase.KeyName] = rsc.GetName()
+			}
+			filters = append(filters, filter)
 		}
 
-		_, err = store.Delete(ctx, resources...)
+		_, err = store.Delete(ctx, map[string]any{
+			"$and": []any{
+				map[string]any{resourcebase.KeyNamespace: namespace},
+				map[string]any{"$or": filters},
+			},
+		})
 		return err
 	}
 }

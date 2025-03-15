@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -62,16 +63,43 @@ func (s *Store) Index(ctx context.Context, keys []string, opts ...store.IndexOpt
 		}
 	}
 
-	raws := bson.D{}
+	name := ""
+	for i, key := range keys {
+		if key == "id" {
+			key = "_id"
+		}
+		if i > 0 {
+			name += "_"
+		}
+		name += key + "_1"
+	}
+
+	idx := bson.D{}
 	for _, key := range keys {
 		if key == "id" {
 			key = "_id"
 		}
-		raws = append(raws, bson.E{Key: key, Value: 1})
+		idx = append(idx, bson.E{Key: key, Value: 1})
 	}
 
-	_, err := s.collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    raws,
+	indexes, err := s.collection.Indexes().List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for indexes.Next(ctx) {
+		var index mongo.IndexSpecification
+		if err := indexes.Decode(&index); err != nil {
+			return err
+		}
+
+		if index.Name == name {
+			return nil
+		}
+	}
+
+	_, err = s.collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    idx,
 		Options: option,
 	})
 	return err
@@ -89,7 +117,23 @@ func (s *Store) Unindex(ctx context.Context, keys []string) error {
 		name += key + "_1"
 	}
 
-	return s.collection.Indexes().DropOne(ctx, name)
+	indexes, err := s.collection.Indexes().List(ctx)
+	if err != nil {
+		return err
+	}
+
+	for indexes.Next(ctx) {
+		var index mongo.IndexSpecification
+		if err := indexes.Decode(&index); err != nil {
+			return err
+		}
+
+		if index.Name == name {
+			return s.collection.Indexes().DropOne(ctx, name)
+		}
+	}
+
+	return nil
 }
 
 func (s *Store) Insert(ctx context.Context, docs []any, _ ...store.InsertOptions) error {
@@ -144,7 +188,7 @@ func (s *Store) Update(ctx context.Context, filter, update any, opts ...store.Up
 	return int(res.ModifiedCount + res.UpsertedCount), nil
 }
 
-func (s *Store) Delete(ctx context.Context, filter any, opts ...store.DeleteOptions) (int, error) {
+func (s *Store) Delete(ctx context.Context, filter any, _ ...store.DeleteOptions) (int, error) {
 	f, err := types.Marshal(filter)
 	if err != nil {
 		return 0, err
@@ -154,7 +198,7 @@ func (s *Store) Delete(ctx context.Context, filter any, opts ...store.DeleteOpti
 		return 0, err
 	}
 
-	res, err := s.collection.DeleteMany(ctx, f)
+	res, err := s.collection.DeleteMany(ctx, filter)
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +212,11 @@ func (s *Store) Find(ctx context.Context, filter any, opts ...store.FindOptions)
 			option = option.SetLimit(int64(opt.Limit))
 		}
 		if opt.Sort != nil {
-			sort, err := toBSON(opt.Sort)
+			val, err := types.Marshal(opt.Sort)
+			if err != nil {
+				return nil, err
+			}
+			sort, err := toBSON(val)
 			if err != nil {
 				return nil, err
 			}

@@ -8,15 +8,18 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
 func TestApplyCommand_Execute(t *testing.T) {
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	fs := afero.NewMemMapFs()
 
@@ -29,8 +32,10 @@ func TestApplyCommand_Execute(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
-			Kind: kind,
-			Name: faker.UUIDHyphenated(),
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 
 		data, err := json.Marshal(meta)
@@ -57,9 +62,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		results, err := specStore.Load(ctx, meta)
+		cursor, err := specStore.Find(ctx, nil)
 		require.NoError(t, err)
-		require.Len(t, results, 1)
+		require.True(t, cursor.Next(ctx))
 		require.Contains(t, output.String(), meta.Name)
 	})
 
@@ -72,11 +77,13 @@ func TestApplyCommand_Execute(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
-			Kind: kind,
-			Name: faker.UUIDHyphenated(),
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 
-		_, err := specStore.Store(ctx, meta)
+		err := specStore.Insert(ctx, []any{meta})
 		require.NoError(t, err)
 
 		data, err := json.Marshal(meta)
@@ -103,9 +110,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		results, err := specStore.Load(ctx, meta)
+		cursor, err := specStore.Find(ctx, nil)
 		require.NoError(t, err)
-		require.Len(t, results, 1)
+		require.True(t, cursor.Next(ctx))
 		require.Contains(t, output.String(), meta.Name)
 	})
 
@@ -115,12 +122,14 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		filename := "values.json"
 
-		scrt := &value.Value{
-			Name: faker.UUIDHyphenated(),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Data:      faker.UUIDHyphenated(),
 		}
 
-		data, err := json.Marshal(scrt)
+		data, err := json.Marshal(val)
 		require.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -144,10 +153,10 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		results, err := valueStore.Load(ctx, scrt)
+		cursor, err := valueStore.Find(ctx, nil)
 		require.NoError(t, err)
-		require.Len(t, results, 1)
-		require.Contains(t, output.String(), scrt.Name)
+		require.True(t, cursor.Next(ctx))
+		require.Contains(t, output.String(), val.Name)
 	})
 
 	t.Run("UpdateValue", func(t *testing.T) {
@@ -156,15 +165,17 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		filename := "values.json"
 
-		scrt := &value.Value{
-			Name: faker.UUIDHyphenated(),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Data:      faker.UUIDHyphenated(),
 		}
 
-		_, err := valueStore.Store(ctx, scrt)
+		err := valueStore.Insert(ctx, []any{val})
 		require.NoError(t, err)
 
-		data, err := json.Marshal(scrt)
+		data, err := json.Marshal(val)
 		require.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -188,9 +199,9 @@ func TestApplyCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		results, err := valueStore.Load(ctx, scrt)
+		cursor, err := valueStore.Find(ctx, nil)
 		require.NoError(t, err)
-		require.Len(t, results, 1)
-		require.Contains(t, output.String(), scrt.Name)
+		require.True(t, cursor.Next(ctx))
+		require.Contains(t, output.String(), val.Name)
 	})
 }

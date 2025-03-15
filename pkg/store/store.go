@@ -23,7 +23,7 @@ type Store interface {
 
 type IndexOptions struct {
 	Unique bool
-	Filter types.Map
+	Filter any
 }
 
 type InsertOptions struct {
@@ -38,7 +38,7 @@ type UpdateOptions struct {
 
 type FindOptions struct {
 	Limit int
-	Sort  types.Map
+	Sort  any
 }
 
 type store struct {
@@ -126,8 +126,12 @@ func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) er
 			unique = true
 		}
 		if opt.Filter != nil {
+			val, err := types.Cast[types.Map](types.Marshal(opt.Filter))
+			if err != nil {
+				return err
+			}
 			filter = func(doc types.Map) bool {
-				ok, err := match(doc, opt.Filter)
+				ok, err := match(doc, val)
 				if err != nil {
 					return false
 				}
@@ -139,6 +143,19 @@ func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) er
 	idx := make([]types.String, 0, len(keys))
 	for _, k := range keys {
 		idx = append(idx, types.NewString(k))
+	}
+
+	for i := 0; i < len(s.indexes); i++ {
+		if len(s.indexes[i]) != len(idx) {
+			continue
+		}
+		for j := 0; j < len(idx); j++ {
+			if !types.Equal(s.indexes[i][j], idx[j]) {
+				continue
+			}
+		}
+
+		return nil
 	}
 
 	if err := s.section.Index(idx, withUnique(unique), withFilter(filter)); err != nil {
@@ -235,7 +252,7 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
 		if f == nil {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 			continue
 		}
 		ok, err := match(doc, f)
@@ -243,7 +260,7 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 			return 0, err
 		}
 		if ok {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 		}
 	}
 
@@ -313,7 +330,7 @@ func (s *store) Delete(_ context.Context, filter any, _ ...DeleteOptions) (int, 
 	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
 		if f == nil {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 			continue
 		}
 		ok, err := match(doc, f)
@@ -321,7 +338,7 @@ func (s *store) Delete(_ context.Context, filter any, _ ...DeleteOptions) (int, 
 			return 0, err
 		}
 		if ok {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 		}
 	}
 
@@ -347,7 +364,11 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 			limit = opt.Limit
 		}
 		if opt.Sort != nil {
-			sort = opt.Sort
+			var err error
+			sort, err = types.Cast[types.Map](types.Marshal(opt.Sort))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -373,7 +394,7 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
 		if f == nil {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 			continue
 		}
 		ok, err := match(doc, f)
@@ -381,7 +402,7 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 			return nil, err
 		}
 		if ok {
-			docs = append(docs, doc.(types.Map))
+			docs = append(docs, doc)
 		}
 	}
 

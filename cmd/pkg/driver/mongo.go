@@ -4,12 +4,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/gofrs/uuid"
-	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
-	mongospec "github.com/siyul-park/uniflow/driver/mongo/pkg/spec"
-	mongovalue "github.com/siyul-park/uniflow/driver/mongo/pkg/value"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
+
+	"github.com/siyul-park/uniflow/pkg/store"
+
+	"github.com/gofrs/uuid"
+	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
+	mongostore "github.com/siyul-park/uniflow/driver/mongo/pkg/store"
 	"github.com/tryvium-travels/memongo"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -52,33 +54,35 @@ func NewMongoDriver(uri, name string) (Driver, error) {
 }
 
 // NewSpecStore creates and returns a new Spec Store.
-func (d *MongoDriver) NewSpecStore(ctx context.Context, name string) (spec.Store, error) {
+func (d *MongoDriver) NewSpecStore(ctx context.Context, name string) (store.Store, error) {
 	if name == "" {
 		name = "specs"
 	}
-
-	collection := d.database.Collection(name)
-	store := mongospec.NewStore(collection)
-
-	if err := store.Index(ctx); err != nil {
+	s := mongostore.New(d.database.Collection(name))
+	err := s.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, store.IndexOptions{
+		Unique: true,
+		Filter: map[string]any{"name": map[string]any{"$exists": true}},
+	})
+	if err != nil {
 		return nil, err
 	}
-	return store, nil
+	return s, nil
 }
 
 // NewValueStore creates and returns a new Value Store.
-func (d *MongoDriver) NewValueStore(ctx context.Context, name string) (value.Store, error) {
+func (d *MongoDriver) NewValueStore(ctx context.Context, name string) (store.Store, error) {
 	if name == "" {
 		name = "values"
 	}
-
-	collection := d.database.Collection(name)
-	store := mongovalue.NewStore(collection)
-
-	if err := store.Index(ctx); err != nil {
+	s := mongostore.New(d.database.Collection(name))
+	err := s.Index(ctx, []string{value.KeyNamespace, value.KeyName}, store.IndexOptions{
+		Unique: true,
+		Filter: map[string]any{"name": map[string]any{"$exists": true}},
+	})
+	if err != nil {
 		return nil, err
 	}
-	return store, nil
+	return s, nil
 }
 
 // Close closes the MongoDB connection.

@@ -49,27 +49,27 @@ type Spec interface {
 // Meta contains metadata for node specifications.
 type Meta struct {
 	// ID is the unique identifier of the node.
-	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" validate:"required"`
 	// Kind specifies the node's type.
 	Kind string `json:"kind" bson:"kind" yaml:"kind"  validate:"required"`
 	// Namespace groups nodes logically.
-	Namespace string `json:"namespace" bson:"namespace" yaml:"namespace" validate:"required"`
+	Namespace string `json:"namespace" yaml:"namespace" validate:"required"`
 	// Name is the human-readable name of the node.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// Annotations hold additional metadata.
-	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 	// Env contains sensitive data associated with the node.
-	Env map[string]Value `json:"env,omitempty" bson:"env,omitempty" yaml:"env,omitempty"`
+	Env map[string]Value `json:"env,omitempty" yaml:"env,omitempty"`
 	// Ports define connections to other nodes.
-	Ports map[string][]Port `json:"ports,omitempty" bson:"ports,omitempty" yaml:"ports,omitempty"`
+	Ports map[string][]Port `json:"ports,omitempty" yaml:"ports,omitempty"`
 }
 
 // Port represents a network port or connection on a node.
 type Port struct {
 	// ID is the unique identifier of the port.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty"`
 	// Name is the human-readable name of the port.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// Port is the port number or identifier within the namespace.
 	Port string `json:"port" bson:"port" yaml:"port" validate:"required"`
 }
@@ -77,11 +77,11 @@ type Port struct {
 // Value represents a sensitive piece of data associated with a node.
 type Value struct {
 	// ID is the unique identifier of the value.
-	ID uuid.UUID `json:"id,omitempty" bson:"_id,omitempty" yaml:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty"`
 	// Name is the human-readable name of the value.
-	Name string `json:"name,omitempty" bson:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// Data is the sensitive value of the value.
-	Data any `json:"data" bson:"data" yaml:"data" validate:"required"`
+	Data any `json:"data" yaml:"data" validate:"required"`
 }
 
 var _ resource.Resource = (Spec)(nil)
@@ -188,7 +188,7 @@ func (m *Meta) IsBound(values ...*value.Value) bool {
 			Name:      val.Name,
 		}
 		for _, v := range values {
-			if resource.Is(v, target) {
+			if v.Is(target) {
 				return true
 			}
 		}
@@ -207,7 +207,7 @@ func (m *Meta) Bind(values ...*value.Value) error {
 
 		var value *value.Value
 		for _, v := range values {
-			if (!v.IsIdentified() && !val.IsIdentified()) || resource.Is(v, example) {
+			if (!v.IsIdentified() && !val.IsIdentified()) || v.Is(example) {
 				value = v
 				break
 			}
