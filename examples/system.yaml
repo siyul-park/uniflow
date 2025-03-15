@@ -549,3 +549,349 @@
       },
       "status": 500
     }
+
+- kind: test
+  name: test_specs_create
+  ports:
+    out:
+      - name: mock_specs_create
+        port: in
+
+- kind: snippet
+  name: mock_specs_create
+  language: json
+  code: |
+    {
+      "body": {
+        "kind": "nop"
+      }
+    }
+  ports:
+    out:
+      - name: specs_create
+        port: in
+
+- kind: test
+  name: test_specs_read_with_query
+  ports:
+    out:
+      - name: mock_specs_read_with_query
+        port: in
+
+- kind: snippet
+  name: mock_specs_read_with_query
+  language: json
+  code: |
+    {
+      "query": {}
+    }
+  ports:
+    out:
+      - name: specs_read_with_query
+        port: in
+
+- kind: test
+  name: test_specs_update
+  ports:
+    out:
+      - name: mock_specs_update
+        port: in
+
+- kind: snippet
+  name: mock_specs_update
+  language: json
+  code: |
+    {
+      "body": {
+        "kind": "nop"
+      }
+    }
+  ports:
+    out:
+      - name: specs_update
+        port: in
+
+- kind: test
+  name: test_specs_delete_with_query
+  ports:
+    out:
+      - name: mock_specs_delete_with_query
+        port: in
+
+- kind: snippet
+  name: mock_specs_delete_with_query  
+  language: json
+  code: |
+    {
+      "query": {}
+    }
+  ports:
+    out:
+      - name: specs_delete_with_query
+        port: in
+
+- kind: test
+  name: test_specs_read_with_params
+  ports:
+    out:
+      - name: pipe_specs_read_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_specs_read_with_params
+  ports:
+    out[0]:
+      - name: mock_specs_create
+        port: in
+    out[1]:
+      - name: mock_specs_read_with_params
+        port: in
+
+- kind: snippet
+  name: mock_specs_read_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body
+      }
+    }
+  ports:
+    out:
+      - name: specs_read_with_params
+        port: in
+
+- kind: test
+  name: test_specs_update_with_params
+  ports:
+    out:
+      - name: pipe_specs_update_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_specs_update_with_params
+  ports:
+    out[0]:
+      - name: mock_specs_create
+        port: in
+    out[1]:
+      - name: mock_specs_update_with_params
+        port: in
+
+- kind: snippet
+  name: mock_specs_update_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body  
+      }
+    }
+  ports:
+    out:
+      - name: specs_update_with_params
+        port: in
+
+- kind: test
+  name: test_specs_delete_with_params
+  ports:
+    out:
+      - name: pipe_specs_delete_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_specs_delete_with_params
+  ports:
+    out[0]:
+      - name: mock_specs_create
+        port: in  
+    out[1]:
+      - name: mock_specs_delete_with_params
+        port: in
+
+- kind: snippet
+  name: mock_specs_delete_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body
+      }
+    }
+  ports:
+    out:
+      - name: specs_delete_with_params
+        port: in
+
+- kind: test
+  name: test_values_create
+  ports:
+    out:
+      - name: mock_values_create
+        port: in
+
+- kind: snippet
+  name: mock_values_create
+  language: json
+  code: |
+    {
+      "body": {
+        "data": "foo"
+      }
+    }
+  ports:
+    out:
+      - name: values_create
+        port: in
+
+- kind: test
+  name: test_values_read_with_query
+  ports:
+    out:
+      - name: mock_values_read_with_query
+        port: in
+
+- kind: snippet
+  name: mock_values_read_with_query
+  language: json
+  code: |
+    {
+      "query": {}
+    }
+  ports:
+    out:
+      - name: values_read_with_query
+        port: in
+
+- kind: test
+  name: test_values_update
+  ports:
+    out:
+      - name: mock_values_update
+        port: in
+
+- kind: snippet
+  name: mock_values_update
+  language: json
+  code: |
+    {
+      "body": {
+        "data": "foo"
+      }
+    }
+  ports:
+    out:
+      - name: values_update
+        port: in
+
+- kind: test
+  name: test_values_delete_with_query
+  ports:
+    out:
+      - name: mock_values_delete_with_query
+        port: in
+
+- kind: snippet
+  name: mock_values_delete_with_query  
+  language: json
+  code: |
+    {
+      "query": {}
+    }
+  ports:
+    out:
+      - name: values_delete_with_query
+        port: in
+
+- kind: test
+  name: test_values_read_with_params
+  ports:
+    out:
+      - name: pipe_values_read_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_values_read_with_params
+  ports:
+    out[0]:
+      - name: mock_values_create
+        port: in
+    out[1]:
+      - name: mock_values_read_with_params
+        port: in
+
+- kind: snippet
+  name: mock_values_read_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body
+      }
+    }
+  ports:
+    out:
+      - name: values_read_with_params
+        port: in
+
+- kind: test
+  name: test_values_update_with_params
+  ports:
+    out:
+      - name: pipe_values_update_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_values_update_with_params
+  ports:
+    out[0]:
+      - name: mock_values_create
+        port: in
+    out[1]:
+      - name: mock_values_update_with_params
+        port: in
+
+- kind: snippet
+  name: mock_values_update_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body  
+      }
+    }
+  ports:
+    out:
+      - name: values_update_with_params
+        port: in
+
+- kind: test
+  name: test_values_delete_with_params
+  ports:
+    out:
+      - name: pipe_values_delete_with_params
+        port: in
+
+- kind: pipe
+  name: pipe_values_delete_with_params
+  ports:
+    out[0]:
+      - name: mock_values_create
+        port: in  
+    out[1]:
+      - name: mock_values_delete_with_params
+        port: in
+
+- kind: snippet
+  name: mock_values_delete_with_params
+  language: javascript
+  code: |
+    export default function ({ body = {} } = {}) {
+      return {
+        params: body
+      }
+    }
+  ports:
+    out:
+      - name: values_delete_with_params
+        port: in
