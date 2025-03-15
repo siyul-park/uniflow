@@ -37,6 +37,7 @@ type executionPlan struct {
 
 var (
 	ErrUnsupportedOperation = errors.New("unsupported operation")
+	ErrUnsupportedType      = errors.New("unsupported type")
 )
 
 var _ Store = (*store)(nil)
@@ -205,21 +206,53 @@ func (s *store) explain(query types.Value) (*executionPlan, error) {
 			}
 
 			next := &executionPlan{key: field}
-			if c, ok := cond.(types.Map); !ok {
+			if c, ok := cond.(types.Map); ok {
+				if v := c.Get(types.NewString("$eq")); v != nil {
+					next.min = v
+					next.max = v
+				} else {
+					var lower types.Value
+					var lowers []types.Value
+					if v := c.Get(types.NewString("$gt")); v != nil {
+						lowers = append(lowers, v)
+					}
+					if v := c.Get(types.NewString("$gte")); v != nil {
+						lowers = append(lowers, v)
+					}
+					if len(lowers) > 0 {
+						lower = lowers[0]
+						for i := 1; i < len(lowers); i++ {
+							if types.Compare(lowers[i], lower) > 0 {
+								lower = lowers[i]
+							}
+						}
+						next.min = lower
+					}
+
+					var upper types.Value
+					var uppers []types.Value
+					if v := c.Get(types.NewString("$lt")); v != nil {
+						uppers = append(uppers, v)
+					}
+					if v := c.Get(types.NewString("$lte")); v != nil {
+						uppers = append(uppers, v)
+					}
+					if len(uppers) > 0 {
+						upper = uppers[0]
+						for i := 1; i < len(uppers); i++ {
+							if types.Compare(uppers[i], upper) < 0 {
+								upper = uppers[i]
+							}
+						}
+						next.max = upper
+					}
+				}
+			} else {
 				next.min = cond
 				next.max = cond
-			} else if v := c.Get(types.NewString("$eq")); v != nil {
-				next.min = v
-				next.max = v
-			} else if v := c.Get(types.NewString("$gt")); v != nil {
-				next.min = v
-			} else if v := c.Get(types.NewString("$gte")); v != nil {
-				next.min = v
-			} else if v := c.Get(types.NewString("$lt")); v != nil {
-				next.max = v
-			} else if v := c.Get(types.NewString("$lte")); v != nil {
-				next.max = v
-			} else {
+			}
+
+			if next.min == nil && next.max == nil {
 				break
 			}
 
@@ -250,7 +283,7 @@ func (s *store) match(doc, query types.Value) (bool, error) {
 	for field, cond := range q.Range() {
 		key, ok := field.(types.String)
 		if !ok {
-			return false, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", field.Interface())
+			return false, errors.WithMessagef(ErrUnsupportedType, "field: %v", field.Interface())
 		}
 
 		if !strings.HasPrefix(key.String(), "$") {
@@ -292,6 +325,39 @@ func (s *store) match(doc, query types.Value) (bool, error) {
 			}
 		case "$lte":
 			if types.Compare(doc, cond) > 0 {
+				return false, nil
+			}
+		case "$and":
+			conds, ok := cond.(types.Slice)
+			if !ok {
+				return false, errors.WithMessagef(ErrUnsupportedType, "$and operator requires an array of conditions")
+			}
+			for _, sub := range conds.Range() {
+				match, err := s.match(doc, sub)
+				if err != nil {
+					return false, err
+				}
+				if !match {
+					return false, nil
+				}
+			}
+		case "$or":
+			conds, ok := cond.(types.Slice)
+			if !ok {
+				return false, errors.WithMessagef(ErrUnsupportedType, "$or operator requires an array of conditions")
+			}
+			matched := false
+			for _, sub := range conds.Range() {
+				match, err := s.match(doc, sub)
+				if err != nil {
+					return false, err
+				}
+				if match {
+					matched = true
+					break
+				}
+			}
+			if !matched {
 				return false, nil
 			}
 		default:

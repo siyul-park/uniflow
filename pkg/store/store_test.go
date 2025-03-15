@@ -175,6 +175,9 @@ func TestStore_Find(t *testing.T) {
 			types.NewString("age"), types.NewInt(123),
 		)
 
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
+
 		_ = s.Insert(ctx, doc)
 
 		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$gt"), types.NewInt(0))))
@@ -194,6 +197,9 @@ func TestStore_Find(t *testing.T) {
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
+
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
 
 		_ = s.Insert(ctx, doc)
 
@@ -215,6 +221,9 @@ func TestStore_Find(t *testing.T) {
 			types.NewString("age"), types.NewInt(123),
 		)
 
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
+
 		_ = s.Insert(ctx, doc)
 
 		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lt"), types.NewInt(321))))
@@ -235,12 +244,84 @@ func TestStore_Find(t *testing.T) {
 			types.NewString("age"), types.NewInt(123),
 		)
 
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
+
 		_ = s.Insert(ctx, doc)
 
 		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lte"), types.NewInt(321))))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
+	})
+
+	t.Run("{$and: [ {'age': {'$gt': 100}}, {'name': {'$eq': <name>}} ] }", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+		name := types.NewString(faker.Word())
+
+		doc1 := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), name,
+			types.NewString("age"), types.NewInt(123),
+		)
+		doc2 := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+			types.NewString("age"), types.NewInt(50),
+		)
+
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
+
+		_ = s.Insert(ctx, doc1, doc2)
+
+		query := types.NewMap(
+			types.NewString("$and"), types.NewSlice(
+				types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$gt"), types.NewInt(100))),
+				types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), name)),
+			),
+		)
+		docs, err := s.Find(ctx, query)
+		require.NoError(t, err)
+		require.Len(t, docs, 1)
+		require.Equal(t, doc1, docs[0])
+	})
+
+	t.Run("{$or: [ {'age': {'$lt': 100}}, {'name': {'$eq': <name>}} ] }", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+		name := types.NewString(faker.Word())
+
+		doc1 := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), name,
+			types.NewString("age"), types.NewInt(150),
+		)
+		doc2 := types.NewMap(
+			primaryKey, types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+			types.NewString("age"), types.NewInt(50),
+		)
+
+		_ = s.Index(ctx, []types.String{types.NewString("name")})
+		_ = s.Index(ctx, []types.String{types.NewString("age")})
+
+		_ = s.Insert(ctx, doc1, doc2)
+
+		query := types.NewMap(
+			types.NewString("$or"), types.NewSlice(
+				types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lt"), types.NewInt(100))),
+				types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), name)),
+			),
+		)
+		docs, err := s.Find(ctx, query)
+		require.NoError(t, err)
+		require.Len(t, docs, 2)
 	})
 }
 
