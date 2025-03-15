@@ -2,11 +2,12 @@ package store
 
 import (
 	"context"
+	"sync"
+
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
-	"sync"
 )
 
 // Stream struct to hold the change stream

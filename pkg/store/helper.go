@@ -1,6 +1,7 @@
 package store
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,6 +37,11 @@ func match(doc, filter types.Value) (bool, error) {
 		}
 
 		switch key.String() {
+		case "$exists":
+			if reflect.ValueOf(value).IsZero() {
+				return value == nil, nil
+			}
+			return value != nil, nil
 		case "$eq":
 			if !types.Equal(doc, value) {
 				return false, nil

@@ -3,15 +3,14 @@ package cli
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/value"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/cobra"
 )
 
 // GetConfig represents the configuration for the get command.
 type GetConfig struct {
-	SpecStore  spec.Store
-	ValueStore value.Store
+	SpecStore  store.Store
+	ValueStore store.Store
 }
 
 // NewGetCommand creates a new cobra.Command for the get command.
@@ -22,8 +21,8 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{specs, values},
 		RunE: runs(map[string]func(cmd *cobra.Command) error{
-			specs:  runGetCommand(config.SpecStore, spec.New),
-			values: runGetCommand(config.ValueStore, value.New),
+			specs:  runGetCommand(config.SpecStore),
+			values: runGetCommand(config.ValueStore),
 		}),
 	}
 
@@ -32,7 +31,7 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 	return cmd
 }
 
-func runGetCommand[T resourcebase.Resource](store resourcebase.Store[T], zero func() T, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runGetCommand(store store.Store, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 	}
@@ -50,12 +49,19 @@ func runGetCommand[T resourcebase.Resource](store resourcebase.Store[T], zero fu
 
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		rsc := zero()
-		rsc.SetNamespace(namespace)
-
-		resources, err := store.Load(ctx, rsc)
+		cursor, err := store.Find(ctx, map[string]any{resourcebase.KeyNamespace: namespace})
 		if err != nil {
 			return err
+		}
+		defer cursor.Close(ctx)
+
+		var resources []*resourcebase.Unstructured
+		for cursor.Next(ctx) {
+			rsc := &resourcebase.Unstructured{}
+			if err := cursor.Decode(rsc); err != nil {
+				return err
+			}
+			resources = append(resources, rsc)
 		}
 
 		return writer.Write(resources)

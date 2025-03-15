@@ -2,13 +2,14 @@ package store
 
 import (
 	"context"
+	"sync/atomic"
+	"testing"
+	"time"
+
 	"github.com/siyul-park/uniflow/driver/mongo/pkg/server"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"sync/atomic"
-	"testing"
-	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/require"
@@ -26,15 +27,15 @@ func TestStore_Watch(t *testing.T) {
 
 	s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
-	c, err := s.Watch(ctx, nil)
+	strm, err := s.Watch(ctx, nil)
 	require.NoError(t, err)
-	require.NotNil(t, c)
+	require.NotNil(t, strm)
 
-	defer c.Close(ctx)
+	defer strm.Close(ctx)
 
 	var count atomic.Int32
 	go func() {
-		for c.Next(ctx) {
+		for strm.Next(ctx) {
 			count.Add(1)
 		}
 	}()
@@ -49,15 +50,11 @@ func TestStore_Watch(t *testing.T) {
 
 	err = s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
-		return count.Load() == 1
-	}, 1*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return count.Load() == 1 }, time.Second, 10*time.Millisecond)
 
 	_, err = s.Delete(ctx, map[string]any{"id": doc["id"]})
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
-		return count.Load() == 2
-	}, 1*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return count.Load() == 2 }, time.Second, 10*time.Millisecond)
 }
 
 func TestStore_Index(t *testing.T) {
@@ -74,6 +71,9 @@ func TestStore_Index(t *testing.T) {
 
 	err := s.Index(ctx, []string{"name"})
 	require.NoError(t, err)
+
+	err = s.Index(ctx, []string{"name"})
+	require.NoError(t, err)
 }
 
 func TestStore_Unindex(t *testing.T) {
@@ -89,6 +89,9 @@ func TestStore_Unindex(t *testing.T) {
 	s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
 	err := s.Index(ctx, []string{"name"})
+	require.NoError(t, err)
+
+	err = s.Unindex(ctx, []string{"name"})
 	require.NoError(t, err)
 
 	err = s.Unindex(ctx, []string{"name"})
