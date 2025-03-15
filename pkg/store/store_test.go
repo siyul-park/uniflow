@@ -2,12 +2,13 @@ package store
 
 import (
 	"context"
-	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/require"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-faker/faker/v4"
+	"github.com/siyul-park/uniflow/pkg/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStore_Watch(t *testing.T) {
@@ -30,7 +31,7 @@ func TestStore_Watch(t *testing.T) {
 	}()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 	)
 
@@ -40,7 +41,7 @@ func TestStore_Watch(t *testing.T) {
 		return count.Load() == 1
 	}, 1*time.Second, 10*time.Millisecond)
 
-	c, err := s.Delete(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))))
+	c, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
 	require.NoError(t, err)
 	require.Equal(t, 1, c)
 	require.Eventually(t, func() bool {
@@ -55,7 +56,7 @@ func TestStore_Index(t *testing.T) {
 	s := New()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 	)
 
@@ -73,7 +74,7 @@ func TestStore_Unindex(t *testing.T) {
 	s := New()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 	)
 
@@ -94,7 +95,7 @@ func TestStore_Insert(t *testing.T) {
 	s := New()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 		types.NewString("age"), types.NewInt(123),
 	)
@@ -111,7 +112,7 @@ func TestStore_Update(t *testing.T) {
 		s := New()
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -121,8 +122,8 @@ func TestStore_Update(t *testing.T) {
 
 		count, err := s.Update(
 			ctx,
-			types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))),
-			types.NewMap(types.NewString("$set"), types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
+			Where(KeyID).Equal(doc.Get(types.NewString(KeyID))),
+			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
@@ -136,8 +137,8 @@ func TestStore_Update(t *testing.T) {
 
 		count, err := s.Update(
 			ctx,
-			types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), types.NewString(faker.UUIDHyphenated()))),
-			types.NewMap(types.NewString("$set"), types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
+			Where(KeyID).Equal(types.NewString(faker.UUIDHyphenated())),
+			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
 			UpdateOptions{Upsert: true},
 		)
 		require.NoError(t, err)
@@ -152,14 +153,14 @@ func TestStore_Delete(t *testing.T) {
 	s := New()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 	)
 
 	err := s.Insert(ctx, []types.Map{doc})
 	require.NoError(t, err)
 
-	count, err := s.Delete(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))))
+	count, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
@@ -172,7 +173,7 @@ func TestStore_Find(t *testing.T) {
 		s := New()
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -193,12 +194,12 @@ func TestStore_Find(t *testing.T) {
 		s := New()
 
 		doc1 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(150),
 		)
 		doc2 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(50),
 		)
@@ -208,7 +209,7 @@ func TestStore_Find(t *testing.T) {
 
 		docs, err := s.Find(ctx, nil, FindOptions{
 			Limit: 1,
-			Sort:  types.NewMap(KeyID, types.NewInt(1)),
+			Sort:  types.NewMap(types.NewString(KeyID), types.NewInt(1)),
 		})
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
@@ -221,7 +222,7 @@ func TestStore_Find(t *testing.T) {
 		s := New()
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -229,7 +230,7 @@ func TestStore_Find(t *testing.T) {
 		err := s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))))
+		docs, err := s.Find(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -242,7 +243,7 @@ func TestStore_Find(t *testing.T) {
 		s := New()
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -250,7 +251,7 @@ func TestStore_Find(t *testing.T) {
 		err := s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$ne"), types.NewString(faker.UUIDHyphenated()))))
+		docs, err := s.Find(ctx, Where(KeyID).NotEqual(types.NewString(faker.UUIDHyphenated())))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -268,7 +269,7 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -276,7 +277,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$gt"), types.NewInt(0))))
+		docs, err := s.Find(ctx, Where("age").GreaterThan(types.NewInt(0)))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -294,7 +295,7 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -302,7 +303,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$gte"), types.NewInt(0))))
+		docs, err := s.Find(ctx, Where("age").GreaterThanOrEqual(types.NewInt(0)))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -320,7 +321,7 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -328,7 +329,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lt"), types.NewInt(321))))
+		docs, err := s.Find(ctx, Where("age").LessThan(types.NewInt(321)))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -346,7 +347,7 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -354,7 +355,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lte"), types.NewInt(321))))
+		docs, err := s.Find(ctx, Where("age").LessThanOrEqual(types.NewInt(321)))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc, docs[0])
@@ -372,12 +373,12 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc1 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
 		doc2 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(50),
 		)
@@ -385,13 +386,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc1, doc2})
 		require.NoError(t, err)
 
-		query := types.NewMap(
-			types.NewString("$and"), types.NewSlice(
-				types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$gt"), types.NewInt(100))),
-				types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), doc1.Get(types.NewString("name")))),
-			),
-		)
-		docs, err := s.Find(ctx, query)
+		docs, err := s.Find(ctx, And(Where("age").GreaterThan(types.NewInt(0)), Where("name").Equal(doc1.Get(types.NewString("name")))))
 		require.NoError(t, err)
 		require.Len(t, docs, 1)
 		require.Equal(t, doc1, docs[0])
@@ -409,12 +404,12 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		doc1 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(150),
 		)
 		doc2 := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(50),
 		)
@@ -422,13 +417,7 @@ func TestStore_Find(t *testing.T) {
 		err = s.Insert(ctx, []types.Map{doc1, doc2})
 		require.NoError(t, err)
 
-		query := types.NewMap(
-			types.NewString("$or"), types.NewSlice(
-				types.NewMap(types.NewString("age"), types.NewMap(types.NewString("$lt"), types.NewInt(100))),
-				types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), doc1.Get(types.NewString("name")))),
-			),
-		)
-		docs, err := s.Find(ctx, query)
+		docs, err := s.Find(ctx, Or(Where("age").LessThan(types.NewInt(100)), Where("name").Equal(doc1.Get(types.NewString("name")))))
 		require.NoError(t, err)
 		require.Len(t, docs, 2)
 	})
@@ -442,7 +431,7 @@ func BenchmarkStore_Insert(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 			types.NewString("age"), types.NewInt(123),
 		)
@@ -459,7 +448,7 @@ func BenchmarkStore_Update(b *testing.B) {
 	s := New()
 
 	doc := types.NewMap(
-		KeyID, types.NewString(faker.UUIDHyphenated()),
+		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 		types.NewString("name"), types.NewString(faker.Word()),
 	)
 
@@ -469,8 +458,8 @@ func BenchmarkStore_Update(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		count, err := s.Update(
 			ctx,
-			types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))),
-			types.NewMap(types.NewString("$set"), types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
+			Where(KeyID).Equal(doc.Get(types.NewString(KeyID))),
+			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
 		)
 		require.NoError(b, err)
 		require.Equal(b, 1, count)
@@ -487,7 +476,7 @@ func BenchmarkStore_Delete(b *testing.B) {
 		b.StopTimer()
 
 		doc := types.NewMap(
-			KeyID, types.NewString(faker.UUIDHyphenated()),
+			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 		)
 
@@ -496,7 +485,7 @@ func BenchmarkStore_Delete(b *testing.B) {
 
 		b.StartTimer()
 
-		count, err := s.Delete(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), doc.Get(KeyID))))
+		count, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
 		require.NoError(b, err)
 		require.Equal(b, 1, count)
 	}
@@ -513,7 +502,7 @@ func BenchmarkStore_Find(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			doc := types.NewMap(
-				KeyID, types.NewString(faker.UUIDHyphenated()),
+				types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 				types.NewString("name"), types.NewString(faker.Word()),
 				types.NewString("age"), types.NewInt(123),
 			)
@@ -521,14 +510,14 @@ func BenchmarkStore_Find(b *testing.B) {
 			err := s.Insert(ctx, []types.Map{doc})
 			require.NoError(b, err)
 
-			keys = append(keys, doc.Get(KeyID).(types.String))
+			keys = append(keys, doc.Get(types.NewString(KeyID)).(types.String))
 		}
 
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
 			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), key)))
+			_, err := s.Find(ctx, Where(KeyID).Equal(key))
 			require.NoError(b, err)
 		}
 	})
@@ -543,7 +532,7 @@ func BenchmarkStore_Find(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			doc := types.NewMap(
-				KeyID, types.NewString(faker.UUIDHyphenated()),
+				types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
 				types.NewString("name"), types.NewString(faker.Word()),
 				types.NewString("age"), types.NewInt(123),
 			)
@@ -558,7 +547,7 @@ func BenchmarkStore_Find(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), key)))
+			_, err := s.Find(ctx, Where("name").Equal(key))
 			require.NoError(b, err)
 		}
 	})

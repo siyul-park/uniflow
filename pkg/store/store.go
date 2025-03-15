@@ -2,11 +2,12 @@ package store
 
 import (
 	"context"
-	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 type Store interface {
@@ -69,8 +70,10 @@ type executionPlan struct {
 	next *executionPlan
 }
 
-var KeyOP = types.NewString("op")
-var KeyID = types.NewString("id")
+const (
+	KeyID = "id"
+	KeyOP = "op"
+)
 
 var (
 	ErrKeyMissing   = errors.New("key is missing")
@@ -87,7 +90,7 @@ var _ Stream = (*stream)(nil)
 func New() Store {
 	return &store{
 		section: NewSection(),
-		indexes: [][]types.String{{KeyID}},
+		indexes: [][]types.String{{types.NewString(KeyID)}},
 	}
 }
 
@@ -346,7 +349,7 @@ func (s *store) Delete(_ context.Context, filter types.Map, _ ...DeleteOptions) 
 	}
 
 	for _, doc := range docs {
-		if err := s.section.Delete(doc.Get(KeyID)); err != nil {
+		if err := s.section.Delete(doc.Get(types.NewString(KeyID))); err != nil {
 			return 0, err
 		}
 		if err := s.emit(types.NewString("delete"), doc); err != nil {
@@ -682,9 +685,9 @@ func (s *store) apply(filter types.Value) (types.Value, error) {
 }
 
 func (s *store) emit(op types.String, doc types.Map) error {
-	pk := doc.Get(KeyID)
-	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	id := doc.Get(types.NewString(KeyID))
+	if id == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID)
 	}
 
 	for i := 0; i < len(s.stream); i++ {
@@ -697,7 +700,7 @@ func (s *store) emit(op types.String, doc types.Map) error {
 			}
 		}
 		if ok {
-			s.stream[i].in <- types.NewMap(KeyOP, op, KeyID, pk)
+			s.stream[i].in <- types.NewMap(types.NewString(KeyOP), op, types.NewString(KeyID), id)
 		}
 	}
 	return nil

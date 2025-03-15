@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"context"
+	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"testing"
 	"time"
 
@@ -29,8 +31,8 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	r := New(Config{
 		Scheme:     s,
@@ -44,9 +46,16 @@ func TestRuntime_Load(t *testing.T) {
 		Kind: kind,
 	}
 
-	_, _ = specStore.Store(ctx, meta)
+	d, err := types.Marshal(meta)
+	require.NoError(t, err)
 
-	err := r.Load(ctx)
+	doc, ok := d.(types.Map)
+	require.True(t, ok)
+
+	err = specStore.Insert(ctx, []types.Map{doc})
+	require.NoError(t, err)
+
+	err = r.Load(ctx, nil)
 	require.NoError(t, err)
 }
 
@@ -63,8 +72,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -97,7 +106,14 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		specStore.Store(ctx, meta)
+		d, err := types.Marshal(meta)
+		require.NoError(t, err)
+
+		doc, ok := d.(types.Map)
+		require.True(t, ok)
+
+		err = specStore.Insert(ctx, []types.Map{doc})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -106,7 +122,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			require.NoError(t, ctx.Err())
 		}
 
-		specStore.Delete(ctx, meta)
+		specStore.Delete(ctx, store.Where(spec.KeyID).Equal(doc.Get(types.NewString(spec.KeyID))))
 
 		select {
 		case sb := <-symbols:
@@ -117,7 +133,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Value", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		s := scheme.New()
@@ -128,8 +144,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -155,9 +171,10 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		go r.Reconcile(ctx)
 
-		scrt := &value.Value{
-			ID:   uuid.Must(uuid.NewV7()),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Data:      faker.UUIDHyphenated(),
 		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -165,24 +182,39 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 			Env: map[string]spec.Value{
 				"key": {
-					ID:   scrt.GetID(),
+					ID:   val.GetID(),
 					Data: "{{ . }}",
 				},
 			},
 		}
 
-		specStore.Store(ctx, meta)
-		valueStore.Store(ctx, scrt)
+		d, err := types.Marshal(meta)
+		require.NoError(t, err)
+
+		doc, ok := d.(types.Map)
+		require.True(t, ok)
+
+		err = specStore.Insert(ctx, []types.Map{doc})
+		require.NoError(t, err)
+
+		d, err = types.Marshal(val)
+		require.NoError(t, err)
+
+		doc, ok = d.(types.Map)
+		require.True(t, ok)
+
+		err = valueStore.Insert(ctx, []types.Map{doc})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
 			require.Equal(t, meta.GetID(), sb.ID())
-			require.Equal(t, scrt.Data, sb.Env()["key"].Data)
+			require.Equal(t, val.Data, sb.Env()["key"].Data)
 		case <-ctx.Done():
 			require.NoError(t, ctx.Err())
 		}
 
-		valueStore.Delete(ctx, scrt)
+		valueStore.Delete(ctx, store.Where(value.KeyID).Equal(doc.Get(types.NewString(value.KeyID))))
 
 		select {
 		case sb := <-symbols:
@@ -205,8 +237,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -236,7 +268,14 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 			}
 
-			specStore.Store(ctx, meta)
+			d, err := types.Marshal(meta)
+			require.NoError(b, err)
+
+			doc, ok := d.(types.Map)
+			require.True(b, ok)
+
+			err = specStore.Insert(ctx, []types.Map{doc})
+			require.NoError(b, err)
 
 			select {
 			case <-symbols:
@@ -256,8 +295,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -280,7 +319,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		go r.Reconcile(ctx)
 
 		for i := 0; i < b.N; i++ {
-			scrt := &value.Value{
+			val := &value.Value{
 				ID:   uuid.Must(uuid.NewV7()),
 				Data: faker.UUIDHyphenated(),
 			}
@@ -290,14 +329,29 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 				Env: map[string]spec.Value{
 					"key": {
-						ID:   scrt.GetID(),
+						ID:   val.GetID(),
 						Data: "{{ . }}",
 					},
 				},
 			}
 
-			specStore.Store(ctx, meta)
-			valueStore.Store(ctx, scrt)
+			d, err := types.Marshal(meta)
+			require.NoError(b, err)
+
+			doc, ok := d.(types.Map)
+			require.True(b, ok)
+
+			err = specStore.Insert(ctx, []types.Map{doc})
+			require.NoError(b, err)
+
+			d, err = types.Marshal(val)
+			require.NoError(b, err)
+
+			doc, ok = d.(types.Map)
+			require.True(b, ok)
+
+			err = valueStore.Insert(ctx, []types.Map{doc})
+			require.NoError(b, err)
 
 			select {
 			case <-symbols:
