@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,33 +16,35 @@ func TestStore_Watch(t *testing.T) {
 
 	s := New()
 
-	strm, err := s.Watch(ctx, nil)
+	c, err := s.Watch(ctx, nil)
 	require.NoError(t, err)
-	require.NotNil(t, strm)
+	require.NotNil(t, c)
 
-	defer strm.Close()
+	defer c.Close(ctx)
 
 	var count atomic.Int32
 	go func() {
-		for range strm.Next() {
+		for c.Next(ctx) {
 			count.Add(1)
 		}
 	}()
 
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
 
-	err = s.Insert(ctx, []types.Map{doc})
+	err = s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
 		return count.Load() == 1
 	}, 1*time.Second, 10*time.Millisecond)
 
-	c, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
+	_, err = s.Delete(ctx, map[string]any{"id": doc["id"]})
 	require.NoError(t, err)
-	require.Equal(t, 1, c)
 	require.Eventually(t, func() bool {
 		return count.Load() == 2
 	}, 1*time.Second, 10*time.Millisecond)
@@ -55,15 +56,18 @@ func TestStore_Index(t *testing.T) {
 
 	s := New()
 
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
 
-	err := s.Insert(ctx, []types.Map{doc})
+	err := s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 
-	err = s.Index(ctx, []types.String{types.NewString("name")})
+	err = s.Index(ctx, []string{"name"})
 	require.NoError(t, err)
 }
 
@@ -73,18 +77,21 @@ func TestStore_Unindex(t *testing.T) {
 
 	s := New()
 
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
 
-	err := s.Insert(ctx, []types.Map{doc})
+	err := s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 
-	err = s.Index(ctx, []types.String{types.NewString("name")})
+	err = s.Index(ctx, []string{"name"})
 	require.NoError(t, err)
 
-	err = s.Unindex(ctx, []types.String{types.NewString("name")})
+	err = s.Unindex(ctx, []string{"name"})
 	require.NoError(t, err)
 }
 
@@ -94,13 +101,15 @@ func TestStore_Insert(t *testing.T) {
 
 	s := New()
 
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-		types.NewString("age"), types.NewInt(123),
-	)
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
 
-	err := s.Insert(ctx, []types.Map{doc})
+	err := s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 }
 
@@ -111,19 +120,21 @@ func TestStore_Update(t *testing.T) {
 
 		s := New()
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
+		doc := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
 
-		err := s.Insert(ctx, []types.Map{doc})
+		err := s.Insert(ctx, []any{doc})
 		require.NoError(t, err)
 
 		count, err := s.Update(
 			ctx,
-			Where(KeyID).Equal(doc.Get(types.NewString(KeyID))),
-			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
+			map[string]any{"id": doc["id"]},
+			map[string]any{"$set": map[string]any{"name": faker.Name()}},
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
@@ -135,10 +146,21 @@ func TestStore_Update(t *testing.T) {
 
 		s := New()
 
+		doc := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+
+		err := s.Insert(ctx, []any{doc})
+		require.NoError(t, err)
+
 		count, err := s.Update(
 			ctx,
-			Where(KeyID).Equal(types.NewString(faker.UUIDHyphenated())),
-			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
+			map[string]any{"id": faker.UUIDHyphenated()},
+			map[string]any{"$set": map[string]any{"name": faker.Name()}},
 			UpdateOptions{Upsert: true},
 		)
 		require.NoError(t, err)
@@ -152,15 +174,18 @@ func TestStore_Delete(t *testing.T) {
 
 	s := New()
 
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
 
-	err := s.Insert(ctx, []types.Map{doc})
+	err := s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 
-	count, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
+	count, err := s.Delete(ctx, map[string]any{"id": doc["id"]})
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
@@ -172,46 +197,75 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
 
-		err := s.Insert(ctx, []types.Map{doc})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, nil)
+		c, err := s.Find(ctx, nil)
 		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
+		require.Len(t, docs, 2)
 	})
 
-	t.Run("nil, {'limit': <limit>, 'sort': <sort>}", func(t *testing.T) {
+	t.Run("{'id': <id>}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		s := New()
 
-		doc1 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(150),
-		)
-		doc2 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(50),
-		)
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
 
-		err := s.Insert(ctx, []types.Map{doc1, doc2})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, nil, FindOptions{
-			Limit: 1,
-			Sort:  types.NewMap(types.NewString(KeyID), types.NewInt(1)),
-		})
+		c, err := s.Find(ctx, map[string]any{"id": doc1["id"]})
 		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
 		require.Len(t, docs, 1)
 	})
 
@@ -221,19 +275,37 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
 
-		err := s.Insert(ctx, []types.Map{doc})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
+		c, err := s.Find(ctx, map[string]any{"id": map[string]any{"$eq": doc1["id"]}})
 		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
 		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
 	})
 
 	t.Run("{'id': {'$ne': <id>}}", func(t *testing.T) {
@@ -242,313 +314,192 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
 
-		err := s.Insert(ctx, []types.Map{doc})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, Where(KeyID).NotEqual(types.NewString(faker.UUIDHyphenated())))
+		c, err := s.Find(ctx, map[string]any{"id": map[string]any{"$ne": doc1["id"]}})
 		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
 		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("{'age': {'$gt': <age>}}", func(t *testing.T) {
+	t.Run("{'version': {'$gt': <version>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		s := New()
 
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
+
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc})
+		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gt": 1}})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, Where("age").GreaterThan(types.NewInt(0)))
-		require.NoError(t, err)
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
 		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
 	})
 
-	t.Run("{'age': {'$gte': <age>}}", func(t *testing.T) {
+	t.Run("{'version': {'$gte': <version>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		s := New()
 
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
-		require.NoError(t, err)
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc})
-		require.NoError(t, err)
-
-		docs, err := s.Find(ctx, Where("age").GreaterThanOrEqual(types.NewInt(0)))
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
-	})
-
-	t.Run("{'age': {'$lt': <age>}}", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		s := New()
-
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc})
+		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gte": 1}})
 		require.NoError(t, err)
 
-		docs, err := s.Find(ctx, Where("age").LessThan(types.NewInt(321)))
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
-	})
+		defer c.Close(ctx)
 
-	t.Run("{'age': {'$lte': <name>}}", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		s := New()
-
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
-		require.NoError(t, err)
-
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc})
-		require.NoError(t, err)
-
-		docs, err := s.Find(ctx, Where("age").LessThanOrEqual(types.NewInt(321)))
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		require.Equal(t, doc, docs[0])
-	})
-
-	t.Run("{$and: [{'age': {'$gt': 100}}, {'name': {'$eq': <name>}}]}", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		s := New()
-
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
-		require.NoError(t, err)
-
-		doc1 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-		doc2 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(50),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc1, doc2})
-		require.NoError(t, err)
-
-		docs, err := s.Find(ctx, And(Where("age").GreaterThan(types.NewInt(0)), Where("name").Equal(doc1.Get(types.NewString("name")))))
-		require.NoError(t, err)
-		require.Len(t, docs, 1)
-		require.Equal(t, doc1, docs[0])
-	})
-
-	t.Run("{$or: [{'age': {'$lt': 100}}, {'name': {'$eq': <name>}}]}", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		s := New()
-
-		err := s.Index(ctx, []types.String{types.NewString("name")})
-		require.NoError(t, err)
-		err = s.Index(ctx, []types.String{types.NewString("age")})
-		require.NoError(t, err)
-
-		doc1 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(150),
-		)
-		doc2 := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(50),
-		)
-
-		err = s.Insert(ctx, []types.Map{doc1, doc2})
-		require.NoError(t, err)
-
-		docs, err := s.Find(ctx, Or(Where("age").LessThan(types.NewInt(100)), Where("name").Equal(doc1.Get(types.NewString("name")))))
-		require.NoError(t, err)
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
 		require.Len(t, docs, 2)
 	})
-}
 
-func BenchmarkStore_Insert(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	s := New()
-
-	for i := 0; i < b.N; i++ {
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-			types.NewString("age"), types.NewInt(123),
-		)
-
-		err := s.Insert(ctx, []types.Map{doc})
-		require.NoError(b, err)
-	}
-}
-
-func BenchmarkStore_Update(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	s := New()
-
-	doc := types.NewMap(
-		types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
-
-	err := s.Insert(ctx, []types.Map{doc})
-	require.NoError(b, err)
-
-	for i := 0; i < b.N; i++ {
-		count, err := s.Update(
-			ctx,
-			Where(KeyID).Equal(doc.Get(types.NewString(KeyID))),
-			Set(types.NewMap(types.NewString("name"), types.NewString(faker.Word()))),
-		)
-		require.NoError(b, err)
-		require.Equal(b, 1, count)
-	}
-}
-
-func BenchmarkStore_Delete(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	defer cancel()
-
-	s := New()
-
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-
-		doc := types.NewMap(
-			types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-			types.NewString("name"), types.NewString(faker.Word()),
-		)
-
-		err := s.Insert(ctx, []types.Map{doc})
-		require.NoError(b, err)
-
-		b.StartTimer()
-
-		count, err := s.Delete(ctx, Where(KeyID).Equal(doc.Get(types.NewString(KeyID))))
-		require.NoError(b, err)
-		require.Equal(b, 1, count)
-	}
-}
-
-func BenchmarkStore_Find(b *testing.B) {
-	b.Run("with index", func(b *testing.B) {
+	t.Run("{'version': {'$lt': <version>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		s := New()
 
-		keys := make([]types.String, 0, b.N)
-
-		for i := 0; i < b.N; i++ {
-			doc := types.NewMap(
-				types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-				types.NewString("name"), types.NewString(faker.Word()),
-				types.NewString("age"), types.NewInt(123),
-			)
-
-			err := s.Insert(ctx, []types.Map{doc})
-			require.NoError(b, err)
-
-			keys = append(keys, doc.Get(types.NewString(KeyID)).(types.String))
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
 		}
 
-		b.ResetTimer()
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
 
-		for i := 0; i < b.N; i++ {
-			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, Where(KeyID).Equal(key))
-			require.NoError(b, err)
+		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lt": 2}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
 		}
+		require.Len(t, docs, 1)
 	})
 
-	b.Run("without index", func(b *testing.B) {
+	t.Run("{'version': {'$lte': <version>}}", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		s := New()
 
-		keys := make([]types.String, 0, b.N)
-
-		for i := 0; i < b.N; i++ {
-			doc := types.NewMap(
-				types.NewString(KeyID), types.NewString(faker.UUIDHyphenated()),
-				types.NewString("name"), types.NewString(faker.Word()),
-				types.NewString("age"), types.NewInt(123),
-			)
-
-			err := s.Insert(ctx, []types.Map{doc})
-			require.NoError(b, err)
-
-			keys = append(keys, doc.Get(types.NewString("name")).(types.String))
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
 		}
 
-		b.ResetTimer()
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
 
-		for i := 0; i < b.N; i++ {
-			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, Where("name").Equal(key))
-			require.NoError(b, err)
+		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lte": 2}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
 		}
+		require.Len(t, docs, 2)
 	})
 }
