@@ -164,7 +164,7 @@ func TestStore_Update(t *testing.T) {
 
 		count, err := s.Update(
 			ctx,
-			map[string]any{"id": faker.UUIDHyphenated()},
+			map[string]any{"$or": []map[string]any{{"id": faker.UUIDHyphenated()}, {"name": faker.UUIDHyphenated()}}},
 			map[string]any{"$set": map[string]any{"name": faker.Name()}},
 			UpdateOptions{Upsert: true},
 		)
