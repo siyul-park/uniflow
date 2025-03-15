@@ -297,15 +297,14 @@ func (r *Runtime) Close(ctx context.Context) error {
 		if err := r.specStream.Close(ctx); err != nil {
 			return err
 		}
+		r.specStream = nil
 	}
 	if r.valueStream != nil {
 		if err := r.valueStream.Close(ctx); err != nil {
 			return err
 		}
+		r.valueStream = nil
 	}
-
-	r.specStream = nil
-	r.valueStream = nil
 
 	return r.symbolTable.Close()
 }
