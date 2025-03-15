@@ -372,14 +372,14 @@ func (s *store) find(filter types.Map) ([]types.Map, error) {
 		return nil, err
 	}
 
-	c := scanner(s.section)
+	scan := scanner(s.section)
 	for plan != nil {
-		c = c.Scan(plan.key, plan.min, plan.max)
+		scan = scan.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
 	}
 
 	var docs []types.Map
-	for _, doc := range c.Range() {
+	for _, doc := range scan.Range() {
 		if filter == nil {
 			docs = append(docs, doc)
 			continue

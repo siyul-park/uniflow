@@ -94,6 +94,7 @@ func match(doc, filter types.Value) (bool, error) {
 					return true, nil
 				}
 			}
+			return false, nil
 		default:
 			return false, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
 		}
