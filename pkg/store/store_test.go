@@ -63,6 +63,12 @@ func TestStore_Index(t *testing.T) {
 	err := s.Insert(ctx, []any{doc})
 	require.NoError(t, err)
 
+	err = s.Index(ctx, []string{"name"}, IndexOptions{
+		Unique: true,
+		Filter: map[string]any{"name": map[string]any{"$exists": 1}},
+	})
+	require.NoError(t, err)
+
 	err = s.Index(ctx, []string{"name"})
 	require.NoError(t, err)
 }
@@ -85,6 +91,9 @@ func TestStore_Unindex(t *testing.T) {
 	require.NoError(t, err)
 
 	err = s.Index(ctx, []string{"name"})
+	require.NoError(t, err)
+
+	err = s.Unindex(ctx, []string{"name"})
 	require.NoError(t, err)
 
 	err = s.Unindex(ctx, []string{"name"})
@@ -224,6 +233,45 @@ func TestStore_Find(t *testing.T) {
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
+	})
+
+	t.Run("{limit: 1, sort: {'id': 1}}", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
+
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
+
+		c, err := s.Find(ctx, nil, FindOptions{Limit: 1, Sort: map[string]any{"id": 1}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
+		require.Len(t, docs, 1)
 	})
 
 	t.Run("{'id': <id>}", func(t *testing.T) {
@@ -485,6 +533,84 @@ func TestStore_Find(t *testing.T) {
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lte": 2}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
+		require.Len(t, docs, 2)
+	})
+
+	t.Run("{'$and': [{'id': {'$eq': <id>}}]}", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
+
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
+
+		c, err := s.Find(ctx, map[string]any{"$and": []any{map[string]any{"id": map[string]any{"$eq": doc1["id"]}}, map[string]any{"id": map[string]any{"$eq": doc2["id"]}}}})
+		require.NoError(t, err)
+
+		defer c.Close(ctx)
+
+		var docs []map[string]any
+		for c.Next(ctx) {
+			doc := map[string]any{}
+			err := c.Decode(&doc)
+			require.NoError(t, err)
+			docs = append(docs, doc)
+		}
+		require.Len(t, docs, 0)
+	})
+
+	t.Run("{'$or': [{'id': {'$eq': <id>}}]}", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		s := New()
+
+		doc1 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		doc2 := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 2,
+		}
+
+		err := s.Insert(ctx, []any{doc1, doc2})
+		require.NoError(t, err)
+
+		c, err := s.Find(ctx, map[string]any{"$or": []any{map[string]any{"id": map[string]any{"$eq": doc1["id"]}}, map[string]any{"id": map[string]any{"$eq": doc2["id"]}}}})
 		require.NoError(t, err)
 
 		defer c.Close(ctx)

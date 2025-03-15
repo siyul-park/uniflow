@@ -165,14 +165,9 @@ func apply(filter types.Value) (types.Value, error) {
 				return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
 			}
 			for _, sub := range vals.Range() {
-				c, err := apply(sub)
+				child, err := types.Cast[types.Map](apply(sub))
 				if err != nil {
 					return nil, err
-				}
-
-				child, ok := c.(types.Map)
-				if !ok {
-					return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", child.Interface())
 				}
 
 				for key, val := range child.Range() {

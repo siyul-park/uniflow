@@ -238,30 +238,9 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 		return 0, err
 	}
 
-	plan, err := s.explain(f)
+	docs, err := s.find(f)
 	if err != nil {
 		return 0, err
-	}
-
-	c := scanner(s.section)
-	for plan != nil {
-		c = c.Scan(plan.key, plan.min, plan.max)
-		plan = plan.next
-	}
-
-	docs := make([]types.Map, 0)
-	for _, doc := range c.Range() {
-		if f == nil {
-			docs = append(docs, doc)
-			continue
-		}
-		ok, err := match(doc, f)
-		if err != nil {
-			return 0, err
-		}
-		if ok {
-			docs = append(docs, doc)
-		}
 	}
 
 	if upsert && len(docs) == 0 {
@@ -316,30 +295,9 @@ func (s *store) Delete(_ context.Context, filter any, _ ...DeleteOptions) (int, 
 		}
 	}
 
-	plan, err := s.explain(f)
+	docs, err := s.find(f)
 	if err != nil {
 		return 0, err
-	}
-
-	c := scanner(s.section)
-	for plan != nil {
-		c = c.Scan(plan.key, plan.min, plan.max)
-		plan = plan.next
-	}
-
-	docs := make([]types.Map, 0)
-	for _, doc := range c.Range() {
-		if f == nil {
-			docs = append(docs, doc)
-			continue
-		}
-		ok, err := match(doc, f)
-		if err != nil {
-			return 0, err
-		}
-		if ok {
-			docs = append(docs, doc)
-		}
 	}
 
 	for _, doc := range docs {
@@ -380,30 +338,9 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 		}
 	}
 
-	plan, err := s.explain(f)
+	docs, err := s.find(f)
 	if err != nil {
 		return nil, err
-	}
-
-	c := scanner(s.section)
-	for plan != nil {
-		c = c.Scan(plan.key, plan.min, plan.max)
-		plan = plan.next
-	}
-
-	docs := make([]types.Map, 0)
-	for _, doc := range c.Range() {
-		if f == nil {
-			docs = append(docs, doc)
-			continue
-		}
-		ok, err := match(doc, f)
-		if err != nil {
-			return nil, err
-		}
-		if ok {
-			docs = append(docs, doc)
-		}
 	}
 
 	if sort != nil {
@@ -426,8 +363,36 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 	if limit > 0 && len(docs) > limit {
 		docs = docs[:limit]
 	}
-
 	return newCursor(docs), nil
+}
+
+func (s *store) find(filter types.Map) ([]types.Map, error) {
+	plan, err := s.explain(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	c := scanner(s.section)
+	for plan != nil {
+		c = c.Scan(plan.key, plan.min, plan.max)
+		plan = plan.next
+	}
+
+	var docs []types.Map
+	for _, doc := range c.Range() {
+		if filter == nil {
+			docs = append(docs, doc)
+			continue
+		}
+		ok, err := match(doc, filter)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			docs = append(docs, doc)
+		}
+	}
+	return docs, nil
 }
 
 func (s *store) explain(filter types.Value) (*executionPlan, error) {
