@@ -23,7 +23,6 @@ import (
 	"github.com/siyul-park/uniflow/ext/pkg/language/typescript"
 	"github.com/siyul-park/uniflow/ext/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/ext/pkg/network"
-	"github.com/siyul-park/uniflow/ext/pkg/system"
 	"github.com/siyul-park/uniflow/ext/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -32,21 +31,6 @@ import (
 )
 
 const configFile = ".uniflow.toml"
-
-const (
-	topicSpecs  = "specs"
-	topicValues = "values"
-
-	opCreateSpecs = "specs.create"
-	opReadSpecs   = "specs.read"
-	opUpdateSpecs = "specs.update"
-	opDeleteSpecs = "specs.delete"
-
-	opCreateValues = "values.create"
-	opReadValues   = "values.read"
-	opUpdateValues = "values.update"
-	opDeleteValues = "values.delete"
-)
 
 var k = koanf.New(".")
 
@@ -107,42 +91,12 @@ func main() {
 	languages.Store(javascript.Language, javascript.NewCompiler())
 	languages.Store(typescript.Language, typescript.NewCompiler())
 
-	signals := map[string]any{
-		topicSpecs:  system.WatchResource(specStore),
-		topicValues: system.WatchResource(valueStore),
-	}
-	calls := map[string]any{
-		opCreateSpecs:  system.CreateResource(specStore),
-		opReadSpecs:    system.ReadResource(specStore),
-		opUpdateSpecs:  system.UpdateResource(specStore),
-		opDeleteSpecs:  system.DeleteResource(specStore),
-		opCreateValues: system.CreateResource(valueStore),
-		opReadValues:   system.ReadResource(valueStore),
-		opUpdateValues: system.UpdateResource(valueStore),
-		opDeleteValues: system.DeleteResource(valueStore),
-	}
-
-	systemAddToScheme := system.AddToScheme()
-
-	for topic, signal := range signals {
-		if err := systemAddToScheme.SetSignal(topic, signal); err != nil {
-			log.Fatal(err)
-		}
-	}
-	for opcode, call := range calls {
-		if err := systemAddToScheme.SetCall(opcode, call); err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	schemeBuilder.Register(control.AddToScheme(languages, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
-	schemeBuilder.Register(systemAddToScheme)
 	schemeBuilder.Register(testing.AddToScheme())
 
 	hookBuilder.Register(network.AddToHook())
-	hookBuilder.Register(system.AddToHook())
 	hookBuilder.Register(testing.AddToHook(runner))
 
 	scheme, err := schemeBuilder.Build()

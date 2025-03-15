@@ -14,7 +14,7 @@ func TestTimeout(t *testing.T) {
 		require.True(t, ok)
 		return nil, nil
 	})
-	timeout := Timeout(program, 1*time.Second)
+	timeout := Timeout(program, time.Second)
 
 	_, err := timeout.Run(context.Background(), nil)
 	require.NoError(t, err)

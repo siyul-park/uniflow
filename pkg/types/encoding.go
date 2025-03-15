@@ -49,6 +49,20 @@ func init() {
 	Decoder.Add(newShortcutDecoder())
 }
 
+// Cast attempts to cast the given Value to type T.
+// If an error is already present or the cast fails, it returns an error.
+func Cast[T Value](val Value, err error) (T, error) {
+	var zero T
+	if err != nil {
+		return zero, err
+	}
+	target, ok := val.(T)
+	if !ok {
+		return zero, errors.WithStack(encoding.ErrUnsupportedType)
+	}
+	return target, nil
+}
+
 // Marshal encodes the given value into a Value using the global Encoder.
 func Marshal(val any) (Value, error) {
 	return Encoder.Encode(val)

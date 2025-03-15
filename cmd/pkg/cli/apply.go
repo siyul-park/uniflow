@@ -1,18 +1,18 @@
 package cli
 
 import (
+	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/resource"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/value"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // ApplyConfig represents the configuration for the apply command.
 type ApplyConfig struct {
-	SpecStore  spec.Store
-	ValueStore value.Store
+	SpecStore  store.Store
+	ValueStore store.Store
 	FS         afero.Fs
 }
 
@@ -35,7 +35,7 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 	return cmd
 }
 
-func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runApplyCommand(st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -69,7 +69,7 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 		reader := resource.NewReader(file)
 		writer := resource.NewWriter(cmd.OutOrStdout())
 
-		var resources []T
+		var resources []*resourcebase.Unstructured
 		if err := reader.Read(&resources); err != nil {
 			return err
 		}
@@ -82,35 +82,38 @@ func runApplyCommand[T resourcebase.Resource](store resourcebase.Store[T], fs af
 			if rsc.GetNamespace() == "" {
 				rsc.SetNamespace(namespace)
 			}
-		}
 
-		loads, err := store.Load(ctx, resources...)
-		if err != nil {
-			return err
-		}
+			filter := map[string]any{}
+			if rsc.GetID() != uuid.Nil {
+				filter[resourcebase.KeyID] = rsc.GetID()
+			}
+			if rsc.GetName() != "" {
+				filter[resourcebase.KeyName] = rsc.GetName()
+			}
 
-		var inserts []T
-		var updates []T
-		for _, rsc := range resources {
-			exists := false
-			for _, r := range loads {
-				if resourcebase.Is(rsc, r) {
-					rsc.SetID(r.GetID())
-					updates = append(updates, rsc)
-					exists = true
-					break
+			cursor, err := st.Find(ctx, filter, store.FindOptions{Limit: 1})
+			if err != nil {
+				return err
+			}
+
+			ok := cursor.Next(ctx)
+			_ = cursor.Close(ctx)
+
+			if ok {
+				_, err := st.Update(ctx, filter, map[string]any{"$set": rsc})
+				if err != nil {
+					return err
+				}
+			} else {
+				if rsc.GetID() == uuid.Nil {
+					rsc.SetID(uuid.Must(uuid.NewV7()))
+				}
+
+				err := st.Insert(ctx, []any{rsc})
+				if err != nil {
+					return err
 				}
 			}
-			if !exists {
-				inserts = append(inserts, rsc)
-			}
-		}
-
-		if _, err := store.Store(ctx, inserts...); err != nil {
-			return err
-		}
-		if _, err := store.Swap(ctx, updates...); err != nil {
-			return err
 		}
 
 		return writer.Write(resources)
