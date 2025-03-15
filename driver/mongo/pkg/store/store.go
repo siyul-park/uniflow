@@ -92,7 +92,6 @@ func (s *Store) Index(ctx context.Context, keys []string, opts ...store.IndexOpt
 		if err := indexes.Decode(&index); err != nil {
 			return err
 		}
-
 		if index.Name == name {
 			return nil
 		}
@@ -127,7 +126,6 @@ func (s *Store) Unindex(ctx context.Context, keys []string) error {
 		if err := indexes.Decode(&index); err != nil {
 			return err
 		}
-
 		if index.Name == name {
 			return s.collection.Indexes().DropOne(ctx, name)
 		}
