@@ -2,14 +2,21 @@ package store
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"sync"
+
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 type Stream interface {
 	Next(ctx context.Context) bool
 	Decode(val any) error
 	Close(ctx context.Context) error
+}
+
+type Event struct {
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
+	OP string    `json:"op" bson:"op" yaml:"op" validate:"required"`
 }
 
 type stream struct {

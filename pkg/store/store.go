@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"github.com/gofrs/uuid"
 	"slices"
 	"sync"
 
@@ -20,11 +19,6 @@ type Store interface {
 	Update(ctx context.Context, filter, update any, opts ...UpdateOptions) (int, error)
 	Delete(ctx context.Context, filter any, opts ...DeleteOptions) (int, error)
 	Find(ctx context.Context, filter any, opts ...FindOptions) (Cursor, error)
-}
-
-type Event struct {
-	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
-	OP string    `json:"op" bson:"op" yaml:"op" validate:"required"`
 }
 
 type IndexOptions struct {

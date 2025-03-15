@@ -1,9 +1,10 @@
 package store
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"strings"
 )
 
 func match(doc, filter types.Value) (bool, error) {
