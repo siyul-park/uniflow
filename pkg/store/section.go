@@ -41,14 +41,6 @@ type node struct {
 	value *btree.BTreeG[*node]
 }
 
-var primaryKey = types.NewString("id")
-
-var (
-	ErrKeyMissing   = errors.New("key is missing")
-	ErrKeyDuplicate = errors.New("key already exists")
-	ErrKeyNotFound  = errors.New("key not found")
-)
-
 func (e *entry) Less(than btree.Item) bool {
 	return types.Compare(e.key, than.(*entry).key) < 0
 }
@@ -75,7 +67,7 @@ func NewSection() *Section {
 			return types.Compare(x.key, y.key) < 0
 		}),
 	}
-	_ = s.Index([]types.String{primaryKey}, WithUnique(true))
+	_ = s.Index([]types.String{KeyID}, WithUnique(true))
 	return s
 }
 
@@ -136,9 +128,9 @@ func (s *Section) Store(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	pk := doc.Get(primaryKey)
+	pk := doc.Get(KeyID)
 	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", primaryKey.String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
 	}
 
 	if s.entries.Has(&entry{key: pk}) {
@@ -155,13 +147,40 @@ func (s *Section) Store(doc types.Map) error {
 	return nil
 }
 
+func (s *Section) Swap(doc types.Map) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	pk := doc.Get(KeyID)
+	if pk == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	}
+
+	old, ok := s.entries.Get(&entry{key: pk})
+	if !ok {
+		return errors.WithMessagef(ErrKeyNotFound, "key: %v", pk.Interface())
+	}
+
+	s.entries.ReplaceOrInsert(&entry{key: pk, value: doc})
+
+	for _, idx := range s.indexes {
+		if err := s.unindex(idx, old.value); err != nil {
+			return err
+		}
+		if err := s.index(idx, doc); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Section) Delete(pk types.Value) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	l, ok := s.entries.Delete(&entry{key: pk})
 	if !ok {
-		return errors.WithMessagef(ErrKeyNotFound, "key: %v", pk)
+		return errors.WithMessagef(ErrKeyNotFound, "key: %v", pk.Interface())
 	}
 
 	for _, idx := range s.indexes {
@@ -205,9 +224,9 @@ func (s *Section) Range() func(func(types.Value, types.Map) bool) {
 }
 
 func (s *Section) index(idx *index, doc types.Map) error {
-	pk := doc.Get(primaryKey)
+	pk := doc.Get(KeyID)
 	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", primaryKey.String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
 	}
 
 	if idx.filter != nil && !idx.filter(doc) {
@@ -242,9 +261,9 @@ func (s *Section) index(idx *index, doc types.Map) error {
 }
 
 func (s *Section) unindex(idx *index, doc types.Map) error {
-	pk := doc.Get(primaryKey)
+	pk := doc.Get(KeyID)
 	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", primaryKey.String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
 	}
 
 	curr := idx.nodes
