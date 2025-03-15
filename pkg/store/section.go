@@ -1,10 +1,11 @@
 package store
 
 import (
+	"sync"
+
 	"github.com/google/btree"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"sync"
 )
 
 type Section struct {
@@ -67,7 +68,7 @@ func NewSection() *Section {
 			return types.Compare(x.key, y.key) < 0
 		}),
 	}
-	_ = s.Index([]types.String{KeyID}, WithUnique(true))
+	_ = s.Index([]types.String{types.NewString(KeyID)}, WithUnique(true))
 	return s
 }
 
@@ -128,16 +129,16 @@ func (s *Section) Store(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	pk := doc.Get(KeyID)
-	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	id := doc.Get(types.NewString(KeyID))
+	if id == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
 	}
 
-	if s.entries.Has(&entry{key: pk}) {
-		return errors.WithMessagef(ErrKeyDuplicate, "key: %v", pk.Interface())
+	if s.entries.Has(&entry{key: id}) {
+		return errors.WithMessagef(ErrKeyDuplicate, "key: %v", id.Interface())
 	}
 
-	s.entries.ReplaceOrInsert(&entry{key: pk, value: doc})
+	s.entries.ReplaceOrInsert(&entry{key: id, value: doc})
 
 	for _, idx := range s.indexes {
 		if err := s.index(idx, doc); err != nil {
@@ -151,17 +152,17 @@ func (s *Section) Swap(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	pk := doc.Get(KeyID)
-	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	id := doc.Get(types.NewString(KeyID))
+	if id == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
 	}
 
-	old, ok := s.entries.Get(&entry{key: pk})
+	old, ok := s.entries.Get(&entry{key: id})
 	if !ok {
-		return errors.WithMessagef(ErrKeyNotFound, "key: %v", pk.Interface())
+		return errors.WithMessagef(ErrKeyNotFound, "key: %v", id.Interface())
 	}
 
-	s.entries.ReplaceOrInsert(&entry{key: pk, value: doc})
+	s.entries.ReplaceOrInsert(&entry{key: id, value: doc})
 
 	for _, idx := range s.indexes {
 		if err := s.unindex(idx, old.value); err != nil {
@@ -174,13 +175,13 @@ func (s *Section) Swap(doc types.Map) error {
 	return nil
 }
 
-func (s *Section) Delete(pk types.Value) error {
+func (s *Section) Delete(id types.Value) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	l, ok := s.entries.Delete(&entry{key: pk})
+	l, ok := s.entries.Delete(&entry{key: id})
 	if !ok {
-		return errors.WithMessagef(ErrKeyNotFound, "key: %v", pk.Interface())
+		return errors.WithMessagef(ErrKeyNotFound, "key: %v", id.Interface())
 	}
 
 	for _, idx := range s.indexes {
@@ -192,13 +193,13 @@ func (s *Section) Delete(pk types.Value) error {
 	return nil
 }
 
-func (s *Section) Load(pk types.Value) (types.Map, error) {
+func (s *Section) Load(id types.Value) (types.Map, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	l, ok := s.entries.Get(&entry{key: pk})
+	l, ok := s.entries.Get(&entry{key: id})
 	if !ok {
-		return nil, errors.WithMessagef(ErrKeyNotFound, "key: %v", pk)
+		return nil, errors.WithMessagef(ErrKeyNotFound, "key: %v", id)
 	}
 	return l.value, nil
 }
@@ -224,9 +225,9 @@ func (s *Section) Range() func(func(types.Value, types.Map) bool) {
 }
 
 func (s *Section) index(idx *index, doc types.Map) error {
-	pk := doc.Get(KeyID)
-	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	id := doc.Get(types.NewString(KeyID))
+	if id == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
 	}
 
 	if idx.filter != nil && !idx.filter(doc) {
@@ -252,7 +253,7 @@ func (s *Section) index(idx *index, doc types.Map) error {
 			if idx.unique && next.value.Len() > 0 {
 				return errors.WithMessagef(ErrKeyDuplicate, "key: %v", val.Interface())
 			}
-			next.value.ReplaceOrInsert(&node{key: pk})
+			next.value.ReplaceOrInsert(&node{key: id})
 			continue
 		}
 		curr = next.value
@@ -261,9 +262,9 @@ func (s *Section) index(idx *index, doc types.Map) error {
 }
 
 func (s *Section) unindex(idx *index, doc types.Map) error {
-	pk := doc.Get(KeyID)
-	if pk == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID.String())
+	id := doc.Get(types.NewString(KeyID))
+	if id == nil {
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
 	}
 
 	curr := idx.nodes
@@ -277,7 +278,7 @@ func (s *Section) unindex(idx *index, doc types.Map) error {
 		}
 
 		if i == len(idx.keys)-1 {
-			next.value.Delete(&node{key: pk})
+			next.value.Delete(&node{key: id})
 		}
 
 		curr = next.value
