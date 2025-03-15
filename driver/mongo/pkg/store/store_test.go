@@ -413,6 +413,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -428,7 +431,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"id": map[string]any{"$ne": doc1["id"]}})
@@ -458,6 +461,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -473,7 +479,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gt": 1}})
@@ -503,6 +509,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -518,7 +527,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gte": 1}})
@@ -593,6 +602,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -608,7 +620,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lte": 2}})
@@ -638,6 +650,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New(con.Database(faker.UUIDHyphenated()).Collection(faker.UUIDHyphenated()))
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -653,7 +668,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"$and": []any{map[string]any{"id": map[string]any{"$eq": doc1["id"]}}, map[string]any{"id": map[string]any{"$eq": doc2["id"]}}}})

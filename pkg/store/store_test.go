@@ -202,6 +202,15 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
+		err := s.Index(ctx, []string{"name"})
+		require.NoError(t, err)
+
+		err = s.Index(ctx, []string{"email"})
+		require.NoError(t, err)
+
+		err = s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -217,7 +226,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, nil)
@@ -397,6 +406,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -412,7 +424,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gt": 1}})
@@ -436,6 +448,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -451,7 +466,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$gte": 1}})
@@ -475,6 +490,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -490,7 +508,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lt": 2}})
@@ -514,6 +532,9 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
+		err := s.Index(ctx, []string{"version"})
+		require.NoError(t, err)
+
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -529,7 +550,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err := s.Insert(ctx, []any{doc1, doc2})
+		err = s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, map[string]any{"version": map[string]any{"$lte": 2}})
