@@ -17,7 +17,7 @@ require (
 	github.com/siyul-park/uniflow v0.13.0
 	github.com/siyul-park/uniflow/driver/mongo v0.13.0
 	github.com/siyul-park/uniflow/ext v0.13.0
-	github.com/spf13/afero v1.12.0
+	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tryvium-travels/memongo v0.12.0
