@@ -131,7 +131,7 @@ func (s *section) Store(doc types.Map) error {
 
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
+		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
 	if s.entries.Has(&entry{key: id}) {
@@ -154,7 +154,7 @@ func (s *section) Swap(doc types.Map) error {
 
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
+		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
 	old, ok := s.entries.Get(&entry{key: id})
@@ -227,7 +227,7 @@ func (s *section) Range() func(func(types.Value, types.Map) bool) {
 func (s *section) index(idx *index, doc types.Map) error {
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
+		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
 	if idx.filter != nil && !idx.filter(doc) {
@@ -264,7 +264,7 @@ func (s *section) index(idx *index, doc types.Map) error {
 func (s *section) unindex(idx *index, doc types.Map) error {
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
+		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
 	curr := idx.nodes

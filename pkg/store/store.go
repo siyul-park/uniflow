@@ -432,7 +432,6 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 					next.min = v
 					next.max = v
 				} else {
-					var lower types.Value
 					var lowers []types.Value
 					if v := val.Get(types.NewString("$gt")); v != nil {
 						lowers = append(lowers, v)
@@ -441,16 +440,14 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 						lowers = append(lowers, v)
 					}
 					if len(lowers) > 0 {
-						lower = lowers[0]
+						next.min = lowers[0]
 						for i := 1; i < len(lowers); i++ {
-							if types.Compare(lowers[i], lower) > 0 {
-								lower = lowers[i]
+							if types.Compare(lowers[i], next.min) > 0 {
+								next.min = lowers[i]
 							}
 						}
-						next.min = lower
 					}
 
-					var upper types.Value
 					var uppers []types.Value
 					if v := val.Get(types.NewString("$lt")); v != nil {
 						uppers = append(uppers, v)
@@ -459,13 +456,12 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 						uppers = append(uppers, v)
 					}
 					if len(uppers) > 0 {
-						upper = uppers[0]
+						next.max = uppers[0]
 						for i := 1; i < len(uppers); i++ {
-							if types.Compare(uppers[i], upper) < 0 {
-								upper = uppers[i]
+							if types.Compare(uppers[i], next.max) < 0 {
+								next.max = uppers[i]
 							}
 						}
-						next.max = upper
 					}
 				}
 			}
@@ -495,7 +491,7 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 func (s *store) emit(op types.String, doc types.Map) error {
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", "id")
+		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
 	for _, strm := range s.streams {
