@@ -46,11 +46,8 @@ func TestRuntime_Load(t *testing.T) {
 		Kind: kind,
 	}
 
-	d, err := types.Marshal(meta)
+	doc, err := types.Cast[types.Map](types.Marshal(meta))
 	require.NoError(t, err)
-
-	doc, ok := d.(types.Map)
-	require.True(t, ok)
 
 	err = specStore.Insert(ctx, []types.Map{doc})
 	require.NoError(t, err)
@@ -106,11 +103,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		d, err := types.Marshal(meta)
+		doc, err := types.Cast[types.Map](types.Marshal(meta))
 		require.NoError(t, err)
-
-		doc, ok := d.(types.Map)
-		require.True(t, ok)
 
 		err = specStore.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
@@ -188,20 +182,14 @@ func TestRuntime_Reconcile(t *testing.T) {
 			},
 		}
 
-		d, err := types.Marshal(meta)
+		doc, err := types.Cast[types.Map](types.Marshal(meta))
 		require.NoError(t, err)
-
-		doc, ok := d.(types.Map)
-		require.True(t, ok)
 
 		err = specStore.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
 
-		d, err = types.Marshal(val)
+		doc, err = types.Cast[types.Map](types.Marshal(val))
 		require.NoError(t, err)
-
-		doc, ok = d.(types.Map)
-		require.True(t, ok)
 
 		err = valueStore.Insert(ctx, []types.Map{doc})
 		require.NoError(t, err)
@@ -268,11 +256,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 			}
 
-			d, err := types.Marshal(meta)
+			doc, err := types.Cast[types.Map](types.Marshal(meta))
 			require.NoError(b, err)
-
-			doc, ok := d.(types.Map)
-			require.True(b, ok)
 
 			err = specStore.Insert(ctx, []types.Map{doc})
 			require.NoError(b, err)
@@ -335,20 +320,14 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				},
 			}
 
-			d, err := types.Marshal(meta)
+			doc, err := types.Cast[types.Map](types.Marshal(meta))
 			require.NoError(b, err)
-
-			doc, ok := d.(types.Map)
-			require.True(b, ok)
 
 			err = specStore.Insert(ctx, []types.Map{doc})
 			require.NoError(b, err)
 
-			d, err = types.Marshal(val)
+			doc, err = types.Cast[types.Map](types.Marshal(val))
 			require.NoError(b, err)
-
-			doc, ok = d.(types.Map)
-			require.True(b, ok)
 
 			err = valueStore.Insert(ctx, []types.Map{doc})
 			require.NoError(b, err)
