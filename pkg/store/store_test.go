@@ -528,7 +528,7 @@ func BenchmarkStore_Find(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, types.NewMap(KeyID, key))
+			_, err := s.Find(ctx, types.NewMap(KeyID, types.NewMap(types.NewString("$eq"), key)))
 			require.NoError(b, err)
 		}
 	})
@@ -558,7 +558,7 @@ func BenchmarkStore_Find(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			key := keys[i%len(keys)]
-			_, err := s.Find(ctx, types.NewMap(types.NewString("name"), key))
+			_, err := s.Find(ctx, types.NewMap(types.NewString("name"), types.NewMap(types.NewString("$eq"), key)))
 			require.NoError(b, err)
 		}
 	})
