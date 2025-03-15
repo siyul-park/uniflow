@@ -3,7 +3,6 @@ package runtime
 import (
 	"context"
 	"errors"
-	"golang.org/x/sync/errgroup"
 	"reflect"
 	"sync"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
+	"golang.org/x/sync/errgroup"
 )
 
 // Config defines configuration options for the Runtime.
