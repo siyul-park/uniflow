@@ -15,8 +15,8 @@ type Stream interface {
 }
 
 type Event struct {
-	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
-	OP string    `json:"op" bson:"op" yaml:"op" validate:"required"`
+	ID uuid.UUID `json:"id" yaml:"id" validate:"required"`
+	OP string    `json:"op" yaml:"op" validate:"required"`
 }
 
 type stream struct {
