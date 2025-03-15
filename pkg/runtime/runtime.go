@@ -82,7 +82,7 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 	if filter == nil {
 		filter = map[string]any{resource.KeyNamespace: r.namespace}
 	} else {
-		filter = map[string]any{"$and": append([]any{filter}, map[string]any{resource.KeyNamespace: r.namespace})}
+		filter = map[string]any{"$and": []any{filter, map[string]any{resource.KeyNamespace: r.namespace}}}
 	}
 
 	cursor, err := r.specStore.Find(ctx, filter)
@@ -111,18 +111,20 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 		}
 	}
 
-	cursor, err = r.valueStore.Find(ctx, map[string]any{"$or": filters})
-	if err != nil {
-		return err
-	}
-
 	var values []*value.Value
-	for cursor.Next(ctx) {
-		val := &value.Value{}
-		if err := cursor.Decode(val); err != nil {
+	if len(filters) > 0 {
+		cursor, err = r.valueStore.Find(ctx, map[string]any{"$or": filters})
+		if err != nil {
 			return err
 		}
-		values = append(values, val)
+
+		for cursor.Next(ctx) {
+			val := &value.Value{}
+			if err := cursor.Decode(val); err != nil {
+				return err
+			}
+			values = append(values, val)
+		}
 	}
 
 	if len(r.environment) > 0 {
@@ -263,7 +265,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				return err
 			}
 
-			var values []*value.Value
+			values := []*value.Value{{ID: event.ID}}
 			for cursor.Next(ctx) {
 				val := &value.Value{}
 				if err := cursor.Decode(val); err != nil {
@@ -284,7 +286,9 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				}
 			}
 
-			_ = r.Load(ctx, map[string]any{"$or": filters})
+			if len(filters) > 0 {
+				_ = r.Load(ctx, map[string]any{"$or": filters})
+			}
 		}
 		return nil
 	})
