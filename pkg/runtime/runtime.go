@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"reflect"
@@ -169,32 +168,30 @@ func (r *Runtime) Load(ctx context.Context, filter types.Map) error {
 			continue
 		}
 
-		d, err := types.Marshal(sb.Spec)
+		doc, err := types.Cast[types.Map](types.Marshal(sb.Spec))
 		if err != nil {
 			errs = append(errs, err)
 			continue
-		}
-		doc, ok := d.(types.Map)
-		if !ok {
-			errs = append(errs, encoding.ErrUnsupportedType)
 		}
 
 		local := store.New()
 
 		if err := local.Insert(ctx, []types.Map{doc}); err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 
 		docs, err := local.Find(ctx, filter)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 
 		if !slices.Contains(docs, doc) {
 			continue
 		}
 
-		ok = false
+		ok := false
 		for _, s := range symbols {
 			if s.ID() == id {
 				ok = true
@@ -268,12 +265,19 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				return nil
 			}
 
-			var id uuid.UUID
-			if err := types.Unmarshal(event.Get(types.NewString(value.KeyID)), &id); err != nil {
+			docs, err := r.valueStore.Find(ctx, store.Where(value.KeyID).Equal(event.Get(types.NewString(value.KeyID))))
+			if err != nil {
 				return err
 			}
 
-			val := &value.Value{ID: id}
+			values := make([]*value.Value, 0, len(docs))
+			for _, doc := range docs {
+				val := &value.Value{}
+				if err := types.Unmarshal(doc, val); err != nil {
+					return err
+				}
+				values = append(values, val)
+			}
 
 			var filters []types.Map
 			for _, id := range r.symbolTable.Keys() {
@@ -281,7 +285,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 					unstructured := &spec.Unstructured{}
 					if err := spec.As(sb.Spec, unstructured); err != nil {
 						return err
-					} else if unstructured.IsBound(val) {
+					} else if unstructured.IsBound(values...) {
 						id, err := types.Marshal(sb.ID())
 						if err != nil {
 							return err
