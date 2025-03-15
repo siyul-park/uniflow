@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/store"
+
 	"github.com/go-faker/faker/v4"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -14,8 +18,8 @@ import (
 )
 
 func TestDeleteCommand_Execute(t *testing.T) {
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	fs := afero.NewMemMapFs()
 
@@ -28,8 +32,10 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		kind := faker.UUIDHyphenated()
 
 		meta := &spec.Meta{
-			Kind: kind,
-			Name: faker.UUIDHyphenated(),
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      kind,
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
 		}
 
 		data, err := json.Marshal(meta)
@@ -42,7 +48,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		_, err = file.Write(data)
 		require.NoError(t, err)
 
-		_, err = specStore.Store(ctx, meta)
+		err = specStore.Insert(ctx, []any{meta})
 		require.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
@@ -56,9 +62,9 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		r, err := specStore.Load(ctx, meta)
+		cursor, err := specStore.Find(ctx, meta)
 		require.NoError(t, err)
-		require.Len(t, r, 0)
+		require.False(t, cursor.Next(ctx))
 	})
 
 	t.Run("DeleteValue", func(t *testing.T) {
@@ -67,12 +73,14 @@ func TestDeleteCommand_Execute(t *testing.T) {
 
 		filename := "values.json"
 
-		scrt := &value.Value{
-			Name: faker.UUIDHyphenated(),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+			Data:      faker.UUIDHyphenated(),
 		}
 
-		data, err := json.Marshal(scrt)
+		data, err := json.Marshal(val)
 		require.NoError(t, err)
 
 		file, err := fs.Create(filename)
@@ -82,7 +90,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		_, err = file.Write(data)
 		require.NoError(t, err)
 
-		_, err = valueStore.Store(ctx, scrt)
+		err = valueStore.Insert(ctx, []any{val})
 		require.NoError(t, err)
 
 		cmd := NewDeleteCommand(DeleteConfig{
@@ -96,8 +104,8 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		err = cmd.Execute()
 		require.NoError(t, err)
 
-		rValue, err := valueStore.Load(ctx, scrt)
+		cursor, err := valueStore.Find(ctx, val)
 		require.NoError(t, err)
-		require.Len(t, rValue, 0)
+		require.False(t, cursor.Next(ctx))
 	})
 }

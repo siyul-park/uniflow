@@ -6,13 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/siyul-park/uniflow/pkg/store"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ import (
 type StartConfig struct {
 	Scheme     *scheme.Scheme
 	Hook       *hook.Hook
-	SpecStore  spec.Store
-	ValueStore value.Store
+	SpecStore  store.Store
+	ValueStore store.Store
 	FS         afero.Fs
 }
 
@@ -93,7 +93,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			SpecStore:   config.SpecStore,
 			ValueStore:  config.ValueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -113,7 +113,7 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 
 			go func() {
 				d.Wait()
-				r.Close()
+				r.Close(ctx)
 			}()
 
 			go func() {
@@ -124,20 +124,20 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 			if err := r.Watch(ctx); err != nil {
 				return err
 			}
-			r.Load(ctx)
+			_ = r.Load(ctx, nil)
 			go r.Reconcile(ctx)
 			return d.Run()
 		}
 
 		go func() {
 			<-sigs
-			r.Close()
+			r.Close(ctx)
 		}()
 
 		if err := r.Watch(ctx); err != nil {
 			return err
 		}
-		r.Load(ctx)
+		_ = r.Load(ctx, nil)
 		return r.Reconcile(ctx)
 	}
 }

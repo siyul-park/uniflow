@@ -5,13 +5,13 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/siyul-park/uniflow/pkg/store"
+
 	"github.com/siyul-park/uniflow/pkg/hook"
 	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
-	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/testing"
-	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ type TestConfig struct {
 	Runner     *testing.Runner
 	Scheme     *scheme.Scheme
 	Hook       *hook.Hook
-	SpecStore  spec.Store
-	ValueStore value.Store
+	SpecStore  store.Store
+	ValueStore store.Store
 	FS         afero.Fs
 }
 
@@ -105,9 +105,9 @@ func runTestCommand(config TestConfig) func(cmd *cobra.Command, args []string) e
 			SpecStore:   config.SpecStore,
 			ValueStore:  config.ValueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
-		if err := r.Load(ctx); err != nil {
+		if err := r.Load(ctx, nil); err != nil {
 			return err
 		}
 

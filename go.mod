@@ -6,6 +6,7 @@ require (
 	github.com/go-faker/faker/v4 v4.6.0
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/google/btree v1.1.3
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1

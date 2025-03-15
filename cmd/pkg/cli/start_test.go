@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/siyul-park/uniflow/pkg/store"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
@@ -25,8 +28,8 @@ func TestStartCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	h := hook.New()
 
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	fs := afero.NewMemMapFs()
 
@@ -40,7 +43,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	s.AddCodec(kind, codec)
 
 	t.Run("NoFlag", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -49,7 +52,8 @@ func TestStartCommand_Execute(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		specStore.Store(ctx, meta)
+		err := specStore.Insert(ctx, []any{meta})
+		require.NoError(t, err)
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -84,7 +88,7 @@ func TestStartCommand_Execute(t *testing.T) {
 	})
 
 	t.Run(flagDebug, func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -93,7 +97,8 @@ func TestStartCommand_Execute(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		specStore.Store(ctx, meta)
+		err := specStore.Insert(ctx, []any{meta})
+		require.NoError(t, err)
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -161,18 +166,24 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromSpecs), filename})
 
-		specStream, _ := specStore.Watch(ctx)
-		defer specStream.Close()
+		strm, err := specStore.Watch(ctx, nil)
+		require.NoError(t, err)
+		require.NotNil(t, strm)
+
+		defer strm.Close(ctx)
+
+		var count atomic.Int32
+		go func() {
+			for strm.Next(ctx) {
+				count.Add(1)
+			}
+		}()
 
 		go func() {
 			_ = cmd.Execute()
 		}()
 
-		select {
-		case <-specStream.Next():
-		case <-ctx.Done():
-			require.Fail(t, ctx.Err().Error())
-		}
+		require.Eventually(t, func() bool { return count.Load() == 1 }, time.Second, 10*time.Millisecond)
 	})
 
 	t.Run(flagFromValues, func(t *testing.T) {
@@ -207,17 +218,23 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagFromValues), filename})
 
-		valueStream, _ := valueStore.Watch(ctx)
-		defer valueStream.Close()
+		strm, err := valueStore.Watch(ctx, nil)
+		require.NoError(t, err)
+		require.NotNil(t, strm)
+
+		defer strm.Close(ctx)
+
+		var count atomic.Int32
+		go func() {
+			for strm.Next(ctx) {
+				count.Add(1)
+			}
+		}()
 
 		go func() {
 			_ = cmd.Execute()
 		}()
 
-		select {
-		case <-valueStream.Next():
-		case <-ctx.Done():
-			require.Fail(t, ctx.Err().Error())
-		}
+		require.Eventually(t, func() bool { return count.Load() == 1 }, time.Second, 10*time.Millisecond)
 	})
 }

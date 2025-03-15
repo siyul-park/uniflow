@@ -1,84 +1,12 @@
 package resource
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 )
-
-func TestIs(t *testing.T) {
-	id := uuid.Must(uuid.NewV7())
-
-	tests := []struct {
-		source Resource
-		target Resource
-		expect bool
-	}{
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{ID: id},
-			expect: true,
-		},
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{ID: uuid.Must(uuid.NewV7())},
-			expect: false,
-		},
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{Namespace: DefaultNamespace},
-			expect: true,
-		},
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{Namespace: "other"},
-			expect: false,
-		},
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{Name: "node1"},
-			expect: true,
-		},
-		{
-			source: &Meta{
-				ID:        id,
-				Namespace: DefaultNamespace,
-				Name:      "node1",
-			},
-			target: &Meta{Name: "node2"},
-			expect: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%v, %v", tt.source, tt.target), func(t *testing.T) {
-			require.Equal(t, tt.expect, Is(tt.source, tt.target))
-		})
-	}
-}
 
 func TestMeta_ID(t *testing.T) {
 	meta := &Meta{}

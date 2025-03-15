@@ -12,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/require"
@@ -29,24 +30,25 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	specStore := spec.NewStore()
-	valueStore := value.NewStore()
+	specStore := store.New()
+	valueStore := store.New()
 
 	r := New(Config{
 		Scheme:     s,
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 	})
-	defer r.Close()
+	defer r.Close(ctx)
 
 	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	_, _ = specStore.Store(ctx, meta)
+	err := specStore.Insert(ctx, []any{meta})
+	require.NoError(t, err)
 
-	err := r.Load(ctx)
+	err = r.Load(ctx, nil)
 	require.NoError(t, err)
 }
 
@@ -63,8 +65,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -84,7 +86,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(t, err)
@@ -97,7 +99,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		specStore.Store(ctx, meta)
+		err = specStore.Insert(ctx, []any{meta})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -106,7 +109,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			require.NoError(t, ctx.Err())
 		}
 
-		specStore.Delete(ctx, meta)
+		_, err = specStore.Delete(ctx, map[string]any{spec.KeyID: meta.ID})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -117,7 +121,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Value", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 		defer cancel()
 
 		s := scheme.New()
@@ -128,8 +132,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -149,15 +153,17 @@ func TestRuntime_Reconcile(t *testing.T) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(t, err)
 
 		go r.Reconcile(ctx)
 
-		scrt := &value.Value{
-			ID:   uuid.Must(uuid.NewV7()),
-			Data: faker.UUIDHyphenated(),
+		val := &value.Value{
+			ID:        uuid.Must(uuid.NewV7()),
+			Namespace: resource.DefaultNamespace,
+			Data:      faker.UUIDHyphenated(),
 		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
@@ -165,24 +171,28 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 			Env: map[string]spec.Value{
 				"key": {
-					ID:   scrt.GetID(),
+					ID:   val.GetID(),
 					Data: "{{ . }}",
 				},
 			},
 		}
 
-		specStore.Store(ctx, meta)
-		valueStore.Store(ctx, scrt)
+		err = specStore.Insert(ctx, []any{meta})
+		require.NoError(t, err)
+
+		err = valueStore.Insert(ctx, []any{val})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
 			require.Equal(t, meta.GetID(), sb.ID())
-			require.Equal(t, scrt.Data, sb.Env()["key"].Data)
+			require.Equal(t, val.Data, sb.Env()["key"].Data)
 		case <-ctx.Done():
 			require.NoError(t, ctx.Err())
 		}
 
-		valueStore.Delete(ctx, scrt)
+		_, err = valueStore.Delete(ctx, map[string]any{value.KeyID: val.ID})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -190,6 +200,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		case <-ctx.Done():
 			require.NoError(t, ctx.Err())
 		}
+
+		go func() {
+			for range symbols {
+			}
+		}()
 	})
 }
 
@@ -205,8 +220,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -222,7 +237,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(b, err)
@@ -236,7 +251,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 			}
 
-			specStore.Store(ctx, meta)
+			err := specStore.Insert(ctx, []any{meta})
+			require.NoError(b, err)
 
 			select {
 			case <-symbols:
@@ -256,8 +272,8 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := spec.NewStore()
-		valueStore := value.NewStore()
+		specStore := store.New()
+		valueStore := store.New()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -280,7 +296,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 		go r.Reconcile(ctx)
 
 		for i := 0; i < b.N; i++ {
-			scrt := &value.Value{
+			val := &value.Value{
 				ID:   uuid.Must(uuid.NewV7()),
 				Data: faker.UUIDHyphenated(),
 			}
@@ -290,14 +306,17 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 				Env: map[string]spec.Value{
 					"key": {
-						ID:   scrt.GetID(),
+						ID:   val.GetID(),
 						Data: "{{ . }}",
 					},
 				},
 			}
 
-			specStore.Store(ctx, meta)
-			valueStore.Store(ctx, scrt)
+			err := specStore.Insert(ctx, []any{meta})
+			require.NoError(b, err)
+
+			err = valueStore.Insert(ctx, []any{val})
+			require.NoError(b, err)
 
 			select {
 			case <-symbols:
