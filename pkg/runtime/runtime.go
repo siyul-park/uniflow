@@ -3,12 +3,13 @@ package runtime
 import (
 	"context"
 	"errors"
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"reflect"
 	"slices"
 	"sync"
+
+	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/node"
+	"github.com/siyul-park/uniflow/pkg/types"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/resource"
@@ -168,26 +169,17 @@ func (r *Runtime) Load(ctx context.Context, filter types.Map) error {
 			continue
 		}
 
-		doc, err := types.Cast[types.Map](types.Marshal(sb.Spec))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
 		local := store.New()
-
-		if err := local.Insert(ctx, []types.Map{doc}); err != nil {
+		if doc, err := types.Cast[types.Map](types.Marshal(sb.Spec)); err != nil {
 			errs = append(errs, err)
 			continue
-		}
-
-		docs, err := local.Find(ctx, filter)
-		if err != nil {
+		} else if err := local.Insert(ctx, []types.Map{doc}); err != nil {
 			errs = append(errs, err)
 			continue
-		}
-
-		if !slices.Contains(docs, doc) {
+		} else if docs, err := local.Find(ctx, filter); err != nil {
+			errs = append(errs, err)
+			continue
+		} else if !slices.Contains(docs, doc) {
 			continue
 		}
 

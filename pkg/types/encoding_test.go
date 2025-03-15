@@ -3,15 +3,14 @@ package types
 import (
 	"errors"
 	"fmt"
-	"github.com/go-faker/faker/v4"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-
 	"github.com/stretchr/testify/require"
 )
 

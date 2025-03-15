@@ -2,10 +2,11 @@ package runtime
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/pkg/types"
 	"testing"
 	"time"
+
+	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/types"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
