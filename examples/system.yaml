@@ -550,7 +550,108 @@
       "status": 500
     }
 
-# Mock implementations using snippets to provide test data
+# test setup
+- kind: snippet
+  name: setup_test_data
+  language: javascript
+  code: |
+    export default function () {
+      return { 
+        status: "Test flow is starting",
+        testOrder: [
+          "1. Create specs/values first",
+          "2. Then perform read/update/delete operations"
+        ]
+      };
+    }
+  ports:
+    out:
+      - name: test_setup_complete
+        port: in
+
+- kind: snippet
+  name: test_setup_complete
+  language: javascript
+  code: |
+    export default function (input) {
+      return { status: "Setup complete" };
+    }
+
+# test nodes (for uuid problem)
+- kind: step
+  name: specs_read_with_params_test
+  specs:
+    - kind: snippet
+      language: cel
+      code: params
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (input) {
+          if (input && input.id === 123) {
+            return [{
+              id: 123,
+              name: "test-spec",
+              kind: "test",
+              data: { test: "mocked value for test" },
+              namespace: "default"
+            }];
+          }
+          return null;
+        }
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+- kind: step
+  name: values_read_with_params_test
+  specs:
+    - kind: snippet
+      language: cel
+      code: params
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (input) {
+          if (input && input.id === 456) {
+            return [{
+              id: 456,
+              name: "test-value",
+              data: "mocked value for test",
+              namespace: "default"
+            }];
+          }
+          return null;
+        }
+    - kind: snippet
+      language: javascript
+      code: |
+        export default function (args) {
+          if (!args) {
+            return { 
+              body: "Not Found",
+              status: 404
+            };
+          }
+          return {
+            body: args.length > 1 ? args : args[0],
+            status: 200
+          };
+        }
+
+# Mock implementations for specs operations
 - kind: snippet
   name: mock_specs_create
   language: javascript
@@ -558,6 +659,7 @@
     export default function () {
       return {
         body: {
+          id: 123,
           name: "mock-spec-new",
           kind: "test",
           data: { 
@@ -643,7 +745,7 @@
       - name: test_specs_read_with_params
         port: out
     out:
-      - name: specs_read_with_params
+      - name: specs_read_with_params_test
         port: in
 
 - kind: snippet
@@ -681,6 +783,7 @@
       - name: specs_delete_with_params
         port: in
 
+# Mock implementations for values operations
 - kind: snippet
   name: mock_values_create
   language: javascript
@@ -688,6 +791,7 @@
     export default function () {
       return {
         body: {
+          id: 456,
           name: "mock-value-new",
           data: "mock sample value"
         }
@@ -769,7 +873,7 @@
       - name: test_values_read_with_params
         port: out
     out:
-      - name: values_read_with_params
+      - name: values_read_with_params_test
         port: in
 
 - kind: snippet
@@ -807,12 +911,26 @@
       - name: values_delete_with_params
         port: in
 
-# Adding test nodes for specs operations
+# test
+- kind: test
+  name: test_setup
+  ports:
+    out:
+      - name: setup_test_data
+        port: in
+
 - kind: test
   name: test_specs_create
   ports:
     out:
       - name: mock_specs_create
+        port: in
+
+- kind: test
+  name: test_values_create
+  ports:
+    out:
+      - name: mock_values_create
         port: in
 
 - kind: test
@@ -823,17 +941,10 @@
         port: in
 
 - kind: test
-  name: test_specs_update
+  name: test_values_read
   ports:
     out:
-      - name: mock_specs_update
-        port: in
-
-- kind: test
-  name: test_specs_delete
-  ports:
-    out:
-      - name: mock_specs_delete
+      - name: mock_values_read
         port: in
 
 - kind: test
@@ -844,32 +955,17 @@
         port: in
 
 - kind: test
-  name: test_specs_update_with_params
+  name: test_values_read_with_params
   ports:
     out:
-      - name: mock_specs_update_with_params
+      - name: mock_values_read_with_params
         port: in
 
 - kind: test
-  name: test_specs_delete_with_params
+  name: test_specs_update
   ports:
     out:
-      - name: mock_specs_delete_with_params
-        port: in
-
-# Adding test nodes for values operations
-- kind: test
-  name: test_values_create
-  ports:
-    out:
-      - name: mock_values_create
-        port: in
-
-- kind: test
-  name: test_values_read
-  ports:
-    out:
-      - name: mock_values_read
+      - name: mock_specs_update
         port: in
 
 - kind: test
@@ -880,17 +976,10 @@
         port: in
 
 - kind: test
-  name: test_values_delete
+  name: test_specs_update_with_params
   ports:
     out:
-      - name: mock_values_delete
-        port: in
-
-- kind: test
-  name: test_values_read_with_params
-  ports:
-    out:
-      - name: mock_values_read_with_params
+      - name: mock_specs_update_with_params
         port: in
 
 - kind: test
@@ -898,6 +987,27 @@
   ports:
     out:
       - name: mock_values_update_with_params
+        port: in
+
+- kind: test
+  name: test_specs_delete
+  ports:
+    out:
+      - name: mock_specs_delete
+        port: in
+
+- kind: test
+  name: test_values_delete
+  ports:
+    out:
+      - name: mock_values_delete
+        port: in
+
+- kind: test
+  name: test_specs_delete_with_params
+  ports:
+    out:
+      - name: mock_specs_delete_with_params
         port: in
 
 - kind: test
