@@ -5,9 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/store"
-	"github.com/siyul-park/uniflow/pkg/types"
-
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
@@ -15,6 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/require"
@@ -40,17 +38,14 @@ func TestRuntime_Load(t *testing.T) {
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 	})
-	defer r.Close()
+	defer r.Close(ctx)
 
 	meta := &spec.Meta{
 		ID:   uuid.Must(uuid.NewV7()),
 		Kind: kind,
 	}
 
-	doc, err := types.Cast[types.Map](types.Marshal(meta))
-	require.NoError(t, err)
-
-	err = specStore.Insert(ctx, []types.Map{doc})
+	err := specStore.Insert(ctx, []any{meta})
 	require.NoError(t, err)
 
 	err = r.Load(ctx, nil)
@@ -91,7 +86,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(t, err)
@@ -104,10 +99,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			Namespace: resource.DefaultNamespace,
 		}
 
-		doc, err := types.Cast[types.Map](types.Marshal(meta))
-		require.NoError(t, err)
-
-		err = specStore.Insert(ctx, []types.Map{doc})
+		err = specStore.Insert(ctx, []any{meta})
 		require.NoError(t, err)
 
 		select {
@@ -117,7 +109,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			require.NoError(t, ctx.Err())
 		}
 
-		specStore.Delete(ctx, store.Where(spec.KeyID).Equal(doc.Get(types.NewString(spec.KeyID))))
+		_, err = specStore.Delete(ctx, map[string]any{spec.KeyID: meta.ID})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -160,6 +153,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(t, err)
@@ -183,16 +177,10 @@ func TestRuntime_Reconcile(t *testing.T) {
 			},
 		}
 
-		doc, err := types.Cast[types.Map](types.Marshal(meta))
+		err = specStore.Insert(ctx, []any{meta})
 		require.NoError(t, err)
 
-		err = specStore.Insert(ctx, []types.Map{doc})
-		require.NoError(t, err)
-
-		doc, err = types.Cast[types.Map](types.Marshal(val))
-		require.NoError(t, err)
-
-		err = valueStore.Insert(ctx, []types.Map{doc})
+		err = valueStore.Insert(ctx, []any{val})
 		require.NoError(t, err)
 
 		select {
@@ -203,7 +191,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			require.NoError(t, ctx.Err())
 		}
 
-		valueStore.Delete(ctx, store.Where(value.KeyID).Equal(doc.Get(types.NewString(value.KeyID))))
+		_, err = valueStore.Delete(ctx, map[string]any{value.KeyID: val.ID})
+		require.NoError(t, err)
 
 		select {
 		case sb := <-symbols:
@@ -211,6 +200,11 @@ func TestRuntime_Reconcile(t *testing.T) {
 		case <-ctx.Done():
 			require.NoError(t, ctx.Err())
 		}
+
+		go func() {
+			for range symbols {
+			}
+		}()
 	})
 }
 
@@ -243,7 +237,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 			SpecStore:  specStore,
 			ValueStore: valueStore,
 		})
-		defer r.Close()
+		defer r.Close(ctx)
 
 		err := r.Watch(ctx)
 		require.NoError(b, err)
@@ -257,10 +251,7 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				Namespace: resource.DefaultNamespace,
 			}
 
-			doc, err := types.Cast[types.Map](types.Marshal(meta))
-			require.NoError(b, err)
-
-			err = specStore.Insert(ctx, []types.Map{doc})
+			err := specStore.Insert(ctx, []any{meta})
 			require.NoError(b, err)
 
 			select {
@@ -321,16 +312,10 @@ func BenchmarkRuntime_Reconcile(b *testing.B) {
 				},
 			}
 
-			doc, err := types.Cast[types.Map](types.Marshal(meta))
+			err := specStore.Insert(ctx, []any{meta})
 			require.NoError(b, err)
 
-			err = specStore.Insert(ctx, []types.Map{doc})
-			require.NoError(b, err)
-
-			doc, err = types.Cast[types.Map](types.Marshal(val))
-			require.NoError(b, err)
-
-			err = valueStore.Insert(ctx, []types.Map{doc})
+			err = valueStore.Insert(ctx, []any{val})
 			require.NoError(b, err)
 
 			select {

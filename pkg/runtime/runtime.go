@@ -3,15 +3,13 @@ package runtime
 import (
 	"context"
 	"errors"
+	"golang.org/x/sync/errgroup"
 	"reflect"
-	"slices"
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/types"
-
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -37,8 +35,8 @@ type Runtime struct {
 	scheme      *scheme.Scheme
 	specStore   store.Store
 	valueStore  store.Store
-	specStream  store.Stream
-	valueStream store.Stream
+	specStream  store.Cursor
+	valueStream store.Cursor
 	symbolTable *symbol.Table
 	mu          sync.RWMutex
 }
@@ -80,48 +78,44 @@ func New(config Config) *Runtime {
 }
 
 // Load loads symbols from the spec store into the symbol table.
-func (r *Runtime) Load(ctx context.Context, filter types.Map) error {
-	filter = store.And(filter, store.Where(spec.KeyNamespace).Equal(types.NewString(r.namespace)))
+func (r *Runtime) Load(ctx context.Context, filter any) error {
+	filter = map[string]any{"$and": []any{filter, map[string]any{resource.KeyNamespace: r.namespace}}}
 
-	docs, err := r.specStore.Find(ctx, filter)
+	cursor, err := r.specStore.Find(ctx, filter)
 	if err != nil {
 		return err
 	}
 
-	specs := make([]*spec.Unstructured, 0, len(docs))
-	for _, doc := range docs {
+	var specs []*spec.Unstructured
+	for cursor.Next(ctx) {
 		unstructured := &spec.Unstructured{}
-		if err := types.Unmarshal(doc, unstructured); err != nil {
+		if err := cursor.Decode(unstructured); err != nil {
 			return err
 		}
 		specs = append(specs, unstructured)
 	}
 
-	var filters []types.Map
+	var filters []any
 	for _, sp := range specs {
 		for _, val := range sp.GetEnv() {
 			if val.ID != uuid.Nil {
-				id, err := types.Marshal(val.ID)
-				if err != nil {
-					return err
-				}
-				filters = append(filters, store.Where(value.KeyID).Equal(id))
+				filters = append(filters, map[string]any{value.KeyID: val.ID})
 			}
 			if val.Name != "" {
-				filters = append(filters, store.And(store.Where(value.KeyNamespace).Equal(types.NewString(sp.GetNamespace())), store.Where(value.KeyName).Equal(types.NewString(val.Name))))
+				filters = append(filters, map[string]any{value.KeyNamespace: sp.GetNamespace(), value.KeyName: val.Name})
 			}
 		}
 	}
 
-	docs, err = r.valueStore.Find(ctx, store.Or(filters...))
+	cursor, err = r.valueStore.Find(ctx, map[string]any{"$or": filters})
 	if err != nil {
 		return err
 	}
 
-	values := make([]*value.Value, 0, len(docs))
-	for _, doc := range docs {
+	var values []*value.Value
+	for cursor.Next(ctx) {
 		val := &value.Value{}
-		if err := types.Unmarshal(doc, val); err != nil {
+		if err := cursor.Decode(val); err != nil {
 			return err
 		}
 		values = append(values, val)
@@ -170,16 +164,13 @@ func (r *Runtime) Load(ctx context.Context, filter types.Map) error {
 		}
 
 		local := store.New()
-		if doc, err := types.Cast[types.Map](types.Marshal(sb.Spec)); err != nil {
+		if err := local.Insert(ctx, []any{sb.Spec}); err != nil {
 			errs = append(errs, err)
 			continue
-		} else if err := local.Insert(ctx, []types.Map{doc}); err != nil {
+		} else if cursor, err := local.Find(ctx, filter); err != nil {
 			errs = append(errs, err)
 			continue
-		} else if docs, err := local.Find(ctx, filter); err != nil {
-			errs = append(errs, err)
-			continue
-		} else if !slices.Contains(docs, doc) {
+		} else if !cursor.Next(ctx) {
 			continue
 		}
 
@@ -205,22 +196,22 @@ func (r *Runtime) Watch(ctx context.Context) error {
 	defer r.mu.Unlock()
 
 	if r.specStream != nil {
-		if err := r.specStream.Close(); err != nil {
+		if err := r.specStream.Close(ctx); err != nil {
 			return err
 		}
 	}
-	specStream, err := r.specStore.Watch(ctx, store.Where(spec.KeyNamespace).Equal(types.NewString(r.namespace)))
+	specStream, err := r.specStore.Watch(ctx, map[string]any{spec.KeyNamespace: r.namespace})
 	if err != nil {
 		return err
 	}
 	r.specStream = specStream
 
 	if r.valueStream != nil {
-		if err := r.valueStream.Close(); err != nil {
+		if err := r.valueStream.Close(ctx); err != nil {
 			return err
 		}
 	}
-	valueStream, err := r.valueStore.Watch(ctx, store.Where(value.KeyNamespace).Equal(types.NewString(r.namespace)))
+	valueStream, err := r.valueStore.Watch(ctx, map[string]any{value.KeyNamespace: r.namespace})
 	if err != nil {
 		return err
 	}
@@ -242,72 +233,79 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case event, ok := <-specStream.Next():
-			if !ok {
-				return nil
+	g, _ := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		for specStream.Next(ctx) {
+			var event store.Event
+			if err := specStream.Decode(&event); err != nil {
+				return err
 			}
 
-			_ = r.Load(ctx, store.Where(spec.KeyID).Equal(event.Get(types.NewString(spec.KeyID))))
-		case event, ok := <-valueStream.Next():
-			if !ok {
-				return nil
+			_ = r.Load(ctx, map[string]any{spec.KeyID: event.ID})
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		for valueStream.Next(ctx) {
+			var event store.Event
+			if err := valueStream.Decode(&event); err != nil {
+				return err
 			}
 
-			docs, err := r.valueStore.Find(ctx, store.Where(value.KeyID).Equal(event.Get(types.NewString(value.KeyID))))
+			cursor, err := r.valueStore.Find(ctx, map[string]any{value.KeyID: event.ID})
 			if err != nil {
 				return err
 			}
 
-			values := make([]*value.Value, 0, len(docs))
-			for _, doc := range docs {
+			var values []*value.Value
+			for cursor.Next(ctx) {
 				val := &value.Value{}
-				if err := types.Unmarshal(doc, val); err != nil {
+				if err := cursor.Decode(val); err != nil {
 					return err
 				}
 				values = append(values, val)
 			}
 
-			var filters []types.Map
+			var filters []any
 			for _, id := range r.symbolTable.Keys() {
 				if sb := r.symbolTable.Lookup(id); sb != nil {
 					unstructured := &spec.Unstructured{}
 					if err := spec.As(sb.Spec, unstructured); err != nil {
 						return err
 					} else if unstructured.IsBound(values...) {
-						id, err := types.Marshal(sb.ID())
-						if err != nil {
-							return err
-						}
-						filters = append(filters, store.Where(spec.KeyID).Equal(id))
+						filters = append(filters, map[string]any{spec.KeyID: id})
 					}
 				}
 			}
 
-			_ = r.Load(ctx, store.Or(filters...))
+			_ = r.Load(ctx, map[string]any{"$or": filters})
 		}
-	}
+		return nil
+	})
+
+	return g.Wait()
 }
 
 // Close shuts down the Runtime by closing streams and clearing the symbol table.
-func (r *Runtime) Close() error {
+func (r *Runtime) Close(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.specStream != nil {
-		if err := r.specStream.Close(); err != nil {
+		if err := r.specStream.Close(ctx); err != nil {
 			return err
 		}
-		r.specStream = nil
 	}
 	if r.valueStream != nil {
-		if err := r.valueStream.Close(); err != nil {
+		if err := r.valueStream.Close(ctx); err != nil {
 			return err
 		}
-		r.valueStream = nil
 	}
+
+	r.specStream = nil
+	r.valueStream = nil
+
 	return r.symbolTable.Close()
 }

@@ -8,18 +8,18 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
-type Section struct {
+type scanner interface {
+	Scan(key types.String, min, max types.Value) scanner
+	Range() func(func(types.Value, types.Map) bool)
+}
+
+type section struct {
 	entries *btree.BTreeG[*entry]
 	indexes []*index
 	mu      sync.RWMutex
 }
 
-type Cursor interface {
-	Scan(key types.String, min, max types.Value) Cursor
-	Range() func(func(types.Value, types.Map) bool)
-}
-
-type cursor struct {
+type sector struct {
 	entries *btree.BTreeG[*entry]
 	indexes []*index
 	mu      *sync.RWMutex
@@ -50,29 +50,29 @@ func (n *node) Less(than btree.Item) bool {
 	return types.Compare(n.key, than.(*node).key) < 0
 }
 
-func WithUnique(unique bool) func(*index) {
+func withUnique(unique bool) func(*index) {
 	return func(idx *index) {
 		idx.unique = unique
 	}
 }
 
-func WithFilter(filter func(types.Map) bool) func(*index) {
+func withFilter(filter func(types.Map) bool) func(*index) {
 	return func(idx *index) {
 		idx.filter = filter
 	}
 }
 
-func NewSection() *Section {
-	s := &Section{
+func newSection() *section {
+	s := &section{
 		entries: btree.NewG[*entry](2, func(x, y *entry) bool {
 			return types.Compare(x.key, y.key) < 0
 		}),
 	}
-	_ = s.Index([]types.String{types.NewString(KeyID)}, WithUnique(true))
+	_ = s.Index([]types.String{types.NewString("id")}, withUnique(true))
 	return s
 }
 
-func (s *Section) Index(keys []types.String, options ...func(*index)) error {
+func (s *section) Index(keys []types.String, options ...func(*index)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -97,7 +97,7 @@ func (s *Section) Index(keys []types.String, options ...func(*index)) error {
 	return nil
 }
 
-func (s *Section) Unindex(keys []types.String) error {
+func (s *section) Unindex(keys []types.String) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -125,13 +125,13 @@ func (s *Section) Unindex(keys []types.String) error {
 	return nil
 }
 
-func (s *Section) Store(doc types.Map) error {
+func (s *section) Store(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	id := doc.Get(types.NewString(KeyID))
+	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
 	}
 
 	if s.entries.Has(&entry{key: id}) {
@@ -148,13 +148,13 @@ func (s *Section) Store(doc types.Map) error {
 	return nil
 }
 
-func (s *Section) Swap(doc types.Map) error {
+func (s *section) Swap(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	id := doc.Get(types.NewString(KeyID))
+	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
 	}
 
 	old, ok := s.entries.Get(&entry{key: id})
@@ -175,7 +175,7 @@ func (s *Section) Swap(doc types.Map) error {
 	return nil
 }
 
-func (s *Section) Delete(id types.Value) error {
+func (s *section) Delete(id types.Value) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -193,7 +193,7 @@ func (s *Section) Delete(id types.Value) error {
 	return nil
 }
 
-func (s *Section) Load(id types.Value) (types.Map, error) {
+func (s *section) Load(id types.Value) (types.Map, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -204,8 +204,8 @@ func (s *Section) Load(id types.Value) (types.Map, error) {
 	return l.value, nil
 }
 
-func (s *Section) Scan(key types.String, min, max types.Value) Cursor {
-	c := &cursor{
+func (s *section) Scan(key types.String, min, max types.Value) scanner {
+	c := &sector{
 		entries: s.entries,
 		indexes: s.indexes,
 		mu:      &s.mu,
@@ -213,7 +213,7 @@ func (s *Section) Scan(key types.String, min, max types.Value) Cursor {
 	return c.Scan(key, min, max)
 }
 
-func (s *Section) Range() func(func(types.Value, types.Map) bool) {
+func (s *section) Range() func(func(types.Value, types.Map) bool) {
 	return func(yield func(key types.Value, doc types.Map) bool) {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
@@ -224,10 +224,10 @@ func (s *Section) Range() func(func(types.Value, types.Map) bool) {
 	}
 }
 
-func (s *Section) index(idx *index, doc types.Map) error {
-	id := doc.Get(types.NewString(KeyID))
+func (s *section) index(idx *index, doc types.Map) error {
+	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
 	}
 
 	if idx.filter != nil && !idx.filter(doc) {
@@ -261,10 +261,10 @@ func (s *Section) index(idx *index, doc types.Map) error {
 	return nil
 }
 
-func (s *Section) unindex(idx *index, doc types.Map) error {
-	id := doc.Get(types.NewString(KeyID))
+func (s *section) unindex(idx *index, doc types.Map) error {
+	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString(KeyID).String())
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", types.NewString("id").String())
 	}
 
 	curr := idx.nodes
@@ -296,12 +296,12 @@ func (s *Section) unindex(idx *index, doc types.Map) error {
 	return nil
 }
 
-func (c *cursor) Scan(key types.String, min, max types.Value) Cursor {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+func (s *sector) Scan(key types.String, min, max types.Value) scanner {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	var indexes []*index
-	for _, idx := range c.indexes {
+	for _, idx := range s.indexes {
 		if len(idx.keys) == 0 || idx.keys[0] != key {
 			continue
 		}
@@ -318,21 +318,21 @@ func (c *cursor) Scan(key types.String, min, max types.Value) Cursor {
 		})
 	}
 
-	return &cursor{
-		entries: c.entries,
+	return &sector{
+		entries: s.entries,
 		indexes: indexes,
-		mu:      c.mu,
+		mu:      s.mu,
 	}
 }
 
-func (c *cursor) Range() func(func(types.Value, types.Map) bool) {
+func (s *sector) Range() func(func(types.Value, types.Map) bool) {
 	return func(yield func(key types.Value, doc types.Map) bool) {
-		c.mu.RLock()
-		defer c.mu.RUnlock()
+		s.mu.RLock()
+		defer s.mu.RUnlock()
 
 		var indexes []*index
 
-		curr := c.indexes
+		curr := s.indexes
 		for {
 			var next []*index
 			for _, idx := range curr {
@@ -359,7 +359,7 @@ func (c *cursor) Range() func(func(types.Value, types.Map) bool) {
 		})
 		for _, idx := range indexes {
 			idx.nodes.Ascend(func(n *node) bool {
-				e, _ := c.entries.Get(&entry{key: n.key})
+				e, _ := s.entries.Get(&entry{key: n.key})
 				entries.ReplaceOrInsert(e)
 				return true
 			})

@@ -2,8 +2,8 @@ package store
 
 import (
 	"context"
+	"github.com/gofrs/uuid"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -11,21 +11,20 @@ import (
 )
 
 type Store interface {
-	Watch(ctx context.Context, filter types.Map) (Stream, error)
+	Watch(ctx context.Context, filter any) (Stream, error)
 
-	Index(ctx context.Context, keys []types.String, opts ...IndexOptions) error
-	Unindex(ctx context.Context, keys []types.String) error
+	Index(ctx context.Context, keys []string, opts ...IndexOptions) error
+	Unindex(ctx context.Context, keys []string) error
 
-	Insert(ctx context.Context, docs []types.Map, opts ...InsertOptions) error
-	Update(ctx context.Context, filter, update types.Map, opts ...UpdateOptions) (int, error)
-	Delete(ctx context.Context, filter types.Map, opts ...DeleteOptions) (int, error)
-	Find(ctx context.Context, filter types.Map, opts ...FindOptions) ([]types.Map, error)
+	Insert(ctx context.Context, docs []any, opts ...InsertOptions) error
+	Update(ctx context.Context, filter, update any, opts ...UpdateOptions) (int, error)
+	Delete(ctx context.Context, filter any, opts ...DeleteOptions) (int, error)
+	Find(ctx context.Context, filter any, opts ...FindOptions) (Cursor, error)
 }
 
-type Stream interface {
-	Next() <-chan types.Map
-	Done() <-chan struct{}
-	Close() error
+type Event struct {
+	ID uuid.UUID `json:"id" bson:"_id" yaml:"id" validate:"required"`
+	OP string    `json:"op" bson:"op" yaml:"op" validate:"required"`
 }
 
 type IndexOptions struct {
@@ -49,18 +48,10 @@ type FindOptions struct {
 }
 
 type store struct {
-	section *Section
+	section *section
 	indexes [][]types.String
-	stream  []*stream
-	filters []types.Map
+	streams []*stream
 	mu      sync.RWMutex
-}
-
-type stream struct {
-	in   chan types.Map
-	out  chan types.Map
-	done chan struct{}
-	mu   sync.Mutex
 }
 
 type executionPlan struct {
@@ -69,11 +60,6 @@ type executionPlan struct {
 	max  types.Value
 	next *executionPlan
 }
-
-const (
-	KeyID = "id"
-	KeyOP = "op"
-)
 
 var (
 	ErrKeyMissing   = errors.New("key is missing")
@@ -85,60 +71,34 @@ var (
 )
 
 var _ Store = (*store)(nil)
-var _ Stream = (*stream)(nil)
 
 func New() Store {
 	return &store{
-		section: NewSection(),
-		indexes: [][]types.String{{types.NewString(KeyID)}},
+		section: newSection(),
+		indexes: [][]types.String{{types.NewString("id")}},
 	}
 }
 
-func (s *store) Watch(ctx context.Context, filter types.Map) (Stream, error) {
+func (s *store) Watch(ctx context.Context, filter any) (Stream, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	strm := &stream{
-		in:   make(chan types.Map),
-		out:  make(chan types.Map),
-		done: make(chan struct{}),
+	var f types.Map
+	if filter != nil {
+		var err error
+		if f, err = types.Cast[types.Map](types.Marshal(filter)); err != nil {
+			return nil, err
+		}
 	}
 
-	go func() {
-		defer close(strm.out)
-		defer close(strm.in)
-
-		buffer := make([]types.Map, 0, 2)
-		for {
-			var event types.Map
-			select {
-			case event = <-strm.in:
-			case <-strm.done:
-				return
-			}
-
-			select {
-			case strm.out <- event:
-			default:
-				buffer = append(buffer, event)
-
-				for len(buffer) > 0 {
-					select {
-					case event = <-strm.in:
-						buffer = append(buffer, event)
-					case strm.out <- buffer[0]:
-						buffer = buffer[1:]
-					}
-				}
-			}
-		}
-	}()
+	strm := newStream(f)
+	s.streams = append(s.streams, strm)
 
 	if ctx.Done() != nil {
 		go func() {
 			select {
 			case <-ctx.Done():
-				_ = strm.Close()
+				_ = strm.Close(ctx)
 			case <-strm.Done():
 			}
 		}()
@@ -150,22 +110,18 @@ func (s *store) Watch(ctx context.Context, filter types.Map) (Stream, error) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		for i := 0; i < len(s.stream); i++ {
-			if s.stream[i] == strm {
-				s.stream = append(s.stream[:i], s.stream[i+1:]...)
-				s.filters = append(s.filters[:i], s.filters[i+1:]...)
+		for i := 0; i < len(s.streams); i++ {
+			if s.streams[i] == strm {
+				s.streams = append(s.streams[:i], s.streams[i+1:]...)
 				break
 			}
 		}
 	}()
 
-	s.stream = append(s.stream, strm)
-	s.filters = append(s.filters, filter)
-
 	return strm, nil
 }
 
-func (s *store) Index(_ context.Context, keys []types.String, opts ...IndexOptions) error {
+func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -177,7 +133,7 @@ func (s *store) Index(_ context.Context, keys []types.String, opts ...IndexOptio
 		}
 		if opt.Filter != nil {
 			filter = func(doc types.Map) bool {
-				ok, err := s.match(doc, opt.Filter)
+				ok, err := match(doc, opt.Filter)
 				if err != nil {
 					return false
 				}
@@ -186,30 +142,38 @@ func (s *store) Index(_ context.Context, keys []types.String, opts ...IndexOptio
 		}
 	}
 
-	if err := s.section.Index(keys, WithUnique(unique), WithFilter(filter)); err != nil {
+	idx := make([]types.String, 0, len(keys))
+	for _, k := range keys {
+		idx = append(idx, types.NewString(k))
+	}
+
+	if err := s.section.Index(idx, withUnique(unique), withFilter(filter)); err != nil {
 		return err
 	}
 
-	s.indexes = append(s.indexes, keys)
+	s.indexes = append(s.indexes, idx)
 	return nil
 }
 
-func (s *store) Unindex(_ context.Context, keys []types.String) error {
+func (s *store) Unindex(_ context.Context, keys []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.section.Unindex(keys); err != nil {
+	idx := make([]types.String, 0, len(keys))
+	for _, k := range keys {
+		idx = append(idx, types.NewString(k))
+	}
+
+	if err := s.section.Unindex(idx); err != nil {
 		return err
 	}
 
 	for i := 0; i < len(s.indexes); i++ {
-		idx := s.indexes[i]
-
-		if len(keys) != len(idx) {
+		if len(s.indexes[i]) != len(idx) {
 			continue
 		}
-		for j := 0; j < len(keys); j++ {
-			if !types.Equal(keys[j], idx[j]) {
+		for j := 0; j < len(idx); j++ {
+			if !types.Equal(s.indexes[i][j], idx[j]) {
 				continue
 			}
 		}
@@ -220,22 +184,26 @@ func (s *store) Unindex(_ context.Context, keys []types.String) error {
 	return nil
 }
 
-func (s *store) Insert(_ context.Context, docs []types.Map, _ ...InsertOptions) error {
+func (s *store) Insert(_ context.Context, docs []any, _ ...InsertOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, doc := range docs {
-		if err := s.section.Store(doc); err != nil {
+		val, err := types.Cast[types.Map](types.Marshal(doc))
+		if err != nil {
 			return err
 		}
-		if err := s.emit(types.NewString("insert"), doc); err != nil {
+		if err := s.section.Store(val); err != nil {
+			return err
+		}
+		if err := s.emit(types.NewString("insert"), val); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *store) Update(_ context.Context, filter, update types.Map, opts ...UpdateOptions) (int, error) {
+func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOptions) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -246,25 +214,37 @@ func (s *store) Update(_ context.Context, filter, update types.Map, opts ...Upda
 		}
 	}
 
-	docs := make([]types.Map, 0)
+	var f types.Map
+	if filter != nil {
+		var err error
+		if f, err = types.Cast[types.Map](types.Marshal(filter)); err != nil {
+			return 0, err
+		}
+	}
 
-	plan, err := s.explain(filter)
+	u, err := types.Cast[types.Map](types.Marshal(update))
 	if err != nil {
 		return 0, err
 	}
 
-	c := Cursor(s.section)
+	plan, err := s.explain(f)
+	if err != nil {
+		return 0, err
+	}
+
+	c := scanner(s.section)
 	for plan != nil {
 		c = c.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
 	}
 
+	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
-		if filter == nil {
+		if f == nil {
 			docs = append(docs, doc.(types.Map))
 			continue
 		}
-		ok, err := s.match(doc, filter)
+		ok, err := match(doc, f)
 		if err != nil {
 			return 0, err
 		}
@@ -274,16 +254,12 @@ func (s *store) Update(_ context.Context, filter, update types.Map, opts ...Upda
 	}
 
 	if upsert && len(docs) == 0 {
-		d, err := s.apply(filter)
+		doc, err := types.Cast[types.Map](apply(f))
 		if err != nil {
 			return 0, err
 		}
-		doc, ok := d.(types.Map)
-		if !ok {
-			return 0, errors.WithMessagef(ErrUnsupportedType, "value: %v", d)
-		}
 
-		doc, err = s.patch(doc, update)
+		doc, err = patch(doc, u)
 		if err != nil {
 			return 0, err
 		}
@@ -298,7 +274,7 @@ func (s *store) Update(_ context.Context, filter, update types.Map, opts ...Upda
 	}
 
 	for i := 0; i < len(docs); i++ {
-		doc, err := s.patch(docs[i], update)
+		doc, err := patch(docs[i], u)
 		if err != nil {
 			return 0, err
 		}
@@ -317,29 +293,36 @@ func (s *store) Update(_ context.Context, filter, update types.Map, opts ...Upda
 	return len(docs), nil
 }
 
-func (s *store) Delete(_ context.Context, filter types.Map, _ ...DeleteOptions) (int, error) {
+func (s *store) Delete(_ context.Context, filter any, _ ...DeleteOptions) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	docs := make([]types.Map, 0)
+	var f types.Map
+	if filter != nil {
+		var err error
+		if f, err = types.Cast[types.Map](types.Marshal(filter)); err != nil {
+			return 0, err
+		}
+	}
 
-	plan, err := s.explain(filter)
+	plan, err := s.explain(f)
 	if err != nil {
 		return 0, err
 	}
 
-	c := Cursor(s.section)
+	c := scanner(s.section)
 	for plan != nil {
 		c = c.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
 	}
 
+	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
-		if filter == nil {
+		if f == nil {
 			docs = append(docs, doc.(types.Map))
 			continue
 		}
-		ok, err := s.match(doc, filter)
+		ok, err := match(doc, f)
 		if err != nil {
 			return 0, err
 		}
@@ -349,7 +332,7 @@ func (s *store) Delete(_ context.Context, filter types.Map, _ ...DeleteOptions) 
 	}
 
 	for _, doc := range docs {
-		if err := s.section.Delete(doc.Get(types.NewString(KeyID))); err != nil {
+		if err := s.section.Delete(doc.Get(types.NewString("id"))); err != nil {
 			return 0, err
 		}
 		if err := s.emit(types.NewString("delete"), doc); err != nil {
@@ -359,7 +342,7 @@ func (s *store) Delete(_ context.Context, filter types.Map, _ ...DeleteOptions) 
 	return len(docs), nil
 }
 
-func (s *store) Find(_ context.Context, filter types.Map, opts ...FindOptions) ([]types.Map, error) {
+func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -374,25 +357,32 @@ func (s *store) Find(_ context.Context, filter types.Map, opts ...FindOptions) (
 		}
 	}
 
-	docs := make([]types.Map, 0)
+	var f types.Map
+	if filter != nil {
+		var err error
+		if f, err = types.Cast[types.Map](types.Marshal(filter)); err != nil {
+			return nil, err
+		}
+	}
 
-	plan, err := s.explain(filter)
+	plan, err := s.explain(f)
 	if err != nil {
 		return nil, err
 	}
 
-	c := Cursor(s.section)
+	c := scanner(s.section)
 	for plan != nil {
 		c = c.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
 	}
 
+	docs := make([]types.Map, 0)
 	for _, doc := range c.Range() {
-		if filter == nil {
+		if f == nil {
 			docs = append(docs, doc.(types.Map))
 			continue
 		}
-		ok, err := s.match(doc, filter)
+		ok, err := match(doc, f)
 		if err != nil {
 			return nil, err
 		}
@@ -421,7 +411,8 @@ func (s *store) Find(_ context.Context, filter types.Map, opts ...FindOptions) (
 	if limit > 0 && len(docs) > limit {
 		docs = docs[:limit]
 	}
-	return docs, nil
+
+	return newCursor(docs), nil
 }
 
 func (s *store) explain(filter types.Value) (*executionPlan, error) {
@@ -507,224 +498,22 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 	return plan, nil
 }
 
-func (s *store) match(doc, filter types.Value) (bool, error) {
-	f, ok := filter.(types.Map)
-	if !ok {
-		return false, errors.WithMessagef(ErrUnsupportedType, "filter: %v", filter.Interface())
-	}
-
-	for k, value := range f.Range() {
-		key, ok := k.(types.String)
-		if !ok {
-			return false, errors.WithMessagef(ErrUnsupportedType, "key: %v", k.Interface())
-		}
-
-		if !strings.HasPrefix(key.String(), "$") {
-			d, ok := doc.(types.Map)
-			if !ok {
-				return false, errors.WithMessagef(ErrUnsupportedType, "doc: %v", doc.Interface())
-			}
-
-			ok, err := s.match(d.Get(key), value)
-			if err != nil {
-				return false, err
-			}
-			if !ok {
-				return false, nil
-			}
-			continue
-		}
-
-		switch key.String() {
-		case "$eq":
-			if !types.Equal(doc, value) {
-				return false, nil
-			}
-		case "$ne":
-			if types.Equal(doc, value) {
-				return false, nil
-			}
-		case "$gt":
-			if types.Compare(doc, value) <= 0 {
-				return false, nil
-			}
-		case "$lt":
-			if types.Compare(doc, value) >= 0 {
-				return false, nil
-			}
-		case "$gte":
-			if types.Compare(doc, value) < 0 {
-				return false, nil
-			}
-		case "$lte":
-			if types.Compare(doc, value) > 0 {
-				return false, nil
-			}
-		case "$and":
-			vals, ok := value.(types.Slice)
-			if !ok {
-				return false, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
-			}
-			for _, sub := range vals.Range() {
-				match, err := s.match(doc, sub)
-				if err != nil {
-					return false, err
-				}
-				if !match {
-					return false, nil
-				}
-			}
-		case "$or":
-			vals, ok := value.(types.Slice)
-			if !ok {
-				return false, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
-			}
-			for _, sub := range vals.Range() {
-				match, err := s.match(doc, sub)
-				if err != nil {
-					return false, err
-				}
-				if match {
-					return true, nil
-				}
-			}
-		default:
-			return false, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
-		}
-	}
-	return true, nil
-}
-
-func (s *store) patch(doc, update types.Map) (types.Map, error) {
-	doc = doc.Mutable()
-	for k, value := range update.Range() {
-		key, ok := k.(types.String)
-		if !ok {
-			return nil, errors.WithMessagef(ErrUnsupportedType, "key: %v", k.Interface())
-		}
-
-		switch key.String() {
-		case "$set":
-			val, ok := value.(types.Map)
-			if !ok {
-				return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
-			}
-			for k, v := range val.Range() {
-				doc.Set(k, v)
-			}
-		case "$unset":
-			val, ok := value.(types.Map)
-			if !ok {
-				return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
-			}
-			for k := range val.Range() {
-				doc.Delete(k)
-			}
-		default:
-			return nil, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
-		}
-	}
-	return doc.Immutable(), nil
-}
-
-func (s *store) apply(filter types.Value) (types.Value, error) {
-	f, ok := filter.(types.Map)
-	if !ok {
-		return nil, errors.WithMessagef(ErrUnsupportedType, "filter: %v", filter.Interface())
-	}
-
-	doc := types.NewMap().Mutable()
-
-	for k, value := range f.Range() {
-		key, ok := k.(types.String)
-		if !ok {
-			continue
-		}
-
-		if !strings.HasPrefix(key.String(), "$") {
-			child, err := s.apply(value)
-			if err != nil {
-				return nil, err
-			}
-			doc = doc.Set(key, child)
-			continue
-		}
-
-		switch key.String() {
-		case "$eq":
-			return value, nil
-		case "$and", "$or":
-			vals, ok := value.(types.Slice)
-			if !ok {
-				return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
-			}
-			for _, sub := range vals.Range() {
-				c, err := s.apply(sub)
-				if err != nil {
-					return nil, err
-				}
-
-				child, ok := c.(types.Map)
-				if !ok {
-					return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", child.Interface())
-				}
-
-				for key, val := range child.Range() {
-					if doc.Has(key) {
-						return nil, errors.WithMessagef(ErrUnsupportedOperation, "key: %v", key.Interface())
-					}
-					doc = doc.Set(key, val)
-				}
-			}
-		default:
-			return nil, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
-		}
-	}
-
-	return doc.Immutable(), nil
-}
-
 func (s *store) emit(op types.String, doc types.Map) error {
-	id := doc.Get(types.NewString(KeyID))
+	id := doc.Get(types.NewString("id"))
 	if id == nil {
-		return errors.WithMessagef(ErrKeyMissing, "key: %s", KeyID)
+		return errors.WithMessagef(ErrKeyMissing, "key: %s", "id")
 	}
 
-	for i := 0; i < len(s.stream); i++ {
-		ok := true
-		if s.filters[i] != nil {
-			var err error
-			ok, err = s.match(doc, s.filters[i])
-			if err != nil {
-				return err
-			}
+	for _, strm := range s.streams {
+		ok, err := strm.Match(doc)
+		if err != nil {
+			return err
 		}
 		if ok {
-			s.stream[i].in <- types.NewMap(types.NewString(KeyOP), op, types.NewString(KeyID), id)
+			strm.Emit(types.NewMap(types.NewString("op"), op, types.NewString("id"), id))
 		}
 	}
 	return nil
-}
-
-func (s *stream) Next() <-chan types.Map {
-	return s.out
-}
-
-func (s *stream) Done() <-chan struct{} {
-	return s.done
-}
-
-func (s *stream) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	select {
-	case <-s.done:
-		return nil
-	default:
-		close(s.done)
-		return nil
-	}
 }
 
 func (e *executionPlan) cost() int {

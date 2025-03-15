@@ -36,6 +36,14 @@ type Meta struct {
 	Annotations map[string]string `json:"annotations,omitempty" bson:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
+// Key constants for commonly used fields.
+const (
+	KeyID          = "id"
+	KeyNamespace   = "namespace"
+	KeyName        = "name"
+	KeyAnnotations = "annotations"
+)
+
 // DefaultNamespace represents the default namespace for resources.
 const DefaultNamespace = "default"
 
