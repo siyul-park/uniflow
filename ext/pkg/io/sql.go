@@ -74,7 +74,7 @@ func (n *SQLNode) SetIsolation(isolation sql.IsolationLevel) {
 	n.isolation = isolation
 }
 
-// Close closes resource associated with the node.
+// Close closes meta associated with the node.
 func (n *SQLNode) Close() error {
 	n.mu.RLock()
 	defer n.mu.RUnlock()

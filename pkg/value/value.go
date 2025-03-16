@@ -2,7 +2,7 @@ package value
 
 import (
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 )
 
 // Value defines the interface for a value with various attributes.
@@ -28,7 +28,7 @@ const (
 	KeyData        = "data"
 )
 
-var _ resource.Resource = (*Value)(nil)
+var _ meta.Meta = (*Value)(nil)
 
 // New creates and returns a new instance of Value.
 func New() *Value {

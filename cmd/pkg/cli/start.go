@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -35,7 +35,7 @@ func NewStartCommand(config StartConfig) *cobra.Command {
 		RunE:  runStartCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the namespace for running the workflow")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
 	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
 	cmd.PersistentFlags().Bool(flagDebug, false, "Enable debug mode for detailed output during execution")

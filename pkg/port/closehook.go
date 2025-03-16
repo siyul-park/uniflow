@@ -1,6 +1,6 @@
 package port
 
-// CloseHook is an interface that defines a method for handling resource cleanup.
+// CloseHook is an interface that defines a method for handling meta cleanup.
 type CloseHook interface {
 	// Close performs the necessary cleanup actions.
 	Close()

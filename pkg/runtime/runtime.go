@@ -8,8 +8,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
@@ -44,7 +44,7 @@ type Runtime struct {
 // New creates a new Runtime instance with the specified configuration.
 func New(config Config) *Runtime {
 	if config.Namespace == "" {
-		config.Namespace = resource.DefaultNamespace
+		config.Namespace = meta.DefaultNamespace
 	}
 	if config.Hook == nil {
 		config.Hook = hook.New()
@@ -80,9 +80,9 @@ func New(config Config) *Runtime {
 // Load loads symbols from the spec store into the symbol table.
 func (r *Runtime) Load(ctx context.Context, filter any) error {
 	if filter == nil {
-		filter = map[string]any{resource.KeyNamespace: r.namespace}
+		filter = map[string]any{meta.KeyNamespace: r.namespace}
 	} else {
-		filter = map[string]any{"$and": []any{filter, map[string]any{resource.KeyNamespace: r.namespace}}}
+		filter = map[string]any{"$and": []any{filter, map[string]any{meta.KeyNamespace: r.namespace}}}
 	}
 
 	cursor, err := r.specStore.Find(ctx, filter)

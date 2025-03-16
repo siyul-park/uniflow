@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/siyul-park/uniflow/cmd/pkg/io"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -28,12 +28,12 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the io's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the io's namespace. If not set, use all namespace")
 
 	return cmd
 }
 
-func runGetCommand[T resource.Resource](store store.Store, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runGetCommand[T meta.Meta](store store.Store, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 	}
@@ -51,21 +51,21 @@ func runGetCommand[T resource.Resource](store store.Store, alias ...func(map[str
 
 		writer := io.NewWriter(cmd.OutOrStdout())
 
-		cursor, err := store.Find(ctx, map[string]any{resource.KeyNamespace: namespace})
+		cursor, err := store.Find(ctx, map[string]any{meta.KeyNamespace: namespace})
 		if err != nil {
 			return err
 		}
 		defer cursor.Close(ctx)
 
-		var resources []T
+		var metas []T
 		for cursor.Next(ctx) {
-			var rsc T
-			if err := cursor.Decode(&rsc); err != nil {
+			var m T
+			if err := cursor.Decode(&m); err != nil {
 				return err
 			}
-			resources = append(resources, rsc)
+			metas = append(metas, m)
 		}
 
-		return writer.Write(resources)
+		return writer.Write(metas)
 	}
 }

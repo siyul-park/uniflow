@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -34,7 +34,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
@@ -79,7 +79,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		}
 
@@ -124,7 +124,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		val := &value.Value{
 			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.UUIDHyphenated(),
 		}
@@ -167,7 +167,7 @@ func TestApplyCommand_Execute(t *testing.T) {
 
 		val := &value.Value{
 			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 			Data:      faker.UUIDHyphenated(),
 		}

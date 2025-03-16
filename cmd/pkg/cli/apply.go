@@ -3,7 +3,7 @@ package cli
 import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/io"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -31,13 +31,13 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd
 }
 
-func runApplyCommand[T resource.Resource](st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runApplyCommand[T meta.Meta](st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -71,26 +71,26 @@ func runApplyCommand[T resource.Resource](st store.Store, fs afero.Fs, alias ...
 		reader := io.NewReader(file)
 		writer := io.NewWriter(cmd.OutOrStdout())
 
-		var resources []T
-		if err := reader.Read(&resources); err != nil {
+		var metas []T
+		if err := reader.Read(&metas); err != nil {
 			return err
 		}
 
-		if len(resources) == 0 {
+		if len(metas) == 0 {
 			return nil
 		}
 
-		for _, rsc := range resources {
-			if rsc.GetNamespace() == "" {
-				rsc.SetNamespace(namespace)
+		for _, m := range metas {
+			if m.GetNamespace() == "" {
+				m.SetNamespace(namespace)
 			}
 
 			filter := map[string]any{}
-			if rsc.GetID() != uuid.Nil {
-				filter[resource.KeyID] = rsc.GetID()
+			if m.GetID() != uuid.Nil {
+				filter[meta.KeyID] = m.GetID()
 			}
-			if rsc.GetName() != "" {
-				filter[resource.KeyName] = rsc.GetName()
+			if m.GetName() != "" {
+				filter[meta.KeyName] = m.GetName()
 			}
 
 			cursor, err := st.Find(ctx, filter, store.FindOptions{Limit: 1})
@@ -102,22 +102,22 @@ func runApplyCommand[T resource.Resource](st store.Store, fs afero.Fs, alias ...
 			_ = cursor.Close(ctx)
 
 			if ok {
-				_, err := st.Update(ctx, filter, map[string]any{"$set": rsc})
+				_, err := st.Update(ctx, filter, map[string]any{"$set": m})
 				if err != nil {
 					return err
 				}
 			} else {
-				if rsc.GetID() == uuid.Nil {
-					rsc.SetID(uuid.Must(uuid.NewV7()))
+				if m.GetID() == uuid.Nil {
+					m.SetID(uuid.Must(uuid.NewV7()))
 				}
 
-				err := st.Insert(ctx, []any{rsc})
+				err := st.Insert(ctx, []any{m})
 				if err != nil {
 					return err
 				}
 			}
 		}
 
-		return writer.Write(resources)
+		return writer.Write(metas)
 	}
 }

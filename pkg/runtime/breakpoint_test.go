@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestNewBreakpoint(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -51,7 +51,7 @@ func TestBreakpoint_Next(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -83,7 +83,7 @@ func TestBreakpoint_Done(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),

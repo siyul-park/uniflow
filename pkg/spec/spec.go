@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -84,7 +84,7 @@ type Value struct {
 	Data any `json:"data" yaml:"data" validate:"required"`
 }
 
-var _ resource.Resource = (Spec)(nil)
+var _ meta.Meta = (Spec)(nil)
 var _ Spec = (*Meta)(nil)
 
 // As serializes a source spec.Spec and deserializes it into a destination spec.Spec.

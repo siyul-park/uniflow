@@ -8,8 +8,8 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
@@ -96,7 +96,7 @@ func TestRuntime_Reconcile(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 		}
 
 		err = specStore.Insert(ctx, []any{meta})
@@ -162,13 +162,13 @@ func TestRuntime_Reconcile(t *testing.T) {
 
 		val := &value.Value{
 			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Data:      faker.UUIDHyphenated(),
 		}
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Env: map[string]spec.Value{
 				"key": {
 					ID:   val.GetID(),

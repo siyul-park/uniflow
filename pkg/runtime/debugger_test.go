@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
@@ -29,7 +29,7 @@ func TestDebugger_AddBreakpoint(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -56,7 +56,7 @@ func TestDebugger_RemoveBreakpoint(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -85,7 +85,7 @@ func TestDebugger_Breakpoints(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -114,7 +114,7 @@ func TestDebugger_Pause(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -166,7 +166,7 @@ func TestDebugger_Step(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -218,7 +218,7 @@ func TestDebugger_Breakpoint(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -272,7 +272,7 @@ func TestDebugger_Frame(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -326,7 +326,7 @@ func TestDebugger_Process(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),
@@ -380,7 +380,7 @@ func TestDebugger_Symbol(t *testing.T) {
 		Spec: &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      faker.UUIDHyphenated(),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Name:      faker.UUIDHyphenated(),
 		},
 		Node: node.NewOneToOneNode(nil),

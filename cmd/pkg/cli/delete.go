@@ -3,7 +3,7 @@ package cli
 import (
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/cmd/pkg/io"
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -31,13 +31,13 @@ func NewDeleteCommand(config DeleteConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be deleted")
 
 	return cmd
 }
 
-func runDeleteCommand[T resource.Resource](store store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runDeleteCommand[T meta.Meta](store store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -69,26 +69,26 @@ func runDeleteCommand[T resource.Resource](store store.Store, fs afero.Fs, alias
 
 		reader := io.NewReader(file)
 
-		var resources []T
-		if err := reader.Read(&resources); err != nil {
+		var metas []T
+		if err := reader.Read(&metas); err != nil {
 			return err
 		}
 
-		filters := make([]any, 0, len(resources))
-		for _, rsc := range resources {
+		filters := make([]any, 0, len(metas))
+		for _, m := range metas {
 			filter := map[string]any{}
-			if rsc.GetID() != uuid.Nil {
-				filter[resource.KeyID] = rsc.GetID()
+			if m.GetID() != uuid.Nil {
+				filter[meta.KeyID] = m.GetID()
 			}
-			if rsc.GetName() != "" {
-				filter[resource.KeyName] = rsc.GetName()
+			if m.GetName() != "" {
+				filter[meta.KeyName] = m.GetName()
 			}
 			filters = append(filters, filter)
 		}
 
 		_, err = store.Delete(ctx, map[string]any{
 			"$and": []any{
-				map[string]any{resource.KeyNamespace: namespace},
+				map[string]any{meta.KeyNamespace: namespace},
 				map[string]any{"$or": filters},
 			},
 		})

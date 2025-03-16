@@ -11,11 +11,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -48,7 +48,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -81,7 +81,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -114,7 +114,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -150,7 +150,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -186,7 +186,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -222,7 +222,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -261,7 +261,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -318,7 +318,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -351,7 +351,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -390,7 +390,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -450,7 +450,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -511,7 +511,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -571,7 +571,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(nil),
@@ -631,7 +631,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -694,7 +694,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
@@ -757,7 +757,7 @@ func TestDebugModel_Update(t *testing.T) {
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      faker.UUIDHyphenated(),
 			},
 			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {

@@ -291,8 +291,7 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 		}
 		if opt.Sort != nil {
 			var err error
-			sort, err = types.Cast[types.Map](types.Marshal(opt.Sort))
-			if err != nil {
+			if sort, err = types.Cast[types.Map](types.Marshal(opt.Sort)); err != nil {
 				return nil, err
 			}
 		}
@@ -317,10 +316,9 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 				val1 := x.Get(field)
 				val2 := y.Get(field)
 
-				order := 1
-				_ = types.Unmarshal(o, &order)
-
 				if comp := types.Compare(val1, val2); comp != 0 {
+					order := 1
+					_ = types.Unmarshal(o, &order)
 					return comp * order
 				}
 			}
@@ -352,11 +350,10 @@ func (s *store) find(filter types.Map) ([]types.Map, error) {
 			docs = append(docs, doc)
 			continue
 		}
-		ok, err := match(doc, filter)
-		if err != nil {
+
+		if ok, err := match(doc, filter); err != nil {
 			return nil, err
-		}
-		if ok {
+		} else if ok {
 			docs = append(docs, doc)
 		}
 	}
@@ -396,11 +393,9 @@ func (s *store) emit(op types.String, doc types.Map) error {
 	}
 
 	for _, strm := range s.streams {
-		ok, err := strm.Match(doc)
-		if err != nil {
+		if ok, err := strm.Match(doc); err != nil {
 			return err
-		}
-		if ok {
+		} else if ok {
 			strm.Emit(types.NewMap(types.NewString("op"), op, types.NewString("id"), id))
 		}
 	}

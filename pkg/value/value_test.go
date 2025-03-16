@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/meta"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
@@ -78,7 +78,7 @@ func TestValue_Id(t *testing.T) {
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
 			target: &Value{ID: id},
@@ -87,7 +87,7 @@ func TestValue_Id(t *testing.T) {
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
 			target: &Value{ID: uuid.Must(uuid.NewV7())},
@@ -96,16 +96,16 @@ func TestValue_Id(t *testing.T) {
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
-			target: &Value{Namespace: resource.DefaultNamespace},
+			target: &Value{Namespace: meta.DefaultNamespace},
 			expect: true,
 		},
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
 			target: &Value{Namespace: "other"},
@@ -114,7 +114,7 @@ func TestValue_Id(t *testing.T) {
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
 			target: &Value{Name: "node1"},
@@ -123,7 +123,7 @@ func TestValue_Id(t *testing.T) {
 		{
 			source: &Value{
 				ID:        id,
-				Namespace: resource.DefaultNamespace,
+				Namespace: meta.DefaultNamespace,
 				Name:      "node1",
 			},
 			target: &Value{Name: "node2"},

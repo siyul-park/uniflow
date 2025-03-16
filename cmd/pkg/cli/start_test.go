@@ -14,8 +14,8 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
-	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -49,7 +49,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 		}
 
 		err := specStore.Insert(ctx, []any{meta})
@@ -94,7 +94,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 		}
 
 		err := specStore.Insert(ctx, []any{meta})
@@ -143,7 +143,7 @@ func TestStartCommand_Execute(t *testing.T) {
 		meta := &spec.Meta{
 			ID:        uuid.Must(uuid.NewV7()),
 			Kind:      kind,
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 		}
 
 		data, _ := json.Marshal(meta)
@@ -194,7 +194,7 @@ func TestStartCommand_Execute(t *testing.T) {
 
 		scrt := &value.Value{
 			ID:        uuid.Must(uuid.NewV7()),
-			Namespace: resource.DefaultNamespace,
+			Namespace: meta.DefaultNamespace,
 			Data:      faker.UUIDHyphenated(),
 		}
 
