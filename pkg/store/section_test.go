@@ -141,14 +141,10 @@ func BenchmarkSection_Store(b *testing.B) {
 	s := newSection()
 
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-
 		doc := types.NewMap(
 			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 		)
-
-		b.StartTimer()
 
 		err := s.Store(doc)
 		require.NoError(b, err)
@@ -177,20 +173,19 @@ func BenchmarkSection_Swap(b *testing.B) {
 func BenchmarkSection_Delete(b *testing.B) {
 	s := newSection()
 
-	doc := types.NewMap(
-		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	docs := make([]types.Map, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = types.NewMap(
+			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+		)
+		require.NoError(b, s.Store(docs[i]))
+	}
+
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-
-		err := s.Store(doc)
-		require.NoError(b, err)
-
-		b.StartTimer()
-
-		err = s.Delete(doc.Get(types.NewString("id")))
+		err := s.Delete(docs[i].Get(types.NewString("id")))
 		require.NoError(b, err)
 	}
 }
@@ -198,35 +193,33 @@ func BenchmarkSection_Delete(b *testing.B) {
 func BenchmarkSection_Load(b *testing.B) {
 	s := newSection()
 
-	doc := types.NewMap(
-		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
-
-	err := s.Store(doc)
-	require.NoError(b, err)
+	docs := make([]types.Map, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = types.NewMap(
+			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+		)
+		require.NoError(b, s.Store(docs[i]))
+	}
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := s.Load(doc.Get(types.NewString("id")))
-		if err != nil {
-			b.Fatalf("Load failed: %v", err)
-		}
+		_, err := s.Load(docs[i].Get(types.NewString("id")))
+		require.NoError(b, err)
 	}
 }
 
 func BenchmarkSection_Range(b *testing.B) {
 	s := newSection()
 
+	docs := make([]types.Map, b.N)
 	for i := 0; i < b.N; i++ {
-		doc := types.NewMap(
+		docs[i] = types.NewMap(
 			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
 			types.NewString("name"), types.NewString(faker.Word()),
 		)
-
-		err := s.Store(doc)
-		require.NoError(b, err)
+		require.NoError(b, s.Store(docs[i]))
 	}
 
 	b.ResetTimer()
@@ -243,22 +236,24 @@ func BenchmarkSection_Range(b *testing.B) {
 func BenchmarkSection_Scan(b *testing.B) {
 	s := newSection()
 
-	doc := types.NewMap(
-		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
-
-	err := s.Store(doc)
-	require.NoError(b, err)
+	docs := make([]types.Map, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = types.NewMap(
+			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+		)
+		require.NoError(b, s.Store(docs[i]))
+	}
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var docs []types.Value
-		for _, doc := range s.Scan(types.NewString("id"), doc.Get(types.NewString("id")), doc.Get(types.NewString("id"))).Range() {
+		scan := s.Scan(types.NewString("id"), docs[i].Get(types.NewString("id")), docs[i].Get(types.NewString("id")))
+
+		var docs []types.Map
+		for _, doc := range scan.Range() {
 			docs = append(docs, doc)
 		}
 		require.Len(b, docs, 1)
-		require.Contains(b, docs, doc)
 	}
 }

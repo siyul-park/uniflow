@@ -744,19 +744,22 @@ func BenchmarkStore_Update(b *testing.B) {
 
 	s := New()
 
-	doc := map[string]any{
-		"id":      faker.UUIDHyphenated(),
-		"name":    faker.Name(),
-		"email":   faker.Email(),
-		"phone":   faker.Phonenumber(),
-		"version": 1,
+	docs := make([]map[string]any, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		require.NoError(b, s.Insert(ctx, []any{docs[i]}))
 	}
-	require.NoError(b, s.Insert(ctx, []any{doc}))
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		count, err := s.Update(ctx, map[string]any{"id": doc["id"]}, map[string]any{"$set": map[string]any{"version": i}})
+		count, err := s.Update(ctx, map[string]any{"id": docs[i]["id"]}, map[string]any{"$set": map[string]any{"version": i}})
 		require.NoError(b, err)
 		require.Equal(b, 1, count)
 	}
@@ -767,22 +770,22 @@ func BenchmarkStore_Delete(b *testing.B) {
 
 	s := New()
 
-	doc := map[string]any{
-		"id":      faker.UUIDHyphenated(),
-		"name":    faker.Name(),
-		"email":   faker.Email(),
-		"phone":   faker.Phonenumber(),
-		"version": 1,
+	docs := make([]map[string]any, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		require.NoError(b, s.Insert(ctx, []any{docs[i]}))
 	}
 
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-
-		require.NoError(b, s.Insert(ctx, []any{doc}))
-
-		b.StartTimer()
-
-		count, err := s.Delete(ctx, map[string]any{"id": doc["id"]})
+		count, err := s.Delete(ctx, map[string]any{"id": docs[i]["id"]})
 		require.NoError(b, err)
 		require.Equal(b, 1, count)
 	}

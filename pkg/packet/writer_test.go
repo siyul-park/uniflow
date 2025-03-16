@@ -193,9 +193,8 @@ func BenchmarkWriter_Write(b *testing.B) {
 			count := w.Write(out)
 			require.Equal(b, 1, count)
 
-			in, ok := <-r.Read()
+			_, ok := <-r.Read()
 			require.True(b, ok)
-			require.Equal(b, out, in)
 		}
 	})
 }

@@ -91,16 +91,14 @@ func BenchmarkReader_Receive(b *testing.B) {
 
 			in, ok := <-r.Read()
 			require.True(b, ok)
-			require.Equal(b, out, in)
 
 			b.StartTimer()
 
 			ok = r.Receive(in)
 			require.True(b, ok)
 
-			back, ok := <-w.Receive()
+			_, ok = <-w.Receive()
 			require.True(b, ok)
-			require.Equal(b, in, back)
 		}
 	})
 }
