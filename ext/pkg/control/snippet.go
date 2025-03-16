@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/encoding"
+
 	"github.com/siyul-park/uniflow/ext/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -30,11 +33,11 @@ type SnippetNode struct {
 const KindSnippet = "snippet"
 
 // NewSnippetNodeCodec creates a new codec for SnippetNodeSpec.
-func NewSnippetNodeCodec(module *language.Module) scheme.Codec {
+func NewSnippetNodeCodec(compilers map[string]language.Compiler) scheme.Codec {
 	return scheme.CodecWithType(func(spec *SnippetNodeSpec) (node.Node, error) {
-		compiler, err := module.Load(spec.Language)
-		if err != nil {
-			return nil, err
+		compiler, ok := compilers[spec.Language]
+		if !ok {
+			return nil, errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
 		program, err := compiler.Compile(spec.Code)

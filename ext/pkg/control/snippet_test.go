@@ -17,10 +17,9 @@ import (
 )
 
 func TestSnippetNodeCodec_Compile(t *testing.T) {
-	m := language.NewModule()
-	m.Store(text.Language, text.NewCompiler())
-
-	codec := NewSnippetNodeCodec(m)
+	codec := NewSnippetNodeCodec(map[string]language.Compiler{
+		text.Language: text.NewCompiler(),
+	})
 
 	spec := &SnippetNodeSpec{
 		Language: text.Language,

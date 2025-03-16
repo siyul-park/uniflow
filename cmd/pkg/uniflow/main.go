@@ -126,18 +126,19 @@ func main() {
 
 	runner := testing2.NewRunner()
 
+	compilers := map[string]language.Compiler{
+		text.Language:       text.NewCompiler(),
+		json.Language:       json.NewCompiler(),
+		yaml.Language:       yaml.NewCompiler(),
+		cel.Language:        cel.NewCompiler(),
+		javascript.Language: javascript.NewCompiler(),
+		typescript.Language: typescript.NewCompiler(),
+	}
+
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
 
-	languages := language.NewModule()
-	languages.Store(text.Language, text.NewCompiler())
-	languages.Store(json.Language, json.NewCompiler())
-	languages.Store(yaml.Language, yaml.NewCompiler())
-	languages.Store(cel.Language, cel.NewCompiler())
-	languages.Store(javascript.Language, javascript.NewCompiler())
-	languages.Store(typescript.Language, typescript.NewCompiler())
-
-	schemeBuilder.Register(control.AddToScheme(languages, cel.Language))
+	schemeBuilder.Register(control.AddToScheme(compilers, cel.Language))
 	schemeBuilder.Register(io.AddToScheme(io.NewOSFileSystem()))
 	schemeBuilder.Register(network.AddToScheme())
 	schemeBuilder.Register(testing.AddToScheme())

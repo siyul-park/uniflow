@@ -12,10 +12,7 @@ import (
 func TestAddToScheme(t *testing.T) {
 	s := scheme.New()
 
-	m := language.NewModule()
-	m.Store(text.Language, text.NewCompiler())
-
-	err := AddToScheme(m, text.Language).AddToScheme(s)
+	err := AddToScheme(map[string]language.Compiler{text.Language: text.NewCompiler()}, text.Language).AddToScheme(s)
 	require.NoError(t, err)
 
 	tests := []string{KindBlock, KindCache, KindFor, KindFork, KindIf, KindFor, KindMerge, KindNOP, KindPipe, KindRetry, KindStep, KindSession, KindSleep, KindSnippet, KindSplit, KindSwitch, KindThrow, KindTry}

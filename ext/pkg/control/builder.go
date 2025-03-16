@@ -1,17 +1,19 @@
 package control
 
 import (
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/ext/pkg/language"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )
 
 // AddToScheme returns a function that adds node types and codecs to the provided spec.
-func AddToScheme(module *language.Module, lang string) scheme.Register {
+func AddToScheme(compilers map[string]language.Compiler, lang string) scheme.Register {
 	return scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		expr, err := module.Load(lang)
-		if err != nil {
-			return err
+		compiler, ok := compilers[lang]
+		if !ok {
+			return errors.WithStack(encoding.ErrUnsupportedValue)
 		}
 
 		definitions := []struct {
@@ -23,17 +25,17 @@ func AddToScheme(module *language.Module, lang string) scheme.Register {
 			{KindCache, NewCacheNodeCodec(), &CacheNodeSpec{}},
 			{KindFor, NewForNodeCodec(), &ForNodeSpec{}},
 			{KindFork, NewForkNodeCodec(), &ForkNodeSpec{}},
-			{KindIf, NewIfNodeCodec(expr), &IfNodeSpec{}},
+			{KindIf, NewIfNodeCodec(compiler), &IfNodeSpec{}},
 			{KindMerge, NewMergeNodeCodec(), &MergeNodeSpec{}},
 			{KindNOP, NewNOPNodeCodec(), &NOPNodeSpec{}},
 			{KindPipe, NewPipeNodeCodec(), &PipeNodeSpec{}},
 			{KindRetry, NewRetryNodeCodec(), &RetryNodeSpec{}},
 			{KindSession, NewSessionNodeCodec(), &SessionNodeSpec{}},
 			{KindSleep, NewSleepNodeCodec(), &SleepNodeSpec{}},
-			{KindSnippet, NewSnippetNodeCodec(module), &SnippetNodeSpec{}},
+			{KindSnippet, NewSnippetNodeCodec(compilers), &SnippetNodeSpec{}},
 			{KindSplit, NewSplitNodeCodec(), &SplitNodeSpec{}},
 			{KindStep, NewStepNodeCodec(s), &StepNodeSpec{}},
-			{KindSwitch, NewSwitchNodeCodec(expr), &SwitchNodeSpec{}},
+			{KindSwitch, NewSwitchNodeCodec(compiler), &SwitchNodeSpec{}},
 			{KindThrow, NewThrowNodeCodec(), &ThrowNodeSpec{}},
 			{KindTry, NewTryNodeCodec(), &TryNodeSpec{}},
 		}
