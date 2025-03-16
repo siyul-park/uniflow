@@ -321,45 +321,44 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 }
 
 func (s *sector) Range() func(func(types.Value, types.Map) bool) {
-	return func(yield func(key types.Value, doc types.Map) bool) {
-		s.mu.RLock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
-		var indexes []*index
-		curr := s.indexes
-		for {
-			var next []*index
-			for _, idx := range curr {
-				if len(idx.Keys) == 0 {
-					indexes = append(indexes, idx)
-					continue
-				}
-				idx.nodes.Ascend(func(n *node) bool {
-					next = append(next, &index{
-						Keys:  idx.Keys[1:],
-						nodes: n.value,
-					})
-					return true
-				})
+	var indexes []*index
+	curr := s.indexes
+	for {
+		var next []*index
+		for _, idx := range curr {
+			if len(idx.Keys) == 0 {
+				indexes = append(indexes, idx)
+				continue
 			}
-			if len(next) == 0 {
-				break
-			}
-			curr = next
-		}
-
-		entries := btree.NewG[*entry](2, func(x, y *entry) bool {
-			return types.Compare(x.key, y.key) < 0
-		})
-		for _, idx := range indexes {
 			idx.nodes.Ascend(func(n *node) bool {
-				e, _ := s.entries.Get(&entry{key: n.key})
-				entries.ReplaceOrInsert(e)
+				next = append(next, &index{
+					Keys:  idx.Keys[1:],
+					nodes: n.value,
+				})
 				return true
 			})
 		}
+		if len(next) == 0 {
+			break
+		}
+		curr = next
+	}
 
-		s.mu.RUnlock()
+	entries := btree.NewG[*entry](2, func(x, y *entry) bool {
+		return types.Compare(x.key, y.key) < 0
+	})
+	for _, idx := range indexes {
+		idx.nodes.Ascend(func(n *node) bool {
+			e, _ := s.entries.Get(&entry{key: n.key})
+			entries.ReplaceOrInsert(e)
+			return true
+		})
+	}
 
+	return func(yield func(key types.Value, doc types.Map) bool) {
 		entries.Ascend(func(e *entry) bool {
 			return yield(e.key, e.value)
 		})

@@ -50,9 +50,8 @@ func init() {
 		log.Fatal(err)
 	}
 
-	if err := k.Load(file.Provider(configFile), toml.Parser()); err != nil {
-		log.Fatal(err)
-	}
+	_ = k.Load(file.Provider(configFile), toml.Parser())
+
 	if err := k.Load(env.Provider("", ".", func(s string) string {
 		return strcase.ToDelimited(s, '.')
 	}), nil); err != nil {
