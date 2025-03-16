@@ -291,8 +291,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -336,8 +335,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -381,8 +379,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -426,8 +423,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -471,8 +467,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -519,8 +514,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -567,8 +561,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -615,8 +608,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -660,8 +652,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -708,8 +699,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -756,8 +746,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 0)
@@ -801,8 +790,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)

@@ -228,15 +228,6 @@ func TestStore_Find(t *testing.T) {
 
 		s := New()
 
-		err := s.Index(ctx, []string{"name"})
-		require.NoError(t, err)
-
-		err = s.Index(ctx, []string{"email"})
-		require.NoError(t, err)
-
-		err = s.Index(ctx, []string{"version"})
-		require.NoError(t, err)
-
 		doc1 := map[string]any{
 			"id":      faker.UUIDHyphenated(),
 			"name":    faker.Name(),
@@ -252,7 +243,7 @@ func TestStore_Find(t *testing.T) {
 			"version": 2,
 		}
 
-		err = s.Insert(ctx, []any{doc1, doc2})
+		err := s.Insert(ctx, []any{doc1, doc2})
 		require.NoError(t, err)
 
 		c, err := s.Find(ctx, nil)
@@ -263,8 +254,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -302,8 +292,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -341,8 +330,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -380,8 +368,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -419,8 +406,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -458,8 +444,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -500,8 +485,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -542,8 +526,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -584,8 +567,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 1)
@@ -626,8 +608,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
@@ -665,8 +646,7 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 0)
@@ -704,10 +684,106 @@ func TestStore_Find(t *testing.T) {
 		var docs []map[string]any
 		for c.Next(ctx) {
 			doc := map[string]any{}
-			err := c.Decode(&doc)
-			require.NoError(t, err)
+			require.NoError(t, c.Decode(&doc))
 			docs = append(docs, doc)
 		}
 		require.Len(t, docs, 2)
 	})
+}
+
+func BenchmarkStore_Insert(b *testing.B) {
+	ctx := context.TODO()
+
+	s := New()
+
+	for i := 0; i < b.N; i++ {
+		doc := map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		require.NoError(b, s.Insert(ctx, []any{doc}))
+	}
+}
+
+func BenchmarkStore_Find(b *testing.B) {
+	ctx := context.TODO()
+
+	s := New()
+
+	docs := make([]map[string]any, b.N)
+	for i := 0; i < b.N; i++ {
+		docs[i] = map[string]any{
+			"id":      faker.UUIDHyphenated(),
+			"name":    faker.Name(),
+			"email":   faker.Email(),
+			"phone":   faker.Phonenumber(),
+			"version": 1,
+		}
+		require.NoError(b, s.Insert(ctx, []any{docs[i]}))
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		c, err := s.Find(ctx, map[string]any{"id": docs[i]["id"]})
+		require.NoError(b, err)
+
+		for c.Next(ctx) {
+			var doc map[string]any
+			require.NoError(b, c.Decode(&doc))
+		}
+		require.NoError(b, c.Close(ctx))
+	}
+}
+
+func BenchmarkStore_Update(b *testing.B) {
+	ctx := context.TODO()
+
+	s := New()
+
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
+	require.NoError(b, s.Insert(ctx, []any{doc}))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		count, err := s.Update(ctx, map[string]any{"id": doc["id"]}, map[string]any{"$set": map[string]any{"version": i}})
+		require.NoError(b, err)
+		require.Equal(b, 1, count)
+	}
+}
+
+func BenchmarkStore_Delete(b *testing.B) {
+	ctx := context.TODO()
+
+	s := New()
+
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": 1,
+	}
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		require.NoError(b, s.Insert(ctx, []any{doc}))
+
+		b.StartTimer()
+
+		count, err := s.Delete(ctx, map[string]any{"id": doc["id"]})
+		require.NoError(b, err)
+		require.Equal(b, 1, count)
+	}
 }

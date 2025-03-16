@@ -48,13 +48,6 @@ type store struct {
 	mu      sync.RWMutex
 }
 
-type executionPlan struct {
-	key  types.String
-	min  types.Value
-	max  types.Value
-	next *executionPlan
-}
-
 var (
 	ErrKeyMissing   = errors.New("key is missing")
 	ErrKeyDuplicate = errors.New("key already exists")
@@ -382,72 +375,10 @@ func (s *store) find(filter types.Map) ([]types.Map, error) {
 }
 
 func (s *store) explain(filter types.Value) (*executionPlan, error) {
-	f, ok := filter.(types.Map)
-	if !ok {
-		return nil, nil
-	}
-
 	var plans []*executionPlan
 	for _, idx := range s.indexes {
-		plan := &executionPlan{}
-		curr := plan
-
-		for _, key := range idx {
-			value := f.Get(key)
-			if value == nil {
-				continue
-			}
-
-			next := &executionPlan{key: key}
-			if val, ok := value.(types.Map); ok {
-				if v := val.Get(types.NewString("$eq")); v != nil {
-					next.min = v
-					next.max = v
-				} else {
-					var lowers []types.Value
-					if v := val.Get(types.NewString("$gt")); v != nil {
-						lowers = append(lowers, v)
-					}
-					if v := val.Get(types.NewString("$gte")); v != nil {
-						lowers = append(lowers, v)
-					}
-					if len(lowers) > 0 {
-						next.min = lowers[0]
-						for i := 1; i < len(lowers); i++ {
-							if types.Compare(lowers[i], next.min) > 0 {
-								next.min = lowers[i]
-							}
-						}
-					}
-
-					var uppers []types.Value
-					if v := val.Get(types.NewString("$lt")); v != nil {
-						uppers = append(uppers, v)
-					}
-					if v := val.Get(types.NewString("$lte")); v != nil {
-						uppers = append(uppers, v)
-					}
-					if len(uppers) > 0 {
-						next.max = uppers[0]
-						for i := 1; i < len(uppers); i++ {
-							if types.Compare(uppers[i], next.max) < 0 {
-								next.max = uppers[i]
-							}
-						}
-					}
-				}
-			}
-
-			if next.min == nil && next.max == nil {
-				break
-			}
-
-			curr.next = next
-			curr = next
-		}
-
-		if plan.next != nil {
-			plans = append(plans, plan.next)
+		if plan := newExecutionPlan(idx, filter); plan != nil {
+			plans = append(plans, plan)
 		}
 	}
 
@@ -476,11 +407,4 @@ func (s *store) emit(op types.String, doc types.Map) error {
 		}
 	}
 	return nil
-}
-
-func (e *executionPlan) cost() int {
-	if e.next != nil {
-		return 1 + e.next.cost()
-	}
-	return 1
 }

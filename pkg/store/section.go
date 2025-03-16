@@ -306,16 +306,29 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 			continue
 		}
 
-		idx.nodes.AscendGreaterOrEqual(&node{key: min}, func(n *node) bool {
-			if max != nil && types.Compare(n.key, max) > 0 {
-				return false
-			}
-			indexes = append(indexes, &index{
-				keys:  idx.keys[1:],
-				nodes: n.value,
+		if max != nil {
+			idx.nodes.DescendLessOrEqual(&node{key: max}, func(n *node) bool {
+				if min != nil && types.Compare(n.key, min) < 0 {
+					return false
+				}
+				indexes = append(indexes, &index{
+					keys:  idx.keys[1:],
+					nodes: n.value,
+				})
+				return true
 			})
-			return true
-		})
+		} else {
+			idx.nodes.AscendGreaterOrEqual(&node{key: min}, func(n *node) bool {
+				if max != nil && types.Compare(n.key, max) > 0 {
+					return false
+				}
+				indexes = append(indexes, &index{
+					keys:  idx.keys[1:],
+					nodes: n.value,
+				})
+				return true
+			})
+		}
 	}
 
 	return &sector{
@@ -328,10 +341,8 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 func (s *sector) Range() func(func(types.Value, types.Map) bool) {
 	return func(yield func(key types.Value, doc types.Map) bool) {
 		s.mu.RLock()
-		defer s.mu.RUnlock()
 
 		var indexes []*index
-
 		curr := s.indexes
 		for {
 			var next []*index
@@ -364,6 +375,8 @@ func (s *sector) Range() func(func(types.Value, types.Map) bool) {
 				return true
 			})
 		}
+
+		s.mu.RUnlock()
 
 		entries.Ascend(func(e *entry) bool {
 			return yield(e.key, e.value)

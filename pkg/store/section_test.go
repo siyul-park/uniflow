@@ -219,13 +219,15 @@ func BenchmarkSection_Load(b *testing.B) {
 func BenchmarkSection_Range(b *testing.B) {
 	s := newSection()
 
-	doc := types.NewMap(
-		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
-		types.NewString("name"), types.NewString(faker.Word()),
-	)
+	for i := 0; i < b.N; i++ {
+		doc := types.NewMap(
+			types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
+			types.NewString("name"), types.NewString(faker.Word()),
+		)
 
-	err := s.Store(doc)
-	require.NoError(b, err)
+		err := s.Store(doc)
+		require.NoError(b, err)
+	}
 
 	b.ResetTimer()
 
@@ -234,8 +236,7 @@ func BenchmarkSection_Range(b *testing.B) {
 		for _, doc := range s.Range() {
 			docs = append(docs, doc)
 		}
-		require.Len(b, docs, 1)
-		require.Contains(b, docs, doc)
+		require.Len(b, docs, b.N)
 	}
 }
 
