@@ -19,8 +19,11 @@ func TestSection_Index(t *testing.T) {
 	err := s.Store(doc)
 	require.NoError(t, err)
 
-	err = s.Index([]types.String{types.NewString("name")})
+	err = s.Index(&index{Keys: []types.String{types.NewString("name")}})
 	require.NoError(t, err)
+
+	indexes := s.Indexes()
+	require.Len(t, indexes, 2)
 }
 
 func TestSection_Unindex(t *testing.T) {
@@ -34,11 +37,16 @@ func TestSection_Unindex(t *testing.T) {
 	err := s.Store(doc)
 	require.NoError(t, err)
 
-	err = s.Index([]types.String{types.NewString("name")})
+	idx := &index{Keys: []types.String{types.NewString("name")}}
+
+	err = s.Index(idx)
 	require.NoError(t, err)
 
-	err = s.Unindex([]types.String{types.NewString("name")})
+	err = s.Unindex(idx)
 	require.NoError(t, err)
+
+	indexes := s.Indexes()
+	require.Len(t, indexes, 1)
 }
 
 func TestSection_Store(t *testing.T) {

@@ -134,7 +134,7 @@ func patch(doc, update types.Map) (types.Map, error) {
 	return doc.Immutable(), nil
 }
 
-func apply(filter types.Value) (types.Value, error) {
+func extract(filter types.Value) (types.Value, error) {
 	f, ok := filter.(types.Map)
 	if !ok {
 		return filter, nil
@@ -149,7 +149,7 @@ func apply(filter types.Value) (types.Value, error) {
 		}
 
 		if !strings.HasPrefix(key.String(), "$") {
-			child, err := apply(value)
+			child, err := extract(value)
 			if err != nil {
 				return nil, err
 			}
@@ -166,20 +166,20 @@ func apply(filter types.Value) (types.Value, error) {
 				return nil, errors.WithMessagef(ErrUnsupportedType, "value: %v", value.Interface())
 			}
 			for _, sub := range vals.Range() {
-				child, err := types.Cast[types.Map](apply(sub))
+				child, err := types.Cast[types.Map](extract(sub))
 				if err != nil {
 					return nil, err
 				}
 
 				for key, val := range child.Range() {
 					if doc.Has(key) {
-						return nil, errors.WithMessagef(ErrUnsupportedOperation, "key: %v", key.Interface())
+						return nil, errors.WithMessagef(ErrKeyDuplicate, "key: %v", key.Interface())
 					}
 					doc = doc.Set(key, val)
 				}
 			}
 		default:
-			return nil, errors.WithMessagef(ErrUnsupportedOperation, "operation: %v", key.String())
+			return nil, nil
 		}
 	}
 

@@ -43,7 +43,6 @@ type FindOptions struct {
 
 type store struct {
 	section *section
-	indexes [][]types.String
 	streams []*stream
 	mu      sync.RWMutex
 }
@@ -60,10 +59,7 @@ var (
 var _ Store = (*store)(nil)
 
 func New() Store {
-	return &store{
-		section: newSection(),
-		indexes: [][]types.String{{types.NewString("id")}},
-	}
+	return &store{section: newSection()}
 }
 
 func (s *store) Watch(ctx context.Context, filter any) (Stream, error) {
@@ -133,42 +129,35 @@ func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) er
 		}
 	}
 
-	idx := make([]types.String, 0, len(keys))
+	idx := &index{Keys: make([]types.String, 0, len(keys)), Unique: unique, Filter: filter}
 	for _, k := range keys {
-		idx = append(idx, types.NewString(k))
+		idx.Keys = append(idx.Keys, types.NewString(k))
 	}
 
-	for i := 0; i < len(s.indexes); i++ {
-		if slices.Equal(s.indexes[i], idx) {
-			return nil
+	for _, i := range s.section.Indexes() {
+		if slices.Equal(i.Keys, idx.Keys) {
+			if err := s.section.Unindex(i); err != nil {
+				return err
+			}
 		}
 	}
-
-	if err := s.section.Index(idx, withUnique(unique), withFilter(filter)); err != nil {
-		return err
-	}
-
-	s.indexes = append(s.indexes, idx)
-	return nil
+	return s.section.Index(idx)
 }
 
 func (s *store) Unindex(_ context.Context, keys []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	idx := make([]types.String, 0, len(keys))
+	idx := &index{Keys: make([]types.String, 0, len(keys))}
 	for _, k := range keys {
-		idx = append(idx, types.NewString(k))
+		idx.Keys = append(idx.Keys, types.NewString(k))
 	}
 
-	if err := s.section.Unindex(idx); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(s.indexes); i++ {
-		if slices.Equal(s.indexes[i], idx) {
-			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
-			break
+	for _, i := range s.section.Indexes() {
+		if slices.Equal(i.Keys, idx.Keys) {
+			if err := s.section.Unindex(i); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -223,7 +212,7 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 	}
 
 	if upsert && len(docs) == 0 {
-		doc, err := types.Cast[types.Map](apply(f))
+		doc, err := types.Cast[types.Map](extract(f))
 		if err != nil {
 			return 0, err
 		}
@@ -375,16 +364,25 @@ func (s *store) find(filter types.Map) ([]types.Map, error) {
 }
 
 func (s *store) explain(filter types.Value) (*executionPlan, error) {
+	if filter == nil {
+		return nil, nil
+	}
+
+	doc, _ := types.Cast[types.Map](extract(filter))
+
 	var plans []*executionPlan
-	for _, idx := range s.indexes {
-		if plan := newExecutionPlan(idx, filter); plan != nil {
+	for _, idx := range s.section.Indexes() {
+		if idx.Filter != nil && (doc == nil || !idx.Filter(doc)) {
+			continue
+		}
+		if plan := newExecutionPlan(idx.Keys, filter); plan != nil {
 			plans = append(plans, plan)
 		}
 	}
 
 	var plan *executionPlan
 	for _, p := range plans {
-		if plan == nil || p.cost() < plan.cost() {
+		if plan == nil || p.lenght() > plan.lenght() {
 			plan = p
 		}
 	}

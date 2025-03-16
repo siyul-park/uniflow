@@ -26,10 +26,10 @@ type sector struct {
 }
 
 type index struct {
-	keys   []types.String
+	Keys   []types.String
+	Unique bool
+	Filter func(types.Map) bool
 	nodes  *btree.BTreeG[*node]
-	unique bool
-	filter func(types.Map) bool
 }
 
 type entry struct {
@@ -50,43 +50,29 @@ func (n *node) Less(than btree.Item) bool {
 	return types.Compare(n.key, than.(*node).key) < 0
 }
 
-func withUnique(unique bool) func(*index) {
-	return func(idx *index) {
-		idx.unique = unique
-	}
-}
-
-func withFilter(filter func(types.Map) bool) func(*index) {
-	return func(idx *index) {
-		idx.filter = filter
-	}
-}
-
 func newSection() *section {
 	s := &section{
 		entries: btree.NewG[*entry](2, func(x, y *entry) bool {
 			return types.Compare(x.key, y.key) < 0
 		}),
 	}
-	_ = s.Index([]types.String{types.NewString("id")}, withUnique(true))
+	_ = s.Index(&index{Keys: []types.String{types.NewString("id")}, Unique: true})
 	return s
 }
 
-func (s *section) Index(keys []types.String, options ...func(*index)) error {
+func (s *section) Index(idx *index) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	idx := &index{
-		keys: keys,
-		nodes: btree.NewG[*node](2, func(x, y *node) bool {
-			return types.Compare(x.key, y.key) < 0
-		}),
+	for i := 0; i < len(s.indexes); i++ {
+		if s.indexes[i] == idx {
+			return nil
+		}
 	}
 
-	for _, opt := range options {
-		opt(idx)
-	}
-
+	idx.nodes = btree.NewG[*node](2, func(x, y *node) bool {
+		return types.Compare(x.key, y.key) < 0
+	})
 	s.indexes = append(s.indexes, idx)
 
 	var err error
@@ -97,32 +83,28 @@ func (s *section) Index(keys []types.String, options ...func(*index)) error {
 	return nil
 }
 
-func (s *section) Unindex(keys []types.String) error {
+func (s *section) Unindex(idx *index) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for i := 0; i < len(s.indexes); i++ {
-		idx := s.indexes[i]
-
-		if len(keys) != len(idx.keys) {
-			continue
+		if s.indexes[i] == idx {
+			s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
+			return nil
 		}
-		for j := 0; j < len(keys); j++ {
-			if !types.Equal(keys[j], idx.keys[j]) {
-				continue
-			}
-		}
-
-		var err error
-		s.entries.Ascend(func(e *entry) bool {
-			err = s.unindex(idx, e.value)
-			return err == nil
-		})
-
-		s.indexes = append(s.indexes[:i], s.indexes[i+1:]...)
-		break
 	}
 	return nil
+}
+
+func (s *section) Indexes() []*index {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	indexes := make([]*index, 0, len(s.indexes))
+	for i := 0; i < len(s.indexes); i++ {
+		indexes = append(indexes, s.indexes[i])
+	}
+	return indexes
 }
 
 func (s *section) Store(doc types.Map) error {
@@ -230,12 +212,12 @@ func (s *section) index(idx *index, doc types.Map) error {
 		return errors.WithMessage(ErrKeyMissing, "key: id")
 	}
 
-	if idx.filter != nil && !idx.filter(doc) {
+	if idx.Filter != nil && !idx.Filter(doc) {
 		return nil
 	}
 
 	curr := idx.nodes
-	for i, key := range idx.keys {
+	for i, key := range idx.Keys {
 		val := doc.Get(key)
 
 		next, ok := curr.Get(&node{key: val})
@@ -249,8 +231,8 @@ func (s *section) index(idx *index, doc types.Map) error {
 			curr.ReplaceOrInsert(next)
 		}
 
-		if i == len(idx.keys)-1 {
-			if idx.unique && next.value.Len() > 0 {
+		if i == len(idx.Keys)-1 {
+			if idx.Unique && next.value.Len() > 0 {
 				return errors.WithMessagef(ErrKeyDuplicate, "key: %v", val.Interface())
 			}
 			next.value.ReplaceOrInsert(&node{key: id})
@@ -269,7 +251,7 @@ func (s *section) unindex(idx *index, doc types.Map) error {
 
 	curr := idx.nodes
 	nodes := []*node{{value: curr}}
-	for i, key := range idx.keys {
+	for i, key := range idx.Keys {
 		val := doc.Get(key)
 
 		next, ok := curr.Get(&node{key: val})
@@ -277,7 +259,7 @@ func (s *section) unindex(idx *index, doc types.Map) error {
 			break
 		}
 
-		if i == len(idx.keys)-1 {
+		if i == len(idx.Keys)-1 {
 			next.value.Delete(&node{key: id})
 		}
 
@@ -302,7 +284,7 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 
 	var indexes []*index
 	for _, idx := range s.indexes {
-		if len(idx.keys) == 0 || idx.keys[0] != key {
+		if len(idx.Keys) == 0 || idx.Keys[0] != key {
 			continue
 		}
 
@@ -312,7 +294,7 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 					return false
 				}
 				indexes = append(indexes, &index{
-					keys:  idx.keys[1:],
+					Keys:  idx.Keys[1:],
 					nodes: n.value,
 				})
 				return true
@@ -323,7 +305,7 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 					return false
 				}
 				indexes = append(indexes, &index{
-					keys:  idx.keys[1:],
+					Keys:  idx.Keys[1:],
 					nodes: n.value,
 				})
 				return true
@@ -347,13 +329,13 @@ func (s *sector) Range() func(func(types.Value, types.Map) bool) {
 		for {
 			var next []*index
 			for _, idx := range curr {
-				if len(idx.keys) == 0 {
+				if len(idx.Keys) == 0 {
 					indexes = append(indexes, idx)
 					continue
 				}
 				idx.nodes.Ascend(func(n *node) bool {
 					next = append(next, &index{
-						keys:  idx.keys[1:],
+						Keys:  idx.Keys[1:],
 						nodes: n.value,
 					})
 					return true

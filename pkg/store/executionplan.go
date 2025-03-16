@@ -104,9 +104,9 @@ func (e *executionPlan) union(other *executionPlan) {
 	}
 }
 
-func (e *executionPlan) cost() int {
+func (e *executionPlan) lenght() int {
 	if e.next != nil {
-		return 1 + e.next.cost()
+		return 1 + e.next.lenght()
 	}
 	return 1
 }
