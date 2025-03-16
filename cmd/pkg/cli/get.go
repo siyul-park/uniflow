@@ -58,14 +58,9 @@ func runGetCommand[T meta.Meta](store store.Store, alias ...func(map[string]stri
 		defer cursor.Close(ctx)
 
 		var metas []T
-		for cursor.Next(ctx) {
-			var m T
-			if err := cursor.Decode(&m); err != nil {
-				return err
-			}
-			metas = append(metas, m)
+		if err := cursor.All(ctx, &metas); err != nil {
+			return err
 		}
-
 		return writer.Write(metas)
 	}
 }

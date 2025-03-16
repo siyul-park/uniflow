@@ -35,8 +35,8 @@ type Runtime struct {
 	scheme      *scheme.Scheme
 	specStore   store.Store
 	valueStore  store.Store
-	specStream  store.Cursor
-	valueStream store.Cursor
+	specStream  store.Stream
+	valueStream store.Stream
 	symbolTable *symbol.Table
 	mu          sync.RWMutex
 }
@@ -91,12 +91,8 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 	}
 
 	var specs []*spec.Unstructured
-	for cursor.Next(ctx) {
-		unstructured := &spec.Unstructured{}
-		if err := cursor.Decode(unstructured); err != nil {
-			return err
-		}
-		specs = append(specs, unstructured)
+	if err := cursor.All(ctx, &specs); err != nil {
+		return err
 	}
 
 	var filters []any
@@ -117,13 +113,8 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 		if err != nil {
 			return err
 		}
-
-		for cursor.Next(ctx) {
-			val := &value.Value{}
-			if err := cursor.Decode(val); err != nil {
-				return err
-			}
-			values = append(values, val)
+		if err := cursor.All(ctx, &values); err != nil {
+			return err
 		}
 	}
 
@@ -173,12 +164,19 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 		if err := local.Insert(ctx, []any{sb.Spec}); err != nil {
 			errs = append(errs, err)
 			continue
-		} else if cursor, err := local.Find(ctx, filter); err != nil {
+		}
+
+		cursor, err := local.Find(ctx, filter)
+		if err != nil {
 			errs = append(errs, err)
 			continue
-		} else if !cursor.Next(ctx) {
+		}
+
+		if !cursor.Next(ctx) {
+			_ = cursor.Close(ctx)
 			continue
 		}
+		_ = cursor.Close(ctx)
 
 		ok := false
 		for _, s := range symbols {
@@ -265,14 +263,11 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 				return err
 			}
 
-			values := []*value.Value{{ID: event.ID}}
-			for cursor.Next(ctx) {
-				val := &value.Value{}
-				if err := cursor.Decode(val); err != nil {
-					return err
-				}
-				values = append(values, val)
+			var values []*value.Value
+			if err := cursor.All(ctx, &values); err != nil {
+				return err
 			}
+			values = append(values, &value.Value{ID: event.ID})
 
 			var filters []any
 			for _, id := range r.symbolTable.Keys() {

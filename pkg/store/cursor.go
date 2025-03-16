@@ -9,6 +9,7 @@ import (
 )
 
 type Cursor interface {
+	All(ctx context.Context, val any) error
 	Next(ctx context.Context) bool
 	Decode(val any) error
 	Close(ctx context.Context) error
@@ -22,6 +23,19 @@ var _ Cursor = (*cursor)(nil)
 
 func newCursor(docs []types.Map) *cursor {
 	return &cursor{docs: append([]types.Map{nil}, docs...)}
+}
+
+func (c *cursor) All(_ context.Context, val any) error {
+	if len(c.docs) == 0 {
+		return errors.WithStack(encoding.ErrUnsupportedType)
+	}
+
+	elements := make([]types.Value, 0, len(c.docs))
+	for _, doc := range c.docs[1:] {
+		elements = append(elements, doc)
+	}
+	c.docs = nil
+	return types.Unmarshal(types.NewSlice(elements...), val)
 }
 
 func (c *cursor) Next(_ context.Context) bool {

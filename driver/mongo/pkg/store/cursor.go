@@ -14,6 +14,24 @@ type cursor struct {
 
 var _ store.Cursor = (*cursor)(nil)
 
+func (c *cursor) All(ctx context.Context, val any) error {
+	defer c.cursor.Close(ctx)
+
+	var elements []types.Value
+	for c.cursor.Next(ctx) {
+		var raw any
+		if err := c.cursor.Decode(&raw); err != nil {
+			return err
+		}
+		v, err := fromBSON(raw)
+		if err != nil {
+			return err
+		}
+		elements = append(elements, v)
+	}
+	return types.Unmarshal(types.NewSlice(elements...), val)
+}
+
 func (c *cursor) Next(ctx context.Context) bool {
 	return c.cursor.Next(ctx)
 }
