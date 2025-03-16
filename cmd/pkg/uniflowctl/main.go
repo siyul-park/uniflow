@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/iancoleman/strcase"
 	"github.com/knadh/koanf/parsers/toml"
@@ -12,8 +14,14 @@ import (
 	"github.com/knadh/koanf/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siyul-park/uniflow/cmd/pkg/cli"
-	"github.com/siyul-park/uniflow/cmd/pkg/driver"
+	mongoserver "github.com/siyul-park/uniflow/driver/mongo/pkg/server"
+	mongostore "github.com/siyul-park/uniflow/driver/mongo/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/store"
+	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/spf13/afero"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const configFile = ".uniflow.toml"
@@ -28,8 +36,9 @@ func init() {
 		log.Fatal(err)
 	}
 
-	_ = k.Load(file.Provider(configFile), toml.Parser())
-
+	if err := k.Load(file.Provider(configFile), toml.Parser()); err != nil {
+		log.Fatal(err)
+	}
 	if err := k.Load(env.Provider("", ".", func(s string) string {
 		return strcase.ToDelimited(s, '.')
 	}), nil); err != nil {
@@ -38,29 +47,66 @@ func init() {
 }
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	databaseURL := k.String(cli.EnvDatabaseURL)
 	databaseName := k.String(cli.EnvDatabaseName)
 	collectionNodes := k.String(cli.EnvCollectionSpecs)
 	collectionValues := k.String(cli.EnvCollectionValues)
 
-	drv := driver.NewInMemoryDriver()
-	defer drv.Close(ctx)
+	var source store.Source
+	if strings.HasPrefix(databaseURL, "memongodb://") {
+		srv := mongoserver.New()
+		defer mongoserver.Release(srv)
 
-	if strings.HasPrefix(databaseURL, "memongodb://") || strings.HasPrefix(databaseURL, "mongodb://") {
-		var err error
-		if drv, err = driver.NewMongoDriver(databaseURL, databaseName); err != nil {
+		client, err := mongo.Connect(
+			options.Client().
+				ApplyURI(srv.URI()).
+				SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1)),
+		)
+		if err != nil {
 			log.Fatal(err)
 		}
-	}
 
-	specStore, err := drv.NewSpecStore(ctx, collectionNodes)
+		database := client.Database(databaseName)
+		source = mongostore.NewSource(database)
+	} else if strings.HasPrefix(databaseURL, "mongodb://") {
+		client, err := mongo.Connect(
+			options.Client().
+				ApplyURI(databaseURL).
+				SetServerAPIOptions(options.ServerAPI(options.ServerAPIVersion1)),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		database := client.Database(databaseName)
+		source = mongostore.NewSource(database)
+	} else {
+		source = store.NewSource()
+	}
+	defer source.Close()
+
+	specStore, err := source.Open(collectionNodes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	valueStore, err := drv.NewValueStore(ctx, collectionValues)
+	valueStore, err := source.Open(collectionValues)
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, store.IndexOptions{
+		Unique: true,
+		Filter: map[string]any{spec.KeyName: map[string]any{"$exists": true}},
+	}); err != nil {
+		log.Fatal(err)
+	}
+	if err := valueStore.Index(ctx, []string{value.KeyNamespace, value.KeyName}, store.IndexOptions{
+		Unique: true,
+		Filter: map[string]any{value.KeyName: map[string]any{"$exists": true}},
+	}); err != nil {
 		log.Fatal(err)
 	}
 
