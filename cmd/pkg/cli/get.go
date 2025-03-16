@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/siyul-park/uniflow/cmd/pkg/resource"
-	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/cmd/pkg/io"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -28,12 +28,12 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the io's namespace. If not set, use all namespace")
 
 	return cmd
 }
 
-func runGetCommand[T resourcebase.Resource](store store.Store, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runGetCommand[T resource.Resource](store store.Store, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 	}
@@ -49,9 +49,9 @@ func runGetCommand[T resourcebase.Resource](store store.Store, alias ...func(map
 			return err
 		}
 
-		writer := resource.NewWriter(cmd.OutOrStdout())
+		writer := io.NewWriter(cmd.OutOrStdout())
 
-		cursor, err := store.Find(ctx, map[string]any{resourcebase.KeyNamespace: namespace})
+		cursor, err := store.Find(ctx, map[string]any{resource.KeyNamespace: namespace})
 		if err != nil {
 			return err
 		}

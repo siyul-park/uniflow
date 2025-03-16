@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
-	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -36,7 +36,7 @@ func NewTestCommand(config TestConfig) *cobra.Command {
 		RunE:  runTestCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the namespace for running the workflow")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
 	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
 	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Set environment variables for the workflow execution")

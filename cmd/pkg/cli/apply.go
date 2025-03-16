@@ -2,8 +2,8 @@ package cli
 
 import (
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/cmd/pkg/resource"
-	resourcebase "github.com/siyul-park/uniflow/pkg/resource"
+	"github.com/siyul-park/uniflow/cmd/pkg/io"
+	"github.com/siyul-park/uniflow/pkg/resource"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/value"
@@ -31,13 +31,13 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resourcebase.DefaultNamespace, "Set the resource's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), resource.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
 	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
 
 	return cmd
 }
 
-func runApplyCommand[T resourcebase.Resource](st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
+func runApplyCommand[T resource.Resource](st store.Store, fs afero.Fs, alias ...func(map[string]string)) func(cmd *cobra.Command) error {
 	flags := map[string]string{
 		flagNamespace: flagNamespace,
 		flagFilename:  flagFilename,
@@ -68,8 +68,8 @@ func runApplyCommand[T resourcebase.Resource](st store.Store, fs afero.Fs, alias
 
 		defer file.Close()
 
-		reader := resource.NewReader(file)
-		writer := resource.NewWriter(cmd.OutOrStdout())
+		reader := io.NewReader(file)
+		writer := io.NewWriter(cmd.OutOrStdout())
 
 		var resources []T
 		if err := reader.Read(&resources); err != nil {
@@ -87,10 +87,10 @@ func runApplyCommand[T resourcebase.Resource](st store.Store, fs afero.Fs, alias
 
 			filter := map[string]any{}
 			if rsc.GetID() != uuid.Nil {
-				filter[resourcebase.KeyID] = rsc.GetID()
+				filter[resource.KeyID] = rsc.GetID()
 			}
 			if rsc.GetName() != "" {
-				filter[resourcebase.KeyName] = rsc.GetName()
+				filter[resource.KeyName] = rsc.GetName()
 			}
 
 			cursor, err := st.Find(ctx, filter, store.FindOptions{Limit: 1})

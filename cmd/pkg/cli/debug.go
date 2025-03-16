@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/cmd/pkg/resource"
+	"github.com/siyul-park/uniflow/cmd/pkg/io"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/runtime"
@@ -409,7 +409,7 @@ func (v *frameDebugView) Interface() map[string]any {
 
 func (v *framesDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
-	writer := resource.NewWriter(buffer)
+	writer := io.NewWriter(buffer)
 
 	values := make([]any, 0, len(v.frames))
 	for _, frm := range v.frames {
@@ -466,7 +466,7 @@ func (v *breakpointDebugView) Interface() map[string]any {
 
 func (v *breakpointsDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
-	writer := resource.NewWriter(buffer)
+	writer := io.NewWriter(buffer)
 
 	values := make([]any, 0, len(v.breakpoints))
 	for _, b := range v.breakpoints {
@@ -504,7 +504,7 @@ func (v *symbolDebugView) Interface() map[string]any {
 
 func (v *symbolsDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
-	writer := resource.NewWriter(buffer)
+	writer := io.NewWriter(buffer)
 
 	values := make([]any, 0, len(v.symbols))
 	for _, sb := range v.symbols {
@@ -546,7 +546,7 @@ func (v *processDebugView) Interface() map[string]any {
 
 func (v *processesDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
-	writer := resource.NewWriter(buffer)
+	writer := io.NewWriter(buffer)
 
 	values := make([]any, 0, len(v.processes))
 	for _, proc := range v.processes {
