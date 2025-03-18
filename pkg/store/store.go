@@ -42,7 +42,7 @@ type FindOptions struct {
 }
 
 type store struct {
-	section *section
+	segment *segment
 	streams []*stream
 	mu      sync.RWMutex
 }
@@ -59,7 +59,7 @@ var (
 var _ Store = (*store)(nil)
 
 func New() Store {
-	return &store{section: newSection()}
+	return &store{segment: newSegment()}
 }
 
 func (s *store) Watch(ctx context.Context, filter any) (Stream, error) {
@@ -134,14 +134,14 @@ func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) er
 		idx.Keys = append(idx.Keys, types.NewString(k))
 	}
 
-	for _, i := range s.section.Indexes() {
+	for _, i := range s.segment.Indexes() {
 		if slices.Equal(i.Keys, idx.Keys) {
-			if err := s.section.Unindex(i); err != nil {
+			if err := s.segment.Unindex(i); err != nil {
 				return err
 			}
 		}
 	}
-	return s.section.Index(idx)
+	return s.segment.Index(idx)
 }
 
 func (s *store) Unindex(_ context.Context, keys []string) error {
@@ -153,9 +153,9 @@ func (s *store) Unindex(_ context.Context, keys []string) error {
 		idx.Keys = append(idx.Keys, types.NewString(k))
 	}
 
-	for _, i := range s.section.Indexes() {
+	for _, i := range s.segment.Indexes() {
 		if slices.Equal(i.Keys, idx.Keys) {
-			if err := s.section.Unindex(i); err != nil {
+			if err := s.segment.Unindex(i); err != nil {
 				return err
 			}
 		}
@@ -172,7 +172,7 @@ func (s *store) Insert(_ context.Context, docs []any, _ ...InsertOptions) error 
 		if err != nil {
 			return err
 		}
-		if err := s.section.Store(val); err != nil {
+		if err := s.segment.Store(val); err != nil {
 			return err
 		}
 		if err := s.emit(types.NewString("insert"), val); err != nil {
@@ -222,7 +222,7 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 			return 0, err
 		}
 
-		if err := s.section.Store(doc); err != nil {
+		if err := s.segment.Store(doc); err != nil {
 			return 0, err
 		}
 		if err := s.emit(types.NewString("insert"), doc); err != nil {
@@ -240,7 +240,7 @@ func (s *store) Update(_ context.Context, filter, update any, opts ...UpdateOpti
 	}
 
 	for _, doc := range docs {
-		if err := s.section.Swap(doc); err != nil {
+		if err := s.segment.Swap(doc); err != nil {
 			return 0, err
 		}
 		if err := s.emit(types.NewString("update"), doc); err != nil {
@@ -269,7 +269,7 @@ func (s *store) Delete(_ context.Context, filter any, _ ...DeleteOptions) (int, 
 	}
 
 	for _, doc := range docs {
-		if err := s.section.Delete(doc.Get(types.NewString("id"))); err != nil {
+		if err := s.segment.Delete(doc.Get(types.NewString("id"))); err != nil {
 			return 0, err
 		}
 		if err := s.emit(types.NewString("delete"), doc); err != nil {
@@ -338,7 +338,7 @@ func (s *store) find(filter types.Map) ([]types.Map, error) {
 		return nil, err
 	}
 
-	scan := scanner(s.section)
+	scan := scanner(s.segment)
 	for plan != nil {
 		scan = scan.Scan(plan.key, plan.min, plan.max)
 		plan = plan.next
@@ -368,7 +368,7 @@ func (s *store) explain(filter types.Value) (*executionPlan, error) {
 	doc, _ := types.Cast[types.Map](extract(filter))
 
 	var plans []*executionPlan
-	for _, idx := range s.section.Indexes() {
+	for _, idx := range s.segment.Indexes() {
 		if idx.Filter != nil && (doc == nil || !idx.Filter(doc)) {
 			continue
 		}

@@ -153,7 +153,9 @@ func extract(filter types.Value) (types.Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			doc = doc.Set(key, child)
+			if child != nil {
+				doc = doc.Set(key, child)
+			}
 			continue
 		}
 

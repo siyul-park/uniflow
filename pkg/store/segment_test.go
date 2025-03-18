@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSection_Index(t *testing.T) {
-	s := newSection()
+func TestSegment_Index(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -26,8 +26,8 @@ func TestSection_Index(t *testing.T) {
 	require.Len(t, indexes, 2)
 }
 
-func TestSection_Unindex(t *testing.T) {
-	s := newSection()
+func TestSegment_Unindex(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -49,8 +49,8 @@ func TestSection_Unindex(t *testing.T) {
 	require.Len(t, indexes, 1)
 }
 
-func TestSection_Store(t *testing.T) {
-	s := newSection()
+func TestSegment_Store(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -61,8 +61,8 @@ func TestSection_Store(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSection_Swap(t *testing.T) {
-	s := newSection()
+func TestSegment_Swap(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -75,8 +75,8 @@ func TestSection_Swap(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSection_Delete(t *testing.T) {
-	s := newSection()
+func TestSegment_Delete(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -89,8 +89,8 @@ func TestSection_Delete(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSection_Load(t *testing.T) {
-	s := newSection()
+func TestSegment_Load(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -104,8 +104,8 @@ func TestSection_Load(t *testing.T) {
 	require.Equal(t, doc, d)
 }
 
-func TestSection_Range(t *testing.T) {
-	s := newSection()
+func TestSegment_Range(t *testing.T) {
+	s := newSegment()
 
 	doc1 := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -128,8 +128,8 @@ func TestSection_Range(t *testing.T) {
 	require.Contains(t, docs, doc2)
 }
 
-func TestSection_Scan(t *testing.T) {
-	s := newSection()
+func TestSegment_Scan(t *testing.T) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -145,8 +145,8 @@ func TestSection_Scan(t *testing.T) {
 	require.Contains(t, docs, doc)
 }
 
-func BenchmarkSection_Store(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Store(b *testing.B) {
+	s := newSegment()
 
 	for i := 0; i < b.N; i++ {
 		doc := types.NewMap(
@@ -159,8 +159,8 @@ func BenchmarkSection_Store(b *testing.B) {
 	}
 }
 
-func BenchmarkSection_Swap(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Swap(b *testing.B) {
+	s := newSegment()
 
 	doc := types.NewMap(
 		types.NewString("id"), types.NewString(faker.UUIDHyphenated()),
@@ -178,8 +178,8 @@ func BenchmarkSection_Swap(b *testing.B) {
 	}
 }
 
-func BenchmarkSection_Delete(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Delete(b *testing.B) {
+	s := newSegment()
 
 	docs := make([]types.Map, b.N)
 	for i := 0; i < b.N; i++ {
@@ -198,8 +198,8 @@ func BenchmarkSection_Delete(b *testing.B) {
 	}
 }
 
-func BenchmarkSection_Load(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Load(b *testing.B) {
+	s := newSegment()
 
 	docs := make([]types.Map, b.N)
 	for i := 0; i < b.N; i++ {
@@ -218,8 +218,8 @@ func BenchmarkSection_Load(b *testing.B) {
 	}
 }
 
-func BenchmarkSection_Range(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Range(b *testing.B) {
+	s := newSegment()
 
 	docs := make([]types.Map, b.N)
 	for i := 0; i < b.N; i++ {
@@ -241,8 +241,8 @@ func BenchmarkSection_Range(b *testing.B) {
 	}
 }
 
-func BenchmarkSection_Scan(b *testing.B) {
-	s := newSection()
+func BenchmarkSegment_Scan(b *testing.B) {
+	s := newSegment()
 
 	docs := make([]types.Map, b.N)
 	for i := 0; i < b.N; i++ {

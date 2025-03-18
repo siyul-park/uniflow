@@ -99,9 +99,8 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 	for _, sp := range specs {
 		for _, val := range sp.GetEnv() {
 			if val.ID != uuid.Nil {
-				filters = append(filters, map[string]any{value.KeyID: val.ID})
-			}
-			if val.Name != "" {
+				filters = append(filters, map[string]any{value.KeyNamespace: sp.GetNamespace(), value.KeyID: val.ID})
+			} else if val.Name != "" {
 				filters = append(filters, map[string]any{value.KeyNamespace: sp.GetNamespace(), value.KeyName: val.Name})
 			}
 		}
@@ -308,6 +307,5 @@ func (r *Runtime) Close(ctx context.Context) error {
 		}
 		r.valueStream = nil
 	}
-
 	return r.symbolTable.Close()
 }

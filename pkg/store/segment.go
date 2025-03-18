@@ -13,13 +13,13 @@ type scanner interface {
 	Range() func(func(types.Value, types.Map) bool)
 }
 
-type section struct {
+type segment struct {
 	entries *btree.BTreeG[*entry]
 	indexes []*index
 	mu      sync.RWMutex
 }
 
-type sector struct {
+type section struct {
 	entries *btree.BTreeG[*entry]
 	indexes []*index
 	mu      *sync.RWMutex
@@ -50,8 +50,8 @@ func (n *node) Less(than btree.Item) bool {
 	return types.Compare(n.key, than.(*node).key) < 0
 }
 
-func newSection() *section {
-	s := &section{
+func newSegment() *segment {
+	s := &segment{
 		entries: btree.NewG[*entry](2, func(x, y *entry) bool {
 			return types.Compare(x.key, y.key) < 0
 		}),
@@ -60,7 +60,7 @@ func newSection() *section {
 	return s
 }
 
-func (s *section) Index(idx *index) error {
+func (s *segment) Index(idx *index) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -83,7 +83,7 @@ func (s *section) Index(idx *index) error {
 	return nil
 }
 
-func (s *section) Unindex(idx *index) error {
+func (s *segment) Unindex(idx *index) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -96,7 +96,7 @@ func (s *section) Unindex(idx *index) error {
 	return nil
 }
 
-func (s *section) Indexes() []*index {
+func (s *segment) Indexes() []*index {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -107,7 +107,7 @@ func (s *section) Indexes() []*index {
 	return indexes
 }
 
-func (s *section) Store(doc types.Map) error {
+func (s *segment) Store(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -130,7 +130,7 @@ func (s *section) Store(doc types.Map) error {
 	return nil
 }
 
-func (s *section) Swap(doc types.Map) error {
+func (s *segment) Swap(doc types.Map) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -157,7 +157,7 @@ func (s *section) Swap(doc types.Map) error {
 	return nil
 }
 
-func (s *section) Delete(id types.Value) error {
+func (s *segment) Delete(id types.Value) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -175,7 +175,7 @@ func (s *section) Delete(id types.Value) error {
 	return nil
 }
 
-func (s *section) Load(id types.Value) (types.Map, error) {
+func (s *segment) Load(id types.Value) (types.Map, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -186,16 +186,16 @@ func (s *section) Load(id types.Value) (types.Map, error) {
 	return l.value, nil
 }
 
-func (s *section) Scan(key types.String, min, max types.Value) scanner {
-	c := &sector{
+func (s *segment) Scan(key types.String, min, max types.Value) scanner {
+	sctn := &section{
 		entries: s.entries,
 		indexes: s.indexes,
 		mu:      &s.mu,
 	}
-	return c.Scan(key, min, max)
+	return sctn.Scan(key, min, max)
 }
 
-func (s *section) Range() func(func(types.Value, types.Map) bool) {
+func (s *segment) Range() func(func(types.Value, types.Map) bool) {
 	return func(yield func(key types.Value, doc types.Map) bool) {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
@@ -206,7 +206,7 @@ func (s *section) Range() func(func(types.Value, types.Map) bool) {
 	}
 }
 
-func (s *section) index(idx *index, doc types.Map) error {
+func (s *segment) index(idx *index, doc types.Map) error {
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
 		return errors.WithMessage(ErrKeyMissing, "key: id")
@@ -243,7 +243,7 @@ func (s *section) index(idx *index, doc types.Map) error {
 	return nil
 }
 
-func (s *section) unindex(idx *index, doc types.Map) error {
+func (s *segment) unindex(idx *index, doc types.Map) error {
 	id := doc.Get(types.NewString("id"))
 	if id == nil {
 		return errors.WithMessage(ErrKeyMissing, "key: id")
@@ -278,7 +278,7 @@ func (s *section) unindex(idx *index, doc types.Map) error {
 	return nil
 }
 
-func (s *sector) Scan(key types.String, min, max types.Value) scanner {
+func (s *section) Scan(key types.String, min, max types.Value) scanner {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -313,14 +313,14 @@ func (s *sector) Scan(key types.String, min, max types.Value) scanner {
 		}
 	}
 
-	return &sector{
+	return &section{
 		entries: s.entries,
 		indexes: indexes,
 		mu:      s.mu,
 	}
 }
 
-func (s *sector) Range() func(func(types.Value, types.Map) bool) {
+func (s *section) Range() func(func(types.Value, types.Map) bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
