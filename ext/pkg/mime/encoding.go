@@ -150,19 +150,17 @@ func Encode(writer io.Writer, value types.Value, header textproto.MIMEHeader) er
 							}
 
 							for _, element := range elements.Values() {
-								data, ok := types.Get[types.Value](element, "data")
-								if !ok {
+								data := types.Lookup(element, "data")
+								if data == nil {
 									data = element
 								}
-								filename, ok := types.Get[string](element, "filename")
-								if !ok {
+								filename, err := types.Cast[string](types.Lookup(element, "filename"))
+								if err != nil {
 									filename = key.String()
 								}
 
-								header, _ := types.Get[types.Value](element, "header")
-
 								h := textproto.MIMEHeader{}
-								_ = types.Unmarshal(header, &h)
+								_ = types.Unmarshal(types.Lookup(element, "header"), &h)
 
 								typ := h.Get(HeaderContentType)
 								if typ == "" {

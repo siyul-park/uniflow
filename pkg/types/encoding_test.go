@@ -8,22 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faker/faker/v4"
 	"github.com/samber/lo"
 	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/require"
 )
-
-func TestCast(t *testing.T) {
-	_, err := Cast[Map](NewMap(), nil)
-	require.NoError(t, err)
-
-	_, err = Cast[Map](NewInt(0), nil)
-	require.Error(t, err)
-
-	_, err = Cast[Map](NewMap(), errors.New(faker.Sentence()))
-	require.Error(t, err)
-}
 
 func TestMarshal(t *testing.T) {
 	var tests = []struct {

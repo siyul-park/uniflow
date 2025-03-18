@@ -82,9 +82,9 @@ func (n *ScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Pac
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	format, ok := types.Get[string](inPck.Payload())
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	format, err := types.Cast[string](inPck.Payload())
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
 	ptrs, err := arguments(format)
@@ -118,14 +118,14 @@ func (n *DynScanNode) action(_ *process.Process, inPck *packet.Packet) (*packet.
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	filename, ok := types.Get[string](inPck.Payload(), 0)
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	filename, err := types.Cast[string](types.Lookup(inPck.Payload(), 0), nil)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
-	format, ok := types.Get[string](inPck.Payload(), 1)
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	format, err := types.Cast[string](types.Lookup(inPck.Payload(), 1), nil)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
 	reader, err := n.fs.Open(filename, os.O_CREATE|os.O_RDONLY)

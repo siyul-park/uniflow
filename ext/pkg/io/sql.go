@@ -89,12 +89,11 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	query, ok := types.Get[string](inPck.Payload())
-	if !ok {
-		query, ok = types.Get[string](inPck.Payload(), 0)
-	}
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	query, err := types.Cast[string](inPck.Payload())
+	if err != nil {
+		if query, err = types.Cast[string](types.Lookup(inPck.Payload(), 0)); err != nil {
+			return nil, packet.New(types.NewError(err))
+		}
 	}
 
 	tx, err := n.txs.LoadOrStore(proc, func() (*sqlx.Tx, error) {
@@ -127,16 +126,16 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 
 	var rows *sqlx.Rows
 	if len(stmt.Params) == 0 {
-		args, _ := types.Get[[]any](inPck.Payload(), 1)
+		args, _ := types.Cast[[]any](types.Lookup(inPck.Payload(), 1), nil)
 		if rows, err = tx.QueryxContext(proc, query, args...); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
 	} else {
 		var arg any
-		var ok bool
-		arg, ok = types.Get[map[string]any](inPck.Payload(), 1)
-		if !ok {
-			arg, _ = types.Get[[]map[string]any](inPck.Payload(), 1)
+		var err error
+		arg, err = types.Cast[map[string]any](types.Lookup(inPck.Payload(), 1), nil)
+		if err != nil {
+			arg, _ = types.Cast[[]map[string]any](types.Lookup(inPck.Payload(), 1), nil)
 		}
 
 		query, args, err := tx.BindNamed(query, arg)

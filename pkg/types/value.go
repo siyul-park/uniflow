@@ -68,6 +68,42 @@ var types = map[Kind]reflect.Type{
 	KindString:  reflect.TypeOf(""),
 }
 
+// Cast attempts to cast the given Value to type T.
+// If an error is already present or the cast fails, it returns an error.
+func Cast[T any](val Value, errs ...error) (T, error) {
+	var v T
+	for _, err := range errs {
+		if err != nil {
+			return v, err
+		}
+	}
+	return v, Unmarshal(val, &v)
+}
+
+// Lookup extracts a value from a nested structure using the provided paths.
+func Lookup(val Value, paths ...any) Value {
+	cur := val
+	for _, path := range paths {
+		switch v := cur.(type) {
+		case Map:
+			p, err := Marshal(path)
+			if err != nil {
+				return nil
+			}
+			cur = v.Get(p)
+		case Slice:
+			p, ok := path.(int)
+			if !ok {
+				return nil
+			}
+			cur = v.Get(p)
+		default:
+			return nil
+		}
+	}
+	return cur
+}
+
 // KindOf returns the kind of the provided Value.
 func KindOf(v Value) Kind {
 	if v == nil {
@@ -120,46 +156,6 @@ func Compare(x, y Value) int {
 		return 1
 	}
 	return x.Compare(y)
-}
-
-// Get extracts a value from a nested structure using the provided paths.
-func Get[T any](obj Value, paths ...any) (T, bool) {
-	var val T
-	cur := obj
-	for _, path := range paths {
-		p, err := Marshal(path)
-		if err != nil {
-			return val, false
-		}
-
-		switch p := p.(type) {
-		case String:
-			if v, ok := cur.(Map); ok {
-				child := v.Get(p)
-				if child == nil {
-					return val, false
-				}
-				cur = child
-			}
-		case Integer:
-			if v, ok := cur.(Slice); ok {
-				if int(p.Int()) >= v.Len() {
-					return val, false
-				}
-				cur = v.Get(int(p.Int()))
-			}
-		default:
-			return val, false
-		}
-	}
-
-	if cur == nil {
-		return val, false
-	}
-	if v, ok := cur.(T); ok {
-		return v, true
-	}
-	return val, Unmarshal(cur, &val) == nil
 }
 
 func compare[T ordered](x, y T) int {

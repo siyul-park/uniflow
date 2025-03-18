@@ -82,15 +82,15 @@ func (n *PrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet.Pa
 	defer n.mu.RUnlock()
 
 	var args []any
-	format, ok := types.Get[string](inPck.Payload())
-	if !ok {
+	format, err := types.Cast[string](types.Lookup(inPck.Payload()))
+	if err != nil {
 		payload, ok := inPck.Payload().(types.Slice)
 		if !ok {
 			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 		}
-		format, ok = types.Get[string](payload, 0)
-		if !ok {
-			return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+		format, err = types.Cast[string](types.Lookup(payload, 0))
+		if err != nil {
+			return nil, packet.New(types.NewError(err))
 		}
 		for i, v := range payload.Range() {
 			if i > 0 {
@@ -115,14 +115,14 @@ func (n *DynPrintNode) action(_ *process.Process, inPck *packet.Packet) (*packet
 		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
 	}
 
-	filename, ok := types.Get[string](payload, 0)
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	filename, err := types.Cast[string](types.Lookup(payload, 0))
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
-	format, ok := types.Get[string](payload, 1)
-	if !ok {
-		return nil, packet.New(types.NewError(encoding.ErrUnsupportedType))
+	format, err := types.Cast[string](types.Lookup(payload, 1))
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
 	var args []any

@@ -167,8 +167,8 @@ func (n *RouteNode) action(_ *process.Process, inPck *packet.Packet) ([]*packet.
 		return nil, nil
 	}
 
-	method, _ := types.Get[string](inPayload, "method")
-	path, _ := types.Get[string](inPayload, "path")
+	method, _ := types.Cast[string](types.Lookup(inPayload, "method"))
+	path, _ := types.Cast[string](types.Lookup(inPayload, "path"))
 
 	route, values := n.find(method, path)
 	if route == nil {
