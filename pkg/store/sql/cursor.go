@@ -3,11 +3,12 @@ package sql
 import (
 	sqldriver "database/sql/driver"
 	"encoding/json"
+	"strings"
+
 	"github.com/araddon/qlbridge/datasource"
 	"github.com/araddon/qlbridge/exec"
 	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"strings"
 )
 
 type cursor struct {

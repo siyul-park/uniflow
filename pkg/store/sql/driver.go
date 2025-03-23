@@ -4,16 +4,19 @@ import (
 	"context"
 	sqldriver "database/sql/driver"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/araddon/qlbridge/datasource"
 	"github.com/araddon/qlbridge/exec"
 	"github.com/araddon/qlbridge/expr"
 	"github.com/araddon/qlbridge/plan"
+	"github.com/araddon/qlbridge/rel"
 	"github.com/araddon/qlbridge/schema"
 	"github.com/pkg/errors"
-	"io"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Connector struct {
@@ -37,6 +40,8 @@ type stmt struct {
 type rows struct {
 	*exec.TaskBase
 	columns []string
+	once    sync.Once
+	wait    chan struct{}
 }
 
 var _ sqldriver.Connector = (*Connector)(nil)
@@ -154,15 +159,20 @@ func (s *stmt) QueryContext(ctx context.Context, args []sqldriver.NamedValue) (s
 
 	stepper := exec.NewTaskStepper(pctx)
 
-	columns := pctx.Projection.Stmt.Columns.AliasedFieldNames()
-	if pctx.Projection.Proj != nil {
-		columns = nil
-		for _, col := range pctx.Projection.Proj.Columns {
-			columns = append(columns, col.As)
+	var columns []string
+	if pctx.Projection != nil {
+		if pctx.Projection.Stmt != nil {
+			columns = pctx.Projection.Stmt.Columns.AliasedFieldNames()
+		}
+		if pctx.Projection.Proj != nil {
+			columns = nil
+			for _, col := range pctx.Projection.Proj.Columns {
+				columns = append(columns, col.As)
+			}
 		}
 	}
 
-	r := &rows{TaskBase: stepper.TaskBase, columns: columns}
+	r := &rows{TaskBase: stepper.TaskBase, columns: columns, wait: make(chan struct{})}
 	r.Handler = func(ctx *plan.Context, msg schema.Message) bool {
 		select {
 		case r.MessageOut() <- msg:
@@ -180,10 +190,20 @@ func (s *stmt) QueryContext(ctx context.Context, args []sqldriver.NamedValue) (s
 		return nil, err
 	}
 
-	go func() {
-		_ = job.Run()
-		_ = job.Close()
-	}()
+	if _, ok := pctx.Stmt.(*rel.SqlSelect); ok {
+		go func() {
+			r.Wait()
+			_ = job.Run()
+			_ = job.Close()
+		}()
+	} else {
+		if err := job.Run(); err != nil {
+			return nil, err
+		}
+		if err := job.Close(); err != nil {
+			return nil, err
+		}
+	}
 
 	return r, nil
 }
@@ -253,13 +273,15 @@ func (r *rows) Columns() []string {
 }
 
 func (r *rows) Next(dest []sqldriver.Value) error {
+	r.once.Do(func() { close(r.wait) })
+
 	select {
 	case <-r.SigChan():
 		return exec.ErrShuttingDown
 	case err := <-r.ErrChan():
 		return err
 	case msg, ok := <-r.MessageIn():
-		if !ok || msg == nil {
+		if msg == nil || !ok {
 			return io.EOF
 		}
 		if mt, ok := msg.Body().(*datasource.SqlDriverMessageMap); ok {
@@ -273,6 +295,14 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 	return nil
 }
 
+func (r *rows) Wait() {
+	select {
+	case <-r.wait:
+	case <-r.SigChan():
+	}
+}
+
 func (r *rows) Close() error {
+	r.once.Do(func() { close(r.wait) })
 	return r.TaskBase.Close()
 }

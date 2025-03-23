@@ -1,7 +1,12 @@
 package sql
 
 import (
+	"context"
+	sqldriver "database/sql/driver"
 	"fmt"
+
+	"github.com/araddon/qlbridge/datasource"
+
 	"github.com/araddon/gou"
 	"github.com/araddon/qlbridge/exec"
 	"github.com/araddon/qlbridge/expr"
@@ -14,7 +19,6 @@ import (
 )
 
 type connection struct {
-	*exec.TaskBase
 	store   store.Store
 	table   *schema.Table
 	filter  any
@@ -22,10 +26,87 @@ type connection struct {
 }
 
 var _ schema.Conn = (*connection)(nil)
+var _ schema.ConnUpsert = (*connection)(nil)
+var _ schema.ConnDeletion = (*connection)(nil)
 var _ plan.SourcePlanner = (*connection)(nil)
 var _ exec.ExecutorSource = (*connection)(nil)
 
-func (c *connection) WalkSourceSelect(planner plan.Planner, source *plan.Source) (plan.Task, error) {
+func (c *connection) Put(ctx context.Context, key schema.Key, row any) (schema.Key, error) {
+	columns := c.table.Columns()
+
+	doc := map[string]any{}
+	switch vals := row.(type) {
+	case []sqldriver.Value:
+		for i, col := range columns {
+			doc[col] = vals[i]
+		}
+	case map[string]sqldriver.Value:
+		for col, val := range vals {
+			doc[col] = val
+		}
+	default:
+		return nil, fmt.Errorf("unsupported row type %T", row)
+	}
+
+	var filter any
+	if key == nil {
+		filter = map[string]any{"id": doc["id"]}
+	} else if k, ok := key.(datasource.KeyCol); ok {
+		filter = map[string]any{k.Name: k.Val}
+	}
+
+	if _, err := c.store.Update(ctx, filter, map[string]any{"$set": doc}, store.UpdateOptions{Upsert: true}); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func (c *connection) PutMulti(ctx context.Context, keys []schema.Key, rows any) ([]schema.Key, error) {
+	columns := c.table.Columns()
+
+	var docs []any
+	switch vals := rows.(type) {
+	case [][]sqldriver.Value:
+		for _, row := range vals {
+			doc := map[string]any{}
+			for i, col := range columns {
+				doc[col] = row[i]
+			}
+			docs = append(docs, doc)
+		}
+	default:
+		return nil, fmt.Errorf("unexpected %T", rows)
+	}
+
+	err := c.store.Insert(ctx, docs)
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
+func (c *connection) Delete(id sqldriver.Value) (int, error) {
+	// TODO: change to use context from the source
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	return c.store.Delete(ctx, map[string]any{"id": id})
+}
+
+func (c *connection) DeleteExpression(_ any, node expr.Node) (int, error) {
+	// TODO: change to use context from the source
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var filter any
+	if _, err := c.walkNode(node, &filter); err != nil {
+		return 0, err
+	}
+
+	return c.store.Delete(ctx, filter)
+}
+
+func (c *connection) WalkSourceSelect(_ plan.Planner, source *plan.Source) (plan.Task, error) {
 	if len(source.Custom) == 0 {
 		source.Custom = make(gou.JsonHelper)
 	}
@@ -37,7 +118,6 @@ func (c *connection) WalkSourceSelect(planner plan.Planner, source *plan.Source)
 		source.Proj = plan.NewProjectionInProcess(source.Stmt.Source).Proj
 	}
 
-	c.TaskBase = exec.NewTaskBase(source.Context())
 	c.options.Limit = source.Stmt.Source.Limit
 	c.options.Skip = source.Stmt.Source.Offset
 
