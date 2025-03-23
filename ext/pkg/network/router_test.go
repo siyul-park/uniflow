@@ -251,7 +251,7 @@ func TestRouteNode_SendAndReceive(t *testing.T) {
 
 			select {
 			case outPck := <-outReader.Read():
-				params, _ := types.Cast[map[string]string](types.Lookup[map[string]string](outPck.Payload(), "params"))
+				params, _ := types.Cast[map[string]string](types.Lookup(outPck.Payload(), "params"))
 				require.Equal(t, tt.expectParams, params)
 				outReader.Receive(outPck)
 			case <-ctx.Done():
