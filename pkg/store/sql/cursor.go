@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"database/sql/driver"
+	sqldriver "database/sql/driver"
 	"encoding/json"
 	"github.com/araddon/qlbridge/datasource"
 	"github.com/araddon/qlbridge/exec"
@@ -28,7 +28,7 @@ func (c *cursor) Run() error {
 		}
 
 		keys := make(map[string]int, row.Len())
-		vals := make([]driver.Value, 0, row.Len())
+		vals := make([]sqldriver.Value, 0, row.Len())
 
 		for key, val := range row.Range() {
 			field, err := types.Cast[string](key)
