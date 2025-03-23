@@ -11,7 +11,7 @@ import (
 )
 
 func TestStore_Watch(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()
 
 	s := New()

@@ -38,6 +38,7 @@ type UpdateOptions struct {
 
 type FindOptions struct {
 	Limit int
+	Skip  int
 	Sort  any
 }
 
@@ -284,10 +285,14 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 	defer s.mu.RUnlock()
 
 	var limit int
+	var skip int
 	var sort types.Map
 	for _, opt := range opts {
-		if opt.Limit != 0 {
+		if opt.Limit > 0 {
 			limit = opt.Limit
+		}
+		if opt.Skip > 0 {
+			skip = opt.Skip
 		}
 		if opt.Sort != nil {
 			var err error
@@ -326,9 +331,20 @@ func (s *store) Find(_ context.Context, filter any, opts ...FindOptions) (Cursor
 		})
 	}
 
-	if limit > 0 && len(docs) > limit {
-		docs = docs[:limit]
+	if skip > len(docs) {
+		skip = len(docs)
 	}
+	if limit == 0 {
+		limit = len(docs)
+	}
+
+	limit = skip + limit
+	if limit > len(docs) {
+		limit = len(docs)
+	}
+
+	docs = docs[skip:limit]
+
 	return newCursor(docs), nil
 }
 

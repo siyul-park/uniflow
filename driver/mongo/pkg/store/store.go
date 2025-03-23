@@ -206,8 +206,11 @@ func (s *Store) Delete(ctx context.Context, filter any, _ ...store.DeleteOptions
 func (s *Store) Find(ctx context.Context, filter any, opts ...store.FindOptions) (store.Cursor, error) {
 	option := options.Find()
 	for _, opt := range opts {
-		if opt.Limit != 0 {
+		if opt.Limit > 0 {
 			option = option.SetLimit(int64(opt.Limit))
+		}
+		if opt.Skip > 0 {
+			option = option.SetSkip(int64(opt.Skip))
 		}
 		if opt.Sort != nil {
 			val, err := types.Marshal(opt.Sort)
