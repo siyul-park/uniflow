@@ -8,7 +8,6 @@ import (
 	"github.com/araddon/qlbridge/exec"
 	"github.com/araddon/qlbridge/expr"
 	"github.com/araddon/qlbridge/plan"
-	"github.com/araddon/qlbridge/rel"
 	"github.com/araddon/qlbridge/schema"
 	"github.com/pkg/errors"
 	"io"
@@ -153,14 +152,17 @@ func (s *stmt) QueryContext(ctx context.Context, args []sqldriver.NamedValue) (s
 		return nil, err
 	}
 
-	sqlSelect, ok := job.Ctx.Stmt.(*rel.SqlSelect)
-	if !ok {
-		return nil, fmt.Errorf("we could not recognize that as a select query: %T", job.Ctx.Stmt)
-	}
-
 	stepper := exec.NewTaskStepper(pctx)
 
-	r := &rows{TaskBase: stepper.TaskBase, columns: sqlSelect.Columns.AliasedFieldNames()}
+	columns := pctx.Projection.Stmt.Columns.AliasedFieldNames()
+	if pctx.Projection.Proj != nil {
+		columns = nil
+		for _, col := range pctx.Projection.Proj.Columns {
+			columns = append(columns, col.As)
+		}
+	}
+
+	r := &rows{TaskBase: stepper.TaskBase, columns: columns}
 	r.Handler = func(ctx *plan.Context, msg schema.Message) bool {
 		select {
 		case r.MessageOut() <- msg:
@@ -261,12 +263,9 @@ func (r *rows) Next(dest []sqldriver.Value) error {
 			return io.EOF
 		}
 		if mt, ok := msg.Body().(*datasource.SqlDriverMessageMap); ok {
-			for col, idx := range mt.ColIndex {
-				if idx < len(dest) {
-					val, ok := mt.Get(col)
-					if ok && val != nil && !val.Nil() {
-						dest[idx] = val.Value()
-					}
+			for i := 0; i < len(dest); i++ {
+				if i < len(mt.Values()) {
+					dest[i] = mt.Values()[i]
 				}
 			}
 		}

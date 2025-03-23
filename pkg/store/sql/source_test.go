@@ -13,64 +13,62 @@ import (
 )
 
 func TestSQL_Query(t *testing.T) {
-	t.Run("SELECT", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
 
-		c := NewConnector()
+	c := NewConnector()
 
-		srcName := faker.Word()
-		tblName := faker.Word()
+	srcName := faker.Word()
+	tblName := faker.Word()
 
-		origin := store.NewSource()
-		defer origin.Close()
+	origin := store.NewSource()
+	defer origin.Close()
 
-		src := NewSource(origin)
-		defer src.Close()
+	src := NewSource(origin)
+	defer src.Close()
 
-		st, err := origin.Open(tblName)
-		require.NoError(t, err)
+	st, err := origin.Open(tblName)
+	require.NoError(t, err)
 
-		doc := map[string]any{
-			"id":      faker.UUIDHyphenated(),
-			"name":    faker.Name(),
-			"email":   faker.Email(),
-			"phone":   faker.Phonenumber(),
-			"version": int64(1),
-		}
+	doc := map[string]any{
+		"id":      faker.UUIDHyphenated(),
+		"name":    faker.Name(),
+		"email":   faker.Email(),
+		"phone":   faker.Phonenumber(),
+		"version": int64(1),
+	}
 
-		err = st.Insert(ctx, []any{doc})
-		require.NoError(t, err)
+	err = st.Insert(ctx, []any{doc})
+	require.NoError(t, err)
 
-		_, err = src.Table(tblName)
-		require.NoError(t, err)
+	_, err = src.Table(tblName)
+	require.NoError(t, err)
 
-		err = c.RegisterSourceAsSchema(srcName, src)
-		require.NoError(t, err)
+	err = c.RegisterSourceAsSchema(srcName, src)
+	require.NoError(t, err)
 
-		db := sql.OpenDB(c)
+	db := sql.OpenDB(c)
 
-		rows, err := db.QueryContext(ctx, fmt.Sprintf("SELECT id, name, email, phone, version FROM %s WHERE name = ?", tblName), doc["name"])
-		require.NoError(t, err)
+	rows, err := db.QueryContext(ctx, fmt.Sprintf("SELECT * FROM %s WHERE name = ?", tblName), doc["name"])
+	require.NoError(t, err)
 
-		cols, err := rows.Columns()
-		require.NoError(t, err)
-		require.Len(t, cols, len(doc))
+	cols, err := rows.Columns()
+	require.NoError(t, err)
+	require.Len(t, cols, len(doc))
 
-		require.True(t, rows.Next())
+	require.True(t, rows.Next())
 
-		vals := make([]any, 0, len(cols))
-		for range cols {
-			vals = append(vals, new(any))
-		}
-		err = rows.Scan(vals...)
-		require.NoError(t, err)
-		for i, col := range cols {
-			require.Equal(t, doc[col], *(vals[i].(*any)))
-		}
+	vals := make([]any, 0, len(cols))
+	for range cols {
+		vals = append(vals, new(any))
+	}
+	err = rows.Scan(vals...)
+	require.NoError(t, err)
+	for i, col := range cols {
+		require.Equal(t, doc[col], *(vals[i].(*any)))
+	}
 
-		defer rows.Close()
-	})
+	defer rows.Close()
 }
 
 func TestSource_Setup(t *testing.T) {
