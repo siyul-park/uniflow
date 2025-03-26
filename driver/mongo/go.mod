@@ -3,7 +3,7 @@ module github.com/siyul-park/uniflow/driver/mongo
 go 1.23.4
 
 require (
-	github.com/go-faker/faker/v4 v4.5.0
+	github.com/go-faker/faker/v4 v4.6.0
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/pkg/errors v0.9.1
