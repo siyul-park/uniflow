@@ -1,56 +1,45 @@
 # Assert 노드
 
-**Assert 노드**는 워크플로우 실행 중 특정 조건을 검증하고, 조건이 충족되지 않으면 오류를 발생시키는 노드입니다. 일반적으로 Test 노드와 함께 작동하여 테스트가 정상적으로 수행되었는지 검증하며, 다음과 같은 구조로 연결됩니다:
-```
-Test 노드 -> 대상 노드 -> Assert 노드
-```
-검증에 성공할 경우 특별한 추가 동작 없이 실행을 완료하고, 실패할 경우 오류를 발생시키게 됩니다.
+**Assert 노드**는 워크플로우 테스트 성공 조건을 검증하고, 실패하면 오류를 발생시키는 노드입니다. 일반적으로 Test 노드와 함께 구성하여 테스트가 정상적으로 수행되었는지 검증할 때 사용되며, 필요하다면 포트 연결을 추가로 설정하여 복잡한 테스트 검증을 할 수 있습니다.
 
 ## 명세
 
-- **expect**: 예상되는 결과 값을 지정합니다. 이 값과 실제 결과가 비교됩니다.
-- **mode**: 비교 방식을 지정합니다. 다음 중 하나를 선택할 수 있습니다:
-  - `exact`: 정확한 값 비교 (기본값)
-  - `type`: 값의 타입만 비교
-  - `exists`: 값이 존재하는지만 확인
-- **msg**: (선택 사항) 검증 실패 시 표시할 오류 메시지를 지정합니다. 지정하지 않으면 기본 오류 메시지가 표시됩니다.
+- **expect**: 예상되는 결과 값을 정의합니다.  `Common Expression Language (CEL)`로 작성하며, 실제 결과와 비교됩니다.
+- **target**: 검증할 대상을 지정합니다. 
+    - **name**: 대상 노드의 이름
+    - **port**: 대상 노드의 출력 포트
+    - 주의: 해당 필드가 존재하지 않을 경우 직후에 전달받은 프레임을 사용하며, 존재하면 조건에 맞는 프레임을 검색하여 사용합니다. 이 때, 해당 프레임을 찾을 수 없다면 **오류로 판단하고 테스트를 중단합니다.**
 
 ## 포트
 
-- **in**: 검증할 입력 데이터를 받습니다. 일반적으로 Test 노드를 통해 실행된 노드의 출력이 이 포트로 전달됩니다.
+- **in**: [value, index] 형식으로 검증할 데이터를 전달합니다.
+- **out**: 검증 성공 시 현재 프레임과 인덱스를 [value, index] 형식으로 다음 노드에 전달합니다.
 
 ## 예시
 
-다음은 간단한 숫자 연산 결과를 검증하는 예시입니다:
-
 ```yaml
 - kind: test
-  name: test-multiply
+  name: simple-test
   ports:
     out[0]:
-      - name: multiply
+      - name: target-node
         port: in
     out[1]:
-      - name: assert-result
+      - name: basic-assert
         port: in
 
 - kind: snippet
-  name: multiply
-  spec:
-    language: javascript
-    code: export default function(x) { return x * 2; }
-  ports:
-    out:
-      - name: test-multiply
-        port: in
+  name: target-node
+  language: javascript
+  code: |
+    export default function(input) {
+      return 42;
+    }
 
 - kind: assert
-  name: assert-result
-  ports:
-    in:
-      - name: test-multiply
-        port: out
-  spec:
-    expect: 10
-    msg: "곱셈 결과는 10이어야 합니다"
+  name: basic-assert
+  expect: self == 42
+  target:
+    name: target-node
+    port: out
 ```
