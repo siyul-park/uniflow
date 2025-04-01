@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/driver/mongo
 
-go 1.23.4
+go 1.24.2
 
 require (
 	github.com/go-faker/faker/v4 v4.5.0

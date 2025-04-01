@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/cmd
 
-go 1.23.4
+go 1.24.2
 
 require (
 	github.com/charmbracelet/bubbles v0.20.0
