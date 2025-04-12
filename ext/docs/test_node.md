@@ -1,6 +1,6 @@
 # Test Node
 
-The **Test Node** provides functionality for executing and validating developed workflows. It allows for both simple success/failure verification and more complex validation scenarios through configurable output ports.
+**Test Node** provides functionality for executing and validating developed workflows. It allows for both simple success/failure verification and more complex validation scenarios through configurable output ports.
 
 ## Specification
 

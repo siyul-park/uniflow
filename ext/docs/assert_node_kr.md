@@ -19,17 +19,17 @@
 
 ```yaml
 - kind: test
-  name: simple-test
+  name: simple_test
   ports:
     out[0]:
-      - name: target-node
+      - name: target_node
         port: in
     out[1]:
-      - name: basic-assert
+      - name: basic_assert
         port: in
 
 - kind: snippet
-  name: target-node
+  name: target_node
   language: javascript
   code: |
     export default function(input) {
@@ -37,9 +37,39 @@
     }
 
 - kind: assert
-  name: basic-assert
+  name: basic_assert
   expect: self == 42
+```
+
+```yaml
+- kind: test
+  name: complex_test
+  ports:
+    out[0]:
+      - name: n1
+        port: in
+    out[1]:
+      - name: a1
+        port: in
+
+- kind: snippet
+  name: n1
+  language: json
+  code: 1
+  ports:
+    out:
+      - name: n2
+        port: in
+
+- kind: snippet
+  name: n2
+  language: json
+  code: 2
+
+- kind: assert
+  name: n1
+  expect: self == 1
   target:
-    name: target-node
+    name: n1
     port: out
 ```
