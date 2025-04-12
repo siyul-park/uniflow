@@ -19,57 +19,54 @@
 
 ```yaml
 - kind: test
-  name: simple_test
+  name: non_target_test
   ports:
     out[0]:
-      - name: target_node
+      - name: snippet
         port: in
     out[1]:
-      - name: basic_assert
+      - name: assert
         port: in
 
 - kind: snippet
-  name: target_node
-  language: javascript
-  code: |
-    export default function(input) {
-      return 42;
-    }
+  name: snippet
+  language: json
+  code: 42
 
 - kind: assert
-  name: basic_assert
+  name: assert
   expect: self == 42
 ```
 
 ```yaml
 - kind: test
-  name: complex_test
+  name: target_test
   ports:
     out[0]:
-      - name: n1
+      - name: first
         port: in
     out[1]:
-      - name: a1
+      - name: assert
         port: in
 
 - kind: snippet
-  name: n1
+  name: first
   language: json
   code: 1
   ports:
     out:
-      - name: n2
+      - name: second
         port: in
 
 - kind: snippet
-  name: n2
+  name: second
   language: json
   code: 2
 
 - kind: assert
-  name: n1
+  name: assert
   expect: self == 1
   target:
-    name: n1
+    name: first
     port: out
 ```

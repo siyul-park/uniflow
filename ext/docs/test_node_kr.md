@@ -23,14 +23,14 @@ out[0] 포트에 테스트 대상이 되는 워크플로우를 연결하고, 결
 
 ```yaml
 - kind: test
-  name: test_values_create
+  name: test
   ports:
     out:
-      - name: mock_values_create
+      - name: mock
         port: in
 
 - kind: snippet
-  name: mock_values_create
+  name: mock
   language: json
   code: |
     {
@@ -40,11 +40,11 @@ out[0] 포트에 테스트 대상이 되는 워크플로우를 연결하고, 결
     }
   ports:
     out:
-      - name: values_create
+      - name: snippet
         port: in
 
 - kind: snippet
-  name: values_create
+  name: snippet
   language: javascript
   code: |
     export default function (args) {
