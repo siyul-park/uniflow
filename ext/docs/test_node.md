@@ -1,6 +1,6 @@
 # Test Node
 
-**Test Node** provides functionality for executing and validating developed workflows. It allows for both simple success/failure verification and more complex validation scenarios through configurable output ports.
+**Test Node** provides functionality for testing developed workflows. When executed with the `uniflow test` command, the system recognizes and executes this node. supporting both simple success/failure verification and complex validation scenarios through configurable output ports.
 
 ## Specification
 
@@ -11,34 +11,26 @@
 Connect the workflow to be tested to the out[0] port and validate its results through out[1]. For simple execution validation, out[1] can be omitted.
 
 - **out[0]**: Executes the workflow and receives its response.
-  - Executes the connected workflow
-  - Success is determined by the absence of errors from the connected workflow
-  - Any error returned from the workflow indicates test failure
+  - If no error occurs in the connected workflow, the test is considered successful
+  - If the workflow returns an error, the test is considered failed
 
 - **out[1]**: Results from out[0] execution are passed to out[1] in [value, index] format.
   - **index**: Indicates where the value is positioned in frames. Starts with -1.
   - **value**: Represents the execution result of the workflow.
-  - Test fails if out[1] returns an error
+  - If out[1] returns an error, the test is considered failed
 
 ## Examples
 
-### Simple Test Configuration
 ```yaml
-kind: test
-ports:
-  out:
-    - name: sub
-      port: in
-```
+- kind: test
+  name: test
+  ports:
+    out:
+      - name: snippet
+        port: in
 
-### Extended Test Configuration
-```yaml
-kind: test
-ports:
-  out[0]:
-    - name: sub
-      port: in
-  out[1]:
-    - name: require
-      port: in
+- kind: snippet
+  name: first
+  language: json
+  code: 1
 ```

@@ -1,6 +1,6 @@
 # Assert Node
 
-The **Assert Node** compares the expected test conditions with the actual execution results in a workflow. If they match, the test succeeds; if they differ, it triggers an error and fails. It is typically used in conjunction with Test nodes to verify whether tests are executed correctly. Additional port connections can be configured when needed to perform more complex test validations.
+**Assert Node** compares the expected test conditions with the actual execution results in a workflow. If they match, the test succeeds; if they differ, it triggers an error and fails. It is typically used in conjunction with Test nodes to verify whether tests are executed correctly. Additional port connections can be configured when needed to perform more complex test validations.
 
 ## Specification
 

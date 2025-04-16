@@ -26,31 +26,11 @@ out[0] 포트에 테스트 대상이 되는 워크플로우를 연결하고, 결
   name: test
   ports:
     out:
-      - name: mock
-        port: in
-
-- kind: snippet
-  name: mock
-  language: json
-  code: |
-    {
-      "body": {
-        "data": "foo"
-      }
-    }
-  ports:
-    out:
       - name: snippet
         port: in
 
 - kind: snippet
-  name: snippet
-  language: javascript
-  code: |
-    export default function (args) {
-      return {
-        body: args,
-        status: 201
-      };
-    }
+  name: first
+  language: json
+  code: 1
 ```
