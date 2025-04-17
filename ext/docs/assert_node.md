@@ -13,7 +13,7 @@
 ## Ports
 
 - **in**: Receives data to validate in the format [value, index]
-- **out**: When validation succeeds, passes the current frame and index to the next node in the format [value, index]
+- **out**: When validation succeeds, passes the current frame and payload with index to the next node in the format [value, index]
 
 ## Examples
 
