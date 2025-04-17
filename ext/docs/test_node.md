@@ -14,7 +14,7 @@ Connect the workflow to be tested to the out[0] port and validate its results th
   - If no error occurs in the connected workflow, the test is considered successful
   - If the workflow returns an error, the test is considered failed
 
-- **out[1]**: Results from out[0] execution are passed to out[1] in [value, index] format.
+- **out[1]**: Results from out[0] execution are passed to out[1] in [payload, index] format.
   - **index**: Indicates where the value is positioned in frames. Starts with -1.
   - **value**: Represents the execution result of the workflow.
   - If out[1] returns an error, the test is considered failed
