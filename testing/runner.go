@@ -1,0 +1,129 @@
+package testing
+
+import (
+	"context"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
+
+	"github.com/siyul-park/uniflow/process"
+)
+
+// Runner executes test suites and reports results.
+type Runner struct {
+	reporters Reporters
+	suites    map[string]Suite
+	mu        sync.RWMutex
+}
+
+// NewRunner creates a new Runner instance.
+func NewRunner() *Runner {
+	return &Runner{suites: make(map[string]Suite)}
+}
+
+// AddReporter adds a reporter if it's not already present.
+func (r *Runner) AddReporter(reporter Reporter) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, rp := range r.reporters {
+		if rp == reporter {
+			return false
+		}
+	}
+	r.reporters = append(r.reporters, reporter)
+	return true
+}
+
+// RemoveReporter removes a reporter if it exists.
+func (r *Runner) RemoveReporter(reporter Reporter) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for i, rp := range r.reporters {
+		if rp == reporter {
+			r.reporters = append(r.reporters[:i], r.reporters[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Register adds a test suite if it's not already registered.
+func (r *Runner) Register(name string, suite Suite) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.suites[name]; exists {
+		return false
+	}
+	r.suites[name] = suite
+	return true
+}
+
+// Unregister removes a registered test suite.
+func (r *Runner) Unregister(name string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.suites[name]; !exists {
+		return false
+	}
+	delete(r.suites, name)
+	return true
+}
+
+// Run executes all test suites matching the filter concurrently.
+func (r *Runner) Run(ctx context.Context, match func(string) bool) error {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if match == nil {
+		match = func(string) bool { return true }
+	}
+
+	errorReporter := NewErrorReporter()
+	reporters := append(r.reporters, errorReporter)
+	g, ctx := errgroup.WithContext(ctx)
+
+	for name, suite := range r.suites {
+		if match(name) {
+			g.Go(func() error {
+				tester := NewTester(name)
+
+				errs := make(chan error)
+				defer close(errs)
+
+				tester.AddExitHook(process.ExitFunc(func(err error) {
+					errs <- reporters.Report(ctx, &Result{
+						ID:        tester.ID(),
+						Name:      tester.Name(),
+						Error:     err,
+						StartTime: tester.StartTime(),
+						EndTime:   tester.EndTime(),
+					})
+				}))
+
+				go func() {
+					select {
+					case <-ctx.Done():
+						tester.Exit(ctx.Err())
+					case <-tester.Done():
+					}
+				}()
+
+				go func() {
+					suite.Run(tester)
+					tester.Exit(nil)
+				}()
+
+				return <-errs
+			})
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return errorReporter.Error()
+}
