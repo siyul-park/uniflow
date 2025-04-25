@@ -39,7 +39,7 @@ make build
 
 ### ⚡ 예제 실행
 
-다음은 HTTP 요청 처리 예제인 [ping.yaml](./examples/ping.yaml)을 실행하는 방법입니다:
+다음은 HTTP 요청 처리 예제인 [ping.yaml](examples/ping.yaml)을 실행하는 방법입니다:
 
 ```yaml
 - kind: listener
@@ -97,7 +97,7 @@ pong#
 
 ## 📊 벤치마크
 
-다음 벤치마크는 **[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행되었습니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](./examples/ping.yaml) 워크플로우를 테스트했습니다.
+다음 벤치마크는 **[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행되었습니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](examples/ping.yaml) 워크플로우를 테스트했습니다.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping

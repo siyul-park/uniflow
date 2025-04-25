@@ -9,18 +9,17 @@ DOCKERFILE = deployments/Dockerfile
 
 CGO_ENABLED ?= 1
 
-.PHONY: init generate build clean tidy update sync check test coverage benchmark lint fmt vet doc docker-build
+.PHONY: init generate build clean tidy update check test coverage benchmark lint fmt vet doc docker-build
 all: lint test build
 
 init:
-	@cp .go.work go.work
 	@$(MAKE) install-tools
 	@$(MAKE) install-modules
 
 install-tools:
 	@go install golang.org/x/tools/cmd/godoc@latest
-	@go install golang.org/x/tools/cmd/goimports@latest
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
+	@go install github.com/incu6us/goimports-reviser/v3@latest
 
 install-modules:
 	@for dir in $(MODULE_DIRS); do \
@@ -61,9 +60,6 @@ clean-cache:
 		cd $$dir && go clean -modcache; \
 	done
 
-sync:
-	@go work sync
-
 check: lint test staticcheck
 
 test:
@@ -86,7 +82,7 @@ lint: fmt vet staticcheck
 
 fmt:
 	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && goimports -w .; \
+		cd $$dir && goimports-reviser -rm-unused -format ./...; \
 	done
 
 vet:

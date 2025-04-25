@@ -39,7 +39,7 @@ The executable will be located in the `dist` directory after building.
 
 ### ⚡ Run an Example
 
-Try a basic HTTP request handler using [ping.yaml](./examples/ping.yaml):
+Try a basic HTTP request handler using [ping.yaml](examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -97,7 +97,7 @@ Adjust settings through `.uniflow.toml` or environment variables.
 
 ## 📊 Benchmark
 
-The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](./examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
+The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
