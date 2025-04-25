@@ -2,17 +2,17 @@
 
 CURRENT_DIR = $(shell realpath .)
 MODULE_DIRS = $(shell find $(CURRENT_DIR) -name go.mod -exec dirname {} \;)
+PLUGIN_DIRS = $(shell find $(CURRENT_DIR)/plugin -name go.mod -exec dirname {} \;)
 
 DOCKER_IMAGE = $(shell basename -s .git $(shell git config --get remote.origin.url))
 DOCKER_TAG = $(shell git tag --sort=-v:refname | grep -v '/' | head -n 1 || echo "latest")
 DOCKERFILE = deployments/Dockerfile
 
-CGO_ENABLED ?= 1
-
 .PHONY: init generate build clean tidy update check test coverage benchmark lint fmt vet doc docker-build
 all: lint test build
 
 init:
+	@cp .go.work go.work
 	@$(MAKE) install-tools
 	@$(MAKE) install-modules
 
@@ -31,10 +31,18 @@ generate:
 		cd $$dir && go generate ./...; \
 	done
 
+build-all: build build-plugin
+
 build:
 	@go clean -cache
 	@mkdir -p dist
-	@cd cmd && CGO_ENABLED=$(CGO_ENABLED) go build -ldflags "-s -w" -o ../dist ./...
+	@cd cmd && go build -ldflags "-s -w" -o ../dist ./...
+
+build-plugin:
+	@mkdir -p dist
+	@for dir in $(PLUGIN_DIRS); do \
+  		cd $$dir && go build -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist .; \
+	done
 
 clean:
 	@go clean -cache

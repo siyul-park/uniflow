@@ -1,8 +1,9 @@
 package driver
 
 import (
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 // Registry manages a collection of drivers.
