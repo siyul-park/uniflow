@@ -1,23 +1,27 @@
 package driver
 
 import (
+	"context"
+
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-// Conn implements the driver.Conn interface for a MongoDB connection.
-type Conn struct {
+type conn struct {
+	client   *mongo.Client
 	database *mongo.Database
 }
 
-var _ driver.Conn = (*Conn)(nil)
+var _ driver.Conn = (*conn)(nil)
 
-// Load returns a new Store for the given collection name.
-func (c *Conn) Load(name string) (driver.Store, error) {
+func newConn(client *mongo.Client, database string) *conn {
+	return &conn{client: client, database: client.Database(database)}
+}
+
+func (c *conn) Load(name string) (driver.Store, error) {
 	return NewStore(c.database.Collection(name)), nil
 }
 
-// Close performs cleanup of the connection.
-func (c *Conn) Close() error {
-	return nil
+func (c *conn) Close() error {
+	return c.client.Disconnect(context.Background())
 }

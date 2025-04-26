@@ -32,8 +32,7 @@ func (d *Driver) Open(name string) (driver.Conn, error) {
 		return nil, err
 	}
 
-	db := client.Database(dsn.Database)
-	return &Conn{database: db}, nil
+	return newConn(client, dsn.Database), nil
 }
 
 // Close performs any necessary cleanup.

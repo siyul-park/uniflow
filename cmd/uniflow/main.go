@@ -88,8 +88,12 @@ func main() {
 	hk := cli.Must(hookBuilder.Build())
 
 	dsn := cli.Must(url.Parse(k.String(envDatabaseURL)))
+
 	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
+	defer drv.Close()
+
 	conn := cli.Must(drv.Open(dsn.String()))
+	defer conn.Close()
 
 	specStore := cli.Must(conn.Load(k.String(envCollectionSpecs)))
 	valueStore := cli.Must(conn.Load(k.String(envCollectionValues)))
