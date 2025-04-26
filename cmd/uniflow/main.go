@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/iancoleman/strcase"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 	"net/url"
 	"os/signal"
 	"syscall"
@@ -18,6 +23,32 @@ import (
 	"github.com/siyul-park/uniflow/pkg/value"
 )
 
+const (
+	envDatabaseURL      = "database.url"
+	envCollectionSpecs  = "collection.specs"
+	envCollectionValues = "collection.values"
+	envPlugin           = "plugin"
+
+	keyPath     = "path"
+	keyManifest = "manifest"
+)
+
+const configFile = ".uniflow.toml"
+
+var k = koanf.New(".")
+
+func init() {
+	cli.Fatal(k.Set(envDatabaseURL, "memory://"))
+	cli.Fatal(k.Set(envCollectionSpecs, "specs"))
+	cli.Fatal(k.Set(envCollectionValues, "values"))
+
+	_ = k.Load(file.Provider(configFile), toml.Parser())
+
+	cli.Fatal(k.Load(env.Provider("", ".", func(s string) string {
+		return strcase.ToDelimited(s, '.')
+	}), nil))
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -30,33 +61,33 @@ func main() {
 	driverRegistry := driver.NewRegistry()
 	defer driverRegistry.Close()
 
-	fatal(driverRegistry.Register("memory", driver.New()))
+	cli.Fatal(driverRegistry.Register("memory", driver.New()))
 
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
-	for _, cfg := range config.Slices(envPlugin) {
-		p := must(plugin.Open(cfg.String(keyPath), cfg.Get(keyManifest)))
-		fatal(pluginRegistry.Register(p))
+	for _, cfg := range k.Slices(envPlugin) {
+		p := cli.Must(plugin.Open(cfg.String(keyPath), cfg.Get(keyManifest)))
+		cli.Fatal(pluginRegistry.Register(p))
 	}
-	fatal(pluginRegistry.Inject(schemeBuilder, hookBuilder, driverRegistry, runner))
-	fatal(pluginRegistry.Load(ctx))
+	cli.Fatal(pluginRegistry.Inject(schemeBuilder, hookBuilder, driverRegistry, runner))
+	cli.Fatal(pluginRegistry.Load(ctx))
 
-	scheme := must(schemeBuilder.Build())
-	hook := must(hookBuilder.Build())
+	scheme := cli.Must(schemeBuilder.Build())
+	hook := cli.Must(hookBuilder.Build())
 
-	dsn := must(url.Parse(config.String(envDatabaseURL)))
-	drv := must(driverRegistry.Lookup(dsn.Scheme))
-	conn := must(drv.Open(dsn.String()))
+	dsn := cli.Must(url.Parse(k.String(envDatabaseURL)))
+	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
+	conn := cli.Must(drv.Open(dsn.String()))
 
-	specStore := must(conn.Load(config.String(envCollectionSpecs)))
-	valueStore := must(conn.Load(config.String(envCollectionValues)))
+	specStore := cli.Must(conn.Load(k.String(envCollectionSpecs)))
+	valueStore := cli.Must(conn.Load(k.String(envCollectionValues)))
 
-	fatal(specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, driver.IndexOptions{
+	cli.Fatal(specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, driver.IndexOptions{
 		Unique: true,
 		Filter: map[string]any{spec.KeyName: map[string]any{"$exists": true}},
 	}))
-	fatal(valueStore.Index(ctx, []string{value.KeyNamespace, value.KeyName}, driver.IndexOptions{
+	cli.Fatal(valueStore.Index(ctx, []string{value.KeyNamespace, value.KeyName}, driver.IndexOptions{
 		Unique: true,
 		Filter: map[string]any{value.KeyName: map[string]any{"$exists": true}},
 	}))
@@ -98,5 +129,5 @@ func main() {
 		ValueStore: valueStore,
 	}))
 
-	fatal(cmd.Execute())
+	cli.Fatal(cmd.Execute())
 }

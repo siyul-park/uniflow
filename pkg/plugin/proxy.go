@@ -25,7 +25,7 @@ func (p *Proxy) Inject(dependencies ...any) error {
 		typ := val.Type().Method(i)
 		val := val.Method(i)
 
-		if !strings.HasPrefix(typ.Name, "Inject") {
+		if !strings.HasPrefix(typ.Name, "Set") {
 			continue
 		}
 
@@ -33,8 +33,8 @@ func (p *Proxy) Inject(dependencies ...any) error {
 		for j := 0; j < val.Type().NumIn(); j++ {
 			typ := val.Type().In(j)
 			for _, dep := range dependencies {
-				if reflect.TypeOf(dep).ConvertibleTo(typ) {
-					ins = append(ins, reflect.ValueOf(dep).Convert(typ))
+				if reflect.TypeOf(dep).AssignableTo(typ) {
+					ins = append(ins, reflect.ValueOf(dep))
 					break
 				}
 			}
@@ -58,4 +58,9 @@ func (p *Proxy) Load(ctx context.Context) error {
 // Unload calls the plugin's Unload method.
 func (p *Proxy) Unload(ctx context.Context) error {
 	return p.plugin.Unload(ctx)
+}
+
+// Unwrap returns the original plugin instance.
+func (p *Proxy) Unwrap() Plugin {
+	return p.plugin
 }
