@@ -55,7 +55,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	runner := testing.NewRunner()
+	testingRunner := testing.NewRunner()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
@@ -81,7 +81,7 @@ func main() {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(runner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry))
+	cli.Fatal(pluginRegistry.Inject(testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())
@@ -118,7 +118,7 @@ func main() {
 		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewTestCommand(cli.TestConfig{
-		Runner:     runner,
+		Runner:     testingRunner,
 		Scheme:     sc,
 		Hook:       hk,
 		SpecStore:  specStore,

@@ -11,7 +11,7 @@ type Mock struct {
 	mock.Mock
 }
 
-// NewMock creates a new Plugin mock and registers the testing interface with cleanup.
+// NewMock creates a new Plugin mock and registers the node interface with cleanup.
 func NewMock(t interface {
 	mock.TestingT
 	Cleanup(func())

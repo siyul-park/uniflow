@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -15,6 +16,6 @@ func Must[T any](val T, err error) T {
 // Fatal exits the program if err is not nil.
 func Fatal(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("%+v", err))
 	}
 }

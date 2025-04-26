@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/language"
-	"github.com/siyul-park/uniflow/pkg/language/text"
+	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/scheme"
+	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/stretchr/testify/require"
 
-	"github.com/siyul-park/uniflow/plugin/ctrl/pkg/node"
+	"github.com/siyul-park/uniflow/plugin/testing/pkg/node"
 )
 
 func TestPlugin_Load(t *testing.T) {
@@ -19,39 +19,22 @@ func TestPlugin_Load(t *testing.T) {
 
 	p := New()
 
+	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
-	lr := language.NewRegistry()
+	tr := testing2.NewRunner()
 
-	lr.SetDefault(text.Language)
-
-	err := lr.Register(text.Language, text.NewCompiler())
-	require.NoError(t, err)
-
+	p.SetHookBuilder(hb)
 	p.SetSchemeBuilder(sb)
-	p.SetLanguageRegistry(lr)
+	p.SetTestingRunner(tr)
 
-	err = p.Load(ctx)
+	err := p.Load(ctx)
 	require.NoError(t, err)
 
 	s, err := sb.Build()
 	require.NoError(t, err)
 
 	tests := []string{
-		node.KindBlock,
-		node.KindFor,
-		node.KindFork,
-		node.KindIf,
-		node.KindMerge,
-		node.KindNOP,
-		node.KindPipe,
-		node.KindRetry,
-		node.KindSleep,
-		node.KindSnippet,
-		node.KindSplit,
-		node.KindStep,
-		node.KindSwitch,
-		node.KindThrow,
-		node.KindTry,
+		node.KindTest,
 	}
 
 	for _, tt := range tests {
@@ -68,11 +51,13 @@ func TestPlugin_Unload(t *testing.T) {
 
 	p := New()
 
+	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
-	lr := language.NewRegistry()
+	tr := testing2.NewRunner()
 
+	p.SetHookBuilder(hb)
 	p.SetSchemeBuilder(sb)
-	p.SetLanguageRegistry(lr)
+	p.SetTestingRunner(tr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)

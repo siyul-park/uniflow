@@ -6,6 +6,7 @@ use (
     ./plugin/ctrl
     ./plugin/ecmascript
     ./plugin/net
+    ./plugin/testing
 )
 
 replace (

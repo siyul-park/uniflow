@@ -42,7 +42,6 @@ func TestPlugin_Load(t *testing.T) {
 			require.NotNil(t, s.Codec(tt))
 		})
 	}
-
 }
 
 func TestPlugin_Unload(t *testing.T) {
