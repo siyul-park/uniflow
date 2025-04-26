@@ -18,17 +18,17 @@ func TestPlugin_Load(t *testing.T) {
 
 	p := New()
 
-	r := language.NewRegistry()
-	p.SetRegistry(r)
+	lr := language.NewRegistry()
+	p.SetLanguageRegistry(lr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
 
-	c, err := r.Lookup(javascript.Language)
+	c, err := lr.Lookup(javascript.Language)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	c, err = r.Lookup(typescript.Language)
+	c, err = lr.Lookup(typescript.Language)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 }
@@ -39,8 +39,8 @@ func TestPlugin_Unload(t *testing.T) {
 
 	p := New()
 
-	r := language.NewRegistry()
-	p.SetRegistry(r)
+	lr := language.NewRegistry()
+	p.SetLanguageRegistry(lr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)

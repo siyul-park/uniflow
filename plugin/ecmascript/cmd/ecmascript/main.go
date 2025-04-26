@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/plugin"
 
@@ -13,8 +14,8 @@ import (
 
 // Plugin implements a plugin that registers ECMAScript language compilers (JavaScript and TypeScript).
 type Plugin struct {
-	registry *language.Registry
-	mu       sync.Mutex
+	languageRegistry *language.Registry
+	mu               sync.Mutex
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
@@ -24,12 +25,12 @@ func New() *Plugin {
 	return &Plugin{}
 }
 
-// SetRegistry sets the language registry to be used by the plugin.
-func (p *Plugin) SetRegistry(registry *language.Registry) {
+// SetLanguageRegistry sets the language registry to be used by the plugin.
+func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.registry = registry
+	p.languageRegistry = registry
 }
 
 // Load registers the JavaScript and TypeScript compilers with the language registry.
@@ -37,10 +38,14 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if err := p.registry.Register(javascript.Language, javascript.NewCompiler()); err != nil {
+	if p.languageRegistry == nil {
+		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
+	}
+
+	if err := p.languageRegistry.Register(javascript.Language, javascript.NewCompiler()); err != nil {
 		return err
 	}
-	return p.registry.Register(typescript.Language, typescript.NewCompiler())
+	return p.languageRegistry.Register(typescript.Language, typescript.NewCompiler())
 }
 
 // Unload performs cleanup when the plugin is unloaded (currently no-op).

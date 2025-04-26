@@ -20,9 +20,9 @@ type Config struct {
 
 // Plugin provides a CEL plugin that registers a CEL compiler with optional extensions.
 type Plugin struct {
-	registry   *language.Registry
-	extensions []string
-	mu         sync.Mutex
+	languageRegistry *language.Registry
+	extensions       []string
+	mu               sync.Mutex
 }
 
 var ErrUnsupportedExtension = errors.New("unsupported extension requested")
@@ -44,12 +44,12 @@ func New(config Config) *Plugin {
 	return &Plugin{extensions: config.Extensions}
 }
 
-// SetRegistry sets the language registry that will be used by the plugin.
-func (p *Plugin) SetRegistry(registry *language.Registry) {
+// SetLanguageRegistry sets the language registry that will be used by the plugin.
+func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.registry = registry
+	p.languageRegistry = registry
 }
 
 // Load registers the CEL compiler with the configured extensions in the language registry.
@@ -57,7 +57,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.registry == nil {
+	if p.languageRegistry == nil {
 		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
 	}
 
@@ -70,7 +70,7 @@ func (p *Plugin) Load(_ context.Context) error {
 		opts = append(opts, opt)
 	}
 
-	return p.registry.Register(cel2.Language, cel2.NewCompiler(opts...))
+	return p.languageRegistry.Register(cel2.Language, cel2.NewCompiler(opts...))
 }
 
 // Unload cleans up resources when the plugin is unloaded (currently a no-op).

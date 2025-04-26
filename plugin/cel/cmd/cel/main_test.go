@@ -17,13 +17,13 @@ func TestPlugin_Load(t *testing.T) {
 
 	p := New(Config{})
 
-	r := language.NewRegistry()
-	p.SetRegistry(r)
+	lr := language.NewRegistry()
+	p.SetLanguageRegistry(lr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
 
-	c, err := r.Lookup(cel.Language)
+	c, err := lr.Lookup(cel.Language)
 	require.NoError(t, err)
 	require.NotNil(t, c)
 }
@@ -34,8 +34,8 @@ func TestPlugin_Unload(t *testing.T) {
 
 	p := New(Config{})
 
-	r := language.NewRegistry()
-	p.SetRegistry(r)
+	lr := language.NewRegistry()
+	p.SetLanguageRegistry(lr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
