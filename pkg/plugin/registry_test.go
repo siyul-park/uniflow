@@ -2,9 +2,10 @@ package plugin
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegistry_Register(t *testing.T) {

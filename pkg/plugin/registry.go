@@ -3,6 +3,8 @@ package plugin
 import (
 	"context"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 // Registry manages a list of plugins and controls their lifecycle.
@@ -10,6 +12,8 @@ type Registry struct {
 	proxies []*Proxy
 	mu      sync.RWMutex
 }
+
+var ErrConflict = errors.New("plugin conflict occurred")
 
 var _ Plugin = (*Registry)(nil)
 
@@ -19,11 +23,16 @@ func NewRegistry() *Registry {
 }
 
 // Register adds a plugin to the registry.
-func (r *Registry) Register(p Plugin) error {
+func (r *Registry) Register(plugin Plugin) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.proxies = append(r.proxies, NewProxy(p))
+	for _, p := range r.proxies {
+		if p.Unwrap() == plugin {
+			return errors.WithStack(ErrConflict)
+		}
+	}
+	r.proxies = append(r.proxies, NewProxy(plugin))
 	return nil
 }
 

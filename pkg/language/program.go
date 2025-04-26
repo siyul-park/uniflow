@@ -11,10 +11,11 @@ type Program interface {
 	Run(context.Context, ...any) (any, error)
 }
 
-// RunFunc is a function type that implements the Program interface.
-type RunFunc func(context.Context, ...any) (any, error)
+type program struct {
+	fn func(context.Context, ...any) (any, error)
+}
 
-var _ Program = RunFunc(nil)
+var _ Program = (*program)(nil)
 
 // Timeout returns a Program that runs the given program with a specified timeout.
 func Timeout(program Program, timeout time.Duration) Program {
@@ -66,7 +67,11 @@ func TriFunction[T any, U any, V any, R any](program Program) func(context.Conte
 	}
 }
 
-// Run executes the program with the provided environment using the RunFunc.
-func (f RunFunc) Run(ctx context.Context, args ...any) (any, error) {
-	return f(ctx, args...)
+// RunFunc creates a new Program implementation using the provided function.
+func RunFunc(fn func(context.Context, ...any) (any, error)) Program {
+	return &program{fn: fn}
+}
+
+func (p *program) Run(ctx context.Context, args ...any) (any, error) {
+	return p.fn(ctx, args...)
 }
