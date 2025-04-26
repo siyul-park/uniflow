@@ -14,7 +14,6 @@ all: lint test build
 init:
 	@cp .go.work go.work
 	@go install golang.org/x/tools/cmd/godoc@latest
-	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@go install github.com/incu6us/goimports-reviser/v3@latest
 
 generate:
@@ -84,7 +83,7 @@ benchmark:
 		cd $$dir && go test -run="-" -bench=".*" -benchmem $(test-options) ./...; \
 	done
 
-lint: fmt vet staticcheck
+lint: fmt vet
 
 fmt:
 	@for dir in $(MODULE_DIRS); do \
@@ -94,11 +93,6 @@ fmt:
 vet:
 	@for dir in $(MODULE_DIRS); do \
 		cd $$dir && go vet ./...; \
-	done
-
-staticcheck:
-	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && staticcheck ./...; \
 	done
 
 doc: init

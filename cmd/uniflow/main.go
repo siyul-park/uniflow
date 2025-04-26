@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/pkg/plugin"
 	"net/url"
 	"os/signal"
 	"syscall"
@@ -12,6 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/internal/cli"
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/plugin"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/testing"

@@ -1,12 +1,13 @@
 package plugin
 
 import (
-	"github.com/rogpeppe/go-internal/testenv"
-	"github.com/stretchr/testify/require"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/rogpeppe/go-internal/testenv"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOpen(t *testing.T) {

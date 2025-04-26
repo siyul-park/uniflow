@@ -3,10 +3,11 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 	"plugin"
 	"reflect"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 )
 
 // Plugin defines the interface that dynamic plugins must implement.
