@@ -73,8 +73,8 @@ func main() {
 	cli.Fatal(pluginRegistry.Inject(schemeBuilder, hookBuilder, driverRegistry, runner))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
-	scheme := cli.Must(schemeBuilder.Build())
-	hook := cli.Must(hookBuilder.Build())
+	sc := cli.Must(schemeBuilder.Build())
+	hk := cli.Must(hookBuilder.Build())
 
 	dsn := cli.Must(url.Parse(k.String(envDatabaseURL)))
 	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
@@ -100,16 +100,16 @@ func main() {
 		FS:    fs,
 	})
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
-		Scheme:     scheme,
-		Hook:       hook,
+		Scheme:     sc,
+		Hook:       hk,
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 		FS:         fs,
 	}))
 	cmd.AddCommand(cli.NewTestCommand(cli.TestConfig{
 		Runner:     runner,
-		Scheme:     scheme,
-		Hook:       hook,
+		Scheme:     sc,
+		Hook:       hk,
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 		FS:         fs,
