@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/siyul-park/uniflow/pkg/language"
+	"github.com/siyul-park/uniflow/pkg/language/json"
+	"github.com/siyul-park/uniflow/pkg/language/text"
+	"github.com/siyul-park/uniflow/pkg/language/yaml"
 	"net/url"
 	"os/signal"
 	"syscall"
@@ -63,6 +67,12 @@ func main() {
 
 	cli.Fatal(driverRegistry.Register("memory", driver.New()))
 
+	languageRegistry := language.NewRegistry()
+
+	cli.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
+	cli.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))
+	cli.Fatal(languageRegistry.Register(yaml.Language, yaml.NewCompiler()))
+
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
@@ -70,7 +80,7 @@ func main() {
 		p := cli.Must(plugin.Open(cfg.String(keyPath), cfg.Get(keyManifest)))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(schemeBuilder, hookBuilder, driverRegistry, runner))
+	cli.Fatal(pluginRegistry.Inject(runner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())
