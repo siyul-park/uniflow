@@ -88,9 +88,8 @@ func (w *Writer) Write(value any) error {
 		if diff := scores[y] - scores[x]; math.Abs(diff) > 0.1 {
 			if diff > 0 {
 				return 1
-			} else {
-				return -1
 			}
+			return -1
 		}
 		return strings.Compare(x, y)
 	})

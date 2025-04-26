@@ -110,11 +110,11 @@ func NewCompiler(options ...api.TransformOptions) language.Compiler {
 				}
 			}()
 
-			if result, err := run(vm.ToValue(ctx), values...); err != nil {
+			result, err := run(vm.ToValue(ctx), values...)
+			if err != nil {
 				return nil, err
-			} else {
-				return result.Export(), nil
 			}
+			return result.Export(), nil
 		}), nil
 	})
 }
