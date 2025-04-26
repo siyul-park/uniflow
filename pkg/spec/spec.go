@@ -65,7 +65,7 @@ type Meta struct {
 	Ports map[string][]Port `json:"ports,omitempty" yaml:"ports,omitempty"`
 }
 
-// Port represents a network port or connection on a node.
+// Port represents a node port or connection on a node.
 type Port struct {
 	// ID is the unique identifier of the port.
 	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty"`
