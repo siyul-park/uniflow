@@ -80,7 +80,7 @@ func newShortcutDecoder() encoding.DecodeCompiler[Value] {
 			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				s := reflect.ValueOf(source)
 				t := reflect.NewAt(typ.Elem(), target).Elem()
-				if s.Type().ConvertibleTo(typ.Elem()) {
+				if s.IsValid() && s.Type().ConvertibleTo(typ.Elem()) {
 					t.Set(s)
 					return nil
 				}

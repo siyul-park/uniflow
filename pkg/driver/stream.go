@@ -9,34 +9,34 @@ import (
 	"github.com/siyul-park/uniflow/pkg/types"
 )
 
+// Stream defines an interface for consuming event streams.
 type Stream interface {
 	Next(ctx context.Context) bool
 	Decode(val any) error
 	Close(ctx context.Context) error
 }
 
+// Event represents a change event within the store.
 type Event struct {
 	ID uuid.UUID `json:"id" yaml:"id" validate:"required"`
 	OP string    `json:"op" yaml:"op" validate:"required"`
 }
 
 type stream struct {
-	filter types.Map
-	doc    types.Map
-	in     chan types.Map
-	out    chan types.Map
-	done   chan struct{}
-	mu     sync.Mutex
+	doc  types.Map
+	in   chan types.Map
+	out  chan types.Map
+	done chan struct{}
+	mu   sync.Mutex
 }
 
 var _ Stream = (*stream)(nil)
 
-func newStream(filter types.Map) *stream {
+func newStream() *stream {
 	c := &stream{
-		filter: filter,
-		in:     make(chan types.Map),
-		out:    make(chan types.Map),
-		done:   make(chan struct{}),
+		in:   make(chan types.Map),
+		out:  make(chan types.Map),
+		done: make(chan struct{}),
 	}
 
 	go func() {
@@ -74,13 +74,6 @@ func newStream(filter types.Map) *stream {
 	}()
 
 	return c
-}
-
-func (s *stream) Match(doc types.Map) (bool, error) {
-	if s.filter == nil {
-		return true, nil
-	}
-	return match(doc, s.filter)
 }
 
 func (s *stream) Emit(doc types.Map) bool {

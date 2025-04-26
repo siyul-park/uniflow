@@ -9,6 +9,7 @@ import (
 
 const Language = "json"
 
+// NewCompiler returns a compiler that parses JSON code.
 func NewCompiler() language.Compiler {
 	return language.CompileFunc(func(code string) (language.Program, error) {
 		var data any

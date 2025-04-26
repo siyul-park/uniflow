@@ -10,6 +10,7 @@ import (
 
 const Language = "yaml"
 
+// NewCompiler returns a compiler that processes YAML code.
 func NewCompiler() language.Compiler {
 	return language.CompileFunc(func(code string) (language.Program, error) {
 		var data any
