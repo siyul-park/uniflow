@@ -20,8 +20,10 @@ type watcher struct {
 	onProcess func(*process.Process)
 }
 
-var _ Watcher = (Watchers)(nil)
-var _ Watcher = (*watcher)(nil)
+var (
+	_ Watcher = (Watchers)(nil)
+	_ Watcher = (*watcher)(nil)
+)
 
 // NewFrameWatcher creates a Watcher for handling Frame events.
 func NewFrameWatcher(handle func(*Frame)) Watcher {
@@ -35,15 +37,15 @@ func NewProcessWatcher(handle func(*process.Process)) Watcher {
 
 // OnFrame triggers the OnFrame method for each Watcher in the slice.
 func (w Watchers) OnFrame(frame *Frame) {
-	for _, watcher := range w {
-		watcher.OnFrame(frame)
+	for _, wc := range w {
+		wc.OnFrame(frame)
 	}
 }
 
 // OnProcess triggers the OnProcess method for each Watcher in the slice.
 func (w Watchers) OnProcess(proc *process.Process) {
-	for _, watcher := range w {
-		watcher.OnProcess(proc)
+	for _, wc := range w {
+		wc.OnProcess(proc)
 	}
 }
 

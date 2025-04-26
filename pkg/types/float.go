@@ -8,8 +8,9 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"golang.org/x/exp/constraints"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Float is an interface representing a floating-point number.
@@ -28,12 +29,16 @@ type Float64 struct {
 	value float64
 }
 
-var _ Float = Float32{}
-var _ Float = Float64{}
-var _ json.Marshaler = Float32{}
-var _ json.Marshaler = Float64{}
-var _ json.Unmarshaler = (*Float32)(nil)
-var _ json.Unmarshaler = (*Float64)(nil)
+var (
+	_ Float = Float32{}
+	_ Float = Float64{}
+
+	_ json.Marshaler = Float32{}
+	_ json.Marshaler = Float64{}
+
+	_ json.Unmarshaler = (*Float32)(nil)
+	_ json.Unmarshaler = (*Float64)(nil)
+)
 
 // NewFloat32 returns a new Float32 instance.
 func NewFloat32(value float32) Float32 {

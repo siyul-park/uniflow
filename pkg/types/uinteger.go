@@ -8,8 +8,9 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"golang.org/x/exp/constraints"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Uinteger is an interface representing an unsigned integer.
@@ -43,21 +44,25 @@ type Uint64 struct {
 	value uint64
 }
 
-var _ Uinteger = Uint{}
-var _ Uinteger = Uint8{}
-var _ Uinteger = Uint16{}
-var _ Uinteger = Uint32{}
-var _ Uinteger = Uint64{}
-var _ json.Marshaler = Uint{}
-var _ json.Marshaler = Uint8{}
-var _ json.Marshaler = Uint16{}
-var _ json.Marshaler = Uint32{}
-var _ json.Marshaler = Uint64{}
-var _ json.Unmarshaler = (*Uint)(nil)
-var _ json.Unmarshaler = (*Uint8)(nil)
-var _ json.Unmarshaler = (*Uint16)(nil)
-var _ json.Unmarshaler = (*Uint32)(nil)
-var _ json.Unmarshaler = (*Uint64)(nil)
+var (
+	_ Uinteger = Uint{}
+	_ Uinteger = Uint8{}
+	_ Uinteger = Uint16{}
+	_ Uinteger = Uint32{}
+	_ Uinteger = Uint64{}
+
+	_ json.Marshaler = Uint{}
+	_ json.Marshaler = Uint8{}
+	_ json.Marshaler = Uint16{}
+	_ json.Marshaler = Uint32{}
+	_ json.Marshaler = Uint64{}
+
+	_ json.Unmarshaler = (*Uint)(nil)
+	_ json.Unmarshaler = (*Uint8)(nil)
+	_ json.Unmarshaler = (*Uint16)(nil)
+	_ json.Unmarshaler = (*Uint32)(nil)
+	_ json.Unmarshaler = (*Uint64)(nil)
+)
 
 // NewUint returns a new Uint instance.
 func NewUint(value uint) Uint {

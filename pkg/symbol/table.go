@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"

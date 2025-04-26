@@ -8,8 +8,9 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"golang.org/x/exp/constraints"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Integer is an interface representing an integer.
@@ -43,21 +44,25 @@ type Int64 struct {
 	value int64
 }
 
-var _ Integer = Int{}
-var _ Integer = Int8{}
-var _ Integer = Int16{}
-var _ Integer = Int32{}
-var _ Integer = Int64{}
-var _ json.Marshaler = Int{}
-var _ json.Marshaler = Int8{}
-var _ json.Marshaler = Int16{}
-var _ json.Marshaler = Int32{}
-var _ json.Marshaler = Int64{}
-var _ json.Unmarshaler = (*Int)(nil)
-var _ json.Unmarshaler = (*Int8)(nil)
-var _ json.Unmarshaler = (*Int16)(nil)
-var _ json.Unmarshaler = (*Int32)(nil)
-var _ json.Unmarshaler = (*Int64)(nil)
+var (
+	_ Integer = Int{}
+	_ Integer = Int8{}
+	_ Integer = Int16{}
+	_ Integer = Int32{}
+	_ Integer = Int64{}
+
+	_ json.Marshaler = Int{}
+	_ json.Marshaler = Int8{}
+	_ json.Marshaler = Int16{}
+	_ json.Marshaler = Int32{}
+	_ json.Marshaler = Int64{}
+
+	_ json.Unmarshaler = (*Int)(nil)
+	_ json.Unmarshaler = (*Int8)(nil)
+	_ json.Unmarshaler = (*Int16)(nil)
+	_ json.Unmarshaler = (*Int32)(nil)
+	_ json.Unmarshaler = (*Int64)(nil)
+)
 
 // NewInt returns a new Int instance.
 func NewInt(value int) Int {

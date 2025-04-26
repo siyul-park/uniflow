@@ -3,10 +3,11 @@ package hook
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHook_LoadHook(t *testing.T) {

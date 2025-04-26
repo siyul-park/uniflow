@@ -13,8 +13,10 @@ type storeHook[T any] struct {
 // StoreHooks is a slice of StoreHook interfaces, processed in reverse order.
 type StoreHooks[T any] []StoreHook[T]
 
-var _ StoreHook[any] = (StoreHooks[any])(nil)
-var _ StoreHook[any] = (*storeHook[any])(nil)
+var (
+	_ StoreHook[any] = (StoreHooks[any])(nil)
+	_ StoreHook[any] = (*storeHook[any])(nil)
+)
 
 // StoreFunc creates a new StoreHook from the provided function.
 func StoreFunc[T any](store func(val T)) StoreHook[T] {

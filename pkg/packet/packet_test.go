@@ -3,8 +3,9 @@ package packet
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 func TestNew(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -18,8 +19,10 @@ type Symbol struct {
 	mu   sync.RWMutex
 }
 
-var _ node.Node = (*Symbol)(nil)
-var _ node.Proxy = (*Symbol)(nil)
+var (
+	_ node.Node  = (*Symbol)(nil)
+	_ node.Proxy = (*Symbol)(nil)
+)
 
 // ID returns the unique identifier of the Symbol.
 func (s *Symbol) ID() uuid.UUID {

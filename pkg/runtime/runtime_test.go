@@ -7,15 +7,16 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRuntime_Load(t *testing.T) {
@@ -30,8 +31,8 @@ func TestRuntime_Load(t *testing.T) {
 		return node.NewOneToOneNode(nil), nil
 	}))
 
-	specStore := store.New()
-	valueStore := store.New()
+	specStore := driver.NewStore()
+	valueStore := driver.NewStore()
 
 	r := New(Config{
 		Scheme:     s,
@@ -65,8 +66,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := store.New()
-		valueStore := store.New()
+		specStore := driver.NewStore()
+		valueStore := driver.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)
@@ -132,8 +133,8 @@ func TestRuntime_Reconcile(t *testing.T) {
 			return node.NewOneToOneNode(nil), nil
 		}))
 
-		specStore := store.New()
-		valueStore := store.New()
+		specStore := driver.NewStore()
+		valueStore := driver.NewStore()
 
 		h := hook.New()
 		symbols := make(chan *symbol.Symbol)

@@ -26,9 +26,11 @@ type reporter struct {
 	report func(ctx context.Context, result *Result) error
 }
 
-var _ Reporter = (Reporters)(nil)
-var _ Reporter = (*ErrorReporter)(nil)
-var _ Reporter = (*reporter)(nil)
+var (
+	_ Reporter = (Reporters)(nil)
+	_ Reporter = (*ErrorReporter)(nil)
+	_ Reporter = (*reporter)(nil)
+)
 
 // ReportFunc is a function type that implements the Reporter interface.
 func ReportFunc(fn func(ctx context.Context, result *Result) error) Reporter {

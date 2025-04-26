@@ -2,6 +2,7 @@ package value
 
 import (
 	"github.com/gofrs/uuid"
+
 	"github.com/siyul-park/uniflow/pkg/meta"
 )
 

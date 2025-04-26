@@ -12,7 +12,7 @@ func TestHooksBuilder_Register(t *testing.T) {
 	b.Register(RegisterFunc(func(_ *Hook) error {
 		return nil
 	}))
-	require.Len(t, b, 1)
+	require.Equal(t, 1, b.Len())
 }
 
 func TestHooksBuilder_AddToScheme(t *testing.T) {

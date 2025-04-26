@@ -6,7 +6,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func newJSONEncoder(encoder *encoding.EncodeAssembler[any, Value]) encoding.EncodeCompiler[any, Value] {

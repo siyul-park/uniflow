@@ -10,7 +10,9 @@
 
 ## 📝 Overview
 
-**Uniflow** is designed to manage a wide range of tasks, from short-term jobs to long-term processes. It supports declarative workflow definitions and allows for dynamic changes to data flows. With [built-in extensions](./ext/README.md), you can implement complex workflows and add or remove nodes to expand its functionality as needed.
+**Uniflow** is designed to manage a wide range of tasks, from short-term jobs to long-term processes. It supports
+declarative workflow definitions and allows for dynamic changes to data flows. With [Plugin](./plugin/README.md), you
+can implement complex workflows and add or remove nodes to expand its functionality as needed.
 
 This system empowers you to deliver customized experiences through your service and continuously enhance its capabilities.
 
@@ -32,14 +34,50 @@ git clone https://github.com/siyul-park/uniflow
 cd uniflow
 
 make init
-make build
+make build-all
 ```
 
 The executable will be located in the `dist` directory after building.
 
+### ⚙️ Configuration
+
+Environment configuration is managed through environment variables or the `.uniflow.toml` file. The following shows how
+to register and configure the default plugins provided:
+
+```toml
+[database]
+url = "memory://"
+
+[collection]
+specs = "specs"
+values = "values"
+
+[language]
+default = "cel"
+
+[[plugin]]
+path = "./dist/cel.so"
+config.extensions = ["encoders", "math", "lists", "sets", "strings"]
+
+[[plugin]]
+path = "./dist/ecmascript.so"
+
+[[plugin]]
+path = "./dist/mongodb.so"
+
+[[plugin]]
+path = "./dist/ctrl.so"
+
+[[plugin]]
+path = "./dist/net.so"
+
+[[plugin]]
+path = "./dist/testing.so"
+```
+
 ### ⚡ Run an Example
 
-Try a basic HTTP request handler using [ping.yaml](./examples/ping.yaml):
+Try a basic HTTP request handler using [ping.yaml](examples/ping.yaml):
 
 ```yaml
 - kind: listener
@@ -84,20 +122,9 @@ curl localhost:8000/ping
 pong#
 ```
 
-## ⚙️ Configuration
-
-Adjust settings through `.uniflow.toml` or environment variables.
-
-| TOML Key            | Environment Variable Key | Example                  |
-|---------------------|--------------------------|--------------------------|
-| `database.url`      | `DATABASE_URL`           | `mem://` or `mongodb://` |
-| `database.name`     | `DATABASE_NAME`          | -                        |
-| `collection.specs`  | `COLLECTION_SPECS`       | `specs`                  |
-| `collection.values` | `COLLECTION_VALUES`      | `values`                 |
-
 ## 📊 Benchmark
 
-The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](./examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
+The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -148,8 +175,6 @@ Percentage of the requests served within a certain time (ms)
 - [Flowchart](./docs/flowchart.md): Detailed explanation of workflow compilation and runtime processes.
 - [Debugging](./docs/debugging.md): Debug workflows, set breakpoints, and start sessions.
 - [User Extensions](./docs/user_extensions.md): Add features and integrate external services.
-- [Kubernetes Operator](https://github.com/siyul-park/uniflow-operator): Detects workflow changes and generates CRD to
-  provide serverless services.
 
 ## 🌐 Community and Support
 

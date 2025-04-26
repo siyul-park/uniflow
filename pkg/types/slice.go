@@ -9,7 +9,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Slice represents a slice of Objects.
@@ -21,9 +22,11 @@ type _slice struct {
 	mu    sync.RWMutex
 }
 
-var _ Value = (Slice)(nil)
-var _ json.Marshaler = (Slice)(nil)
-var _ json.Unmarshaler = (Slice)(nil)
+var (
+	_ json.Marshaler   = (Slice)(nil)
+	_ json.Unmarshaler = (Slice)(nil)
+	_ Value            = (Slice)(nil)
+)
 
 // NewSlice returns a new Slice.
 func NewSlice(elements ...Value) Slice {

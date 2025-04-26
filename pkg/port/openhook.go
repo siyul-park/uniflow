@@ -16,6 +16,7 @@ type openHook struct {
 }
 
 var _ OpenHook = (OpenHooks)(nil)
+
 var _ OpenHook = (*openHook)(nil)
 
 // OpenHookFunc creates a new Hook from the provided function.

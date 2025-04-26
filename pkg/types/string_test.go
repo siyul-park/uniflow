@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/encoding"
-
 	"github.com/go-faker/faker/v4"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func TestString_Len(t *testing.T) {

@@ -3,8 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func TestBoolean_NewBoolean(t *testing.T) {

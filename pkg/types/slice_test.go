@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func TestNewSlice(t *testing.T) {

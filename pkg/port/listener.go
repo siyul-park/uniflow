@@ -19,8 +19,10 @@ type listener struct {
 	accept func(proc *process.Process)
 }
 
-var _ Listener = (Listeners)(nil)
-var _ Listener = (*listener)(nil)
+var (
+	_ Listener = (Listeners)(nil)
+	_ Listener = (*listener)(nil)
+)
 
 // ListenFunc creates a new Listener from the provided function.
 func ListenFunc(accept func(proc *process.Process)) Listener {

@@ -2,40 +2,45 @@
 
 CURRENT_DIR = $(shell realpath .)
 MODULE_DIRS = $(shell find $(CURRENT_DIR) -name go.mod -exec dirname {} \;)
+PLUGIN_DIRS = $(shell find $(CURRENT_DIR)/plugin -name go.mod -exec dirname {} \;)
 
 DOCKER_IMAGE = $(shell basename -s .git $(shell git config --get remote.origin.url))
 DOCKER_TAG = $(shell git tag --sort=-v:refname | grep -v '/' | head -n 1 || echo "latest")
 DOCKERFILE = deployments/Dockerfile
 
-CGO_ENABLED ?= 1
-
-.PHONY: init generate build clean tidy update sync check test coverage benchmark lint fmt vet doc docker-build
+.PHONY: init generate build clean tidy update check test coverage benchmark lint fmt vet doc docker-build
 all: lint test build
 
 init:
 	@cp .go.work go.work
-	@$(MAKE) install-tools
-	@$(MAKE) install-modules
-
-install-tools:
+	@go work sync
 	@go install golang.org/x/tools/cmd/godoc@latest
-	@go install golang.org/x/tools/cmd/goimports@latest
-	@go install honnef.co/go/tools/cmd/staticcheck@latest
-
-install-modules:
-	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && go install -v ./...; \
-	done
+	@go install github.com/incu6us/goimports-reviser/v3@latest
 
 generate:
 	@for dir in $(MODULE_DIRS); do \
 		cd $$dir && go generate ./...; \
 	done
 
+build-all: build build-plugin
+
 build:
 	@go clean -cache
 	@mkdir -p dist
-	@cd cmd && CGO_ENABLED=$(CGO_ENABLED) go build -ldflags "-s -w" -o ../dist ./...
+	@cd cmd && go build -ldflags "-s -w" -o $(CURRENT_DIR)/dist ./...
+
+build-plugin:
+	@mkdir -p dist
+	@for dir in $(PLUGIN_DIRS); do \
+  		cd $$dir && cd cmd && go build -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist ./...; \
+	done
+
+build-docker:
+	docker build --no-cache \
+		-t $(if $(DOCKER_DOMAIN),$(DOCKER_DOMAIN)/)$(DOCKER_IMAGE):$(DOCKER_TAG) \
+		-f $(DOCKERFILE) \
+		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
+		$(CURRENT_DIR)
 
 clean:
 	@go clean -cache
@@ -61,9 +66,6 @@ clean-cache:
 		cd $$dir && go clean -modcache; \
 	done
 
-sync:
-	@go work sync
-
 check: lint test staticcheck
 
 test:
@@ -82,11 +84,11 @@ benchmark:
 		cd $$dir && go test -run="-" -bench=".*" -benchmem $(test-options) ./...; \
 	done
 
-lint: fmt vet staticcheck
+lint: fmt vet
 
 fmt:
 	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && goimports -w .; \
+		cd $$dir && goimports-reviser -rm-unused -format ./...; \
 	done
 
 vet:
@@ -94,17 +96,5 @@ vet:
 		cd $$dir && go vet ./...; \
 	done
 
-staticcheck:
-	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && staticcheck ./...; \
-	done
-
 doc: init
 	@godoc -http=:6060
-
-docker-build:
-	docker build --no-cache \
-		-t $(if $(DOCKER_DOMAIN),$(DOCKER_DOMAIN)/)$(DOCKER_IMAGE):$(DOCKER_TAG) \
-		-f $(DOCKERFILE) \
-		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
-		$(CURRENT_DIR)

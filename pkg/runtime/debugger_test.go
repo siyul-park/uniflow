@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/require"
+
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -15,7 +17,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDebugger_AddBreakpoint(t *testing.T) {

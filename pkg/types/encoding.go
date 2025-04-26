@@ -5,13 +5,12 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 var (
-	// Encoder is a global encoding assembler used to encode values into the custom Value type.
 	Encoder = encoding.NewEncodeAssembler[any, Value]()
-	// Decoder is a global decoding assembler used to decode values from the custom Value type.
 	Decoder = encoding.NewDecodeAssembler[Value, any]()
 )
 
@@ -81,7 +80,7 @@ func newShortcutDecoder() encoding.DecodeCompiler[Value] {
 			return encoding.DecodeFunc(func(source Value, target unsafe.Pointer) error {
 				s := reflect.ValueOf(source)
 				t := reflect.NewAt(typ.Elem(), target).Elem()
-				if s.Type().ConvertibleTo(typ.Elem()) {
+				if s.IsValid() && s.Type().ConvertibleTo(typ.Elem()) {
 					t.Set(s)
 					return nil
 				}

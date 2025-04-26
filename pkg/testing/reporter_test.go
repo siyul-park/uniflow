@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/require"
 )
 

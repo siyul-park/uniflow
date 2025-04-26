@@ -5,9 +5,10 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/require"
+
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/stretchr/testify/require"
 )
 
 func TestScheme_Kinds(t *testing.T) {

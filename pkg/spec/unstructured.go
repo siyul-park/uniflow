@@ -3,8 +3,9 @@ package spec
 import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
-	"github.com/siyul-park/uniflow/pkg/template"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/internal/template"
 )
 
 // Unstructured implements the Spec interface with a flexible key-value structure.

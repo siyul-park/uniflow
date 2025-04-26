@@ -19,8 +19,10 @@ type loadHook struct {
 	fn func(*Symbol) error
 }
 
-var _ LoadHook = (LoadHooks)(nil)
-var _ LoadHook = (*loadHook)(nil)
+var (
+	_ LoadHook = (LoadHooks)(nil)
+	_ LoadHook = (*loadHook)(nil)
+)
 
 // LoadFunc wraps a function as a LoadHook.
 func LoadFunc(fn func(*Symbol) error) LoadHook {

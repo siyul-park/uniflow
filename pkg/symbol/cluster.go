@@ -19,9 +19,11 @@ type Cluster struct {
 	mu        sync.RWMutex
 }
 
-var _ node.Node = (*Cluster)(nil)
-var _ LoadListener = (*Cluster)(nil)
-var _ UnloadListener = (*Cluster)(nil)
+var (
+	_ node.Node      = (*Cluster)(nil)
+	_ LoadListener   = (*Cluster)(nil)
+	_ UnloadListener = (*Cluster)(nil)
+)
 
 // NewCluster creates a new Cluster with the provided symbol table.
 func NewCluster(symbols []*Symbol) *Cluster {

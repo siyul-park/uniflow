@@ -19,8 +19,10 @@ type unloadHook struct {
 	fn func(*Symbol) error
 }
 
-var _ UnloadHook = (UnloadHooks)(nil)
-var _ UnloadHook = (*unloadHook)(nil)
+var (
+	_ UnloadHook = (UnloadHooks)(nil)
+	_ UnloadHook = (*unloadHook)(nil)
+)
 
 // UnloadFunc wraps a function as an UnloadHook.
 func UnloadFunc(fn func(*Symbol) error) UnloadHook {

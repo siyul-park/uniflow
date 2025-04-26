@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func TestTime_Encode(t *testing.T) {

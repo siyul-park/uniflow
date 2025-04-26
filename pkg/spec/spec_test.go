@@ -5,8 +5,9 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/value"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/pkg/value"
 )
 
 func TestAs(t *testing.T) {

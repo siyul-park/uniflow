@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/siyul-park/uniflow/pkg/meta"
-
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/pkg/meta"
 )
 
 func TestValue_ID(t *testing.T) {

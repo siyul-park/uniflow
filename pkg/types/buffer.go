@@ -8,7 +8,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
+
+	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Buffer is a representation of a io.Reader value.
@@ -18,10 +19,12 @@ type _buffer struct {
 	value io.Reader
 }
 
-var _ Value = (Buffer)(nil)
-var _ io.Reader = (Buffer)(nil)
-var _ encoding.BinaryMarshaler = (Buffer)(nil)
-var _ encoding.BinaryUnmarshaler = (Buffer)(nil)
+var (
+	_ Value                      = (Buffer)(nil)
+	_ io.Reader                  = (Buffer)(nil)
+	_ encoding.BinaryMarshaler   = (Buffer)(nil)
+	_ encoding.BinaryUnmarshaler = (Buffer)(nil)
+)
 
 // NewBuffer creates a new Buffer instance.
 func NewBuffer(value io.Reader) Buffer {

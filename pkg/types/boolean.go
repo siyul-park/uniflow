@@ -8,7 +8,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Boolean is a representation of a boolean value.
@@ -22,9 +23,11 @@ var (
 	False = Boolean{value: false}
 )
 
-var _ Value = Boolean{}
-var _ json.Marshaler = Boolean{}
-var _ json.Unmarshaler = (*Boolean)(nil)
+var (
+	_ Value            = Boolean{}
+	_ json.Marshaler   = Boolean{}
+	_ json.Unmarshaler = (*Boolean)(nil)
+)
 
 // NewBoolean returns the predefined True or False instance.
 func NewBoolean(value bool) Boolean {

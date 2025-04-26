@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/require"
+
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -12,7 +14,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAgent_Watch(t *testing.T) {

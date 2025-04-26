@@ -5,9 +5,10 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/internal/template"
 	"github.com/siyul-park/uniflow/pkg/meta"
-	"github.com/siyul-park/uniflow/pkg/template"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/siyul-park/uniflow/pkg/value"
 )
@@ -64,7 +65,7 @@ type Meta struct {
 	Ports map[string][]Port `json:"ports,omitempty" yaml:"ports,omitempty"`
 }
 
-// Port represents a network port or connection on a node.
+// Port represents a node port or connection on a node.
 type Port struct {
 	// ID is the unique identifier of the port.
 	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty"`
@@ -84,8 +85,10 @@ type Value struct {
 	Data any `json:"data" yaml:"data" validate:"required"`
 }
 
-var _ meta.Meta = (Spec)(nil)
-var _ Spec = (*Meta)(nil)
+var (
+	_ meta.Meta = (Spec)(nil)
+	_ Spec      = (*Meta)(nil)
+)
 
 // As serializes a source spec.Spec and deserializes it into a destination spec.Spec.
 func As(src, dest Spec) error {

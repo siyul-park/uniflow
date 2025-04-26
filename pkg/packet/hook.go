@@ -13,8 +13,10 @@ type hook struct {
 	handle func(*Packet)
 }
 
-var _ Hook = (Hooks)(nil)
-var _ Hook = (*hook)(nil)
+var (
+	_ Hook = (Hooks)(nil)
+	_ Hook = (*hook)(nil)
+)
 
 // HookFunc creates a new Hook using the provided function.
 func HookFunc(handle func(*Packet)) Hook {

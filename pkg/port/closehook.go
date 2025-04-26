@@ -13,8 +13,10 @@ type closeHook struct {
 	close func()
 }
 
-var _ CloseHook = (CloseHooks)(nil)
-var _ CloseHook = (*closeHook)(nil)
+var (
+	_ CloseHook = (CloseHooks)(nil)
+	_ CloseHook = (*closeHook)(nil)
+)
 
 // CloseHookFunc creates a new CloseHook from the provided function.
 func CloseHookFunc(fn func()) CloseHook {

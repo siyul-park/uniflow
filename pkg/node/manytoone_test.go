@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/stretchr/testify/require"
+
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewManyToOneNode(t *testing.T) {

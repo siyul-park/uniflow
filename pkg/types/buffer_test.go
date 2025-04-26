@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/gofrs/uuid"
-
-	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 func TestBuffer_Read(t *testing.T) {

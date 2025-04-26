@@ -7,15 +7,16 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/store"
 	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
-	"golang.org/x/sync/errgroup"
 )
 
 // Config defines configuration options for the Runtime.
@@ -24,8 +25,8 @@ type Config struct {
 	Environment map[string]string // Environment holds the variables for the loader.
 	Hook        *hook.Hook        // Hook is a collection of hook functions for managing symbols.
 	Scheme      *scheme.Scheme    // Scheme defines the scheme and behaviors for symbols.
-	SpecStore   store.Store       // SpecStore is responsible for persisting specifications.
-	ValueStore  store.Store       // ValueStore is responsible for persisting values.
+	SpecStore   driver.Store      // SpecStore is responsible for persisting specifications.
+	ValueStore  driver.Store      // ValueStore is responsible for persisting values.
 }
 
 // Runtime represents an environment for executing Workflows.
@@ -33,11 +34,11 @@ type Runtime struct {
 	namespace   string
 	environment map[string]string
 	scheme      *scheme.Scheme
-	specStore   store.Store
-	valueStore  store.Store
-	specStream  store.Stream
-	valueStream store.Stream
 	symbolTable *symbol.Table
+	specStore   driver.Store
+	valueStore  driver.Store
+	specStream  driver.Stream
+	valueStream driver.Stream
 	mu          sync.RWMutex
 }
 
@@ -53,10 +54,10 @@ func New(config Config) *Runtime {
 		config.Scheme = scheme.New()
 	}
 	if config.SpecStore == nil {
-		config.SpecStore = store.New()
+		config.SpecStore = driver.NewStore()
 	}
 	if config.ValueStore == nil {
-		config.ValueStore = store.New()
+		config.ValueStore = driver.NewStore()
 	}
 
 	config.Hook.AddLoadHook(symbol.LoadListenerHook(config.Hook))
@@ -71,9 +72,9 @@ func New(config Config) *Runtime {
 		namespace:   config.Namespace,
 		environment: config.Environment,
 		scheme:      config.Scheme,
+		symbolTable: symbolTable,
 		specStore:   config.SpecStore,
 		valueStore:  config.ValueStore,
-		symbolTable: symbolTable,
 	}
 }
 
@@ -159,7 +160,7 @@ func (r *Runtime) Load(ctx context.Context, filter any) error {
 			continue
 		}
 
-		local := store.New()
+		local := driver.NewStore()
 		if err := local.Insert(ctx, []any{sb.Spec}); err != nil {
 			errs = append(errs, err)
 			continue
@@ -240,7 +241,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 
 	g.Go(func() error {
 		for specStream.Next(ctx) {
-			var event store.Event
+			var event driver.Event
 			if err := specStream.Decode(&event); err != nil {
 				return err
 			}
@@ -252,7 +253,7 @@ func (r *Runtime) Reconcile(ctx context.Context) error {
 
 	g.Go(func() error {
 		for valueStream.Next(ctx) {
-			var event store.Event
+			var event driver.Event
 			if err := valueStream.Decode(&event); err != nil {
 				return err
 			}

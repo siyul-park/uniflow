@@ -12,7 +12,7 @@ func TestSchemeBuilder_Register(t *testing.T) {
 	b.Register(RegisterFunc(func(_ *Scheme) error {
 		return nil
 	}))
-	require.Len(t, b, 1)
+	require.Equal(t, 1, b.Len())
 }
 
 func TestSchemeBuilder_AddToScheme(t *testing.T) {

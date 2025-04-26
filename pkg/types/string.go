@@ -9,7 +9,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
+
+	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // String represents a string.
@@ -17,9 +18,11 @@ type String struct {
 	value string
 }
 
-var _ Value = String{}
-var _ encoding.TextMarshaler = String{}
-var _ encoding.TextUnmarshaler = (*String)(nil)
+var (
+	_ Value                    = String{}
+	_ encoding.TextMarshaler   = String{}
+	_ encoding.TextUnmarshaler = (*String)(nil)
+)
 
 // NewString creates a new String instance.
 func NewString(value string) String {
@@ -78,12 +81,12 @@ func (s String) Compare(other Value) int {
 	return compare(s.Kind(), KindOf(other))
 }
 
-// MarshalText implements the encoding.TextMarshaler interface.
+// MarshalText implements the encoding2.TextMarshaler interface.
 func (s String) MarshalText() ([]byte, error) {
 	return []byte(s.value), nil
 }
 
-// UnmarshalText implements the encoding.TextUnmarshaler interface.
+// UnmarshalText implements the encoding2.TextUnmarshaler interface.
 func (s *String) UnmarshalText(text []byte) error {
 	s.value = string(text)
 	return nil

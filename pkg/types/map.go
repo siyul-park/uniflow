@@ -12,7 +12,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
-	"github.com/siyul-park/uniflow/pkg/encoding"
+
+	"github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Map represents a key-value map with support for immutability and mutability.
@@ -73,14 +74,16 @@ type mapMeta struct {
 	inline    bool
 }
 
-const tagMap = "json"
+var (
+	_ Map = (*immutableMap)(nil)
+	_ Map = (*mutableMap)(nil)
 
-var _ Map = (*immutableMap)(nil)
-var _ Map = (*mutableMap)(nil)
-var _ json.Marshaler = (*immutableMap)(nil)
-var _ json.Marshaler = (*mutableMap)(nil)
-var _ json.Unmarshaler = (*immutableMap)(nil)
-var _ json.Unmarshaler = (*mutableMap)(nil)
+	_ json.Marshaler = (*immutableMap)(nil)
+	_ json.Marshaler = (*mutableMap)(nil)
+
+	_ json.Unmarshaler = (*immutableMap)(nil)
+	_ json.Unmarshaler = (*mutableMap)(nil)
+)
 
 // NewMap creates a new Map with key-value pairs.
 func NewMap(pairs ...Value) Map {
@@ -823,7 +826,7 @@ func newMapDecoder(decoder *encoding.DecodeAssembler[Value, any]) encoding.Decod
 
 func getMapMeta(f reflect.StructField) mapMeta {
 	key := strcase.ToSnake(f.Name)
-	tag := f.Tag.Get(tagMap)
+	tag := f.Tag.Get("json")
 
 	if tag != "" {
 		if tag == "-" {

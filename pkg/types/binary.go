@@ -10,16 +10,19 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
+
+	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Binary is a representation of a []byte.
 type Binary = *binary_
 
-var _ encoding.TextMarshaler = (Binary)(nil)
-var _ encoding.TextUnmarshaler = (Binary)(nil)
-var _ encoding.BinaryMarshaler = (Binary)(nil)
-var _ encoding.BinaryUnmarshaler = (Binary)(nil)
+var (
+	_ encoding.TextMarshaler     = (Binary)(nil)
+	_ encoding.TextUnmarshaler   = (Binary)(nil)
+	_ encoding.BinaryMarshaler   = (Binary)(nil)
+	_ encoding.BinaryUnmarshaler = (Binary)(nil)
+)
 
 type binary_ struct {
 	value []byte
@@ -101,12 +104,12 @@ func (b Binary) Compare(other Value) int {
 	return compare(b.Kind(), KindOf(other))
 }
 
-// MarshalText implements the encoding.TextMarshaler interface.
+// MarshalText implements the encoding2.TextMarshaler interface.
 func (b Binary) MarshalText() ([]byte, error) {
 	return []byte(b.String()), nil
 }
 
-// UnmarshalText implements the encoding.TextUnmarshaler interface.
+// UnmarshalText implements the encoding2.TextUnmarshaler interface.
 func (b Binary) UnmarshalText(text []byte) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -121,12 +124,12 @@ func (b Binary) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface.
+// MarshalBinary implements the encoding2.BinaryMarshaler interface.
 func (b Binary) MarshalBinary() ([]byte, error) {
 	return b.value, nil
 }
 
-// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+// UnmarshalBinary implements the encoding2.BinaryUnmarshaler interface.
 func (b Binary) UnmarshalBinary(data []byte) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()

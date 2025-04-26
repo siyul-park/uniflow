@@ -7,7 +7,8 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
+
+	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
 )
 
 // Error represents an error types.
@@ -17,10 +18,12 @@ type _error struct {
 	value error
 }
 
-var _ Value = (Error)(nil)
-var _ error = (Error)(nil)
-var _ encoding.TextMarshaler = (Error)(nil)
-var _ encoding.TextUnmarshaler = (Error)(nil)
+var (
+	_ Value                    = (Error)(nil)
+	_ error                    = (Error)(nil)
+	_ encoding.TextMarshaler   = (Error)(nil)
+	_ encoding.TextUnmarshaler = (Error)(nil)
+)
 
 // NewError creates a new Error instance.
 func NewError(value error) Error {

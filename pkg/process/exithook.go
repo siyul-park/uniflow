@@ -13,8 +13,10 @@ type exitHook struct {
 // ExitHooks is a slice of ExitHook interfaces, processed in reverse order.
 type ExitHooks []ExitHook
 
-var _ ExitHook = (ExitHooks)(nil)
-var _ ExitHook = (*exitHook)(nil)
+var (
+	_ ExitHook = (ExitHooks)(nil)
+	_ ExitHook = (*exitHook)(nil)
+)
 
 // ExitFunc creates a new ExitHook from the provided function.
 func ExitFunc(exit func(err error)) ExitHook {

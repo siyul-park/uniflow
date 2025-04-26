@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+
 	"github.com/siyul-park/uniflow/pkg/packet"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
@@ -23,6 +24,7 @@ type Agent struct {
 }
 
 var _ symbol.LoadHook = (*Agent)(nil)
+
 var _ symbol.UnloadHook = (*Agent)(nil)
 
 // NewAgent initializes and returns a new Agent.

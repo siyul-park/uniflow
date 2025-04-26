@@ -25,3 +25,29 @@
   name: pong
   language: text
   code: pong
+
+- kind: test
+  name: test_router
+  ports:
+    out:
+      - name: pipe_router
+        port: in
+
+- kind: pipe
+  name: pipe_router
+  ports:
+    out[0]:
+      - name: mock_http
+        port: in
+    out[1]:
+      - name: router
+        port: in
+
+- kind: snippet
+  name: mock_http
+  language: json
+  code: |
+    {
+      "method": "GET",
+      "path": "/ping"
+    }

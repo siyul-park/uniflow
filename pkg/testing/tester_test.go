@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/process"
-
 	"github.com/stretchr/testify/require"
+
+	"github.com/siyul-park/uniflow/pkg/process"
 )
 
 func TestTester_ID(t *testing.T) {
