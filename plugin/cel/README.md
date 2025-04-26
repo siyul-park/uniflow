@@ -1,4 +1,4 @@
-### CEL Plugin
+# ✨ CEL Plugin
 
 The **CEL Plugin** integrates the **Common Expression Language (CEL)** into the system, enabling nodes to leverage CEL
 syntax for advanced data processing and complex logical operations. This extension allows for more efficient and

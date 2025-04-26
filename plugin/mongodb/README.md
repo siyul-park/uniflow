@@ -1,4 +1,4 @@
-# MongoDB Plugin
+# 🍃 MongoDB Plugin
 
 The **MongoDB Plugin** enables seamless integration of **MongoDB** as a database backend within the system. It allows
 for persistent data storage, efficient execution of complex queries, and reliable management of large-scale datasets.

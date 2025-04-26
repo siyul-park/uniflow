@@ -1,4 +1,4 @@
-# ECMAScript Plugin
+# 📜 ECMAScript Plugin
 
 The **ECMAScript Plugin** adds support for the **JavaScript** and **TypeScript** languages within the system. This
 allows nodes to utilize JavaScript/TypeScript syntax to perform flexible and powerful data processing and logic
