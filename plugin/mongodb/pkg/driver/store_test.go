@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/plugin/mongodb/internal/server"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/siyul-park/uniflow/plugin/mongodb/internal/server"
 )
 
 func TestStore_Watch(t *testing.T) {
