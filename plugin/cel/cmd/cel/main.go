@@ -13,19 +13,19 @@ import (
 	cel2 "github.com/siyul-park/uniflow/plugin/cel/pkg/cel"
 )
 
-// Config defines the plugin configuration with a list of modules to load.
+// Config defines the plugin configuration with a list of extensions to load.
 type Config struct {
-	Modules []string `json:"modules"`
+	Extensions []string `json:"extensions"`
 }
 
-// Plugin implements the CEL plugin interface, managing modules and the language registry.
+// Plugin implements the CEL plugin interface, managing extensions and the language registry.
 type Plugin struct {
-	registry *language.Registry
-	modules  []string
-	mu       sync.Mutex
+	registry   *language.Registry
+	extensions []string
+	mu         sync.Mutex
 }
 
-var ErrUnsupportedModule = errors.New("unsupported module requested")
+var ErrUnsupportedExtension = errors.New("unsupported extension requested")
 
 var options = map[string]cel.EnvOption{
 	"encoders":               ext.Encoders(),
@@ -41,7 +41,7 @@ var _ plugin.Plugin = (*Plugin)(nil)
 
 // New creates a new Plugin with the specified configuration.
 func New(config Config) plugin.Plugin {
-	return &Plugin{modules: config.Modules}
+	return &Plugin{extensions: config.Extensions}
 }
 
 // SetRegistry assigns a language registry to the plugin.
@@ -52,7 +52,7 @@ func (p *Plugin) SetRegistry(registry *language.Registry) {
 	p.registry = registry
 }
 
-// Load registers the specified modules with the registry.
+// Load registers the specified extensions with the registry.
 func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -62,14 +62,14 @@ func (p *Plugin) Load(_ context.Context) error {
 	}
 
 	var opts []cel.EnvOption
-	for _, module := range p.modules {
-		opt, ok := options[module]
+	for _, e := range p.extensions {
+		opt, ok := options[e]
 		if !ok {
-			return errors.Wrapf(ErrUnsupportedModule, "failed to load plugin: unsupported module '%s'", module)
+			return errors.Wrapf(ErrUnsupportedExtension, "failed to load plugin: unsupported extension '%s'", e)
 		}
 		opts = append(opts, opt)
 	}
-	return p.registry.Register(cel2.Language, cel2.NewCompiler())
+	return p.registry.Register(cel2.Language, cel2.NewCompiler(opts...))
 }
 
 // Unload is a placeholder for cleanup when unloading the plugin.
