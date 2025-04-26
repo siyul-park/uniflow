@@ -10,6 +10,7 @@ import (
 
 const Language = "cel"
 
+// NewCompiler creates and returns a new language.Compiler for CEL with the specified options.
 func NewCompiler(opts ...cel.EnvOption) language.Compiler {
 	opts = append(opts, cel.CustomTypeAdapter(TypeAdapter), cel.StdLib())
 	return language.CompileFunc(func(code string) (language.Program, error) {

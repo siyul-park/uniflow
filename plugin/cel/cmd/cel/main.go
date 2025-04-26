@@ -40,7 +40,7 @@ var options = map[string]cel.EnvOption{
 var _ plugin.Plugin = (*Plugin)(nil)
 
 // New creates a new Plugin with the specified configuration.
-func New(config Config) plugin.Plugin {
+func New(config Config) *Plugin {
 	return &Plugin{extensions: config.Extensions}
 }
 
@@ -58,14 +58,14 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.registry == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "failed to load plugin: missing language registry")
+		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
 	}
 
 	var opts []cel.EnvOption
 	for _, e := range p.extensions {
 		opt, ok := options[e]
 		if !ok {
-			return errors.Wrapf(ErrUnsupportedExtension, "failed to load plugin: unsupported extension '%s'", e)
+			return errors.Wrapf(ErrUnsupportedExtension, "unsupported extension '%s'", e)
 		}
 		opts = append(opts, opt)
 	}

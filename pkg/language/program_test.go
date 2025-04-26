@@ -9,22 +9,22 @@ import (
 )
 
 func TestTimeout(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+	p := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		_, ok := ctx.Deadline()
 		require.True(t, ok)
 		return nil, nil
 	})
-	timeout := Timeout(program, time.Second)
+	timeout := Timeout(p, time.Second)
 
 	_, err := timeout.Run(context.Background(), nil)
 	require.NoError(t, err)
 }
 
 func TestPredicate(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+	p := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		return []any{1}, nil
 	})
-	predicate := Predicate[int](program)
+	predicate := Predicate[int](p)
 
 	result, err := predicate(context.Background(), 1)
 	require.NoError(t, err)
@@ -32,10 +32,10 @@ func TestPredicate(t *testing.T) {
 }
 
 func TestFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+	p := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		return "result", nil
 	})
-	function := Function[int, string](program)
+	function := Function[int, string](p)
 
 	result, err := function(context.Background(), 1)
 	require.NoError(t, err)
@@ -43,10 +43,10 @@ func TestFunction(t *testing.T) {
 }
 
 func TestBiFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+	p := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		return "result", nil
 	})
-	biFunction := BiFunction[int, int, string](program)
+	biFunction := BiFunction[int, int, string](p)
 
 	result, err := biFunction(context.Background(), 1, 2)
 	require.NoError(t, err)
@@ -54,10 +54,10 @@ func TestBiFunction(t *testing.T) {
 }
 
 func TestTriFunction(t *testing.T) {
-	program := RunFunc(func(ctx context.Context, args ...any) (any, error) {
+	p := RunFunc(func(ctx context.Context, args ...any) (any, error) {
 		return "result", nil
 	})
-	triFunction := TriFunction[int, int, int, string](program)
+	triFunction := TriFunction[int, int, int, string](p)
 
 	result, err := triFunction(context.Background(), 1, 2, 3)
 	require.NoError(t, err)
