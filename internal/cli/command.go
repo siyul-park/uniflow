@@ -2,6 +2,7 @@ package cli
 
 import (
 	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 
 	"github.com/spf13/afero"
@@ -73,6 +74,11 @@ func NewCommand(config Config) *cobra.Command {
 			}
 			return nil
 		},
+	}
+
+	info, ok := debug.ReadBuildInfo()
+	if ok {
+		cmd.Version = info.Main.Version
 	}
 
 	cmd.PersistentFlags().String(flagCPUProfile, "", "write cpu profile to `file`")
