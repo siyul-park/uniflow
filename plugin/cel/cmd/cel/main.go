@@ -13,12 +13,12 @@ import (
 	cel2 "github.com/siyul-park/uniflow/plugin/cel/pkg/cel"
 )
 
-// Config defines the plugin configuration with a list of extensions to load.
+// Config defines the plugin configuration, specifying CEL extensions to load.
 type Config struct {
 	Extensions []string `json:"extensions"`
 }
 
-// Plugin implements the CEL plugin interface, managing extensions and the language registry.
+// Plugin provides a CEL plugin that registers a CEL compiler with optional extensions.
 type Plugin struct {
 	registry   *language.Registry
 	extensions []string
@@ -39,12 +39,12 @@ var options = map[string]cel.EnvOption{
 
 var _ plugin.Plugin = (*Plugin)(nil)
 
-// New creates a new Plugin with the specified configuration.
+// New creates and returns a new CEL plugin with the given configuration.
 func New(config Config) *Plugin {
 	return &Plugin{extensions: config.Extensions}
 }
 
-// SetRegistry assigns a language registry to the plugin.
+// SetRegistry sets the language registry that will be used by the plugin.
 func (p *Plugin) SetRegistry(registry *language.Registry) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -52,7 +52,7 @@ func (p *Plugin) SetRegistry(registry *language.Registry) {
 	p.registry = registry
 }
 
-// Load registers the specified extensions with the registry.
+// Load registers the CEL compiler with the configured extensions in the language registry.
 func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -69,10 +69,11 @@ func (p *Plugin) Load(_ context.Context) error {
 		}
 		opts = append(opts, opt)
 	}
+
 	return p.registry.Register(cel2.Language, cel2.NewCompiler(opts...))
 }
 
-// Unload is a placeholder for cleanup when unloading the plugin.
+// Unload cleans up resources when the plugin is unloaded (currently a no-op).
 func (p *Plugin) Unload(_ context.Context) error {
 	return nil
 }

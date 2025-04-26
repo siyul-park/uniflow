@@ -11,7 +11,7 @@ import (
 	"github.com/siyul-park/uniflow/plugin/ecmascript/pkg/typescript"
 )
 
-// Plugin implements the CEL plugin interface, managing extensions and the language registry.
+// Plugin implements a plugin that registers ECMAScript language compilers (JavaScript and TypeScript).
 type Plugin struct {
 	registry *language.Registry
 	mu       sync.Mutex
@@ -19,12 +19,12 @@ type Plugin struct {
 
 var _ plugin.Plugin = (*Plugin)(nil)
 
-// New creates a new Plugin with the specified configuration.
+// New returns a new instance of the ECMAScript plugin.
 func New() *Plugin {
 	return &Plugin{}
 }
 
-// SetRegistry assigns a language registry to the plugin.
+// SetRegistry sets the language registry to be used by the plugin.
 func (p *Plugin) SetRegistry(registry *language.Registry) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -32,7 +32,7 @@ func (p *Plugin) SetRegistry(registry *language.Registry) {
 	p.registry = registry
 }
 
-// Load registers the specified extensions with the registry.
+// Load registers the JavaScript and TypeScript compilers with the language registry.
 func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -43,7 +43,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	return p.registry.Register(typescript.Language, typescript.NewCompiler())
 }
 
-// Unload is a placeholder for cleanup when unloading the plugin.
+// Unload performs cleanup when the plugin is unloaded (currently no-op).
 func (p *Plugin) Unload(_ context.Context) error {
 	return nil
 }
