@@ -6,23 +6,26 @@ import (
 	"strings"
 )
 
+// Proxy wraps a Plugin and injects dependencies via Inject* methods.
 type Proxy struct {
 	plugin Plugin
 }
 
 var _ Plugin = (*Proxy)(nil)
 
+// NewProxy creates a new Proxy for the given Plugin.
 func NewProxy(plugin Plugin) *Proxy {
 	return &Proxy{plugin: plugin}
 }
 
-func (p *Proxy) Set(dependencies ...any) error {
+// Inject injects dependencies into the plugin by calling its Inject* methods.
+func (p *Proxy) Inject(dependencies ...any) error {
 	val := reflect.ValueOf(p.plugin)
 	for i := 0; i < val.NumMethod(); i++ {
 		typ := val.Type().Method(i)
 		val := val.Method(i)
 
-		if !strings.HasPrefix(typ.Name, "Set") {
+		if !strings.HasPrefix(typ.Name, "Inject") {
 			continue
 		}
 
@@ -47,10 +50,12 @@ func (p *Proxy) Set(dependencies ...any) error {
 	return nil
 }
 
+// Load calls the plugin's Load method.
 func (p *Proxy) Load(ctx context.Context) error {
 	return p.plugin.Load(ctx)
 }
 
+// Unload calls the plugin's Unload method.
 func (p *Proxy) Unload(ctx context.Context) error {
 	return p.plugin.Unload(ctx)
 }

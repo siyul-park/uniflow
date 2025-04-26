@@ -41,8 +41,15 @@ build:
 build-plugin:
 	@mkdir -p dist
 	@for dir in $(PLUGIN_DIRS); do \
-  		cd $$dir && go build -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist .; \
+  		cd $$dir && go test -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist .; \
 	done
+
+build-docker:
+	docker build --no-cache \
+		-t $(if $(DOCKER_DOMAIN),$(DOCKER_DOMAIN)/)$(DOCKER_IMAGE):$(DOCKER_TAG) \
+		-f $(DOCKERFILE) \
+		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
+		$(CURRENT_DIR)
 
 clean:
 	@go clean -cache
@@ -105,10 +112,3 @@ staticcheck:
 
 doc: init
 	@godoc -http=:6060
-
-docker-build:
-	docker build --no-cache \
-		-t $(if $(DOCKER_DOMAIN),$(DOCKER_DOMAIN)/)$(DOCKER_IMAGE):$(DOCKER_TAG) \
-		-f $(DOCKERFILE) \
-		--build-arg COPY_EXAMPLES=$(COPY_EXAMPLES) \
-		$(CURRENT_DIR)

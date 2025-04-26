@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// Registry manages a list of plugins and controls their lifecycle.
 type Registry struct {
 	proxies []*Proxy
 	mu      sync.RWMutex
@@ -12,10 +13,12 @@ type Registry struct {
 
 var _ Plugin = (*Registry)(nil)
 
+// NewRegistry creates a new plugin registry.
 func NewRegistry() *Registry {
 	return &Registry{}
 }
 
+// Register adds a plugin to the registry.
 func (r *Registry) Register(p Plugin) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -24,18 +27,20 @@ func (r *Registry) Register(p Plugin) error {
 	return nil
 }
 
-func (r *Registry) Set(dependencies ...any) error {
+// Inject injects dependencies into all registered plugins.
+func (r *Registry) Inject(dependencies ...any) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for _, p := range r.proxies {
-		if err := p.Set(dependencies...); err != nil {
+		if err := p.Inject(dependencies...); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// Load calls Load on all registered plugins.
 func (r *Registry) Load(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -48,6 +53,7 @@ func (r *Registry) Load(ctx context.Context) error {
 	return nil
 }
 
+// Unload calls Unload on all registered plugins in reverse order.
 func (r *Registry) Unload(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

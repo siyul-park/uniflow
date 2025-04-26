@@ -39,7 +39,7 @@ func main() {
 		p := must(plugin.Open(cfg.String(keyPath), cfg.Get(keyManifest)))
 		fatal(pluginRegistry.Register(p))
 	}
-	fatal(pluginRegistry.Set(schemeBuilder, hookBuilder, driverRegistry, runner))
+	fatal(pluginRegistry.Inject(schemeBuilder, hookBuilder, driverRegistry, runner))
 	fatal(pluginRegistry.Load(ctx))
 
 	scheme := must(schemeBuilder.Build())

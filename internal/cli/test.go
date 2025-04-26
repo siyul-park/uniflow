@@ -37,10 +37,10 @@ func NewTestCommand(config TestConfig) *cobra.Command {
 		RunE:  runTestCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the namespace for running the workflow")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Inject the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
 	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
-	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Set environment variables for the workflow execution")
+	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Inject environment variables for the workflow execution")
 
 	return cmd
 }

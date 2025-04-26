@@ -32,8 +32,8 @@ func NewApplyCommand(config ApplyConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the io's namespace. If not set, use the default namespace")
-	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Set the file path to be applied")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Inject the io's namespace. If not set, use the default namespace")
+	cmd.PersistentFlags().StringP(flagFilename, toShorthand(flagFilename), "", "Inject the file path to be applied")
 
 	return cmd
 }

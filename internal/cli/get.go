@@ -29,7 +29,7 @@ func NewGetCommand(config GetConfig) *cobra.Command {
 		}),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Set the io's namespace. If not set, use all namespace")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Inject the io's namespace. If not set, use all namespace")
 
 	return cmd
 }
