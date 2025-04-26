@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/evanw/esbuild v0.25.3
-	github.com/go-faker/faker/v4 v4.6.0
+	github.com/go-faker/faker/v4 v4.6.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
