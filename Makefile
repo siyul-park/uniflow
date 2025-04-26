@@ -13,18 +13,9 @@ all: lint test build
 
 init:
 	@cp .go.work go.work
-	@$(MAKE) install-tools
-	@$(MAKE) install-modules
-
-install-tools:
 	@go install golang.org/x/tools/cmd/godoc@latest
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@go install github.com/incu6us/goimports-reviser/v3@latest
-
-install-modules:
-	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && go install -v ./...; \
-	done
 
 generate:
 	@for dir in $(MODULE_DIRS); do \
