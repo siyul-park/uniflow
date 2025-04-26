@@ -56,6 +56,6 @@ func (r *Registry) Close() error {
 			return err
 		}
 	}
-	r.drivers = nil
+	r.drivers = make(map[string]Driver)
 	return nil
 }

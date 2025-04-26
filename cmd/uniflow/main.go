@@ -31,6 +31,7 @@ const (
 	envDatabaseURL      = "database.url"
 	envCollectionSpecs  = "collection.specs"
 	envCollectionValues = "collection.values"
+	envLanguageDefault  = "language.default"
 	envPlugin           = "plugin"
 
 	keyPath     = "path"
@@ -68,6 +69,9 @@ func main() {
 	cli.Fatal(driverRegistry.Register("memory", driver.New()))
 
 	languageRegistry := language.NewRegistry()
+	defer languageRegistry.Close()
+
+	languageRegistry.SetDefault(k.String(envLanguageDefault))
 
 	cli.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
 	cli.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))

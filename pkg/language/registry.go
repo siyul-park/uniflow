@@ -9,6 +9,7 @@ import (
 // Registry manages a collection of compilers for different languages.
 type Registry struct {
 	compilers map[string]Compiler
+	language  string
 	mu        sync.RWMutex
 }
 
@@ -39,9 +40,39 @@ func (r *Registry) Lookup(language string) (Compiler, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	compiler, ok := r.compilers[language]
+	c, ok := r.compilers[language]
 	if !ok {
 		return nil, errors.WithStack(ErrNotFound)
 	}
-	return compiler, nil
+	return c, nil
+}
+
+// SetDefault adds a new language and its compiler to the registry.
+func (r *Registry) SetDefault(language string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.language = language
+}
+
+// Default retrieves the default compiler.
+func (r *Registry) Default() (Compiler, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	c, ok := r.compilers[r.language]
+	if !ok {
+		return nil, errors.WithStack(ErrNotFound)
+	}
+	return c, nil
+}
+
+// Close shuts down all registered drivers and clears the registry.
+func (r *Registry) Close() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.compilers = make(map[string]Compiler)
+	r.language = ""
+	return nil
 }
