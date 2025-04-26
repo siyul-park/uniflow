@@ -8,7 +8,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/language"
 )
 
-const Language = "cel"
+const Language = "ecmascript"
 
 // NewCompiler creates and returns a new language.Compiler for CEL with the specified options.
 func NewCompiler(opts ...cel.EnvOption) language.Compiler {

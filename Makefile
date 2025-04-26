@@ -13,6 +13,7 @@ all: lint test build
 
 init:
 	@cp .go.work go.work
+	@go work sync
 	@go install golang.org/x/tools/cmd/godoc@latest
 	@go install github.com/incu6us/goimports-reviser/v3@latest
 
