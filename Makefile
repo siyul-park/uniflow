@@ -26,12 +26,12 @@ build-all: build build-plugin
 build:
 	@go clean -cache
 	@mkdir -p dist
-	@cd cmd && go build -ldflags "-s -w" -o ../dist ./...
+	@cd cmd && go build -ldflags "-s -w" -o $(CURRENT_DIR)/dist ./...
 
 build-plugin:
 	@mkdir -p dist
 	@for dir in $(PLUGIN_DIRS); do \
-  		cd $$dir && go test -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist .; \
+  		cd $$dir && cd cmd && go build -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist ./...; \
 	done
 
 build-docker:

@@ -1,0 +1,3 @@
+github.com/google/cel-go v0.25.0 h1:jsFw9Fhn+3y2kBbltZR4VEz5xKkcIFRPDnuEzAGv5GY=
+github.com/google/cel-go v0.25.0/go.mod h1:hjEb6r5SuOSlhCHmFoLzu8HGCERvIsDAbxDAyNU/MmI=
+github.com/siyul-park/uniflow v0.13.0/go.mod h1:v/Lv4WT08tjzit+wUAMMwjLOccTJ4VNxJNh43GFcBUE=

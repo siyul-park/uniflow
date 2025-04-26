@@ -12,5 +12,5 @@
 
 - kind: snippet
   name: loopback
-  language: cel
+  language: language
   code: self

@@ -29,7 +29,7 @@ func (r *Registry) Register(language string, compiler Compiler) error {
 	defer r.mu.Unlock()
 
 	if _, ok := r.compilers[language]; ok {
-		return errors.WithStack(ErrConflict)
+		return errors.Wrapf(ErrConflict, "failed to register language '%s'", language)
 	}
 	r.compilers[language] = compiler
 	return nil
@@ -42,7 +42,7 @@ func (r *Registry) Lookup(language string) (Compiler, error) {
 
 	c, ok := r.compilers[language]
 	if !ok {
-		return nil, errors.WithStack(ErrNotFound)
+		return nil, errors.Wrapf(ErrNotFound, "compiler not found for language '%s'", language)
 	}
 	return c, nil
 }
@@ -62,7 +62,7 @@ func (r *Registry) Default() (Compiler, error) {
 
 	c, ok := r.compilers[r.language]
 	if !ok {
-		return nil, errors.WithStack(ErrNotFound)
+		return nil, errors.Wrapf(ErrNotFound, "default compiler not found for language '%s'", r.language)
 	}
 	return c, nil
 }

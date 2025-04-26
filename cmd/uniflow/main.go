@@ -2,10 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/siyul-park/uniflow/pkg/language"
-	"github.com/siyul-park/uniflow/pkg/language/json"
-	"github.com/siyul-park/uniflow/pkg/language/text"
-	"github.com/siyul-park/uniflow/pkg/language/yaml"
 	"net/url"
 	"os/signal"
 	"syscall"
@@ -20,6 +16,10 @@ import (
 	"github.com/siyul-park/uniflow/internal/cli"
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/language"
+	"github.com/siyul-park/uniflow/pkg/language/json"
+	"github.com/siyul-park/uniflow/pkg/language/text"
+	"github.com/siyul-park/uniflow/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/pkg/plugin"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -33,9 +33,6 @@ const (
 	envCollectionValues = "collection.values"
 	envLanguageDefault  = "language.default"
 	envPlugin           = "plugin"
-
-	keyPath     = "path"
-	keyManifest = "manifest"
 )
 
 const configFile = ".uniflow.toml"
@@ -81,7 +78,7 @@ func main() {
 	defer pluginRegistry.Unload(ctx)
 
 	for _, cfg := range k.Slices(envPlugin) {
-		p := cli.Must(plugin.Open(cfg.String(keyPath), cfg.Get(keyManifest)))
+		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
 	cli.Fatal(pluginRegistry.Inject(runner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry))

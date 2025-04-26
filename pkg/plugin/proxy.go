@@ -4,12 +4,16 @@ import (
 	"context"
 	"reflect"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Proxy wraps a Plugin and injects dependencies via Inject* methods.
 type Proxy struct {
 	plugin Plugin
 }
+
+var ErrMissingDependency = errors.New("missing dependency")
 
 var _ Plugin = (*Proxy)(nil)
 
@@ -32,11 +36,17 @@ func (p *Proxy) Inject(dependencies ...any) error {
 		var ins []reflect.Value
 		for j := 0; j < val.Type().NumIn(); j++ {
 			typ := val.Type().In(j)
+
+			ok := false
 			for _, dep := range dependencies {
 				if reflect.TypeOf(dep).AssignableTo(typ) {
 					ins = append(ins, reflect.ValueOf(dep))
+					ok = true
 					break
 				}
+			}
+			if !ok {
+				return errors.WithStack(ErrMissingDependency)
 			}
 		}
 
