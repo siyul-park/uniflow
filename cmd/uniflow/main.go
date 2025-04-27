@@ -32,7 +32,7 @@ const (
 	envCollectionSpecs  = "collection.specs"
 	envCollectionValues = "collection.values"
 	envLanguageDefault  = "language.default"
-	envPlugin           = "plugin"
+	envPlugins          = "plugins"
 )
 
 const configFile = ".uniflow.toml"
@@ -77,7 +77,7 @@ func main() {
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
-	for _, cfg := range k.Slices(envPlugin) {
+	for _, cfg := range k.Slices(envPlugins) {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}

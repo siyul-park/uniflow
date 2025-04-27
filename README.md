@@ -55,26 +55,26 @@ values = "values"
 [language]
 default = "cel"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/cel.so"
 config.extensions = ["encoders", "math", "lists", "sets", "strings"]
 
-[[plugin]]
+[[plugins]]
 path = "./dist/ecmascript.so"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/mongodb.so"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/ctrl.so"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/net.so"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/sql.so"
 
-[[plugin]]
+[[plugins]]
 path = "./dist/testing.so"
 ```
 
