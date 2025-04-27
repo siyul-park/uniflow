@@ -6,26 +6,25 @@
 [![ci][repo_ci_img]][repo_ci_url]
 [![code coverage][go_code_coverage_img]][go_code_coverage_url]
 
-**높은 성능과 뛰어난 유연성을 겸비한 확장 가능한 범용 워크플로우 엔진.**
+**높은 성능과 뛰어난 유연성을 갖춘 확장 가능한 범용 워크플로우 엔진**
 
 ## 📝 개요
 
-**Uniflow**는 단기 작업부터 장기 프로세스까지 다양한 작업을 효율적으로 관리할 수 있는 워크플로우 엔진입니다. 데이터 흐름을 선언적으로 정의하며, 동적 수정이 가능해 업무 요구 사항에 맞게 유연하게 조정할
-수 있습니다. 또한, [플러그인](./plugin/README_kr.md)을 통해 복잡한 워크플로우를 구현하고, 필요에 따라 새로운 노드를 추가하거나 제거하여 기능을 확장할 수 있습니다.
-
-서비스에 개인 맞춤형 경험을 제공하고, 지속적으로 발전시킬 수 있는 기반을 마련하세요.
+복잡한 데이터 흐름을 효율적으로 관리하고 실시간으로 조정하세요. [플러그인](./plugin/README_kr.md)과 노드를 추가하여 워크플로우를 쉽게 구현하고 확장할 수 있으며, 비즈니스 요구에 맞게 프로세스를
+최적화할 수 있습니다. 이를 통해 개인화된
+서비스를 제공하고, 시스템의 지속적인 발전을 위한 강력한 기반을 구축해 보세요.
 
 ## 🎯 핵심 가치
 
-- **성능:** 다양한 환경에서 최대의 처리량과 최소의 지연 시간을 달성합니다.
-- **유연성:** 실시간으로 워크플로우를 수정하고 조정할 수 있습니다.
-- **확장성:** 손쉽게 새로운 컴포넌트를 추가하여 기능을 확장할 수 있습니다.
+- **성능:** 다양한 환경에서 최대 처리량과 최소 지연 시간을 제공합니다.
+- **유연성:** 워크플로우를 실시간으로 수정하고 조정할 수 있습니다.
+- **확장성:** 새로운 컴포넌트를 쉽게 추가하여 기능을 확장할 수 있습니다.
 
 ## 🚀 빠른 시작
 
 ### 🛠️ 빌드 및 설치
 
-**[Go 1.23](https://go.dev/doc/install)** 이상을 설치한 후, 아래 단계를 통해 소스 코드를 빌드할 수 있습니다:
+**[Go 1.24 이상](https://go.dev/doc/install)**이 설치된 환경에서 다음 명령어로 소스 코드를 빌드할 수 있습니다:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -36,11 +35,12 @@ make init
 make build-all
 ```
 
-빌드가 완료되면 `dist` 디렉토리에 실행 파일이 생성됩니다.
+빌드가 완료되면 `dist` 디렉터리에 실행 파일이 생성됩니다.
 
 ### ⚙️ 환경 설정
 
-환경 설정은 환경 변수 또는 `.uniflow.toml` 파일을 통해 관리됩니다. 기본적으로 제공되는 플러그인들을 등록하고 설정하는 방법은 아래와 같습니다:
+설정은 환경 변수 또는 `.uniflow.toml` 파일을 통해 관리할 수 있습니다.  
+기본 제공 플러그인을 등록하고 설정하는 예시는 다음과 같습니다:
 
 ```toml
 [database]
@@ -70,12 +70,15 @@ path = "./dist/ctrl.so"
 path = "./dist/net.so"
 
 [[plugin]]
+path = "./dist/sql.so"
+
+[[plugin]]
 path = "./dist/testing.so"
 ```
 
 ### ⚡ 예제 실행
 
-다음은 HTTP 요청 처리 예제인 [ping.yaml](examples/ping.yaml)을 실행하는 방법입니다:
+HTTP 요청을 처리하는 [ping.yaml](examples/ping.yaml) 예제를 실행하는 방법은 다음과 같습니다:
 
 ```yaml
 - kind: listener
@@ -107,13 +110,13 @@ path = "./dist/testing.so"
   code: pong
 ```
 
-다음 명령어로 워크플로우를 실행합니다:
+다음 명령어를 사용해 워크플로우를 실행할 수 있습니다:
 
 ```sh
 ./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
 ```
 
-정상 작동 여부를 확인하려면 HTTP 엔드포인트를 호출하세요:
+정상 작동 여부를 확인하려면 아래 명령어로 HTTP 엔드포인트를 호출하세요:
 
 ```sh
 curl localhost:8000/ping
@@ -122,7 +125,9 @@ pong#
 
 ## 📊 벤치마크
 
-다음 벤치마크는 **[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행되었습니다. [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용하여 `listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](examples/ping.yaml) 워크플로우를 테스트했습니다.
+다음 벤치마크는 **[Contabo](https://contabo.com/)** VPS S SSD (4코어, 8GB) 환경에서 수행되었습니다.  
+`listener`, `router`, `snippet` 노드로 구성된 [ping.yaml](examples/ping.yaml) 워크플로우를
+대상으로, [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)을 사용해 테스트했습니다:
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -169,19 +174,19 @@ Percentage of the requests served within a certain time (ms)
 
 - [시작하기](./docs/getting_started_kr.md): CLI 설치 및 워크플로우 관리 방법을 알아보세요.
 - [핵심 개념](./docs/key_concepts_kr.md): 노드, 연결, 포트, 패킷 등 주요 개념을 이해하세요.
-- [아키텍처](./docs/architecture_kr.md): 노드 명세 로딩 및 워크플로우 실행 과정을 살펴보세요.
-- [플로우차트](./docs/flowchart_kr.md): 워크플로우 컴파일 및 런타임 프로세스에 대한 자세한 설명을 확인하세요.
-- [디버깅](./docs/debugging_kr.md): 워크플로우 디버깅을 통해 문제를 해결하는 방법을 배우세요.
-- [사용자 확장](./docs/user_extensions_kr.md): 시스템 확장 및 기존 서비스와의 통합 방법을 안내합니다.
+- [아키텍처](./docs/architecture_kr.md): 명세 로딩과 워크플로우 실행 과정을 살펴보세요.
+- [플로우차트](./docs/flowchart_kr.md): 컴파일 및 런타임 프로세스를 단계별로 알아보세요.
+- [디버깅](./docs/debugging_kr.md): 문제 해결과 디버깅 방법을 확인하세요.
+- [사용자 확장](./docs/user_extensions_kr.md): 새로운 노드 추가 및 서비스 통합 방법을 안내합니다.
 
 ## 🌐 커뮤니티 및 지원
 
-- [토론 포럼](https://github.com/siyul-park/uniflow/discussions): 질문 및 피드백을 나눌 수 있습니다.
-- [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그를 신고하거나 기능 요청을 제출할 수 있습니다.
+- [토론 포럼](https://github.com/siyul-park/uniflow/discussions): 질문하고 피드백을 나눌 수 있습니다.
+- [이슈 트래커](https://github.com/siyul-park/uniflow/issues): 버그 신고 및 기능 요청이 가능합니다.
 
-## 📜 라이센스
+## 📜 라이선스
 
-이 프로젝트는 [MIT 라이센스](./LICENSE)에 따라 배포됩니다. 자유롭게 사용, 수정, 배포할 수 있습니다.
+이 프로젝트는 [MIT 라이선스](./LICENSE)에 따라 배포됩니다. 자유롭게 사용, 수정, 배포할 수 있습니다.
 
 <!-- Go -->
 

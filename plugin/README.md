@@ -1,25 +1,25 @@
 # 🧩 Plugins
 
-A variety of plugins are available to extend the functionality of your workflows. These plugins support features such as
-network communication, testing, and flow control, helping you maximize the efficiency and flexibility of your workflows.
+Various plugins are available to extend the functionality of your workflows. They support a wide range of capabilities,
+including network communication, testing, and flow control, helping to maximize the efficiency and flexibility of
+workflows.
 
-## Available Languages
+## Supported Languages
 
-- **[CEL Plugin](./cel/README.md)**: Integrates the Common Expression Language (CEL) into the system to enable advanced
-  expression handling.
-- **[ECMAScript Plugin](./ecmascript/README.md)**: Adds support for JavaScript and TypeScript scripting, enabling
-  flexible and dynamic logic implementation.
+- **[CEL Plugin](./cel/README.md)**: Integrates Common Expression Language (CEL) for advanced expression handling.
+- **[ECMAScript Plugin](./ecmascript/README.md)**: Integrates JavaScript and TypeScript for flexible scripting
+  capabilities.
 
 ## Supported Databases
 
-- **[MongoDB Plugin](./mongodb/README.md)**: Integrates MongoDB as a database backend, supporting persistent data
-  storage and advanced querying.
+- **[MongoDB Plugin](./mongodb/README.md)**: Adds MongoDB as a backend database to support persistent data storage and
+  advanced queries.
 
 ## Available Nodes
 
-- **[Ctrl Plugin](./ctrl/README.md)**: Provides control nodes to enable fine-grained management of data flow within
-  workflows.
-- **[Net Plugin](./net/README.md)**: Offers nodes that support various network protocols for seamless communication with
-  external systems.
-- **[Testing Plugin](./testing/README.md)**: Provides dedicated nodes for testing and validation to enhance the
-  stability and reliability of workflows.
+- **[Ctrl Plugin](./ctrl/README.md)**: Provides various control nodes to finely manage data flow.
+- **[Net Plugin](./net/README.md)**: Supports communication with external systems through various network protocols.
+- **[SQL Plugin](./sql/README.md)**: Enables interaction with relational databases, supporting SQL query execution and
+  data processing.
+- **[Testing Plugin](./testing/README.md)**: Provides specialized nodes for testing and verification, enhancing workflow
+  stability and reliability.

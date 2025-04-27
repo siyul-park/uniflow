@@ -10,23 +10,23 @@
 
 ## 📝 Overview
 
-**Uniflow** is designed to manage a wide range of tasks, from short-term jobs to long-term processes. It supports
-declarative workflow definitions and allows for dynamic changes to data flows. With [Plugin](./plugin/README.md), you
-can implement complex workflows and add or remove nodes to expand its functionality as needed.
+Efficiently manage complex data flows and adjust them in real-time. With the ability to
+add [plugins](./plugin/README.md) and nodes, workflows
+can be easily implemented and expanded to optimize processes according to business needs. Build a strong foundation for
+continuous system evolution and deliver personalized services.
 
-This system empowers you to deliver customized experiences through your service and continuously enhance its capabilities.
+## 🎯 Key Features
 
-## 🎯 Core Values
-
-- **Performance:** Optimized for maximum throughput and minimal latency.
-- **Flexibility:** Adapt workflows on-the-fly to meet evolving needs.
-- **Extensibility:** Easily integrate new components and expand your system's functionality.
+- **Performance:** Offers maximum throughput and minimal latency across various environments.
+- **Flexibility:** Adjust and modify workflows in real-time.
+- **Scalability:** Easily expand functionality by adding new components.
 
 ## 🚀 Quick Start
 
-### 🛠️ Build and Install
+### 🛠️ Build and Installation
 
-To get started, install **[Go 1.23](https://go.dev/doc/install)** or later. Then, follow these steps:
+To build the source code, ensure you have **[Go 1.24 or above](https://go.dev/doc/install)** installed and run the
+following commands:
 
 ```sh
 git clone https://github.com/siyul-park/uniflow
@@ -37,12 +37,12 @@ make init
 make build-all
 ```
 
-The executable will be located in the `dist` directory after building.
+After building, the executable will be created in the `dist` directory.
 
 ### ⚙️ Configuration
 
-Environment configuration is managed through environment variables or the `.uniflow.toml` file. The following shows how
-to register and configure the default plugins provided:
+You can manage configuration using environment variables or a `.uniflow.toml` file. Here's an example of registering and
+configuring the built-in plugins:
 
 ```toml
 [database]
@@ -72,12 +72,15 @@ path = "./dist/ctrl.so"
 path = "./dist/net.so"
 
 [[plugin]]
+path = "./dist/sql.so"
+
+[[plugin]]
 path = "./dist/testing.so"
 ```
 
-### ⚡ Run an Example
+### ⚡ Example Run
 
-Try a basic HTTP request handler using [ping.yaml](examples/ping.yaml):
+To run the [ping.yaml](examples/ping.yaml) example, which processes HTTP requests, use the following configuration:
 
 ```yaml
 - kind: listener
@@ -109,13 +112,13 @@ Try a basic HTTP request handler using [ping.yaml](examples/ping.yaml):
   code: pong
 ```
 
-Start the workflow with:
+Start the workflow with this command:
 
 ```sh
 ./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
 ```
 
-Verify by calling the HTTP endpoint:
+To verify it's working, use the following command to call the HTTP endpoint:
 
 ```sh
 curl localhost:8000/ping
@@ -124,7 +127,10 @@ pong#
 
 ## 📊 Benchmark
 
-The following benchmark was conducted on a **[Contabo](https://contabo.com/)** VPS S SSD (4 cores, 8GB) using the [Apache HTTP benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) to measure the performance of [ping.yaml](examples/ping.yaml) involving `listener`, `router`, and `snippet` nodes.
+The following benchmark was run on a **[Contabo](https://contabo.com/)** VPS S SSD (4-core, 8GB) environment.  
+The test was conducted using
+the [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html) on a workflow consisting
+of `listener`, `router`, and `snippet` nodes, using the [ping.yaml](examples/ping.yaml) example.
 
 ```sh
 ab -n 102400 -c 1024 http://127.0.0.1:8000/ping
@@ -169,21 +175,21 @@ Percentage of the requests served within a certain time (ms)
 
 ## 📚 Learn More
 
-- [Getting Started](./docs/getting_started.md): CLI usage and workflow management.
-- [Key Concepts](./docs/key_concepts.md): Understanding nodes, ports, and packets.
-- [Architecture](./docs/architecture.md): Workflow execution and node specification loading.
-- [Flowchart](./docs/flowchart.md): Detailed explanation of workflow compilation and runtime processes.
-- [Debugging](./docs/debugging.md): Debug workflows, set breakpoints, and start sessions.
-- [User Extensions](./docs/user_extensions.md): Add features and integrate external services.
+- [Getting Started](./docs/getting_started.md): Learn about CLI installation and workflow management.
+- [Core Concepts](./docs/key_concepts.md): Understand key concepts such as nodes, connections, ports, and packets.
+- [Architecture](./docs/architecture.md): Explore the specification loading and workflow execution process.
+- [Flowchart](./docs/flowchart.md): A step-by-step guide to compilation and runtime processes.
+- [Debugging](./docs/debugging.md): Find troubleshooting and debugging tips.
+- [User Extensions](./docs/user_extensions.md): Learn how to add new nodes and integrate services.
 
-## 🌐 Community and Support
+## 🌐 Community & Support
 
-- [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Share questions and feedback.
-- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Submit bugs or request features.
+- [Discussion Forum](https://github.com/siyul-park/uniflow/discussions): Ask questions and share feedback.
+- [Issue Tracker](https://github.com/siyul-park/uniflow/issues): Report bugs and request features.
 
 ## 📜 License
 
-This project is available under the [MIT License](./LICENSE). You are free to use, modify, and distribute it in accordance with the terms.
+This project is distributed under the [MIT License](./LICENSE). You are free to use, modify, and distribute it.
 
 <!-- Go -->
 

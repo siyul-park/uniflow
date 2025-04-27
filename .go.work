@@ -5,7 +5,9 @@ use (
     ./plugin/cel
     ./plugin/ctrl
     ./plugin/ecmascript
+    ./plugin/mongodb
     ./plugin/net
+    ./plugin/sql
     ./plugin/testing
 )
 

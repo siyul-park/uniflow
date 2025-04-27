@@ -1,9 +1,11 @@
-module github.com/siyul-park/uniflow/plugin/testing
+module github.com/siyul-park/uniflow/plugin/sql
 
 go 1.24.2
 
 require (
 	github.com/go-faker/faker/v4 v4.6.1
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/pkg/errors v0.9.1
 	github.com/siyul-park/uniflow v0.13.0
 	github.com/stretchr/testify v1.10.0
