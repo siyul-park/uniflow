@@ -75,9 +75,12 @@ test:
 
 coverage:
 	@for dir in $(MODULE_DIRS); do \
-		cd $$dir && go test -race --coverprofile=coverage.out --covermode=atomic $(test-options) ./...; \
-		cat coverage.out >> $(CURRENT_DIR)/coverage.out && rm coverage.out; \
-	done
+    	cd $$dir && go test -race --coverprofile=coverage.out --covermode=atomic $(test-options) ./...; \
+    	if [ "$$PWD" != "$(CURRENT_DIR)" ]; then \
+    		cat coverage.out >> $(CURRENT_DIR)/coverage.out; \
+    	fi; \
+    	rm coverage.out; \
+    done
 
 benchmark:
 	@for dir in $(MODULE_DIRS); do \

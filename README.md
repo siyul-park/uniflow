@@ -10,10 +10,7 @@
 
 ## 📝 Overview
 
-Efficiently manage complex data flows and adjust them in real-time. With the ability to
-add [plugins](./plugin/README.md) and nodes, workflows
-can be easily implemented and expanded to optimize processes according to business needs. Build a strong foundation for
-continuous system evolution and deliver personalized services.
+Efficiently manage complex data flows and adjust them in real-time. With the ability to add [plugins](plugins/README.md), workflows can be easily expanded to optimize processes according to business needs. Build a strong foundation for continuous system evolution and deliver personalized services.
 
 ## 🎯 Key Features
 
