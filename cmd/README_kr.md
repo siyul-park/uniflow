@@ -2,9 +2,15 @@
 
 다양한 작업 흐름을 관리하기 위해 설계된 다목적 명령줄 인터페이스 (CLI)를 효과적으로 사용하세요.
 
-### 설정
+## 설정
 
-환경 설정은 환경 변수 또는 `.uniflow.toml` 파일을 통해 관리됩니다. 기본적으로 제공되는 플러그인들을 등록하고 설정하는 방법은 아래와 같습니다:
+환경 변수 또는 설정 파일(`.toml`, `.yaml`, `.json`, `.hjson`, `.env`)을 사용하여 설정을 구성할 수 있습니다. 설정 파일의 경로는 `UNIFLOW_CONFIG` 환경 변수로 지정하며, 지정하지 않으면 기본값인 `.uniflow.toml` 파일이 사용됩니다.
+
+```bash
+export UNIFLOW_CONFIG=./config/uniflow.toml
+```
+
+설정 파일에서 정의할 수 있는 주요 항목은 다음과 같습니다:
 
 ```toml
 [database]
@@ -37,9 +43,20 @@ path = "./dist/net.so"
 path = "./dist/testing.so"
 ```
 
-만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기
-위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를
-위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
+환경 변수도 자동으로 로드되며, 환경 변수는 `UNIFLOW_` 접두어를 사용합니다. 예를 들어, 다음과 같이 설정할 수 있습니다:
+
+```env
+UNIFLOW_DATABASE_URL=memory://
+UNIFLOW_COLLECTION_SPECS=specs
+UNIFLOW_COLLECTION_VALUES=values
+UNIFLOW_LANGUAGE_DEFAULT=cel
+```
+
+만약 [MongoDB](https://www.mongodb.com/)를 사용하는 경우, 리소스의 변경 사항을 실시간으로 추적하려면 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 구성이 필요합니다.
+
+## 지원하는 명령어
+
+`uniflow`는 워크플로우의 런타임 환경을 시작하고 관리하는 데 사용되는 다양한 명령어를 제공합니다.
 
 ### Start 명령어
 

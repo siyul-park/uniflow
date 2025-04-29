@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	os.Setenv("_TEST_IS_MAIN", "1")
+	_ = os.Setenv("_TEST_IS_MAIN", "1")
 	os.Exit(m.Run())
 }
 
@@ -31,6 +31,15 @@ func TestCommand(t *testing.T) {
 		},
 		{
 			args: []string{"test", "-h"},
+		},
+		{
+			args: []string{"apply", "-h"},
+		},
+		{
+			args: []string{"delete", "-h"},
+		},
+		{
+			args: []string{"get", "-h"},
 		},
 	}
 

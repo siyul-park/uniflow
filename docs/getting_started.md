@@ -33,16 +33,55 @@ After the build completes, the executable files will be available in the `dist` 
 
 ### Configuration
 
-Settings can be modified using the `.uniflow.toml` file or system environment variables. The key configuration options are:
+You can configure the settings using environment variables or a configuration file (`.toml`, `.yaml`, `.json`, `.hjson`, `.env`). The path to the configuration file is specified using the `UNIFLOW_CONFIG` environment variable. If not specified, the default `.uniflow.toml` file will be used.
 
-| TOML Key            | Environment Variable Key | Example                     |
-|---------------------|--------------------------|-----------------------------|
-| `database.url`      | `DATABASE_URL`           | `memory://` or `mongodb://` |
-| `database.name`     | `DATABASE_NAME`          | -                           |
-| `collection.specs`  | `COLLECTION_SPECS`       | `nodes`                     |
-| `collection.values` | `COLLECTION_VALUES`      | `values`                    |
+```bash
+export UNIFLOW_CONFIG=./config/uniflow.toml
+```
 
-If you are using [MongoDB](https://www.mongodb.com/), enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
+The configuration file can define the following key settings:
+
+```toml
+[database]
+url = "memory://"
+
+[collection]
+specs = "specs"
+values = "values"
+
+[language]
+default = "cel"
+
+[[plugins]]
+path = "./dist/cel.so"
+config.extensions = ["encoders", "math", "lists", "sets", "strings"]
+
+[[plugins]]
+path = "./dist/ecmascript.so"
+
+[[plugins]]
+path = "./dist/mongodb.so"
+
+[[plugins]]
+path = "./dist/ctrl.so"
+
+[[plugins]]
+path = "./dist/net.so"
+
+[[plugins]]
+path = "./dist/testing.so"
+```
+
+Environment variables are also automatically loaded, and they use the `UNIFLOW_` prefix. For example, the following environment variables can be set:
+
+```env
+UNIFLOW_DATABASE_URL=memory://
+UNIFLOW_COLLECTION_SPECS=specs
+UNIFLOW_COLLECTION_VALUES=values
+UNIFLOW_LANGUAGE_DEFAULT=cel
+```
+
+If you are using [MongoDB](https://www.mongodb.com/), you will need to enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real-time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
 
 ## Running an Example
 
@@ -88,32 +127,32 @@ curl localhost:8000/ping
 pong#
 ```
 
-## Using Uniflow
+## Supported Commands
 
-`uniflow` is primarily used to start and manage the runtime environment.
+`uniflow` provides various commands used to start and manage the runtime environment of workflows.
 
 ### Start Command
 
-The `start` command executes all node specifications within the specified namespace. If no namespace is provided, the
-`default` namespace is used.
+The `start` command runs all node specifications within the specified namespace. If no namespace is specified, the
+default `default` namespace will be used.
 
 ```sh
 ./dist/uniflow start --namespace default
 ```
 
-If the namespace is empty, you can provide initial node specifications using the `--from-specs` flag:
+If the namespace is empty, you can provide the initial node specification with the `--from-specs` flag.
 
 ```sh
 ./dist/uniflow start --namespace default --from-specs examples/specs.yaml
 ```
 
-You can set initial variable files using the `--from-values` flag:
+Initial variable files can be set using the `--from-values` flag.
 
 ```sh
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-Environment variables can be specified using the `--env` flag:
+Environment variables can be specified with the `--env` flag.
 
 ```sh
 ./dist/uniflow start --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
@@ -121,87 +160,72 @@ Environment variables can be specified using the `--env` flag:
 
 ### Test Command
 
-The `test` command runs workflow tests within the specified namespace. If no namespace is provided, the `default`
-namespace is used.
+The `test` command runs workflow tests within the specified namespace. If no namespace is specified, the default
+`default` namespace will be used.
 
 ```sh
 ./dist/uniflow test --namespace default
 ```
 
-To run specific tests, you can filter them using a regular expression:
+To run specific tests, use regular expressions for filtering.
 
 ```sh
 ./dist/uniflow test ".*/my_test" --namespace default
 ```
 
-If the namespace is empty, you can apply initial specifications and variables:
+If the namespace is empty, you can apply initial specifications and variables.
 
 ```sh
 ./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
 ```
 
-Environment variables can be set using the `--env` flag:
+Environment variables can be specified with the `--env` flag.
 
 ```sh
 ./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
 ```
 
-## Using Uniflow CTL
-
-`uniflowctl` is a command used to manage resources within a namespace.
-
 ### Apply Command
 
-The `apply` command applies the contents of a specified file to the namespace. If no namespace is specified, the `default` namespace is used.
+The `apply` command applies the content of the specified file to the namespace. If no namespace is specified, the
+default `default` namespace will be used.
 
 ```sh
-./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
+./dist/uniflow apply nodes --namespace default --filename examples/specs.yaml
 ```
 
-To apply values:
+To apply variables:
 
 ```sh
-./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
+./dist/uniflow apply values --namespace default --filename examples/values.yaml
 ```
 
 ### Delete Command
 
-The `delete` command removes all resources defined in the specified file. If no namespace is specified, the `default` namespace is used.
+The `delete` command removes all resources defined in the specified file. If no namespace is specified, the default
+`default` namespace will be used.
 
 ```sh
-./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
+./dist/uniflow delete nodes --namespace default --filename examples/specs.yaml
 ```
 
-To delete values:
+To delete variables:
 
 ```sh
-./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
+./dist/uniflow delete values --namespace default --filename examples/values.yaml
 ```
-
 
 ### Get Command
 
-The `get` command retrieves all resources in the specified namespace. If no namespace is specified, the `default` namespace is used.
+The `get` command retrieves all resources within the specified namespace. If no namespace is specified, the default
+`default` namespace will be used.
 
 ```sh
-./dist/uniflowctl get nodes --namespace default
+./dist/uniflow get nodes --namespace default
 ```
 
-To retrieve values:
+To retrieve variables:
 
 ```sh
-./dist/uniflowctl get values --namespace default
+./dist/uniflow get values --namespace default
 ```
-
-
-## Integrating HTTP API
-
-To modify node specifications via the HTTP API, set up workflows accordingly. You can use the `syscall` node provided in
-the [core extensions](../ext/README.md):
-
-```yaml
-kind: syscall
-opcode: specs.create # or specs.read, specs.update, specs.delete
-```
-
-Refer to the [workflow examples](../examples/system.yaml) to get started. If needed, you can add authentication and authorization processes. These runtime control workflows are typically defined in the `system` namespace.
