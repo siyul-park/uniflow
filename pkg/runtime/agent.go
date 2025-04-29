@@ -23,9 +23,10 @@ type Agent struct {
 	mu        sync.RWMutex
 }
 
-var _ symbol.LoadHook = (*Agent)(nil)
-
-var _ symbol.UnloadHook = (*Agent)(nil)
+var (
+	_ symbol.LoadHook   = (*Agent)(nil)
+	_ symbol.UnloadHook = (*Agent)(nil)
+)
 
 // NewAgent initializes and returns a new Agent.
 func NewAgent() *Agent {

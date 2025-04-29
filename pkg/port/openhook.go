@@ -15,9 +15,10 @@ type openHook struct {
 	open func(*process.Process)
 }
 
-var _ OpenHook = (OpenHooks)(nil)
-
-var _ OpenHook = (*openHook)(nil)
+var (
+	_ OpenHook = (OpenHooks)(nil)
+	_ OpenHook = (*openHook)(nil)
+)
 
 // OpenHookFunc creates a new Hook from the provided function.
 func OpenHookFunc(open func(*process.Process)) OpenHook {

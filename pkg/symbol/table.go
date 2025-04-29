@@ -277,7 +277,7 @@ func (t *Table) load(sb *Symbol) error {
 				return err
 			} else if err := t.loadHooks.Load(sb); err != nil {
 				return err
-			} else if err := t.exec(sb, node.PortBegin); err != nil {
+			} else if err := t.exec(sb, node.PortActive); err != nil {
 				return err
 			}
 		}
@@ -290,11 +290,11 @@ func (t *Table) unload(sb *Symbol) error {
 	for i := len(linked) - 1; i >= 0; i-- {
 		sb := linked[i]
 		if t.isActivated(sb) {
-			if err := t.exec(sb, node.PortTerm); err != nil {
+			if err := t.exec(sb, node.PortDeative); err != nil {
 				return err
 			} else if err := t.unloadHooks.Unload(sb); err != nil {
 				return err
-			} else if err := t.exec(sb, node.PortFinal); err != nil {
+			} else if err := t.exec(sb, node.PortCleanup); err != nil {
 				return err
 			}
 		}

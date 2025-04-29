@@ -8,14 +8,14 @@ import (
 
 // Commonly used port names.
 const (
-	PortInit  = "init"
-	PortBegin = "begin"
-	PortTerm  = "term"
-	PortFinal = "final"
-	PortIO    = "io"
-	PortIn    = "in"
-	PortOut   = "out"
-	PortError = "error"
+	PortInit    = "init"
+	PortActive  = "active"
+	PortDeative = "deactive"
+	PortCleanup = "cleanup"
+	PortIO      = "io"
+	PortIn      = "in"
+	PortOut     = "out"
+	PortError   = "error"
 )
 
 var subscript = regexp.MustCompile(`(\w+)\[(\d+)\]`)
