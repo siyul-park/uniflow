@@ -33,16 +33,55 @@ make build
 
 ### 설정
 
-설정은 `.uniflow.toml` 파일이나 시스템 환경 변수를 사용해 유연하게 변경할 수 있습니다. 주요 설정 항목은 다음과 같습니다:
+환경 변수 또는 설정 파일(`.toml`, `.yaml`, `.json`, `.hjson`, `.env`)을 사용하여 설정을 구성할 수 있습니다. 설정 파일의 경로는 `UNIFLOW_CONFIG` 환경 변수로 지정하며, 지정하지 않으면 기본값인 `.uniflow.toml` 파일이 사용됩니다.
 
-| TOML 키              | 환경 변수 키             | 예시                          |
-|---------------------|---------------------|-----------------------------|
-| `database.url`      | `DATABASE_URL`      | `memory://` 또는 `mongodb://` |
-| `database.name`     | `DATABASE_NAME`     | -                           |
-| `collection.specs`  | `COLLECTION_SPECS`  | `nodes`                     |
-| `collection.values` | `COLLECTION_VALUES` | `values`                    |
+```bash
+export UNIFLOW_CONFIG=./config/uniflow.toml
+```
 
-만약 [MongoDB](https://www.mongodb.com/)를 사용한다면, 리소스의 변경 사항을 실시간으로 추적하기 위해 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 설정이 필요합니다.
+설정 파일에서 정의할 수 있는 주요 항목은 다음과 같습니다:
+
+```toml
+[database]
+url = "memory://"
+
+[collection]
+specs = "specs"
+values = "values"
+
+[language]
+default = "cel"
+
+[[plugins]]
+path = "./dist/cel.so"
+config.extensions = ["encoders", "math", "lists", "sets", "strings"]
+
+[[plugins]]
+path = "./dist/ecmascript.so"
+
+[[plugins]]
+path = "./dist/mongodb.so"
+
+[[plugins]]
+path = "./dist/ctrl.so"
+
+[[plugins]]
+path = "./dist/net.so"
+
+[[plugins]]
+path = "./dist/testing.so"
+```
+
+환경 변수도 자동으로 로드되며, 환경 변수는 `UNIFLOW_` 접두어를 사용합니다. 예를 들어, 다음과 같이 설정할 수 있습니다:
+
+```env
+UNIFLOW_DATABASE_URL=memory://
+UNIFLOW_COLLECTION_SPECS=specs
+UNIFLOW_COLLECTION_VALUES=values
+UNIFLOW_LANGUAGE_DEFAULT=cel
+```
+
+만약 [MongoDB](https://www.mongodb.com/)를 사용하는 경우, 리소스의 변경 사항을 실시간으로 추적하려면 [변경 스트림](https://www.mongodb.com/docs/manual/changeStreams/)을 활성화해야 합니다. 이를 위해서는 [복제 세트](https://www.mongodb.com/docs/manual/replication/) 구성이 필요합니다.
 
 ## 예제 실행
 
@@ -88,9 +127,9 @@ curl localhost:8000/ping
 pong#
 ```
 
-## Uniflow 사용하기
+## 지원하는 명령어
 
-`uniflow`는 주로 런타임 환경을 시작하고 관리하는 명령어입니다.
+`uniflow`는 워크플로우의 런타임 환경을 시작하고 관리하는 데 사용되는 다양한 명령어를 제공합니다.
 
 ### Start 명령어
 
@@ -144,22 +183,18 @@ pong#
 ./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
 ```
 
-## Uniflow CTL 사용하기
-
-`uniflowctl`는 네임스페이스 내에서 리소스를 관리하는 명령어입니다.
-
 ### Apply 명령어
 
 `apply` 명령어는 지정된 파일 내용을 네임스페이스에 적용합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
 
 ```sh
-./dist/uniflowctl apply nodes --namespace default --filename examples/specs.yaml
+./dist/uniflow apply nodes --namespace default --filename examples/specs.yaml
 ```
 
 변수을 적용하려면:
 
 ```sh
-./dist/uniflowctl apply values --namespace default --filename examples/values.yaml
+./dist/uniflow apply values --namespace default --filename examples/values.yaml
 ```
 
 ### Delete 명령어
@@ -167,13 +202,13 @@ pong#
 `delete` 명령어는 지정된 파일에 정의된 모든 리소스를 삭제합니다. 네임스페이스를 지정하지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
 
 ```sh
-./dist/uniflowctl delete nodes --namespace default --filename examples/specs.yaml
+./dist/uniflow delete nodes --namespace default --filename examples/specs.yaml
 ```
 
 변수을 삭제하려면:
 
 ```sh
-./dist/uniflowctl delete values --namespace default --filename examples/values.yaml
+./dist/uniflow delete values --namespace default --filename examples/values.yaml
 ```
 
 ### Get 명령어
@@ -181,22 +216,11 @@ pong#
 `get` 명령어는 지정된 네임스페이스 내 모든 리소스를 조회합니다. 네임스페이스가 지정되지 않으면 기본적으로 `default` 네임스페이스가 사용됩니다.
 
 ```sh
-./dist/uniflowctl get nodes --namespace default
+./dist/uniflow get nodes --namespace default
 ```
 
 변수을 조회하려면:
 
 ```sh
-./dist/uniflowctl get values --namespace default
+./dist/uniflow get values --namespace default
 ```
-
-## HTTP API 통합
-
-HTTP API를 통해 노드 명세를 수정하려면, 관련 워크플로우를 설정해야 합니다. 이를 위해 [기본 확장](../ext/README_kr.md)에 포함된 `syscall` 노드를 사용할 수 있습니다:
-
-```yaml
-kind: syscall
-opcode: specs.create # 또는 specs.read, specs.update, specs.delete
-```
-
-시작하려면 [워크플로우 예제](../examples/system.yaml)를 참고하세요. 필요한 경우, 인증 및 권한 관리 프로세스를 추가할 수 있습니다. 이러한 런타임 제어 워크플로우는 보통 `system` 네임스페이스에 정의됩니다.

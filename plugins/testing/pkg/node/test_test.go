@@ -13,6 +13,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewTestNode(t *testing.T) {

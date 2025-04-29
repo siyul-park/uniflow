@@ -2,10 +2,15 @@
 
 Effectively manage various workflows with the versatile Command-Line Interface (CLI) designed for system interaction.
 
-### Setup
+### Configuration
 
-Environment configuration is managed through environment variables or the `.uniflow.toml` file. Below is how to register
-and configure the default plugins:
+You can configure the settings using environment variables or a configuration file (`.toml`, `.yaml`, `.json`, `.hjson`, `.env`). The path to the configuration file is specified using the `UNIFLOW_CONFIG` environment variable. If not specified, the default `.uniflow.toml` file will be used.
+
+```bash
+export UNIFLOW_CONFIG=./config/uniflow.toml
+```
+
+The configuration file can define the following key settings:
 
 ```toml
 [database]
@@ -38,9 +43,20 @@ path = "./dist/net.so"
 path = "./dist/testing.so"
 ```
 
-If you're using [MongoDB](https://www.mongodb.com/), you must
-enable [Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to track real-time changes in resources. For
-this, you will need to configure a [Replica Set](https://www.mongodb.com/docs/manual/replication/).
+Environment variables are also automatically loaded, and they use the `UNIFLOW_` prefix. For example, the following environment variables can be set:
+
+```env
+UNIFLOW_DATABASE_URL=memory://
+UNIFLOW_COLLECTION_SPECS=specs
+UNIFLOW_COLLECTION_VALUES=values
+UNIFLOW_LANGUAGE_DEFAULT=cel
+```
+
+If you are using [MongoDB](https://www.mongodb.com/), you will need to enable [change streams](https://www.mongodb.com/docs/manual/changeStreams/) to track resource changes in real-time. This requires setting up a [replica set](https://www.mongodb.com/docs/manual/replication/).
+
+## Supported Commands
+
+`uniflow` provides various commands used to start and manage the runtime environment of workflows.
 
 ### Start Command
 

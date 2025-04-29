@@ -4,13 +4,19 @@ import (
 	"context"
 	"net/url"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/iancoleman/strcase"
-	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/parsers/dotenv"
+	"github.com/knadh/koanf/parsers/hjson"
+	"github.com/knadh/koanf/parsers/toml/v2"
+	koanfyaml "github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
 	"github.com/siyul-park/uniflow/internal/cli"
@@ -28,27 +34,47 @@ import (
 )
 
 const (
-	envDatabaseURL      = "database.url"
-	envCollectionSpecs  = "collection.specs"
-	envCollectionValues = "collection.values"
-	envLanguageDefault  = "language.default"
-	envPlugins          = "plugins"
-)
+	prefix = "UNIFLOW_"
 
-const configFile = ".uniflow.toml"
+	keyConfig           = "config"
+	keyDatabaseURL      = "database.url"
+	keyCollectionSpecs  = "collection.specs"
+	keyCollectionValues = "collection.values"
+	keyLanguageDefault  = "language.default"
+	keyPlugins          = "plugins"
+)
 
 var k = koanf.New(".")
 
 func init() {
-	cli.Fatal(k.Set(envDatabaseURL, "memory://"))
-	cli.Fatal(k.Set(envCollectionSpecs, "specs"))
-	cli.Fatal(k.Set(envCollectionValues, "values"))
+	cli.Fatal(k.Set(keyConfig, ".uniflow.toml"))
+	cli.Fatal(k.Set(keyDatabaseURL, "memory://"))
+	cli.Fatal(k.Set(keyCollectionSpecs, "specs"))
+	cli.Fatal(k.Set(keyCollectionValues, "values"))
 
-	_ = k.Load(file.Provider(configFile), toml.Parser())
-
-	cli.Fatal(k.Load(env.Provider("", ".", func(s string) string {
-		return strcase.ToDelimited(s, '.')
+	cli.Fatal(k.Load(env.Provider(prefix, ".", func(s string) string {
+		return strcase.ToDelimited(strings.TrimPrefix(s, prefix), '.')
 	}), nil))
+
+	config := k.String(keyConfig)
+
+	var parser koanf.Parser
+	switch strings.ToLower(filepath.Ext(config)) {
+	case ".toml":
+		parser = toml.Parser()
+	case ".yaml", ".yml":
+		parser = koanfyaml.Parser()
+	case ".json", ".hjson":
+		parser = hjson.Parser()
+	case ".env":
+		parser = dotenv.ParserEnv(prefix, ".", func(s string) string {
+			return strcase.ToDelimited(strings.TrimPrefix(s, prefix), '.')
+		})
+	default:
+		cli.Fatal(errors.New("invalid config file extension"))
+	}
+
+	_ = k.Load(file.Provider(config), parser)
 }
 
 func main() {
@@ -68,7 +94,7 @@ func main() {
 	languageRegistry := language.NewRegistry()
 	defer languageRegistry.Close()
 
-	languageRegistry.SetDefault(k.String(envLanguageDefault))
+	languageRegistry.SetDefault(k.String(keyLanguageDefault))
 
 	cli.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
 	cli.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))
@@ -77,7 +103,7 @@ func main() {
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
-	for _, cfg := range k.Slices(envPlugins) {
+	for _, cfg := range k.Slices(keyPlugins) {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
@@ -87,7 +113,7 @@ func main() {
 	sc := cli.Must(schemeBuilder.Build())
 	hk := cli.Must(hookBuilder.Build())
 
-	dsn := cli.Must(url.Parse(k.String(envDatabaseURL)))
+	dsn := cli.Must(url.Parse(k.String(keyDatabaseURL)))
 
 	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
 	defer drv.Close()
@@ -95,8 +121,8 @@ func main() {
 	conn := cli.Must(drv.Open(dsn.String()))
 	defer conn.Close()
 
-	specStore := cli.Must(conn.Load(k.String(envCollectionSpecs)))
-	valueStore := cli.Must(conn.Load(k.String(envCollectionValues)))
+	specStore := cli.Must(conn.Load(k.String(keyCollectionSpecs)))
+	valueStore := cli.Must(conn.Load(k.String(keyCollectionValues)))
 
 	cli.Fatal(specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, driver.IndexOptions{
 		Unique: true,
