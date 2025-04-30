@@ -10,7 +10,6 @@ import (
 
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -20,12 +19,14 @@ import (
 
 // TestConfig holds the configuration for the start command.
 type TestConfig struct {
-	Runner     *testing.Runner
-	Scheme     *scheme.Scheme
-	Hook       *hook.Hook
-	SpecStore  driver.Store
-	ValueStore driver.Store
-	FS         afero.Fs
+	Namespace   string
+	Environment map[string]string
+	Runner      *testing.Runner
+	Scheme      *scheme.Scheme
+	Hook        *hook.Hook
+	SpecStore   driver.Store
+	ValueStore  driver.Store
+	FS          afero.Fs
 }
 
 // NewTestCommand creates a new cobra.Command for the start command.
@@ -37,10 +38,10 @@ func NewTestCommand(config TestConfig) *cobra.Command {
 		RunE:  runTestCommand(config),
 	}
 
-	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), meta.DefaultNamespace, "Inject the namespace for running the workflow")
+	cmd.PersistentFlags().StringP(flagNamespace, toShorthand(flagNamespace), config.Namespace, "Inject the namespace for running the workflow")
 	cmd.PersistentFlags().String(flagFromSpecs, "", "Specify the file path containing workflow specifications")
 	cmd.PersistentFlags().String(flagFromValues, "", "Specify the file path containing values for the workflow")
-	cmd.PersistentFlags().StringToString(flagEnvironment, nil, "Inject environment variables for the workflow execution")
+	cmd.PersistentFlags().StringToStringP(flagEnvironment, toShorthand(flagEnvironment), config.Environment, "Inject environment variables for the workflow execution")
 
 	return cmd
 }

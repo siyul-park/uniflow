@@ -42,15 +42,16 @@ You can manage configuration using environment variables or a `.uniflow.toml` fi
 configuring the built-in plugins:
 
 ```toml
+[runtime]
+namespace = "default"
+language = "cel"
+
 [database]
 url = "memory://"
 
 [collection]
 specs = "specs"
 values = "values"
-
-[language]
-default = "cel"
 
 [[plugins]]
 path = "./dist/cel.so"
@@ -112,7 +113,7 @@ To run the [ping.yaml](examples/ping.yaml) example, which processes HTTP request
 Start the workflow with this command:
 
 ```sh
-./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
+./dist/uniflow start --from-specs ./examples/ping.yaml --environment PORT=8000
 ```
 
 To verify it's working, use the following command to call the HTTP endpoint:

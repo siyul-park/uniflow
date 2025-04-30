@@ -2,7 +2,7 @@
 
 CURRENT_DIR = $(shell realpath .)
 MODULE_DIRS = $(shell find $(CURRENT_DIR) -name go.mod -exec dirname {} \;)
-PLUGIN_DIRS = $(shell find $(CURRENT_DIR)/plugin -name go.mod -exec dirname {} \;)
+PLUGIN_DIRS = $(shell find $(CURRENT_DIR)/plugins -name go.mod -exec dirname {} \;)
 
 DOCKER_IMAGE = $(shell basename -s .git $(shell git config --get remote.origin.url))
 DOCKER_TAG = $(shell git tag --sort=-v:refname | grep -v '/' | head -n 1 || echo "latest")
@@ -66,7 +66,7 @@ clean-cache:
 		cd $$dir && go clean -modcache; \
 	done
 
-check: lint test staticcheck
+check: lint test
 
 test:
 	@for dir in $(MODULE_DIRS); do \

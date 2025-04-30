@@ -8,7 +8,7 @@ const (
 	flagFromValues = "from-values"
 
 	flagDebug       = "debug"
-	flagEnvironment = "env"
+	flagEnvironment = "environment"
 
 	flagCPUProfile = "cpuprofile"
 	flagMemProfile = "memprofile"

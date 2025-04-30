@@ -26,7 +26,7 @@ To install the required dependencies and build the project, run the following co
 
 ```sh
 make init
-make build
+make build-all
 ```
 
 After the build completes, the executable files will be available in the `dist` folder.
@@ -36,21 +36,22 @@ After the build completes, the executable files will be available in the `dist` 
 You can configure the settings using environment variables or a configuration file (`.toml`, `.yaml`, `.json`, `.hjson`, `.env`). The path to the configuration file is specified using the `UNIFLOW_CONFIG` environment variable. If not specified, the default `.uniflow.toml` file will be used.
 
 ```bash
-export UNIFLOW_CONFIG=./config/uniflow.toml
+export UNIFLOW_CONFIG=./uniflow.toml
 ```
 
 The configuration file can define the following key settings:
 
 ```toml
+[runtime]
+namespace = "default"
+language = "cel"
+
 [database]
 url = "memory://"
 
 [collection]
 specs = "specs"
 values = "values"
-
-[language]
-default = "cel"
 
 [[plugins]]
 path = "./dist/cel.so"
@@ -67,6 +68,9 @@ path = "./dist/ctrl.so"
 
 [[plugins]]
 path = "./dist/net.so"
+
+[[plugins]]
+path = "./dist/sql.so"
 
 [[plugins]]
 path = "./dist/testing.so"
@@ -152,10 +156,10 @@ Initial variable files can be set using the `--from-values` flag.
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-Environment variables can be specified with the `--env` flag.
+Environment variables can be specified with the `--environment` flag.
 
 ```sh
-./dist/uniflow start --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow start --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Test Command
@@ -179,10 +183,10 @@ If the namespace is empty, you can apply initial specifications and variables.
 ./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
 ```
 
-Environment variables can be specified with the `--env` flag.
+Environment variables can be specified with the `--environment` flag.
 
 ```sh
-./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow test --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Apply Command

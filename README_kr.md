@@ -41,15 +41,16 @@ make build-all
 기본 제공 플러그인을 등록하고 설정하는 예시는 다음과 같습니다:
 
 ```toml
+[runtime]
+namespace = "default"
+language = "cel"
+
 [database]
 url = "memory://"
 
 [collection]
 specs = "specs"
 values = "values"
-
-[language]
-default = "cel"
 
 [[plugins]]
 path = "./dist/cel.so"
@@ -111,7 +112,7 @@ HTTP 요청을 처리하는 [ping.yaml](examples/ping.yaml) 예제를 실행하�
 다음 명령어를 사용해 워크플로우를 실행할 수 있습니다:
 
 ```sh
-./dist/uniflow start --from-specs ./examples/ping.yaml --env PORT=8000
+./dist/uniflow start --from-specs ./examples/ping.yaml --environment PORT=8000
 ```
 
 정상 작동 여부를 확인하려면 아래 명령어로 HTTP 엔드포인트를 호출하세요:
