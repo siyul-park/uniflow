@@ -13,15 +13,16 @@ export UNIFLOW_CONFIG=./config/uniflow.toml
 The configuration file can define the following key settings:
 
 ```toml
+[runtime]
+namespace = "default"
+language = "cel"
+
 [database]
 url = "memory://"
 
 [collection]
 specs = "specs"
 values = "values"
-
-[language]
-default = "cel"
 
 [[plugins]]
 path = "./dist/cel.so"
@@ -38,6 +39,9 @@ path = "./dist/ctrl.so"
 
 [[plugins]]
 path = "./dist/net.so"
+
+[[plugins]]
+path = "./dist/sql.so"
 
 [[plugins]]
 path = "./dist/testing.so"
@@ -79,10 +83,10 @@ Initial variable files can be set using the `--from-values` flag.
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-Environment variables can be specified with the `--env` flag.
+Environment variables can be specified with the `--environment` flag.
 
 ```sh
-./dist/uniflow start --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow start --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Test Command
@@ -106,10 +110,10 @@ If the namespace is empty, you can apply initial specifications and variables.
 ./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
 ```
 
-Environment variables can be specified with the `--env` flag.
+Environment variables can be specified with the `--environment` flag.
 
 ```sh
-./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow test --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Apply Command

@@ -26,6 +26,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/language/json"
 	"github.com/siyul-park/uniflow/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/language/yaml"
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/plugin"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -37,10 +38,12 @@ const (
 	prefix = "UNIFLOW_"
 
 	keyConfig           = "config"
+	keyRuntimeLanguage  = "runtime.language"
+	KeyRuntimeNamespace = "runtime.namespace"
+	keyEnvironment      = "environment"
 	keyDatabaseURL      = "database.url"
 	keyCollectionSpecs  = "collection.specs"
 	keyCollectionValues = "collection.values"
-	keyLanguageDefault  = "language.default"
 	keyPlugins          = "plugins"
 )
 
@@ -48,6 +51,7 @@ var k = koanf.New(".")
 
 func init() {
 	cli.Fatal(k.Set(keyConfig, ".uniflow.toml"))
+	cli.Fatal(k.Set(KeyRuntimeNamespace, meta.DefaultNamespace))
 	cli.Fatal(k.Set(keyDatabaseURL, "memory://"))
 	cli.Fatal(k.Set(keyCollectionSpecs, "specs"))
 	cli.Fatal(k.Set(keyCollectionValues, "values"))
@@ -94,7 +98,7 @@ func main() {
 	languageRegistry := language.NewRegistry()
 	defer languageRegistry.Close()
 
-	languageRegistry.SetDefault(k.String(keyLanguageDefault))
+	languageRegistry.SetDefault(k.String(keyRuntimeLanguage))
 
 	cli.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
 	cli.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))
@@ -133,6 +137,9 @@ func main() {
 		Filter: map[string]any{value.KeyName: map[string]any{"$exists": true}},
 	}))
 
+	namespace := k.String(KeyRuntimeNamespace)
+	environment := k.StringMap(keyEnvironment)
+
 	fs := afero.NewOsFs()
 
 	cmd := cli.NewCommand(cli.Config{
@@ -141,19 +148,23 @@ func main() {
 		FS:    fs,
 	})
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
-		Scheme:     sc,
-		Hook:       hk,
-		SpecStore:  specStore,
-		ValueStore: valueStore,
-		FS:         fs,
+		Namespace:   namespace,
+		Environment: environment,
+		Scheme:      sc,
+		Hook:        hk,
+		SpecStore:   specStore,
+		ValueStore:  valueStore,
+		FS:          fs,
 	}))
 	cmd.AddCommand(cli.NewTestCommand(cli.TestConfig{
-		Runner:     testingRunner,
-		Scheme:     sc,
-		Hook:       hk,
-		SpecStore:  specStore,
-		ValueStore: valueStore,
-		FS:         fs,
+		Namespace:   namespace,
+		Environment: environment,
+		Runner:      testingRunner,
+		Scheme:      sc,
+		Hook:        hk,
+		SpecStore:   specStore,
+		ValueStore:  valueStore,
+		FS:          fs,
 	}))
 	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
 		SpecStore:  specStore,

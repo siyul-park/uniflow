@@ -26,7 +26,7 @@ cd uniflow
 
 ```sh
 make init
-make build
+make build-all
 ```
 
 빌드가 완료되면 `dist` 폴더에 실행 파일이 생성됩니다.
@@ -36,21 +36,22 @@ make build
 환경 변수 또는 설정 파일(`.toml`, `.yaml`, `.json`, `.hjson`, `.env`)을 사용하여 설정을 구성할 수 있습니다. 설정 파일의 경로는 `UNIFLOW_CONFIG` 환경 변수로 지정하며, 지정하지 않으면 기본값인 `.uniflow.toml` 파일이 사용됩니다.
 
 ```bash
-export UNIFLOW_CONFIG=./config/uniflow.toml
+export UNIFLOW_CONFIG=./uniflow.toml
 ```
 
 설정 파일에서 정의할 수 있는 주요 항목은 다음과 같습니다:
 
 ```toml
+[runtime]
+namespace = "default"
+language = "cel"
+
 [database]
 url = "memory://"
 
 [collection]
 specs = "specs"
 values = "values"
-
-[language]
-default = "cel"
 
 [[plugins]]
 path = "./dist/cel.so"
@@ -67,6 +68,9 @@ path = "./dist/ctrl.so"
 
 [[plugins]]
 path = "./dist/net.so"
+
+[[plugins]]
+path = "./dist/sql.so"
 
 [[plugins]]
 path = "./dist/testing.so"
@@ -151,10 +155,10 @@ pong#
 ./dist/uniflow start --namespace default --from-values examples/values.yaml
 ```
 
-환경 변수는 `--env` 플래그로 지정할 수 있습니다.
+환경 변수는 `--environment` 플래그로 지정할 수 있습니다.
 
 ```sh
-./dist/uniflow start --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow start --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Test 명령어
@@ -177,10 +181,10 @@ pong#
 ./dist/uniflow test --namespace default --from-specs examples/specs.yaml --from-values examples/values.yaml
 ```
 
-환경 변수는 `--env` 플래그로 지정할 수 있습니다.
+환경 변수는 `--environment` 플래그로 지정할 수 있습니다.
 
 ```sh
-./dist/uniflow test --namespace default --env DATABASE_URL=mongodb://localhost:27017 --env DATABASE_NAME=mydb
+./dist/uniflow test --namespace default --environment DATABASE_URL=mongodb://localhost:27017 --environment DATABASE_NAME=mydb
 ```
 
 ### Apply 명령어
