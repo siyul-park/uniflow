@@ -4,13 +4,13 @@ Various plugins are available to extend the functionality of your workflows. The
 including network communication, testing, and flow control, helping to maximize the efficiency and flexibility of
 workflows.
 
-## Supported Languages
+## Available Languages
 
 - **[CEL Plugin](./cel/README.md)**: Integrates Common Expression Language (CEL) for advanced expression handling.
 - **[ECMAScript Plugin](./ecmascript/README.md)**: Integrates JavaScript and TypeScript for flexible scripting
   capabilities.
 
-## Supported Databases
+## Available Databases
 
 - **[MongoDB Plugin](./mongodb/README.md)**: Adds MongoDB as a backend database to support persistent data storage and
   advanced queries.

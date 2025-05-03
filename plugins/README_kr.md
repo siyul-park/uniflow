@@ -7,7 +7,7 @@
 - **[CEL 플러그인](./cel/README_kr.md)**: Common Expression Language (CEL)를 통합하여 고급 표현식 처리를 지원합니다.
 - **[ECMAScript 플러그인](./ecmascript/README_kr.md)**: JavaScript 및 TypeScript를 통합하여 유연한 스크립팅 기능을 제공합니다.
 
-## 지원하는 데이터베이스
+## 사용 가능한 데이터베이스
 
 - **[MongoDB 플러그인](./mongodb/README_kr.md)**: MongoDB를 백엔드 데이터베이스로 추가하여 영구적인 데이터 저장과 고급 쿼리를 지원합니다.
 
