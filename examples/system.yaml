@@ -39,7 +39,7 @@
   code: SELECT * FROM `frames`
   ports:
     out:
-      - name: local
+      - name: system
         port: in
 
 - kind: snippet
@@ -48,7 +48,7 @@
   code: SELECT * FROM `processes`
   ports:
     out:
-      - name: local
+      - name: system
         port: in
 
 - kind: snippet
@@ -57,10 +57,10 @@
   code: SELECT * FROM `symbols`
   ports:
     out:
-      - name: local
+      - name: system
         port: in
 
 - kind: sql
-  name: local
-  driver: reflect
-  source: local
+  name: system
+  driver: runtime
+  source: system

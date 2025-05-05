@@ -49,14 +49,14 @@ func (p *Plugin) Load(_ context.Context) error {
 		agent := runtime.NewAgent()
 
 		drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
-			"local": schema.NewInMemoryCatalog(map[string]schema.Table{
+			"system": schema.NewInMemoryCatalog(map[string]schema.Table{
 				"frames":    schema2.NewFrameTable(agent),
 				"processes": schema2.NewProcessTable(agent),
 				"symbols":   schema2.NewSymbolTable(agent),
 			}),
 		})))
 
-		sql.Register("reflect", drv)
+		sql.Register("runtime", drv)
 
 		h.AddLoadHook(agent)
 		h.AddUnloadHook(agent)
