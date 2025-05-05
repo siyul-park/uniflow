@@ -1,7 +1,6 @@
 package process
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -229,42 +228,27 @@ func (p *Process) MarshalJSON() ([]byte, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	var buf bytes.Buffer
-	buf.WriteByte('{')
+	data := map[string]any{
+		"id":         p.id.String(),
+		"status":     p.status,
+		"started_at": p.startTime.Unix(),
+	}
 
-	if _, err := fmt.Fprintf(&buf, `"id":"%s"`, p.id.String()); err != nil {
-		return nil, err
-	}
 	if p.parent != nil {
-		if _, err := fmt.Fprintf(&buf, `,"parent_id":"%s"`, p.parent.ID().String()); err != nil {
-			return nil, err
-		}
-	}
-	if _, err := fmt.Fprintf(&buf, `,"status":%d`, p.status); err != nil {
-		return nil, err
-	}
-	if _, err := fmt.Fprintf(&buf, `,"started_at":"%d"`, p.startTime.Unix()); err != nil {
-		return nil, err
+		data["parent_id"] = p.parent.ID().String()
 	}
 	if !p.endTime.IsZero() {
-		if _, err := fmt.Fprintf(&buf, `,"ended_at":"%d"`, p.endTime.Unix()); err != nil {
-			return nil, err
-		}
+		data["ended_at"] = p.endTime.Unix()
 	}
 	if p.err != nil {
-		if _, err := fmt.Fprintf(&buf, `,"error":%q`, p.err.Error()); err != nil {
-			return nil, err
-		}
+		data["error"] = p.err.Error()
 	}
 
 	for _, key := range p.Keys() {
-		k := fmt.Sprint(key)
-		v, _ := json.Marshal(p.data[key])
-		if _, err := fmt.Fprintf(&buf, `,"%s":%q`, k, v); err != nil {
-			return nil, err
+		if val, ok := p.data[key]; ok {
+			data[fmt.Sprint(key)] = val
 		}
 	}
 
-	buf.WriteByte('}')
-	return buf.Bytes(), nil
+	return json.Marshal(data)
 }

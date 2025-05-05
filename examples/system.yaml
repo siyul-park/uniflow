@@ -14,17 +14,32 @@
   name: router
   routes:
     - method: GET
-      path: /processes
+      path: /frames
       port: out[0]
     - method: GET
-      path: /symbols
+      path: /processes
       port: out[1]
+    - method: GET
+      path: /symbols
+      port: out[2]
   ports:
     out[0]:
-      - name: get_processes
+      - name: get_frames
         port: in
     out[1]:
+      - name: get_processes
+        port: in
+    out[2]:
       - name: get_symbols
+        port: in
+
+- kind: snippet
+  name: get_frames
+  language: text
+  code: SELECT * FROM `frames`
+  ports:
+    out:
+      - name: local
         port: in
 
 - kind: snippet

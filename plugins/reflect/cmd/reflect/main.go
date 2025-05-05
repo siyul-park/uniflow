@@ -50,6 +50,7 @@ func (p *Plugin) Load(_ context.Context) error {
 
 		drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
 			"local": schema.NewInMemoryCatalog(map[string]schema.Table{
+				"frames":    schema2.NewFrameTable(agent),
 				"processes": schema2.NewProcessTable(agent),
 				"symbols":   schema2.NewSymbolTable(agent),
 			}),

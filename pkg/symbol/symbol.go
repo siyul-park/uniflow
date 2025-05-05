@@ -9,7 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Symbol represents a Node that is identifiable within a Spec.

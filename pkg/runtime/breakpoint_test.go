@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -109,4 +110,30 @@ func TestBreakpoint_Done(t *testing.T) {
 
 	require.True(t, b.Done())
 	require.Nil(t, b.Frame())
+}
+
+func TestBreakpoint_MarshalJSON(t *testing.T) {
+	proc := process.New()
+	defer proc.Exit(nil)
+
+	sb := &symbol.Symbol{
+		Spec: &spec.Meta{
+			ID:        uuid.Must(uuid.NewV7()),
+			Kind:      faker.UUIDHyphenated(),
+			Namespace: meta.DefaultNamespace,
+			Name:      faker.UUIDHyphenated(),
+		},
+		Node: node.NewOneToOneNode(nil),
+	}
+	defer sb.Close()
+
+	b := NewBreakpoint(
+		BreakWithProcess(proc),
+		BreakWithSymbol(sb),
+	)
+	defer b.Close()
+
+	data, err := json.Marshal(b)
+	require.NoError(t, err)
+	require.NotZero(t, data)
 }

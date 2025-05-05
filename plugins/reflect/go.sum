@@ -37,6 +37,8 @@ github.com/siyul-park/sqlbridge v0.1.1-0.20250505012939-aede07bfdb16 h1:WeM42C47
 github.com/siyul-park/sqlbridge v0.1.1-0.20250505012939-aede07bfdb16/go.mod h1:8uHK8MD/hmM4vYzy/tyRS4EeRBoYDT6auSn2pbmtPJw=
 github.com/siyul-park/sqlbridge v0.1.1 h1:wDX8DTA0fGEYiaSbsLzt00y99b/h1jkb2YKsfUDRftY=
 github.com/siyul-park/sqlbridge v0.1.1/go.mod h1:8uHK8MD/hmM4vYzy/tyRS4EeRBoYDT6auSn2pbmtPJw=
+github.com/siyul-park/sqlbridge v0.1.2 h1:VBambboHf4WfUUwUEDl1pmcSw+zOAa5QHgKxMbWRqk4=
+github.com/siyul-park/sqlbridge v0.1.2/go.mod h1:8uHK8MD/hmM4vYzy/tyRS4EeRBoYDT6auSn2pbmtPJw=
 github.com/siyul-park/uniflow v0.13.0 h1:o8xnG+lqKQl3R42nVX0bHA6h9DNEkTIdRAJ5dcqYJr0=
 github.com/siyul-park/uniflow v0.13.0/go.mod h1:v/Lv4WT08tjzit+wUAMMwjLOccTJ4VNxJNh43GFcBUE=
 github.com/siyul-park/uniflow v0.13.1-0.20250430144224-4382a287a960 h1:eHpyqZSTaG+lWlH2MdvIUV337RPXflVfnsNytPAl2wM=

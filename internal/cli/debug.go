@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,7 +17,6 @@ import (
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/symbol"
-	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Debugger manages the debugger UI using Bubble Tea.
@@ -351,76 +349,23 @@ func (v *frameDebugView) View() string {
 	if v.frame == nil {
 		return ""
 	}
-	data, err := json.MarshalIndent(v.Interface(), "", "    ")
+	data, err := json.MarshalIndent(v.frame, "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
 	return string(data)
 }
 
-func (v *frameDebugView) Interface() map[string]any {
-	if v.frame == nil {
-		return nil
-	}
-
-	value := map[string]any{}
-
-	if v.frame.Process != nil {
-		value["process"] = v.frame.Process.ID()
-	}
-
-	if v.frame.Symbol != nil {
-		if v.frame.Symbol.Name() != "" {
-			value["symbol"] = v.frame.Symbol.Name()
-		} else {
-			value["symbol"] = v.frame.Symbol.ID()
-		}
-
-		if v.frame.InPort != nil {
-			for name, in := range v.frame.Symbol.Ins() {
-				if in == v.frame.InPort {
-					value["port"] = name
-					break
-				}
-			}
-		}
-
-		if v.frame.OutPort != nil {
-			for name, out := range v.frame.Symbol.Outs() {
-				if out == v.frame.OutPort {
-					value["port"] = name
-					break
-				}
-			}
-		}
-	}
-
-	if v.frame.InPck != nil {
-		value["input"] = types.InterfaceOf(v.frame.InPck.Payload())
-	}
-
-	if v.frame.OutPck != nil {
-		value["output"] = types.InterfaceOf(v.frame.OutPck.Payload())
-	}
-
-	if v.frame.InTime != (time.Time{}) && v.frame.OutTime != (time.Time{}) {
-		value["time"] = v.frame.OutTime.Sub(v.frame.InTime).Abs().String()
-	}
-
-	return value
-}
-
 func (v *framesDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
 	writer := fmt2.NewWriter(buffer)
 
-	values := make([]any, 0, len(v.frames))
+	frms := make([]*runtime.Frame, 0, len(v.frames))
 	for _, frm := range v.frames {
-		value := (&frameDebugView{frame: frm}).Interface()
-		values = append(values, value)
+		frms = append(frms, frm)
 	}
 
-	writer.Write(values)
+	_ = writer.Write(frms)
 	return buffer.String()
 }
 
@@ -429,55 +374,23 @@ func (v *breakpointDebugView) View() string {
 		return ""
 	}
 
-	data, err := json.MarshalIndent(v.Interface(), "", "    ")
+	data, err := json.MarshalIndent(v.breakpoint, "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
 	return string(data)
 }
 
-func (v *breakpointDebugView) Interface() map[string]any {
-	if v.breakpoint == nil {
-		return nil
-	}
-
-	value := map[string]any{"id": v.breakpoint.ID()}
-
-	sb := v.breakpoint.Symbol()
-	if sb != nil {
-		value["symbol"] = sb.ID()
-		if sb.Name() != "" {
-			value["symbol"] = sb.Name()
-		}
-
-		for name, in := range sb.Ins() {
-			if in == v.breakpoint.InPort() {
-				value["port"] = name
-				break
-			}
-		}
-		for name, out := range sb.Outs() {
-			if out == v.breakpoint.OutPort() {
-				value["port"] = name
-				break
-			}
-		}
-	}
-
-	return value
-}
-
 func (v *breakpointsDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
 	writer := fmt2.NewWriter(buffer)
 
-	values := make([]any, 0, len(v.breakpoints))
-	for _, b := range v.breakpoints {
-		value := (&breakpointDebugView{breakpoint: b}).Interface()
-		values = append(values, value)
+	bps := make([]*runtime.Breakpoint, 0, len(v.breakpoints))
+	for _, bp := range v.breakpoints {
+		bps = append(bps, bp)
 	}
 
-	writer.Write(values)
+	_ = writer.Write(bps)
 	return buffer.String()
 }
 
