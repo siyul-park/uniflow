@@ -35,6 +35,9 @@ path = "./dist/ecmascript.so"
 path = "./dist/mongodb.so"
 
 [[plugins]]
+path = "./dist/reflect.so"
+
+[[plugins]]
 path = "./dist/ctrl.so"
 
 [[plugins]]

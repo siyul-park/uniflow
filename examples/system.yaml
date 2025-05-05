@@ -24,17 +24,17 @@
       port: out[2]
   ports:
     out[0]:
-      - name: get_frames
+      - name: frames_read
         port: in
     out[1]:
-      - name: get_processes
+      - name: processes_read
         port: in
     out[2]:
-      - name: get_symbols
+      - name: symbols_read
         port: in
 
 - kind: snippet
-  name: get_frames
+  name: frames_read
   language: text
   code: SELECT * FROM `frames`
   ports:
@@ -43,7 +43,7 @@
         port: in
 
 - kind: snippet
-  name: get_processes
+  name: processes_read
   language: text
   code: SELECT * FROM `processes`
   ports:
@@ -52,7 +52,7 @@
         port: in
 
 - kind: snippet
-  name: get_symbols
+  name: symbols_read
   language: text
   code: SELECT * FROM `symbols`
   ports:
