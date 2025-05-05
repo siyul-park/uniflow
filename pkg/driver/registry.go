@@ -34,6 +34,18 @@ func (r *Registry) Register(name string, driver Driver) error {
 	return nil
 }
 
+// Unregister removes a driver from the registry. Returns an error if the driver is not found.
+func (r *Registry) Unregister(name string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.drivers[name]; !ok {
+		return errors.WithStack(ErrNotRegistered)
+	}
+	delete(r.drivers, name)
+	return nil
+}
+
 // Lookup retrieves a driver by its name. Returns an error if the driver is not found.
 func (r *Registry) Lookup(name string) (Driver, error) {
 	r.mu.RLock()

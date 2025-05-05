@@ -17,6 +17,7 @@ import (
 type Plugin struct {
 	schemeBuilder    *scheme.Builder
 	languageRegistry *language.Registry
+	schemeRegister   scheme.Register
 	mu               sync.Mutex
 }
 
@@ -48,53 +49,63 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.schemeBuilder == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing scheme builder")
-	}
-	if p.languageRegistry == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
+	if p.schemeBuilder == nil || p.languageRegistry == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	p.schemeBuilder.Register(scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		compiler, err := p.languageRegistry.Default()
-		if err != nil {
-			return err
-		}
+	if p.schemeRegister == nil {
+		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
+			compiler, err := p.languageRegistry.Default()
+			if err != nil {
+				return err
+			}
 
-		definitions := []struct {
-			kind  string
-			codec scheme.Codec
-			spec  spec.Spec
-		}{
-			{node.KindBlock, node.NewBlockNodeCodec(s), &node.BlockNodeSpec{}},
-			{node.KindFor, node.NewForNodeCodec(), &node.ForNodeSpec{}},
-			{node.KindFork, node.NewForkNodeCodec(), &node.ForkNodeSpec{}},
-			{node.KindIf, node.NewIfNodeCodec(compiler), &node.IfNodeSpec{}},
-			{node.KindMerge, node.NewMergeNodeCodec(), &node.MergeNodeSpec{}},
-			{node.KindNOP, node.NewNOPNodeCodec(), &node.NOPNodeSpec{}},
-			{node.KindPipe, node.NewPipeNodeCodec(), &node.PipeNodeSpec{}},
-			{node.KindRetry, node.NewRetryNodeCodec(), &node.RetryNodeSpec{}},
-			{node.KindSleep, node.NewSleepNodeCodec(), &node.SleepNodeSpec{}},
-			{node.KindSnippet, node.NewSnippetNodeCodec(p.languageRegistry), &node.SnippetNodeSpec{}},
-			{node.KindSplit, node.NewSplitNodeCodec(), &node.SplitNodeSpec{}},
-			{node.KindStep, node.NewStepNodeCodec(s), &node.StepNodeSpec{}},
-			{node.KindSwitch, node.NewSwitchNodeCodec(compiler), &node.SwitchNodeSpec{}},
-			{node.KindThrow, node.NewThrowNodeCodec(), &node.ThrowNodeSpec{}},
-			{node.KindTry, node.NewTryNodeCodec(), &node.TryNodeSpec{}},
-		}
+			definitions := []struct {
+				kind  string
+				codec scheme.Codec
+				spec  spec.Spec
+			}{
+				{node.KindBlock, node.NewBlockNodeCodec(s), &node.BlockNodeSpec{}},
+				{node.KindFor, node.NewForNodeCodec(), &node.ForNodeSpec{}},
+				{node.KindFork, node.NewForkNodeCodec(), &node.ForkNodeSpec{}},
+				{node.KindIf, node.NewIfNodeCodec(compiler), &node.IfNodeSpec{}},
+				{node.KindMerge, node.NewMergeNodeCodec(), &node.MergeNodeSpec{}},
+				{node.KindNOP, node.NewNOPNodeCodec(), &node.NOPNodeSpec{}},
+				{node.KindPipe, node.NewPipeNodeCodec(), &node.PipeNodeSpec{}},
+				{node.KindRetry, node.NewRetryNodeCodec(), &node.RetryNodeSpec{}},
+				{node.KindSleep, node.NewSleepNodeCodec(), &node.SleepNodeSpec{}},
+				{node.KindSnippet, node.NewSnippetNodeCodec(p.languageRegistry), &node.SnippetNodeSpec{}},
+				{node.KindSplit, node.NewSplitNodeCodec(), &node.SplitNodeSpec{}},
+				{node.KindStep, node.NewStepNodeCodec(s), &node.StepNodeSpec{}},
+				{node.KindSwitch, node.NewSwitchNodeCodec(compiler), &node.SwitchNodeSpec{}},
+				{node.KindThrow, node.NewThrowNodeCodec(), &node.ThrowNodeSpec{}},
+				{node.KindTry, node.NewTryNodeCodec(), &node.TryNodeSpec{}},
+			}
 
-		for _, def := range definitions {
-			s.AddKnownType(def.kind, def.spec)
-			s.AddCodec(def.kind, def.codec)
-		}
+			for _, def := range definitions {
+				s.AddKnownType(def.kind, def.spec)
+				s.AddCodec(def.kind, def.codec)
+			}
 
-		return nil
-	}))
+			return nil
+		})
+	}
 
+	p.schemeBuilder.Register(p.schemeRegister)
 	return nil
 }
 
-// Unload performs cleanup when the plugin is unloaded (no-op).
+// Unload performs cleanup when the plugin is unloaded.
 func (p *Plugin) Unload(_ context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.schemeBuilder == nil {
+		return nil
+	}
+
+	if p.schemeRegister == nil {
+		p.schemeBuilder.Unregister(p.schemeRegister)
+	}
 	return nil
 }

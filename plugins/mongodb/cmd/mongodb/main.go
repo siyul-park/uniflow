@@ -39,13 +39,18 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.driverRegistry == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing driver registry")
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
-
 	return p.driverRegistry.Register("mongodb", driver2.New())
 }
 
 // Unload cleans up resources when the plugin is unloaded (currently a no-op).
 func (p *Plugin) Unload(_ context.Context) error {
-	return nil
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.driverRegistry == nil {
+		return nil
+	}
+	return p.driverRegistry.Unregister("mongodb")
 }

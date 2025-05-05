@@ -14,8 +14,9 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	schemeBuilder *scheme.Builder
-	mu            sync.Mutex
+	schemeBuilder  *scheme.Builder
+	schemeRegister scheme.Register
+	mu             sync.Mutex
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
@@ -39,30 +40,44 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.schemeBuilder == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing scheme builder")
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	p.schemeBuilder.Register(scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		definitions := []struct {
-			kind  string
-			codec scheme.Codec
-			spec  spec.Spec
-		}{
-			{node2.KindSQL, node2.NewSQLNodeCodec(), &node2.SQLNodeSpec{}},
-		}
+	if p.schemeRegister == nil {
+		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
+			definitions := []struct {
+				kind  string
+				codec scheme.Codec
+				spec  spec.Spec
+			}{
+				{node2.KindSQL, node2.NewSQLNodeCodec(), &node2.SQLNodeSpec{}},
+			}
 
-		for _, def := range definitions {
-			s.AddKnownType(def.kind, def.spec)
-			s.AddCodec(def.kind, def.codec)
-		}
+			for _, def := range definitions {
+				s.AddKnownType(def.kind, def.spec)
+				s.AddCodec(def.kind, def.codec)
+			}
 
-		return nil
-	}))
+			return nil
+		})
+	}
+
+	p.schemeBuilder.Register(p.schemeRegister)
 
 	return nil
 }
 
-// Unload releases plugin resources (no-op).
+// Unload releases plugin resources.
 func (p *Plugin) Unload(_ context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.schemeBuilder == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
+	}
+
+	if p.schemeRegister != nil {
+		p.schemeBuilder.Unregister(p.schemeRegister)
+	}
 	return nil
 }

@@ -18,10 +18,12 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder   *hook.Builder
-	schemeBuilder *scheme.Builder
-	testingRunner *testing.Runner
-	mu            sync.Mutex
+	hookBuilder    *hook.Builder
+	schemeBuilder  *scheme.Builder
+	testingRunner  *testing.Runner
+	schemeRegister scheme.Register
+	hookRegister   hook.Register
+	mu             sync.Mutex
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
@@ -60,55 +62,67 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing hook builder")
-	}
-	if p.schemeBuilder == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing scheme builder")
-	}
-	if p.testingRunner == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing testing runner")
+	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	p.hookBuilder.Register(hook.RegisterFunc(func(h *hook.Hook) error {
-		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-			var n *node2.TestNode
-			if node.As(sb, &n) {
-				p.testingRunner.Register(sb.NamespacedName(), n)
-			}
+	if p.hookRegister == nil {
+		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
+			h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+				var n *node2.TestNode
+				if node.As(sb, &n) {
+					p.testingRunner.Register(sb.NamespacedName(), n)
+				}
+				return nil
+			}))
+			h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+				var n *node2.TestNode
+				if node.As(sb, &n) {
+					p.testingRunner.Unregister(sb.NamespacedName())
+				}
+				return nil
+			}))
 			return nil
-		}))
-		h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-			var n *node2.TestNode
-			if node.As(sb, &n) {
-				p.testingRunner.Unregister(sb.NamespacedName())
+		})
+	}
+	if p.schemeRegister == nil {
+		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
+			definitions := []struct {
+				kind  string
+				codec scheme.Codec
+				spec  spec.Spec
+			}{
+				{node2.KindTest, node2.NewTestNodeCodec(), &node2.TestNodeSpec{}},
 			}
+
+			for _, def := range definitions {
+				s.AddKnownType(def.kind, def.spec)
+				s.AddCodec(def.kind, def.codec)
+			}
+
 			return nil
-		}))
-		return nil
-	}))
+		})
+	}
 
-	p.schemeBuilder.Register(scheme.RegisterFunc(func(s *scheme.Scheme) error {
-		definitions := []struct {
-			kind  string
-			codec scheme.Codec
-			spec  spec.Spec
-		}{
-			{node2.KindTest, node2.NewTestNodeCodec(), &node2.TestNodeSpec{}},
-		}
-
-		for _, def := range definitions {
-			s.AddKnownType(def.kind, def.spec)
-			s.AddCodec(def.kind, def.codec)
-		}
-
-		return nil
-	}))
-
+	p.hookBuilder.Register(p.hookRegister)
+	p.schemeBuilder.Register(p.schemeRegister)
 	return nil
 }
 
-// Unload releases plugin resources (no-op).
+// Unload releases plugin resources.
 func (p *Plugin) Unload(_ context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil {
+		return nil
+	}
+
+	if p.hookRegister != nil {
+		p.hookBuilder.Unregister(p.hookRegister)
+	}
+	if p.schemeRegister != nil {
+		p.schemeBuilder.Unregister(p.schemeRegister)
+	}
 	return nil
 }
