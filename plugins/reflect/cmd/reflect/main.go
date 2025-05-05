@@ -17,8 +17,9 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder *hook.Builder
-	mu          sync.Mutex
+	hookBuilder  *hook.Builder
+	hookRegister hook.Register
+	mu           sync.Mutex
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
@@ -42,31 +43,45 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.hookBuilder == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing hook builder")
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	p.hookBuilder.Register(hook.RegisterFunc(func(h *hook.Hook) error {
-		agent := runtime.NewAgent()
+	if p.hookRegister == nil {
+		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
+			agent := runtime.NewAgent()
 
-		drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
-			"system": schema.NewInMemoryCatalog(map[string]schema.Table{
-				"frames":    table.NewFrameTable(agent),
-				"processes": table.NewProcessTable(agent),
-				"symbols":   table.NewSymbolTable(agent),
-			}),
-		})))
+			drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
+				"system": schema.NewInMemoryCatalog(map[string]schema.Table{
+					"frames":    table.NewFrameTable(agent),
+					"processes": table.NewProcessTable(agent),
+					"symbols":   table.NewSymbolTable(agent),
+				}),
+			})))
 
-		h.AddLoadHook(agent)
-		h.AddUnloadHook(agent)
+			h.AddLoadHook(agent)
+			h.AddUnloadHook(agent)
 
-		sql.Register("runtime", drv)
+			sql.Register("runtime", drv)
 
-		return nil
-	}))
+			return nil
+		})
+	}
+
+	p.hookBuilder.Register(p.hookRegister)
 	return nil
 }
 
-// Unload releases plugin resources (no-op).
+// Unload releases plugin resources.
 func (p *Plugin) Unload(_ context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.hookBuilder == nil {
+		return nil
+	}
+
+	if p.hookRegister != nil {
+		p.hookBuilder.Unregister(p.hookRegister)
+	}
 	return nil
 }

@@ -39,7 +39,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.languageRegistry == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
 	if err := p.languageRegistry.Register(javascript.Language, javascript.NewCompiler()); err != nil {
@@ -48,7 +48,17 @@ func (p *Plugin) Load(_ context.Context) error {
 	return p.languageRegistry.Register(typescript.Language, typescript.NewCompiler())
 }
 
-// Unload performs cleanup when the plugin is unloaded (currently no-op).
+// Unload performs cleanup when the plugin is unloaded.
 func (p *Plugin) Unload(_ context.Context) error {
-	return nil
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.languageRegistry == nil {
+		return nil
+	}
+
+	if err := p.languageRegistry.Unregister(typescript.Language); err != nil {
+		return err
+	}
+	return p.languageRegistry.Unregister(javascript.Language)
 }

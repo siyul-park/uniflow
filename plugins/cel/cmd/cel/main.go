@@ -58,7 +58,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.languageRegistry == nil {
-		return errors.Wrap(plugin.ErrMissingDependency, "missing language registry")
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
 	var opts []cel.EnvOption
@@ -69,11 +69,16 @@ func (p *Plugin) Load(_ context.Context) error {
 		}
 		opts = append(opts, opt)
 	}
-
 	return p.languageRegistry.Register(cel2.Language, cel2.NewCompiler(opts...))
 }
 
-// Unload cleans up resources when the plugin is unloaded (currently a no-op).
+// Unload cleans up resources when the plugin is unloaded.
 func (p *Plugin) Unload(_ context.Context) error {
-	return nil
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.languageRegistry == nil {
+		return nil
+	}
+	return p.languageRegistry.Unregister(cel2.Language)
 }

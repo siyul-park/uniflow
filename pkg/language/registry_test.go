@@ -24,6 +24,24 @@ func TestRegistry_Register(t *testing.T) {
 
 }
 
+func TestRegistry_Unregister(t *testing.T) {
+	r := NewRegistry()
+	defer r.Close()
+
+	lang := faker.UUIDHyphenated()
+	c := CompileFunc(func(_ string) (Program, error) {
+		return RunFunc(func(_ context.Context, _ ...any) (any, error) {
+			return nil, nil
+		}), nil
+	})
+
+	err := r.Register(lang, c)
+	assert.NoError(t, err)
+
+	err = r.Unregister(lang)
+	assert.NoError(t, err)
+}
+
 func TestRegistry_Lookup(t *testing.T) {
 	r := NewRegistry()
 	defer r.Close()

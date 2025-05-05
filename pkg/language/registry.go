@@ -35,6 +35,18 @@ func (r *Registry) Register(language string, compiler Compiler) error {
 	return nil
 }
 
+// Unregister removes a language and its compiler from the registry.
+func (r *Registry) Unregister(language string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.compilers[language]; !ok {
+		return errors.Wrapf(ErrNotFound, "failed to unregister language '%s'", language)
+	}
+	delete(r.compilers, language)
+	return nil
+}
+
 // Lookup retrieves the compiler for a given language.
 func (r *Registry) Lookup(language string) (Compiler, error) {
 	r.mu.RLock()

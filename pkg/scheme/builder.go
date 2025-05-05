@@ -8,7 +8,9 @@ var _ Register = (*Builder)(nil)
 // NewBuilder creates a new Builder with the provided Register functions.
 func NewBuilder(registers ...Register) *Builder {
 	b := &Builder{}
-	b.Register(registers...)
+	for _, r := range registers {
+		b.Register(r)
+	}
 	return b
 }
 
@@ -22,9 +24,26 @@ func (b *Builder) AddToScheme(s *Scheme) error {
 	return nil
 }
 
-// Register appends one or more Register functions to the Builder.
-func (b *Builder) Register(registers ...Register) {
-	*b = append(*b, registers...)
+// Register adds a Register function if not already present.
+func (b *Builder) Register(register Register) bool {
+	for _, r := range *b {
+		if r == register {
+			return false
+		}
+	}
+	*b = append(*b, register)
+	return true
+}
+
+// Unregister removes a Register function if present.
+func (b *Builder) Unregister(register Register) bool {
+	for i, r := range *b {
+		if r == register {
+			*b = append((*b)[:i], (*b)[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // Len returns the number of registered hook functions.
