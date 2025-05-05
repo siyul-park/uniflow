@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
-	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,14 +16,13 @@ func TestPlugin_Load(t *testing.T) {
 	p := New()
 
 	hb := hook.NewBuilder()
-	sb := scheme.NewBuilder()
 
 	p.SetHookBuilder(hb)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
 
-	_, err = sb.Build()
+	_, err = hb.Build()
 	require.NoError(t, err)
 }
 
