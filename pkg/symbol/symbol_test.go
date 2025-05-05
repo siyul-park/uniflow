@@ -1,6 +1,7 @@
 package symbol
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -120,4 +121,36 @@ func TestSymbol_Setter(t *testing.T) {
 	}
 	sb.SetEnv(env)
 	require.Equal(t, env, sb.Env())
+}
+
+func TestSymbol_MarshalJSON(t *testing.T) {
+	n := node.NewOneToOneNode(nil)
+	defer n.Close()
+
+	meta := &spec.Meta{
+		ID:        uuid.Must(uuid.NewV7()),
+		Kind:      faker.UUIDHyphenated(),
+		Namespace: meta.DefaultNamespace,
+		Name:      faker.UUIDHyphenated(),
+		Annotations: map[string]string{
+			faker.UUIDHyphenated(): faker.UUIDHyphenated(),
+		},
+		Ports: map[string][]spec.Port{
+			node.PortOut: {
+				{
+					ID:   uuid.Must(uuid.NewV7()),
+					Port: node.PortIn,
+				},
+			},
+		},
+	}
+
+	sb := &Symbol{
+		Spec: meta,
+		Node: n,
+	}
+
+	data, err := json.Marshal(sb)
+	require.NoError(t, err)
+	require.NotZero(t, data)
 }

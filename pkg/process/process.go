@@ -1,7 +1,10 @@
 package process
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -31,7 +34,10 @@ const (
 	StatusTerminated
 )
 
-var _ context.Context = (*Process)(nil)
+var (
+	_ context.Context = (*Process)(nil)
+	_ json.Marshaler  = (*Process)(nil)
+)
 
 // New creates and returns a new Process instance with an initial state.
 func New() *Process {
@@ -216,4 +222,49 @@ func (p *Process) AddExitHook(hook ExitHook) bool {
 	p.mu.Unlock()
 
 	return true
+}
+
+// MarshalJSON encodes the Process into a compact, standard-form JSON object.
+func (p *Process) MarshalJSON() ([]byte, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	var buf bytes.Buffer
+	buf.WriteByte('{')
+
+	if _, err := fmt.Fprintf(&buf, `"id":"%s"`, p.id.String()); err != nil {
+		return nil, err
+	}
+	if p.parent != nil {
+		if _, err := fmt.Fprintf(&buf, `,"parent_id":"%s"`, p.parent.ID().String()); err != nil {
+			return nil, err
+		}
+	}
+	if _, err := fmt.Fprintf(&buf, `,"status":%d`, p.status); err != nil {
+		return nil, err
+	}
+	if _, err := fmt.Fprintf(&buf, `,"started_at":"%d"`, p.startTime.Unix()); err != nil {
+		return nil, err
+	}
+	if !p.endTime.IsZero() {
+		if _, err := fmt.Fprintf(&buf, `,"ended_at":"%d"`, p.endTime.Unix()); err != nil {
+			return nil, err
+		}
+	}
+	if p.err != nil {
+		if _, err := fmt.Fprintf(&buf, `,"error":%q`, p.err.Error()); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, key := range p.Keys() {
+		k := fmt.Sprint(key)
+		v, _ := json.Marshal(p.data[key])
+		if _, err := fmt.Fprintf(&buf, `,"%s":%q`, k, v); err != nil {
+			return nil, err
+		}
+	}
+
+	buf.WriteByte('}')
+	return buf.Bytes(), nil
 }

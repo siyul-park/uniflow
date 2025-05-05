@@ -54,23 +54,17 @@ type (
 	processesDebugView   struct{ processes []*process.Process }
 )
 
-var _ tea.Model = (*debugModel)(nil)
-
-var _ debugView = (*errDebugView)(nil)
-
-var _ debugView = (*frameDebugView)(nil)
-
-var _ debugView = (*breakpointDebugView)(nil)
-
-var _ debugView = (*breakpointsDebugView)(nil)
-
-var _ debugView = (*symbolDebugView)(nil)
-
-var _ debugView = (*symbolsDebugView)(nil)
-
-var _ debugView = (*processDebugView)(nil)
-
-var _ debugView = (*processesDebugView)(nil)
+var (
+	_ tea.Model = (*debugModel)(nil)
+	_ debugView = (*errDebugView)(nil)
+	_ debugView = (*frameDebugView)(nil)
+	_ debugView = (*breakpointDebugView)(nil)
+	_ debugView = (*breakpointsDebugView)(nil)
+	_ debugView = (*symbolDebugView)(nil)
+	_ debugView = (*symbolsDebugView)(nil)
+	_ debugView = (*processDebugView)(nil)
+	_ debugView = (*processesDebugView)(nil)
+)
 
 // NewDebugger initializes a new Debugger with an input model and UI.
 func NewDebugger(agent *runtime.Agent, options ...tea.ProgramOption) *Debugger {
@@ -492,35 +486,23 @@ func (v *symbolDebugView) View() string {
 		return ""
 	}
 
-	data, err := json.MarshalIndent(v.Interface(), "", "    ")
+	data, err := json.MarshalIndent(v.symbol, "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
 	return string(data)
 }
 
-func (v *symbolDebugView) Interface() map[string]any {
-	if v.symbol == nil {
-		return nil
-	}
-
-	encoded, _ := types.Marshal(v.symbol.Spec)
-
-	var decoded map[string]any
-	types.Unmarshal(encoded, &decoded)
-	return decoded
-}
-
 func (v *symbolsDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
 	writer := fmt2.NewWriter(buffer)
 
-	values := make([]any, 0, len(v.symbols))
+	sbs := make([]*symbol.Symbol, 0, len(v.symbols))
 	for _, sb := range v.symbols {
-		values = append(values, (&symbolDebugView{symbol: sb}).Interface())
+		sbs = append(sbs, sb)
 	}
 
-	writer.Write(values)
+	_ = writer.Write(sbs)
 	return buffer.String()
 }
 
@@ -529,39 +511,22 @@ func (v *processDebugView) View() string {
 		return ""
 	}
 
-	data, err := json.MarshalIndent(v.Interface(), "", "    ")
+	data, err := json.MarshalIndent(v.process, "", "    ")
 	if err != nil {
 		return (&errDebugView{err: err}).View()
 	}
 	return string(data)
 }
 
-func (v *processDebugView) Interface() map[string]any {
-	if v.process == nil {
-		return nil
-	}
-
-	value := map[string]any{"id": v.process.ID()}
-	if p := v.process.Parent(); p != nil {
-		value["pid"] = p.ID()
-	}
-	for _, key := range v.process.Keys() {
-		val := v.process.Value(key)
-		value[fmt.Sprint(key)] = fmt.Sprint(val)
-	}
-	value["status"] = v.process.Status()
-	return value
-}
-
 func (v *processesDebugView) View() string {
 	buffer := bytes.NewBuffer(nil)
 	writer := fmt2.NewWriter(buffer)
 
-	values := make([]any, 0, len(v.processes))
+	procs := make([]*process.Process, 0, len(v.processes))
 	for _, proc := range v.processes {
-		values = append(values, (&processDebugView{process: proc}).Interface())
+		procs = append(procs, proc)
 	}
 
-	writer.Write(values)
+	_ = writer.Write(procs)
 	return buffer.String()
 }

@@ -1,0 +1,51 @@
+- kind: listener
+  name: listener
+  protocol: http
+  port: '{{ .PORT }}'
+  env:
+    PORT:
+      data: '{{ .PORT }}'
+  ports:
+    out:
+      - name: router
+        port: in
+
+- kind: router
+  name: router
+  routes:
+    - method: GET
+      path: /processes
+      port: out[0]
+    - method: GET
+      path: /symbols
+      port: out[1]
+  ports:
+    out[0]:
+      - name: get_processes
+        port: in
+    out[1]:
+      - name: get_symbols
+        port: in
+
+- kind: snippet
+  name: get_processes
+  language: text
+  code: SELECT * FROM `processes`
+  ports:
+    out:
+      - name: local
+        port: in
+
+- kind: snippet
+  name: get_symbols
+  language: text
+  code: SELECT * FROM `symbols`
+  ports:
+    out:
+      - name: local
+        port: in
+
+- kind: sql
+  name: local
+  driver: reflect
+  source: local
