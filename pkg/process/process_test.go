@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -146,6 +147,18 @@ func TestProcess_Join(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, ctx.Err())
 	}
+}
+
+func TestProcess_MarshalJSON(t *testing.T) {
+	proc := New()
+	defer proc.Exit(nil)
+
+	proc.SetValue("key1", "value1")
+	proc.SetValue("key2", "value2")
+
+	data, err := json.Marshal(proc)
+	require.NoError(t, err)
+	require.NotZero(t, data)
 }
 
 func BenchmarkNewProcess(b *testing.B) {

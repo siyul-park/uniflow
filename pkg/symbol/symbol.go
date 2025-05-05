@@ -1,6 +1,7 @@
 package symbol
 
 import (
+	"encoding/json"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/spec"
+	"github.com/siyul-park/uniflow/pkg/types"
 )
 
 // Symbol represents a Node that is identifiable within a Spec.
@@ -20,8 +22,9 @@ type Symbol struct {
 }
 
 var (
-	_ node.Node  = (*Symbol)(nil)
-	_ node.Proxy = (*Symbol)(nil)
+	_ node.Node      = (*Symbol)(nil)
+	_ node.Proxy     = (*Symbol)(nil)
+	_ json.Marshaler = (*Symbol)(nil)
 )
 
 // ID returns the unique identifier of the Symbol.
@@ -162,6 +165,19 @@ func (s *Symbol) Out(name string) *port.OutPort {
 // Unwrap returns the underlying Node from the Symbol.
 func (s *Symbol) Unwrap() node.Node {
 	return s.Node
+}
+
+// MarshalJSON implements the json.Marshaler interface for Symbol.
+func (s *Symbol) MarshalJSON() ([]byte, error) {
+	raw, err := types.Marshal(s.Spec)
+	if err != nil {
+		return nil, err
+	}
+	var data any
+	if err := types.Unmarshal(raw, &data); err != nil {
+		return nil, err
+	}
+	return json.Marshal(data)
 }
 
 // Close frees all resources held by the Symbol.

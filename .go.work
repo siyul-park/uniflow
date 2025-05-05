@@ -7,6 +7,7 @@ use (
     ./plugins/ecmascript
     ./plugins/mongodb
     ./plugins/net
+    ./plugins/reflect
     ./plugins/sql
     ./plugins/testing
 )

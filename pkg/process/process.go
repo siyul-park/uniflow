@@ -2,6 +2,8 @@ package process
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -31,7 +33,10 @@ const (
 	StatusTerminated
 )
 
-var _ context.Context = (*Process)(nil)
+var (
+	_ context.Context = (*Process)(nil)
+	_ json.Marshaler  = (*Process)(nil)
+)
 
 // New creates and returns a new Process instance with an initial state.
 func New() *Process {
@@ -216,4 +221,34 @@ func (p *Process) AddExitHook(hook ExitHook) bool {
 	p.mu.Unlock()
 
 	return true
+}
+
+// MarshalJSON encodes the Process into a compact, standard-form JSON object.
+func (p *Process) MarshalJSON() ([]byte, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	data := map[string]any{
+		"id":         p.id.String(),
+		"status":     p.status,
+		"started_at": p.startTime.Unix(),
+	}
+
+	if p.parent != nil {
+		data["parent_id"] = p.parent.ID().String()
+	}
+	if !p.endTime.IsZero() {
+		data["ended_at"] = p.endTime.Unix()
+	}
+	if p.err != nil {
+		data["error"] = p.err.Error()
+	}
+
+	for _, key := range p.Keys() {
+		if val, ok := p.data[key]; ok {
+			data[fmt.Sprint(key)] = val
+		}
+	}
+
+	return json.Marshal(data)
 }

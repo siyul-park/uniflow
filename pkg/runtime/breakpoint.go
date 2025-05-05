@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/json"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -25,7 +26,10 @@ type Breakpoint struct {
 	wmu     sync.Mutex
 }
 
-var _ Watcher = (*Breakpoint)(nil)
+var (
+	_ Watcher        = (*Breakpoint)(nil)
+	_ json.Marshaler = (*Breakpoint)(nil)
+)
 
 // BreakWithProcess sets the process associated with the breakpoint.
 func BreakWithProcess(proc *process.Process) func(*Breakpoint) {
@@ -149,6 +153,32 @@ func (b *Breakpoint) OnFrame(frame *Frame) {
 
 // OnProcess is a no-op but required by the Watcher interface.
 func (b *Breakpoint) OnProcess(*process.Process) {}
+
+// MarshalJSON implements the json.Marshaler interface for the Breakpoint type.
+func (b *Breakpoint) MarshalJSON() ([]byte, error) {
+	data := map[string]any{"id": b.ID()}
+
+	sb := b.Symbol()
+	if sb != nil {
+		data["symbol_id"] = sb.ID()
+		data["symbol_name"] = sb.Name()
+
+		for name, in := range sb.Ins() {
+			if in == b.InPort() {
+				data["port"] = name
+				break
+			}
+		}
+		for name, out := range sb.Outs() {
+			if out == b.OutPort() {
+				data["port"] = name
+				break
+			}
+		}
+	}
+
+	return json.Marshal(data)
+}
 
 // Close cleans up resources.
 func (b *Breakpoint) Close() {

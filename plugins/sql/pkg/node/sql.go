@@ -160,6 +160,5 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-
 	return packet.New(outPayload), nil
 }

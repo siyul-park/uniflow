@@ -1,6 +1,7 @@
 package fmt
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -42,7 +43,7 @@ func NewWriter(writer io.Writer) *Writer {
 
 // Write encodes the value, transforms it into a table, and writes it to the writer.
 func (w *Writer) Write(value any) error {
-	data, err := yaml.Marshal(value)
+	data, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
