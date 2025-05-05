@@ -1,4 +1,4 @@
-package schema
+package table
 
 import (
 	"context"

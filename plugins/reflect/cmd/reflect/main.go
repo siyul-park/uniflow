@@ -12,7 +12,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/plugin"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 
-	schema2 "github.com/siyul-park/uniflow/plugins/reflect/pkg/schema"
+	"github.com/siyul-park/uniflow/plugins/reflect/pkg/table"
 )
 
 // Plugin implements the plugin that registers testing-related nodes.
@@ -50,16 +50,17 @@ func (p *Plugin) Load(_ context.Context) error {
 
 		drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
 			"system": schema.NewInMemoryCatalog(map[string]schema.Table{
-				"frames":    schema2.NewFrameTable(agent),
-				"processes": schema2.NewProcessTable(agent),
-				"symbols":   schema2.NewSymbolTable(agent),
+				"frames":    table.NewFrameTable(agent),
+				"processes": table.NewProcessTable(agent),
+				"symbols":   table.NewSymbolTable(agent),
 			}),
 		})))
 
-		sql.Register("runtime", drv)
-
 		h.AddLoadHook(agent)
 		h.AddUnloadHook(agent)
+
+		sql.Register("runtime", drv)
+
 		return nil
 	}))
 	return nil
