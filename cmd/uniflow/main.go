@@ -107,11 +107,14 @@ func main() {
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
+	driverProxy := driver.NewProxy(nil)
+	defer driverProxy.Close()
+
 	for _, cfg := range k.Slices(keyPlugins) {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry))
+	cli.Fatal(pluginRegistry.Inject(pluginRegistry, testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry, driverProxy))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())
@@ -121,6 +124,8 @@ func main() {
 
 	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
 	defer drv.Close()
+
+	driverProxy.Wrap(drv)
 
 	conn := cli.Must(drv.Open(dsn.String()))
 	defer conn.Close()

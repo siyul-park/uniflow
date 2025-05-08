@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Proxy wraps a Plugin and injects dependencies via Inject* methods.
+// Proxy wraps a Plugin and injects dependencies via Set* methods.
 type Proxy struct {
 	plugin Plugin
 }
@@ -22,7 +22,7 @@ func NewProxy(plugin Plugin) *Proxy {
 	return &Proxy{plugin: plugin}
 }
 
-// Inject injects dependencies into the plugin by calling its Inject* methods.
+// Inject injects dependencies into the plugin by calling its Set* methods.
 func (p *Proxy) Inject(dependencies ...any) error {
 	val := reflect.ValueOf(p.plugin)
 	for i := 0; i < val.NumMethod(); i++ {
@@ -35,11 +35,9 @@ func (p *Proxy) Inject(dependencies ...any) error {
 
 		var ins []reflect.Value
 		for j := 0; j < val.Type().NumIn(); j++ {
-			typ := val.Type().In(j)
-
 			ok := false
 			for _, dep := range dependencies {
-				if reflect.TypeOf(dep).AssignableTo(typ) {
+				if reflect.TypeOf(dep).AssignableTo(val.Type().In(j)) {
 					ins = append(ins, reflect.ValueOf(dep))
 					ok = true
 					break
