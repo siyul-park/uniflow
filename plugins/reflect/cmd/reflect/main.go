@@ -78,6 +78,9 @@ func (p *Plugin) Load(_ context.Context) error {
 
 // Unload releases plugin resources.
 func (p *Plugin) Unload(_ context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if p.hookBuilder == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
