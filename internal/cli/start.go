@@ -105,10 +105,10 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		if enableDebug {
 			if config.Agent == nil {
 				config.Agent = runtime.NewAgent()
-
-				h.AddLoadHook(config.Agent)
-				h.AddUnloadHook(config.Agent)
 			}
+
+			h.AddLoadHook(config.Agent)
+			h.AddUnloadHook(config.Agent)
 
 			d := NewDebugger(
 				config.Agent,
