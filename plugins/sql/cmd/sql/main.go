@@ -14,12 +14,14 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	schemeBuilder  *scheme.Builder
-	schemeRegister scheme.Register
-	mu             sync.Mutex
+	schemeBuilder *scheme.Builder
+	mu            sync.Mutex
 }
 
-var _ plugin.Plugin = (*Plugin)(nil)
+var (
+	_ plugin.Plugin   = (*Plugin)(nil)
+	_ scheme.Register = (*Plugin)(nil)
+)
 
 // New returns a new Plugin instance.
 func New() *Plugin {
@@ -42,28 +44,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	if p.schemeBuilder == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
-
-	if p.schemeRegister == nil {
-		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
-			definitions := []struct {
-				kind  string
-				codec scheme.Codec
-				spec  spec.Spec
-			}{
-				{node2.KindSQL, node2.NewSQLNodeCodec(), &node2.SQLNodeSpec{}},
-			}
-
-			for _, def := range definitions {
-				s.AddKnownType(def.kind, def.spec)
-				s.AddCodec(def.kind, def.codec)
-			}
-
-			return nil
-		})
-	}
-
-	p.schemeBuilder.Register(p.schemeRegister)
-
+	p.schemeBuilder.Register(p)
 	return nil
 }
 
@@ -75,9 +56,23 @@ func (p *Plugin) Unload(_ context.Context) error {
 	if p.schemeBuilder == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
+	p.schemeBuilder.Unregister(p)
+	return nil
+}
 
-	if p.schemeRegister != nil {
-		p.schemeBuilder.Unregister(p.schemeRegister)
+// AddToScheme registers node types and codecs to the scheme.
+func (p *Plugin) AddToScheme(s *scheme.Scheme) error {
+	definitions := []struct {
+		kind  string
+		codec scheme.Codec
+		spec  spec.Spec
+	}{
+		{node2.KindSQL, node2.NewSQLNodeCodec(), &node2.SQLNodeSpec{}},
+	}
+
+	for _, def := range definitions {
+		s.AddKnownType(def.kind, def.spec)
+		s.AddCodec(def.kind, def.codec)
 	}
 	return nil
 }

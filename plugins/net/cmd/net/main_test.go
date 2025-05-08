@@ -27,6 +27,10 @@ func TestPlugin_Load(t *testing.T) {
 	err := p.Load(ctx)
 	require.NoError(t, err)
 
+	h, err := hb.Build()
+	require.NoError(t, err)
+	require.NotNil(t, h)
+
 	s, err := sb.Build()
 	require.NoError(t, err)
 

@@ -17,16 +17,33 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder  *hook.Builder
-	hookRegister hook.Register
-	mu           sync.Mutex
+	agent       *runtime.Agent
+	hookBuilder *hook.Builder
+	mu          sync.Mutex
 }
 
-var _ plugin.Plugin = (*Plugin)(nil)
+var drv = driver.New()
+
+func init() {
+	sql.Register("runtime", drv)
+}
+
+var (
+	_ plugin.Plugin = (*Plugin)(nil)
+	_ hook.Register = (*Plugin)(nil)
+)
 
 // New returns a new Plugin instance.
 func New() *Plugin {
 	return &Plugin{}
+}
+
+// SetAgent sets the agent for the plugin.
+func (p *Plugin) SetAgent(agent *runtime.Agent) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.agent = agent
 }
 
 // SetHookBuilder sets the hook builder for the plugin.
@@ -42,32 +59,20 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil {
+	if p.agent == nil || p.hookBuilder == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.hookRegister == nil {
-		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
-			agent := runtime.NewAgent()
+	reg := schema.NewInMemoryRegistry(map[string]schema.Catalog{
+		"": schema.NewInMemoryCatalog(map[string]schema.Table{
+			"frames":    table.NewFrameTable(p.agent),
+			"processes": table.NewProcessTable(p.agent),
+			"symbols":   table.NewSymbolTable(p.agent),
+		}),
+	})
+	driver.WithRegistry(reg)(drv)
 
-			drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
-				"system": schema.NewInMemoryCatalog(map[string]schema.Table{
-					"frames":    table.NewFrameTable(agent),
-					"processes": table.NewProcessTable(agent),
-					"symbols":   table.NewSymbolTable(agent),
-				}),
-			})))
-
-			h.AddLoadHook(agent)
-			h.AddUnloadHook(agent)
-
-			sql.Register("runtime", drv)
-
-			return nil
-		})
-	}
-
-	p.hookBuilder.Register(p.hookRegister)
+	p.hookBuilder.Register(p)
 	return nil
 }
 
@@ -77,11 +82,25 @@ func (p *Plugin) Unload(_ context.Context) error {
 	defer p.mu.Unlock()
 
 	if p.hookBuilder == nil {
-		return nil
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.hookRegister != nil {
-		p.hookBuilder.Unregister(p.hookRegister)
+	reg := schema.NewInMemoryRegistry(nil)
+	driver.WithRegistry(reg)(drv)
+
+	p.hookBuilder.Unregister(p)
+	return nil
+}
+
+func (p *Plugin) AddToHook(h *hook.Hook) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.agent == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
+
+	h.AddLoadHook(p.agent)
+	h.AddUnloadHook(p.agent)
 	return nil
 }

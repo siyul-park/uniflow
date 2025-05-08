@@ -33,6 +33,9 @@ func (d *driver) Open(name string) (Conn, error) {
 }
 
 func (d *driver) Close() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	for _, c := range d.conns {
 		if err := c.Close(); err != nil {
 			return err
