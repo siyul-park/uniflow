@@ -51,9 +51,10 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.schemeBuilder != nil {
-		p.schemeBuilder.Register(p)
+	if p.schemeBuilder == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
+	p.schemeBuilder.Register(p)
 	return nil
 }
 
@@ -62,9 +63,10 @@ func (p *Plugin) Unload(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.schemeBuilder != nil {
-		p.schemeBuilder.Unregister(p)
+	if p.schemeBuilder == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
+	p.schemeBuilder.Unregister(p)
 	return nil
 }
 

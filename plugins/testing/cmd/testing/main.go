@@ -64,12 +64,11 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder != nil {
-		p.hookBuilder.Register(p)
+	if p.hookBuilder == nil || p.schemeBuilder == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
-	if p.schemeBuilder != nil {
-		p.schemeBuilder.Register(p)
-	}
+	p.hookBuilder.Register(p)
+	p.schemeBuilder.Register(p)
 	return nil
 }
 
@@ -78,12 +77,11 @@ func (p *Plugin) Unload(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder != nil {
-		p.hookBuilder.Unregister(p)
+	if p.hookBuilder == nil || p.schemeBuilder == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
-	if p.schemeBuilder != nil {
-		p.schemeBuilder.Unregister(p)
-	}
+	p.hookBuilder.Unregister(p)
+	p.schemeBuilder.Unregister(p)
 	return nil
 }
 

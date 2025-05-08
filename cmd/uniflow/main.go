@@ -118,14 +118,11 @@ func main() {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(pluginRegistry, testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry, driverProxy, agent))
+	cli.Fatal(pluginRegistry.Inject(testingRunner, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry, driverProxy, agent))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())
 	hk := cli.Must(hookBuilder.Build())
-
-	hk.AddLoadHook(agent)
-	hk.AddUnloadHook(agent)
 
 	dsn := cli.Must(url.Parse(k.String(keyDatabaseURL)))
 
