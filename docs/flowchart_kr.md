@@ -221,9 +221,9 @@ flowchart TD
    * 각 노드는 `node.PortInit` 이름의 특수 포트를 통해 초기화 로직을 실행합니다.
    * 특수 포트는 코드에서 상수로 정의되어 있으며, 특정 생명주기 이벤트를 처리합니다:
      - `node.PortInit` (`init`): 노드가 처음 로드될 때 초기화 작업 수행
-     - `node.PortBegin` (`begin`): 초기화 후 노드가 활성화될 때 호출
-     - `node.PortTerm` (`term`): 노드가 언로드될 때 준비 작업 수행
-     - `node.PortFinal` (`final`): 노드 종료 시 최종 정리 작업 수행
+     - `node.PortActive` (`active`): 초기화 후 노드가 활성화될 때 호출
+     - `node.PortDeative` (`deactive`): 노드가 언로드될 때 준비 작업 수행
+     - `node.PortDeinit` (`deinit`): 노드 종료 시 최종 정리 작업 수행
    * 심볼 테이블은 `exec()` 메서드를 통해 심볼의 특수 포트로 초기화 워크플로우를 실행합니다.
    * 새로운 프로세스를 생성하여 초기화 워크플로우를 실행합니다.
    * 초기화 워크플로우는 다음과 같은 작업을 수행할 수 있습니다:

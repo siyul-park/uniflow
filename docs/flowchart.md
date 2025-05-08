@@ -221,9 +221,9 @@ flowchart TD
    * Each node executes initialization logic through a special port named `node.PortInit`.
    * Special ports are defined as constants in the code and handle specific lifecycle events:
      - `node.PortInit` (`init`): Performs initialization tasks when a node is first loaded
-     - `node.PortBegin` (`begin`): Called when a node is activated after initialization
-     - `node.PortTerm` (`term`): Performs preparation tasks when a node is unloaded
-     - `node.PortFinal` (`final`): Performs final cleanup tasks when a node is terminated
+     - `node.PortActive` (`active`): Called when a node is activated after initialization
+     - `node.PortDeative` (`deactive`): Performs preparation tasks when a node is unloaded
+     - `node.PortDeinit` (`deinit`): Performs final cleanup tasks when a node is terminated
    * The symbol table executes the initialization workflow through the special port of the symbol using the `exec()` method.
    * Creates a new process to execute the initialization workflow.
    * The initialization workflow can perform tasks such as:

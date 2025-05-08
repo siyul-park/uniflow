@@ -11,7 +11,7 @@ const (
 	PortInit    = "init"
 	PortActive  = "active"
 	PortDeative = "deactive"
-	PortCleanup = "cleanup"
+	PortDeinit  = "deinit"
 	PortIO      = "io"
 	PortIn      = "in"
 	PortOut     = "out"

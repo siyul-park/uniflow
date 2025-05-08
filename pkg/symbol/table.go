@@ -294,7 +294,7 @@ func (t *Table) unload(sb *Symbol) error {
 				return err
 			} else if err := t.unloadHooks.Unload(sb); err != nil {
 				return err
-			} else if err := t.exec(sb, node.PortCleanup); err != nil {
+			} else if err := t.exec(sb, node.PortDeinit); err != nil {
 				return err
 			}
 		}
