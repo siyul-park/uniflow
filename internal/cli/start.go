@@ -22,6 +22,7 @@ import (
 type StartConfig struct {
 	Namespace   string
 	Environment map[string]string
+	Agent       *runtime.Agent
 	Scheme      *scheme.Scheme
 	Hook        *hook.Hook
 	SpecStore   driver.Store
@@ -102,13 +103,15 @@ func runStartCommand(config StartConfig) func(cmd *cobra.Command, args []string)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 		if enableDebug {
-			a := runtime.NewAgent()
+			if config.Agent == nil {
+				config.Agent = runtime.NewAgent()
 
-			h.AddLoadHook(a)
-			h.AddUnloadHook(a)
+				h.AddLoadHook(config.Agent)
+				h.AddUnloadHook(config.Agent)
+			}
 
 			d := NewDebugger(
-				a,
+				config.Agent,
 				tea.WithContext(ctx),
 				tea.WithInput(cmd.InOrStdin()),
 				tea.WithOutput(cmd.OutOrStdout()),

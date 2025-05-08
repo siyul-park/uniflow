@@ -18,15 +18,17 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder    *hook.Builder
-	schemeBuilder  *scheme.Builder
-	testingRunner  *testing.Runner
-	schemeRegister scheme.Register
-	hookRegister   hook.Register
-	mu             sync.Mutex
+	hookBuilder   *hook.Builder
+	schemeBuilder *scheme.Builder
+	testingRunner *testing.Runner
+	mu            sync.Mutex
 }
 
-var _ plugin.Plugin = (*Plugin)(nil)
+var (
+	_ plugin.Plugin   = (*Plugin)(nil)
+	_ hook.Register   = (*Plugin)(nil)
+	_ scheme.Register = (*Plugin)(nil)
+)
 
 // New returns a new Plugin instance.
 func New() *Plugin {
@@ -62,50 +64,12 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil {
-		return errors.WithStack(plugin.ErrMissingDependency)
+	if p.hookBuilder != nil {
+		p.hookBuilder.Register(p)
 	}
-
-	if p.hookRegister == nil {
-		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
-			h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
-				var n *node2.TestNode
-				if node.As(sb, &n) {
-					p.testingRunner.Register(sb.NamespacedName(), n)
-				}
-				return nil
-			}))
-			h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
-				var n *node2.TestNode
-				if node.As(sb, &n) {
-					p.testingRunner.Unregister(sb.NamespacedName())
-				}
-				return nil
-			}))
-			return nil
-		})
+	if p.schemeBuilder != nil {
+		p.schemeBuilder.Register(p)
 	}
-	if p.schemeRegister == nil {
-		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
-			definitions := []struct {
-				kind  string
-				codec scheme.Codec
-				spec  spec.Spec
-			}{
-				{node2.KindTest, node2.NewTestNodeCodec(), &node2.TestNodeSpec{}},
-			}
-
-			for _, def := range definitions {
-				s.AddKnownType(def.kind, def.spec)
-				s.AddCodec(def.kind, def.codec)
-			}
-
-			return nil
-		})
-	}
-
-	p.hookBuilder.Register(p.hookRegister)
-	p.schemeBuilder.Register(p.schemeRegister)
 	return nil
 }
 
@@ -114,15 +78,55 @@ func (p *Plugin) Unload(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil {
-		return nil
+	if p.hookBuilder != nil {
+		p.hookBuilder.Unregister(p)
+	}
+	if p.schemeBuilder != nil {
+		p.schemeBuilder.Unregister(p)
+	}
+	return nil
+}
+
+// AddToHook adds lifecycle hooks for test nodes.
+func (p *Plugin) AddToHook(h *hook.Hook) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	testingRunner := p.testingRunner
+	if testingRunner == nil {
+		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.hookRegister != nil {
-		p.hookBuilder.Unregister(p.hookRegister)
+	h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+		var n *node2.TestNode
+		if node.As(sb, &n) {
+			testingRunner.Register(sb.NamespacedName(), n)
+		}
+		return nil
+	}))
+	h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
+		var n *node2.TestNode
+		if node.As(sb, &n) {
+			testingRunner.Unregister(sb.NamespacedName())
+		}
+		return nil
+	}))
+	return nil
+}
+
+// AddToScheme registers node types and codecs to the scheme.
+func (p *Plugin) AddToScheme(s *scheme.Scheme) error {
+	definitions := []struct {
+		kind  string
+		codec scheme.Codec
+		spec  spec.Spec
+	}{
+		{node2.KindTest, node2.NewTestNodeCodec(), &node2.TestNodeSpec{}},
 	}
-	if p.schemeRegister != nil {
-		p.schemeBuilder.Unregister(p.schemeRegister)
+
+	for _, def := range definitions {
+		s.AddKnownType(def.kind, def.spec)
+		s.AddCodec(def.kind, def.codec)
 	}
 	return nil
 }

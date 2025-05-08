@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/siyul-park/sqlbridge/driver"
 	"github.com/siyul-park/sqlbridge/schema"
-	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/plugin"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 
@@ -17,9 +16,14 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder  *hook.Builder
-	hookRegister hook.Register
-	mu           sync.Mutex
+	agent *runtime.Agent
+	mu    sync.Mutex
+}
+
+var drv = driver.New()
+
+func init() {
+	sql.Register("runtime", drv)
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
@@ -29,12 +33,12 @@ func New() *Plugin {
 	return &Plugin{}
 }
 
-// SetHookBuilder sets the hook builder for the plugin.
-func (p *Plugin) SetHookBuilder(builder *hook.Builder) {
+// SetAgent sets the agent for the plugin.
+func (p *Plugin) SetAgent(agent *runtime.Agent) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.hookBuilder = builder
+	p.agent = agent
 }
 
 // Load registers testing nodes and hooks to the scheme and hook builder.
@@ -42,46 +46,24 @@ func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil {
+	if p.agent == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.hookRegister == nil {
-		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
-			agent := runtime.NewAgent()
-
-			drv := driver.New(driver.WithRegistry(schema.NewInMemoryRegistry(map[string]schema.Catalog{
-				"system": schema.NewInMemoryCatalog(map[string]schema.Table{
-					"frames":    table.NewFrameTable(agent),
-					"processes": table.NewProcessTable(agent),
-					"symbols":   table.NewSymbolTable(agent),
-				}),
-			})))
-
-			h.AddLoadHook(agent)
-			h.AddUnloadHook(agent)
-
-			sql.Register("runtime", drv)
-
-			return nil
-		})
-	}
-
-	p.hookBuilder.Register(p.hookRegister)
+	reg := schema.NewInMemoryRegistry(map[string]schema.Catalog{
+		"": schema.NewInMemoryCatalog(map[string]schema.Table{
+			"frames":    table.NewFrameTable(p.agent),
+			"processes": table.NewProcessTable(p.agent),
+			"symbols":   table.NewSymbolTable(p.agent),
+		}),
+	})
+	driver.WithRegistry(reg)(drv)
 	return nil
 }
 
 // Unload releases plugin resources.
 func (p *Plugin) Unload(_ context.Context) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.hookBuilder == nil {
-		return nil
-	}
-
-	if p.hookRegister != nil {
-		p.hookBuilder.Unregister(p.hookRegister)
-	}
+	reg := schema.NewInMemoryRegistry(nil)
+	driver.WithRegistry(reg)(drv)
 	return nil
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/language/yaml"
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/plugin"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/testing"
@@ -110,15 +111,21 @@ func main() {
 	driverProxy := driver.NewProxy(nil)
 	defer driverProxy.Close()
 
+	agent := runtime.NewAgent()
+	defer agent.Close()
+
 	for _, cfg := range k.Slices(keyPlugins) {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(pluginRegistry, testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry, driverProxy))
+	cli.Fatal(pluginRegistry.Inject(pluginRegistry, testingRunner, schemeBuilder, hookBuilder, driverRegistry, languageRegistry, driverProxy, agent))
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())
 	hk := cli.Must(hookBuilder.Build())
+
+	hk.AddLoadHook(agent)
+	hk.AddUnloadHook(agent)
 
 	dsn := cli.Must(url.Parse(k.String(keyDatabaseURL)))
 
@@ -155,6 +162,7 @@ func main() {
 	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
 		Namespace:   namespace,
 		Environment: environment,
+		Agent:       agent,
 		Scheme:      sc,
 		Hook:        hk,
 		SpecStore:   specStore,

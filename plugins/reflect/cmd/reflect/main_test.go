@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,14 +15,12 @@ func TestPlugin_Load(t *testing.T) {
 
 	p := New()
 
-	hb := hook.NewBuilder()
+	agent := runtime.NewAgent()
+	defer agent.Close()
 
-	p.SetHookBuilder(hb)
+	p.SetAgent(agent)
 
 	err := p.Load(ctx)
-	require.NoError(t, err)
-
-	_, err = hb.Build()
 	require.NoError(t, err)
 }
 
@@ -32,9 +30,10 @@ func TestPlugin_Unload(t *testing.T) {
 
 	p := New()
 
-	hb := hook.NewBuilder()
+	agent := runtime.NewAgent()
+	defer agent.Close()
 
-	p.SetHookBuilder(hb)
+	p.SetAgent(agent)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
