@@ -4,16 +4,12 @@ import (
 	"context"
 	"reflect"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Proxy wraps a Plugin and injects dependencies via Set* methods.
 type Proxy struct {
 	plugin Plugin
 }
-
-var ErrMissingDependency = errors.New("missing dependency")
 
 var _ Plugin = (*Proxy)(nil)
 
@@ -22,40 +18,33 @@ func NewProxy(plugin Plugin) *Proxy {
 	return &Proxy{plugin: plugin}
 }
 
-// Inject injects dependencies into the plugin by calling its Set* methods.
-func (p *Proxy) Inject(dependencies ...any) error {
-	val := reflect.ValueOf(p.plugin)
-	for i := 0; i < val.NumMethod(); i++ {
-		typ := val.Type().Method(i)
-		val := val.Method(i)
+// Inject calls Set* methods on the plugin that accept the given dependency.
+func (p *Proxy) Inject(dependency any) (bool, error) {
+	pv := reflect.ValueOf(p.plugin)
+	pt := pv.Type()
 
-		if !strings.HasPrefix(typ.Name, "Set") {
+	dv := reflect.ValueOf(dependency)
+	dt := dv.Type()
+
+	for i := 0; i < pt.NumMethod(); i++ {
+		m := pt.Method(i)
+		if !strings.HasPrefix(m.Name, "Set") {
 			continue
 		}
 
-		var ins []reflect.Value
-		for j := 0; j < val.Type().NumIn(); j++ {
-			ok := false
-			for _, dep := range dependencies {
-				if reflect.TypeOf(dep).AssignableTo(val.Type().In(j)) {
-					ins = append(ins, reflect.ValueOf(dep))
-					ok = true
-					break
+		mv := pv.Method(i)
+		mt := mv.Type()
+
+		if mt.NumIn() == 1 && dt.AssignableTo(mt.In(0)) {
+			if ret := mv.Call([]reflect.Value{dv}); len(ret) > 0 {
+				if err, ok := ret[0].Interface().(error); ok && err != nil {
+					return false, err
 				}
 			}
-			if !ok {
-				return errors.WithStack(ErrMissingDependency)
-			}
-		}
-
-		outs := val.Call(ins)
-		if len(outs) > 0 {
-			if err, ok := outs[len(outs)-1].Interface().(error); ok && err != nil {
-				return err
-			}
+			return true, nil
 		}
 	}
-	return nil
+	return false, nil
 }
 
 // Load calls the plugin's Load method.

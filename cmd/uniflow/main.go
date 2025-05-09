@@ -118,7 +118,14 @@ func main() {
 		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cli.Fatal(pluginRegistry.Register(p))
 	}
-	cli.Fatal(pluginRegistry.Inject(testingRunner, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry, driverProxy, agent))
+	for _, dep := range []any{
+		testingRunner,
+		schemeBuilder, hookBuilder,
+		pluginRegistry, driverRegistry, languageRegistry,
+		driverProxy, agent,
+	} {
+		cli.Must(pluginRegistry.Inject(dep))
+	}
 	cli.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cli.Must(schemeBuilder.Build())

@@ -22,7 +22,7 @@ func NewMock(t interface {
 	return m
 }
 
-// SetXXX mocks the SetXXX method.
+// SetXXX mocks the Set* method.
 func (m *Mock) SetXXX(val any) error {
 	ret := m.Called(val)
 

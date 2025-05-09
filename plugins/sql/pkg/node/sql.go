@@ -17,7 +17,7 @@ import (
 type SQLNodeSpec struct {
 	spec.Meta `json:",inline"`
 	Driver    string             `json:"driver" validate:"required"`
-	Source    string             `json:"source" validate:"required"`
+	Source    string             `json:"source,omitempty"`
 	Isolation sql.IsolationLevel `json:"isolation,omitempty"`
 }
 
