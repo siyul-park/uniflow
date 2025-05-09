@@ -14,8 +14,9 @@ func TestProxy_Inject(t *testing.T) {
 
 	m.On("SetXXX", "foo").Return(nil)
 
-	err := p.Inject("foo")
+	ok, err := p.Inject("foo")
 	require.NoError(t, err)
+	require.True(t, ok)
 }
 
 func TestProxy_Load(t *testing.T) {

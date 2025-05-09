@@ -25,8 +25,9 @@ func TestRegistry_Inject(t *testing.T) {
 
 	m.On("SetXXX", "foo").Return(nil)
 
-	err = r.Inject("foo")
+	count, err := r.Inject("foo")
 	require.NoError(t, err)
+	require.Equal(t, 1, count)
 }
 
 func TestRegistry_Load(t *testing.T) {

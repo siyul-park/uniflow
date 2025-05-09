@@ -6,7 +6,7 @@ processing data. This node executes SQL queries on the database and returns the 
 ## Specification
 
 - **driver**: The name of the database driver, such as `"sqlite3"`, `"postgres"`, etc.
-- **source**: The database connection string, provided in the format appropriate for the driver.
+- **source**: The database connection string, provided in the format appropriate for the driver. (Optional)
 - **isolation**: Sets the transaction isolation level. The default value is `0`. (Optional)
 
 ## Ports

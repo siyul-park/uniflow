@@ -36,17 +36,22 @@ func (r *Registry) Register(plugin Plugin) error {
 	return nil
 }
 
-// Inject injects dependencies into all registered plugins.
-func (r *Registry) Inject(dependencies ...any) error {
+// Inject attempts to inject the given dependency into all registered plugins.
+func (r *Registry) Inject(dependency any) (int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	count := 0
 	for _, p := range r.proxies {
-		if err := p.Inject(dependencies...); err != nil {
-			return err
+		ok, err := p.Inject(dependency)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			count++
 		}
 	}
-	return nil
+	return count, nil
 }
 
 // Load calls Load on all registered plugins.
