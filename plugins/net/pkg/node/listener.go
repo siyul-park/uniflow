@@ -52,9 +52,10 @@ const (
 	KeyHTTPResponseWriter = "__http.ResponseWriter__"
 )
 
-var _ node.Node = (*HTTPListenNode)(nil)
-
-var _ http.Handler = (*HTTPListenNode)(nil)
+var (
+	_ node.Node    = (*HTTPListenNode)(nil)
+	_ http.Handler = (*HTTPListenNode)(nil)
+)
 
 // NewListenNodeCodec creates a new codec for ListenNodeSpec.
 func NewListenNodeCodec() scheme.Codec {

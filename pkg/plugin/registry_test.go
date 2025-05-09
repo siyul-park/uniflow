@@ -16,6 +16,17 @@ func TestRegistry_Register(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRegistry_Unregister(t *testing.T) {
+	r := NewRegistry()
+	m := NewMock(t)
+
+	err := r.Register(m)
+	require.NoError(t, err)
+
+	err = r.Unregister(m)
+	require.NoError(t, err)
+}
+
 func TestRegistry_Inject(t *testing.T) {
 	r := NewRegistry()
 	m := NewMock(t)

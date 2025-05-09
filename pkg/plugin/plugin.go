@@ -16,7 +16,10 @@ type Plugin interface {
 	Unload(ctx context.Context) error
 }
 
-var ErrInvalidSignature = errors.New("invalid signature")
+var (
+	ErrInvalidSignature  = errors.New("invalid signature")
+	ErrMissingDependency = errors.New("missing dependency")
+)
 
 // Open loads a plugin from the given path and returns an instance created by the plugin's New function.
 // The manifest is marshaled to JSON and passed as input to New.

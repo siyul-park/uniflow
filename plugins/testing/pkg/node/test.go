@@ -22,9 +22,10 @@ type TestNode struct {
 
 const KindTest = "test"
 
-var _ node.Node = (*TestNode)(nil)
-
-var _ testing.Suite = (*TestNode)(nil)
+var (
+	_ node.Node     = (*TestNode)(nil)
+	_ testing.Suite = (*TestNode)(nil)
+)
 
 // NewTestNodeCodec creates and returns a codec for decoding TestNodeSpec.
 func NewTestNodeCodec() scheme.Codec {

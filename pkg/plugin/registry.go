@@ -13,7 +13,10 @@ type Registry struct {
 	mu      sync.RWMutex
 }
 
-var ErrConflict = errors.New("plugin conflict occurred")
+var (
+	ErrConflict = errors.New("plugin conflict occurred")
+	ErrNotFound = errors.New("plugin not found")
+)
 
 var _ Plugin = (*Registry)(nil)
 
@@ -36,6 +39,20 @@ func (r *Registry) Register(plugin Plugin) error {
 	return nil
 }
 
+// Unregister removes a plugin from the registry.
+func (r *Registry) Unregister(plugin Plugin) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for i, p := range r.proxies {
+		if p.Unwrap() == plugin {
+			r.proxies = append(r.proxies[:i], r.proxies[i+1:]...)
+			return nil
+		}
+	}
+	return errors.WithStack(ErrNotFound)
+}
+
 // Inject attempts to inject the given dependency into all registered plugins.
 func (r *Registry) Inject(dependency any) (int, error) {
 	r.mu.Lock()
@@ -43,11 +60,9 @@ func (r *Registry) Inject(dependency any) (int, error) {
 
 	count := 0
 	for _, p := range r.proxies {
-		ok, err := p.Inject(dependency)
-		if err != nil {
+		if ok, err := p.Inject(dependency); err != nil {
 			return 0, err
-		}
-		if ok {
+		} else if ok {
 			count++
 		}
 	}
