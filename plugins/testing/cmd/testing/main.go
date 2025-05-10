@@ -6,8 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/plugin"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
 	"github.com/siyul-park/uniflow/pkg/symbol"
@@ -18,19 +20,23 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	hookBuilder    *hook.Builder
-	schemeBuilder  *scheme.Builder
-	testingRunner  *testing.Runner
-	schemeRegister scheme.Register
-	hookRegister   hook.Register
-	mu             sync.Mutex
+	hookBuilder      *hook.Builder
+	schemeBuilder    *scheme.Builder
+	testingRunner    *testing.Runner
+	languageRegistry *language.Registry
+	agent            *runtime.Agent
+	schemeRegister   scheme.Register
+	hookRegister     hook.Register
+	mu               sync.Mutex
 }
 
 var _ plugin.Plugin = (*Plugin)(nil)
 
 // New returns a new Plugin instance.
 func New() *Plugin {
-	return &Plugin{}
+	return &Plugin{
+		agent: runtime.NewAgent(),
+	}
 }
 
 // SetHookBuilder sets the hook builder for the plugin.
@@ -57,17 +63,28 @@ func (p *Plugin) SetTestingRunner(runner *testing.Runner) {
 	p.testingRunner = runner
 }
 
+// SetLanguageRegistry sets the language registry for the plugin.
+func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.languageRegistry = registry
+}
+
 // Load registers testing nodes and hooks to the scheme and hook builder.
 func (p *Plugin) Load(_ context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil {
+	if p.hookBuilder == nil || p.schemeBuilder == nil || p.testingRunner == nil || p.languageRegistry == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
 	if p.hookRegister == nil {
 		p.hookRegister = hook.RegisterFunc(func(h *hook.Hook) error {
+			h.AddLoadHook(p.agent)
+			h.AddUnloadHook(p.agent)
+
 			h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
 				var n *node2.TestNode
 				if node.As(sb, &n) {
@@ -87,12 +104,18 @@ func (p *Plugin) Load(_ context.Context) error {
 	}
 	if p.schemeRegister == nil {
 		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
+			compiler, err := p.languageRegistry.Default()
+			if err != nil {
+				return err
+			}
+
 			definitions := []struct {
 				kind  string
 				codec scheme.Codec
 				spec  spec.Spec
 			}{
 				{node2.KindTest, node2.NewTestNodeCodec(), &node2.TestNodeSpec{}},
+				{node2.KindAssert, node2.NewAssertNodeCodec(p.agent, compiler), &node2.AssertNodeSpec{}},
 			}
 
 			for _, def := range definitions {
@@ -124,5 +147,10 @@ func (p *Plugin) Unload(_ context.Context) error {
 	if p.schemeRegister != nil {
 		p.schemeBuilder.Unregister(p.schemeRegister)
 	}
+
+	if p.agent != nil {
+		p.agent.Close()
+	}
+
 	return nil
 }
