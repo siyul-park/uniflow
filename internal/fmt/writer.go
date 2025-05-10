@@ -10,7 +10,6 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"gopkg.in/yaml.v3"
 )
 
 // Writer writes structured data to an fmt.Writer in table format.
@@ -49,9 +48,9 @@ func (w *Writer) Write(value any) error {
 	}
 
 	var elements []map[string]any
-	if err := yaml.Unmarshal(data, &elements); err != nil {
+	if err := json.Unmarshal(data, &elements); err != nil {
 		var element map[string]any
-		if err := yaml.Unmarshal(data, &element); err != nil {
+		if err := json.Unmarshal(data, &element); err != nil {
 			return err
 		}
 		elements = append(elements, element)

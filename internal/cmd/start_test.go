@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"bytes"
@@ -20,13 +20,11 @@ import (
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
-	testingutil "github.com/siyul-park/uniflow/pkg/testing"
+	"github.com/siyul-park/uniflow/pkg/symbol"
 	"github.com/siyul-park/uniflow/pkg/value"
 )
 
-func TestTestCommand_Execute(t *testing.T) {
-	r := testingutil.NewRunner()
-
+func TestStartCommand_Execute(t *testing.T) {
 	s := scheme.New()
 	h := hook.New()
 
@@ -45,7 +43,7 @@ func TestTestCommand_Execute(t *testing.T) {
 	s.AddCodec(kind, codec)
 
 	t.Run("NoFlag", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -58,11 +56,16 @@ func TestTestCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		h := hook.New()
+		symbols := make(chan *symbol.Symbol)
+
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
 
 		output := new(bytes.Buffer)
 
-		cmd := NewTestCommand(TestConfig{
-			Runner:     r,
+		cmd := NewStartCommand(StartConfig{
 			Scheme:     s,
 			Hook:       h,
 			FS:         fs,
@@ -73,12 +76,19 @@ func TestTestCommand_Execute(t *testing.T) {
 		cmd.SetErr(output)
 		cmd.SetContext(ctx)
 
-		err = cmd.Execute()
-		require.NoError(t, err)
+		go func() {
+			_ = cmd.Execute()
+		}()
+
+		select {
+		case <-symbols:
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
 	})
 
-	t.Run("Regexp", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	t.Run(flagDebug, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
 		meta := &spec.Meta{
@@ -91,11 +101,16 @@ func TestTestCommand_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		h := hook.New()
+		symbols := make(chan *symbol.Symbol)
+
+		h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
+			symbols <- sb
+			return nil
+		}))
 
 		output := new(bytes.Buffer)
 
-		cmd := NewTestCommand(TestConfig{
-			Runner:     r,
+		cmd := NewStartCommand(StartConfig{
 			Scheme:     s,
 			Hook:       h,
 			FS:         fs,
@@ -106,10 +121,17 @@ func TestTestCommand_Execute(t *testing.T) {
 		cmd.SetErr(output)
 		cmd.SetContext(ctx)
 
-		cmd.SetArgs([]string{"foo"})
+		cmd.SetArgs([]string{fmt.Sprintf("--%s", flagDebug)})
 
-		err = cmd.Execute()
-		require.NoError(t, err)
+		go func() {
+			_ = cmd.Execute()
+		}()
+
+		select {
+		case <-symbols:
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
 	})
 
 	t.Run(flagFromSpecs, func(t *testing.T) {
@@ -131,8 +153,7 @@ func TestTestCommand_Execute(t *testing.T) {
 
 		output := new(bytes.Buffer)
 
-		cmd := NewTestCommand(TestConfig{
-			Runner:     r,
+		cmd := NewStartCommand(StartConfig{
 			Scheme:     s,
 			Hook:       h,
 			FS:         fs,
@@ -184,8 +205,7 @@ func TestTestCommand_Execute(t *testing.T) {
 
 		output := new(bytes.Buffer)
 
-		cmd := NewTestCommand(TestConfig{
-			Runner:     r,
+		cmd := NewStartCommand(StartConfig{
 			Scheme:     s,
 			Hook:       h,
 			FS:         fs,

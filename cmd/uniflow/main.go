@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
-	"github.com/siyul-park/uniflow/internal/cli"
+	"github.com/siyul-park/uniflow/internal/cmd"
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/hook"
 	"github.com/siyul-park/uniflow/pkg/language"
@@ -51,13 +51,13 @@ const (
 var k = koanf.New(".")
 
 func init() {
-	cli.Fatal(k.Set(keyConfig, ".uniflow.toml"))
-	cli.Fatal(k.Set(KeyRuntimeNamespace, meta.DefaultNamespace))
-	cli.Fatal(k.Set(keyDatabaseURL, "memory://"))
-	cli.Fatal(k.Set(keyCollectionSpecs, "specs"))
-	cli.Fatal(k.Set(keyCollectionValues, "values"))
+	cmd.Fatal(k.Set(keyConfig, ".uniflow.toml"))
+	cmd.Fatal(k.Set(KeyRuntimeNamespace, meta.DefaultNamespace))
+	cmd.Fatal(k.Set(keyDatabaseURL, "memory://"))
+	cmd.Fatal(k.Set(keyCollectionSpecs, "specs"))
+	cmd.Fatal(k.Set(keyCollectionValues, "values"))
 
-	cli.Fatal(k.Load(env.Provider(prefix, ".", func(s string) string {
+	cmd.Fatal(k.Load(env.Provider(prefix, ".", func(s string) string {
 		return strcase.ToDelimited(strings.TrimPrefix(s, prefix), '.')
 	}), nil))
 
@@ -76,7 +76,7 @@ func init() {
 			return strcase.ToDelimited(strings.TrimPrefix(s, prefix), '.')
 		})
 	default:
-		cli.Fatal(errors.New("invalid config file extension"))
+		cmd.Fatal(errors.New("invalid config file extension"))
 	}
 
 	_ = k.Load(file.Provider(config), parser)
@@ -94,16 +94,16 @@ func main() {
 	driverRegistry := driver.NewRegistry()
 	defer driverRegistry.Close()
 
-	cli.Fatal(driverRegistry.Register("memory", driver.New()))
+	cmd.Fatal(driverRegistry.Register("memory", driver.New()))
 
 	languageRegistry := language.NewRegistry()
 	defer languageRegistry.Close()
 
 	languageRegistry.SetDefault(k.String(keyRuntimeLanguage))
 
-	cli.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
-	cli.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))
-	cli.Fatal(languageRegistry.Register(yaml.Language, yaml.NewCompiler()))
+	cmd.Fatal(languageRegistry.Register(text.Language, text.NewCompiler()))
+	cmd.Fatal(languageRegistry.Register(json.Language, json.NewCompiler()))
+	cmd.Fatal(languageRegistry.Register(yaml.Language, yaml.NewCompiler()))
 
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
@@ -115,40 +115,35 @@ func main() {
 	defer agent.Close()
 
 	for _, cfg := range k.Slices(keyPlugins) {
-		p := cli.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
-		cli.Fatal(pluginRegistry.Register(p))
+		p := cmd.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
+		cmd.Fatal(pluginRegistry.Register(p))
 	}
-	for _, dep := range []any{
-		testingRunner,
-		schemeBuilder, hookBuilder,
-		pluginRegistry, driverRegistry, languageRegistry,
-		driverProxy, agent,
-	} {
-		cli.Must(pluginRegistry.Inject(dep))
+	for _, dep := range []any{testingRunner, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry, driverProxy, agent} {
+		cmd.Must(pluginRegistry.Inject(dep))
 	}
-	cli.Fatal(pluginRegistry.Load(ctx))
+	cmd.Fatal(pluginRegistry.Load(ctx))
 
-	sc := cli.Must(schemeBuilder.Build())
-	hk := cli.Must(hookBuilder.Build())
+	sc := cmd.Must(schemeBuilder.Build())
+	hk := cmd.Must(hookBuilder.Build())
 
-	dsn := cli.Must(url.Parse(k.String(keyDatabaseURL)))
+	dsn := cmd.Must(url.Parse(k.String(keyDatabaseURL)))
 
-	drv := cli.Must(driverRegistry.Lookup(dsn.Scheme))
+	drv := cmd.Must(driverRegistry.Lookup(dsn.Scheme))
 	defer drv.Close()
 
 	driverProxy.Wrap(drv)
 
-	conn := cli.Must(drv.Open(dsn.String()))
+	conn := cmd.Must(drv.Open(dsn.String()))
 	defer conn.Close()
 
-	specStore := cli.Must(conn.Load(k.String(keyCollectionSpecs)))
-	valueStore := cli.Must(conn.Load(k.String(keyCollectionValues)))
+	specStore := cmd.Must(conn.Load(k.String(keyCollectionSpecs)))
+	valueStore := cmd.Must(conn.Load(k.String(keyCollectionValues)))
 
-	cli.Fatal(specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, driver.IndexOptions{
+	cmd.Fatal(specStore.Index(ctx, []string{spec.KeyNamespace, spec.KeyName}, driver.IndexOptions{
 		Unique: true,
 		Filter: map[string]any{spec.KeyName: map[string]any{"$exists": true}},
 	}))
-	cli.Fatal(valueStore.Index(ctx, []string{value.KeyNamespace, value.KeyName}, driver.IndexOptions{
+	cmd.Fatal(valueStore.Index(ctx, []string{value.KeyNamespace, value.KeyName}, driver.IndexOptions{
 		Unique: true,
 		Filter: map[string]any{value.KeyName: map[string]any{"$exists": true}},
 	}))
@@ -158,12 +153,12 @@ func main() {
 
 	fs := afero.NewOsFs()
 
-	cmd := cli.NewCommand(cli.Config{
+	root := cmd.NewCommand(cmd.Config{
 		Use:   "uniflow",
 		Short: "A high-performance, extremely flexible, and easily extensible universal workflow engine.",
 		FS:    fs,
 	})
-	cmd.AddCommand(cli.NewStartCommand(cli.StartConfig{
+	root.AddCommand(cmd.NewStartCommand(cmd.StartConfig{
 		Namespace:   namespace,
 		Environment: environment,
 		Agent:       agent,
@@ -173,7 +168,7 @@ func main() {
 		ValueStore:  valueStore,
 		FS:          fs,
 	}))
-	cmd.AddCommand(cli.NewTestCommand(cli.TestConfig{
+	root.AddCommand(cmd.NewTestCommand(cmd.TestConfig{
 		Namespace:   namespace,
 		Environment: environment,
 		Runner:      testingRunner,
@@ -183,20 +178,20 @@ func main() {
 		ValueStore:  valueStore,
 		FS:          fs,
 	}))
-	cmd.AddCommand(cli.NewApplyCommand(cli.ApplyConfig{
+	root.AddCommand(cmd.NewApplyCommand(cmd.ApplyConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 		FS:         fs,
 	}))
-	cmd.AddCommand(cli.NewDeleteCommand(cli.DeleteConfig{
+	root.AddCommand(cmd.NewDeleteCommand(cmd.DeleteConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 		FS:         fs,
 	}))
-	cmd.AddCommand(cli.NewGetCommand(cli.GetConfig{
+	root.AddCommand(cmd.NewGetCommand(cmd.GetConfig{
 		SpecStore:  specStore,
 		ValueStore: valueStore,
 	}))
 
-	cli.Fatal(cmd.Execute())
+	cmd.Fatal(root.Execute())
 }
