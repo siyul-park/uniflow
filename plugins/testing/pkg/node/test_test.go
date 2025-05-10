@@ -16,6 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewTestNodeCodec(t *testing.T) {
+	codec := NewTestNodeCodec()
+	require.NotNil(t, codec)
+}
+
 func TestNewTestNode(t *testing.T) {
 	n := NewTestNode()
 	require.NotNil(t, n)
@@ -31,7 +36,7 @@ func TestTestNode_Port(t *testing.T) {
 	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
 }
 
-func TestPipeNode_SendAndReceive(t *testing.T) {
+func TestTestNode_SendAndReceive(t *testing.T) {
 	t.Run("SingleOutput", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
