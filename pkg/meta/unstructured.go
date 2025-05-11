@@ -1,7 +1,10 @@
 package meta
 
 import (
+	"encoding/json"
+
 	"github.com/gofrs/uuid"
+	"gopkg.in/yaml.v3"
 )
 
 // Unstructured implements the Spec interface with a flexible key-value structure.
@@ -26,7 +29,11 @@ const (
 	KeyAnnotations = "annotations"
 )
 
-var _ Meta = (*Unstructured)(nil)
+var (
+	_ Meta             = (*Unstructured)(nil)
+	_ json.Marshaler   = (*Unstructured)(nil)
+	_ json.Unmarshaler = (*Unstructured)(nil)
+)
 
 // GetID retrieves the ID of the node.
 func (u *Unstructured) GetID() uuid.UUID {
@@ -113,4 +120,30 @@ func (u *Unstructured) Set(key string, val any) {
 		}
 		u.Fields[key] = val
 	}
+}
+
+// MarshalJSON marshals the Unstructured object using YAML inline handling, then converts to JSON.
+func (u *Unstructured) MarshalJSON() ([]byte, error) {
+	d, err := yaml.Marshal(u)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(d, &m); err != nil {
+		return nil, err
+	}
+	return json.Marshal(m)
+}
+
+// UnmarshalJSON unmarshals JSON into an Unstructured object using YAML to support inline fields.
+func (u *Unstructured) UnmarshalJSON(data []byte) error {
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	d, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(d, u)
 }

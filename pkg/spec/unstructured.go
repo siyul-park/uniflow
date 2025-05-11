@@ -1,8 +1,11 @@
 package spec
 
 import (
+	"encoding/json"
+
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 
 	"github.com/siyul-park/uniflow/internal/encoding"
 	"github.com/siyul-park/uniflow/internal/template"
@@ -25,7 +28,11 @@ const (
 	KeyPorts       = "ports"
 )
 
-var _ Spec = (*Unstructured)(nil)
+var (
+	_ Spec             = (*Unstructured)(nil)
+	_ json.Marshaler   = (*Unstructured)(nil)
+	_ json.Unmarshaler = (*Unstructured)(nil)
+)
 
 // Get retrieves the value associated with the given key.
 func (u *Unstructured) Get(key string) (any, bool) {
@@ -112,4 +119,30 @@ func (u *Unstructured) Build() error {
 		}
 	}
 	return nil
+}
+
+// MarshalJSON marshals the Unstructured object using YAML inline handling, then converts to JSON.
+func (u *Unstructured) MarshalJSON() ([]byte, error) {
+	d, err := yaml.Marshal(u)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(d, &m); err != nil {
+		return nil, err
+	}
+	return json.Marshal(m)
+}
+
+// UnmarshalJSON unmarshals JSON into an Unstructured object using YAML to support inline fields.
+func (u *Unstructured) UnmarshalJSON(data []byte) error {
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	d, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(d, u)
 }

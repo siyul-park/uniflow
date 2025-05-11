@@ -28,7 +28,7 @@ func (c *Catalog) Table(name string) (schema.Table, error) {
 	}
 	switch name {
 	case "specs":
-		return NewTable[*spec.Unstructured](store), nil
+		return NewTable[spec.Spec](store), nil
 	case "values":
 		return NewTable[*value.Value](store), nil
 	default:

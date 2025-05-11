@@ -5,4 +5,5 @@
 
 ## 사용 가능한 드라이버
 
-- **runtime**: 런타임 내부 자원에 접근하고 관리하는 표준 SQL 드라이버입니다. `frames`, `processes`, `symbols`와 같은 런타임 테이블을 조회하고 수정할 수 있습니다.
+- **runtime**: 런타임 내부 자원에 접근하고 관리하는 표준 SQL 드라이버입니다. `frames`, `processes`, `symbols`, `specs`, `values` 와 같은 런타임 테이블을
+  조회하고 수정할 수 있습니다.

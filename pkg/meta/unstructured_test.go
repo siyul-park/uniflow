@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -53,4 +54,26 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, customValue, val)
 	})
+}
+
+func TestUnstructured_MarshalJSON(t *testing.T) {
+	unstructured1 := &Unstructured{
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: "default",
+		Name:      faker.UUIDHyphenated(),
+		Annotations: map[string]string{
+			"key": "value",
+		},
+		Fields: map[string]any{
+			"customField": "customValue",
+		},
+	}
+
+	d, err := json.Marshal(unstructured1)
+	require.NoError(t, err)
+
+	unstructured2 := &Unstructured{}
+	err = json.Unmarshal(d, &unstructured2)
+	require.NoError(t, err)
+	require.Equal(t, unstructured1, unstructured2)
 }

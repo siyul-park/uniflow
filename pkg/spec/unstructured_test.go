@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-faker/faker/v4"
@@ -110,4 +111,29 @@ func TestUnstructured_Build(t *testing.T) {
 	err := unstructured.Build()
 	require.NoError(t, err)
 	require.Equal(t, "foo", unstructured.Fields["foo"])
+}
+
+func TestUnstructured_MarshalJSON(t *testing.T) {
+	unstructured1 := &Unstructured{
+		Meta: Meta{
+			ID:   uuid.Must(uuid.NewV7()),
+			Kind: faker.UUIDHyphenated(),
+			Env: map[string]Value{
+				"FOO": {
+					Data: "foo",
+				},
+			},
+		},
+		Fields: map[string]any{
+			"customField": "customValue",
+		},
+	}
+
+	d, err := json.Marshal(unstructured1)
+	require.NoError(t, err)
+
+	unstructured2 := &Unstructured{}
+	err = json.Unmarshal(d, &unstructured2)
+	require.NoError(t, err)
+	require.Equal(t, unstructured1, unstructured2)
 }
