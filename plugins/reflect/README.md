@@ -7,4 +7,4 @@ manage the state of runtime resources.
 ## Available Drivers
 
 - **runtime**: A standard SQL driver for accessing and managing runtime resources. It query and modify runtime tables
-  such as `frames`, `processes`, and `symbols`.
+  such as `frames`, `processes`, `symbols`, `specs` and `values`.

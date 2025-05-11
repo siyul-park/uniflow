@@ -22,6 +22,12 @@
     - method: GET
       path: /symbols
       port: out[2]
+    - method: GET
+      path: /specs
+      port: out[3]
+    - method: GET
+      path: /values
+      port: out[4]
   ports:
     out[0]:
       - name: frames_read
@@ -31,6 +37,12 @@
         port: in
     out[2]:
       - name: symbols_read
+        port: in
+    out[3]:
+      - name: specs_read
+        port: in
+    out[4]:
+      - name: values_read
         port: in
 
 - kind: snippet
@@ -60,7 +72,24 @@
       - name: system
         port: in
 
+- kind: snippet
+  name: specs_read
+  language: text
+  code: SELECT * FROM `specs`
+  ports:
+    out:
+      - name: system
+        port: in
+
+- kind: snippet
+  name: values_read
+  language: text
+  code: SELECT * FROM `values`
+  ports:
+    out:
+      - name: system
+        port: in
+
 - kind: sql
   name: system
   driver: runtime
-  source: system

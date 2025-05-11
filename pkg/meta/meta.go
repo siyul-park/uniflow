@@ -26,11 +26,3 @@ type Meta interface {
 
 // DefaultNamespace represents the default namespace for resources.
 const DefaultNamespace = "default"
-
-// Key constants for commonly used fields in Unstructured.
-const (
-	KeyID          = "id"
-	KeyNamespace   = "namespace"
-	KeyName        = "name"
-	KeyAnnotations = "annotations"
-)

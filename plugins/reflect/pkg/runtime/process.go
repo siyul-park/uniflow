@@ -1,4 +1,4 @@
-package table
+package runtime
 
 import (
 	"context"
@@ -9,21 +9,23 @@ import (
 	"github.com/xwb1989/sqlparser"
 )
 
-// SymbolTable represents a table of symbols from a runtime agent.
-type SymbolTable struct {
+// ProcessTable represents a table of processes from a runtime agent.
+type ProcessTable struct {
 	agent *runtime.Agent
 }
 
-// NewSymbolTable creates a new SymbolTable with the given agent.
-func NewSymbolTable(agent *runtime.Agent) *SymbolTable {
-	return &SymbolTable{agent: agent}
+var _ schema.Table = (*ProcessTable)(nil)
+
+// NewProcessTable creates a new ProcessTable with the given agent.
+func NewProcessTable(agent *runtime.Agent) *ProcessTable {
+	return &ProcessTable{agent: agent}
 }
 
-// Scan returns a cursor for the symbols in the agent, formatted as rows.
-func (t *SymbolTable) Scan(_ context.Context) (schema.Cursor, error) {
+// Scan returns a cursor for the processes in the agent, formatted as rows.
+func (t *ProcessTable) Scan(_ context.Context) (schema.Cursor, error) {
 	var rows []schema.Row
-	for _, sb := range t.agent.Symbols() {
-		raw, err := json.Marshal(sb)
+	for _, proc := range t.agent.Processes() {
+		raw, err := json.Marshal(proc)
 		if err != nil {
 			return nil, err
 		}

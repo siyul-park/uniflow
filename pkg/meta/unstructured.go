@@ -1,56 +1,91 @@
-package spec
+package meta
 
 import (
 	"encoding/json"
 
 	"github.com/gofrs/uuid"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
-
-	"github.com/siyul-park/uniflow/internal/encoding"
-	"github.com/siyul-park/uniflow/internal/template"
 )
 
 // Unstructured implements the Spec interface with a flexible key-value structure.
 type Unstructured struct {
-	Meta   `json:",inline" yaml:",inline"`
+	// ID is the unique identifier of the node.
+	ID uuid.UUID `json:"id,omitempty" yaml:"id,omitempty" validate:"required"`
+	// Namespace groups nodes logically.
+	Namespace string `json:"namespace" yaml:"namespace" validate:"required"`
+	// Name is the human-readable name of the node.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Annotations hold additional metadata.
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
+	// Fields contain custom data in a flexible, key-value format.
 	Fields map[string]any `json:",inline" yaml:",inline"`
 }
 
 // Key constants for commonly used fields in Unstructured.
 const (
 	KeyID          = "id"
-	KeyKind        = "kind"
 	KeyNamespace   = "namespace"
 	KeyName        = "name"
 	KeyAnnotations = "annotations"
-	KeyEnv         = "env"
-	KeyPorts       = "ports"
 )
 
 var (
-	_ Spec             = (*Unstructured)(nil)
+	_ Meta             = (*Unstructured)(nil)
 	_ json.Marshaler   = (*Unstructured)(nil)
 	_ json.Unmarshaler = (*Unstructured)(nil)
 )
+
+// GetID retrieves the ID of the node.
+func (u *Unstructured) GetID() uuid.UUID {
+	return u.ID
+}
+
+// SetID assigns the ID to the node.
+func (u *Unstructured) SetID(val uuid.UUID) {
+	u.ID = val
+}
+
+// GetNamespace retrieves the namespace of the node.
+func (u *Unstructured) GetNamespace() string {
+	return u.Namespace
+}
+
+// SetNamespace assigns the namespace to the node.
+func (u *Unstructured) SetNamespace(val string) {
+	u.Namespace = val
+}
+
+// GetName retrieves the name of the node.
+func (u *Unstructured) GetName() string {
+	return u.Name
+}
+
+// SetName assigns the name to the node.
+func (u *Unstructured) SetName(val string) {
+	u.Name = val
+}
+
+// GetAnnotations retrieves the annotations of the node.
+func (u *Unstructured) GetAnnotations() map[string]string {
+	return u.Annotations
+}
+
+// SetAnnotations assigns annotations to the node.
+func (u *Unstructured) SetAnnotations(val map[string]string) {
+	u.Annotations = val
+}
 
 // Get retrieves the value associated with the given key.
 func (u *Unstructured) Get(key string) (any, bool) {
 	switch key {
 	case KeyID:
 		return u.ID, true
-	case KeyKind:
-		return u.Kind, true
 	case KeyNamespace:
 		return u.Namespace, true
 	case KeyName:
 		return u.Name, true
 	case KeyAnnotations:
 		return u.Annotations, true
-	case KeyEnv:
-		return u.Env, true
-	case KeyPorts:
-		return u.Ports, true
 	default:
 		if u.Fields == nil {
 			return nil, false
@@ -67,10 +102,6 @@ func (u *Unstructured) Set(key string, val any) {
 		if v, ok := val.(uuid.UUID); ok {
 			u.ID = v
 		}
-	case KeyKind:
-		if v, ok := val.(string); ok {
-			u.Kind = v
-		}
 	case KeyNamespace:
 		if v, ok := val.(string); ok {
 			u.Namespace = v
@@ -83,42 +114,12 @@ func (u *Unstructured) Set(key string, val any) {
 		if v, ok := val.(map[string]string); ok {
 			u.Annotations = v
 		}
-	case KeyEnv:
-		if v, ok := val.(map[string]Value); ok {
-			u.Env = v
-		}
-	case KeyPorts:
-		if v, ok := val.(map[string][]Port); ok {
-			u.Ports = v
-		}
 	default:
 		if u.Fields == nil {
 			u.Fields = make(map[string]any)
 		}
 		u.Fields[key] = val
 	}
-}
-
-// Build processes the fields and resolves environment variables using template execution.
-func (u *Unstructured) Build() error {
-	env := make(map[string]any)
-	for key, val := range u.Env {
-		env[key] = val.Data
-	}
-
-	if len(env) > 0 {
-		fields, err := template.Execute(u.Fields, env)
-		if err != nil {
-			return err
-		}
-
-		if fields, ok := fields.(map[string]any); ok {
-			u.Fields = fields
-		} else {
-			return errors.WithStack(encoding.ErrUnsupportedValue)
-		}
-	}
-	return nil
 }
 
 // MarshalJSON marshals the Unstructured object using YAML inline handling, then converts to JSON.

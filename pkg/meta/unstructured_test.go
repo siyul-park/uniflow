@@ -1,4 +1,4 @@
-package spec
+package meta
 
 import (
 	"encoding/json"
@@ -7,8 +7,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
-
-	"github.com/siyul-park/uniflow/pkg/node"
 )
 
 func TestUnstructured_GetAndSet(t *testing.T) {
@@ -19,15 +17,6 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		val, ok := unstructured.Get(KeyID)
 		require.True(t, ok)
 		require.Equal(t, id, val)
-	})
-
-	t.Run("KeyKind", func(t *testing.T) {
-		unstructured := &Unstructured{}
-		kind := faker.UUIDHyphenated()
-		unstructured.Set(KeyKind, kind)
-		val, ok := unstructured.Get(KeyKind)
-		require.True(t, ok)
-		require.Equal(t, kind, val)
 	})
 
 	t.Run("KeyNamespace", func(t *testing.T) {
@@ -56,31 +45,6 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 		require.Equal(t, annotations, val)
 	})
 
-	t.Run("KeyPorts", func(t *testing.T) {
-		unstructured := &Unstructured{}
-		ports := map[string][]Port{
-			node.PortOut: {
-				{
-					Name: faker.UUIDHyphenated(),
-					Port: node.PortIn,
-				},
-			},
-		}
-		unstructured.Set(KeyPorts, ports)
-		val, ok := unstructured.Get(KeyPorts)
-		require.True(t, ok)
-		require.Equal(t, ports, val)
-	})
-
-	t.Run("KeyEnv", func(t *testing.T) {
-		unstructured := &Unstructured{}
-		env := map[string]Value{"env1": {Name: "value1", Data: "value1"}}
-		unstructured.Set(KeyEnv, env)
-		val, ok := unstructured.Get(KeyEnv)
-		require.True(t, ok)
-		require.Equal(t, env, val)
-	})
-
 	t.Run("CustomField", func(t *testing.T) {
 		unstructured := &Unstructured{}
 		customKey := "customField"
@@ -92,37 +56,13 @@ func TestUnstructured_GetAndSet(t *testing.T) {
 	})
 }
 
-func TestUnstructured_Build(t *testing.T) {
-	unstructured := &Unstructured{
-		Meta: Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.UUIDHyphenated(),
-			Env: map[string]Value{
-				"FOO": {
-					Data: "foo",
-				},
-			},
-		},
-		Fields: map[string]any{
-			"foo": "{{ .FOO }}",
-		},
-	}
-
-	err := unstructured.Build()
-	require.NoError(t, err)
-	require.Equal(t, "foo", unstructured.Fields["foo"])
-}
-
 func TestUnstructured_MarshalJSON(t *testing.T) {
 	unstructured1 := &Unstructured{
-		Meta: Meta{
-			ID:   uuid.Must(uuid.NewV7()),
-			Kind: faker.UUIDHyphenated(),
-			Env: map[string]Value{
-				"FOO": {
-					Data: "foo",
-				},
-			},
+		ID:        uuid.Must(uuid.NewV7()),
+		Namespace: "default",
+		Name:      faker.UUIDHyphenated(),
+		Annotations: map[string]string{
+			"key": "value",
 		},
 		Fields: map[string]any{
 			"customField": "customValue",

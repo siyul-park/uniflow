@@ -6,7 +6,7 @@ require (
 	github.com/go-faker/faker/v4 v4.6.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/siyul-park/sqlbridge v0.1.2
+	github.com/siyul-park/sqlbridge v0.2.0
 	github.com/siyul-park/uniflow v0.13.0
 	github.com/stretchr/testify v1.10.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
