@@ -108,8 +108,8 @@ func main() {
 	pluginRegistry := plugin.NewRegistry()
 	defer pluginRegistry.Unload(ctx)
 
-	driverProxy := driver.NewProxy(nil)
-	defer driverProxy.Close()
+	connProxy := driver.NewConnProxy(nil)
+	defer connProxy.Close()
 
 	agent := runtime.NewAgent()
 	defer agent.Close()
@@ -118,7 +118,7 @@ func main() {
 		p := cmd.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
 		cmd.Fatal(pluginRegistry.Register(p))
 	}
-	for _, dep := range []any{testingRunner, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry, driverProxy, agent} {
+	for _, dep := range []any{testingRunner, connProxy, agent, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry} {
 		cmd.Must(pluginRegistry.Inject(dep))
 	}
 	cmd.Fatal(pluginRegistry.Load(ctx))
@@ -131,10 +131,16 @@ func main() {
 	drv := cmd.Must(driverRegistry.Lookup(dsn.Scheme))
 	defer drv.Close()
 
-	driverProxy.Wrap(drv)
-
 	conn := cmd.Must(drv.Open(dsn.String()))
 	defer conn.Close()
+
+	connAlias := driver.NewConnAlias(conn)
+	defer connAlias.Close()
+
+	connAlias.Alias(k.String(keyCollectionSpecs), "specs")
+	connAlias.Alias(k.String(keyCollectionValues), "values")
+
+	connProxy.Wrap(connAlias)
 
 	specStore := cmd.Must(conn.Load(k.String(keyCollectionSpecs)))
 	valueStore := cmd.Must(conn.Load(k.String(keyCollectionValues)))

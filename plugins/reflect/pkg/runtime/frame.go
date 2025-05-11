@@ -1,4 +1,4 @@
-package table
+package runtime
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 type FrameTable struct {
 	agent *runtime.Agent
 }
+
+var _ schema.Table = (*FrameTable)(nil)
 
 // NewFrameTable creates a new FrameTable with the given agent.
 func NewFrameTable(agent *runtime.Agent) *FrameTable {
