@@ -186,6 +186,5 @@ func (n *AssertNode) find(target *AssertNodeTarget) (interface{}, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located",
-		tname, tport)
+	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located", tname, tport)
 }
