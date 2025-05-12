@@ -153,6 +153,11 @@ func (n *SQLNode) action(proc *process.Process, inPck *packet.Packet) (*packet.P
 		if err := rows.MapScan(result); err != nil {
 			return nil, packet.New(types.NewError(err))
 		}
+		for k, v := range result {
+			if v == nil {
+				delete(result, k)
+			}
+		}
 		results = append(results, result)
 	}
 
