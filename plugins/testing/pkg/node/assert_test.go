@@ -39,7 +39,15 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		agent := runtime.NewAgent()
 		defer agent.Close()
 
-		n1 := NewTestNode()
+		n1 := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      "test",
+				Namespace: meta.DefaultNamespace,
+				Name:      "test",
+			},
+			Node: NewTestNode(),
+		}
 		defer n1.Close()
 
 		n2 := &symbol.Symbol{
@@ -76,6 +84,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n3.Close()
 
+		agent.Load(n1)
+		defer agent.Unload(n1)
+
 		agent.Load(n2)
 		defer agent.Unload(n2)
 
@@ -86,7 +97,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
 
 		tester := testing2.NewTester("")
-		go n1.Run(tester)
+		go n1.Node.(*TestNode).Run(tester)
 
 		select {
 		case <-tester.Done():
@@ -103,7 +114,15 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		agent := runtime.NewAgent()
 		defer agent.Close()
 
-		n1 := NewTestNode()
+		n1 := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      "test",
+				Namespace: meta.DefaultNamespace,
+				Name:      "test",
+			},
+			Node: NewTestNode(),
+		}
 		defer n1.Close()
 
 		n2 := &symbol.Symbol{
@@ -140,6 +159,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n3.Close()
 
+		agent.Load(n1)
+		defer agent.Unload(n1)
+
 		agent.Load(n2)
 		defer agent.Unload(n2)
 
@@ -150,7 +172,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
 
 		tester := testing2.NewTester("")
-		go n1.Run(tester)
+		go n1.Node.(*TestNode).Run(tester)
 
 		select {
 		case <-tester.Done():
@@ -169,7 +191,15 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		agent := runtime.NewAgent()
 		defer agent.Close()
 
-		n1 := NewTestNode()
+		n1 := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      "test",
+				Namespace: meta.DefaultNamespace,
+				Name:      "test",
+			},
+			Node: NewTestNode(),
+		}
 		defer n1.Close()
 
 		targetNodeName := "target"
@@ -225,6 +255,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n4.Close()
 
+		agent.Load(n1)
+		defer agent.Unload(n1)
+
 		agent.Load(n2)
 		defer agent.Unload(n2)
 
@@ -239,7 +272,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		n2.Out(node.PortOut).Link(n3.In(node.PortIn))
 
 		tester := testing2.NewTester("")
-		go n1.Run(tester)
+		go n1.Node.(*TestNode).Run(tester)
 
 		select {
 		case <-tester.Done():
@@ -256,7 +289,15 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		agent := runtime.NewAgent()
 		defer agent.Close()
 
-		n1 := NewTestNode()
+		n1 := &symbol.Symbol{
+			Spec: &spec.Meta{
+				ID:        uuid.Must(uuid.NewV7()),
+				Kind:      "test",
+				Namespace: meta.DefaultNamespace,
+				Name:      "test",
+			},
+			Node: NewTestNode(),
+		}
 		defer n1.Close()
 
 		n2 := &symbol.Symbol{
@@ -293,6 +334,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n3.Close()
 
+		agent.Load(n1)
+		defer agent.Unload(n1)
+
 		agent.Load(n2)
 		defer agent.Unload(n2)
 
@@ -303,13 +347,13 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
 
 		tester := testing2.NewTester("")
-		go n1.Run(tester)
+		go n1.Node.(*TestNode).Run(tester)
 
 		select {
 		case <-tester.Done():
 			require.Error(t, tester.Err())
 			require.NotErrorIs(t, tester.Err(), context.Canceled)
-			require.Contains(t, tester.Err().Error(), "target symbol not found")
+			require.Contains(t, tester.Err().Error(), "target frame not found")
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}

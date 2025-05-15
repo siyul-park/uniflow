@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
@@ -20,6 +21,7 @@ type AssertNodeSpec struct {
 	spec.Meta `json:",inline"`
 	Expect    string            `json:"expect"`
 	Target    *AssertNodeTarget `json:"target,omitempty"`
+	Timeout   time.Duration     `json:"timeout,omitempty"`
 }
 
 // AssertNodeTarget defines the target to validate
@@ -49,21 +51,7 @@ func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme
 			return nil, err
 		}
 
-		evaluator := func(ctx context.Context, payload interface{}) (bool, error) {
-			result, err := program.Run(ctx, payload)
-			if err != nil {
-				return false, err
-			}
-
-			boolResult, ok := result.(bool)
-			if !ok {
-				return false, fmt.Errorf("expression must evaluate to a boolean, got %T for '%s'",
-					result, spec.Expect)
-			}
-
-			return boolResult, nil
-		}
-
+		evaluator := language.Predicate[any](language.Timeout(program, spec.Timeout))
 		return NewAssertNode(spec, agent, evaluator), nil
 	})
 }
