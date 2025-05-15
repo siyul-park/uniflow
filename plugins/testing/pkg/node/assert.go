@@ -120,13 +120,13 @@ func (n *AssertNode) forward(proc *process.Process) {
 			target = inPayload
 		}
 
-		result, err := n.fn(proc, target)
+		ok, err := n.fn(proc, target)
 		if err != nil {
 			inReader.Receive(packet.New(types.NewError(err)))
 			continue
 		}
 
-		if !result {
+		if !ok {
 			errMsg := fmt.Errorf("assertion failed: expression '%s' evaluated to false with value %v",
 				n.spec.Expect, target)
 			inReader.Receive(packet.New(types.NewError(errMsg)))
@@ -145,7 +145,6 @@ func (n *AssertNode) forward(proc *process.Process) {
 	}
 }
 
-// find locates the target frame based on the target specification
 func (n *AssertNode) find(target *AssertNodeTarget) (interface{}, error) {
 	if target == nil {
 		return nil, fmt.Errorf("no target specified")
