@@ -27,6 +27,11 @@ type Plugin struct {
 
 var ErrUnsupportedExtension = errors.New("unsupported extension requested")
 
+var (
+	name    string
+	version string
+)
+
 var options = map[string]cel.EnvOption{
 	"encoders":               ext.Encoders(),
 	"math":                   ext.Math(),
@@ -50,6 +55,16 @@ func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
 	defer p.mu.Unlock()
 
 	p.languageRegistry = registry
+}
+
+// Name returns the plugin's package path as its name.
+func (p *Plugin) Name() string {
+	return name
+}
+
+// Version returns the plugin version.
+func (p *Plugin) Version() string {
+	return version
 }
 
 // Load registers the CEL compiler with the configured extensions in the language registry.

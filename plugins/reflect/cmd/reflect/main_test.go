@@ -12,6 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPlugin_Name(t *testing.T) {
+	p := New()
+	require.Equal(t, name, p.Name())
+}
+
+func TestPlugin_Version(t *testing.T) {
+	p := New()
+	require.Equal(t, version, p.Version())
+}
+
 func TestPlugin_Load(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

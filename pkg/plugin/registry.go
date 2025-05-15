@@ -18,8 +18,6 @@ var (
 	ErrNotFound = errors.New("plugin not found")
 )
 
-var _ Plugin = (*Registry)(nil)
-
 // NewRegistry creates a new plugin registry.
 func NewRegistry() *Registry {
 	return &Registry{}
@@ -51,6 +49,18 @@ func (r *Registry) Unregister(plugin Plugin) error {
 		}
 	}
 	return errors.WithStack(ErrNotFound)
+}
+
+// Plugins returns a slice of all registered plugins.
+func (r *Registry) Plugins() []Plugin {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	plugins := make([]Plugin, len(r.proxies))
+	for i, p := range r.proxies {
+		plugins[i] = p.Unwrap()
+	}
+	return plugins
 }
 
 // Inject attempts to inject the given dependency into all registered plugins.

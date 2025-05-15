@@ -19,6 +19,11 @@ type Plugin struct {
 }
 
 var (
+	name    string
+	version string
+)
+
+var (
 	_ plugin.Plugin   = (*Plugin)(nil)
 	_ scheme.Register = (*Plugin)(nil)
 )
@@ -34,6 +39,16 @@ func (p *Plugin) SetSchemeBuilder(builder *scheme.Builder) {
 	defer p.mu.Unlock()
 
 	p.schemeBuilder = builder
+}
+
+// Name returns the plugin's package path as its name.
+func (p *Plugin) Name() string {
+	return name
+}
+
+// Version returns the plugin version.
+func (p *Plugin) Version() string {
+	return version
 }
 
 // Load registers testing nodes and hooks to the scheme and hook builder.

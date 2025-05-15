@@ -12,6 +12,8 @@ import (
 
 // Plugin defines the interface that dynamic plugins must implement.
 type Plugin interface {
+	Name() string
+	Version() string
 	Load(ctx context.Context) error
 	Unload(ctx context.Context) error
 }

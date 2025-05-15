@@ -18,6 +18,11 @@ type Plugin struct {
 	mu               sync.Mutex
 }
 
+var (
+	name    string
+	version string
+)
+
 var _ plugin.Plugin = (*Plugin)(nil)
 
 // New returns a new instance of the ECMAScript plugin.
@@ -31,6 +36,16 @@ func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
 	defer p.mu.Unlock()
 
 	p.languageRegistry = registry
+}
+
+// Name returns the plugin's package path as its name.
+func (p *Plugin) Name() string {
+	return name
+}
+
+// Version returns the plugin version.
+func (p *Plugin) Version() string {
+	return version
 }
 
 // Load registers the JavaScript and TypeScript compilers with the language registry.

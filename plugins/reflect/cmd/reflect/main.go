@@ -25,16 +25,21 @@ type Plugin struct {
 	mu          sync.Mutex
 }
 
-var drv = driver.New()
+var (
+	name    string
+	version string
+)
 
-func init() {
-	sql.Register("runtime", drv)
-}
+var drv = driver.New()
 
 var (
 	_ plugin.Plugin = (*Plugin)(nil)
 	_ hook.Register = (*Plugin)(nil)
 )
+
+func init() {
+	sql.Register("runtime", drv)
+}
 
 // New creates a new Plugin instance.
 func New() *Plugin {
@@ -63,6 +68,16 @@ func (p *Plugin) SetHookBuilder(builder *hook.Builder) {
 	defer p.mu.Unlock()
 
 	p.hookBuilder = builder
+}
+
+// Name returns the plugin's package path as its name.
+func (p *Plugin) Name() string {
+	return name
+}
+
+// Version returns the plugin version.
+func (p *Plugin) Version() string {
+	return version
 }
 
 // Load registers testing nodes and hooks to the schema and hook builder.

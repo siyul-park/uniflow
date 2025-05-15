@@ -41,6 +41,22 @@ func TestRegistry_Inject(t *testing.T) {
 	require.Equal(t, 1, count)
 }
 
+func TestRegistry_Plugins(t *testing.T) {
+	r := NewRegistry()
+	m1 := NewMock(t)
+	m2 := NewMock(t)
+
+	err := r.Register(m1)
+	require.NoError(t, err)
+	err = r.Register(m2)
+	require.NoError(t, err)
+
+	plugins := r.Plugins()
+	require.Len(t, plugins, 2)
+	require.Contains(t, plugins, m1)
+	require.Contains(t, plugins, m2)
+}
+
 func TestRegistry_Load(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 	defer cancel()

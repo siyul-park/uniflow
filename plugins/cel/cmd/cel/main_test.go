@@ -11,6 +11,16 @@ import (
 	"github.com/siyul-park/uniflow/plugins/cel/pkg/cel"
 )
 
+func TestPlugin_Name(t *testing.T) {
+	p := New(Config{})
+	require.Equal(t, name, p.Name())
+}
+
+func TestPlugin_Version(t *testing.T) {
+	p := New(Config{})
+	require.Equal(t, version, p.Version())
+}
+
 func TestPlugin_Load(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
