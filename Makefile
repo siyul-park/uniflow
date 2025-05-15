@@ -32,7 +32,13 @@ build:
 build-plugin:
 	@mkdir -p dist
 	@for dir in $(PLUGIN_DIRS); do \
-  		cd $$dir && cd cmd && go build -buildmode=plugin -ldflags "-s -w" -o $(CURRENT_DIR)/dist ./...; \
+		NAME=$$(basename $$dir); \
+		TAG=$$(git tag -l "$${NAME}/*" | sort -V | tail -1); \
+		if [ -z "$$TAG" ]; then \
+			TAG="v0.0.0"; \
+		fi; \
+		VERSION="$$(basename $$TAG)-$$(git rev-parse --short HEAD)"; \
+		cd $$dir/cmd && go build -buildmode=plugin -ldflags "-s -w -X main.version=$$VERSION -X main.name=$$NAME" -o $(CURRENT_DIR)/dist ./...; \
 	done
 
 build-docker:

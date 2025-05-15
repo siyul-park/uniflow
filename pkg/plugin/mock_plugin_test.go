@@ -11,6 +11,8 @@ type Mock struct {
 	mock.Mock
 }
 
+var _ Plugin = (*Mock)(nil)
+
 // NewMock creates a new Plugin mock and registers the node interface with cleanup.
 func NewMock(t interface {
 	mock.TestingT
@@ -36,7 +38,32 @@ func (m *Mock) SetXXX(val any) error {
 	} else {
 		r0 = ret.Error(0)
 	}
+	return r0
+}
 
+// Name mocks the Name method.
+func (m *Mock) Name() string {
+	ret := m.Called()
+
+	var r0 string
+	if fn, ok := ret.Get(0).(func() string); ok {
+		r0 = fn()
+	} else {
+		r0 = ret.String(0)
+	}
+	return r0
+}
+
+// Version mocks the Version method.
+func (m *Mock) Version() string {
+	ret := m.Called()
+
+	var r0 string
+	if fn, ok := ret.Get(0).(func() string); ok {
+		r0 = fn()
+	} else {
+		r0 = ret.String(0)
+	}
 	return r0
 }
 
@@ -54,7 +81,6 @@ func (m *Mock) Load(ctx context.Context) error {
 	} else {
 		r0 = ret.Error(0)
 	}
-
 	return r0
 }
 
@@ -72,6 +98,5 @@ func (m *Mock) Unload(ctx context.Context) error {
 	} else {
 		r0 = ret.Error(0)
 	}
-
 	return r0
 }

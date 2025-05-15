@@ -21,6 +21,11 @@ type Plugin struct {
 }
 
 var (
+	name    string
+	version string
+)
+
+var (
 	_ plugin.Plugin   = (*Plugin)(nil)
 	_ scheme.Register = (*Plugin)(nil)
 )
@@ -44,6 +49,16 @@ func (p *Plugin) SetLanguageRegistry(registry *language.Registry) {
 	defer p.mu.Unlock()
 
 	p.languageRegistry = registry
+}
+
+// Name returns the plugin's package path as its name.
+func (p *Plugin) Name() string {
+	return name
+}
+
+// Version returns the plugin version.
+func (p *Plugin) Version() string {
+	return version
 }
 
 // Load registers control nodes to the scheme using the provided builder and registry.
