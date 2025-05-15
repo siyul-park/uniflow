@@ -113,7 +113,12 @@ func (p *Plugin) Load(_ context.Context) error {
 	}
 	if p.schemeRegister == nil {
 		p.schemeRegister = scheme.RegisterFunc(func(s *scheme.Scheme) error {
+			if p.languageRegistry == nil {
+				return errors.WithStack(plugin.ErrMissingDependency)
+			}
+
 			compiler, err := p.languageRegistry.Default()
+
 			if err != nil {
 				return err
 			}
