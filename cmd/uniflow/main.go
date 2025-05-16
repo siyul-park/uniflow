@@ -114,11 +114,15 @@ func main() {
 	agent := runtime.NewAgent()
 	defer agent.Close()
 
+	fs := afero.NewOsFs()
+
+	pluginLoader := plugin.NewLoader(fs)
+
 	for _, cfg := range k.Slices(keyPlugins) {
-		p := cmd.Must(plugin.Open(cfg.String("path"), cfg.Get("config")))
+		p := cmd.Must(pluginLoader.Load(cfg.String("path"), cfg.Get("config")))
 		cmd.Fatal(pluginRegistry.Register(p))
 	}
-	for _, dep := range []any{testingRunner, connProxy, agent, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry} {
+	for _, dep := range []any{testingRunner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry} {
 		cmd.Must(pluginRegistry.Inject(dep))
 	}
 	cmd.Fatal(pluginRegistry.Load(ctx))
@@ -156,8 +160,6 @@ func main() {
 
 	namespace := k.String(KeyRuntimeNamespace)
 	environment := k.StringMap(keyEnvironment)
-
-	fs := afero.NewOsFs()
 
 	root := cmd.NewCommand(cmd.Config{
 		Use:   "uniflow",
