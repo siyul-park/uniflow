@@ -2,9 +2,10 @@ package plugin
 
 import (
 	"context"
+	"testing"
+
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLoader_Load(t *testing.T) {
@@ -17,28 +18,34 @@ func TestLoader_Load(t *testing.T) {
 	_, err = file.WriteString(`
 package main
 
-import "context"
+import (
+	"context"
+
+	"github.com/siyul-park/uniflow/pkg/plugin"
+)
 
 type Plugin struct {
 }
+
+var _ plugin.Plugin = (*Plugin)(nil)
 
 func New() *Plugin {
 	return &Plugin{}
 }
 
 func (p *Plugin) Name() string {
-	return ""
+	return "test"
 }
 
 func (p *Plugin) Version() string {
-	return ""
+	return "test"
 }
 
-func (p *Plugin) Load(ctx context.Context) error {
+func (p *Plugin) Load(_ context.Context) error {
 	return nil
 }
 
-func (p *Plugin) Unload() error {
+func (p *Plugin) Unload(_ context.Context) error {
 	return nil
 }
 
@@ -50,6 +57,15 @@ func (p *Plugin) Unload() error {
 	p, err := ld.Open("main.go", nil)
 	require.NoError(t, err)
 
+	name := p.Name()
+	require.Equal(t, "test", name)
+
+	version := p.Version()
+	require.Equal(t, "test", version)
+
 	err = p.Load(context.Background())
+	require.NoError(t, err)
+
+	err = p.Unload(context.Background())
 	require.NoError(t, err)
 }

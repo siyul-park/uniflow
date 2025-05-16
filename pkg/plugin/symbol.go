@@ -14,13 +14,15 @@ func init() {
 	}
 }
 
+//go:generate go install github.com/traefik/yaegi/cmd/yaegi@latest
+
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/driver
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/hook
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/language
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/meta
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/node
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/packet
-//go:generate yaegi extract github.com/siyul-park/uniflow/pkg/plugin
+//_go:generate yaegi extract github.com/siyul-park/uniflow/pkg/plugin
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/port
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/process
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/runtime

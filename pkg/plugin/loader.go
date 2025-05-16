@@ -1,23 +1,24 @@
 package plugin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
-	"github.com/spf13/afero"
-	"github.com/traefik/yaegi/interp"
-	"github.com/traefik/yaegi/stdlib"
 	"go/ast"
-	"go/importer"
 	"go/parser"
-	"go/types"
+	"go/printer"
 	"io"
 	"os"
 	"path/filepath"
 	"plugin"
 	"reflect"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
+	"github.com/traefik/yaegi/interp"
+	"github.com/traefik/yaegi/stdlib"
 )
 
 type Loader struct {
@@ -110,6 +111,11 @@ func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
 		return nil, err
 	}
 
+	b, wrappers, err := l.wrap(i, b)
+	if err != nil {
+		return nil, err
+	}
+
 	node, err := parser.ParseFile(i.FileSet(), path, b, parser.AllErrors)
 	if err != nil {
 		return nil, err
@@ -137,157 +143,16 @@ func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
 		return r, nil
 	}
 
-	conf := types.Config{Importer: importer.Default()}
-	info := &types.Info{Defs: make(map[*ast.Ident]types.Object)}
-	if _, err = conf.Check("main", i.FileSet(), []*ast.File{node}, info); err != nil {
-		return nil, err
-	}
-
-	var fn *types.Func
-	for id, obj := range info.Defs {
-		if id.Name == "New" && obj != nil {
-			if f, ok := obj.(*types.Func); ok {
-				fn = f
-				break
-			}
-		}
-	}
-	if fn == nil {
-		return nil, errors.WithStack(ErrInvalidSignature)
-	}
-
-	sig := fn.Type().(*types.Signature)
-	res := sig.Results()
-	if res.Len() == 0 {
-		return nil, errors.WithStack(ErrInvalidSignature)
-	}
-
-	typ := res.At(0).Type()
-	if ptr, ok := typ.(*types.Pointer); ok {
-		typ = ptr.Elem()
-	}
-
-	named, ok := typ.(*types.Named)
-	if !ok {
-		return nil, errors.WithStack(ErrInvalidSignature)
-	}
-
-	name := named.Obj().Name()
 	methods := map[string]reflect.Value{}
-
-	for j := 0; j < named.NumMethods(); j++ {
-		m := named.Method(j)
-		msig := m.Type().(*types.Signature)
-
-		mname := m.Name()
-		wname := fmt.Sprintf("__wrap_%s_%s", name, mname)
-
-		params := []string{"recv *" + name}
-		args := []string{"recv"}
-
-		for h := 0; h < msig.Params().Len(); h++ {
-			pn := fmt.Sprintf("a%d", h)
-			pt := msig.Params().At(h).Type().String()
-
-			params = append(params, fmt.Sprintf("%s %s", pn, pt))
-			args = append(args, pn)
-		}
-
-		call := fmt.Sprintf("recv.%s(%s)", mname, strings.Join(args[1:], ", "))
-		if msig.Results().Len() == 0 {
-			call = call + "; return nil"
-		} else {
-			call = "return " + call
-		}
-
-		var rets []string
-		for k := 0; k < msig.Results().Len(); k++ {
-			rets = append(rets, msig.Results().At(k).Type().String())
-		}
-
-		var rblock string
-		switch len(rets) {
-		case 0:
-			rblock = ""
-		case 1:
-			rblock = rets[0]
-		default:
-			rblock = "(" + strings.Join(rets, ", ") + ")"
-		}
-
-		var deps []types.Type
-		for k := 0; k < msig.Params().Len(); k++ {
-			deps = append(deps, msig.Params().At(k).Type())
-		}
-		for k := 0; k < msig.Results().Len(); k++ {
-			deps = append(deps, msig.Results().At(k).Type())
-		}
-
-		imports := map[string]struct{}{}
-		for len(deps) > 0 {
-			curr := deps[0]
-			deps = deps[1:]
-
-			switch tt := curr.(type) {
-			case *types.Named:
-				obj := tt.Obj()
-				if pkg := obj.Pkg(); pkg != nil && pkg.Path() != "main" {
-					imports[pkg.Path()] = struct{}{}
-				}
-			case *types.Pointer:
-				deps = append(deps, tt.Elem())
-			case *types.Array:
-				deps = append(deps, tt.Elem())
-			case *types.Slice:
-				deps = append(deps, tt.Elem())
-			case *types.Map:
-				deps = append(deps, tt.Key(), tt.Elem())
-			case *types.Chan:
-				deps = append(deps, tt.Elem())
-			case *types.Signature:
-				for i := 0; i < tt.Params().Len(); i++ {
-					deps = append(deps, tt.Params().At(i).Type())
-				}
-				for i := 0; i < tt.Results().Len(); i++ {
-					deps = append(deps, tt.Results().At(i).Type())
-				}
-			case *types.Struct:
-				for i := 0; i < tt.NumFields(); i++ {
-					deps = append(deps, tt.Field(i).Type())
-				}
-			}
-		}
-
-		var iblock string
-		if len(imports) > 0 {
-			var b strings.Builder
-			b.WriteString("import (\n")
-			for p := range imports {
-				b.WriteString(fmt.Sprintf("\t%q\n", p))
-			}
-			b.WriteString(")\n")
-			iblock = b.String()
-		}
-
-		if _, err := i.Eval(fmt.Sprintf(`
-package main
-%s
-func %s(%s) %s {
-	%s
-}
-`, iblock, wname, strings.Join(params, ", "), rblock, call)); err != nil {
-			return nil, err
-		}
-
-		wrapper, err := i.Eval("main." + wname)
+	for name, wrapper := range wrappers {
+		val, err := i.Eval("main." + wrapper)
 		if err != nil {
 			return nil, err
 		}
-		if wrapper.Kind() != reflect.Func {
+		if val.Kind() != reflect.Func {
 			return nil, errors.WithStack(ErrInvalidSignature)
 		}
-
-		methods[mname] = wrapper
+		methods[name] = val
 	}
 
 	return &proxy{
@@ -328,4 +193,139 @@ func (l *Loader) invoke(val reflect.Value, config any) (reflect.Value, error) {
 		}
 	}
 	return res[0], nil
+}
+
+func (l *Loader) wrap(i *interp.Interpreter, b []byte) ([]byte, map[string]string, error) {
+	var buf bytes.Buffer
+	buf.Write(b)
+
+	node, err := parser.ParseFile(i.FileSet(), ".go", b, parser.AllErrors)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var ctor *ast.FuncDecl
+	for _, decl := range node.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "New" {
+			continue
+		}
+		ctor = fn
+		break
+	}
+	if ctor == nil {
+		return nil, nil, errors.WithStack(ErrInvalidSignature)
+	}
+
+	var recv *ast.Ident
+	if ctor.Type.Results != nil && len(ctor.Type.Results.List) > 0 {
+		typExpr := ctor.Type.Results.List[0].Type
+		switch t := typExpr.(type) {
+		case *ast.StarExpr:
+			if ident, ok := t.X.(*ast.Ident); ok {
+				recv = ident
+			}
+		case *ast.Ident:
+			recv = t
+		}
+	}
+	if recv == nil {
+		return nil, nil, errors.WithStack(ErrInvalidSignature)
+	}
+
+	methods := make(map[string]*ast.FuncDecl)
+	for _, decl := range node.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 {
+			continue
+		}
+
+		var r *ast.Ident
+		switch rt := fn.Recv.List[0].Type.(type) {
+		case *ast.StarExpr:
+			if id, ok := rt.X.(*ast.Ident); ok {
+				r = id
+			}
+		case *ast.Ident:
+			r = rt
+		}
+
+		if r != nil && r.Name == recv.Name {
+			methods[fn.Name.Name] = fn
+		}
+	}
+
+	wrappers := map[string]string{}
+	for name, fn := range methods {
+
+		params := []string{"recv *" + recv.Name}
+		var args []string
+
+		if fn.Type.Params != nil {
+			for _, field := range fn.Type.Params.List {
+				var typ bytes.Buffer
+				if err := printer.Fprint(&typ, i.FileSet(), field.Type); err != nil {
+					return nil, nil, err
+				}
+
+				count := len(field.Names)
+				if count == 0 {
+					count = 1
+				}
+
+				for i := 0; i < count; i++ {
+					arg := fmt.Sprintf("a%d", len(args))
+					params = append(params, fmt.Sprintf("%s %s", arg, typ.String()))
+					args = append(args, arg)
+				}
+			}
+		}
+
+		ret := ""
+		if fn.Type.Results != nil && len(fn.Type.Results.List) > 0 {
+			var rets []string
+			for _, field := range fn.Type.Results.List {
+				var typ bytes.Buffer
+				err := printer.Fprint(&typ, i.FileSet(), field.Type)
+				if err != nil {
+					return nil, nil, err
+				}
+				count := 1
+				if len(field.Names) > 0 {
+					count = len(field.Names)
+				}
+				for i := 0; i < count; i++ {
+					rets = append(rets, typ.String())
+				}
+			}
+			if len(rets) == 1 {
+				ret = rets[0]
+			} else {
+				ret = "(" + strings.Join(rets, ", ") + ")"
+			}
+		}
+
+		call := fmt.Sprintf("recv.%s(%s)", name, strings.Join(args, ", "))
+
+		var body string
+		if ret == "" {
+			body = call
+		} else {
+			body = "return " + call
+		}
+
+		wrapper := fmt.Sprintf(
+			"func __wrap_%s_%s(%s) %s {\n\t%s\n}\n",
+			recv.Name,
+			name,
+			strings.Join(params, ", "),
+			ret,
+			body,
+		)
+
+		buf.WriteString(wrapper)
+		wrappers[name] = fmt.Sprintf("__wrap_%s_%s", recv.Name, name)
+	}
+
+	return buf.Bytes(), wrappers, nil
 }
