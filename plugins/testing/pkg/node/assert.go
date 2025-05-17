@@ -36,6 +36,7 @@ type AssertNode struct {
 	outPort *port.OutPort
 	expect  func(context.Context, interface{}) (bool, error)
 	target  func(interface{}, interface{}) (interface{}, interface{}, error)
+	agent   *runtime.Agent
 }
 
 const KindAssert = "assert"
@@ -54,16 +55,10 @@ func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme
 
 		n := NewAssertNode()
 		n.SetExpect(evaluator)
+		n.SetAgent(agent)
 
 		if spec.Target != nil {
-			n.SetTarget(func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
-				target, err := find(agent, spec.Target.Name, spec.Target.Port)
-				if err != nil {
-					return nil, nil, err
-				}
-
-				return target, index, nil
-			})
+			n.SetTarget(spec.Target.Name, spec.Target.Port)
 		}
 
 		return n, nil
@@ -90,8 +85,23 @@ func (n *AssertNode) SetExpect(expect func(context.Context, interface{}) (bool, 
 }
 
 // SetTarget sets the target function
-func (n *AssertNode) SetTarget(target func(interface{}, interface{}) (interface{}, interface{}, error)) {
-	n.target = target
+func (n *AssertNode) SetTarget(name string, port string) {
+	n.target = func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
+		if n.agent == nil {
+			return nil, nil, fmt.Errorf("agent not set")
+		}
+
+		target, err := find(n.agent, name, port)
+		if err != nil {
+			return nil, nil, err
+		}
+		return target, index, nil
+	}
+}
+
+// SetAgent sets the runtime agent for finding targets
+func (n *AssertNode) SetAgent(agent *runtime.Agent) {
+	n.agent = agent
 }
 
 // In returns the input port with the specified name
