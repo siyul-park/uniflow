@@ -48,13 +48,12 @@ func (p *Plugin) Load(_ context.Context) error {
 func (p *Plugin) Unload(_ context.Context) error {
 	return nil
 }
-
 `)
 	require.NoError(t, err)
 
 	ld := NewLoader(fs)
 
-	p, err := ld.Open("main.go", nil)
+	p, err := ld.Open("main.go")
 	require.NoError(t, err)
 
 	name := p.Name()

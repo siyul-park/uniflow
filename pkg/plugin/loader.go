@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/samber/lo"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/traefik/yaegi/interp"
@@ -25,6 +27,12 @@ import (
 type Loader struct {
 	fs       afero.Fs
 	validate *validator.Validate
+}
+
+// LoadOptions specifies options for loading a plugin.ㄴ
+type LoadOptions struct {
+	Environment map[string]string
+	Arguments   []any
 }
 
 // NewLoader returns a new Loader using the given filesystem.
@@ -38,18 +46,25 @@ func NewLoader(fs afero.Fs) *Loader {
 var ErrInvalidSignature = errors.New("invalid signature")
 
 // Open loads and initializes a plugin with the given config.
-func (l *Loader) Open(path string, config any) (Plugin, error) {
+func (l *Loader) Open(path string, options ...LoadOptions) (Plugin, error) {
 	switch ext := filepath.Ext(path); ext {
 	case ".so":
-		return l.openNative(path, config)
+		return l.openNative(path, options...)
 	case ".go":
-		return l.openInterp(path, config)
+		return l.openInterp(path, options...)
 	default:
 		return nil, errors.WithStack(ErrInvalidSignature)
 	}
 }
 
-func (l *Loader) openNative(path string, config any) (Plugin, error) {
+func (l *Loader) openNative(path string, options ...LoadOptions) (Plugin, error) {
+	var args []any
+	for _, opt := range options {
+		if opt.Arguments != nil {
+			args = opt.Arguments
+		}
+	}
+
 	tmp, err := os.CreateTemp("", "*.so")
 	if err != nil {
 		return nil, err
@@ -80,7 +95,7 @@ func (l *Loader) openNative(path string, config any) (Plugin, error) {
 		return nil, err
 	}
 
-	recv, err := l.invoke(reflect.ValueOf(ctor), config)
+	recv, err := l.invoke(reflect.ValueOf(ctor), args...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +107,18 @@ func (l *Loader) openNative(path string, config any) (Plugin, error) {
 	return r, nil
 }
 
-func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
+func (l *Loader) openInterp(path string, options ...LoadOptions) (Plugin, error) {
+	env := map[string]string{}
+	var args []any
+	for _, opt := range options {
+		for k, v := range opt.Environment {
+			env[strcase.ToScreamingSnake(k)] = v
+		}
+		if opt.Arguments != nil {
+			args = opt.Arguments
+		}
+	}
+
 	f, err := l.fs.Open(path)
 	if err != nil {
 		return nil, err
@@ -105,6 +131,10 @@ func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
 	}
 
 	i := interp.New(interp.Options{
+		GoPath: env["GOPATH"],
+		Env: lo.Map(lo.Keys(env), func(key string, _ int) string {
+			return key + "=" + env[key]
+		}),
 		SourcecodeFilesystem: afero.NewIOFS(l.fs),
 	})
 	if err := i.Use(stdlib.Symbols); err != nil {
@@ -137,7 +167,7 @@ func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
 		return nil, err
 	}
 
-	recv, err := l.invoke(ctor, cfg)
+	recv, err := l.invoke(ctor, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,28 +194,32 @@ func (l *Loader) openInterp(path string, cfg any) (Plugin, error) {
 	}, nil
 }
 
-func (l *Loader) invoke(val reflect.Value, config any) (reflect.Value, error) {
-	if val.Kind() != reflect.Func {
+func (l *Loader) invoke(fn reflect.Value, args ...any) (reflect.Value, error) {
+	if fn.Kind() != reflect.Func {
 		return reflect.Value{}, errors.WithStack(ErrInvalidSignature)
 	}
 
 	var ins []reflect.Value
-	for i := 0; i < val.Type().NumIn(); i++ {
-		data, err := json.Marshal(config)
-		if err != nil {
-			return reflect.Value{}, err
+	for i := 0; i < fn.Type().NumIn(); i++ {
+		in := reflect.New(fn.Type().In(i))
+
+		if i < len(args) {
+			data, err := json.Marshal(args[i])
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			if err := json.Unmarshal(data, in.Interface()); err != nil {
+				return reflect.Value{}, err
+			}
 		}
-		in := reflect.New(val.Type().In(i))
-		if err := json.Unmarshal(data, in.Interface()); err != nil {
-			return reflect.Value{}, err
-		}
+
 		if err := l.validate.Struct(in.Interface()); err != nil {
 			return reflect.Value{}, err
 		}
 		ins = append(ins, in.Elem())
 	}
 
-	res := val.Call(ins)
+	res := fn.Call(ins)
 	if len(res) == 0 {
 		return reflect.Value{}, errors.WithStack(ErrInvalidSignature)
 	}
