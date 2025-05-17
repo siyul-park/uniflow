@@ -6,69 +6,101 @@ import (
 	"strings"
 )
 
-// Proxy wraps a Plugin and supports dependency injection.
-type Proxy struct {
-	plugin Plugin
+type proxy struct {
+	receiver reflect.Value
+	methods  map[string]reflect.Value
 }
 
-var _ Plugin = (*Proxy)(nil)
+var _ Plugin = (*proxy)(nil)
 
-// NewProxy returns a new Proxy for the given Plugin.
-func NewProxy(plugin Plugin) *Proxy {
-	return &Proxy{plugin: plugin}
+func (p *proxy) Name() string {
+	m, ok := p.methods["Name"]
+	if !ok || !m.IsValid() {
+		return ""
+	}
+
+	t := m.Type()
+	if t.NumIn() != 1 || t.NumOut() != 1 || t.Out(0).Kind() != reflect.String {
+		return ""
+	}
+
+	ret := m.Call([]reflect.Value{p.receiver})
+	return ret[0].Interface().(string)
 }
 
-// Inject injects a dependency via a matching Set* method.
-func (p *Proxy) Inject(dependency any) (bool, error) {
-	pv := reflect.ValueOf(p.plugin)
-	pt := pv.Type()
+func (p *proxy) Version() string {
+	m, ok := p.methods["Version"]
+	if !ok || !m.IsValid() {
+		return ""
+	}
 
-	dv := reflect.ValueOf(dependency)
+	t := m.Type()
+	if t.NumIn() != 1 || t.NumOut() != 1 || t.Out(0).Kind() != reflect.String {
+		return ""
+	}
+
+	ret := m.Call([]reflect.Value{p.receiver})
+	return ret[0].Interface().(string)
+}
+
+func (p *proxy) SetXXX(dep any) error {
+	dv := reflect.ValueOf(dep)
 	dt := dv.Type()
 
-	for i := 0; i < pt.NumMethod(); i++ {
-		m := pt.Method(i)
-		if !strings.HasPrefix(m.Name, "Set") {
+	for n, m := range p.methods {
+		if !strings.HasPrefix(n, "Set") {
 			continue
 		}
 
-		mv := pv.Method(i)
+		mv := m
 		mt := mv.Type()
 
-		if mt.NumIn() == 1 && dt.AssignableTo(mt.In(0)) {
-			ret := mv.Call([]reflect.Value{dv})
+		if mt.NumIn() == 2 && dt.AssignableTo(mt.In(1)) {
+			ret := mv.Call([]reflect.Value{p.receiver, dv})
+			var err error
 			if len(ret) > 0 {
-				if err, ok := ret[0].Interface().(error); ok && err != nil {
-					return false, err
-				}
+				err, _ = ret[len(ret)-1].Interface().(error)
 			}
-			return true, nil
+			return err
 		}
 	}
-	return false, nil
+	return nil
 }
 
-// Name returns the plugin name.
-func (p *Proxy) Name() string {
-	return p.plugin.Name()
+func (p *proxy) Load(ctx context.Context) error {
+	m, ok := p.methods["Load"]
+	if !ok || !m.IsValid() {
+		return nil
+	}
+
+	t := m.Type()
+	a0 := reflect.TypeOf(ctx)
+	r0 := reflect.TypeOf((*error)(nil)).Elem()
+
+	if t.NumIn() != 2 || !a0.AssignableTo(t.In(1)) || t.NumOut() != 1 || !t.Out(0).AssignableTo(r0) {
+		return nil
+	}
+
+	ret := m.Call([]reflect.Value{p.receiver, reflect.ValueOf(ctx)})
+	v0, _ := ret[0].Interface().(error)
+	return v0
 }
 
-// Version returns the plugin version.
-func (p *Proxy) Version() string {
-	return p.plugin.Version()
-}
+func (p *proxy) Unload(ctx context.Context) error {
+	m, ok := p.methods["Unload"]
+	if !ok || !m.IsValid() {
+		return nil
+	}
 
-// Load loads the plugin.
-func (p *Proxy) Load(ctx context.Context) error {
-	return p.plugin.Load(ctx)
-}
+	t := m.Type()
+	a0 := reflect.TypeOf(ctx)
+	r0 := reflect.TypeOf((*error)(nil)).Elem()
 
-// Unload unloads the plugin.
-func (p *Proxy) Unload(ctx context.Context) error {
-	return p.plugin.Unload(ctx)
-}
+	if t.NumIn() != 2 || !a0.AssignableTo(t.In(1)) || t.NumOut() != 1 || !t.Out(0).AssignableTo(r0) {
+		return nil
+	}
 
-// Unwrap returns the original plugin.
-func (p *Proxy) Unwrap() Plugin {
-	return p.plugin
+	ret := m.Call([]reflect.Value{p.receiver, reflect.ValueOf(ctx)})
+	v0, _ := ret[0].Interface().(error)
+	return v0
 }

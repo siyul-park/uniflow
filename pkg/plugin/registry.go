@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -9,7 +11,7 @@ import (
 
 // Registry manages a list of plugins and controls their lifecycle.
 type Registry struct {
-	proxies []*Proxy
+	plugins []Plugin
 	mu      sync.RWMutex
 }
 
@@ -28,12 +30,12 @@ func (r *Registry) Register(plugin Plugin) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, p := range r.proxies {
-		if p.Unwrap() == plugin {
+	for _, p := range r.plugins {
+		if p == plugin {
 			return errors.WithStack(ErrConflict)
 		}
 	}
-	r.proxies = append(r.proxies, NewProxy(plugin))
+	r.plugins = append(r.plugins, plugin)
 	return nil
 }
 
@@ -42,9 +44,9 @@ func (r *Registry) Unregister(plugin Plugin) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for i, p := range r.proxies {
-		if p.Unwrap() == plugin {
-			r.proxies = append(r.proxies[:i], r.proxies[i+1:]...)
+	for i, p := range r.plugins {
+		if p == plugin {
+			r.plugins = append(r.plugins[:i], r.plugins[i+1:]...)
 			return nil
 		}
 	}
@@ -56,11 +58,7 @@ func (r *Registry) Plugins() []Plugin {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	plugins := make([]Plugin, len(r.proxies))
-	for i, p := range r.proxies {
-		plugins[i] = p.Unwrap()
-	}
-	return plugins
+	return append([]Plugin(nil), r.plugins...)
 }
 
 // Inject attempts to inject the given dependency into all registered plugins.
@@ -69,11 +67,31 @@ func (r *Registry) Inject(dependency any) (int, error) {
 	defer r.mu.Unlock()
 
 	count := 0
-	for _, p := range r.proxies {
-		if ok, err := p.Inject(dependency); err != nil {
-			return 0, err
-		} else if ok {
-			count++
+	for _, p := range r.plugins {
+		pv := reflect.ValueOf(p)
+		pt := pv.Type()
+
+		dv := reflect.ValueOf(dependency)
+		dt := dv.Type()
+
+		for i := 0; i < pt.NumMethod(); i++ {
+			m := pt.Method(i)
+			if !strings.HasPrefix(m.Name, "Set") {
+				continue
+			}
+
+			mv := pv.Method(i)
+			mt := mv.Type()
+
+			if mt.NumIn() == 1 && dt.AssignableTo(mt.In(0)) {
+				ret := mv.Call([]reflect.Value{dv})
+				if len(ret) > 0 {
+					if err, ok := ret[0].Interface().(error); ok && err != nil {
+						return 0, err
+					}
+				}
+				count++
+			}
 		}
 	}
 	return count, nil
@@ -84,8 +102,8 @@ func (r *Registry) Load(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for i := 0; i < len(r.proxies); i++ {
-		if err := r.proxies[i].Load(ctx); err != nil {
+	for i := 0; i < len(r.plugins); i++ {
+		if err := r.plugins[i].Load(ctx); err != nil {
 			return err
 		}
 	}
@@ -97,8 +115,8 @@ func (r *Registry) Unload(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for i := len(r.proxies) - 1; i >= 0; i-- {
-		if err := r.proxies[i].Unload(ctx); err != nil {
+	for i := len(r.plugins) - 1; i >= 0; i-- {
+		if err := r.plugins[i].Unload(ctx); err != nil {
 			return err
 		}
 	}

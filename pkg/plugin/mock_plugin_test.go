@@ -29,7 +29,7 @@ func (m *Mock) SetXXX(val any) error {
 	ret := m.Called(val)
 
 	if len(ret) == 0 {
-		panic("no return value specified for SetXXX")
+		panic("no return receiver specified for SetXXX")
 	}
 
 	var r0 error
@@ -72,7 +72,7 @@ func (m *Mock) Load(ctx context.Context) error {
 	ret := m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Load")
+		panic("no return receiver specified for Load")
 	}
 
 	var r0 error
@@ -89,7 +89,7 @@ func (m *Mock) Unload(ctx context.Context) error {
 	ret := m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Unload")
+		panic("no return receiver specified for Unload")
 	}
 
 	var r0 error
