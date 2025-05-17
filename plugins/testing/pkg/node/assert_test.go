@@ -242,8 +242,12 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 
 		assertNode := NewAssertNode()
 		assertNode.SetExpect(evaluator)
-		assertNode.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
-			return findTarget(agent, targetNodeName, node.PortOut)
+		assertNode.SetTarget(func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
+			target, err := find(agent, targetNodeName, node.PortOut)
+			if err != nil {
+				return nil, nil, err
+			}
+			return target, index, nil
 		})
 
 		n4 := &symbol.Symbol{
@@ -323,8 +327,12 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 
 		assertNode := NewAssertNode()
 		assertNode.SetExpect(evaluator)
-		assertNode.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
-			return findTarget(agent, nonExistentNodeName, node.PortOut)
+		assertNode.SetTarget(func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
+			target, err := find(agent, nonExistentNodeName, node.PortOut)
+			if err != nil {
+				return nil, nil, err
+			}
+			return target, index, nil
 		})
 
 		n3 := &symbol.Symbol{

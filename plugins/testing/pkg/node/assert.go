@@ -35,7 +35,7 @@ type AssertNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
 	expect  func(context.Context, interface{}) (bool, error)
-	target  func(interface{}, interface{}) (interface{}, error)
+	target  func(interface{}, interface{}) (interface{}, interface{}, error)
 }
 
 const KindAssert = "assert"
@@ -56,8 +56,13 @@ func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme
 		n.SetExpect(evaluator)
 
 		if spec.Target != nil {
-			n.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
-				return findTarget(agent, spec.Target.Name, spec.Target.Port)
+			n.SetTarget(func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
+				target, err := find(agent, spec.Target.Name, spec.Target.Port)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				return target, index, nil
 			})
 		}
 
@@ -70,8 +75,8 @@ func NewAssertNode() *AssertNode {
 	n := &AssertNode{
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
-		target: func(payload interface{}, _ interface{}) (interface{}, error) {
-			return payload, nil
+		target: func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
+			return payload, index, nil
 		},
 	}
 
@@ -85,7 +90,7 @@ func (n *AssertNode) SetExpect(expect func(context.Context, interface{}) (bool, 
 }
 
 // SetTarget sets the target function
-func (n *AssertNode) SetTarget(target func(interface{}, interface{}) (interface{}, error)) {
+func (n *AssertNode) SetTarget(target func(interface{}, interface{}) (interface{}, interface{}, error)) {
 	n.target = target
 }
 
@@ -125,7 +130,7 @@ func (n *AssertNode) forward(proc *process.Process) {
 
 		inPayload, frameIdx := value.Get(0), value.Get(1)
 
-		target, err := n.target(inPayload, frameIdx)
+		target, idx, err := n.target(inPayload, frameIdx)
 		if err != nil {
 			inReader.Receive(packet.New(types.NewError(err)))
 			continue
@@ -142,7 +147,7 @@ func (n *AssertNode) forward(proc *process.Process) {
 			continue
 		}
 
-		outPayload, err := types.Marshal([]interface{}{inPayload, frameIdx})
+		outPayload, err := types.Marshal([]interface{}{inPayload, idx})
 		if err != nil {
 			inReader.Receive(packet.New(types.NewError(err)))
 			continue
@@ -153,26 +158,23 @@ func (n *AssertNode) forward(proc *process.Process) {
 	}
 }
 
-func findTarget(agent *runtime.Agent, targetName string, targetPort string) (interface{}, error) {
-	if targetName == "" || targetPort == "" {
-		return nil, fmt.Errorf("no target specified")
-	}
-
+func find(agent *runtime.Agent, name string, port string) (interface{}, error) {
 	for _, proc := range agent.Processes() {
 		for _, frm := range agent.Frames(proc.ID()) {
-			if frm.Symbol == nil || frm.Symbol.Name() != targetName {
+			if frm.Symbol == nil || frm.Symbol.Name() != name {
 				continue
 			}
 
-			if inPort := frm.Symbol.In(targetPort); inPort != nil && frm.InPck != nil {
+			if inPort := frm.Symbol.In(port); inPort != nil && frm.InPck != nil {
 				return frm.InPck.Payload(), nil
 			}
 
-			if outPort := frm.Symbol.Out(targetPort); outPort != nil && frm.OutPck != nil {
+			if outPort := frm.Symbol.Out(port); outPort != nil && frm.OutPck != nil {
 				return frm.OutPck.Payload(), nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located", targetName, targetPort)
+	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located",
+		name, port)
 }
