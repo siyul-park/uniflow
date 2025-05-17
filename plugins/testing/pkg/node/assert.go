@@ -34,9 +34,8 @@ type AssertNodeTarget struct {
 type AssertNode struct {
 	inPort  *port.InPort
 	outPort *port.OutPort
-	agent   *runtime.Agent
-	spec    *AssertNodeSpec
-	fn      func(context.Context, interface{}) (bool, error)
+	expect  func(context.Context, interface{}) (bool, error)
+	target  func(interface{}, interface{}) (interface{}, error)
 }
 
 const KindAssert = "assert"
@@ -52,23 +51,42 @@ func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme
 		}
 
 		evaluator := language.Predicate[any](language.Timeout(program, spec.Timeout))
-		return NewAssertNode(spec, agent, evaluator), nil
+
+		n := NewAssertNode()
+		n.SetExpect(evaluator)
+
+		if spec.Target != nil {
+			n.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
+				return findTarget(agent, spec.Target.Name, spec.Target.Port)
+			})
+		}
+
+		return n, nil
 	})
 }
 
-// NewAssertNode creates a new Assert node with the given spec and agent
-func NewAssertNode(spec *AssertNodeSpec, agent *runtime.Agent, fn func(context.Context, interface{}) (bool, error)) *AssertNode {
+// NewAssertNode creates a new Assert node
+func NewAssertNode() *AssertNode {
 	n := &AssertNode{
 		inPort:  port.NewIn(),
 		outPort: port.NewOut(),
-		agent:   agent,
-		spec:    spec,
-		fn:      fn,
+		target: func(payload interface{}, _ interface{}) (interface{}, error) {
+			return payload, nil
+		},
 	}
 
 	n.inPort.AddListener(port.ListenFunc(n.forward))
-
 	return n
+}
+
+// SetExpect sets the expectation function
+func (n *AssertNode) SetExpect(expect func(context.Context, interface{}) (bool, error)) {
+	n.expect = expect
+}
+
+// SetTarget sets the target function
+func (n *AssertNode) SetTarget(target func(interface{}, interface{}) (interface{}, error)) {
+	n.target = target
 }
 
 // In returns the input port with the specified name
@@ -98,8 +116,6 @@ func (n *AssertNode) forward(proc *process.Process) {
 	inReader := n.inPort.Open(proc)
 	outWriter := n.outPort.Open(proc)
 
-	var target interface{}
-
 	for inPck := range inReader.Read() {
 		value, ok := inPck.Payload().(types.Slice)
 		if !ok || value.Len() != 2 {
@@ -109,27 +125,20 @@ func (n *AssertNode) forward(proc *process.Process) {
 
 		inPayload, frameIdx := value.Get(0), value.Get(1)
 
-		if n.spec.Target != nil {
-			frame, err := n.find(n.spec.Target)
-			if err != nil {
-				inReader.Receive(packet.New(types.NewError(err)))
-				continue
-			}
-			target = frame
-		} else {
-			target = inPayload
+		target, err := n.target(inPayload, frameIdx)
+		if err != nil {
+			inReader.Receive(packet.New(types.NewError(err)))
+			continue
 		}
 
-		ok, err := n.fn(proc, target)
+		ok, err = n.expect(proc, target)
 		if err != nil {
 			inReader.Receive(packet.New(types.NewError(err)))
 			continue
 		}
 
 		if !ok {
-			errMsg := fmt.Errorf("assertion failed: expression '%s' evaluated to false with value %v",
-				n.spec.Expect, target)
-			inReader.Receive(packet.New(types.NewError(errMsg)))
+			inReader.Receive(packet.New(types.NewError(fmt.Errorf("assertion failed: evaluated to false with value %v", target))))
 			continue
 		}
 
@@ -139,39 +148,31 @@ func (n *AssertNode) forward(proc *process.Process) {
 			continue
 		}
 
-		outPck := packet.New(outPayload)
-		outWriter.Write(outPck)
+		outWriter.Write(packet.New(outPayload))
 		inReader.Receive(packet.None)
 	}
 }
 
-func (n *AssertNode) find(target *AssertNodeTarget) (interface{}, error) {
-	if target == nil {
+func findTarget(agent *runtime.Agent, targetName string, targetPort string) (interface{}, error) {
+	if targetName == "" || targetPort == "" {
 		return nil, fmt.Errorf("no target specified")
 	}
 
-	tname := target.Name
-	tport := target.Port
-
-	for _, proc := range n.agent.Processes() {
-		for _, frm := range n.agent.Frames(proc.ID()) {
-			if frm.Symbol == nil {
+	for _, proc := range agent.Processes() {
+		for _, frm := range agent.Frames(proc.ID()) {
+			if frm.Symbol == nil || frm.Symbol.Name() != targetName {
 				continue
 			}
 
-			if frm.Symbol.Name() != tname {
-				continue
-			}
-
-			if inPort := frm.Symbol.In(tport); inPort != nil && frm.InPck != nil {
+			if inPort := frm.Symbol.In(targetPort); inPort != nil && frm.InPck != nil {
 				return frm.InPck.Payload(), nil
 			}
 
-			if outPort := frm.Symbol.Out(tport); outPort != nil && frm.OutPck != nil {
+			if outPort := frm.Symbol.Out(targetPort); outPort != nil && frm.OutPck != nil {
 				return frm.OutPck.Payload(), nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located", tname, tport)
+	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located", targetName, targetPort)
 }
