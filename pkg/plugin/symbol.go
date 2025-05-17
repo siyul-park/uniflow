@@ -33,4 +33,10 @@ func init() {
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/types
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/value
 
+//go:generate yaegi extract github.com/go-playground/validator/v10
 //go:generate yaegi extract github.com/gofrs/uuid
+//go:generate yaegi extract github.com/pkg/errors
+//go:generate yaegi extract github.com/samber/lo
+//go:generate yaegi extract github.com/spf13/afero
+//go:generate yaegi extract github.com/traefik/yaegi
+//go:generate yaegi extract gopkg.in/yaml.v3

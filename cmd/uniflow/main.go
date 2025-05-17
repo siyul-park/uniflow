@@ -119,7 +119,7 @@ func main() {
 	pluginLoader := plugin.NewLoader(fs)
 
 	for _, cfg := range k.Slices(keyPlugins) {
-		p := cmd.Must(pluginLoader.Load(cfg.String("path"), cfg.Get("config")))
+		p := cmd.Must(pluginLoader.Open(cfg.String("path"), cfg.Get("config")))
 		cmd.Fatal(pluginRegistry.Register(p))
 	}
 	for _, dep := range []any{testingRunner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry} {

@@ -21,11 +21,13 @@ import (
 	"github.com/traefik/yaegi/stdlib"
 )
 
+// Loader loads plugins from Go source or compiled shared object files.
 type Loader struct {
 	fs       afero.Fs
 	validate *validator.Validate
 }
 
+// NewLoader returns a new Loader using the given filesystem.
 func NewLoader(fs afero.Fs) *Loader {
 	return &Loader{
 		fs:       fs,
@@ -35,6 +37,7 @@ func NewLoader(fs afero.Fs) *Loader {
 
 var ErrInvalidSignature = errors.New("invalid signature")
 
+// Open loads and initializes a plugin with the given config.
 func (l *Loader) Open(path string, config any) (Plugin, error) {
 	switch ext := filepath.Ext(path); ext {
 	case ".so":
@@ -257,22 +260,18 @@ func (l *Loader) wrap(i *interp.Interpreter, b []byte) ([]byte, map[string]strin
 
 	wrappers := map[string]string{}
 	for name, fn := range methods {
-
 		params := []string{"recv *" + recv.Name}
 		var args []string
-
 		if fn.Type.Params != nil {
 			for _, field := range fn.Type.Params.List {
 				var typ bytes.Buffer
 				if err := printer.Fprint(&typ, i.FileSet(), field.Type); err != nil {
 					return nil, nil, err
 				}
-
 				count := len(field.Names)
 				if count == 0 {
 					count = 1
 				}
-
 				for i := 0; i < count; i++ {
 					arg := fmt.Sprintf("a%d", len(args))
 					params = append(params, fmt.Sprintf("%s %s", arg, typ.String()))
