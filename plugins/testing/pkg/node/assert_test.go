@@ -24,7 +24,7 @@ func TestNewAssertNodeCodec(t *testing.T) {
 }
 
 func TestAssertNode_Port(t *testing.T) {
-	n := NewAssertNode(nil, nil, nil)
+	n := NewAssertNode()
 	defer n.Close()
 
 	require.NotNil(t, n.In(node.PortIn))
@@ -71,6 +71,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
+		assertNode := NewAssertNode()
+		assertNode.SetExpect(evaluator)
+
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -78,9 +81,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 				Namespace: meta.DefaultNamespace,
 				Name:      "assert",
 			},
-			Node: NewAssertNode(&AssertNodeSpec{
-				Expect: "self == 10",
-			}, agent, evaluator),
+			Node: assertNode,
 		}
 		defer n3.Close()
 
@@ -146,6 +147,9 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
+		assertNode := NewAssertNode()
+		assertNode.SetExpect(evaluator)
+
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -153,9 +157,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 				Namespace: meta.DefaultNamespace,
 				Name:      "assert",
 			},
-			Node: NewAssertNode(&AssertNodeSpec{
-				Expect: "self == 10",
-			}, agent, evaluator),
+			Node: assertNode,
 		}
 		defer n3.Close()
 
@@ -238,6 +240,12 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
+		assertNode := NewAssertNode()
+		assertNode.SetExpect(evaluator)
+		assertNode.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
+			return findTarget(agent, targetNodeName, node.PortOut)
+		})
+
 		n4 := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -245,13 +253,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 				Namespace: meta.DefaultNamespace,
 				Name:      "assert",
 			},
-			Node: NewAssertNode(&AssertNodeSpec{
-				Expect: "self == 10",
-				Target: &AssertNodeTarget{
-					Name: targetNodeName,
-					Port: node.PortOut,
-				},
-			}, agent, evaluator),
+			Node: assertNode,
 		}
 		defer n4.Close()
 
@@ -317,6 +319,14 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return true, nil
 		}
 
+		nonExistentNodeName := "non-existent-node"
+
+		assertNode := NewAssertNode()
+		assertNode.SetExpect(evaluator)
+		assertNode.SetTarget(func(_ interface{}, _ interface{}) (interface{}, error) {
+			return findTarget(agent, nonExistentNodeName, node.PortOut)
+		})
+
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
@@ -324,13 +334,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 				Namespace: meta.DefaultNamespace,
 				Name:      "assert",
 			},
-			Node: NewAssertNode(&AssertNodeSpec{
-				Expect: "self == 10",
-				Target: &AssertNodeTarget{
-					Name: "non-existent-node",
-					Port: node.PortOut,
-				},
-			}, agent, evaluator),
+			Node: assertNode,
 		}
 		defer n3.Close()
 
