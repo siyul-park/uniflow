@@ -17,6 +17,7 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"github.com/spf13/afero"
 
 	"github.com/siyul-park/uniflow/internal/cmd"
@@ -119,19 +120,21 @@ func main() {
 	pluginLoader := plugin.NewLoader(fs)
 
 	for _, cfg := range k.Slices(keyPlugins) {
-		e := map[string]string{}
-		for _, key := range cfg.Keys() {
-			e[strcase.ToScreamingSnake(key)] = cfg.String(key)
-		}
+		e := lo.Associate(cfg.Keys(), func(k string) (string, string) {
+			return strcase.ToScreamingSnake(k), cfg.String(k)
+		})
 		p := cmd.Must(pluginLoader.Open(cfg.String("path"), plugin.LoadOptions{
 			Environment: e,
 			Arguments:   []any{cfg.Get("config")},
 		}))
 		cmd.Fatal(pluginRegistry.Register(p))
 	}
-	for _, dep := range []any{testingRunner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry} {
+
+	deps := []any{testingRunner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry}
+	for _, dep := range deps {
 		cmd.Must(pluginRegistry.Inject(dep))
 	}
+
 	cmd.Fatal(pluginRegistry.Load(ctx))
 
 	sc := cmd.Must(schemeBuilder.Build())
