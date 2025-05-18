@@ -161,7 +161,6 @@ func (b *Breakpoint) MarshalJSON() ([]byte, error) {
 	sb := b.Symbol()
 	if sb != nil {
 		data["symbol_id"] = sb.ID()
-		data["symbol_name"] = sb.Name()
 
 		for name, in := range sb.Ins() {
 			if in == b.InPort() {

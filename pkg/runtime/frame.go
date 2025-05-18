@@ -34,7 +34,6 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 	if f.Symbol != nil {
 		data["symbol_id"] = f.Symbol.ID().String()
-		data["symbol_name"] = f.Symbol.Name()
 
 		for name, in := range f.Symbol.Ins() {
 			if in == f.InPort {
