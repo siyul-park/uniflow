@@ -20,8 +20,8 @@ type DecoderGroup[S, T any] struct {
 }
 
 var (
-	ErrUnsupportedType  = errors.New("type is unsupported")
-	ErrUnsupportedValue = errors.New("value is unsupported")
+	ErrUnsupportedType  = errors.New("unsupported type")
+	ErrUnsupportedValue = errors.New("unsupported value")
 )
 
 var (
