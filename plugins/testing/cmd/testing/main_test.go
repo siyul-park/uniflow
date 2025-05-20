@@ -35,7 +35,7 @@ func TestPlugin_Load(t *testing.T) {
 
 	p.SetHookBuilder(hb)
 	p.SetSchemeBuilder(sb)
-	p.SetTestingRunner(tr)
+	p.SetRunner(tr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestPlugin_Unload(t *testing.T) {
 
 	p.SetHookBuilder(hb)
 	p.SetSchemeBuilder(sb)
-	p.SetTestingRunner(tr)
+	p.SetRunner(tr)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)

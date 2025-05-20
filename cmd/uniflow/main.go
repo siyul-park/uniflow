@@ -86,7 +86,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	testingRunner := testing.NewRunner()
+	runner := testing.NewRunner()
 
 	schemeBuilder := scheme.NewBuilder()
 	hookBuilder := hook.NewBuilder()
@@ -126,7 +126,7 @@ func main() {
 		cmd.Fatal(pluginRegistry.Register(p))
 	}
 
-	deps := []any{testingRunner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry}
+	deps := []any{runner, connProxy, agent, fs, schemeBuilder, hookBuilder, pluginRegistry, driverRegistry, languageRegistry}
 	for _, dep := range deps {
 		cmd.Must(pluginRegistry.Inject(dep))
 	}
@@ -185,7 +185,7 @@ func main() {
 	root.AddCommand(cmd.NewTestCommand(cmd.TestConfig{
 		Namespace:   namespace,
 		Environment: environment,
-		Runner:      testingRunner,
+		Runner:      runner,
 		Scheme:      sc,
 		Hook:        hk,
 		SpecStore:   specStore,

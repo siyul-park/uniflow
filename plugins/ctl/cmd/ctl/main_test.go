@@ -10,7 +10,7 @@ import (
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/stretchr/testify/require"
 
-	"github.com/siyul-park/uniflow/plugins/ctrl/pkg/node"
+	"github.com/siyul-park/uniflow/plugins/ctl/pkg/node"
 )
 
 func TestPlugin_Name(t *testing.T) {

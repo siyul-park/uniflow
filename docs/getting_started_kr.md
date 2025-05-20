@@ -67,7 +67,7 @@ path = "./dist/mongodb.so"
 path = "./dist/reflect.so"
 
 [[plugins]]
-path = "./dist/ctrl.so"
+path = "./dist/ctl.so"
 
 [[plugins]]
 path = "./dist/net.so"

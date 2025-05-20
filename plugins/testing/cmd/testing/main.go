@@ -18,9 +18,9 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
+	runner        *testing.Runner
 	hookBuilder   *hook.Builder
 	schemeBuilder *scheme.Builder
-	testingRunner *testing.Runner
 	mu            sync.Mutex
 }
 
@@ -40,6 +40,14 @@ func New() *Plugin {
 	return &Plugin{}
 }
 
+// SetRunner sets the testing runner for the plugin.
+func (p *Plugin) SetRunner(runner *testing.Runner) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.runner = runner
+}
+
 // SetHookBuilder sets the hook builder for the plugin.
 func (p *Plugin) SetHookBuilder(builder *hook.Builder) {
 	p.mu.Lock()
@@ -54,14 +62,6 @@ func (p *Plugin) SetSchemeBuilder(builder *scheme.Builder) {
 	defer p.mu.Unlock()
 
 	p.schemeBuilder = builder
-}
-
-// SetTestingRunner sets the testing runner for the plugin.
-func (p *Plugin) SetTestingRunner(runner *testing.Runner) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.testingRunner = runner
 }
 
 // Name returns the plugin's package path as its name.
@@ -105,7 +105,7 @@ func (p *Plugin) AddToHook(h *hook.Hook) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	testingRunner := p.testingRunner
+	testingRunner := p.runner
 	if testingRunner == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
