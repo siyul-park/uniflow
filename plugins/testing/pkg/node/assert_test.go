@@ -24,7 +24,7 @@ func TestNewAssertNodeCodec(t *testing.T) {
 }
 
 func TestAssertNode_Port(t *testing.T) {
-	n := NewAssertNode()
+	n := NewAssertNode(nil)
 	defer n.Close()
 
 	require.NotNil(t, n.In(node.PortIn))
@@ -63,7 +63,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n2.Close()
 
-		evaluator := func(_ context.Context, payload interface{}) (bool, error) {
+		evaluator := func(_ context.Context, payload any) (bool, error) {
 			val, ok := payload.(types.Int)
 			if !ok {
 				return false, nil
@@ -71,8 +71,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
-		assertNode := NewAssertNode()
-		assertNode.SetExpect(evaluator)
+		assertNode := NewAssertNode(evaluator)
 
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -139,7 +138,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n2.Close()
 
-		evaluator := func(_ context.Context, payload interface{}) (bool, error) {
+		evaluator := func(_ context.Context, payload any) (bool, error) {
 			val, ok := payload.(types.Int)
 			if !ok {
 				return false, nil
@@ -147,8 +146,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
-		assertNode := NewAssertNode()
-		assertNode.SetExpect(evaluator)
+		assertNode := NewAssertNode(evaluator)
 
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -180,7 +178,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case <-tester.Done():
 			require.Error(t, tester.Err())
 			require.NotErrorIs(t, tester.Err(), context.Canceled)
-			require.Contains(t, tester.Err().Error(), "assertion failed")
+			require.ErrorIs(t, tester.Err(), ErrAssertFail)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
@@ -232,7 +230,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n3.Close()
 
-		evaluator := func(_ context.Context, payload interface{}) (bool, error) {
+		evaluator := func(_ context.Context, payload any) (bool, error) {
 			val, ok := payload.(types.Int)
 			if !ok {
 				return false, nil
@@ -240,10 +238,10 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 			return val.Int() == 10, nil
 		}
 
-		assertNode := NewAssertNode()
-		assertNode.SetExpect(evaluator)
-		assertNode.SetAgent(agent)
-		assertNode.SetTarget(targetNodeName, node.PortOut)
+		assertNode := NewAssertNode(evaluator)
+		assertNode.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
+			return targetNodeName, index, nil
+		})
 
 		n4 := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -314,16 +312,16 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 		defer n2.Close()
 
-		evaluator := func(_ context.Context, payload interface{}) (bool, error) {
+		evaluator := func(_ context.Context, payload any) (bool, error) {
 			return true, nil
 		}
 
 		nonExistentNodeName := "non-existent-node"
 
-		assertNode := NewAssertNode()
-		assertNode.SetExpect(evaluator)
-		assertNode.SetAgent(agent)
-		assertNode.SetTarget(nonExistentNodeName, node.PortOut)
+		assertNode := NewAssertNode(evaluator)
+		assertNode.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
+			return nonExistentNodeName, index, nil
+		})
 
 		n3 := &symbol.Symbol{
 			Spec: &spec.Meta{
@@ -355,7 +353,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case <-tester.Done():
 			require.Error(t, tester.Err())
 			require.NotErrorIs(t, tester.Err(), context.Canceled)
-			require.Contains(t, tester.Err().Error(), "target frame not found")
+			require.ErrorIs(t, tester.Err(), ErrNoTarget)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
