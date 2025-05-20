@@ -2,13 +2,14 @@ package node
 
 import (
 	"context"
-	"fmt"
+	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
-	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
@@ -19,46 +20,65 @@ import (
 // AssertNodeSpec defines the specification for Assert node
 type AssertNodeSpec struct {
 	spec.Meta `json:",inline"`
-	Expect    string            `json:"expect"`
-	Target    *AssertNodeTarget `json:"target,omitempty"`
-	Timeout   time.Duration     `json:"timeout,omitempty"`
-}
-
-// AssertNodeTarget defines the target to validate
-type AssertNodeTarget struct {
-	Name string `json:"name"`
-	Port string `json:"port"`
+	Expect    string        `json:"expect"`
+	Target    *spec.Port    `json:"target,omitempty"`
+	Timeout   time.Duration `json:"timeout,omitempty"`
 }
 
 // AssertNode implements the Assert node functionality
 type AssertNode struct {
-	inPort  *port.InPort
-	outPort *port.OutPort
-	expect  func(context.Context, interface{}) (bool, error)
-	target  func(interface{}, interface{}) (interface{}, interface{}, error)
-	agent   *runtime.Agent
+	*node.OneToOneNode
+	expect func(context.Context, any) (bool, error)
+	target func(*process.Process, any, int) (any, int, error)
+	mu     sync.RWMutex
 }
 
 const KindAssert = "assert"
 
+var (
+	ErrAssertFail = errors.New("condition not satisfied")
+	ErrNoTarget   = errors.New("target not found")
+	ErrPayloadNil = errors.New("payload is nil")
+)
+
 var _ node.Node = (*AssertNode)(nil)
 
 // NewAssertNodeCodec creates a codec for AssertNode
-func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme.Codec {
+func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme.Codec {
 	return scheme.CodecWithType(func(spec *AssertNodeSpec) (node.Node, error) {
 		program, err := compiler.Compile(spec.Expect)
 		if err != nil {
 			return nil, err
 		}
 
-		evaluator := language.Predicate[any](language.Timeout(program, spec.Timeout))
-
-		n := NewAssertNode()
-		n.SetExpect(evaluator)
-		n.SetAgent(agent)
+		n := NewAssertNode(language.Predicate[any](language.Timeout(program, spec.Timeout)))
 
 		if spec.Target != nil {
-			n.SetTarget(spec.Target.Name, spec.Target.Port)
+			n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
+				frames := agent.Frames(proc.ID())
+				if index < 0 {
+					index = 0
+				}
+				for i := index; i < len(frames); i++ {
+					frame := frames[i]
+					if frame.Symbol == nil || frame.Symbol.Name() != spec.Target.Name {
+						continue
+					}
+					if frame.InPort != nil && frame.InPort == frame.Symbol.In(spec.Target.Port) {
+						if frame.InPck == nil {
+							return nil, -1, errors.WithStack(ErrPayloadNil)
+						}
+						return frame.InPck.Payload(), i, nil
+					}
+					if frame.OutPort != nil && frame.OutPort == frame.Symbol.Out(spec.Target.Port) {
+						if frame.OutPck == nil {
+							return nil, -1, errors.WithStack(ErrPayloadNil)
+						}
+						return frame.OutPck.Payload(), i, nil
+					}
+				}
+				return nil, -1, errors.WithStack(ErrNoTarget)
+			})
 		}
 
 		return n, nil
@@ -66,125 +86,56 @@ func NewAssertNodeCodec(agent *runtime.Agent, compiler language.Compiler) scheme
 }
 
 // NewAssertNode creates a new Assert node
-func NewAssertNode() *AssertNode {
+func NewAssertNode(expect func(context.Context, any) (bool, error)) *AssertNode {
 	n := &AssertNode{
-		inPort:  port.NewIn(),
-		outPort: port.NewOut(),
-		target: func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
-			return payload, index, nil
-		},
+		expect: expect,
 	}
 
-	n.inPort.AddListener(port.ListenFunc(n.forward))
+	n.OneToOneNode = node.NewOneToOneNode(n.action)
 	return n
 }
 
-// SetExpect sets the expectation function
-func (n *AssertNode) SetExpect(expect func(context.Context, interface{}) (bool, error)) {
-	n.expect = expect
-}
-
 // SetTarget sets the target function
-func (n *AssertNode) SetTarget(name string, port string) {
-	n.target = func(payload interface{}, index interface{}) (interface{}, interface{}, error) {
-		if n.agent == nil {
-			return nil, nil, fmt.Errorf("agent not set")
-		}
+func (n *AssertNode) SetTarget(target func(*process.Process, any, int) (any, int, error)) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-		target, err := find(n.agent, name, port)
+	n.target = target
+}
+
+func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	inPayload := inPck.Payload()
+
+	payload, err := types.Cast[any](types.Lookup(inPayload, 0))
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+
+	index, err := types.Cast[int](types.Lookup(inPayload, 1))
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+
+	if n.target != nil {
+		payload, index, err = n.target(proc, payload, index)
 		if err != nil {
-			return nil, nil, err
-		}
-		return target, index, nil
-	}
-}
-
-// SetAgent sets the runtime agent for finding targets
-func (n *AssertNode) SetAgent(agent *runtime.Agent) {
-	n.agent = agent
-}
-
-// In returns the input port with the specified name
-func (n *AssertNode) In(name string) *port.InPort {
-	if name == "in" {
-		return n.inPort
-	}
-	return nil
-}
-
-// Out returns the output port with the specified name
-func (n *AssertNode) Out(name string) *port.OutPort {
-	if name == "out" {
-		return n.outPort
-	}
-	return nil
-}
-
-// Close closes the ports
-func (n *AssertNode) Close() error {
-	n.inPort.Close()
-	n.outPort.Close()
-	return nil
-}
-
-func (n *AssertNode) forward(proc *process.Process) {
-	inReader := n.inPort.Open(proc)
-	outWriter := n.outPort.Open(proc)
-
-	for inPck := range inReader.Read() {
-		value, ok := inPck.Payload().(types.Slice)
-		if !ok || value.Len() != 2 {
-			inReader.Receive(packet.New(types.NewError(fmt.Errorf("invalid packet format"))))
-			continue
-		}
-
-		inPayload, frameIdx := value.Get(0), value.Get(1)
-
-		target, idx, err := n.target(inPayload, frameIdx)
-		if err != nil {
-			inReader.Receive(packet.New(types.NewError(err)))
-			continue
-		}
-
-		ok, err = n.expect(proc, target)
-		if err != nil {
-			inReader.Receive(packet.New(types.NewError(err)))
-			continue
-		}
-
-		if !ok {
-			inReader.Receive(packet.New(types.NewError(fmt.Errorf("assertion failed: evaluated to false with value %v", target))))
-			continue
-		}
-
-		outPayload, err := types.Marshal([]interface{}{inPayload, idx})
-		if err != nil {
-			inReader.Receive(packet.New(types.NewError(err)))
-			continue
-		}
-
-		outWriter.Write(packet.New(outPayload))
-		inReader.Receive(packet.None)
-	}
-}
-
-func find(agent *runtime.Agent, name string, port string) (interface{}, error) {
-	for _, proc := range agent.Processes() {
-		for _, frm := range agent.Frames(proc.ID()) {
-			if frm.Symbol == nil || frm.Symbol.Name() != name {
-				continue
-			}
-
-			if inPort := frm.Symbol.In(port); inPort != nil && frm.InPck != nil {
-				return frm.InPck.Payload(), nil
-			}
-
-			if outPort := frm.Symbol.Out(port); outPort != nil && frm.OutPck != nil {
-				return frm.OutPck.Payload(), nil
-			}
+			return nil, packet.New(types.NewError(err))
 		}
 	}
 
-	return nil, fmt.Errorf("target frame not found: node '%s' with port '%s' could not be located",
-		name, port)
+	if ok, err := n.expect(proc, payload); err != nil {
+		return nil, packet.New(types.NewError(err))
+	} else if !ok {
+		return nil, packet.New(types.NewError(ErrAssertFail))
+	}
+
+	next, err := types.Marshal(payload)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+
+	return packet.New(types.NewSlice(next, types.NewInt(index))), nil
 }
