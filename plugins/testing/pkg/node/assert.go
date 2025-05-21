@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/siyul-park/uniflow/pkg/language"
@@ -61,7 +62,14 @@ func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme
 				}
 				for i := index; i < len(frames); i++ {
 					frame := frames[i]
-					if frame.Symbol == nil || frame.Symbol.Name() != spec.Target.Name {
+					if frame.Symbol == nil {
+						continue
+					}
+					if spec.Target.ID != uuid.Nil {
+						if frame.Symbol.ID() != spec.Target.ID {
+							continue
+						}
+					} else if frame.Symbol.NamespacedName() != spec.Target.Name {
 						continue
 					}
 					if frame.InPort != nil && frame.InPort == frame.Symbol.In(spec.Target.Port) {
