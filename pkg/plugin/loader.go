@@ -6,16 +6,19 @@ import (
 	"go/ast"
 	"go/parser"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"plugin"
 	"reflect"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
+	"golang.org/x/mod/modfile"
 )
 
 // Loader loads plugins from Go source or compiled shared object files.
@@ -45,10 +48,38 @@ func (l *Loader) Open(path string, options ...LoadOptions) (Plugin, error) {
 	switch ext := filepath.Ext(path); ext {
 	case ".so":
 		return l.openNative(path, options...)
-	case ".go":
-		return l.openInterp(path, options...)
 	default:
-		return nil, errors.WithStack(ErrInvalidSignature)
+		var gopath string
+		var config any
+		for _, opt := range options {
+			if opt.GoPath != "" {
+				gopath = opt.GoPath
+			}
+			if opt.Config != nil {
+				config = opt.Config
+			}
+		}
+		if gopath == "" {
+			gopath = ".plugins"
+		}
+
+		info, err := l.fs.Stat(path)
+		if err != nil {
+			return nil, err
+		}
+		if !info.IsDir() {
+			path = filepath.Dir(filepath.Clean(path))
+		}
+
+		path, err = l.resolve(path, gopath)
+		if err != nil {
+			return nil, err
+		}
+
+		return l.openInterp(path, LoadOptions{
+			GoPath: gopath,
+			Config: config,
+		})
 	}
 }
 
@@ -114,17 +145,6 @@ func (l *Loader) openInterp(path string, options ...LoadOptions) (Plugin, error)
 		}
 	}
 
-	f, err := l.fs.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
 	i := interp.New(interp.Options{
 		GoPath:               gopath,
 		Env:                  os.Environ(),
@@ -137,37 +157,78 @@ func (l *Loader) openInterp(path string, options ...LoadOptions) (Plugin, error)
 		return nil, err
 	}
 
-	node, err := parser.ParseFile(i.FileSet(), path, b, parser.AllErrors)
-	if err != nil {
+	var paths []string
+	if err := afero.Walk(l.fs, path, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
+			paths = append(paths, path)
+		}
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 
-	fn := l.funcDecl(node, "New")
+	var nodes []*ast.File
+	for _, p := range paths {
+		f, err := l.fs.Open(p)
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := io.ReadAll(f)
+		_ = f.Close()
+		if err != nil {
+			return nil, err
+		}
+
+		node, err := parser.ParseFile(i.FileSet(), p, b, parser.AllErrors)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, node)
+	}
+
+	var fn *ast.FuncDecl
+	for _, node := range nodes {
+		f := l.funcDecl(node, "New")
+		if f != nil {
+			fn = f
+			break
+		}
+	}
 	if fn == nil {
 		return nil, errors.WithStack(ErrInvalidSignature)
 	}
 
 	wrappers := map[string]string{}
 	if r0 := l.result(fn, 0); r0 != nil {
-		for _, method := range l.methods(node, r0) {
-			if method.Name == nil {
-				continue
+		for _, node := range nodes {
+			for _, method := range l.methods(node, r0) {
+				if method.Name == nil {
+					continue
+				}
+
+				wrapper := l.wrapper(method)
+				if wrapper == nil {
+					continue
+				}
+
+				node.Decls = append(node.Decls, wrapper)
+				wrappers[method.Name.Name] = wrapper.Name.Name
 			}
-			wrapper := l.wrapper(method)
-			if wrapper == nil {
-				continue
-			}
-			node.Decls = append(node.Decls, wrapper)
-			wrappers[method.Name.Name] = wrapper.Name.Name
 		}
 	}
 
-	prg, err := i.CompileAST(node)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := i.Execute(prg); err != nil {
-		return nil, err
+	for _, node := range nodes {
+		prg, err := i.CompileAST(node)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := i.Execute(prg); err != nil {
+			return nil, err
+		}
 	}
 
 	ctor, err := i.Eval("main.New")
@@ -200,6 +261,84 @@ func (l *Loader) openInterp(path string, options ...LoadOptions) (Plugin, error)
 		receiver: recv,
 		methods:  methods,
 	}, nil
+}
+
+func (l *Loader) resolve(path, gopath string) (string, error) {
+	dir := path
+	var modFile string
+	for {
+		modFile = filepath.Join(dir, "go.mod")
+		if ok, err := afero.Exists(l.fs, modFile); err != nil {
+			return "", err
+		} else if ok {
+			break
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return path, nil
+		}
+		dir = parent
+	}
+
+	data, err := afero.ReadFile(l.fs, modFile)
+	if err != nil {
+		return "", err
+	}
+	mod, err := modfile.Parse(modFile, data, nil)
+	if err != nil {
+		return "", err
+	}
+	if mod.Module == nil {
+		return "", errors.WithStack(ErrInvalidSignature)
+	}
+
+	dst := filepath.Join(gopath, "src", filepath.FromSlash(mod.Module.Mod.Path))
+	if err := afero.Walk(l.fs, dir, func(src string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if strings.HasPrefix(src, dst+string(filepath.Separator)) {
+			return nil
+		}
+
+		rel, err := filepath.Rel(dir, src)
+		if err != nil {
+			return err
+		}
+
+		dst := filepath.Join(dst, rel)
+		if info.IsDir() {
+			return l.fs.MkdirAll(dst, info.Mode())
+		}
+
+		if ok, _ := afero.Exists(l.fs, dst); ok {
+			return nil
+		}
+
+		in, err := l.fs.Open(src)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		out, err := l.fs.Create(dst)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, in)
+		return err
+	}); err != nil {
+		return "", err
+	}
+
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dst, rel), nil
 }
 
 func (l *Loader) invoke(fn reflect.Value, args ...any) (reflect.Value, error) {

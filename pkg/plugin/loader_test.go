@@ -55,6 +55,17 @@ func (p *Plugin) Unload(_ context.Context) error {
 `)
 	require.NoError(t, err)
 
+	mod, err := fs.Create("go.mod")
+	require.NoError(t, err)
+	defer mod.Close()
+
+	_, err = mod.WriteString(`
+module example.com/plugin
+
+go 1.20
+`)
+	require.NoError(t, err)
+
 	ld := NewLoader(fs)
 
 	p, err := ld.Open("main.go")
