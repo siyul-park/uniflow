@@ -52,36 +52,43 @@ func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme
 
 		if spec.Target != nil {
 			n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
-				frames := agent.Frames(proc.ID())
 				if index < 0 {
 					index = 0
 				}
+
+				frames := agent.Frames(proc.ID())
 				for i := index; i < len(frames); i++ {
 					frame := frames[i]
 					if frame.Symbol == nil {
 						continue
 					}
+
+					ok := false
 					if spec.Target.ID != uuid.Nil {
-						if frame.Symbol.ID() != spec.Target.ID {
-							continue
-						}
-					} else if frame.Symbol.NamespacedName() != spec.Target.Name {
+						ok = frame.Symbol.ID() == spec.Target.ID
+					} else {
+						ok = frame.Symbol.Namespace() == spec.GetNamespace() &&
+							frame.Symbol.Name() == spec.Target.Name
+					}
+					if !ok {
 						continue
 					}
+
 					if frame.InPort != nil && frame.InPort == frame.Symbol.In(spec.Target.Port) {
 						if frame.InPck == nil {
-							return nil, -1, errors.WithStack(ErrPayloadNil)
+							return nil, -1, errors.WithStack(ErrAssertFail)
 						}
 						return frame.InPck.Payload(), i, nil
 					}
 					if frame.OutPort != nil && frame.OutPort == frame.Symbol.Out(spec.Target.Port) {
 						if frame.OutPck == nil {
-							return nil, -1, errors.WithStack(ErrPayloadNil)
+							return nil, -1, errors.WithStack(ErrAssertFail)
 						}
 						return frame.OutPck.Payload(), i, nil
 					}
 				}
-				return nil, -1, errors.WithStack(ErrNoTarget)
+
+				return nil, -1, errors.WithStack(ErrAssertFail)
 			})
 		}
 
