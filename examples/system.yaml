@@ -51,7 +51,7 @@
   code: SELECT * FROM `frames`
   ports:
     out:
-      - name: system
+      - name: internal
         port: in
 
 - kind: snippet
@@ -60,7 +60,7 @@
   code: SELECT * FROM `processes`
   ports:
     out:
-      - name: system
+      - name: internal
         port: in
 
 - kind: snippet
@@ -69,7 +69,7 @@
   code: SELECT * FROM `symbols`
   ports:
     out:
-      - name: system
+      - name: internal
         port: in
 
 - kind: snippet
@@ -78,7 +78,7 @@
   code: SELECT * FROM `specs`
   ports:
     out:
-      - name: system
+      - name: internal
         port: in
 
 - kind: snippet
@@ -87,9 +87,9 @@
   code: SELECT * FROM `values`
   ports:
     out:
-      - name: system
+      - name: internal
         port: in
 
 - kind: sql
-  name: system
-  driver: runtime
+  name: internal
+  driver: internal

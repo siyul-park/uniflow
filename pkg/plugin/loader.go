@@ -60,7 +60,7 @@ func (l *Loader) Open(path string, options ...LoadOptions) (Plugin, error) {
 			}
 		}
 		if gopath == "" {
-			gopath = ".plugins"
+			gopath = "go"
 		}
 
 		info, err := l.fs.Stat(path)
@@ -265,10 +265,10 @@ func (l *Loader) openInterp(path string, options ...LoadOptions) (Plugin, error)
 
 func (l *Loader) resolve(path, gopath string) (string, error) {
 	dir := path
-	var modFile string
+	var mPath string
 	for {
-		modFile = filepath.Join(dir, "go.mod")
-		if ok, err := afero.Exists(l.fs, modFile); err != nil {
+		mPath = filepath.Join(dir, "go.mod")
+		if ok, err := afero.Exists(l.fs, mPath); err != nil {
 			return "", err
 		} else if ok {
 			break
@@ -280,11 +280,11 @@ func (l *Loader) resolve(path, gopath string) (string, error) {
 		dir = parent
 	}
 
-	data, err := afero.ReadFile(l.fs, modFile)
+	mData, err := afero.ReadFile(l.fs, mPath)
 	if err != nil {
 		return "", err
 	}
-	mod, err := modfile.Parse(modFile, data, nil)
+	mod, err := modfile.Parse(mPath, mData, nil)
 	if err != nil {
 		return "", err
 	}

@@ -38,7 +38,7 @@ var (
 )
 
 func init() {
-	sql.Register("runtime", drv)
+	sql.Register("internal", drv)
 }
 
 // New creates a new Plugin instance.
