@@ -112,12 +112,10 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
-
 	payload, err := types.Cast[any](types.Lookup(inPayload, 0))
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-
 	index, err := types.Cast[int](types.Lookup(inPayload, 1))
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
@@ -130,16 +128,15 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		}
 	}
 
-	if ok, err := n.expect(proc, payload); err != nil {
+	value, err := types.Marshal(payload)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
+	}
+	if ok, err := n.expect(proc, types.InterfaceOf(value)); err != nil {
 		return nil, packet.New(types.NewError(err))
 	} else if !ok {
 		return nil, packet.New(types.NewError(ErrAssertFail))
 	}
 
-	next, err := types.Marshal(payload)
-	if err != nil {
-		return nil, packet.New(types.NewError(err))
-	}
-
-	return packet.New(types.NewSlice(next, types.NewInt(index))), nil
+	return packet.New(types.NewSlice(value, types.NewInt(index))), nil
 }
