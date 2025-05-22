@@ -36,11 +36,7 @@ type AssertNode struct {
 
 const KindAssert = "assert"
 
-var (
-	ErrAssertFail = errors.New("condition not satisfied")
-	ErrNoTarget   = errors.New("target not found")
-	ErrPayloadNil = errors.New("payload is nil")
-)
+var ErrAssertFail = errors.New("assert failed")
 
 var _ node.Node = (*AssertNode)(nil)
 
