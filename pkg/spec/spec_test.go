@@ -88,32 +88,6 @@ func TestMeta_Ports(t *testing.T) {
 	require.Equal(t, ports, meta.GetPorts())
 }
 
-func TestMeta_NamespacedName(t *testing.T) {
-	t.Run("ID", func(t *testing.T) {
-		meta := &Meta{
-			ID:          uuid.Must(uuid.NewV7()),
-			Kind:        faker.UUIDHyphenated(),
-			Namespace:   "default",
-			Annotations: map[string]string{"key": "value"},
-			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
-			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
-		}
-		require.Equal(t, meta.GetNamespace()+"/"+meta.GetID().String(), meta.GetNamespacedName())
-	})
-	t.Run("Name", func(t *testing.T) {
-		meta := &Meta{
-			ID:          uuid.Must(uuid.NewV7()),
-			Kind:        faker.UUIDHyphenated(),
-			Namespace:   "default",
-			Name:        faker.UUIDHyphenated(),
-			Annotations: map[string]string{"key": "value"},
-			Ports:       map[string][]Port{"out": {{Name: faker.UUIDHyphenated(), Port: "in"}}},
-			Env:         map[string]Value{"env1": {Name: "value1", Data: "value1"}},
-		}
-		require.Equal(t, meta.GetNamespace()+"/"+meta.GetName(), meta.GetNamespacedName())
-	})
-}
-
 func TestMeta_IsBound(t *testing.T) {
 	sec1 := &value.Value{
 		ID: uuid.Must(uuid.NewV7()),

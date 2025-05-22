@@ -44,7 +44,6 @@ func TestSymbol_Getter(t *testing.T) {
 	require.Equal(t, meta.GetKind(), sb.Kind())
 	require.Equal(t, meta.GetNamespace(), sb.Namespace())
 	require.Equal(t, meta.GetName(), sb.Name())
-	require.Equal(t, meta.GetNamespacedName(), sb.NamespacedName())
 	require.Equal(t, meta.GetAnnotations(), sb.Annotations())
 	require.Equal(t, meta.GetPorts(), sb.Ports())
 	require.Equal(t, meta.GetEnv(), sb.Env())

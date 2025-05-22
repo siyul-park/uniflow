@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofrs/uuid"
 
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -69,7 +70,7 @@ func (s *Symbol) SetName(name string) {
 
 // NamespacedName returns the namespaced identifier.
 func (s *Symbol) NamespacedName() string {
-	return s.Spec.GetNamespacedName()
+	return meta.NamespacedName(s.Spec)
 }
 
 // Annotations returns the annotations associated with the Symbol.

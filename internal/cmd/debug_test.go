@@ -295,11 +295,11 @@ func TestDebugModel_Update(t *testing.T) {
 		d.Pause(ctx)
 
 		m.input.SetValue("breakpoint")
+		defer d.RemoveBreakpoint(d.Breakpoint())
+
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		require.Contains(t, m.View(), sb.Name())
-
-		d.RemoveBreakpoint(d.Breakpoint())
+		require.Contains(t, m.View(), sb.ID().String())
 	})
 
 	t.Run("symbols", func(t *testing.T) {

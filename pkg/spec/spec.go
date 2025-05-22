@@ -1,8 +1,6 @@
 package spec
 
 import (
-	"fmt"
-
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
@@ -31,8 +29,6 @@ type Spec interface {
 	GetName() string
 	// SetName sets the name of the node.
 	SetName(val string)
-	// GetNamespacedName returns the fully qualified name of the node.
-	GetNamespacedName() string
 	// GetAnnotations returns the annotations of the node.
 	GetAnnotations() map[string]string
 	// SetAnnotations sets the annotations of the node.
@@ -142,14 +138,6 @@ func (m *Meta) GetName() string {
 // SetName sets the node's name.
 func (m *Meta) SetName(val string) {
 	m.Name = val
-}
-
-// GetNamespacedName returns the namespaced identifier.
-func (m *Meta) GetNamespacedName() string {
-	if m.Name != "" {
-		return fmt.Sprintf("%s/%s", m.Namespace, m.Name)
-	}
-	return fmt.Sprintf("%s/%s", m.Namespace, m.ID)
 }
 
 // GetAnnotations returns the node's annotations.

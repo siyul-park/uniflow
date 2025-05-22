@@ -1,6 +1,8 @@
 package meta
 
 import (
+	"fmt"
+
 	"github.com/gofrs/uuid"
 )
 
@@ -26,3 +28,11 @@ type Meta interface {
 
 // DefaultNamespace represents the default namespace for resources.
 const DefaultNamespace = "default"
+
+// NamespacedName returns the namespaced identifier.
+func NamespacedName(m Meta) string {
+	if m.GetName() != "" {
+		return fmt.Sprintf("%s/%s", m.GetNamespace(), m.GetName())
+	}
+	return fmt.Sprintf("%s/%s", m.GetNamespace(), m.GetID())
+}

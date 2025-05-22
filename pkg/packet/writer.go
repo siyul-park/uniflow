@@ -156,9 +156,9 @@ func (w *Writer) Unlink(reader *Reader) bool {
 					pck = Join(w.receives[0]...)
 				}
 
-				w.receives = w.receives[1:]
-
 				w.inbounds.Handle(pck)
+
+				w.receives = w.receives[1:]
 				w.in <- pck
 			}
 			return true
@@ -172,11 +172,7 @@ func (w *Writer) Write(pck *Packet) int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.done {
-		return 0
-	}
-
-	if len(w.readers) == 0 {
+	if w.done || len(w.readers) == 0 {
 		return 0
 	}
 

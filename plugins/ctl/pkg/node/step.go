@@ -3,6 +3,7 @@ package node
 import (
 	"fmt"
 
+	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	"github.com/siyul-park/uniflow/pkg/spec"
@@ -23,7 +24,7 @@ func NewStepNodeCodec(s *scheme.Scheme) scheme.Codec {
 		symbols := make([]*symbol.Symbol, 0, len(root.Specs))
 		for i, sp := range root.Specs {
 			if sp.GetNamespace() == "" {
-				sp.SetNamespace(root.GetNamespacedName())
+				sp.SetNamespace(meta.NamespacedName(root))
 			}
 
 			if sp.GetName() == "" {

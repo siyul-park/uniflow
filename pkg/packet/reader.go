@@ -147,8 +147,9 @@ func (r *Reader) write(pck *Packet, writer *Writer) bool {
 		return false
 	}
 
-	r.writers = append(r.writers, writer)
 	r.inbounds.Handle(pck)
+
+	r.writers = append(r.writers, writer)
 	r.in <- pck
 	return true
 }
