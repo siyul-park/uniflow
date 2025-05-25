@@ -5,21 +5,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
-	"github.com/siyul-park/uniflow/pkg/meta"
+	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/pkg/language/text"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
+	"github.com/siyul-park/uniflow/pkg/port"
 	"github.com/siyul-park/uniflow/pkg/process"
 	"github.com/siyul-park/uniflow/pkg/runtime"
-	"github.com/siyul-park/uniflow/pkg/spec"
-	"github.com/siyul-park/uniflow/pkg/symbol"
-	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewAssertNodeCodec(t *testing.T) {
-	codec := NewAssertNodeCodec(nil, nil)
+	compiler := text.NewCompiler()
+	agent := runtime.NewAgent()
+	defer agent.Close()
+
+	codec := NewAssertNodeCodec(compiler, agent)
 	require.NotNil(t, codec)
 }
 
@@ -33,327 +35,196 @@ func TestAssertNode_Port(t *testing.T) {
 
 func TestAssertNode_SendAndReceive(t *testing.T) {
 	t.Run("DirectAssert", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		agent := runtime.NewAgent()
-		defer agent.Close()
-
-		n1 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "test",
-				Namespace: meta.DefaultNamespace,
-				Name:      "test",
-			},
-			Node: NewTestNode(),
-		}
-		defer n1.Close()
-
-		n2 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "snippet",
-				Namespace: meta.DefaultNamespace,
-				Name:      "target",
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return packet.New(types.NewInt(10)), nil
-			}),
-		}
-		defer n2.Close()
-
-		evaluator := func(_ context.Context, payload any) (bool, error) {
-			val, ok := payload.(types.Int)
-			if !ok {
-				return false, nil
-			}
-			return val.Int() == 10, nil
+		expect := func(_ context.Context, payload any) (bool, error) {
+			return payload == 10, nil
 		}
 
-		assertNode := NewAssertNode(evaluator)
+		n := NewAssertNode(expect)
+		defer n.Close()
 
-		n3 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "assert",
-				Namespace: meta.DefaultNamespace,
-				Name:      "assert",
-			},
-			Node: assertNode,
-		}
-		defer n3.Close()
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		agent.Load(n1)
-		defer agent.Unload(n1)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
-		agent.Load(n2)
-		defer agent.Unload(n2)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-		agent.Load(n3)
-		defer agent.Unload(n3)
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
 
-		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
+		inPck := packet.New(inPayload)
 
-		tester := testing2.NewTester("")
-		go n1.Node.(*TestNode).Run(tester)
+		inWriter.Write(inPck)
 
 		select {
-		case <-tester.Done():
-			require.ErrorIs(t, tester.Err(), context.Canceled)
+		case outPck := <-outReader.Read():
+			outPayload, ok := outPck.Payload().(types.Slice)
+			require.True(t, ok)
+			require.Equal(t, 2, outPayload.Len())
+			require.Equal(t, types.NewInt(10), outPayload.Get(0))
+			require.Equal(t, types.NewInt(-1), outPayload.Get(1))
+			outReader.Receive(outPck)
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
 	t.Run("AssertFailed", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		agent := runtime.NewAgent()
-		defer agent.Close()
-
-		n1 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "test",
-				Namespace: meta.DefaultNamespace,
-				Name:      "test",
-			},
-			Node: NewTestNode(),
-		}
-		defer n1.Close()
-
-		n2 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "snippet",
-				Namespace: meta.DefaultNamespace,
-				Name:      "target",
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return packet.New(types.NewInt(5)), nil
-			}),
-		}
-		defer n2.Close()
-
-		evaluator := func(_ context.Context, payload any) (bool, error) {
-			val, ok := payload.(types.Int)
-			if !ok {
-				return false, nil
-			}
-			return val.Int() == 10, nil
+		expect := func(_ context.Context, payload any) (bool, error) {
+			return payload == 10, nil
 		}
 
-		assertNode := NewAssertNode(evaluator)
+		n := NewAssertNode(expect)
+		defer n.Close()
 
-		n3 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "assert",
-				Namespace: meta.DefaultNamespace,
-				Name:      "assert",
-			},
-			Node: assertNode,
-		}
-		defer n3.Close()
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		agent.Load(n1)
-		defer agent.Unload(n1)
+		err := port.NewIn()
+		n.Out(node.PortError).Link(err)
 
-		agent.Load(n2)
-		defer agent.Unload(n2)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-		agent.Load(n3)
-		defer agent.Unload(n3)
+		inWriter := in.Open(proc)
+		errReader := err.Open(proc)
 
-		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
+		inPayload := types.NewSlice(types.NewInt(5), types.NewInt(-1))
+		inPck := packet.New(inPayload)
 
-		tester := testing2.NewTester("")
-		go n1.Node.(*TestNode).Run(tester)
+		inWriter.Write(inPck)
 
 		select {
-		case <-tester.Done():
-			require.Error(t, tester.Err())
-			require.NotErrorIs(t, tester.Err(), context.Canceled)
-			require.ErrorIs(t, tester.Err(), ErrAssertFail)
+		case errPck := <-errReader.Read():
+			errPayload, ok := errPck.Payload().(types.Error)
+			require.True(t, ok)
+			require.ErrorIs(t, errPayload.Unwrap(), ErrAssertFail)
+			errReader.Receive(errPck)
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
 	t.Run("TargetAssert", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		agent := runtime.NewAgent()
-		defer agent.Close()
-
-		n1 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "test",
-				Namespace: meta.DefaultNamespace,
-				Name:      "test",
-			},
-			Node: NewTestNode(),
-		}
-		defer n1.Close()
-
-		targetNodeName := "target"
-
-		n2 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "snippet",
-				Namespace: meta.DefaultNamespace,
-				Name:      targetNodeName,
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return packet.New(types.NewInt(10)), nil
-			}),
-		}
-		defer n2.Close()
-
-		n3 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "snippet",
-				Namespace: meta.DefaultNamespace,
-				Name:      "non-target",
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return packet.New(types.NewInt(20)), nil
-			}),
-		}
-		defer n3.Close()
-
-		evaluator := func(_ context.Context, payload any) (bool, error) {
-			val, ok := payload.(types.Int)
-			if !ok {
-				return false, nil
-			}
-			return val.Int() == 10, nil
+		expect := func(_ context.Context, payload any) (bool, error) {
+			return payload == 42, nil
 		}
 
-		assertNode := NewAssertNode(evaluator)
-		assertNode.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
-			return targetNodeName, index, nil
+		n := NewAssertNode(expect)
+		defer n.Close()
+
+		n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
+			return 42, 0, nil
 		})
 
-		n4 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "assert",
-				Namespace: meta.DefaultNamespace,
-				Name:      "assert",
-			},
-			Node: assertNode,
-		}
-		defer n4.Close()
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		agent.Load(n1)
-		defer agent.Unload(n1)
+		out := port.NewIn()
+		n.Out(node.PortOut).Link(out)
 
-		agent.Load(n2)
-		defer agent.Unload(n2)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-		agent.Load(n3)
-		defer agent.Unload(n3)
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
 
-		agent.Load(n4)
-		defer agent.Unload(n4)
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
+		inPck := packet.New(inPayload)
 
-		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n4.In(node.PortIn))
-		n2.Out(node.PortOut).Link(n3.In(node.PortIn))
-
-		tester := testing2.NewTester("")
-		go n1.Node.(*TestNode).Run(tester)
+		inWriter.Write(inPck)
 
 		select {
-		case <-tester.Done():
-			require.ErrorIs(t, tester.Err(), context.Canceled)
+		case outPck := <-outReader.Read():
+			outPayload, ok := outPck.Payload().(types.Slice)
+			require.True(t, ok)
+			require.Equal(t, 2, outPayload.Len())
+			require.Equal(t, types.NewInt(42), outPayload.Get(0))
+			require.Equal(t, types.NewInt(0), outPayload.Get(1))
+			outReader.Receive(outPck)
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
 	})
 
 	t.Run("TargetNotFound", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
-		agent := runtime.NewAgent()
-		defer agent.Close()
-
-		n1 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "test",
-				Namespace: meta.DefaultNamespace,
-				Name:      "test",
-			},
-			Node: NewTestNode(),
-		}
-		defer n1.Close()
-
-		n2 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "snippet",
-				Namespace: meta.DefaultNamespace,
-				Name:      "target",
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return packet.New(types.NewInt(10)), nil
-			}),
-		}
-		defer n2.Close()
-
-		evaluator := func(_ context.Context, payload any) (bool, error) {
-			return true, nil
+		expect := func(_ context.Context, payload any) (bool, error) {
+			return payload == 42, nil
 		}
 
-		nonExistentNodeName := "non-existent-node"
+		n := NewAssertNode(expect)
+		defer n.Close()
 
-		assertNode := NewAssertNode(evaluator)
-		assertNode.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
-			return nonExistentNodeName, index, nil
+		n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
+			return nil, -1, errors.WithStack(ErrAssertFail)
 		})
 
-		n3 := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      "assert",
-				Namespace: meta.DefaultNamespace,
-				Name:      "assert",
-			},
-			Node: assertNode,
-		}
-		defer n3.Close()
+		in := port.NewOut()
+		in.Link(n.In(node.PortIn))
 
-		agent.Load(n1)
-		defer agent.Unload(n1)
+		err := port.NewIn()
+		n.Out(node.PortError).Link(err)
 
-		agent.Load(n2)
-		defer agent.Unload(n2)
+		proc := process.New()
+		defer proc.Exit(nil)
 
-		agent.Load(n3)
-		defer agent.Unload(n3)
+		inWriter := in.Open(proc)
+		errReader := err.Open(proc)
 
-		n1.Out(node.PortWithIndex(node.PortOut, 0)).Link(n2.In(node.PortIn))
-		n1.Out(node.PortWithIndex(node.PortOut, 1)).Link(n3.In(node.PortIn))
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
+		inPck := packet.New(inPayload)
 
-		tester := testing2.NewTester("")
-		go n1.Node.(*TestNode).Run(tester)
+		inWriter.Write(inPck)
 
 		select {
-		case <-tester.Done():
-			require.Error(t, tester.Err())
-			require.NotErrorIs(t, tester.Err(), context.Canceled)
-			require.ErrorIs(t, tester.Err(), ErrNoTarget)
+		case errPck := <-errReader.Read():
+			errPayload, ok := errPck.Payload().(types.Error)
+			require.True(t, ok)
+			require.ErrorIs(t, errPayload.Unwrap(), ErrAssertFail)
+			errReader.Receive(errPck)
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
+
+		select {
+		case backPck := <-inWriter.Receive():
+			require.NotNil(t, backPck)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
