@@ -162,10 +162,10 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		return nil, packet.New(types.NewError(ErrAssertFail))
 	}
 
-	value, err := types.Marshal(payload)
+	next, err := types.Marshal(payload)
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
 
-	return packet.New(types.NewSlice(value, types.NewInt(index))), nil
+	return packet.New(types.NewSlice(next, types.NewInt(index))), nil
 }
