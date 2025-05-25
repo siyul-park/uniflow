@@ -57,34 +57,55 @@ func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme
 				}
 
 				frames := agent.Frames(proc.ID())
+				namespaces := make(map[string]map[string]uuid.UUID)
+				for _, frame := range frames {
+					sym := frame.Symbol
+					if sym == nil {
+						continue
+					}
+					if sym.Name() != "" {
+						ns, ok := namespaces[sym.Namespace()]
+						if !ok {
+							ns = make(map[string]uuid.UUID)
+							namespaces[sym.Namespace()] = ns
+						}
+						ns[sym.Name()] = sym.ID()
+					}
+				}
+
+				lookup := func(namespace, name string) uuid.UUID {
+					if ns, ok := namespaces[namespace]; ok {
+						return ns[name]
+					}
+					return uuid.Nil
+				}
+
 				for i := index; i < len(frames); i++ {
 					frame := frames[i]
-					if frame.Symbol == nil {
+					sym := frame.Symbol
+					if sym == nil {
 						continue
 					}
 
-					ok := false
-					if spec.Target.ID != uuid.Nil {
-						ok = frame.Symbol.ID() == spec.Target.ID
-					} else {
-						ok = frame.Symbol.Namespace() == spec.GetNamespace() &&
-							frame.Symbol.Name() == spec.Target.Name
+					id := spec.Target.ID
+					if id == uuid.Nil {
+						id = lookup(spec.GetNamespace(), spec.Target.Name)
 					}
-					if !ok {
+					if sym.ID() != id {
 						continue
 					}
 
-					if frame.InPort != nil && frame.InPort == frame.Symbol.In(spec.Target.Port) {
+					if frame.InPort != nil && frame.InPort == sym.In(spec.Target.Port) {
 						if frame.InPck == nil {
 							return nil, -1, errors.WithStack(ErrAssertFail)
 						}
-						return frame.InPck.Payload(), i, nil
+						return types.InterfaceOf(frame.InPck.Payload()), i, nil
 					}
-					if frame.OutPort != nil && frame.OutPort == frame.Symbol.Out(spec.Target.Port) {
+					if frame.OutPort != nil && frame.OutPort == sym.Out(spec.Target.Port) {
 						if frame.OutPck == nil {
 							return nil, -1, errors.WithStack(ErrAssertFail)
 						}
-						return frame.OutPck.Payload(), i, nil
+						return types.InterfaceOf(frame.OutPck.Payload()), i, nil
 					}
 				}
 
@@ -135,14 +156,15 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		}
 	}
 
-	value, err := types.Marshal(payload)
-	if err != nil {
-		return nil, packet.New(types.NewError(err))
-	}
-	if ok, err := n.expect(proc, types.InterfaceOf(value)); err != nil {
+	if ok, err := n.expect(proc, payload); err != nil {
 		return nil, packet.New(types.NewError(err))
 	} else if !ok {
 		return nil, packet.New(types.NewError(ErrAssertFail))
+	}
+
+	value, err := types.Marshal(payload)
+	if err != nil {
+		return nil, packet.New(types.NewError(err))
 	}
 
 	return packet.New(types.NewSlice(value, types.NewInt(index))), nil
