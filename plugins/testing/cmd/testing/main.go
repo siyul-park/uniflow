@@ -20,7 +20,7 @@ import (
 
 // Plugin implements the plugin that registers testing-related nodes.
 type Plugin struct {
-	testingRunner    *testing.Runner
+	runner           *testing.Runner
 	agent            *runtime.Agent
 	schemeBuilder    *scheme.Builder
 	hookBuilder      *hook.Builder
@@ -44,12 +44,12 @@ func New() *Plugin {
 	return &Plugin{}
 }
 
-// SetTestingRunner sets the testing runner for the plugin.
-func (p *Plugin) SetTestingRunner(runner *testing.Runner) {
+// SetRunner sets the testing runner for the plugin.
+func (p *Plugin) SetRunner(runner *testing.Runner) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.testingRunner = runner
+	p.runner = runner
 }
 
 // SetAgent sets the agent for the plugin.
@@ -130,27 +130,25 @@ func (p *Plugin) AddToHook(h *hook.Hook) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	testingRunner := p.testingRunner
-	if testingRunner == nil {
+	runner := p.runner
+	if runner == nil || p.agent == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.agent != nil {
-		h.AddLoadHook(p.agent)
-		h.AddUnloadHook(p.agent)
-	}
+	h.AddLoadHook(p.agent)
+	h.AddUnloadHook(p.agent)
 
 	h.AddLoadHook(symbol.LoadFunc(func(sb *symbol.Symbol) error {
 		var n *node2.TestNode
 		if node.As(sb, &n) {
-			testingRunner.Register(sb.NamespacedName(), n)
+			runner.Register(sb.NamespacedName(), n)
 		}
 		return nil
 	}))
 	h.AddUnloadHook(symbol.UnloadFunc(func(sb *symbol.Symbol) error {
 		var n *node2.TestNode
 		if node.As(sb, &n) {
-			testingRunner.Unregister(sb.NamespacedName())
+			runner.Unregister(sb.NamespacedName())
 		}
 		return nil
 	}))
@@ -162,7 +160,7 @@ func (p *Plugin) AddToScheme(s *scheme.Scheme) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.languageRegistry == nil {
+	if p.languageRegistry == nil || p.agent == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 

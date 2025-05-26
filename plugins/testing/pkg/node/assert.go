@@ -5,9 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-
 	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -57,59 +55,27 @@ func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme
 				}
 
 				frames := agent.Frames(proc.ID())
-				namespaces := make(map[string]map[string]uuid.UUID)
-				for _, frame := range frames {
-					sym := frame.Symbol
-					if sym == nil {
-						continue
-					}
-					if sym.Name() != "" {
-						ns, ok := namespaces[sym.Namespace()]
-						if !ok {
-							ns = make(map[string]uuid.UUID)
-							namespaces[sym.Namespace()] = ns
-						}
-						ns[sym.Name()] = sym.ID()
-					}
-				}
-
-				lookup := func(namespace, name string) uuid.UUID {
-					if ns, ok := namespaces[namespace]; ok {
-						return ns[name]
-					}
-					return uuid.Nil
-				}
-
 				for i := index; i < len(frames); i++ {
 					frame := frames[i]
 					sym := frame.Symbol
-					if sym == nil {
-						continue
-					}
-
-					id := spec.Target.ID
-					if id == uuid.Nil {
-						id = lookup(spec.GetNamespace(), spec.Target.Name)
-					}
-					if sym.ID() != id {
+					if sym.Namespace() != spec.GetNamespace() || (spec.Target.ID != sym.ID() && (spec.Target.Name == "" || spec.Target.Name != sym.Name())) {
 						continue
 					}
 
 					if frame.InPort != nil && frame.InPort == sym.In(spec.Target.Port) {
 						if frame.InPck == nil {
-							return nil, -1, errors.WithStack(ErrAssertFail)
+							return nil, 0, errors.WithStack(ErrAssertFail)
 						}
 						return types.InterfaceOf(frame.InPck.Payload()), i, nil
 					}
 					if frame.OutPort != nil && frame.OutPort == sym.Out(spec.Target.Port) {
 						if frame.OutPck == nil {
-							return nil, -1, errors.WithStack(ErrAssertFail)
+							return nil, 0, errors.WithStack(ErrAssertFail)
 						}
 						return types.InterfaceOf(frame.OutPck.Payload()), i, nil
 					}
 				}
-
-				return nil, -1, errors.WithStack(ErrAssertFail)
+				return nil, 0, errors.WithStack(ErrAssertFail)
 			})
 		}
 
@@ -119,10 +85,7 @@ func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme
 
 // NewAssertNode creates a new Assert node
 func NewAssertNode(expect func(context.Context, any) (bool, error)) *AssertNode {
-	n := &AssertNode{
-		expect: expect,
-	}
-
+	n := &AssertNode{expect: expect}
 	n.OneToOneNode = node.NewOneToOneNode(n.action)
 	return n
 }
@@ -140,6 +103,7 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 	defer n.mu.RUnlock()
 
 	inPayload := inPck.Payload()
+
 	payload, err := types.Cast[any](types.Lookup(inPayload, 0))
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
@@ -162,10 +126,9 @@ func (n *AssertNode) action(proc *process.Process, inPck *packet.Packet) (*packe
 		return nil, packet.New(types.NewError(ErrAssertFail))
 	}
 
-	next, err := types.Marshal(payload)
+	outPayload, err := types.Marshal([]any{payload, index})
 	if err != nil {
 		return nil, packet.New(types.NewError(err))
 	}
-
-	return packet.New(types.NewSlice(next, types.NewInt(index))), nil
+	return packet.New(outPayload), nil
 }
