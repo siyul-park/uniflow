@@ -116,10 +116,6 @@ func (p *Plugin) Unload(_ context.Context) error {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
 
-	if p.agent != nil {
-		p.agent.Close()
-	}
-
 	p.hookBuilder.Unregister(p)
 	p.schemeBuilder.Unregister(p)
 	return nil
