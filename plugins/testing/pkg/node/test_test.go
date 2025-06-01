@@ -38,6 +38,7 @@ func TestTestNode_Port(t *testing.T) {
 	n := NewTestNode()
 	defer n.Close()
 
+	require.Nil(t, n.In(node.PortIn))
 	require.NotNil(t, n.Out(node.PortOut))
 	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 0)))
 	require.NotNil(t, n.Out(node.PortWithIndex(node.PortOut, 1)))
