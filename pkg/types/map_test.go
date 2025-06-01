@@ -7,7 +7,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/require"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 func TestNewMap(t *testing.T) {

@@ -22,7 +22,7 @@ workflows.
 
 ## Available Nodes
 
-- **[Ctrl Plugin](ctl/README.md)**: Provides various control nodes to finely manage data flow.
+- **[Ctrl Plugin](ctrl/README.md)**: Provides various control nodes to finely manage data flow.
 - **[Net Plugin](./net/README.md)**: Supports communication with external systems through various network protocols.
 - **[SQL Plugin](./sql/README.md)**: Enables interaction with relational databases, supporting SQL query execution and
   data processing.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	encoding2 "github.com/siyul-park/uniflow/internal/encoding"
+	encoding2 "github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Error represents an error types.
