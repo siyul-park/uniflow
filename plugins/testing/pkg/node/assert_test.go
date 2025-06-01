@@ -276,7 +276,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		}
 	})
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("ExpectError", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
@@ -298,6 +298,46 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		outReader := out.Open(proc)
 
 		inPayload, err := types.Marshal([]any{10, -1})
+		require.NoError(t, err)
+		inPck := packet.New(inPayload)
+
+		inWriter.Write(inPck)
+
+		select {
+		case outPck := <-outReader.Read():
+			require.NotNil(t, outPck)
+			outReader.Receive(outPck)
+			require.Error(t, outPck.Payload().(types.Error).Unwrap())
+		case <-ctx.Done():
+			require.Fail(t, ctx.Err().Error())
+		}
+	})
+
+	t.Run("PayloadError", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		assert := NewAssertNode(func(ctx context.Context, payload any) (bool, error) {
+			if val, ok := payload.(int); ok {
+				return val == 10, nil
+			}
+			return false, nil
+		})
+		defer assert.Close()
+
+		in := port.NewOut()
+		in.Link(assert.In(node.PortIn))
+
+		out := port.NewIn()
+		assert.Out(node.PortError).Link(out)
+
+		proc := process.New()
+		defer proc.Exit(nil)
+
+		inWriter := in.Open(proc)
+		outReader := out.Open(proc)
+
+		inPayload, err := types.Marshal([]any{"error", "error"})
 		require.NoError(t, err)
 		inPck := packet.New(inPayload)
 
