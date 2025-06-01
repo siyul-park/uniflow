@@ -16,9 +16,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewTestNodeCodec(t *testing.T) {
+func TestNewTestNodeCodec_Compile(t *testing.T) {
 	codec := NewTestNodeCodec()
 	require.NotNil(t, codec)
+
+	spec := &TestNodeSpec{}
+
+	n, err := codec.Compile(spec)
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.NoError(t, n.Close())
 }
 
 func TestNewTestNode(t *testing.T) {
