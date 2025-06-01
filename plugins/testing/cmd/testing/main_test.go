@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/siyul-park/uniflow/pkg/hook"
+	"github.com/siyul-park/uniflow/pkg/language"
+	"github.com/siyul-park/uniflow/pkg/language/text"
+	"github.com/siyul-park/uniflow/pkg/runtime"
 	"github.com/siyul-park/uniflow/pkg/scheme"
 	testing2 "github.com/siyul-park/uniflow/pkg/testing"
 	"github.com/stretchr/testify/require"
@@ -32,10 +35,19 @@ func TestPlugin_Load(t *testing.T) {
 	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
 	tr := testing2.NewRunner()
+	ag := runtime.NewAgent()
+	lg := language.NewRegistry()
+	defer ag.Close()
+	defer lg.Close()
 
-	p.SetHookBuilder(hb)
-	p.SetSchemeBuilder(sb)
+	lg.SetDefault(text.Language)
+	lg.Register(text.Language, text.NewCompiler())
+
 	p.SetRunner(tr)
+	p.SetAgent(ag)
+	p.SetSchemeBuilder(sb)
+	p.SetHookBuilder(hb)
+	p.SetLanguageRegistry(lg)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
@@ -68,10 +80,16 @@ func TestPlugin_Unload(t *testing.T) {
 	hb := hook.NewBuilder()
 	sb := scheme.NewBuilder()
 	tr := testing2.NewRunner()
+	ag := runtime.NewAgent()
+	lg := language.NewRegistry()
+	defer ag.Close()
+	defer lg.Close()
 
-	p.SetHookBuilder(hb)
-	p.SetSchemeBuilder(sb)
 	p.SetRunner(tr)
+	p.SetAgent(ag)
+	p.SetSchemeBuilder(sb)
+	p.SetHookBuilder(hb)
+	p.SetLanguageRegistry(lg)
 
 	err := p.Load(ctx)
 	require.NoError(t, err)
