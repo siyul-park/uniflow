@@ -61,6 +61,7 @@ func TestPlugin_Load(t *testing.T) {
 
 	tests := []string{
 		node.KindTest,
+		node.KindAssert,
 	}
 
 	for _, tt := range tests {

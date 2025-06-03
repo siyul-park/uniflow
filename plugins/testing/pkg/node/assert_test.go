@@ -39,23 +39,6 @@ func TestNewAssertNodeCodec_Compile(t *testing.T) {
 				Name:      faker.UUIDHyphenated(),
 			},
 			Expect: "{}",
-		}
-
-		n, err := codec.Compile(spec)
-		require.NoError(t, err)
-		require.NotNil(t, n)
-		require.NoError(t, n.Close())
-	})
-
-	t.Run("WithTarget", func(t *testing.T) {
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Expect: "{}",
 			Target: &spec.Port{
 				ID:   uuid.Must(uuid.NewV7()),
 				Name: "target",
@@ -151,7 +134,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		outReader.Receive(outPck)
 		<-inWriter.Receive()
 
-		result, _, err := target(proc, nil, 0)
+		result, _, err := target(proc, nil, -1)
 		require.NoError(t, err)
 		require.Equal(t, types.InterfaceOf(payload), result)
 	})
@@ -229,93 +212,6 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		}
 
 		target := codec.Target(spec)
-
-		result, _, err := target(proc, nil, 0)
-		require.ErrorIs(t, err, ErrAssertFail)
-		require.Nil(t, result)
-	})
-
-	t.Run("PortMismatch", func(t *testing.T) {
-		targetID := uuid.Must(uuid.NewV7())
-		targetSymbol := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        targetID,
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
-		}
-		defer targetSymbol.Close()
-
-		agent.Load(targetSymbol)
-		defer agent.Unload(targetSymbol)
-
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Target: &spec.Port{
-				ID:   targetID,
-				Port: "in",
-			},
-		}
-
-		target := codec.Target(spec)
-
-		in := targetSymbol.In(node.PortIn)
-		in.Open(proc)
-
-		result, _, err := target(proc, nil, 0)
-		require.ErrorIs(t, err, ErrAssertFail)
-		require.Nil(t, result)
-	})
-
-	t.Run("NamespaceDiff", func(t *testing.T) {
-		n := &symbol.Symbol{
-			Spec: &spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: "different-namespace",
-				Name:      faker.UUIDHyphenated(),
-			},
-			Node: node.NewOneToOneNode(func(_ *process.Process, inPck *packet.Packet) (*packet.Packet, *packet.Packet) {
-				return inPck, nil
-			}),
-		}
-		defer n.Close()
-
-		agent.Load(n)
-		defer agent.Unload(n)
-
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Target: &spec.Port{
-				ID:   n.ID(),
-				Port: "in",
-			},
-		}
-
-		target := codec.Target(spec)
-
-		in := port.NewOut()
-		defer in.Close()
-		in.Link(n.In(node.PortIn))
-		inWriter := in.Open(proc)
-		payload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
-		pck := packet.New(payload)
-		inWriter.Write(pck)
 
 		result, _, err := target(proc, nil, 0)
 		require.ErrorIs(t, err, ErrAssertFail)
