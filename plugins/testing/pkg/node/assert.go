@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/siyul-park/uniflow/internal/encoding"
 	"github.com/siyul-park/uniflow/pkg/language"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/packet"
@@ -32,55 +33,78 @@ type AssertNode struct {
 	mu     sync.RWMutex
 }
 
+// AssertNodeCodec implements scheme.Codec for AssertNode
+type AssertNodeCodec struct {
+	compiler language.Compiler
+	agent    *runtime.Agent
+}
+
 const KindAssert = "assert"
 
 var ErrAssertFail = errors.New("assert failed")
 
-var _ node.Node = (*AssertNode)(nil)
+var (
+	_ node.Node    = (*AssertNode)(nil)
+	_ scheme.Codec = (*AssertNodeCodec)(nil)
+)
 
 // NewAssertNodeCodec creates a codec for AssertNode
-func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) scheme.Codec {
-	return scheme.CodecWithType(func(spec *AssertNodeSpec) (node.Node, error) {
-		program, err := compiler.Compile(spec.Expect)
-		if err != nil {
-			return nil, err
+func NewAssertNodeCodec(compiler language.Compiler, agent *runtime.Agent) *AssertNodeCodec {
+	return &AssertNodeCodec{
+		compiler: compiler,
+		agent:    agent,
+	}
+}
+
+func (c *AssertNodeCodec) Compile(spec spec.Spec) (node.Node, error) {
+	converted, ok := spec.(*AssertNodeSpec)
+	if !ok {
+		return nil, errors.WithStack(encoding.ErrUnsupportedType)
+	}
+
+	program, err := c.compiler.Compile(converted.Expect)
+	if err != nil {
+		return nil, err
+	}
+
+	n := NewAssertNode(language.Predicate[any](language.Timeout(program, converted.Timeout)))
+
+	if converted.Target != nil {
+		n.SetTarget(c.Target(converted))
+	}
+
+	return n, nil
+}
+
+func (c *AssertNodeCodec) Target(spec *AssertNodeSpec) func(proc *process.Process, payload any, index int) (any, int, error) {
+	return func(proc *process.Process, payload any, index int) (any, int, error) {
+		if index < 0 {
+			index = 0
 		}
 
-		n := NewAssertNode(language.Predicate[any](language.Timeout(program, spec.Timeout)))
+		frames := c.agent.Frames(proc.ID())
+		for i := index; i < len(frames); i++ {
+			frame := frames[i]
+			sym := frame.Symbol
+			if sym.Namespace() != spec.GetNamespace() || (spec.Target.ID != sym.ID() && (spec.Target.Name == "" || spec.Target.Name != sym.Name())) {
+				continue
+			}
 
-		if spec.Target != nil {
-			n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
-				if index < 0 {
-					index = 0
+			if frame.InPort != nil && frame.InPort == sym.In(spec.Target.Port) {
+				if frame.InPck == nil {
+					return nil, 0, errors.WithStack(ErrAssertFail)
 				}
-
-				frames := agent.Frames(proc.ID())
-				for i := index; i < len(frames); i++ {
-					frame := frames[i]
-					sym := frame.Symbol
-					if sym.Namespace() != spec.GetNamespace() || (spec.Target.ID != sym.ID() && (spec.Target.Name == "" || spec.Target.Name != sym.Name())) {
-						continue
-					}
-
-					if frame.InPort != nil && frame.InPort == sym.In(spec.Target.Port) {
-						if frame.InPck == nil {
-							return nil, 0, errors.WithStack(ErrAssertFail)
-						}
-						return types.InterfaceOf(frame.InPck.Payload()), i, nil
-					}
-					if frame.OutPort != nil && frame.OutPort == sym.Out(spec.Target.Port) {
-						if frame.OutPck == nil {
-							return nil, 0, errors.WithStack(ErrAssertFail)
-						}
-						return types.InterfaceOf(frame.OutPck.Payload()), i, nil
-					}
+				return types.InterfaceOf(frame.InPck.Payload()), i, nil
+			}
+			if frame.OutPort != nil && frame.OutPort == sym.Out(spec.Target.Port) {
+				if frame.OutPck == nil {
+					return nil, 0, errors.WithStack(ErrAssertFail)
 				}
-				return nil, 0, errors.WithStack(ErrAssertFail)
-			})
+				return types.InterfaceOf(frame.OutPck.Payload()), i, nil
+			}
 		}
-
-		return n, nil
-	})
+		return nil, 0, errors.WithStack(ErrAssertFail)
+	}
 }
 
 // NewAssertNode creates a new Assert node
