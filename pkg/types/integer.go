@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/exp/constraints"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Integer is an interface representing an integer.

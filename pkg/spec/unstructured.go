@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
 	"github.com/siyul-park/uniflow/internal/template"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Unstructured implements the Spec interface with a flexible key-value structure.

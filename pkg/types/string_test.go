@@ -8,7 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 func TestString_Len(t *testing.T) {

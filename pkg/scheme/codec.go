@@ -3,7 +3,7 @@ package scheme
 import (
 	"github.com/pkg/errors"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/node"
 	"github.com/siyul-park/uniflow/pkg/spec"
 )

@@ -4,8 +4,8 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
 	"github.com/siyul-park/uniflow/internal/template"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 	"github.com/siyul-park/uniflow/pkg/meta"
 	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/siyul-park/uniflow/pkg/value"

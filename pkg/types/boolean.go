@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/siyul-park/uniflow/internal/encoding"
+	"github.com/siyul-park/uniflow/pkg/encoding"
 )
 
 // Boolean is a representation of a boolean value.

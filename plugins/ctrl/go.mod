@@ -1,4 +1,4 @@
-module github.com/siyul-park/uniflow/plugins/ctl
+module github.com/siyul-park/uniflow/plugins/ctrl
 
 go 1.24.2
 

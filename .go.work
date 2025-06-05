@@ -3,7 +3,7 @@ go 1.24.2
 use (
     .
     ./plugins/cel
-    ./plugins/ctl
+    ./plugins/ctrl
     ./plugins/ecmascript
     ./plugins/mongodb
     ./plugins/net

@@ -203,7 +203,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue("breakpoints")
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		require.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.ID().String())
 	})
 
 	t.Run("breakpoint <breakpoint>", func(t *testing.T) {
@@ -239,7 +239,7 @@ func TestDebugModel_Update(t *testing.T) {
 		m.input.SetValue(fmt.Sprintf("breakpoint %s", d.Breakpoints()[0].ID()))
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-		require.Contains(t, m.View(), sb.Name())
+		require.Contains(t, m.View(), sb.ID().String())
 	})
 
 	t.Run("breakpoint", func(t *testing.T) {
@@ -295,11 +295,11 @@ func TestDebugModel_Update(t *testing.T) {
 		d.Pause(ctx)
 
 		m.input.SetValue("breakpoint")
-		defer d.RemoveBreakpoint(d.Breakpoint())
-
 		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 		require.Contains(t, m.View(), sb.ID().String())
+
+		d.RemoveBreakpoint(d.Breakpoint())
 	})
 
 	t.Run("symbols", func(t *testing.T) {
