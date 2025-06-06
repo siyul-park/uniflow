@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugins/net
 
-go 1.24.2
+go 1.24.4
 
 require (
 	github.com/andybalholm/brotli v1.1.1
