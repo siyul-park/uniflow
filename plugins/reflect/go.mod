@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugins/reflect
 
-go 1.24.2
+go 1.24.4
 
 require (
 	github.com/go-faker/faker/v4 v4.6.1
