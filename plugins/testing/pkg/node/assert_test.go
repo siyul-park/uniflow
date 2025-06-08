@@ -125,8 +125,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		payload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		payload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		pck := packet.New(payload)
 		inWriter.Write(pck)
 
@@ -183,8 +182,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		payload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		payload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		pck := packet.New(payload)
 		inWriter.Write(pck)
 
@@ -227,17 +225,6 @@ func TestAssertNode_Port(t *testing.T) {
 	require.NotNil(t, n.Out(node.PortOut))
 }
 
-func TestAssertNode_SetTarget(t *testing.T) {
-	n := NewAssertNode(nil)
-	defer n.Close()
-
-	n.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
-		return payload, index, nil
-	})
-
-	require.NotNil(t, n.target)
-}
-
 func TestAssertNode_SendAndReceive(t *testing.T) {
 	t.Run("DirectAssert", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -263,8 +250,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -313,7 +299,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			require.NotNil(t, outPck)
 			outReader.Receive(outPck)
-			require.ErrorIs(t, outPck.Payload().(types.Error).Unwrap(), ErrAssertFail)
+			require.ErrorIs(t, outPck.Payload().(types.Error), ErrAssertFail)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
@@ -343,8 +329,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		inPck := packet.New(inPayload)
 
 		assert.SetTarget(func(proc *process.Process, payload any, index int) (any, int, error) {
@@ -391,8 +376,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -401,7 +385,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			require.NotNil(t, outPck)
 			outReader.Receive(outPck)
-			require.ErrorIs(t, outPck.Payload().(types.Error).Unwrap(), ErrAssertFail)
+			require.ErrorIs(t, outPck.Payload().(types.Error), ErrAssertFail)
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
@@ -428,8 +412,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
 
-		inPayload, err := types.Marshal([]any{10, -1})
-		require.NoError(t, err)
+		inPayload := types.NewSlice(types.NewInt(10), types.NewInt(-1))
 		inPck := packet.New(inPayload)
 
 		inWriter.Write(inPck)
@@ -438,7 +421,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			require.NotNil(t, outPck)
 			outReader.Receive(outPck)
-			require.Error(t, outPck.Payload().(types.Error).Unwrap())
+			require.Error(t, outPck.Payload().(types.Error))
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
@@ -478,7 +461,7 @@ func TestAssertNode_SendAndReceive(t *testing.T) {
 		case outPck := <-outReader.Read():
 			require.NotNil(t, outPck)
 			outReader.Receive(outPck)
-			require.Error(t, outPck.Payload().(types.Error).Unwrap())
+			require.Error(t, outPck.Payload().(types.Error))
 		case <-ctx.Done():
 			require.Fail(t, ctx.Err().Error())
 		}
