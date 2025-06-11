@@ -70,13 +70,13 @@ func (c *AssertNodeCodec) Compile(spec spec.Spec) (node.Node, error) {
 	n := NewAssertNode(language.Predicate[any](language.Timeout(program, converted.Timeout)))
 
 	if converted.Target != nil {
-		n.SetTarget(c.Target(converted))
+		n.SetTarget(c.Target(spec.GetNamespace(), converted.Target))
 	}
 
 	return n, nil
 }
 
-func (c *AssertNodeCodec) Target(spec *AssertNodeSpec) func(proc *process.Process, payload any, index int) (any, int, error) {
+func (c *AssertNodeCodec) Target(namespace string, target *spec.Port) func(proc *process.Process, payload any, index int) (any, int, error) {
 	return func(proc *process.Process, payload any, index int) (any, int, error) {
 		if index < 0 {
 			index = 0
@@ -86,17 +86,17 @@ func (c *AssertNodeCodec) Target(spec *AssertNodeSpec) func(proc *process.Proces
 		for i := index; i < len(frames); i++ {
 			frame := frames[i]
 			sym := frame.Symbol
-			if sym.Namespace() != spec.GetNamespace() || (spec.Target.ID != sym.ID() && (spec.Target.Name == "" || spec.Target.Name != sym.Name())) {
+			if sym.Namespace() != namespace || (target.ID != sym.ID() && (target.Name == "" || target.Name != sym.Name())) {
 				continue
 			}
 
-			if frame.InPort != nil && frame.InPort == sym.In(spec.Target.Port) {
+			if frame.InPort != nil && frame.InPort == sym.In(target.Port) {
 				if frame.InPck == nil {
 					return nil, 0, errors.WithStack(ErrAssertFail)
 				}
 				return types.InterfaceOf(frame.InPck.Payload()), i, nil
 			}
-			if frame.OutPort != nil && frame.OutPort == sym.Out(spec.Target.Port) {
+			if frame.OutPort != nil && frame.OutPort == sym.Out(target.Port) {
 				if frame.OutPck == nil {
 					return nil, 0, errors.WithStack(ErrAssertFail)
 				}

@@ -120,7 +120,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 			},
 		}
 
-		target := codec.Target(spec)
+		target := codec.Target(spec.GetNamespace(), spec.Target)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -177,7 +177,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 			},
 		}
 
-		target := codec.Target(spec)
+		target := codec.Target(spec.GetNamespace(), spec.Target)
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -209,7 +209,7 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 			},
 		}
 
-		target := codec.Target(spec)
+		target := codec.Target(spec.GetNamespace(), spec.Target)
 
 		result, _, err := target(proc, nil, 0)
 		require.ErrorIs(t, err, ErrAssertFail)
