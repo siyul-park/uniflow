@@ -81,6 +81,7 @@ jobs:
           for dir in ${MODULE_DIRS}; do \
             cd $dir && \
               sed -i -E -e "s|${PACKAGE_URL} v[0-9]+\.[0-9]+\.[0-9]+|${PACKAGE_URL} ${PACKAGE_VERSION}|" "$GO_MOD_FILE" && \
+              go get -u all || \
               go mod tidy || \
               true; \
           done

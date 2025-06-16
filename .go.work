@@ -13,5 +13,5 @@ use (
 )
 
 replace (
-	github.com/siyul-park/uniflow v0.13.0 => ./
+	github.com/siyul-park/uniflow v0.14.0 => ./
 )

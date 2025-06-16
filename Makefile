@@ -8,8 +8,8 @@ DOCKER_IMAGE = $(shell basename -s .git $(shell git config --get remote.origin.u
 DOCKER_TAG = $(shell git tag --sort=-v:refname | grep -v '/' | head -n 1 || echo "latest")
 DOCKERFILE = deployments/Dockerfile
 
-.PHONY: init generate build clean tidy update check test coverage benchmark lint fmt vet doc docker-build
-all: lint test build
+.PHONY: init generate build-all build build-plugin clean tidy update check test coverage benchmark lint fmt vet doc docker-build
+all: check build-all
 
 init:
 	@cp .go.work go.work
