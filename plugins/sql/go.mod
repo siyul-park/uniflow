@@ -1,11 +1,11 @@
 module github.com/siyul-park/uniflow/plugins/sql
 
-go 1.24.2
+go 1.24.4
 
 require (
 	github.com/go-faker/faker/v4 v4.6.1
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/pkg/errors v0.9.1
 	github.com/siyul-park/uniflow v0.13.0
 	github.com/stretchr/testify v1.10.0
@@ -27,6 +27,6 @@ require (
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

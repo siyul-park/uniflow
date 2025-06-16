@@ -11,8 +11,8 @@ jobs:
   check:
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        go: ['1.23']
+        os: [ ubuntu-24.04 ]
+        go: [ '1.24' ]
     name: Check ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -54,8 +54,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        go: ['1.22']
+        os: [ ubuntu-24.04 ]
+        go: [ '1.24' ]
     name: Benchmark Comparison ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     continue-on-error: true

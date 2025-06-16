@@ -59,16 +59,11 @@ func (n *TestNode) Run(t *testing.Tester) {
 
 	outPck1 := packet.New(types.NewSlice(backPck0.Payload(), types.NewInt(-1)))
 	backPck1 := packet.Send(writer1, outPck1)
-	if backPck1 == packet.None {
-		t.Exit(nil)
-		return
+	var err error
+	if e, ok := backPck1.Payload().(types.Error); ok {
+		err = e.Unwrap()
 	}
-	if err, ok := backPck1.Payload().(types.Error); ok {
-		t.Exit(err.Unwrap())
-		return
-	}
-
-	t.Exit(nil)
+	t.Exit(err)
 }
 
 // In returns nil as this node does not use an input port.

@@ -36,8 +36,8 @@ func TestPlugin_Load(t *testing.T) {
 	sb := scheme.NewBuilder()
 	tr := testing2.NewRunner()
 	ag := runtime.NewAgent()
-	lg := language.NewRegistry()
 	defer ag.Close()
+	lg := language.NewRegistry()
 	defer lg.Close()
 
 	lg.SetDefault(text.Language)
@@ -82,8 +82,8 @@ func TestPlugin_Unload(t *testing.T) {
 	sb := scheme.NewBuilder()
 	tr := testing2.NewRunner()
 	ag := runtime.NewAgent()
-	lg := language.NewRegistry()
 	defer ag.Close()
+	lg := language.NewRegistry()
 	defer lg.Close()
 
 	p.SetRunner(tr)

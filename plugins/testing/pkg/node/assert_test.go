@@ -31,7 +31,7 @@ func TestNewAssertNodeCodec_Compile(t *testing.T) {
 	require.NotNil(t, codec)
 
 	t.Run("Compile", func(t *testing.T) {
-		spec := &AssertNodeSpec{
+		s := &AssertNodeSpec{
 			Meta: spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -47,14 +47,14 @@ func TestNewAssertNodeCodec_Compile(t *testing.T) {
 			Timeout: time.Second,
 		}
 
-		n, err := codec.Compile(spec)
+		n, err := codec.Compile(s)
 		require.NoError(t, err)
 		require.NotNil(t, n)
 		require.NoError(t, n.Close())
 	})
 
 	t.Run("CompileError", func(t *testing.T) {
-		spec := &AssertNodeSpec{
+		s := &AssertNodeSpec{
 			Meta: spec.Meta{
 				ID:        uuid.Must(uuid.NewV7()),
 				Kind:      faker.UUIDHyphenated(),
@@ -64,7 +64,7 @@ func TestNewAssertNodeCodec_Compile(t *testing.T) {
 			Expect: "{ error }",
 		}
 
-		n, err := codec.Compile(spec)
+		n, err := codec.Compile(s)
 		require.Error(t, err)
 		require.Nil(t, n)
 	})
@@ -107,20 +107,10 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		agent.Load(n)
 		defer agent.Unload(n)
 
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Target: &spec.Port{
-				ID:   id,
-				Port: "in",
-			},
-		}
-
-		target := codec.Target(spec.GetNamespace(), spec.Target)
+		target := codec.Target(meta.DefaultNamespace, &spec.Port{
+			ID:   id,
+			Port: node.PortIn,
+		})
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -164,20 +154,10 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 		agent.Load(n)
 		defer agent.Unload(n)
 
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Target: &spec.Port{
-				Name: name,
-				Port: "out",
-			},
-		}
-
-		target := codec.Target(spec.GetNamespace(), spec.Target)
+		target := codec.Target(meta.DefaultNamespace, &spec.Port{
+			Name: name,
+			Port: node.PortOut,
+		})
 
 		inWriter := in.Open(proc)
 		outReader := out.Open(proc)
@@ -196,20 +176,10 @@ func TestAssertNodeCodec_Target(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		spec := &AssertNodeSpec{
-			Meta: spec.Meta{
-				ID:        uuid.Must(uuid.NewV7()),
-				Kind:      faker.UUIDHyphenated(),
-				Namespace: meta.DefaultNamespace,
-				Name:      faker.UUIDHyphenated(),
-			},
-			Target: &spec.Port{
-				ID:   uuid.Must(uuid.NewV7()),
-				Port: "in",
-			},
-		}
-
-		target := codec.Target(spec.GetNamespace(), spec.Target)
+		target := codec.Target(meta.DefaultNamespace, &spec.Port{
+			ID:   uuid.Must(uuid.NewV7()),
+			Port: node.PortIn,
+		})
 
 		result, _, err := target(proc, nil, 0)
 		require.ErrorIs(t, err, ErrAssertFail)

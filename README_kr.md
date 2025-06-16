@@ -193,7 +193,8 @@ Percentage of the requests served within a certain time (ms)
 
 [go_download_url]: https://golang.org/dl/
 [go_version_img]: https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go
-[go_code_coverage_img]: https://codecov.io/gh/siyul-park/uniflow/graph/badge.svg?token=quEl9AbBcW
+
+[go_code_coverage_img]: https://codecov.io/gh/siyul-park/uniflow/graph/badge.svg?token=HOFm99R9SO
 [go_code_coverage_url]: https://codecov.io/gh/siyul-park/uniflow
 [go_report_img]: https://goreportcard.com/badge/github.com/siyul-park/uniflow
 [go_report_url]: https://goreportcard.com/report/github.com/siyul-park/uniflow

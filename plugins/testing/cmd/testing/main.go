@@ -102,6 +102,7 @@ func (p *Plugin) Load(_ context.Context) error {
 	if p.hookBuilder == nil || p.schemeBuilder == nil {
 		return errors.WithStack(plugin.ErrMissingDependency)
 	}
+
 	p.hookBuilder.Register(p)
 	p.schemeBuilder.Register(p)
 	return nil
@@ -178,6 +179,5 @@ func (p *Plugin) AddToScheme(s *scheme.Scheme) error {
 		s.AddKnownType(def.kind, def.spec)
 		s.AddCodec(def.kind, def.codec)
 	}
-
 	return nil
 }

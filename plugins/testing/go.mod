@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugins/testing
 
-go 1.24.2
+go 1.24.4
 
 require (
 	github.com/go-faker/faker/v4 v4.6.1
@@ -25,6 +25,6 @@ require (
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
