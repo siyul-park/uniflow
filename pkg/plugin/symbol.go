@@ -17,6 +17,7 @@ func init() {
 //go:generate go install github.com/traefik/yaegi/cmd/yaegi@latest
 
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/driver
+//go:generate yaegi extract github.com/siyul-park/uniflow/pkg/encoding
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/hook
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/language
 //go:generate yaegi extract github.com/siyul-park/uniflow/pkg/meta

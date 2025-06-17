@@ -37,22 +37,21 @@ func init() {
 
 // _github_com_siyul_park_uniflow_pkg_spec_Spec is an interface wrapper for Spec type
 type _github_com_siyul_park_uniflow_pkg_spec_Spec struct {
-	IValue             interface{}
-	WGetAnnotations    func() map[string]string
-	WGetEnv            func() map[string]spec.Value
-	WGetID             func() uuid.UUID
-	WGetKind           func() string
-	WGetName           func() string
-	WGetNamespace      func() string
-	WGetNamespacedName func() string
-	WGetPorts          func() map[string][]spec.Port
-	WSetAnnotations    func(val map[string]string)
-	WSetEnv            func(val map[string]spec.Value)
-	WSetID             func(val uuid.UUID)
-	WSetKind           func(val string)
-	WSetName           func(val string)
-	WSetNamespace      func(val string)
-	WSetPorts          func(val map[string][]spec.Port)
+	IValue          interface{}
+	WGetAnnotations func() map[string]string
+	WGetEnv         func() map[string]spec.Value
+	WGetID          func() uuid.UUID
+	WGetKind        func() string
+	WGetName        func() string
+	WGetNamespace   func() string
+	WGetPorts       func() map[string][]spec.Port
+	WSetAnnotations func(val map[string]string)
+	WSetEnv         func(val map[string]spec.Value)
+	WSetID          func(val uuid.UUID)
+	WSetKind        func(val string)
+	WSetName        func(val string)
+	WSetNamespace   func(val string)
+	WSetPorts       func(val map[string][]spec.Port)
 }
 
 func (W _github_com_siyul_park_uniflow_pkg_spec_Spec) GetAnnotations() map[string]string {
@@ -72,9 +71,6 @@ func (W _github_com_siyul_park_uniflow_pkg_spec_Spec) GetName() string {
 }
 func (W _github_com_siyul_park_uniflow_pkg_spec_Spec) GetNamespace() string {
 	return W.WGetNamespace()
-}
-func (W _github_com_siyul_park_uniflow_pkg_spec_Spec) GetNamespacedName() string {
-	return W.WGetNamespacedName()
 }
 func (W _github_com_siyul_park_uniflow_pkg_spec_Spec) GetPorts() map[string][]spec.Port {
 	return W.WGetPorts()

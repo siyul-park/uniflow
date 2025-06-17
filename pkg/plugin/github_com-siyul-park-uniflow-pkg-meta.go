@@ -18,6 +18,7 @@ func init() {
 		"KeyID":            reflect.ValueOf(constant.MakeFromLiteral("\"id\"", token.STRING, 0)),
 		"KeyName":          reflect.ValueOf(constant.MakeFromLiteral("\"name\"", token.STRING, 0)),
 		"KeyNamespace":     reflect.ValueOf(constant.MakeFromLiteral("\"namespace\"", token.STRING, 0)),
+		"NamespacedName":   reflect.ValueOf(meta.NamespacedName),
 
 		// type definitions
 		"Meta":         reflect.ValueOf((*meta.Meta)(nil)),
