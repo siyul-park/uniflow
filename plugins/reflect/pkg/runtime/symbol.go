@@ -21,8 +21,13 @@ func NewSymbolTable(agent *runtime.Agent) *SymbolTable {
 	return &SymbolTable{agent: agent}
 }
 
+// Indexes returns the list of indexes for the table.
+func (t *SymbolTable) Indexes(_ context.Context) ([]schema.Index, error) {
+	return nil, nil
+}
+
 // Scan returns a cursor for the symbols in the agent, formatted as rows.
-func (t *SymbolTable) Scan(_ context.Context) (schema.Cursor, error) {
+func (t *SymbolTable) Scan(_ context.Context, _ ...schema.ScanHint) (schema.Cursor, error) {
 	var rows []schema.Row
 	for _, sb := range t.agent.Symbols() {
 		raw, err := json.Marshal(sb)

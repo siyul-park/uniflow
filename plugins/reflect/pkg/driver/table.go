@@ -3,7 +3,9 @@ package driver
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
+	"github.com/siyul-park/sqlbridge/engine"
 	"github.com/siyul-park/sqlbridge/schema"
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/meta"
@@ -22,9 +24,80 @@ func NewTable[T meta.Meta](store driver.Store) *Table[T] {
 	return &Table[T]{store: store}
 }
 
+// Indexes returns the list of indexes for the table.
+func (t *Table[T]) Indexes(ctx context.Context) ([]schema.Index, error) {
+	keys, err := t.store.Indexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	indexes := make([]schema.Index, 0, len(keys))
+	for _, ks := range keys {
+		cols := make([]*sqlparser.ColName, 0, len(ks))
+		for _, k := range ks {
+			cols = append(cols, &sqlparser.ColName{Name: sqlparser.NewColIdent(k)})
+		}
+		indexes = append(indexes, schema.Index{Name: strings.Join(ks, "_"), Columns: cols})
+	}
+	return indexes, nil
+}
+
 // Scan retrieves rows from the store and returns them as a schema.Cursor.
-func (t *Table[T]) Scan(ctx context.Context) (schema.Cursor, error) {
-	cursor, err := t.store.Find(ctx, nil)
+func (t *Table[T]) Scan(ctx context.Context, hint ...schema.ScanHint) (schema.Cursor, error) {
+	keys, err := t.store.Indexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	indexes := make(map[string][]string)
+	for _, k := range keys {
+		indexes[strings.Join(k, "_")] = k
+	}
+
+	filter := make(map[string]any)
+	for _, h := range hint {
+		ks, ok := indexes[h.Index]
+		if !ok {
+			continue
+		}
+
+		for i, r := range h.Ranges {
+			if i >= len(ks) {
+				break
+			}
+			field := ks[i]
+
+			var from, to engine.Value
+			if r.Min != nil {
+				if from, err = engine.FromSQL(*r.Min); err != nil {
+					return nil, err
+				}
+			}
+			if r.Max != nil {
+				if to, err = engine.FromSQL(*r.Max); err != nil {
+					return nil, err
+				}
+			}
+
+			cmp, err := engine.Compare(from, to)
+			if err != nil {
+				return nil, err
+			}
+
+			switch {
+			case from != nil && to != nil && cmp == 0:
+				filter[field] = from.Interface()
+			case from != nil && to != nil:
+				filter[field] = map[string]any{"$gte": from.Interface(), "$lte": to.Interface()}
+			case from != nil:
+				filter[field] = map[string]any{"$gte": from.Interface()}
+			case to != nil:
+				filter[field] = map[string]any{"$lte": to.Interface()}
+			}
+		}
+	}
+
+	cursor, err := t.store.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

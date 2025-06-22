@@ -21,8 +21,13 @@ func NewProcessTable(agent *runtime.Agent) *ProcessTable {
 	return &ProcessTable{agent: agent}
 }
 
+// Indexes returns the list of indexes for the table.
+func (t *ProcessTable) Indexes(_ context.Context) ([]schema.Index, error) {
+	return nil, nil
+}
+
 // Scan returns a cursor for the processes in the agent, formatted as rows.
-func (t *ProcessTable) Scan(_ context.Context) (schema.Cursor, error) {
+func (t *ProcessTable) Scan(_ context.Context, _ ...schema.ScanHint) (schema.Cursor, error) {
 	var rows []schema.Row
 	for _, proc := range t.agent.Processes() {
 		raw, err := json.Marshal(proc)

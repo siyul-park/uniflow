@@ -69,6 +69,10 @@ func TestStore_Index(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	indexes, err := s.Indexes(ctx)
+	require.NoError(t, err)
+	require.Len(t, indexes, 2)
+
 	err = s.Index(ctx, []string{"name"})
 	require.NoError(t, err)
 }

@@ -42,6 +42,32 @@ func (s *Store) Watch(ctx context.Context, filter any) (driver.Stream, error) {
 	return &stream{changeStream: cs}, nil
 }
 
+func (s *Store) Indexes(ctx context.Context) ([][]string, error) {
+	specs, err := s.collection.Indexes().ListSpecifications(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var indexes [][]string
+	for _, spec := range specs {
+		var key bson.D
+		if err := bson.Unmarshal(spec.KeysDocument, &key); err != nil {
+			return nil, err
+		}
+
+		var keys []string
+		for _, elem := range key {
+			k := elem.Key
+			if k == "_id" {
+				k = "id"
+			}
+			keys = append(keys, k)
+		}
+		indexes = append(indexes, keys)
+	}
+	return indexes, nil
+}
+
 func (s *Store) Index(ctx context.Context, keys []string, opts ...driver.IndexOptions) error {
 	option := options.Index()
 	for _, opt := range opts {

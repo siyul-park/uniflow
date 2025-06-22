@@ -21,8 +21,13 @@ func NewFrameTable(agent *runtime.Agent) *FrameTable {
 	return &FrameTable{agent: agent}
 }
 
+// Indexes returns the list of indexes for the table.
+func (t *FrameTable) Indexes(_ context.Context) ([]schema.Index, error) {
+	return nil, nil
+}
+
 // Scan returns a cursor for the frames in the agent, formatted as rows.
-func (t *FrameTable) Scan(_ context.Context) (schema.Cursor, error) {
+func (t *FrameTable) Scan(_ context.Context, _ ...schema.ScanHint) (schema.Cursor, error) {
 	var rows []schema.Row
 	for _, proc := range t.agent.Processes() {
 		for _, frm := range t.agent.Frames(proc.ID()) {

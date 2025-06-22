@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 
 	"github.com/siyul-park/uniflow/pkg/types"
 )
@@ -16,6 +17,7 @@ import (
 type Store interface {
 	Watch(ctx context.Context, filter any) (Stream, error)
 
+	Indexes(ctx context.Context) ([][]string, error)
 	Index(ctx context.Context, keys []string, opts ...IndexOptions) error
 	Unindex(ctx context.Context, keys []string) error
 
@@ -117,6 +119,20 @@ func (s *store) Watch(ctx context.Context, filter any) (Stream, error) {
 	}()
 
 	return strm, nil
+}
+
+func (s *store) Indexes(_ context.Context) ([][]string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	indexes := s.segment.Indexes()
+	keys := make([][]string, 0, len(indexes))
+	for _, idx := range indexes {
+		keys = append(keys, lo.Map(idx.Keys, func(item types.String, index int) string {
+			return item.String()
+		}))
+	}
+	return keys, nil
 }
 
 func (s *store) Index(_ context.Context, keys []string, opts ...IndexOptions) error {
