@@ -9,6 +9,7 @@ import (
 	"github.com/siyul-park/sqlbridge/schema"
 	"github.com/siyul-park/uniflow/pkg/driver"
 	"github.com/siyul-park/uniflow/pkg/meta"
+	"github.com/siyul-park/uniflow/pkg/types"
 	"github.com/xwb1989/sqlparser"
 )
 
@@ -69,12 +70,16 @@ func (t *Table[T]) Scan(ctx context.Context, hint ...schema.ScanHint) (schema.Cu
 
 			var from, to engine.Value
 			if r.Min != nil {
-				if from, err = engine.FromSQL(*r.Min); err != nil {
+				if v, err := engine.FromSQL(*r.Min); err != nil {
+					return nil, err
+				} else if from, err = t.valueOf(field, v.Interface()); err != nil {
 					return nil, err
 				}
 			}
 			if r.Max != nil {
-				if to, err = engine.FromSQL(*r.Max); err != nil {
+				if v, err := engine.FromSQL(*r.Max); err != nil {
+					return nil, err
+				} else if to, err = t.valueOf(field, v.Interface()); err != nil {
 					return nil, err
 				}
 			}
@@ -132,4 +137,22 @@ func (t *Table[T]) Scan(ctx context.Context, hint ...schema.ScanHint) (schema.Cu
 		rows = append(rows, row)
 	}
 	return schema.NewInMemoryCursor(rows), nil
+}
+
+func (t *Table[T]) valueOf(key string, val any) (engine.Value, error) {
+	data, err := types.Marshal(map[string]any{key: val})
+	if err != nil {
+		return nil, err
+	}
+
+	var doc T
+	if err := types.Unmarshal(data, &doc); err != nil {
+		return nil, err
+	}
+
+	data, err = types.Marshal(doc)
+	if err != nil {
+		return nil, err
+	}
+	return engine.NewValue(types.InterfaceOf(types.Lookup(data, key))), nil
 }
