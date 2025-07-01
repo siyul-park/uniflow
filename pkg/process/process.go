@@ -231,14 +231,14 @@ func (p *Process) MarshalJSON() ([]byte, error) {
 	data := map[string]any{
 		"id":         p.id.String(),
 		"status":     p.status,
-		"started_at": p.startTime.Unix(),
+		"start_time": p.startTime.Unix(),
 	}
 
 	if p.parent != nil {
 		data["parent_id"] = p.parent.ID().String()
 	}
 	if !p.endTime.IsZero() {
-		data["ended_at"] = p.endTime.Unix()
+		data["end_time"] = p.endTime.Unix()
 	}
 	if p.err != nil {
 		data["error"] = p.err.Error()
@@ -246,7 +246,12 @@ func (p *Process) MarshalJSON() ([]byte, error) {
 
 	for _, key := range p.Keys() {
 		if val, ok := p.data[key]; ok {
-			data[fmt.Sprint(key)] = val
+			k := fmt.Sprint(key)
+			if bs, err := json.Marshal(val); err != nil {
+				data[k] = "<native>"
+			} else {
+				data[k] = json.RawMessage(bs)
+			}
 		}
 	}
 
