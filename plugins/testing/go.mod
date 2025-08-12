@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugins/testing
 
-go 1.24.4
+go 1.25.0
 
 require (
 	github.com/go-faker/faker/v4 v4.6.1
