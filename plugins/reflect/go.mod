@@ -9,7 +9,7 @@ require (
 	github.com/samber/lo v1.51.0
 	github.com/siyul-park/sqlbridge v0.4.0
 	github.com/siyul-park/uniflow v0.14.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 )
 
