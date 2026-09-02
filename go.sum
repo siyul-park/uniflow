@@ -70,6 +70,8 @@ github.com/knadh/koanf/maps v0.1.2 h1:RBfmAW5CnZT+PJ1CVc1QSJKf4Xu9kxfQgYVQSu8hpb
 github.com/knadh/koanf/maps v0.1.2/go.mod h1:npD/QZY3V6ghQDdcQzl1W4ICNVTkohC8E73eI2xW4yI=
 github.com/knadh/koanf/parsers/dotenv v1.1.0 h1:dQaM0Jw54zRsqDcaJ27pciNExuKfOXagCJW3K1h0hj0=
 github.com/knadh/koanf/parsers/dotenv v1.1.0/go.mod h1:P3BQjxaIc2+SZ3n9BUceqYl95pz3qaGqYTZX0j0d/DI=
+github.com/knadh/koanf/parsers/dotenv v1.1.2 h1:9VdbqK75gfTm/LCWqOmPbFtIhJ0c11o/MICLmleRlHc=
+github.com/knadh/koanf/parsers/dotenv v1.1.2/go.mod h1:P3BQjxaIc2+SZ3n9BUceqYl95pz3qaGqYTZX0j0d/DI=
 github.com/knadh/koanf/parsers/hjson v1.0.0 h1:MQGEzN2VFgBf+xkIwBU8HO5GxR+JGqdBD5QdkXcvwps=
 github.com/knadh/koanf/parsers/hjson v1.0.0/go.mod h1:n5pKeiKAnLXLiiBAPpaH9XVYL9Y3g9Ymz5tGqAY9240=
 github.com/knadh/koanf/parsers/toml/v2 v2.2.0 h1:2nV7tHYJ5OZy2BynQ4mOJ6k5bDqbbCzRERLUKBytz3A=
