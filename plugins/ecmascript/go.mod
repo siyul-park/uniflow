@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow/plugins/ecmascript
 
-go 1.24.4
+go 1.27.1
 
 require (
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994

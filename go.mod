@@ -1,6 +1,6 @@
 module github.com/siyul-park/uniflow
 
-go 1.24.4
+go 1.27.1
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
